@@ -84,6 +84,7 @@ import type { ExRadioProps, ExRadioEmits, ExRadioSlots, ExRadioInstance } from '
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExRadio',
@@ -118,7 +119,7 @@ const radioGroupContext = inject<{
   updateValue: (value: string | number | boolean) => void;
 } | null>('radioGroup', null);
 
-const radioId = `ex-radio-${Math.random().toString(36).substring(2, 11)}`;
+const radioId = generateId('ex-radio');
 const radioRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
 const currentErrorMessage = ref('');

@@ -7,7 +7,7 @@
         :value="displayValue"
         :placeholder="currentPlaceholder"
         :disabled="disabled"
-        :readonly="readonly || true"
+        readonly
         :aria-label="ariaLabel"
         class="ex-datetime-picker__input"
         @focus="handleFocus"

@@ -7,12 +7,42 @@
  * 允许的 HTML 标签白名单
  */
 const ALLOWED_TAGS = new Set([
-  'a', 'b', 'i', 'u', 's', 'em', 'strong', 'small', 'mark', 'del', 'ins', 'sub', 'sup',
-  'br', 'hr', 'p', 'div', 'span',
-  'ul', 'ol', 'li',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'blockquote', 'pre', 'code',
-  'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'a',
+  'b',
+  'i',
+  'u',
+  's',
+  'em',
+  'strong',
+  'small',
+  'mark',
+  'del',
+  'ins',
+  'sub',
+  'sup',
+  'br',
+  'hr',
+  'p',
+  'div',
+  'span',
+  'ul',
+  'ol',
+  'li',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'blockquote',
+  'pre',
+  'code',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
   'img',
 ]);
 
@@ -21,10 +51,10 @@ const ALLOWED_TAGS = new Set([
  */
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   '*': new Set(['class', 'style', 'id', 'title']),
-  'a': new Set(['href', 'target', 'rel']),
-  'img': new Set(['src', 'alt', 'width', 'height']),
-  'td': new Set(['colspan', 'rowspan']),
-  'th': new Set(['colspan', 'rowspan']),
+  a: new Set(['href', 'target', 'rel']),
+  img: new Set(['src', 'alt', 'width', 'height']),
+  td: new Set(['colspan', 'rowspan']),
+  th: new Set(['colspan', 'rowspan']),
 };
 
 /**
@@ -35,10 +65,20 @@ const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:'];
 /**
  * 检查 URL 是否安全
  * @param url - 要检查的 URL
+ * @param allowDataImage - 是否允许 data:image/*（用于 img src 的内联图片）
  * @returns 是否安全
  */
-function isSafeUrl(url: string): boolean {
-  const trimmedUrl = url.trim().toLowerCase();
+function isSafeUrl(url: string, allowDataImage = false): boolean {
+  // 先去除控制字符/空白（绕过手段之一：java\tscript:）
+  const trimmedUrl = Array.from(url)
+    .filter(ch => ch.charCodeAt(0) > 0x20)
+    .join('')
+    .toLowerCase();
+  if (allowDataImage && trimmedUrl.startsWith('data:image/')) {
+    // 阻止 data:image/svg+xml（SVG 可携带脚本）
+    return !trimmedUrl.startsWith('data:image/svg');
+  }
+
   return !DANGEROUS_PROTOCOLS.some(protocol => trimmedUrl.startsWith(protocol));
 }
 
@@ -110,16 +150,24 @@ export function sanitizeHtml(html: string): string {
           continue;
         }
 
-        // 检查 href 和 src 属性的 URL 安全性
-        if ((attrName === 'href' || attrName === 'src') && !isSafeUrl(attr.value)) {
-          element.removeAttribute(attr.name);
-          continue;
+        // 检查 href 和 src 属性的 URL 安全性（img src 允许 data:image 内联图片）
+        if (attrName === 'href' || attrName === 'src') {
+          const allowDataImage = attrName === 'src' && tagName === 'img';
+          if (!isSafeUrl(attr.value, allowDataImage)) {
+            element.removeAttribute(attr.name);
+            continue;
+          }
         }
 
-        // 检查 style 属性中的危险内容
+        // 检查 style 属性中的危险内容：脚本协议、IE expression、外部资源引用
         if (attrName === 'style') {
           const styleValue = attr.value.toLowerCase();
-          if (styleValue.includes('javascript:') || styleValue.includes('expression(')) {
+          if (
+            styleValue.includes('javascript:') ||
+            styleValue.includes('expression(') ||
+            styleValue.includes('url(') ||
+            styleValue.includes('@import')
+          ) {
             element.removeAttribute(attr.name);
           }
         }

@@ -18,7 +18,7 @@
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-        @keydown="handleKeydown"
+        @keydown.space.prevent="handleSpaceKey"
       />
       <input
         v-else
@@ -37,7 +37,7 @@
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-        @keydown="handleKeydown"
+        @keydown.space.prevent="handleSpaceKey"
       />
 
       <!-- 自定义复选框外观 -->
@@ -103,6 +103,7 @@ import type {
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExCheckbox',
@@ -142,7 +143,7 @@ const checkboxGroupContext = inject<{
 } | null>('checkboxGroup', null);
 
 // 生成唯一ID
-const checkboxId = `ex-checkbox-${Math.random().toString(36).substring(2, 11)}`;
+const checkboxId = generateId('ex-checkbox');
 
 // 引用
 const checkboxRef = ref<HTMLInputElement>();
@@ -308,14 +309,19 @@ const handleBlur = (event: FocusEvent) => {
   emit('blur', event);
 };
 
-const handleKeydown = (event: KeyboardEvent) => {
+// 空格键切换：preventDefault 阻止原生切换后手动更新，
+// 并补发 change（与点击路径行为一致，含验证）
+const handleSpaceKey = (event: KeyboardEvent) => {
   if (currentDisabled.value || currentReadonly.value) return;
 
-  // 空格键切换选中状态
-  if (event.code === 'Space') {
-    event.preventDefault();
-    const newValue = !isChecked.value;
-    checkboxValue.value = newValue ? props.trueValue : props.falseValue;
+  const newChecked = !isChecked.value;
+  if (checkboxGroupContext && props.value !== undefined) {
+    checkboxGroupContext.updateValue(props.value, newChecked);
+  } else {
+    const value = newChecked ? props.trueValue : props.falseValue;
+    emit('update:modelValue', value);
+    validateCheckbox(value);
+    emit('change', value, event);
   }
 };
 

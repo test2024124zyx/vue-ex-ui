@@ -49,9 +49,10 @@ const props = withDefaults(defineProps<ExTypographyProps>(), {
 const computedStyle = computed<CSSProperties>(() => {
   const style: CSSProperties = {};
 
-  // 设置颜色
+  // 设置颜色：支持主题色名（如 'text-primary'）或原始 CSS 颜色值（如 '#fff' / 'rgb(...)' / 'var(...)'）
   if (props.color && !props.gradient) {
-    style.color = `var(--ex-color-${props.color})`;
+    const isRawColor = /^(#|rgb|hsl|var\(|color\()/i.test(props.color);
+    style.color = isRawColor ? props.color : `var(--ex-color-${props.color})`;
   }
 
   // 设置多行截断

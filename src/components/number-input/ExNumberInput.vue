@@ -22,8 +22,8 @@
     <!-- 输入框 -->
     <input
       ref="inputRef"
-      :type="isMobile ? 'number' : 'text'"
-      :inputmode="isMobile ? 'decimal' : undefined"
+      type="text"
+      inputmode="decimal"
       class="ex-number-input__input"
       :value="displayValue"
       :placeholder="placeholder || t('numberInput.placeholder')"
@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -136,7 +136,6 @@ const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const displayValue = ref<string>('');
 const isFocused = ref(false);
-const isMobile = ref(false);
 
 // 计算属性
 const numberInputClasses = computed(() => {
@@ -416,13 +415,6 @@ const handleDecrease = (customStepOrEvent?: number | Event) => {
   emit('change', newValue, oldValue);
   emit('decrease', newValue);
 };
-
-// 检测是否为移动设备
-onMounted(() => {
-  isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-});
 
 // 暴露的方法
 const focus = () => {

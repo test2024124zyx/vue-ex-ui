@@ -11,7 +11,16 @@ export type ModalType = 'default' | 'primary' | 'success' | 'warning' | 'danger'
 /**
  * 模态框位置
  */
-export type ModalPlacement = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type ModalPlacement =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right';
 
 /**
  * 模态框过渡动画
@@ -56,6 +65,8 @@ export interface ExModalProps {
   appendToBody?: boolean;
   /** 是否销毁关闭时的内容 */
   destroyOnClose?: boolean;
+  /** 是否显示默认底部按钮区（传入 footer 插槽时以插槽为准） */
+  showFooter?: boolean;
   /** 自定义类名 */
   wrapClassName?: string;
   /** 自定义样式 */

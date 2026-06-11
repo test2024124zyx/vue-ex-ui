@@ -147,6 +147,7 @@
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { generateId } from '../../utils/id';
 import type {
   ExImageCropProps,
   ExImageCropEmits,
@@ -187,7 +188,7 @@ const cropRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();
 const canvasRef = ref<HTMLCanvasElement>();
 const image = new Image();
-const maskId = `crop-mask-${Math.random().toString(36).substr(2, 9)}`;
+const maskId = generateId('crop-mask');
 
 const imageLoaded = ref(false);
 const imageSize = ref({ width: 0, height: 0 });

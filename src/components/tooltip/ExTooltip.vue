@@ -21,6 +21,8 @@
           :style="tooltipStyles"
           role="tooltip"
           :aria-label="ariaLabel"
+          @mouseenter="handlePopperEnter"
+          @mouseleave="handlePopperLeave"
         >
           <!-- 霓虹边框效果 -->
           <div class="ex-tooltip__border" />
@@ -33,11 +35,7 @@
           </div>
 
           <!-- 箭头 -->
-          <div
-            v-if="showArrow"
-            class="ex-tooltip__arrow"
-            :style="arrowStyle"
-          />
+          <div v-if="showArrow" class="ex-tooltip__arrow" :style="arrowStyle" />
         </div>
       </Transition>
     </Teleport>
@@ -45,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 
 defineOptions({
@@ -127,54 +125,54 @@ const updatePosition = () => {
   let left = 0;
 
   switch (props.placement) {
-  case 'top':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-    break;
-  case 'top-start':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.left;
-    break;
-  case 'top-end':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.right - popperRect.width;
-    break;
-  case 'bottom':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-    break;
-  case 'bottom-start':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.left;
-    break;
-  case 'bottom-end':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.right - popperRect.width;
-    break;
-  case 'left':
-    top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'left-start':
-    top = triggerRect.top;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'left-end':
-    top = triggerRect.bottom - popperRect.height;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'right':
-    top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-    left = triggerRect.right + offset;
-    break;
-  case 'right-start':
-    top = triggerRect.top;
-    left = triggerRect.right + offset;
-    break;
-  case 'right-end':
-    top = triggerRect.bottom - popperRect.height;
-    left = triggerRect.right + offset;
-    break;
+    case 'top':
+      top = triggerRect.top - popperRect.height - offset;
+      left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
+      break;
+    case 'top-start':
+      top = triggerRect.top - popperRect.height - offset;
+      left = triggerRect.left;
+      break;
+    case 'top-end':
+      top = triggerRect.top - popperRect.height - offset;
+      left = triggerRect.right - popperRect.width;
+      break;
+    case 'bottom':
+      top = triggerRect.bottom + offset;
+      left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
+      break;
+    case 'bottom-start':
+      top = triggerRect.bottom + offset;
+      left = triggerRect.left;
+      break;
+    case 'bottom-end':
+      top = triggerRect.bottom + offset;
+      left = triggerRect.right - popperRect.width;
+      break;
+    case 'left':
+      top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
+      left = triggerRect.left - popperRect.width - offset;
+      break;
+    case 'left-start':
+      top = triggerRect.top;
+      left = triggerRect.left - popperRect.width - offset;
+      break;
+    case 'left-end':
+      top = triggerRect.bottom - popperRect.height;
+      left = triggerRect.left - popperRect.width - offset;
+      break;
+    case 'right':
+      top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
+      left = triggerRect.right + offset;
+      break;
+    case 'right-start':
+      top = triggerRect.top;
+      left = triggerRect.right + offset;
+      break;
+    case 'right-end':
+      top = triggerRect.bottom - popperRect.height;
+      left = triggerRect.right + offset;
+      break;
   }
 
   // 边界检测
@@ -264,40 +262,69 @@ const handleClick = () => {
   }
 };
 
-const handleResize = () => {
-  if (visible.value) {
-    updatePosition();
+// 鼠标移入浮层时取消关闭计时，允许用户在浮层内交互/选中文本
+const handlePopperEnter = () => {
+  if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
+    clearTimers();
   }
+};
+
+const handlePopperLeave = () => {
+  if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
+    hide();
+  }
+};
+
+const handleResize = () => {
+  updatePosition();
 };
 
 const handleScroll = () => {
-  if (visible.value) {
-    updatePosition();
+  updatePosition();
+};
+
+// Esc 关闭（WAI-ARIA tooltip 规范要求）
+const handleEscape = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    clearTimers();
+    visible.value = false;
+    emit('hide');
   }
 };
 
-// 生命周期
-onMounted(() => {
-  window.addEventListener('resize', handleResize);
-  window.addEventListener('scroll', handleScroll, true);
+// 仅在浮层可见时挂载全局监听器
+watch(visible, isVisible => {
+  if (isVisible) {
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener('keydown', handleEscape);
+  } else {
+    window.removeEventListener('resize', handleResize);
+    window.removeEventListener('scroll', handleScroll, true);
+    document.removeEventListener('keydown', handleEscape);
+  }
 });
 
 onUnmounted(() => {
   clearTimers();
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('scroll', handleScroll, true);
+  document.removeEventListener('keydown', handleEscape);
 });
 
 // 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== undefined) {
-    if (newVal) {
-      show();
-    } else {
-      hide();
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (newVal !== undefined) {
+      if (newVal) {
+        show();
+      } else {
+        hide();
+      }
     }
   }
-});
+);
 
 defineExpose<ExTooltipExposed>({
   show,

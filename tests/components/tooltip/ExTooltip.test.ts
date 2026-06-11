@@ -359,7 +359,8 @@ describe('ExTooltip', () => {
       await nextTick();
 
       const popper = document.querySelector('.ex-tooltip__popper') as HTMLElement;
-      expect(popper?.style.zIndex).toBe('3000');
+      // z-index 通过 CSS 变量体系下发（--ex-z-tooltip 参与 calc 计算）
+      expect(popper?.style.getPropertyValue('--ex-z-tooltip')).toBe('3000');
     });
   });
 

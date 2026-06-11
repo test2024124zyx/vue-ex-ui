@@ -19,16 +19,10 @@
       <div class="ex-slider__track" />
 
       <!-- 激活轨道 -->
-      <div
-        class="ex-slider__bar"
-        :style="barStyle"
-      />
+      <div class="ex-slider__bar" :style="barStyle" />
 
       <!-- 步进点 -->
-      <div
-        v-if="showStops && stopsData.length > 0"
-        class="ex-slider__stops"
-      >
+      <div v-if="showStops && stopsData.length > 0" class="ex-slider__stops">
         <div
           v-for="stop in stopsData"
           :key="stop"
@@ -38,10 +32,7 @@
       </div>
 
       <!-- 标记 -->
-      <div
-        v-if="hasMarks"
-        class="ex-slider__marks"
-      >
+      <div v-if="hasMarks" class="ex-slider__marks">
         <div
           v-for="(mark, key) in normalizedMarks"
           :key="key"
@@ -139,10 +130,7 @@
     </div>
 
     <!-- 输入框 -->
-    <div
-      v-if="showInput"
-      class="ex-slider__input-wrapper"
-    >
+    <div v-if="showInput" class="ex-slider__input-wrapper">
       <template v-if="!range">
         <input
           v-model.number="inputValue"
@@ -154,7 +142,7 @@
           :disabled="disabled"
           :aria-label="t('slider.input')"
           @change="handleInputChange"
-        >
+        />
       </template>
       <template v-else>
         <input
@@ -167,7 +155,7 @@
           :disabled="disabled"
           :aria-label="t('slider.startInput')"
           @change="handleInputChange"
-        >
+        />
         <span class="ex-slider__input-separator">-</span>
         <input
           v-model.number="inputEndValue"
@@ -179,7 +167,7 @@
           :disabled="disabled"
           :aria-label="t('slider.endInput')"
           @change="handleInputChange"
-        >
+        />
       </template>
     </div>
   </div>
@@ -238,11 +226,7 @@ const inputEndValue = ref(0);
 
 // 计算属性
 const sliderClasses = computed(() => {
-  const classes = [
-    'ex-slider',
-    `ex-slider--${props.size}`,
-    `ex-slider--${props.direction}`,
-  ];
+  const classes = ['ex-slider', `ex-slider--${props.size}`, `ex-slider--${props.direction}`];
 
   if (props.disabled) classes.push('ex-slider--disabled');
   if (props.range) classes.push('ex-slider--range');
@@ -277,13 +261,9 @@ const barStyle = computed(() => {
     const percent = getPercent(value);
 
     if (isVertical) {
-      return isReverse
-        ? { top: 0, height: `${percent}%` }
-        : { bottom: 0, height: `${percent}%` };
+      return isReverse ? { top: 0, height: `${percent}%` } : { bottom: 0, height: `${percent}%` };
     }
-    return isReverse
-      ? { right: 0, width: `${percent}%` }
-      : { left: 0, width: `${percent}%` };
+    return isReverse ? { right: 0, width: `${percent}%` } : { left: 0, width: `${percent}%` };
   } else {
     const [start, end] = currentValue.value as [number, number];
     const startPercent = getPercent(start);
@@ -432,11 +412,18 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
   return getValueFromPercent(Math.max(0, Math.min(100, percent)));
 };
 
-const updateValue = (newValue: number | [number, number]) => {
+/**
+ * 更新滑块值
+ * @param newValue 新值
+ * @param commit 是否提交（emit change）：拖拽过程中为 false，仅在松手/键盘/点击时为 true
+ */
+const updateValue = (newValue: number | [number, number], commit = true) => {
   currentValue.value = newValue;
   emit('update:modelValue', newValue);
-  emit('change', newValue);
   emit('input', newValue);
+  if (commit) {
+    emit('change', newValue);
+  }
 };
 
 const handleTrackClick = (event: MouseEvent | TouchEvent) => {
@@ -491,20 +478,23 @@ const handleMouseMove = (event: MouseEvent | TouchEvent) => {
   const { x, y } = getPositionFromEvent(event);
   const value = getValueFromPosition(x, y);
 
+  // 拖拽过程中只 emit input，不 emit change
   if (!props.range) {
-    updateValue(value);
+    updateValue(value, false);
   } else {
     const [start, end] = currentValue.value as [number, number];
 
     if (activeThumbIndex.value === 0) {
-      updateValue([Math.min(value, end), end]);
+      updateValue([Math.min(value, end), end], false);
     } else {
-      updateValue([start, Math.max(value, start)]);
+      updateValue([start, Math.max(value, start)], false);
     }
   }
 };
 
 const handleMouseUp = () => {
+  const wasDragging = isDragging.value || isDraggingStart.value || isDraggingEnd.value;
+
   isDragging.value = false;
   isDraggingStart.value = false;
   isDraggingEnd.value = false;
@@ -513,32 +503,35 @@ const handleMouseUp = () => {
   document.removeEventListener('mouseup', handleMouseUp);
   document.removeEventListener('touchmove', handleMouseMove);
   document.removeEventListener('touchend', handleMouseUp);
+
+  // 拖拽结束时提交一次 change
+  if (wasDragging) {
+    emit('change', currentValue.value);
+  }
 };
 
 const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
   if (props.disabled) return;
 
   const { key } = event;
-  const isVertical = props.direction === 'vertical';
-  const isReverse = props.reverse;
 
   let increment = 0;
 
+  // 遵循 WAI-ARIA slider 规范：Up/Right 始终增大值，Down/Left 始终减小值，
+  // 与视觉方向（vertical/reverse）无关
   if (key === 'ArrowUp' || key === 'ArrowRight') {
     increment = props.step;
-    if ((isVertical && !isReverse) || (!isVertical && isReverse)) {
-      increment = -increment;
-    }
   } else if (key === 'ArrowDown' || key === 'ArrowLeft') {
     increment = -props.step;
-    if ((isVertical && !isReverse) || (!isVertical && isReverse)) {
-      increment = -increment;
-    }
   } else if (key === 'Home') {
-    const currentVal = props.range ? (currentValue.value as [number, number])[thumbIndex] : (currentValue.value as number);
+    const currentVal = props.range
+      ? (currentValue.value as [number, number])[thumbIndex]
+      : (currentValue.value as number);
     increment = props.min - (currentVal ?? props.min);
   } else if (key === 'End') {
-    const currentVal = props.range ? (currentValue.value as [number, number])[thumbIndex] : (currentValue.value as number);
+    const currentVal = props.range
+      ? (currentValue.value as [number, number])[thumbIndex]
+      : (currentValue.value as number);
     increment = props.max - (currentVal ?? props.max);
   } else if (key === 'PageUp') {
     increment = props.step * 10;
@@ -580,7 +573,7 @@ const handleInputChange = () => {
 // 监听
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     currentValue.value = newValue;
 
     if (!props.range) {
@@ -630,9 +623,20 @@ const reset = () => {
   }
 };
 
+// 聚焦/取消聚焦滑块手柄（范围模式聚焦起始手柄）
+const focus = () => {
+  (thumbRef.value || thumbStartRef.value)?.focus();
+};
+
+const blur = () => {
+  (thumbRef.value || thumbStartRef.value)?.blur();
+};
+
 defineExpose<ExSliderExposed>({
   getElement,
   reset,
+  focus,
+  blur,
 });
 </script>
 

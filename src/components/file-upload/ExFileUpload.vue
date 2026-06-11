@@ -218,6 +218,7 @@ import type {
   UploadFile,
 } from './types';
 import { useLocale } from '../../locale';
+import { generateId } from '../../utils/id';
 import ExButton from '../button/ExButton.vue';
 
 defineOptions({
@@ -274,7 +275,7 @@ watch(
 
 // 生成唯一ID
 const generateUid = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return generateId('ex-upload');
 };
 
 // 获取文件项类名

@@ -1,5 +1,17 @@
 <template>
-  <div :class="rateClasses" :style="rateStyles" @mouseleave="handleMouseLeave">
+  <div
+    :class="rateClasses"
+    :style="rateStyles"
+    role="slider"
+    :tabindex="disabled || readonly ? undefined : 0"
+    :aria-valuemin="0"
+    :aria-valuemax="max"
+    :aria-valuenow="currentValue"
+    :aria-disabled="disabled"
+    :aria-readonly="readonly"
+    @mouseleave="handleMouseLeave"
+    @keydown="handleKeydown"
+  >
     <!-- 评分星星 -->
     <div class="ex-rate__stars">
       <span
@@ -39,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -57,9 +69,9 @@ const props = withDefaults(defineProps<ExRateProps>(), {
   showText: false,
   scoreTemplate: '{value}',
   size: 'medium',
-  color: '#00f0ff',
-  voidColor: '#4a5568',
-  disabledVoidColor: '#6b7280',
+  color: 'var(--ex-color-primary, #00f0ff)',
+  voidColor: 'var(--ex-color-text-disabled, #4a5568)',
+  disabledVoidColor: 'var(--ex-color-text-disabled, #6b7280)',
 });
 
 const emit = defineEmits<ExRateEmits>();
@@ -196,6 +208,33 @@ function resetCurrentValue() {
   emit('change', 0);
 }
 
+// 键盘操作：左右方向键增减评分
+function handleKeydown(event: KeyboardEvent) {
+  if (props.disabled || props.readonly) return;
+
+  const step = props.allowHalf ? 0.5 : 1;
+  let newValue = currentValue.value;
+
+  if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+    newValue = Math.min(props.max, currentValue.value + step);
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+    newValue = Math.max(0, currentValue.value - step);
+  } else if (event.key === 'Home') {
+    newValue = 0;
+  } else if (event.key === 'End') {
+    newValue = props.max;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  if (newValue !== currentValue.value) {
+    currentValue.value = newValue;
+    emit('update:modelValue', newValue);
+    emit('change', newValue);
+  }
+}
+
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
@@ -209,10 +248,6 @@ defineExpose({
   setCurrentValue,
   resetCurrentValue,
 });
-</script>
-
-<script lang="ts">
-import { watch } from 'vue';
 </script>
 
 <style scoped lang="scss" src="./ExRate.scss"></style>

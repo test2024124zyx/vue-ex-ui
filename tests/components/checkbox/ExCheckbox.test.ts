@@ -48,7 +48,7 @@ describe('ExCheckbox', () => {
   describe('Sizes', () => {
     const sizes: ExCheckboxProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExCheckbox, {
           props: { size },
@@ -62,14 +62,9 @@ describe('ExCheckbox', () => {
 
   // 状态测试
   describe('Status', () => {
-    const statuses: ExCheckboxProps['status'][] = [
-      'default',
-      'success',
-      'warning',
-      'error',
-    ];
+    const statuses: ExCheckboxProps['status'][] = ['default', 'success', 'warning', 'error'];
 
-    statuses.forEach((status) => {
+    statuses.forEach(status => {
       it(`renders ${status} status correctly`, () => {
         const wrapper = mount(ExCheckbox, {
           props: { status },
@@ -87,8 +82,7 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) =>
-            wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -105,8 +99,7 @@ describe('ExCheckbox', () => {
           modelValue: 'no',
           trueValue: 'yes',
           falseValue: 'no',
-          'onUpdate:modelValue': (value: string) =>
-            wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -180,8 +173,7 @@ describe('ExCheckbox', () => {
         props: {
           readonly: true,
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) =>
-            wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -207,9 +199,7 @@ describe('ExCheckbox', () => {
       });
 
       expect(wrapper.classes()).toContain('ex-checkbox--indeterminate');
-      expect(wrapper.find('.ex-checkbox__box--indeterminate').exists()).toBe(
-        true
-      );
+      expect(wrapper.find('.ex-checkbox__box--indeterminate').exists()).toBe(true);
     });
 
     it('shows indeterminate icon', () => {
@@ -220,9 +210,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      expect(
-        wrapper.find('.ex-checkbox__indeterminate-icon').exists()
-      ).toBe(true);
+      expect(wrapper.find('.ex-checkbox__indeterminate-icon').exists()).toBe(true);
     });
   });
 
@@ -279,7 +267,7 @@ describe('ExCheckbox', () => {
       });
 
       const input = wrapper.find('input[type="checkbox"]');
-      await input.trigger('keydown', { code: 'Space' });
+      await input.trigger('keydown', { key: ' ', code: 'Space' });
 
       expect(wrapper.emitted('update:modelValue')).toBeTruthy();
     });
@@ -294,7 +282,7 @@ describe('ExCheckbox', () => {
       });
 
       const input = wrapper.find('input[type="checkbox"]');
-      await input.trigger('keydown', { code: 'Space' });
+      await input.trigger('keydown', { key: ' ', code: 'Space' });
 
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });

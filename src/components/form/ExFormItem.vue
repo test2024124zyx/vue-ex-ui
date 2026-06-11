@@ -64,7 +64,8 @@ defineOptions({
 const props = withDefaults(defineProps<ExFormItemProps>(), {
   labelAlign: 'left',
   labelPlacement: 'left',
-  required: false,
+  // 不设默认值：未显式传入时根据校验规则中的 required 自动推断
+  required: undefined,
   hasFeedback: false,
   showColon: true,
   size: 'medium',

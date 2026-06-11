@@ -23,7 +23,7 @@
             role="dialog"
             :aria-modal="modal"
             :aria-label="ariaLabel || title"
-            :aria-labelledby="title ? 'ex-dialog-title' : undefined"
+            :aria-labelledby="title ? titleId : undefined"
             @click.stop
           >
             <!-- 头部 -->
@@ -35,7 +35,7 @@
 
               <!-- 标题 -->
               <div class="ex-dialog__title-wrapper">
-                <h3 id="ex-dialog-title" class="ex-dialog__title">
+                <h3 :id="titleId" class="ex-dialog__title">
                   <slot name="title">
                     {{ title }}
                   </slot>
@@ -89,9 +89,11 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount, useSlots } from 'vue';
+import { computed, ref, watch, nextTick, onBeforeUnmount, useSlots } from 'vue';
 import type { ExDialogProps, ExDialogEmits, ExDialogExposed } from './types';
 import { useLocale } from '../../locale';
+import { generateId } from '../../utils/id';
+import { lockScroll, unlockScroll, trapFocus, autoFocus } from '../modal/utils';
 import ExButton from '../button/ExButton.vue';
 
 defineOptions({
@@ -126,7 +128,11 @@ const { t } = useLocale('dialog');
 
 const dialogRef = ref<HTMLDivElement>();
 const dialogContainerRef = ref<HTMLDivElement>();
-const visible = ref(props.modelValue);
+const visible = ref(false);
+const titleId = `ex-dialog-title-${generateId()}`;
+
+let releaseFocusTrap: (() => void) | null = null;
+let previousActiveElement: HTMLElement | null = null;
 
 // 获取 slots
 const slots = useSlots();
@@ -163,23 +169,30 @@ const dialogClasses = computed(() => {
   return classes;
 });
 
-// 监听 modelValue 变化
+// 监听 modelValue 变化：父级状态是唯一事实来源
+// beforeClose 守卫只在"请求关闭"（handleClose）时执行，
+// 避免出现 modelValue 与内部 visible 脱钩导致对话框无法再关闭的问题
 watch(
   () => props.modelValue,
-  async newVal => {
+  newVal => {
     if (newVal) {
-      await handleBeforeOpen();
+      void openDialog();
     } else {
-      await handleBeforeClose();
+      closeDialog();
     }
-  }
+  },
+  { immediate: true }
 );
 
-// 打开前的处理
-const handleBeforeOpen = async () => {
+// 执行打开
+const openDialog = async () => {
   if (props.beforeOpen) {
     const result = await props.beforeOpen();
-    if (result === false) return;
+    if (result === false) {
+      // 拒绝打开时回写 modelValue，保持与父级同步
+      emit('update:modelValue', false);
+      return;
+    }
   }
 
   visible.value = true;
@@ -188,23 +201,36 @@ const handleBeforeOpen = async () => {
   await nextTick();
 
   if (props.lockScroll) {
-    document.body.style.overflow = 'hidden';
+    lockScroll();
   }
+
+  // 焦点管理：记录来源焦点、自动聚焦、Tab 焦点陷阱
+  previousActiveElement = document.activeElement as HTMLElement | null;
+  if (dialogContainerRef.value) {
+    autoFocus(dialogContainerRef.value);
+    releaseFocusTrap = trapFocus(dialogContainerRef.value);
+  }
+  document.addEventListener('keydown', handleEscapeKey);
 };
 
-// 关闭前的处理
-const handleBeforeClose = async () => {
-  if (props.beforeClose) {
-    const result = await props.beforeClose();
-    if (result === false) return;
-  }
+// 执行关闭（不经过守卫；守卫已在 handleClose 中执行）
+const closeDialog = () => {
+  if (!visible.value) return;
 
   visible.value = false;
   emit('close');
 
   if (props.lockScroll) {
-    document.body.style.overflow = '';
+    unlockScroll();
   }
+
+  releaseFocusTrap?.();
+  releaseFocusTrap = null;
+  document.removeEventListener('keydown', handleEscapeKey);
+
+  // 焦点归还给打开前的元素
+  previousActiveElement?.focus?.();
+  previousActiveElement = null;
 };
 
 // 打开动画结束
@@ -227,8 +253,12 @@ const handleWrapperClick = () => {
   }
 };
 
-// 关闭对话框
+// 请求关闭对话框（关闭按钮 / 遮罩 / Esc / 取消按钮统一入口）
 const handleClose = async () => {
+  if (props.beforeClose) {
+    const result = await props.beforeClose();
+    if (result === false) return;
+  }
   emit('update:modelValue', false);
 };
 
@@ -244,21 +274,19 @@ const handleCancel = () => {
 };
 
 // ESC 键关闭
-const handleEscapeKey = (event: KeyboardEvent) => {
+// ESC 键关闭（函数声明以便在 immediate watch 中安全引用）
+function handleEscapeKey(event: KeyboardEvent) {
   if (event.key === 'Escape' && props.closeOnPressEscape && visible.value) {
     handleClose();
   }
-};
+}
 
-// 生命周期
-onMounted(() => {
-  document.addEventListener('keydown', handleEscapeKey);
-});
-
+// 生命周期：卸载时兜底清理
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleEscapeKey);
-  if (props.lockScroll) {
-    document.body.style.overflow = '';
+  releaseFocusTrap?.();
+  if (visible.value && props.lockScroll) {
+    unlockScroll();
   }
 });
 

@@ -58,6 +58,7 @@ import type {
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExCheckboxGroup',
@@ -85,7 +86,7 @@ const { t } = useI18n();
 const componentSize = useComponentSize(computed(() => props.size));
 
 // 生成唯一 ID
-const groupId = `ex-checkbox-group-${Math.random().toString(36).substring(2, 11)}`;
+const groupId = generateId('ex-checkbox-group');
 const labelId = `${groupId}-label`;
 
 // 状态

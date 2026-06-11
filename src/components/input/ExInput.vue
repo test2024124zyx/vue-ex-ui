@@ -166,6 +166,7 @@ import type { ExInputProps, ExInputEmits, ExInputInstance } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
+import { generateId } from '../../utils/id';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -204,7 +205,7 @@ const validationError = ref<string>('');
 const isComposing = ref(false); // 输入法状态
 
 // 生成唯一ID
-const inputId = `ex-input-${Math.random().toString(36).substr(2, 9)}`;
+const inputId = generateId('ex-input');
 const helpTextId = `${inputId}-help`;
 
 // RAF ID 用于清理

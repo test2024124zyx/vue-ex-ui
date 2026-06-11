@@ -1,14 +1,5 @@
 <template>
-  <div
-    ref="containerRef"
-    class="ex-watermark"
-    :style="containerStyle"
-    role="presentation"
-    aria-hidden="true"
-    :aria-label="
-      Array.isArray(text) ? text.join(' ') : text || t('watermark.text')
-    "
-  >
+  <div ref="containerRef" class="ex-watermark" :style="containerStyle" role="presentation">
     <div
       class="ex-watermark__overlay"
       :class="{ 'is-fixed': fullPage }"

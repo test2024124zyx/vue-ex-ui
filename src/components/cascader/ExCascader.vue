@@ -4,8 +4,8 @@
     <div ref="triggerRef" class="ex-cascader__input-wrapper" @click="handleTriggerClick">
       <input
         ref="inputRef"
-        :value="displayValue"
-        :placeholder="placeholder"
+        :value="inputDisplayValue"
+        :placeholder="currentPlaceholder"
         :disabled="disabled"
         :readonly="!filterable"
         class="ex-cascader__input"
@@ -30,7 +30,23 @@
     <!-- 下拉面板 -->
     <transition name="ex-cascader-dropdown">
       <div v-show="visible" ref="dropdownRef" class="ex-cascader__dropdown">
-        <div class="ex-cascader__menus">
+        <!-- 搜索结果（filterable 且有输入时） -->
+        <div v-if="filterable && searchQuery" class="ex-cascader__search-results">
+          <div
+            v-for="result in searchResults"
+            :key="result.values.join('/')"
+            class="ex-cascader__option"
+            :class="{ 'ex-cascader__option--disabled': result.disabled }"
+            @click="handleSearchResultClick(result)"
+          >
+            <span class="ex-cascader__option-label">{{ result.labels.join(separator) }}</span>
+          </div>
+          <div v-if="searchResults.length === 0" class="ex-cascader__empty">
+            {{ t('cascader.noData') }}
+          </div>
+        </div>
+
+        <div v-else class="ex-cascader__menus">
           <div v-for="(menu, index) in menus" :key="index" class="ex-cascader__menu">
             <div
               v-for="option in menu"
@@ -63,6 +79,8 @@
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
+import { useI18n } from '../../locale';
+import { useComponentSize } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExCascader',
@@ -71,16 +89,21 @@ defineOptions({
 const props = withDefaults(defineProps<ExCascaderProps>(), {
   modelValue: () => [],
   options: () => [],
-  placeholder: '请选择',
+  placeholder: '',
   disabled: false,
   clearable: true,
   filterable: false,
   trigger: 'click',
-  size: 'medium',
+  size: undefined,
   separator: ' / ',
   showAllLevels: true,
   changeOnSelect: false,
 });
+
+const { t } = useI18n();
+const componentSize = useComponentSize(computed(() => props.size));
+
+const currentPlaceholder = computed(() => props.placeholder || t('cascader.placeholder'));
 
 const emit = defineEmits<ExCascaderEmits>();
 
@@ -91,10 +114,56 @@ const inputRef = ref<HTMLInputElement>();
 const visible = ref(false);
 const selectedPath = ref<(string | number)[]>([...props.modelValue]);
 const menus = ref<CascaderOption[][]>([]);
+const searchQuery = ref('');
+
+/** 搜索结果：一条完整的可选路径 */
+interface CascaderSearchResult {
+  labels: string[];
+  values: (string | number)[];
+  disabled: boolean;
+}
+
+// 输入框展示值：搜索时显示搜索词，否则显示选中路径
+const inputDisplayValue = computed(() => {
+  if (props.filterable && visible.value && searchQuery.value) {
+    return searchQuery.value;
+  }
+  return displayValue.value;
+});
+
+// 搜索结果：遍历选项树，匹配"路径上任一级 label 包含关键词"的叶子路径
+const searchResults = computed<CascaderSearchResult[]>(() => {
+  if (!props.filterable || !searchQuery.value) return [];
+
+  const query = searchQuery.value.toLowerCase();
+  const results: CascaderSearchResult[] = [];
+
+  const walk = (
+    options: CascaderOption[],
+    labels: string[],
+    values: (string | number)[],
+    disabled: boolean
+  ) => {
+    for (const option of options) {
+      const nextLabels = [...labels, option.label];
+      const nextValues = [...values, option.value];
+      const nextDisabled = disabled || !!option.disabled;
+
+      if (option.children && option.children.length) {
+        walk(option.children, nextLabels, nextValues, nextDisabled);
+      } else if (nextLabels.some(label => label.toLowerCase().includes(query))) {
+        results.push({ labels: nextLabels, values: nextValues, disabled: nextDisabled });
+      }
+    }
+  };
+
+  walk(props.options, [], [], false);
+  return results;
+});
 
 // 计算属性
 const cascaderClasses = computed(() => {
-  const classes = ['ex-cascader', `ex-cascader--${props.size}`];
+  const classes = ['ex-cascader', `ex-cascader--${componentSize.value}`];
 
   if (props.disabled) classes.push('ex-cascader--disabled');
   if (visible.value) classes.push('ex-cascader--open');
@@ -181,6 +250,7 @@ const show = () => {
 
 const hide = () => {
   visible.value = false;
+  searchQuery.value = '';
   emit('visible-change', false);
 };
 
@@ -196,15 +266,22 @@ const handleTriggerClick = () => {
 
 const handleInput = (event: Event) => {
   if (!props.filterable) return;
-  // 搜索功能：过滤选项
   const target = event.target as HTMLInputElement;
-  const searchValue = target.value.toLowerCase();
-  if (!searchValue) {
-    // 如果搜索为空，显示所有选项
-    return;
+  searchQuery.value = target.value;
+  if (!visible.value) {
+    show();
   }
-  // 实现简单的搜索过滤逻辑
-  // 可以根据需要扩展更复杂的搜索功能
+};
+
+// 点击搜索结果：直接选中整条路径
+const handleSearchResultClick = (result: CascaderSearchResult) => {
+  if (result.disabled) return;
+
+  selectedPath.value = [...result.values];
+  initMenus();
+  emitChange();
+  searchQuery.value = '';
+  hide();
 };
 
 const handleOptionClick = (option: CascaderOption, level: number) => {

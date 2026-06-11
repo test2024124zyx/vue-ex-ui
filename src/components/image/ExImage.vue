@@ -25,7 +25,7 @@ const imageClasses = computed(() => [
 
 watch(
   () => props.src,
-  (src) => {
+  src => {
     status.value = src ? 'loading' : 'idle';
   }
 );
@@ -70,15 +70,10 @@ function handlePreview() {
       :style="{ objectFit: fit }"
       @load="onLoad"
       @error="onError"
-    >
+    />
 
     <!-- 加载占位 -->
-    <div
-      v-if="status === 'loading'"
-      class="ex-image__placeholder"
-      aria-hidden="true"
-      :aria-label="t('image.loading')"
-    >
+    <div v-if="status === 'loading'" class="ex-image__placeholder" aria-hidden="true">
       <slot name="placeholder" />
     </div>
 
@@ -91,11 +86,7 @@ function handlePreview() {
     >
       <slot name="error">
         <div class="ex-image__error-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
               fill="currentColor"

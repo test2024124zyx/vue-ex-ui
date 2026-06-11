@@ -2,7 +2,6 @@
 import { computed, defineOptions, useSlots } from 'vue';
 import { useI18n } from '../../locale';
 import type { ExDividerProps } from './types';
-import './ExDivider.scss';
 
 defineOptions({ name: 'ExDivider' });
 
@@ -74,28 +73,15 @@ const ariaLabel = computed(() => {
   >
     <!-- 水平分割线 -->
     <template v-if="!isVertical">
-      <div
-        class="ex-divider__line"
-        aria-hidden="true"
-      />
-      <div
-        v-if="hasTitle"
-        class="ex-divider__content"
-      >
+      <div class="ex-divider__line" aria-hidden="true" />
+      <div v-if="hasTitle" class="ex-divider__content">
         <slot />
       </div>
-      <div
-        class="ex-divider__line"
-        aria-hidden="true"
-      />
+      <div class="ex-divider__line" aria-hidden="true" />
     </template>
 
     <!-- 垂直分割线 -->
-    <div
-      v-else
-      class="ex-divider__line ex-divider__line--vertical"
-      aria-hidden="true"
-    />
+    <div v-else class="ex-divider__line ex-divider__line--vertical" aria-hidden="true" />
   </div>
 </template>
 <style scoped lang="scss" src="./ExDivider.scss"></style>

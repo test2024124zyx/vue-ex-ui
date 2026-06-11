@@ -24,41 +24,37 @@ const gapPx = computed(() => {
   return presetMap[props.size] ?? presetMap.medium;
 });
 
-const classes = computed(() => [
-  'ex-space',
-  `ex-space--${props.direction}`,
-  props.wrap ? 'is-wrap' : '',
-]);
+const classes = computed(() => [`ex-space--${props.direction}`, props.wrap ? 'is-wrap' : '']);
 
 const justifyContent = computed(() => {
   switch (props.justify) {
-  case 'start':
-    return 'flex-start';
-  case 'end':
-    return 'flex-end';
-  case 'center':
-    return 'center';
-  case 'space-between':
-    return 'space-between';
-  case 'space-around':
-    return 'space-around';
-  case 'space-evenly':
-    return 'space-evenly';
-  default:
-    return 'flex-start';
+    case 'start':
+      return 'flex-start';
+    case 'end':
+      return 'flex-end';
+    case 'center':
+      return 'center';
+    case 'space-between':
+      return 'space-between';
+    case 'space-around':
+      return 'space-around';
+    case 'space-evenly':
+      return 'space-evenly';
+    default:
+      return 'flex-start';
   }
 });
 
 const alignItems = computed(() => {
   switch (props.align) {
-  case 'start':
-    return 'flex-start';
-  case 'end':
-    return 'flex-end';
-  case 'center':
-    return 'center';
-  default:
-    return 'flex-start';
+    case 'start':
+      return 'flex-start';
+    case 'end':
+      return 'flex-end';
+    case 'center':
+      return 'center';
+    default:
+      return 'flex-start';
   }
 });
 </script>
@@ -67,7 +63,6 @@ const alignItems = computed(() => {
   <div
     class="ex-space"
     :class="classes"
-    role="group"
     :style="{
       '--ex-space-gap': gapPx + 'px',
       display: 'flex',

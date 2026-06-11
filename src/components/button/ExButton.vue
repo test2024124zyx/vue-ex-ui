@@ -12,29 +12,20 @@
     @blur="handleBlur"
   >
     <!-- 加载中图标插槽 -->
-    <div
-      v-if="loading && $slots.loading"
-      class="ex-button__loading-icon"
-    >
+    <div v-if="loading && $slots.loading" class="ex-button__loading-icon">
       <slot name="loading" />
     </div>
 
     <!-- 圆形按钮内容：优先显示图标，否则显示第一个字符 -->
     <template v-if="circle && !loading">
       <!-- 圆形按钮图标（优先显示前缀图标，然后后缀图标） -->
-      <div
-        v-if="$slots.prefix || $slots.suffix"
-        class="ex-button__icon ex-button__icon--circle"
-      >
+      <div v-if="$slots.prefix || $slots.suffix" class="ex-button__icon ex-button__icon--circle">
         <slot name="prefix">
           <slot name="suffix" />
         </slot>
       </div>
       <!-- 圆形按钮文字（只显示第一个字符） -->
-      <span
-        v-else-if="hasSlotContent || $slots.default"
-        class="ex-button__circle-text"
-      >
+      <span v-else-if="hasSlotContent || $slots.default" class="ex-button__circle-text">
         {{ getFirstCharacter() }}
       </span>
     </template>
@@ -42,26 +33,17 @@
     <!-- 普通按钮内容 -->
     <template v-else-if="!circle">
       <!-- 左侧图标插槽 -->
-      <div
-        v-if="$slots.prefix && !loading"
-        class="ex-button__icon ex-button__icon--left"
-      >
+      <div v-if="$slots.prefix && !loading" class="ex-button__icon ex-button__icon--left">
         <slot name="prefix" />
       </div>
 
       <!-- 按钮内容 -->
-      <span
-        v-if="hasSlotContent || $slots.default"
-        class="ex-button__content"
-      >
+      <span v-if="hasSlotContent || $slots.default" class="ex-button__content">
         <slot />
       </span>
 
       <!-- 右侧图标插槽 -->
-      <div
-        v-if="$slots.suffix && !loading"
-        class="ex-button__icon ex-button__icon--right"
-      >
+      <div v-if="$slots.suffix && !loading" class="ex-button__icon ex-button__icon--right">
         <slot name="suffix" />
       </div>
     </template>
@@ -96,7 +78,6 @@ const emit = defineEmits<ExButtonEmits>();
 
 const slots = useSlots();
 const buttonRef = ref<HTMLButtonElement>();
-
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
@@ -141,10 +122,9 @@ const buttonStyles = computed(() => {
   return props.style;
 });
 
+// 仅检查插槽是否传入，不在 computed 中渲染插槽（渲染插槽属于渲染期副作用）
 const hasSlotContent = computed(() => {
-  if (!slots.default) return false;
-  const slotContent = slots.default({});
-  return slotContent && slotContent.length > 0;
+  return !!slots.default;
 });
 
 // 获取第一个字符（用于圆形按钮）

@@ -59,6 +59,7 @@ import type {
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExRadioGroup',
@@ -83,7 +84,7 @@ const { t } = useI18n();
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
-const groupId = `ex-radio-group-${Math.random().toString(36).substring(2, 11)}`;
+const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
 
 const currentErrorMessage = ref('');

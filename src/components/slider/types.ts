@@ -101,4 +101,8 @@ export interface ExSliderExposed {
   getElement: () => HTMLDivElement | null;
   /** 重置滑块 */
   reset: () => void;
+  /** 聚焦滑块手柄 */
+  focus: () => void;
+  /** 取消聚焦 */
+  blur: () => void;
 }

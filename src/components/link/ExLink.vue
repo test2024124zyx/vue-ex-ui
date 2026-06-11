@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, getCurrentInstance } from 'vue';
 import type { ExLinkProps, ExLinkEmits, ExLinkExposed } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -66,10 +66,16 @@ const emit = defineEmits<ExLinkEmits>();
 
 const linkRef = ref<HTMLElement>();
 
+// 宿主应用是否安装了 vue-router（未安装时回退为普通 a 标签，避免解析失败）
+const instance = getCurrentInstance();
+const hasRouter = computed(() => {
+  return !!instance?.appContext.config.globalProperties.$router;
+});
+
 // 计算属性
 const linkComponent = computed(() => {
-  // 如果有 to 属性，使用 router-link
-  if (props.to && !props.disabled) {
+  // 如果有 to 属性且宿主安装了 vue-router，使用 router-link
+  if (props.to && !props.disabled && hasRouter.value) {
     return 'router-link';
   }
   // 否则使用普通 a 标签
@@ -138,6 +144,7 @@ const linkProps = computed(() => {
 
 const isExternalLink = computed(() => {
   if (!props.href) return false;
+  if (typeof window === 'undefined') return false;
 
   try {
     const url = new URL(props.href, window.location.origin);
