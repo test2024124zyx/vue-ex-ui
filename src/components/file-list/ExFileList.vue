@@ -1,19 +1,10 @@
 <template>
-  <div
-    ref="listRef"
-    class="ex-file-list"
-  >
+  <div ref="listRef" class="ex-file-list">
     <!-- 工具栏 -->
-    <div
-      v-if="showToolbar"
-      class="ex-file-list__toolbar"
-    >
+    <div v-if="showToolbar" class="ex-file-list__toolbar">
       <div class="ex-file-list__toolbar-left">
         <!-- 搜索 -->
-        <div
-          v-if="showSearch"
-          class="ex-file-list__search"
-        >
+        <div v-if="showSearch" class="ex-file-list__search">
           <ExInput
             v-model="searchKeyword"
             placeholder="搜索文件..."
@@ -21,47 +12,29 @@
             @input="handleSearch"
           >
             <template #prefix>
-              <img
-                src="https://api.iconify.design/ri/search-line.svg"
-                alt="搜索"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="search-line" :size="16" aria-hidden="true" />
             </template>
           </ExInput>
         </div>
 
         <!-- 排序 -->
-        <div
-          v-if="showSort"
-          class="ex-file-list__sort"
-        >
+        <div v-if="showSort" class="ex-file-list__sort">
           <ExSelect
             v-model="currentSortField"
             :options="sortOptions"
             size="small"
-            style="width: 120px;"
+            style="width: 120px"
             @change="handleSort"
           />
-          <ExButton
-            size="small"
-            @click="toggleSortOrder"
-          >
+          <ExButton size="small" @click="toggleSortOrder">
             <template #prefix>
-              <img
+              <ExIcon
                 v-if="currentSortOrder === 'asc'"
-                src="https://api.iconify.design/ri/sort-asc.svg"
-                alt="升序"
-                width="16"
-                height="16"
-              >
-              <img
-                v-else
-                src="https://api.iconify.design/ri/sort-desc.svg"
-                alt="降序"
-                width="16"
-                height="16"
-              >
+                icon="sort-asc"
+                :size="16"
+                aria-hidden="true"
+              />
+              <ExIcon v-else icon="sort-desc" :size="16" aria-hidden="true" />
             </template>
           </ExButton>
         </div>
@@ -69,22 +42,14 @@
 
       <div class="ex-file-list__toolbar-right">
         <!-- 视图切换 -->
-        <div
-          v-if="showViewSwitch"
-          class="ex-file-list__view-switch"
-        >
+        <div v-if="showViewSwitch" class="ex-file-list__view-switch">
           <ExButton
             size="small"
             :type="currentViewMode === 'list' ? 'primary' : 'default'"
             @click="changeViewMode('list')"
           >
             <template #prefix>
-              <img
-                src="https://api.iconify.design/ri/list-check.svg"
-                alt="列表"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="list-check" :size="16" aria-hidden="true" />
             </template>
           </ExButton>
           <ExButton
@@ -93,12 +58,7 @@
             @click="changeViewMode('grid')"
           >
             <template #prefix>
-              <img
-                src="https://api.iconify.design/ri/grid-line.svg"
-                alt="网格"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="grid-line" :size="16" aria-hidden="true" />
             </template>
           </ExButton>
           <ExButton
@@ -107,12 +67,7 @@
             @click="changeViewMode('table')"
           >
             <template #prefix>
-              <img
-                src="https://api.iconify.design/ri/table-line.svg"
-                alt="表格"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="table-line" :size="16" aria-hidden="true" />
             </template>
           </ExButton>
           <ExButton
@@ -121,65 +76,33 @@
             @click="changeViewMode('tree')"
           >
             <template #prefix>
-              <img
-                src="https://api.iconify.design/ri/node-tree.svg"
-                alt="树形"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="node-tree" :size="16" aria-hidden="true" />
             </template>
           </ExButton>
         </div>
 
         <!-- 全选 -->
-        <ExButton
-          v-if="selectable && multiple"
-          size="small"
-          @click="toggleSelectAll"
-        >
+        <ExButton v-if="selectable && multiple" size="small" @click="toggleSelectAll">
           {{ isAllSelected ? '取消全选' : '全选' }}
         </ExButton>
       </div>
     </div>
 
     <!-- 文件列表内容 -->
-    <div
-      v-if="loading"
-      class="ex-file-list__loading"
-    >
-      <ExLoading
-        :visible="true"
-        :fullscreen="false"
-        :mask="false"
-        type="spinner"
-        size="large"
-      />
+    <div v-if="loading" class="ex-file-list__loading">
+      <ExLoading :visible="true" :fullscreen="false" :mask="false" type="spinner" size="large" />
       <p>加载中...</p>
     </div>
 
-    <ExEmpty
-      v-else-if="displayFiles.length === 0"
-      :description="emptyText || '暂无文件'"
-    >
+    <ExEmpty v-else-if="displayFiles.length === 0" :description="emptyText || '暂无文件'">
       <template #image>
-        <img
-          src="https://api.iconify.design/ri/folder-open-line.svg"
-          alt="空"
-          width="64"
-          height="64"
-        >
+        <ExIcon icon="folder-open-line" :size="64" aria-hidden="true" />
       </template>
     </ExEmpty>
 
-    <div
-      v-else
-      :class="`ex-file-list__content ex-file-list__content--${currentViewMode}`"
-    >
+    <div v-else :class="`ex-file-list__content ex-file-list__content--${currentViewMode}`">
       <!-- 列表视图 -->
-      <div
-        v-if="currentViewMode === 'list'"
-        class="ex-file-list__list"
-      >
+      <div v-if="currentViewMode === 'list'" class="ex-file-list__list">
         <div
           v-for="file in paginatedFiles"
           :key="file.id"
@@ -194,21 +117,15 @@
               :checked="isSelected(file.id)"
               class="ex-file-list__checkbox"
               @click.stop="handleSelect(file)"
-            >
+            />
             <div class="ex-file-list__list-item-icon">
               <img
                 v-if="file.thumbUrl"
                 :src="file.thumbUrl"
                 :alt="file.name"
                 class="ex-file-list__thumbnail"
-              >
-              <img
-                v-else
-                :src="getFileIcon(file)"
-                :alt="file.type"
-                width="32"
-                height="32"
-              >
+              />
+              <ExIcon v-else :icon="getFileIcon(file)" :size="32" aria-hidden="true" />
             </div>
             <div class="ex-file-list__list-item-info">
               <div class="ex-file-list__list-item-name">
@@ -222,55 +139,34 @@
               </div>
             </div>
           </div>
-          <div
-            v-if="showActions"
-            class="ex-file-list__list-item-actions"
-          >
+          <div v-if="showActions" class="ex-file-list__list-item-actions">
             <button
               v-if="previewable"
               class="ex-file-list__action-btn"
               @click.stop="handlePreview(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/eye-line.svg"
-                alt="预览"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="eye-line" :size="16" aria-hidden="true" />
             </button>
             <button
               v-if="downloadable"
               class="ex-file-list__action-btn"
               @click.stop="handleDownload(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/download-2-line.svg"
-                alt="下载"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
             </button>
             <button
               v-if="deletable"
               class="ex-file-list__action-btn"
               @click.stop="handleDelete(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/delete-bin-line.svg"
-                alt="删除"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="delete-bin-line" :size="16" aria-hidden="true" />
             </button>
           </div>
         </div>
       </div>
 
       <!-- 网格视图 -->
-      <div
-        v-else-if="currentViewMode === 'grid'"
-        class="ex-file-list__grid"
-      >
+      <div v-else-if="currentViewMode === 'grid'" class="ex-file-list__grid">
         <div
           v-for="file in paginatedFiles"
           :key="file.id"
@@ -284,81 +180,56 @@
             :checked="isSelected(file.id)"
             class="ex-file-list__checkbox ex-file-list__checkbox--grid"
             @click.stop="handleSelect(file)"
-          >
+          />
           <div class="ex-file-list__grid-item-preview">
             <img
               v-if="file.thumbUrl"
               :src="file.thumbUrl"
               :alt="file.name"
               class="ex-file-list__grid-item-image"
-            >
-            <img
+            />
+            <ExIcon
               v-else
-              :src="getFileIcon(file)"
-              :alt="file.type"
-              width="48"
-              height="48"
+              :icon="getFileIcon(file)"
+              :size="48"
               class="ex-file-list__grid-item-icon"
-            >
+              aria-hidden="true"
+            />
           </div>
           <div class="ex-file-list__grid-item-name">
             {{ file.name }}
           </div>
-          <div
-            v-if="showSize && !file.isDirectory"
-            class="ex-file-list__grid-item-size"
-          >
+          <div v-if="showSize && !file.isDirectory" class="ex-file-list__grid-item-size">
             {{ formatBytes(file.size) }}
           </div>
-          <div
-            v-if="showActions"
-            class="ex-file-list__grid-item-actions"
-          >
+          <div v-if="showActions" class="ex-file-list__grid-item-actions">
             <button
               v-if="previewable"
               class="ex-file-list__action-btn"
               @click.stop="handlePreview(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/eye-line.svg"
-                alt="预览"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="eye-line" :size="16" aria-hidden="true" />
             </button>
             <button
               v-if="downloadable"
               class="ex-file-list__action-btn"
               @click.stop="handleDownload(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/download-2-line.svg"
-                alt="下载"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
             </button>
             <button
               v-if="deletable"
               class="ex-file-list__action-btn"
               @click.stop="handleDelete(file)"
             >
-              <img
-                src="https://api.iconify.design/ri/delete-bin-line.svg"
-                alt="删除"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="delete-bin-line" :size="16" aria-hidden="true" />
             </button>
           </div>
         </div>
       </div>
 
       <!-- 树形视图 -->
-      <div
-        v-else-if="currentViewMode === 'tree'"
-        class="ex-file-list__tree"
-      >
+      <div v-else-if="currentViewMode === 'tree'" class="ex-file-list__tree">
         <ExTree
           :data="treeData"
           :default-expanded-keys="defaultExpandedKeys"
@@ -374,45 +245,27 @@
           <template #default="{ node }">
             <div class="ex-file-list__tree-node">
               <span class="ex-file-list__tree-node-label">{{ node.label }}</span>
-              <div
-                v-if="showActions"
-                class="ex-file-list__tree-node-actions"
-              >
+              <div v-if="showActions" class="ex-file-list__tree-node-actions">
                 <button
                   v-if="previewable && !node.data?.isDirectory"
                   class="ex-file-list__action-btn"
                   @click.stop="handlePreview(node.data)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/eye-line.svg"
-                    alt="预览"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="eye-line" :size="16" aria-hidden="true" />
                 </button>
                 <button
                   v-if="downloadable && !node.data?.isDirectory"
                   class="ex-file-list__action-btn"
                   @click.stop="handleDownload(node.data)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/download-2-line.svg"
-                    alt="下载"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
                 </button>
                 <button
                   v-if="deletable"
                   class="ex-file-list__action-btn"
                   @click.stop="handleDelete(node.data)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/delete-bin-line.svg"
-                    alt="删除"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="delete-bin-line" :size="16" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -421,10 +274,7 @@
       </div>
 
       <!-- 表格视图 -->
-      <table
-        v-else-if="currentViewMode === 'table'"
-        class="ex-file-list__table"
-      >
+      <table v-else-if="currentViewMode === 'table'" class="ex-file-list__table">
         <thead>
           <tr>
             <th
@@ -437,29 +287,12 @@
                 :checked="isAllSelected"
                 class="ex-file-list__checkbox"
                 @change="toggleSelectAll"
-              >
+              />
             </th>
-            <th class="ex-file-list__table-cell">
-              名称
-            </th>
-            <th
-              v-if="showSize"
-              class="ex-file-list__table-cell"
-            >
-              大小
-            </th>
-            <th
-              v-if="showType"
-              class="ex-file-list__table-cell"
-            >
-              类型
-            </th>
-            <th
-              v-if="showModifiedTime"
-              class="ex-file-list__table-cell"
-            >
-              修改时间
-            </th>
+            <th class="ex-file-list__table-cell">名称</th>
+            <th v-if="showSize" class="ex-file-list__table-cell">大小</th>
+            <th v-if="showType" class="ex-file-list__table-cell">类型</th>
+            <th v-if="showModifiedTime" class="ex-file-list__table-cell">修改时间</th>
             <th
               v-if="showActions"
               class="ex-file-list__table-cell ex-file-list__table-cell--actions"
@@ -485,7 +318,7 @@
                 :checked="isSelected(file.id)"
                 class="ex-file-list__checkbox"
                 @click.stop="handleSelect(file)"
-              >
+              />
             </td>
             <td class="ex-file-list__table-cell">
               <div class="ex-file-list__table-name">
@@ -494,33 +327,18 @@
                   :src="file.thumbUrl"
                   :alt="file.name"
                   class="ex-file-list__table-thumbnail"
-                >
-                <img
-                  v-else
-                  :src="getFileIcon(file)"
-                  :alt="file.type"
-                  width="24"
-                  height="24"
-                >
+                />
+                <ExIcon v-else :icon="getFileIcon(file)" :size="24" aria-hidden="true" />
                 <span>{{ file.name }}</span>
               </div>
             </td>
-            <td
-              v-if="showSize"
-              class="ex-file-list__table-cell"
-            >
+            <td v-if="showSize" class="ex-file-list__table-cell">
               {{ file.isDirectory ? '-' : formatBytes(file.size) }}
             </td>
-            <td
-              v-if="showType"
-              class="ex-file-list__table-cell"
-            >
+            <td v-if="showType" class="ex-file-list__table-cell">
               {{ file.isDirectory ? '文件夹' : file.type }}
             </td>
-            <td
-              v-if="showModifiedTime"
-              class="ex-file-list__table-cell"
-            >
+            <td v-if="showModifiedTime" class="ex-file-list__table-cell">
               {{ file.modifiedTime ? formatDate(file.modifiedTime) : '-' }}
             </td>
             <td
@@ -533,36 +351,21 @@
                   class="ex-file-list__action-btn"
                   @click.stop="handlePreview(file)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/eye-line.svg"
-                    alt="预览"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="eye-line" :size="16" aria-hidden="true" />
                 </button>
                 <button
                   v-if="downloadable"
                   class="ex-file-list__action-btn"
                   @click.stop="handleDownload(file)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/download-2-line.svg"
-                    alt="下载"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
                 </button>
                 <button
                   v-if="deletable"
                   class="ex-file-list__action-btn"
                   @click.stop="handleDelete(file)"
                 >
-                  <img
-                    src="https://api.iconify.design/ri/delete-bin-line.svg"
-                    alt="删除"
-                    width="16"
-                    height="16"
-                  >
+                  <ExIcon icon="delete-bin-line" :size="16" aria-hidden="true" />
                 </button>
               </div>
             </td>
@@ -572,10 +375,7 @@
     </div>
 
     <!-- 分页 -->
-    <div
-      v-if="showPagination && totalPages > 1"
-      class="ex-file-list__pagination"
-    >
+    <div v-if="showPagination && totalPages > 1" class="ex-file-list__pagination">
       <ExPagination
         v-model:current="currentPage"
         :total="displayFiles.length"
@@ -589,6 +389,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { ref, computed, watch } from 'vue';
 import type {
   ExFileListProps,
@@ -664,7 +465,7 @@ const displayFiles = computed(() => {
   // 搜索过滤
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase();
-    result = result.filter((file) => file.name.toLowerCase().includes(keyword));
+    result = result.filter(file => file.name.toLowerCase().includes(keyword));
   }
 
   // 排序
@@ -673,19 +474,18 @@ const displayFiles = computed(() => {
     const field = currentSortField.value;
 
     switch (field) {
-    case 'name':
-      compareResult = a.name.localeCompare(b.name);
-      break;
-    case 'size':
-      compareResult = a.size - b.size;
-      break;
-    case 'type':
-      compareResult = a.type.localeCompare(b.type);
-      break;
-    case 'modifiedTime':
-      compareResult =
-          (a.modifiedTime?.getTime() || 0) - (b.modifiedTime?.getTime() || 0);
-      break;
+      case 'name':
+        compareResult = a.name.localeCompare(b.name);
+        break;
+      case 'size':
+        compareResult = a.size - b.size;
+        break;
+      case 'type':
+        compareResult = a.type.localeCompare(b.type);
+        break;
+      case 'modifiedTime':
+        compareResult = (a.modifiedTime?.getTime() || 0) - (b.modifiedTime?.getTime() || 0);
+        break;
     }
 
     return currentSortOrder.value === 'asc' ? compareResult : -compareResult;
@@ -713,9 +513,7 @@ const treeData = computed((): TreeNode[] => {
     return {
       key: file.id,
       label: file.name,
-      icon: file.isDirectory
-        ? 'https://api.iconify.design/ri/folder-line.svg'
-        : getFileIcon(file),
+      icon: getFileIcon(file),
       children: file.children ? file.children.map(convertToTreeNode) : undefined,
       isLeaf: !file.isDirectory,
       data: file,
@@ -728,14 +526,14 @@ const treeData = computed((): TreeNode[] => {
 const isAllSelected = computed(() => {
   return (
     displayFiles.value.length > 0 &&
-    displayFiles.value.every((file) => internalSelectedIds.value.includes(file.id))
+    displayFiles.value.every(file => internalSelectedIds.value.includes(file.id))
   );
 });
 
 // 监听选中状态变化
 watch(
   () => props.selectedIds,
-  (newIds) => {
+  newIds => {
     internalSelectedIds.value = [...newIds];
   }
 );
@@ -760,39 +558,39 @@ const formatDate = (date: Date): string => {
   }).format(date);
 };
 
-// 获取文件图标
+// 获取文件图标（内置 SVG 图标名）
 const getFileIcon = (file: FileItem): string => {
   if (file.isDirectory) {
-    return 'https://api.iconify.design/ri/folder-line.svg';
+    return 'folder-line';
   }
 
   const type = file.type.toLowerCase();
   if (type.startsWith('image/')) {
-    return 'https://api.iconify.design/ri/image-line.svg';
+    return 'image-line';
   }
   if (type.startsWith('video/')) {
-    return 'https://api.iconify.design/ri/video-line.svg';
+    return 'video-line';
   }
   if (type.startsWith('audio/')) {
-    return 'https://api.iconify.design/ri/music-line.svg';
+    return 'music-line';
   }
   if (type === 'application/pdf') {
-    return 'https://api.iconify.design/ri/file-pdf-line.svg';
+    return 'file-pdf-line';
   }
   if (type.includes('zip') || type.includes('rar') || type.includes('7z')) {
-    return 'https://api.iconify.design/ri/file-zip-line.svg';
+    return 'file-zip-line';
   }
   if (type.includes('word') || type.includes('document')) {
-    return 'https://api.iconify.design/ri/file-word-line.svg';
+    return 'file-word-line';
   }
   if (type.includes('excel') || type.includes('spreadsheet')) {
-    return 'https://api.iconify.design/ri/file-excel-line.svg';
+    return 'file-excel-line';
   }
   if (type.includes('powerpoint') || type.includes('presentation')) {
-    return 'https://api.iconify.design/ri/file-ppt-line.svg';
+    return 'file-ppt-line';
   }
 
-  return 'https://api.iconify.design/ri/file-text-line.svg';
+  return 'file-text-line';
 };
 
 // 是否选中
@@ -825,7 +623,7 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     internalSelectedIds.value = [];
   } else {
-    internalSelectedIds.value = displayFiles.value.map((file) => file.id);
+    internalSelectedIds.value = displayFiles.value.map(file => file.id);
   }
   emit('update:selectedIds', internalSelectedIds.value);
 };
@@ -917,7 +715,7 @@ const handleTreeNodeContextmenu = (node: TreeNode, event: MouseEvent) => {
 
 // 暴露的方法
 const selectAll = () => {
-  internalSelectedIds.value = displayFiles.value.map((file) => file.id);
+  internalSelectedIds.value = displayFiles.value.map(file => file.id);
   emit('update:selectedIds', internalSelectedIds.value);
 };
 
@@ -946,7 +744,7 @@ const unselectFile = (id: string) => {
 };
 
 const getSelectedFiles = (): FileItem[] => {
-  return props.files.filter((file) => internalSelectedIds.value.includes(file.id));
+  return props.files.filter(file => internalSelectedIds.value.includes(file.id));
 };
 
 const refresh = () => {

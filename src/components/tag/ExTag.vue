@@ -1,13 +1,6 @@
 <template>
-  <span
-    :class="classes"
-    :style="styles"
-    @click="handleClick"
-  >
-    <span
-      v-if="$slots.prefix"
-      class="ex-tag__prefix"
-    >
+  <span :class="classes" :style="styles" @click="handleClick">
+    <span v-if="$slots.prefix" class="ex-tag__prefix">
       <slot name="prefix" />
     </span>
 
@@ -15,16 +8,9 @@
       <slot />
     </span>
 
-    <span
-      v-if="closable"
-      class="ex-tag__close"
-      @click.stop="handleClose"
-    >
+    <span v-if="closable" class="ex-tag__close" @click.stop="handleClose">
       <slot name="close">
-        <ExIcon
-          src="https://api.iconify.design/ri/close-line.svg"
-          :size="12"
-        />
+        <ExIcon icon="close-line" :size="12" />
       </slot>
     </span>
   </span>
@@ -41,7 +27,7 @@ const props = withDefaults(defineProps<TagProps>(), {
   closable: false,
   round: false,
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
-  effect: 'light'
+  effect: 'light',
 });
 
 const emit = defineEmits(['click', 'close']);
@@ -51,21 +37,21 @@ const componentSize = useComponentSize(computed(() => props.size));
 
 const classes = computed(() => [
   'ex-tag',
-	`ex-tag--${props.type}`,
-	`ex-tag--${componentSize.value}`,
-	`ex-tag--${props.effect}`,
-	{
-	  'is-round': props.round,
-	  'is-closable': props.closable
-	}
+  `ex-tag--${props.type}`,
+  `ex-tag--${componentSize.value}`,
+  `ex-tag--${props.effect}`,
+  {
+    'is-round': props.round,
+    'is-closable': props.closable,
+  },
 ]);
 
 const styles = computed(() => {
   const style: {
-		'--ex-tag-text-color'?: string;
-		'--ex-tag-bg-color'?: string;
-		'--ex-tag-border-color'?: string;
-	} = {};
+    '--ex-tag-text-color'?: string;
+    '--ex-tag-bg-color'?: string;
+    '--ex-tag-border-color'?: string;
+  } = {};
 
   if (props.color) {
     style['--ex-tag-text-color'] = props.color;

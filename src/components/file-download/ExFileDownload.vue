@@ -1,13 +1,6 @@
 <template>
-  <div
-    ref="downloadRef"
-    class="ex-file-download"
-  >
-    <slot
-      :download="handleDownload"
-      :status="status"
-      :percent="percent"
-    >
+  <div ref="downloadRef" class="ex-file-download">
+    <slot :download="handleDownload" :status="status" :percent="percent">
       <ExButton
         :type="buttonType"
         :size="buttonSize"
@@ -16,42 +9,28 @@
         @click="handleDownload"
       >
         <template #prefix>
-          <img
+          <ExIcon
             v-if="status === 'idle' || status === 'paused'"
-            src="https://api.iconify.design/ri/download-2-line.svg"
-            alt="下载"
-            width="16"
-            height="16"
-          >
-          <img
+            icon="download-2-line"
+            :size="16"
+            aria-hidden="true"
+          />
+          <ExIcon
             v-else-if="status === 'success'"
-            src="https://api.iconify.design/ri/check-line.svg"
-            alt="成功"
-            width="16"
-            height="16"
-          >
-          <img
-            v-else-if="status === 'error'"
-            src="https://api.iconify.design/ri/close-line.svg"
-            alt="失败"
-            width="16"
-            height="16"
-          >
+            icon="check-line"
+            :size="16"
+            aria-hidden="true"
+          />
+          <ExIcon v-else-if="status === 'error'" icon="close-line" :size="16" aria-hidden="true" />
         </template>
         {{ getButtonText() }}
       </ExButton>
     </slot>
 
     <!-- 进度条 -->
-    <div
-      v-if="showProgress && status === 'downloading'"
-      class="ex-file-download__progress"
-    >
+    <div v-if="showProgress && status === 'downloading'" class="ex-file-download__progress">
       <div class="ex-file-download__progress-bar">
-        <div
-          class="ex-file-download__progress-bar-inner"
-          :style="{ width: `${percent}%` }"
-        />
+        <div class="ex-file-download__progress-bar-inner" :style="{ width: `${percent}%` }" />
       </div>
       <div class="ex-file-download__progress-text">
         {{ percent }}% ({{ formatBytes(loaded) }} / {{ formatBytes(total) }})
@@ -61,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import type {
   ExFileDownloadProps,
@@ -114,16 +94,16 @@ const getButtonText = () => {
   if (props.buttonText) return props.buttonText;
 
   switch (status.value) {
-  case 'downloading':
-    return t('downloading');
-  case 'success':
-    return t('downloadSuccess');
-  case 'error':
-    return t('downloadError');
-  case 'paused':
-    return t('resume');
-  default:
-    return t('download');
+    case 'downloading':
+      return t('downloading');
+    case 'success':
+      return t('downloadSuccess');
+    case 'error':
+      return t('downloadError');
+    case 'paused':
+      return t('resume');
+    default:
+      return t('download');
   }
 };
 
@@ -239,7 +219,7 @@ const downloadByXHR = () => {
     xhr.value.withCredentials = true;
   }
 
-  xhr.value.addEventListener('progress', (e) => {
+  xhr.value.addEventListener('progress', e => {
     if (e.lengthComputable) {
       loaded.value = e.loaded;
       total.value = e.total;

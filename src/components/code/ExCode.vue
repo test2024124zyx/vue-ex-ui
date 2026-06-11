@@ -1,22 +1,10 @@
 <template>
-  <div
-    ref="codeRef"
-    :class="codeClasses"
-    :style="codeStyles"
-    role="region"
-    :aria-label="ariaLabel"
-  >
+  <div ref="codeRef" :class="codeClasses" :style="codeStyles" role="region" :aria-label="ariaLabel">
     <!-- 头部：文件名和操作按钮 -->
-    <div
-      v-if="filename || showLanguage || copyable"
-      class="ex-code__header"
-    >
+    <div v-if="filename || showLanguage || copyable" class="ex-code__header">
       <div class="ex-code__info">
         <!-- 文件名 -->
-        <span
-          v-if="filename"
-          class="ex-code__filename"
-        >
+        <span v-if="filename" class="ex-code__filename">
           <template v-if="$slots.icon">
             <span class="ex-code__file-icon">
               <slot name="icon" />
@@ -25,10 +13,7 @@
           {{ filename }}
         </span>
         <!-- 语言标签 -->
-        <span
-          v-else-if="showLanguage && language"
-          class="ex-code__language"
-        >
+        <span v-else-if="showLanguage && language" class="ex-code__language">
           {{ languageLabel }}
         </span>
       </div>
@@ -45,20 +30,8 @@
             @click="handleCopy"
           >
             <span class="ex-code__copy-icon">
-              <img
-                v-if="!copied"
-                src="https://api.iconify.design/ri/file-copy-line.svg"
-                alt="复制"
-                width="16"
-                height="16"
-              >
-              <img
-                v-else
-                src="https://api.iconify.design/ri/check-line.svg"
-                alt="已复制"
-                width="16"
-                height="16"
-              >
+              <ExIcon v-if="!copied" icon="file-copy-line" :size="16" aria-hidden="true" />
+              <ExIcon v-else icon="check-line" :size="16" aria-hidden="true" />
             </span>
             <span class="ex-code__copy-text">
               {{ copied ? t('code.copied') : t('code.copy') }}
@@ -71,11 +44,7 @@
     <!-- 代码内容区域 -->
     <div class="ex-code__content">
       <!-- 行号 -->
-      <div
-        v-if="lineNumbers"
-        class="ex-code__line-numbers"
-        aria-hidden="true"
-      >
+      <div v-if="lineNumbers" class="ex-code__line-numbers" aria-hidden="true">
         <span
           v-for="line in totalLines"
           :key="line"
@@ -87,10 +56,7 @@
       </div>
 
       <!-- 代码块 -->
-      <pre
-        class="ex-code__pre"
-        :class="{ 'ex-code__pre--wrap': wrap }"
-      ><code
+      <pre class="ex-code__pre" :class="{ 'ex-code__pre--wrap': wrap }"><code
         class="ex-code__code"
         :class="`language-${language}`"
       >{{ displayCode }}</code></pre>
@@ -99,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
@@ -131,7 +98,7 @@ const internalCode = ref(props.code);
 // 监听外部代码变化
 watch(
   () => props.code,
-  (newCode) => {
+  newCode => {
     internalCode.value = newCode;
   }
 );
@@ -202,7 +169,7 @@ const highlightedLines = computed(() => {
   const lines = new Set<number>();
   const parts = props.highlightLines.split(',');
 
-  parts.forEach((part) => {
+  parts.forEach(part => {
     const range = part.trim().split('-');
     if (range.length === 1 && range[0]) {
       lines.add(parseInt(range[0], 10));

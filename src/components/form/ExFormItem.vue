@@ -1,24 +1,10 @@
 <template>
-  <div
-    :class="formItemClasses"
-    :style="formItemStyles"
-    :data-field="prop"
-  >
+  <div :class="formItemClasses" :style="formItemStyles" :data-field="prop">
     <!-- 标签 -->
-    <div
-      v-if="showLabel"
-      :class="labelClasses"
-      :style="labelStyles"
-    >
-      <span
-        v-if="label"
-        :class="labelTextClasses"
-      >
+    <div v-if="showLabel" :class="labelClasses" :style="labelStyles">
+      <span v-if="label" :class="labelTextClasses">
         {{ label }}
-        <span
-          v-if="showColon && showColonMark"
-          class="ex-form-item__colon"
-        >:</span>
+        <span v-if="showColon && showColonMark" class="ex-form-item__colon">:</span>
       </span>
       <slot name="label" />
     </div>
@@ -30,22 +16,13 @@
         <slot />
 
         <!-- 反馈图标 -->
-        <div
-          v-if="actualHasFeedback && feedbackIcon"
-          :class="feedbackClasses"
-        >
-          <ex-icon
-            :src="`https://api.iconify.design/ri/${feedbackIcon}.svg`"
-            :size="16"
-          />
+        <div v-if="actualHasFeedback && feedbackIcon" :class="feedbackClasses">
+          <ex-icon :icon="feedbackIcon" :size="16" />
         </div>
       </div>
 
       <!-- 帮助文本 -->
-      <div
-        v-if="help && !displayError"
-        class="ex-form-item__help"
-      >
+      <div v-if="help && !displayError" class="ex-form-item__help">
         {{ help }}
       </div>
 
@@ -57,11 +34,7 @@
           role="alert"
           :aria-live="validateStatus === 'validating' ? 'polite' : 'assertive'"
         >
-          <ex-icon
-            src="https://api.iconify.design/ri/error-warning-line.svg"
-            :size="14"
-            class="ex-form-item__error-icon"
-          />
+          <ex-icon icon="error-warning-line" :size="14" class="ex-form-item__error-icon" />
           {{ displayError }}
         </div>
       </transition>
@@ -150,7 +123,7 @@ const isRequired = computed(() => {
       ? (formContext.rules[props.prop] as FormRule[])
       : [formContext.rules[props.prop] as FormRule];
 
-    return rules.some((rule) => rule.required);
+    return rules.some(rule => rule.required);
   }
 
   return false;
@@ -180,16 +153,16 @@ const feedbackIcon = computed(() => {
   if (!actualHasFeedback.value) return '';
 
   switch (actualValidateStatus.value) {
-  case 'success':
-    return 'check-circle-line';
-  case 'warning':
-    return 'error-warning-line';
-  case 'error':
-    return 'close-circle-line';
-  case 'validating':
-    return 'loader-4-line';
-  default:
-    return '';
+    case 'success':
+      return 'check-circle-line';
+    case 'warning':
+      return 'error-warning-line';
+    case 'error':
+      return 'close-circle-line';
+    case 'validating':
+      return 'loader-4-line';
+    default:
+      return '';
   }
 });
 
@@ -215,10 +188,7 @@ const formItemStyles = computed(() => {
 });
 
 const labelClasses = computed(() => {
-  return [
-    'ex-form-item__label',
-    `ex-form-item__label--${actualLabelAlign.value}`,
-  ];
+  return ['ex-form-item__label', `ex-form-item__label--${actualLabelAlign.value}`];
 });
 
 const labelStyles = computed(() => {
@@ -242,10 +212,7 @@ const labelTextClasses = computed(() => {
 });
 
 const feedbackClasses = computed(() => {
-  return [
-    'ex-form-item__feedback',
-    `ex-form-item__feedback--${actualValidateStatus.value}`,
-  ];
+  return ['ex-form-item__feedback', `ex-form-item__feedback--${actualValidateStatus.value}`];
 });
 
 // 表单项上下文
@@ -272,11 +239,11 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
 
   // 过滤触发器
   const filteredRules = trigger
-    ? rules.filter((rule) => {
-      if (!rule.trigger) return true;
-      const triggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
-      return triggers.includes(trigger as 'blur' | 'change' | 'input');
-    })
+    ? rules.filter(rule => {
+        if (!rule.trigger) return true;
+        const triggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
+        return triggers.includes(trigger as 'blur' | 'change' | 'input');
+      })
     : rules;
 
   if (filteredRules.length === 0) {
@@ -373,7 +340,7 @@ onUnmounted(() => {
 // 监听验证状态变化
 watch(
   () => props.validateStatus,
-  (newStatus) => {
+  newStatus => {
     if (newStatus) {
       validateStatus.value = newStatus;
     }
@@ -383,7 +350,7 @@ watch(
 // 监听错误消息变化
 watch(
   () => props.error,
-  (newError) => {
+  newError => {
     if (newError) {
       validateStatus.value = 'error';
       validateMessage.value = newError;

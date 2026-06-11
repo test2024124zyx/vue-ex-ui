@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="uploadRef"
-    :class="uploadClasses"
-    :aria-label="ariaLabel"
-  >
+  <div ref="uploadRef" :class="uploadClasses" :aria-label="ariaLabel">
     <!-- 拖拽上传区域 -->
     <div
       v-if="drag"
@@ -16,12 +12,7 @@
     >
       <div class="ex-file-upload__drag-icon">
         <slot name="drag-icon">
-          <img
-            src="https://api.iconify.design/ri/upload-cloud-2-line.svg"
-            alt="上传"
-            width="48"
-            height="48"
-          >
+          <ExIcon icon="upload-cloud-2-line" :size="48" aria-hidden="true" />
         </slot>
       </div>
       <div class="ex-file-upload__drag-text">
@@ -30,16 +21,10 @@
       <div class="ex-file-upload__drag-description">
         {{ dragDescription || t('dragDescription') }}
       </div>
-      <div
-        v-if="accept"
-        class="ex-file-upload__drag-tip"
-      >
+      <div v-if="accept" class="ex-file-upload__drag-tip">
         {{ t('acceptTip', { accept }) }}
       </div>
-      <div
-        v-if="maxSize"
-        class="ex-file-upload__drag-tip"
-      >
+      <div v-if="maxSize" class="ex-file-upload__drag-tip">
         {{ t('maxSizeTip', { size: `${maxSize}MB` }) }}
       </div>
     </div>
@@ -53,12 +38,7 @@
       <slot name="trigger">
         <ExButton :disabled="disabled || isLimitExceeded">
           <template #prefix>
-            <img
-              src="https://api.iconify.design/ri/upload-2-line.svg"
-              alt="上传"
-              width="16"
-              height="16"
-            >
+            <ExIcon icon="upload-2-line" :size="16" aria-hidden="true" />
           </template>
           {{ buttonText || t('selectFile') }}
         </ExButton>
@@ -74,13 +54,10 @@
       :multiple="multiple"
       :disabled="disabled"
       @change="handleFileChange"
-    >
+    />
 
     <!-- 提示信息 -->
-    <div
-      v-if="(tip || $slots.tip) && listType !== 'picture-card'"
-      class="ex-file-upload__tip"
-    >
+    <div v-if="(tip || $slots.tip) && listType !== 'picture-card'" class="ex-file-upload__tip">
       <slot name="tip">
         {{ tip }}
       </slot>
@@ -94,64 +71,47 @@
     >
       <transition-group :name="listType === 'picture-card' ? 'ex-upload-list' : 'ex-list'">
         <!-- 文件项 -->
-        <div
-          v-for="file in internalFileList"
-          :key="file.uid"
-          :class="getFileItemClass(file)"
-        >
+        <div v-for="file in internalFileList" :key="file.uid" :class="getFileItemClass(file)">
           <!-- 文本列表 -->
           <template v-if="listType === 'text'">
             <div class="ex-file-upload__list-item-info">
-              <img
-                src="https://api.iconify.design/ri/file-text-line.svg"
-                alt="文件"
-                width="16"
-                height="16"
+              <ExIcon
+                icon="file-text-line"
+                :size="16"
                 class="ex-file-upload__list-item-icon"
-              >
-              <span
-                class="ex-file-upload__list-item-name"
-                @click="handlePreview(file)"
-              >
+                aria-hidden="true"
+              />
+              <span class="ex-file-upload__list-item-name" @click="handlePreview(file)">
                 {{ file.name }}
               </span>
             </div>
             <div class="ex-file-upload__list-item-actions">
-              <span
-                v-if="file.status === 'uploading'"
-                class="ex-file-upload__list-item-progress"
-              >
+              <span v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress">
                 {{ file.percent }}%
               </span>
-              <img
+              <ExIcon
                 v-if="file.status === 'success'"
-                src="https://api.iconify.design/ri/check-line.svg"
-                alt="成功"
-                width="16"
-                height="16"
+                icon="check-line"
+                :size="16"
                 class="ex-file-upload__list-item-status-icon success"
-              >
-              <img
+                aria-hidden="true"
+              />
+              <ExIcon
                 v-if="file.status === 'error'"
-                src="https://api.iconify.design/ri/close-line.svg"
-                alt="失败"
-                width="16"
-                height="16"
+                icon="close-line"
+                :size="16"
                 class="ex-file-upload__list-item-status-icon error"
-              >
-              <img
-                src="https://api.iconify.design/ri/delete-bin-line.svg"
-                alt="删除"
-                width="16"
-                height="16"
+                aria-hidden="true"
+              />
+              <ExIcon
+                icon="delete-bin-line"
+                :size="16"
                 class="ex-file-upload__list-item-delete"
+                clickable
                 @click="handleRemove(file)"
-              >
+              />
             </div>
-            <div
-              v-if="file.status === 'uploading'"
-              class="ex-file-upload__list-item-progress-bar"
-            >
+            <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress-bar">
               <div
                 class="ex-file-upload__list-item-progress-bar-inner"
                 :style="{ width: `${file.percent}%` }"
@@ -166,46 +126,20 @@
               :src="file.thumbUrl || file.url"
               :alt="file.name"
               class="ex-file-upload__list-item-thumbnail"
-            >
-            <div
-              v-else
-              class="ex-file-upload__list-item-thumbnail-placeholder"
-            >
-              <img
-                src="https://api.iconify.design/ri/image-line.svg"
-                alt="图片"
-                width="24"
-                height="24"
-              >
+            />
+            <div v-else class="ex-file-upload__list-item-thumbnail-placeholder">
+              <ExIcon icon="image-line" :size="24" aria-hidden="true" />
             </div>
             <div class="ex-file-upload__list-item-info">
-              <span
-                class="ex-file-upload__list-item-name"
-                @click="handlePreview(file)"
-              >
+              <span class="ex-file-upload__list-item-name" @click="handlePreview(file)">
                 {{ file.name }}
               </span>
               <div class="ex-file-upload__list-item-actions">
-                <img
-                  src="https://api.iconify.design/ri/eye-line.svg"
-                  alt="预览"
-                  width="16"
-                  height="16"
-                  @click="handlePreview(file)"
-                >
-                <img
-                  src="https://api.iconify.design/ri/delete-bin-line.svg"
-                  alt="删除"
-                  width="16"
-                  height="16"
-                  @click="handleRemove(file)"
-                >
+                <ExIcon icon="eye-line" :size="16" clickable @click="handlePreview(file)" />
+                <ExIcon icon="delete-bin-line" :size="16" clickable @click="handleRemove(file)" />
               </div>
             </div>
-            <div
-              v-if="file.status === 'uploading'"
-              class="ex-file-upload__list-item-progress-bar"
-            >
+            <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress-bar">
               <div
                 class="ex-file-upload__list-item-progress-bar-inner"
                 :style="{ width: `${file.percent}%` }"
@@ -221,44 +155,16 @@
                 :src="file.thumbUrl || file.url"
                 :alt="file.name"
                 class="ex-file-upload__list-item-card-image"
-              >
-              <div
-                v-else
-                class="ex-file-upload__list-item-card-placeholder"
-              >
-                <img
-                  src="https://api.iconify.design/ri/image-line.svg"
-                  alt="图片"
-                  width="32"
-                  height="32"
-                >
+              />
+              <div v-else class="ex-file-upload__list-item-card-placeholder">
+                <ExIcon icon="image-line" :size="32" aria-hidden="true" />
               </div>
-              <div
-                v-if="file.status === 'uploading'"
-                class="ex-file-upload__list-item-card-mask"
-              >
-                <div class="ex-file-upload__list-item-card-progress">
-                  {{ file.percent }}%
-                </div>
+              <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-card-mask">
+                <div class="ex-file-upload__list-item-card-progress">{{ file.percent }}%</div>
               </div>
-              <div
-                v-else
-                class="ex-file-upload__list-item-card-actions"
-              >
-                <img
-                  src="https://api.iconify.design/ri/eye-line.svg"
-                  alt="预览"
-                  width="20"
-                  height="20"
-                  @click="handlePreview(file)"
-                >
-                <img
-                  src="https://api.iconify.design/ri/delete-bin-line.svg"
-                  alt="删除"
-                  width="20"
-                  height="20"
-                  @click="handleRemove(file)"
-                >
+              <div v-else class="ex-file-upload__list-item-card-actions">
+                <ExIcon icon="eye-line" :size="20" clickable @click="handlePreview(file)" />
+                <ExIcon icon="delete-bin-line" :size="20" clickable @click="handleRemove(file)" />
               </div>
             </div>
           </template>
@@ -276,13 +182,12 @@
           @dragleave.prevent="handleDragLeave"
         >
           <div class="ex-file-upload__upload-trigger-content">
-            <img
-              src="https://api.iconify.design/ri/add-line.svg"
-              alt="上传"
-              width="32"
-              height="32"
+            <ExIcon
+              icon="add-line"
+              :size="32"
               class="ex-file-upload__upload-trigger-icon"
-            >
+              aria-hidden="true"
+            />
             <div class="ex-file-upload__upload-trigger-text">
               {{ buttonText || t('selectFile') }}
             </div>
@@ -304,6 +209,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import type {
   ExFileUploadProps,
@@ -360,7 +266,7 @@ const ariaLabel = computed(() => {
 // 监听文件列表变化
 watch(
   () => props.fileList,
-  (newList) => {
+  newList => {
     internalFileList.value = [...newList];
   },
   { deep: true }
@@ -428,7 +334,7 @@ const handleFiles = (files: File[]) => {
     }
   }
 
-  files.forEach((file) => {
+  files.forEach(file => {
     // 检查文件大小
     if (props.maxSize && file.size > props.maxSize * 1024 * 1024) {
       if (import.meta.env.DEV) {
@@ -455,7 +361,7 @@ const handleFiles = (files: File[]) => {
     // 如果是图片，生成缩略图
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (_e) => {
+      reader.onload = _e => {
         uploadFile.thumbUrl = _e.target?.result as string;
         // 触发响应式更新
         emit('update:fileList', [...internalFileList.value]);
@@ -489,7 +395,7 @@ const uploadSingleFile = (file: UploadFile) => {
   }
 
   // 上传进度
-  xhr.upload.addEventListener('progress', (e) => {
+  xhr.upload.addEventListener('progress', e => {
     if (e.lengthComputable) {
       file.percent = Math.round((e.loaded / e.total) * 100);
       emit('progress', file.percent, file);
@@ -517,7 +423,7 @@ const uploadSingleFile = (file: UploadFile) => {
   });
 
   // 上传失败
-  xhr.addEventListener('error', (_e) => {
+  xhr.addEventListener('error', _e => {
     file.status = 'error';
     file.error = 'Upload failed';
     emit('error', new Error('Upload failed'), file, internalFileList.value);
@@ -544,7 +450,7 @@ const uploadSingleFile = (file: UploadFile) => {
 
 // 移除文件
 const handleRemove = (file: UploadFile) => {
-  const index = internalFileList.value.findIndex((f) => f.uid === file.uid);
+  const index = internalFileList.value.findIndex(f => f.uid === file.uid);
   if (index > -1) {
     // 如果正在上传，中止上传
     const xhr = uploadQueue.get(file.uid);
@@ -567,8 +473,8 @@ const handlePreview = (file: UploadFile) => {
 // 手动上传
 const submit = () => {
   internalFileList.value
-    .filter((file) => file.status === 'ready')
-    .forEach((file) => {
+    .filter(file => file.status === 'ready')
+    .forEach(file => {
       file.status = 'uploading';
       uploadSingleFile(file);
     });
@@ -577,7 +483,7 @@ const submit = () => {
 // 清空文件列表
 const clearFiles = () => {
   // 中止所有上传
-  uploadQueue.forEach((xhr) => xhr.abort());
+  uploadQueue.forEach(xhr => xhr.abort());
   uploadQueue.clear();
 
   internalFileList.value = [];
@@ -594,9 +500,9 @@ const abort = (file?: UploadFile) => {
       file.status = 'ready';
     }
   } else {
-    uploadQueue.forEach((xhr) => xhr.abort());
+    uploadQueue.forEach(xhr => xhr.abort());
     uploadQueue.clear();
-    internalFileList.value.forEach((f) => {
+    internalFileList.value.forEach(f => {
       if (f.status === 'uploading') {
         f.status = 'ready';
       }

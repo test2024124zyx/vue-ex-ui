@@ -3,7 +3,7 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    
+
     // 严格模式配置
     "strict": true,
     "noImplicitAny": true,
@@ -13,7 +13,7 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-    
+
     // 额外检查
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -22,7 +22,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
-    
+
     // 其他配置
     "skipLibCheck": true,
     "declaration": true,
@@ -34,17 +34,17 @@
     "jsx": "preserve",
     "isolatedModules": true,
     "resolveJsonModule": true,
-    
+
     // 路径配置
     "baseUrl": "./",
-    "paths": { 
-      "@/*": ["src/*"] 
+    "paths": {
+      "@/*": ["src/*"]
     },
-    
+
     // 类型定义
     "types": ["vite/client", "vitest/globals", "node"],
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "tests", "examples", "src/vue-shim.d.ts"],
+  "include": ["src", "tests", "src/vue-shim.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
 }

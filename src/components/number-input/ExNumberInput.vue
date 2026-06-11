@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="numberInputRef"
-    :class="numberInputClasses"
-    :style="numberInputStyles"
-  >
+  <div ref="numberInputRef" :class="numberInputClasses" :style="numberInputStyles">
     <!-- 左侧减少按钮 -->
     <button
       v-if="controls && controlsPosition === 'both'"
@@ -16,7 +12,7 @@
     >
       <slot name="decrease-icon">
         <ex-icon
-          src="https://api.iconify.design/ri/subtract-line.svg"
+          icon="subtract-line"
           :size="iconSize"
           :color="getIconColor(disabled || isDecreaseDisabled)"
         />
@@ -44,13 +40,10 @@
       @focus="handleFocus"
       @blur="handleBlur"
       @keydown="handleKeydown"
-    >
+    />
 
     <!-- 右侧控制按钮 -->
-    <div
-      v-if="controls && controlsPosition === 'right'"
-      class="ex-number-input__controls"
-    >
+    <div v-if="controls && controlsPosition === 'right'" class="ex-number-input__controls">
       <button
         type="button"
         class="ex-number-input__button ex-number-input__button--increase"
@@ -61,7 +54,7 @@
       >
         <slot name="increase-icon">
           <ex-icon
-            src="https://api.iconify.design/ri/arrow-up-s-line.svg"
+            icon="arrow-up-s-line"
             :size="controlIconSize"
             :color="getIconColor(disabled || isIncreaseDisabled)"
           />
@@ -77,7 +70,7 @@
       >
         <slot name="decrease-icon">
           <ex-icon
-            src="https://api.iconify.design/ri/arrow-down-s-line.svg"
+            icon="arrow-down-s-line"
             :size="controlIconSize"
             :color="getIconColor(disabled || isDecreaseDisabled)"
           />
@@ -97,7 +90,7 @@
     >
       <slot name="increase-icon">
         <ex-icon
-          src="https://api.iconify.design/ri/add-line.svg"
+          icon="add-line"
           :size="iconSize"
           :color="getIconColor(disabled || isIncreaseDisabled)"
         />
@@ -108,11 +101,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue';
-import type {
-  ExNumberInputProps,
-  ExNumberInputEmits,
-  ExNumberInputExposed,
-} from './types';
+import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
@@ -287,11 +276,12 @@ watch(
 );
 
 // 防抖的输入事件
-const debouncedInput = props.debounceDelay > 0
-  ? debounce((value: number) => {
-      emit('input', value);
-    }, props.debounceDelay)
-  : null;
+const debouncedInput =
+  props.debounceDelay > 0
+    ? debounce((value: number) => {
+        emit('input', value);
+      }, props.debounceDelay)
+    : null;
 
 // 事件处理
 const handleInput = (event: Event) => {

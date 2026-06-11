@@ -18,9 +18,9 @@ import ExDrawer from './components/drawer';
 import ExDropdown, { ExDropdownItem } from './components/dropdown';
 import ExEllipsis from './components/ellipsis';
 import ExEmpty from './components/empty';
-import ExFlex, { ExFlexItem } from './components/flex';
+import FlexPlugin, { ExFlex, ExFlexItem } from './components/flex';
 import ExForm, { ExFormItem } from './components/form';
-import ExGrid, { ExGridItem } from './components/grid';
+import GridPlugin, { ExGrid, ExGridItem } from './components/grid';
 import ExHeatmap from './components/heatmap';
 import ExIcon from './components/icon';
 import ExTag, { ExTagInput } from './components/tag';
@@ -34,6 +34,8 @@ import {
   ExContainer,
 } from './components/layout';
 import ExImage from './components/image';
+import ExDatePicker from './components/date-picker';
+import ExTimePicker from './components/time-picker';
 import ExDateTimePicker from './components/datetime-picker';
 import ExInput from './components/input';
 import ExLink from './components/link';
@@ -97,6 +99,7 @@ export {
   ExBreadcrumb,
   ExBreadcrumbItem,
   ExButton,
+  ExCard,
   ExCheckbox,
   ExCheckboxGroup,
   ExCollapse,
@@ -161,6 +164,8 @@ export {
   ExTypography,
   ExVirtualList,
   ExWatermark,
+  ExDatePicker,
+  ExTimePicker,
   ExDateTimePicker,
   ExTag,
   ExTagInput,
@@ -246,14 +251,12 @@ export type * from './components/slider/types';
 export type * from './components/space/types';
 export type * from './components/steps/types';
 export type * from './components/switch/types';
-// export type * from './components/table/types' // VirtualScrollConfig conflicts with list/types
 export type * from './components/table/types';
 export type * from './components/tabs/types';
 // export type * from './components/time-picker/types' // DisabledTime, TimePanelProps conflicts with date-picker/types
 export type { TooltipPlacement, TooltipTrigger, TooltipEffect } from './components/tooltip/types';
 export type * from './components/tree/types';
 export type * from './components/typography/types';
-// export type * from './components/virtual-list/types' // VirtualScrollConfig conflicts with list/types
 export type * from './components/virtual-list/types';
 export type * from './components/watermark/types';
 export type * from './components/tag/types';
@@ -311,7 +314,16 @@ export type {
 } from './components/time-picker/types';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
-export { enUS, zhCN, createLocaleProvider, useI18n, setLocale, getCurrentLocale, SUPPORTED_LOCALES, DEFAULT_LOCALE } from './locale';
+export {
+  enUS,
+  zhCN,
+  createLocaleProvider,
+  useI18n,
+  setLocale,
+  getCurrentLocale,
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+} from './locale';
 
 // 所有组件列
 // 修复组件安装问题
@@ -337,10 +349,10 @@ const components = [
   ExDropdown,
   ExEllipsis,
   ExEmpty,
-  ExFlex,
+  FlexPlugin,
   ExForm,
   ExFormItem,
-  ExGrid,
+  GridPlugin,
   ExHeatmap,
   ExIcon,
   LayoutPlugin,
@@ -374,6 +386,8 @@ const components = [
   ExTable,
   ExTabs,
   ExTabPane,
+  ExDatePicker,
+  ExTimePicker,
   ExDateTimePicker,
   ExTooltip,
   ExTree,
@@ -412,7 +426,8 @@ const install: Plugin['install'] = (app: App) => {
 // 版本号：优先使用构建期注入的 __EX_UI_VERSION__，在未注入场景下回退为 'dev'
 // 使用 typeof 检测可以在未声明变量时避免运行时错误
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const version = typeof (__EX_UI_VERSION__ as any) !== 'undefined' ? (__EX_UI_VERSION__ as string) : 'dev';
+const version =
+  typeof (__EX_UI_VERSION__ as any) !== 'undefined' ? (__EX_UI_VERSION__ as string) : 'dev';
 
 // 默认导出 - 符合 Vue Plugin 类型
 export default {

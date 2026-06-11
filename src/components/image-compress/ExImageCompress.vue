@@ -1,90 +1,37 @@
 <template>
-  <div
-    ref="compressRef"
-    class="ex-image-compress"
-  >
+  <div ref="compressRef" class="ex-image-compress">
     <!-- 预览区域 -->
-    <div
-      v-if="showPreview"
-      class="ex-image-compress__preview"
-    >
+    <div v-if="showPreview" class="ex-image-compress__preview">
       <div class="ex-image-compress__preview-item">
-        <div class="ex-image-compress__preview-label">
-          原图
-        </div>
+        <div class="ex-image-compress__preview-label">原图</div>
         <div class="ex-image-compress__preview-image">
-          <img
-            v-if="originalUrl"
-            :src="originalUrl"
-            alt="原图"
-          >
-          <div
-            v-else
-            class="ex-image-compress__preview-placeholder"
-          >
-            <img
-              src="https://api.iconify.design/ri/image-line.svg"
-              alt="占位"
-              width="48"
-              height="48"
-            >
+          <img v-if="originalUrl" :src="originalUrl" alt="原图" />
+          <div v-else class="ex-image-compress__preview-placeholder">
+            <ExIcon icon="image-line" :size="48" aria-hidden="true" />
           </div>
         </div>
-        <div
-          v-if="originalSize"
-          class="ex-image-compress__preview-info"
-        >
+        <div v-if="originalSize" class="ex-image-compress__preview-info">
           <div>{{ formatBytes(originalSize) }}</div>
           <div>{{ originalDimension.width }} × {{ originalDimension.height }}</div>
         </div>
       </div>
 
-      <div
-        v-if="showComparison && compressedUrl"
-        class="ex-image-compress__preview-arrow"
-      >
-        <img
-          src="https://api.iconify.design/ri/arrow-right-line.svg"
-          alt="箭头"
-          width="32"
-          height="32"
-        >
+      <div v-if="showComparison && compressedUrl" class="ex-image-compress__preview-arrow">
+        <ExIcon icon="arrow-right-line" :size="32" aria-hidden="true" />
       </div>
 
-      <div
-        v-if="showComparison"
-        class="ex-image-compress__preview-item"
-      >
-        <div class="ex-image-compress__preview-label">
-          压缩后
-        </div>
+      <div v-if="showComparison" class="ex-image-compress__preview-item">
+        <div class="ex-image-compress__preview-label">压缩后</div>
         <div class="ex-image-compress__preview-image">
-          <img
-            v-if="compressedUrl"
-            :src="compressedUrl"
-            alt="压缩后"
-          >
-          <div
-            v-else
-            class="ex-image-compress__preview-placeholder"
-          >
-            <img
-              src="https://api.iconify.design/ri/image-line.svg"
-              alt="占位"
-              width="48"
-              height="48"
-            >
+          <img v-if="compressedUrl" :src="compressedUrl" alt="压缩后" />
+          <div v-else class="ex-image-compress__preview-placeholder">
+            <ExIcon icon="image-line" :size="48" aria-hidden="true" />
           </div>
         </div>
-        <div
-          v-if="compressedSize"
-          class="ex-image-compress__preview-info"
-        >
+        <div v-if="compressedSize" class="ex-image-compress__preview-info">
           <div class="ex-image-compress__preview-size">
             {{ formatBytes(compressedSize) }}
-            <span class="ex-image-compress__preview-ratio">
-              ({{ compressionRatio }}%)
-            </span>
+            <span class="ex-image-compress__preview-ratio">({{ compressionRatio }}%)</span>
           </div>
           <div>{{ compressedDimension.width }} × {{ compressedDimension.height }}</div>
         </div>
@@ -120,25 +67,14 @@
         </div>
       </div>
 
-      <div
-        v-if="currentMode === 'quality'"
-        class="ex-image-compress__control-group"
-      >
+      <div v-if="currentMode === 'quality'" class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">
           压缩质量: {{ Math.round(currentQuality * 100) }}%
         </label>
-        <ExSlider
-          v-model="currentQuality"
-          :min="0.1"
-          :max="1"
-          :step="0.05"
-        />
+        <ExSlider v-model="currentQuality" :min="0.1" :max="1" :step="0.05" />
       </div>
 
-      <div
-        v-if="currentMode === 'size'"
-        class="ex-image-compress__control-group"
-      >
+      <div v-if="currentMode === 'size'" class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">目标大小 (KB)</label>
         <ExNumberInput
           v-model="currentTargetSize"
@@ -149,10 +85,7 @@
         />
       </div>
 
-      <div
-        v-if="currentMode === 'dimension'"
-        class="ex-image-compress__control-group"
-      >
+      <div v-if="currentMode === 'dimension'" class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">最大宽度 (px)</label>
         <ExNumberInput
           v-model="currentMaxWidth"
@@ -163,10 +96,7 @@
         />
       </div>
 
-      <div
-        v-if="currentMode === 'dimension'"
-        class="ex-image-compress__control-group"
-      >
+      <div v-if="currentMode === 'dimension'" class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">最大高度 (px)</label>
         <ExNumberInput
           v-model="currentMaxHeight"
@@ -179,51 +109,31 @@
 
       <div class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">输出格式</label>
-        <ExSelect
-          v-model="currentOutputType"
-          :options="outputTypeOptions"
-        />
+        <ExSelect v-model="currentOutputType" :options="outputTypeOptions" />
       </div>
     </div>
 
     <!-- 操作按钮 -->
     <div class="ex-image-compress__actions">
-      <ExButton @click="handleReset">
-        重置
-      </ExButton>
-      <ExButton
-        type="primary"
-        :loading="isCompressing"
-        @click="handleCompress"
-      >
+      <ExButton @click="handleReset">重置</ExButton>
+      <ExButton type="primary" :loading="isCompressing" @click="handleCompress">
         {{ isCompressing ? '压缩中...' : '开始压缩' }}
       </ExButton>
-      <ExButton
-        v-if="compressedBlob"
-        type="success"
-        @click="() => handleDownload()"
-      >
+      <ExButton v-if="compressedBlob" type="success" @click="() => handleDownload()">
         <template #prefix>
-          <img
-            src="https://api.iconify.design/ri/download-2-line.svg"
-            alt="下载"
-            width="16"
-            height="16"
-          >
+          <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
         </template>
         下载
       </ExButton>
     </div>
 
     <!-- 隐藏的canvas -->
-    <canvas
-      ref="canvasRef"
-      style="display: none;"
-    />
+    <canvas ref="canvasRef" style="display: none" />
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { ref, computed, watch } from 'vue';
 import type {
   ExImageCompressProps,
@@ -297,7 +207,7 @@ const compressionRatio = computed(() => {
 // 加载图片
 const loadImage = async () => {
   if (!props.src) return;
-  
+
   try {
     let url: string;
     let size = 0;
@@ -359,10 +269,7 @@ const compress = async (): Promise<CompressResult> => {
     // 根据模式调整尺寸
     if (currentMode.value === 'dimension') {
       if (width > currentMaxWidth.value || height > currentMaxHeight.value) {
-        const ratio = Math.min(
-          currentMaxWidth.value / width,
-          currentMaxHeight.value / height
-        );
+        const ratio = Math.min(currentMaxWidth.value / width, currentMaxHeight.value / height);
         width = Math.round(width * ratio);
         height = Math.round(height * ratio);
       }
@@ -389,7 +296,7 @@ const compress = async (): Promise<CompressResult> => {
         quality = (minQuality + maxQuality) / 2;
         blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
+            b => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
             currentOutputType.value,
             quality
           );
@@ -406,7 +313,7 @@ const compress = async (): Promise<CompressResult> => {
     } else {
       blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
+          b => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
           currentOutputType.value,
           quality
         );
@@ -455,11 +362,11 @@ const handleDownload = (filename?: string) => {
   const url = URL.createObjectURL(compressedBlob.value);
   const link = document.createElement('a');
   link.href = url;
-  
+
   // 使用提供的文件名或生成默认文件名
   const extension = currentOutputType.value.split('/')[1];
   link.download = filename || `compressed-${Date.now()}.${extension}`;
-  
+
   link.click();
   URL.revokeObjectURL(url);
 };
@@ -480,11 +387,15 @@ const handleReset = () => {
 const getResult = () => result.value;
 
 // 监听 src 变化
-watch(() => props.src, () => {
-  if (props.src) {
-    loadImage();
-  }
-}, { immediate: true });
+watch(
+  () => props.src,
+  () => {
+    if (props.src) {
+      loadImage();
+    }
+  },
+  { immediate: true }
+);
 
 const getElement = () => compressRef.value || null;
 

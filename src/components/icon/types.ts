@@ -1,4 +1,6 @@
 export interface ExIconProps {
+  /** 内置 SVG 图标名称（见 icons.ts 注册表，无网络依赖、可随主题着色） */
+  icon?: string;
   /** 图标名称 (用于字体图标) */
   name?: string;
   /** 图标前缀 (如 'fas', 'far', 'fab') */

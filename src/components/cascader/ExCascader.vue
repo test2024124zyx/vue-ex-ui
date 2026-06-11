@@ -1,15 +1,7 @@
 <template>
-  <div
-    ref="cascaderRef"
-    :class="cascaderClasses"
-    :style="cascaderStyles"
-  >
+  <div ref="cascaderRef" :class="cascaderClasses" :style="cascaderStyles">
     <!-- 输入框 -->
-    <div
-      ref="triggerRef"
-      class="ex-cascader__input-wrapper"
-      @click="handleTriggerClick"
-    >
+    <div ref="triggerRef" class="ex-cascader__input-wrapper" @click="handleTriggerClick">
       <input
         ref="inputRef"
         :value="displayValue"
@@ -18,8 +10,8 @@
         :readonly="!filterable"
         class="ex-cascader__input"
         @input="handleInput"
-      >
-      
+      />
+
       <!-- 后缀图标 -->
       <div class="ex-cascader__suffix">
         <button
@@ -27,41 +19,19 @@
           class="ex-cascader__clear"
           @click.stop="handleClear"
         >
-          <img
-            src="https://api.iconify.design/ri/close-line.svg"
-            alt="清空"
-            width="14"
-            height="14"
-          >
+          <ExIcon icon="close-line" :size="14" aria-hidden="true" />
         </button>
-        <span
-          v-else
-          class="ex-cascader__arrow"
-          :class="{ 'ex-cascader__arrow--open': visible }"
-        >
-          <img
-            src="https://api.iconify.design/ri/arrow-down-s-line.svg"
-            alt="展开"
-            width="16"
-            height="16"
-          >
+        <span v-else class="ex-cascader__arrow" :class="{ 'ex-cascader__arrow--open': visible }">
+          <ExIcon icon="arrow-down-s-line" :size="16" aria-hidden="true" />
         </span>
       </div>
     </div>
 
     <!-- 下拉面板 -->
     <transition name="ex-cascader-dropdown">
-      <div
-        v-show="visible"
-        ref="dropdownRef"
-        class="ex-cascader__dropdown"
-      >
+      <div v-show="visible" ref="dropdownRef" class="ex-cascader__dropdown">
         <div class="ex-cascader__menus">
-          <div
-            v-for="(menu, index) in menus"
-            :key="index"
-            class="ex-cascader__menu"
-          >
+          <div v-for="(menu, index) in menus" :key="index" class="ex-cascader__menu">
             <div
               v-for="option in menu"
               :key="option.value"
@@ -79,12 +49,7 @@
                 v-if="option.children && option.children.length"
                 class="ex-cascader__option-arrow"
               >
-                <img
-                  src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-                  alt="展开"
-                  width="16"
-                  height="16"
-                >
+                <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
               </span>
             </div>
           </div>
@@ -95,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
 
@@ -128,10 +94,7 @@ const menus = ref<CascaderOption[][]>([]);
 
 // 计算属性
 const cascaderClasses = computed(() => {
-  const classes = [
-    'ex-cascader',
-    `ex-cascader--${props.size}`,
-  ];
+  const classes = ['ex-cascader', `ex-cascader--${props.size}`];
 
   if (props.disabled) classes.push('ex-cascader--disabled');
   if (visible.value) classes.push('ex-cascader--open');
@@ -309,11 +272,11 @@ const getSelectedOptions = (): CascaderOption[] => {
 // 点击外部关闭
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node;
-  
+
   // 检查点击是否在触发器或下拉面板内
   const isInTrigger = triggerRef.value?.contains(target);
   const isInDropdown = dropdownRef.value?.contains(target);
-  
+
   if (!isInTrigger && !isInDropdown) {
     hide();
   }
@@ -322,7 +285,7 @@ const handleClickOutside = (event: MouseEvent) => {
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     selectedPath.value = [...newValue];
     initMenus();
   }

@@ -1,88 +1,27 @@
 <template>
-  <div
-    ref="cropRef"
-    class="ex-image-crop"
-  >
+  <div ref="cropRef" class="ex-image-crop">
     <!-- 工具栏 -->
-    <div
-      v-if="showToolbar && toolbarPosition === 'top'"
-      class="ex-image-crop__toolbar"
-    >
+    <div v-if="showToolbar && toolbarPosition === 'top'" class="ex-image-crop__toolbar">
       <div class="ex-image-crop__toolbar-group">
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomOut"
-        >
-          <img
-            src="https://api.iconify.design/ri/zoom-out-line.svg"
-            alt="缩小"
-            width="18"
-            height="18"
-          >
+        <button v-if="zoomable" class="ex-image-crop__toolbar-btn" @click.stop="zoomOut">
+          <ExIcon icon="zoom-out-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomIn"
-        >
-          <img
-            src="https://api.iconify.design/ri/zoom-in-line.svg"
-            alt="放大"
-            width="18"
-            height="18"
-          >
+        <button v-if="zoomable" class="ex-image-crop__toolbar-btn" @click.stop="zoomIn">
+          <ExIcon icon="zoom-in-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateLeft"
-        >
-          <img
-            src="https://api.iconify.design/ri/anticlockwise-line.svg"
-            alt="逆时针"
-            width="18"
-            height="18"
-          >
+        <button v-if="rotatable" class="ex-image-crop__toolbar-btn" @click.stop="rotateLeft">
+          <ExIcon icon="anticlockwise-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateRight"
-        >
-          <img
-            src="https://api.iconify.design/ri/clockwise-line.svg"
-            alt="顺时针"
-            width="18"
-            height="18"
-          >
+        <button v-if="rotatable" class="ex-image-crop__toolbar-btn" @click.stop="rotateRight">
+          <ExIcon icon="clockwise-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="reset"
-        >
-          <img
-            src="https://api.iconify.design/ri/refresh-line.svg"
-            alt="重置"
-            width="18"
-            height="18"
-          >
+        <button class="ex-image-crop__toolbar-btn" @click.stop="reset">
+          <ExIcon icon="refresh-line" :size="18" aria-hidden="true" />
         </button>
       </div>
       <div class="ex-image-crop__toolbar-group">
-        <ExButton
-          size="small"
-          @click.stop="handleCancel"
-        >
-          取消
-        </ExButton>
-        <ExButton
-          type="primary"
-          size="small"
-          @click.stop="handleCrop"
-        >
-          确认裁剪
-        </ExButton>
+        <ExButton size="small" @click.stop="handleCancel">取消</ExButton>
+        <ExButton type="primary" size="small" @click.stop="handleCrop">确认裁剪</ExButton>
       </div>
     </div>
 
@@ -94,11 +33,7 @@
       @mousedown="handleMouseDown"
       @touchstart="handleTouchStart"
     >
-      <canvas
-        ref="canvasRef"
-        class="ex-image-crop__canvas"
-        :style="canvasStyle"
-      />
+      <canvas ref="canvasRef" class="ex-image-crop__canvas" :style="canvasStyle" />
 
       <!-- 裁剪框 -->
       <div
@@ -107,10 +42,7 @@
         :style="cropBoxStyle"
       >
         <!-- 网格 -->
-        <div
-          v-if="showGrid"
-          class="ex-image-crop__grid"
-        >
+        <div v-if="showGrid" class="ex-image-crop__grid">
           <div
             v-for="i in gridRows - 1"
             :key="`row-${i}`"
@@ -126,22 +58,10 @@
         </div>
 
         <!-- 调整手柄 -->
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--nw"
-          data-direction="nw"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--ne"
-          data-direction="ne"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--sw"
-          data-direction="sw"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--se"
-          data-direction="se"
-        />
+        <div class="ex-image-crop__handle ex-image-crop__handle--nw" data-direction="nw" />
+        <div class="ex-image-crop__handle ex-image-crop__handle--ne" data-direction="ne" />
+        <div class="ex-image-crop__handle ex-image-crop__handle--sw" data-direction="sw" />
+        <div class="ex-image-crop__handle ex-image-crop__handle--se" data-direction="se" />
         <div
           v-if="mode === 'free'"
           class="ex-image-crop__handle ex-image-crop__handle--n"
@@ -165,19 +85,10 @@
       </div>
 
       <!-- 遮罩层 -->
-      <svg
-        class="ex-image-crop__mask"
-        :style="{ pointerEvents: 'none' }"
-      >
+      <svg class="ex-image-crop__mask" :style="{ pointerEvents: 'none' }">
         <defs>
           <mask :id="maskId">
-            <rect
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              fill="white"
-            />
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
             <rect
               v-if="shape === 'rect'"
               :x="cropArea.x"
@@ -207,91 +118,34 @@
     </div>
 
     <!-- 底部工具栏 -->
-    <div
-      v-if="showToolbar && toolbarPosition === 'bottom'"
-      class="ex-image-crop__toolbar"
-    >
+    <div v-if="showToolbar && toolbarPosition === 'bottom'" class="ex-image-crop__toolbar">
       <div class="ex-image-crop__toolbar-group">
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomOut"
-        >
-          <img
-            src="https://api.iconify.design/ri/zoom-out-line.svg"
-            alt="缩小"
-            width="18"
-            height="18"
-          >
+        <button v-if="zoomable" class="ex-image-crop__toolbar-btn" @click.stop="zoomOut">
+          <ExIcon icon="zoom-out-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomIn"
-        >
-          <img
-            src="https://api.iconify.design/ri/zoom-in-line.svg"
-            alt="放大"
-            width="18"
-            height="18"
-          >
+        <button v-if="zoomable" class="ex-image-crop__toolbar-btn" @click.stop="zoomIn">
+          <ExIcon icon="zoom-in-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateLeft"
-        >
-          <img
-            src="https://api.iconify.design/ri/anticlockwise-line.svg"
-            alt="逆时针"
-            width="18"
-            height="18"
-          >
+        <button v-if="rotatable" class="ex-image-crop__toolbar-btn" @click.stop="rotateLeft">
+          <ExIcon icon="anticlockwise-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateRight"
-        >
-          <img
-            src="https://api.iconify.design/ri/clockwise-line.svg"
-            alt="顺时针"
-            width="18"
-            height="18"
-          >
+        <button v-if="rotatable" class="ex-image-crop__toolbar-btn" @click.stop="rotateRight">
+          <ExIcon icon="clockwise-line" :size="18" aria-hidden="true" />
         </button>
-        <button
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="reset"
-        >
-          <img
-            src="https://api.iconify.design/ri/refresh-line.svg"
-            alt="重置"
-            width="18"
-            height="18"
-          >
+        <button class="ex-image-crop__toolbar-btn" @click.stop="reset">
+          <ExIcon icon="refresh-line" :size="18" aria-hidden="true" />
         </button>
       </div>
       <div class="ex-image-crop__toolbar-group">
-        <ExButton
-          size="small"
-          @click.stop="handleCancel"
-        >
-          取消
-        </ExButton>
-        <ExButton
-          type="primary"
-          size="small"
-          @click.stop="handleCrop"
-        >
-          确认裁剪
-        </ExButton>
+        <ExButton size="small" @click.stop="handleCancel">取消</ExButton>
+        <ExButton type="primary" size="small" @click.stop="handleCrop">确认裁剪</ExButton>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import type {
   ExImageCropProps,
@@ -473,7 +327,10 @@ const handleMouseDown = (e: MouseEvent) => {
     startPos.value = { x: e.clientX, y: e.clientY };
     startArea.value = { ...cropArea.value };
     e.preventDefault();
-  } else if (target.classList.contains('ex-image-crop__crop-box') || target.closest('.ex-image-crop__crop-box')) {
+  } else if (
+    target.classList.contains('ex-image-crop__crop-box') ||
+    target.closest('.ex-image-crop__crop-box')
+  ) {
     isDragging.value = true;
     startPos.value = { x: e.clientX, y: e.clientY };
     startArea.value = { ...cropArea.value };
@@ -484,7 +341,7 @@ const handleMouseDown = (e: MouseEvent) => {
 const handleTouchStart = (e: TouchEvent) => {
   const touch = e.touches[0];
   if (!touch) return;
-  
+
   const target = e.target as HTMLElement;
 
   if (target.classList.contains('ex-image-crop__handle')) {
@@ -493,7 +350,10 @@ const handleTouchStart = (e: TouchEvent) => {
     startPos.value = { x: touch.clientX, y: touch.clientY };
     startArea.value = { ...cropArea.value };
     e.preventDefault();
-  } else if (target.classList.contains('ex-image-crop__crop-box') || target.closest('.ex-image-crop__crop-box')) {
+  } else if (
+    target.classList.contains('ex-image-crop__crop-box') ||
+    target.closest('.ex-image-crop__crop-box')
+  ) {
     isDragging.value = true;
     startPos.value = { x: touch.clientX, y: touch.clientY };
     startArea.value = { ...cropArea.value };
@@ -506,8 +366,14 @@ const handleMouseMove = (e: MouseEvent) => {
     const dx = e.clientX - startPos.value.x;
     const dy = e.clientY - startPos.value.y;
 
-    const newX = Math.max(0, Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width));
-    const newY = Math.max(0, Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height));
+    const newX = Math.max(
+      0,
+      Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width)
+    );
+    const newY = Math.max(
+      0,
+      Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height)
+    );
 
     cropArea.value.x = newX;
     cropArea.value.y = newY;
@@ -520,13 +386,19 @@ const handleMouseMove = (e: MouseEvent) => {
 const handleTouchMove = (e: TouchEvent) => {
   const touch = e.touches[0];
   if (!touch) return;
-  
+
   if (isDragging.value) {
     const dx = touch.clientX - startPos.value.x;
     const dy = touch.clientY - startPos.value.y;
 
-    const newX = Math.max(0, Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width));
-    const newY = Math.max(0, Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height));
+    const newX = Math.max(
+      0,
+      Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width)
+    );
+    const newY = Math.max(
+      0,
+      Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height)
+    );
 
     cropArea.value.x = newX;
     cropArea.value.y = newY;
@@ -626,8 +498,14 @@ const handleResize = (clientX: number, clientY: number) => {
   }
 
   // 限制最小/最大尺寸
-  newArea.width = Math.max(props.minWidth || 50, Math.min(newArea.width, props.maxWidth || containerSize.value.width));
-  newArea.height = Math.max(props.minHeight || 50, Math.min(newArea.height, props.maxHeight || containerSize.value.height));
+  newArea.width = Math.max(
+    props.minWidth || 50,
+    Math.min(newArea.width, props.maxWidth || containerSize.value.width)
+  );
+  newArea.height = Math.max(
+    props.minHeight || 50,
+    Math.min(newArea.height, props.maxHeight || containerSize.value.height)
+  );
 
   // 圆形裁剪确保正圆（在限制尺寸后）
   if (props.shape === 'circle') {
@@ -743,7 +621,7 @@ const crop = async (): Promise<CropResult> => {
   // 转换为Blob
   const blob = await new Promise<Blob>((resolve, reject) => {
     cropCanvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
+      b => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
       props.outputType,
       props.quality
     );
@@ -758,7 +636,7 @@ const crop = async (): Promise<CropResult> => {
     originalSize: imageSize.value,
     croppedSize: {
       width: Math.round(relativeArea.width),
-      height: Math.round(relativeArea.height)
+      height: Math.round(relativeArea.height),
     },
   };
 

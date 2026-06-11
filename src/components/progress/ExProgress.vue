@@ -14,18 +14,12 @@
       <!-- 进度条轨道 -->
       <div class="ex-progress__track">
         <!-- 进度条填充 -->
-        <div
-          class="ex-progress__bar"
-          :style="barStyle"
-        >
+        <div class="ex-progress__bar" :style="barStyle">
           <!-- 霓虹发光效果 -->
           <div class="ex-progress__glow" />
 
           <!-- 进度条内文字 -->
-          <div
-            v-if="showText && textInside"
-            class="ex-progress__text-inside"
-          >
+          <div v-if="showText && textInside" class="ex-progress__text-inside">
             <slot name="text">
               {{ displayText }}
             </slot>
@@ -41,41 +35,24 @@
       </div>
 
       <!-- 进度条外文字 -->
-      <div
-        v-if="showText && !textInside"
-        class="ex-progress__text-outside"
-      >
+      <div v-if="showText && !textInside" class="ex-progress__text-outside">
         <slot name="text">
           {{ displayText }}
         </slot>
       </div>
 
       <!-- 状态图标 -->
-      <div
-        v-if="showIcon && status"
-        class="ex-progress__icon"
-      >
+      <div v-if="showIcon && status" class="ex-progress__icon">
         <slot name="icon">
-          <img
-            :src="statusIcon"
-            :alt="status"
-            class="ex-progress__icon-image"
-          >
+          <ExIcon :icon="statusIcon" class="ex-progress__icon-image" aria-hidden="true" />
         </slot>
       </div>
     </template>
 
     <!-- 环形进度条 -->
     <template v-else-if="props.type === 'circle'">
-      <div
-        class="ex-progress__circle"
-        :style="circleContainerStyle"
-      >
-        <svg
-          :width="circleWidth"
-          :height="circleWidth"
-          :viewBox="viewBox"
-        >
+      <div class="ex-progress__circle" :style="circleContainerStyle">
+        <svg :width="circleWidth" :height="circleWidth" :viewBox="viewBox">
           <!-- 背景圆环 -->
           <circle
             :cx="circleWidth / 2"
@@ -104,21 +81,9 @@
 
           <!-- 渐变定义 -->
           <defs v-if="isGradientColor">
-            <linearGradient
-              id="ex-progress-gradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop
-                offset="0%"
-                :stop-color="gradientColors[0]"
-              />
-              <stop
-                offset="100%"
-                :stop-color="gradientColors[1]"
-              />
+            <linearGradient id="ex-progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" :stop-color="gradientColors[0]" />
+              <stop offset="100%" :stop-color="gradientColors[1]" />
             </linearGradient>
           </defs>
         </svg>
@@ -126,20 +91,11 @@
         <!-- 中心文字 -->
         <div class="ex-progress__circle-text">
           <slot name="text">
-            <span
-              v-if="showText"
-              class="ex-progress__circle-percentage"
-            >
+            <span v-if="showText" class="ex-progress__circle-percentage">
               {{ displayText }}
             </span>
-            <span
-              v-if="status && showIcon"
-              class="ex-progress__circle-icon"
-            >
-              <img
-                :src="statusIcon"
-                :alt="status"
-              >
+            <span v-if="status && showIcon" class="ex-progress__circle-icon">
+              <ExIcon :icon="statusIcon" aria-hidden="true" />
             </span>
           </slot>
         </div>
@@ -148,28 +104,19 @@
 
     <!-- 波浪进度条（矩形） -->
     <template v-else-if="props.type === 'wave'">
-      <div
-        class="ex-progress__wave-container"
-        :style="waveContainerStyle"
-      >
-        <svg 
+      <div class="ex-progress__wave-container" :style="waveContainerStyle">
+        <svg
           ref="waveSvgRef"
-          class="ex-progress__wave-svg" 
+          class="ex-progress__wave-svg"
           :viewBox="`0 0 ${waveWidth} ${waveHeight}`"
           preserveAspectRatio="none"
         >
           <defs>
             <!-- 裁剪路径 -->
             <clipPath :id="`ex-wave-clip-${componentId}`">
-              <rect
-                x="0"
-                y="0"
-                :width="waveWidth"
-                :height="waveHeight"
-                :rx="8"
-              />
+              <rect x="0" y="0" :width="waveWidth" :height="waveHeight" :rx="8" />
             </clipPath>
-            
+
             <!-- 波浪渐变 - 与 demo 一致 -->
             <linearGradient
               :id="`ex-wave-gradient-${componentId}`"
@@ -178,29 +125,15 @@
               x2="0%"
               y2="100%"
             >
-              <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
-              />
+              <stop offset="0%" :stop-color="waveColor" :stop-opacity="0.64" />
+              <stop offset="100%" :stop-color="waveColor" :stop-opacity="0.8" />
             </linearGradient>
           </defs>
-          
+
           <!-- 背景 -->
           <g :clip-path="`url(#ex-wave-clip-${componentId})`">
-            <rect
-              x="0"
-              y="0"
-              :width="waveWidth"
-              :height="waveHeight"
-              :fill="trackColor"
-            />
-            
+            <rect x="0" y="0" :width="waveWidth" :height="waveHeight" :fill="trackColor" />
+
             <!-- 波浪路径 -->
             <path
               ref="wavePath1Ref"
@@ -215,7 +148,7 @@
             />
           </g>
         </svg>
-        
+
         <!-- 波浪文字 -->
         <div class="ex-progress__wave-text">
           <slot name="text">
@@ -227,26 +160,14 @@
 
     <!-- 波浪进度条（圆形） -->
     <template v-else-if="props.type === 'wave-circle'">
-      <div
-        class="ex-progress__wave-circle"
-        :style="circleContainerStyle"
-      >
-        <svg 
-          ref="waveCircleSvgRef"
-          :width="circleWidth" 
-          :height="circleWidth" 
-          :viewBox="viewBox"
-        >
+      <div class="ex-progress__wave-circle" :style="circleContainerStyle">
+        <svg ref="waveCircleSvgRef" :width="circleWidth" :height="circleWidth" :viewBox="viewBox">
           <defs>
             <!-- 圆形裁剪路径 -->
             <clipPath :id="`ex-wave-circle-clip-${componentId}`">
-              <circle
-                :cx="circleWidth / 2"
-                :cy="circleWidth / 2"
-                :r="circleRadius"
-              />
+              <circle :cx="circleWidth / 2" :cy="circleWidth / 2" :r="circleRadius" />
             </clipPath>
-            
+
             <!-- 波浪渐变 - 与 demo 一致 -->
             <linearGradient
               :id="`ex-wave-circle-gradient-${componentId}`"
@@ -255,19 +176,11 @@
               x2="0%"
               y2="100%"
             >
-              <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
-              />
+              <stop offset="0%" :stop-color="waveColor" :stop-opacity="0.64" />
+              <stop offset="100%" :stop-color="waveColor" :stop-opacity="0.8" />
             </linearGradient>
           </defs>
-          
+
           <!-- 背景圆 -->
           <g :clip-path="`url(#ex-wave-circle-clip-${componentId})`">
             <circle
@@ -276,7 +189,7 @@
               :r="circleRadius"
               :fill="trackColor"
             />
-            
+
             <!-- 波浪路径 -->
             <path
               ref="waveCirclePath1Ref"
@@ -290,7 +203,7 @@
               :opacity="0.4"
             />
           </g>
-          
+
           <!-- 边框圆环 -->
           <circle
             :cx="circleWidth / 2"
@@ -302,7 +215,7 @@
             class="ex-progress__wave-circle-border"
           />
         </svg>
-        
+
         <!-- 中心文字 -->
         <div class="ex-progress__wave-circle-text">
           <slot name="text">
@@ -319,6 +232,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import type { ExProgressProps, ExProgressEmits, ExProgressExposed } from './types';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
   name: 'ExProgress',
@@ -364,10 +278,7 @@ const componentId = generateId();
 
 // 计算属性
 const progressClasses = computed(() => {
-  const classes = [
-    'ex-progress',
-    `ex-progress--${props.type}`,
-  ];
+  const classes = ['ex-progress', `ex-progress--${props.type}`];
 
   if (props.status) {
     classes.push(`ex-progress--${props.status}`);
@@ -422,7 +333,7 @@ const barStyle = computed(() => {
       // 渐变色
       const colors = [...props.color]
         .sort((a, b) => a.percentage - b.percentage)
-        .map((item) => `${item.color} ${item.percentage}%`)
+        .map(item => `${item.color} ${item.percentage}%`)
         .join(', ');
       styles.background = `linear-gradient(to right, ${colors})`;
     }
@@ -440,9 +351,9 @@ const displayText = computed(() => {
 
 const statusIcon = computed(() => {
   const iconMap: Record<string, string> = {
-    success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
-    exception: 'https://api.iconify.design/ri/close-circle-line.svg',
-    warning: 'https://api.iconify.design/ri/error-warning-line.svg',
+    success: 'checkbox-circle-line',
+    exception: 'close-circle-line',
+    warning: 'error-warning-line',
   };
 
   return iconMap[props.status || ''] || '';
@@ -463,8 +374,6 @@ const circumference = computed(() => {
 const viewBox = computed(() => {
   return `0 0 ${circleWidth.value} ${circleWidth.value}`;
 });
-
-
 
 const circleOffset = computed(() => {
   const percent = percentage.value / 100;
@@ -503,8 +412,6 @@ const circleColor = computed(() => {
   return 'var(--ex-color-primary)';
 });
 
-
-
 const isGradientColor = computed(() => {
   return !props.color && !props.status;
 });
@@ -537,17 +444,15 @@ const waveColor = computed(() => {
   if (props.color && typeof props.color === 'string') {
     return props.color;
   }
-  
+
   if (props.status === 'success') return 'var(--ex-color-success)';
   if (props.status === 'exception') return 'var(--ex-color-error)';
   if (props.status === 'warning') return 'var(--ex-color-warning)';
-  
+
   return 'var(--ex-color-primary)';
 });
 
 // 波浪效果相关计算属性已移除（预留功能暂不实现）
-
-
 
 // 波浪动画函数 - 与 demo 完全一致的实现
 function generateWavePath(
@@ -585,7 +490,14 @@ function updateWaveAnimation() {
     // 第一层波浪 - 与 demo 一致
     const path1 = generateWavePath(waveY, waveOffset.value, amplitude, frequency, width, height);
     // 第二层波浪 - 相位差 Math.PI，振幅 0.8，频率 1.2
-    const path2 = generateWavePath(waveY, waveOffset.value + Math.PI, amplitude * 0.8, frequency * 1.2, width, height);
+    const path2 = generateWavePath(
+      waveY,
+      waveOffset.value + Math.PI,
+      amplitude * 0.8,
+      frequency * 1.2,
+      width,
+      height
+    );
 
     wavePath1Ref.value.setAttribute('d', path1);
     wavePath2Ref.value.setAttribute('d', path2);
@@ -600,9 +512,23 @@ function updateWaveAnimation() {
     const waveY = height * (1 - percentage.value / 100);
 
     // 第一层波浪 - 与 demo 一致
-    const path1 = generateWavePath(waveY, waveOffset.value, amplitude, frequency, width, height * 2);
+    const path1 = generateWavePath(
+      waveY,
+      waveOffset.value,
+      amplitude,
+      frequency,
+      width,
+      height * 2
+    );
     // 第二层波浪 - 相位差 Math.PI，振幅 0.8，频率 1.2
-    const path2 = generateWavePath(waveY, waveOffset.value + Math.PI, amplitude * 0.8, frequency * 1.2, width, height * 2);
+    const path2 = generateWavePath(
+      waveY,
+      waveOffset.value + Math.PI,
+      amplitude * 0.8,
+      frequency * 1.2,
+      width,
+      height * 2
+    );
 
     waveCirclePath1Ref.value.setAttribute('d', path1);
     waveCirclePath2Ref.value.setAttribute('d', path2);
@@ -641,30 +567,39 @@ onBeforeUnmount(() => {
 });
 
 // 监听类型变化
-watch(() => props.type, (newType, oldType) => {
-  if (oldType === 'wave' || oldType === 'wave-circle') {
-    stopWaveAnimation();
+watch(
+  () => props.type,
+  (newType, oldType) => {
+    if (oldType === 'wave' || oldType === 'wave-circle') {
+      stopWaveAnimation();
+    }
+    if (newType === 'wave' || newType === 'wave-circle') {
+      startWaveAnimation();
+    }
   }
-  if (newType === 'wave' || newType === 'wave-circle') {
-    startWaveAnimation();
-  }
-});
+);
 
 // 监听进度变化，更新波浪
-watch(() => props.percentage, () => {
-  if (props.type === 'wave' || props.type === 'wave-circle') {
-    updateWaveAnimation();
+watch(
+  () => props.percentage,
+  () => {
+    if (props.type === 'wave' || props.type === 'wave-circle') {
+      updateWaveAnimation();
+    }
   }
-});
+);
 
 // 监听动画开关
-watch(() => props.waveAnimated, (newValue) => {
-  if (newValue) {
-    startWaveAnimation();
-  } else {
-    stopWaveAnimation();
+watch(
+  () => props.waveAnimated,
+  newValue => {
+    if (newValue) {
+      startWaveAnimation();
+    } else {
+      stopWaveAnimation();
+    }
   }
-});
+);
 
 // 方法
 const getElement = () => progressRef.value || null;

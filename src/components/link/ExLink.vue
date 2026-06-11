@@ -15,10 +15,7 @@
       class="ex-link__icon ex-link__icon--left"
     >
       <slot name="prefix">
-        <slot
-          v-if="iconPlacement === 'left'"
-          name="icon"
-        />
+        <slot v-if="iconPlacement === 'left'" name="icon" />
       </slot>
     </span>
 
@@ -33,20 +30,14 @@
       class="ex-link__icon ex-link__icon--right"
     >
       <slot name="suffix">
-        <slot
-          v-if="iconPlacement === 'right'"
-          name="icon"
-        />
+        <slot v-if="iconPlacement === 'right'" name="icon" />
       </slot>
     </span>
 
     <!-- 外部链接图标 -->
-    <span
-      v-if="isExternalLink && showExternalIcon"
-      class="ex-link__external-icon"
-    >
+    <span v-if="isExternalLink && showExternalIcon" class="ex-link__external-icon">
       <slot name="external-icon">
-        <ex-icon src="https://api.iconify.design/ri/external-link-line.svg" />
+        <ex-icon icon="external-link-line" />
       </slot>
     </span>
   </component>
@@ -86,11 +77,7 @@ const linkComponent = computed(() => {
 });
 
 const linkClasses = computed(() => {
-  const classes = [
-    'ex-link',
-    `ex-link--${props.type}`,
-    `ex-link--${props.size}`,
-  ];
+  const classes = ['ex-link', `ex-link--${props.type}`, `ex-link--${props.size}`];
 
   if (props.disabled) classes.push('ex-link--disabled');
   if (!props.underline) classes.push('ex-link--no-underline');

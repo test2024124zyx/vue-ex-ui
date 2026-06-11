@@ -7,17 +7,10 @@
     :aria-describedby="ariaDescribedBy"
   >
     <!-- 标签 -->
-    <label
-      v-if="label || $slots.label"
-      :id="labelId"
-      class="ex-checkbox-group__label"
-    >
+    <label v-if="label || $slots.label" :id="labelId" class="ex-checkbox-group__label">
       <slot name="label">
         {{ label }}
-        <span
-          v-if="required"
-          class="ex-checkbox-group__required"
-        >*</span>
+        <span v-if="required" class="ex-checkbox-group__required">*</span>
       </slot>
     </label>
 
@@ -27,16 +20,9 @@
     </div>
 
     <!-- 底部信息 -->
-    <div
-      v-if="showBottomInfo"
-      class="ex-checkbox-group__bottom"
-    >
+    <div v-if="showBottomInfo" class="ex-checkbox-group__bottom">
       <!-- 帮助文本 -->
-      <div
-        v-if="helpText || $slots.help"
-        :id="`${groupId}-help`"
-        class="ex-checkbox-group__help"
-      >
+      <div v-if="helpText || $slots.help" :id="`${groupId}-help`" class="ex-checkbox-group__help">
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -51,11 +37,7 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon
-            src="https://api.iconify.design/ri/error-warning-line.svg"
-            :size="14"
-            class="ex-checkbox-group__error-icon"
-          />
+          <ex-icon icon="error-warning-line" :size="14" class="ex-checkbox-group__error-icon" />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -204,7 +186,7 @@ const validateGroup = (value: Array<string | number>) => {
 // 监听错误信息变化
 watch(
   () => props.errorMessage,
-  (newError) => {
+  newError => {
     if (newError) {
       currentErrorMessage.value = newError;
     }
@@ -227,9 +209,7 @@ provide('checkboxGroup', {
 const checkAll = () => {
   if (props.disabled || props.readonly || !props.options) return;
 
-  const allValues = props.options
-    .filter((option) => !option.disabled)
-    .map((option) => option.value);
+  const allValues = props.options.filter(option => !option.disabled).map(option => option.value);
 
   emit('update:modelValue', allValues);
   emit('change', allValues);
@@ -245,12 +225,9 @@ const uncheckAll = () => {
 const toggleAll = () => {
   if (props.disabled || props.readonly || !props.options) return;
 
-  const allValues = props.options
-    .filter((option) => !option.disabled)
-    .map((option) => option.value);
+  const allValues = props.options.filter(option => !option.disabled).map(option => option.value);
 
-  const newValue =
-    props.modelValue.length === allValues.length ? [] : allValues;
+  const newValue = props.modelValue.length === allValues.length ? [] : allValues;
 
   emit('update:modelValue', newValue);
   emit('change', newValue);

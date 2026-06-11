@@ -1,17 +1,9 @@
 <template>
-  <div
-    ref="tabsRef"
-    :class="tabsClasses"
-    :style="tabsStyles"
-  >
+  <div ref="tabsRef" :class="tabsClasses" :style="tabsStyles">
     <!-- 标签页导航 -->
     <div :class="`ex-tabs__nav-wrap ex-tabs__nav-wrap--${position}`">
       <div class="ex-tabs__nav-scroll">
-        <div
-          ref="navRef"
-          class="ex-tabs__nav"
-          role="tablist"
-        >
+        <div ref="navRef" class="ex-tabs__nav" role="tablist">
           <!-- 标签页项 -->
           <div
             v-for="pane in panes"
@@ -26,10 +18,7 @@
             @keydown.space.prevent="handleTabClick(pane, $event)"
           >
             <!-- 标签页图标插槽 -->
-            <div
-              v-if="$slots[`icon-${pane.name}`]"
-              class="ex-tabs__tab-icon"
-            >
+            <div v-if="$slots[`icon-${pane.name}`]" class="ex-tabs__tab-icon">
               <slot :name="`icon-${pane.name}`" />
             </div>
 
@@ -46,12 +35,7 @@
               class="ex-tabs__tab-close"
               @click.stop="handleTabRemove(pane.name)"
             >
-              <img 
-                src="https://api.iconify.design/ri/close-line.svg" 
-                alt="关闭" 
-                width="14" 
-                height="14"
-              >
+              <ExIcon icon="close-line" :size="14" aria-hidden="true" />
             </div>
           </div>
 
@@ -61,12 +45,7 @@
             class="ex-tabs__tab ex-tabs__tab--add"
             @click="handleTabAdd"
           >
-            <img 
-              src="https://api.iconify.design/ri/add-line.svg" 
-              alt="添加" 
-              width="16" 
-              height="16"
-            >
+            <ExIcon icon="add-line" :size="16" aria-hidden="true" />
           </div>
 
           <!-- 激活指示器 -->
@@ -88,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, provide, watch, nextTick, onMounted } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
 
@@ -209,7 +189,7 @@ const handleTabClick = (pane: PaneInfo, event: MouseEvent | KeyboardEvent) => {
   activeTab.value = pane.name;
   emit('update:modelValue', pane.name);
   emit('change', pane.name);
-  
+
   // 只有 MouseEvent 才触发 tab-click 事件
   if (event instanceof MouseEvent) {
     emit('tab-click', pane.name, event);
@@ -238,10 +218,13 @@ const handleTabAdd = () => {
 };
 
 // 监听
-watch(() => props.modelValue, (val) => {
-  activeTab.value = val;
-  updateIndicator();
-});
+watch(
+  () => props.modelValue,
+  val => {
+    activeTab.value = val;
+    updateIndicator();
+  }
+);
 
 watch(activeTab, () => {
   updateIndicator();

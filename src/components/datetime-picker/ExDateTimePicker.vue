@@ -1,10 +1,5 @@
 <template>
-  <div
-    ref="pickerRef"
-    :class="pickerClasses"
-    :style="pickerStyles"
-    @click="handleClick"
-  >
+  <div ref="pickerRef" :class="pickerClasses" :style="pickerStyles" @click="handleClick">
     <!-- 输入框 -->
     <div class="ex-datetime-picker__input-wrapper">
       <input
@@ -17,8 +12,8 @@
         class="ex-datetime-picker__input"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
-      
+      />
+
       <!-- 图标 -->
       <div class="ex-datetime-picker__icons">
         <!-- 清除按钮 -->
@@ -29,33 +24,19 @@
           :aria-label="t('clear')"
           @click.stop="handleClear"
         >
-          <img
-            src="https://api.iconify.design/ri/close-circle-line.svg"
-            alt="clear"
-            width="16"
-            height="16"
-          >
+          <ExIcon icon="close-circle-line" :size="16" aria-hidden="true" />
         </button>
-        
+
         <!-- 日历图标 -->
         <div class="ex-datetime-picker__icon">
-          <img
-            src="https://api.iconify.design/ri/calendar-line.svg"
-            alt="calendar"
-            width="16"
-            height="16"
-          >
+          <ExIcon icon="calendar-line" :size="16" aria-hidden="true" />
         </div>
       </div>
     </div>
 
     <!-- 下拉面板 -->
     <transition name="ex-datetime-picker-dropdown">
-      <div
-        v-if="isOpen"
-        class="ex-datetime-picker__dropdown"
-        @click.stop
-      >
+      <div v-if="isOpen" class="ex-datetime-picker__dropdown" @click.stop>
         <!-- 日期选择面板 -->
         <div class="ex-datetime-picker__panel">
           <!-- 头部 -->
@@ -66,12 +47,7 @@
               :aria-label="t('prevYear')"
               @click="changeYear(-1)"
             >
-              <img
-                src="https://api.iconify.design/ri/arrow-left-double-line.svg"
-                alt="prev year"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="arrow-left-double-line" :size="16" aria-hidden="true" />
             </button>
             <button
               class="ex-datetime-picker__nav-btn"
@@ -79,30 +55,20 @@
               :aria-label="t('prevMonth')"
               @click="changeMonth(-1)"
             >
-              <img
-                src="https://api.iconify.design/ri/arrow-left-s-line.svg"
-                alt="prev month"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
             </button>
-            
+
             <div class="ex-datetime-picker__current">
               {{ currentYearMonth }}
             </div>
-            
+
             <button
               class="ex-datetime-picker__nav-btn"
               type="button"
               :aria-label="t('nextMonth')"
               @click="changeMonth(1)"
             >
-              <img
-                src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-                alt="next month"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
             </button>
             <button
               class="ex-datetime-picker__nav-btn"
@@ -110,22 +76,13 @@
               :aria-label="t('nextYear')"
               @click="changeYear(1)"
             >
-              <img
-                src="https://api.iconify.design/ri/arrow-right-double-line.svg"
-                alt="next year"
-                width="16"
-                height="16"
-              >
+              <ExIcon icon="arrow-right-double-line" :size="16" aria-hidden="true" />
             </button>
           </div>
 
           <!-- 星期标题 -->
           <div class="ex-datetime-picker__weekdays">
-            <div
-              v-for="day in weekdays"
-              :key="day"
-              class="ex-datetime-picker__weekday"
-            >
+            <div v-for="day in weekdays" :key="day" class="ex-datetime-picker__weekday">
               {{ day }}
             </div>
           </div>
@@ -139,7 +96,7 @@
               :disabled="day.disabled"
               type="button"
               @click="selectDate(day.date)"
-              @mouseenter="isRangeMode && rangeStart && !rangeEnd ? hoverDate = day.date : null"
+              @mouseenter="isRangeMode && rangeStart && !rangeEnd ? (hoverDate = day.date) : null"
               @mouseleave="hoverDate = null"
             >
               {{ day.day }}
@@ -155,10 +112,7 @@
               {{ isRangeMode ? '选择时间' : '选择时间' }}
             </div>
             <div class="ex-datetime-picker__time-inputs">
-              <div
-                v-if="!isRangeMode || rangeStart"
-                class="ex-datetime-picker__time-input-group"
-              >
+              <div v-if="!isRangeMode || rangeStart" class="ex-datetime-picker__time-input-group">
                 <label v-if="isRangeMode">开始时间</label>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
@@ -170,7 +124,7 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
-                  >
+                  />
                   <span>:</span>
                   <input
                     v-model.number="minutes"
@@ -181,7 +135,7 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
-                  >
+                  />
                   <span>:</span>
                   <input
                     v-model.number="seconds"
@@ -192,13 +146,10 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
-                  >
+                  />
                 </div>
               </div>
-              <div
-                v-if="isRangeMode && rangeEnd"
-                class="ex-datetime-picker__time-input-group"
-              >
+              <div v-if="isRangeMode && rangeEnd" class="ex-datetime-picker__time-input-group">
                 <label>结束时间</label>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
@@ -210,7 +161,7 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
-                  >
+                  />
                   <span>:</span>
                   <input
                     v-model.number="endMinutes"
@@ -221,7 +172,7 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
-                  >
+                  />
                   <span>:</span>
                   <input
                     v-model.number="endSeconds"
@@ -232,7 +183,7 @@
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
-                  >
+                  />
                 </div>
               </div>
             </div>
@@ -248,11 +199,7 @@
             >
               {{ t('today') }}
             </button>
-            <button
-              class="ex-datetime-picker__confirm-btn"
-              type="button"
-              @click="handleConfirm"
-            >
+            <button class="ex-datetime-picker__confirm-btn" type="button" @click="handleConfirm">
               {{ t('confirm') }}
             </button>
           </div>
@@ -263,8 +210,13 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import type { ExDateTimePickerProps, ExDateTimePickerEmits, ExDateTimePickerExposed } from './types';
+import type {
+  ExDateTimePickerProps,
+  ExDateTimePickerEmits,
+  ExDateTimePickerExposed,
+} from './types';
 import { useLocale } from '../../locale';
 
 defineOptions({
@@ -315,10 +267,7 @@ const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
 // 计算属性
 const pickerClasses = computed(() => {
-  const classes = [
-    'ex-datetime-picker',
-    `ex-datetime-picker--${props.size}`,
-  ];
+  const classes = ['ex-datetime-picker', `ex-datetime-picker--${props.size}`];
 
   if (props.disabled) classes.push('ex-datetime-picker--disabled');
   if (isOpen.value) classes.push('ex-datetime-picker--open');
@@ -353,10 +302,11 @@ const currentPlaceholder = computed(() => {
 });
 
 const displayValue = computed(() => {
-  const format = props.type === 'datetime' || props.type === 'datetimerange' 
-    ? 'YYYY-MM-DD HH:mm:ss' 
-    : props.format;
-    
+  const format =
+    props.type === 'datetime' || props.type === 'datetimerange'
+      ? 'YYYY-MM-DD HH:mm:ss'
+      : props.format;
+
   if (isRangeMode.value) {
     if (!rangeStart.value && !rangeEnd.value) return '';
     const start = rangeStart.value ? formatDate(rangeStart.value, format) : '';
@@ -377,18 +327,18 @@ const currentYearMonth = computed(() => {
 const calendarDays = computed(() => {
   const year = currentDate.value.getFullYear();
   const month = currentDate.value.getMonth();
-  
+
   // 当月第一天
   const firstDay = new Date(year, month, 1);
   const firstDayWeek = firstDay.getDay();
-  
+
   // 当月最后一天
   const lastDay = new Date(year, month + 1, 0);
   const lastDayDate = lastDay.getDate();
-  
+
   // 上月最后几天
   const prevMonthLastDay = new Date(year, month, 0).getDate();
-  
+
   const days: Array<{
     date: Date;
     day: number;
@@ -398,7 +348,7 @@ const calendarDays = computed(() => {
     disabled: boolean;
     key: string;
   }> = [];
-  
+
   // 上月日期
   for (let i = firstDayWeek - 1; i >= 0; i--) {
     const day = prevMonthLastDay - i;
@@ -413,32 +363,32 @@ const calendarDays = computed(() => {
       key: `prev-${day}`,
     });
   }
-  
+
   // 当月日期
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   for (let day = 1; day <= lastDayDate; day++) {
     const date = new Date(year, month, day);
     const isToday = date.getTime() === today.getTime();
-    
+
     let isSelected = false;
     if (isRangeMode.value) {
       const dateTime = date.getTime();
       const startTime = rangeStart.value ? new Date(rangeStart.value).setHours(0, 0, 0, 0) : null;
       const endTime = rangeEnd.value ? new Date(rangeEnd.value).setHours(0, 0, 0, 0) : null;
-      
+
       if (startTime && endTime) {
         isSelected = dateTime >= startTime && dateTime <= endTime;
       } else if (startTime) {
         isSelected = dateTime === startTime;
       }
     } else {
-      isSelected = selectedDate.value ? 
-        date.getTime() === new Date(selectedDate.value).setHours(0, 0, 0, 0) : 
-        false;
+      isSelected = selectedDate.value
+        ? date.getTime() === new Date(selectedDate.value).setHours(0, 0, 0, 0)
+        : false;
     }
-    
+
     days.push({
       date,
       day,
@@ -449,7 +399,7 @@ const calendarDays = computed(() => {
       key: `current-${day}`,
     });
   }
-  
+
   // 下月日期
   const remainingDays = 42 - days.length; // 6行 x 7列
   for (let day = 1; day <= remainingDays; day++) {
@@ -464,7 +414,7 @@ const calendarDays = computed(() => {
       key: `next-${day}`,
     });
   }
-  
+
   return days;
 });
 
@@ -476,7 +426,7 @@ const formatDate = (date: Date, format: string): string => {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
-  
+
   return format
     .replace('YYYY', String(year))
     .replace('MM', month)
@@ -498,36 +448,36 @@ interface CalendarDay {
 
 const getDayClasses = (day: CalendarDay) => {
   const classes = ['ex-datetime-picker__day'];
-  
+
   if (!day.isCurrentMonth) classes.push('ex-datetime-picker__day--other-month');
   if (day.isToday) classes.push('ex-datetime-picker__day--today');
   if (day.isSelected) classes.push('ex-datetime-picker__day--selected');
   if (day.disabled) classes.push('ex-datetime-picker__day--disabled');
-  
+
   // 范围选择模式的额外样式
   if (isRangeMode.value && rangeStart.value) {
     const dateTime = day.date.getTime();
     const startTime = new Date(rangeStart.value).setHours(0, 0, 0, 0);
     const endTime = rangeEnd.value ? new Date(rangeEnd.value).setHours(0, 0, 0, 0) : null;
     const hoverTime = hoverDate.value ? new Date(hoverDate.value).setHours(0, 0, 0, 0) : null;
-    
+
     // 范围起始
     if (dateTime === startTime) {
       classes.push('ex-datetime-picker__day--range-start');
     }
-    
+
     // 范围结束
     if (endTime && dateTime === endTime) {
       classes.push('ex-datetime-picker__day--range-end');
     }
-    
+
     // 范围中间（包括悬停预览）
     const effectiveEndTime = endTime || hoverTime;
     if (effectiveEndTime && dateTime > startTime && dateTime < effectiveEndTime) {
       classes.push('ex-datetime-picker__day--in-range');
     }
   }
-  
+
   return classes;
 };
 
@@ -567,7 +517,7 @@ const updateTime = () => {
   hours.value = validateHours(hours.value);
   minutes.value = validateMinutes(minutes.value);
   seconds.value = validateSeconds(seconds.value);
-  
+
   if (selectedDate.value) {
     const newDate = new Date(selectedDate.value);
     newDate.setHours(hours.value);
@@ -589,7 +539,7 @@ const updateEndTime = () => {
   endHours.value = validateHours(endHours.value);
   endMinutes.value = validateMinutes(endMinutes.value);
   endSeconds.value = validateSeconds(endSeconds.value);
-  
+
   if (isRangeMode.value && rangeEnd.value) {
     const newDate = new Date(rangeEnd.value);
     newDate.setHours(endHours.value);
@@ -601,7 +551,7 @@ const updateEndTime = () => {
 
 const selectDate = (date: Date) => {
   if (props.disabledDate && props.disabledDate(date)) return;
-  
+
   if (isRangeMode.value) {
     // 范围选择模式
     if (!rangeStart.value || (rangeStart.value && rangeEnd.value)) {
@@ -613,7 +563,7 @@ const selectDate = (date: Date) => {
       rangeStart.value = newDate;
       rangeEnd.value = null;
       hoverDate.value = null;
-      
+
       // 不自动关闭，等待选择结束日期
     } else {
       // 选择结束日期
@@ -622,7 +572,7 @@ const selectDate = (date: Date) => {
       endDate.setHours(endHours.value || 23);
       endDate.setMinutes(endMinutes.value || 59);
       endDate.setSeconds(endSeconds.value || 59);
-      
+
       if (endDate < startDate) {
         // 如果选择的日期早于开始日期，交换它们
         [startDate, endDate] = [endDate, startDate];
@@ -631,7 +581,7 @@ const selectDate = (date: Date) => {
       } else {
         rangeEnd.value = endDate;
       }
-      
+
       // 只有在不显示时间选择器或用户点击确认时才发送值
       if (!props.showTime && props.type !== 'datetimerange') {
         emit('update:modelValue', [rangeStart.value, rangeEnd.value]);
@@ -646,7 +596,7 @@ const selectDate = (date: Date) => {
     newDate.setMinutes(minutes.value || 0);
     newDate.setSeconds(seconds.value || 0);
     selectedDate.value = newDate;
-    
+
     if (!props.showTime && props.type !== 'datetime') {
       emit('update:modelValue', newDate);
       emit('change', newDate);
@@ -709,38 +659,42 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 // 监听 modelValue 变化
-watch(() => props.modelValue, (newValue) => {
-  if (isRangeMode.value) {
-    if (Array.isArray(newValue) && newValue.length === 2) {
-      rangeStart.value = newValue[0];
-      rangeEnd.value = newValue[1];
-      if (newValue[0]) {
-        currentDate.value = new Date(newValue[0]);
-        hours.value = newValue[0].getHours();
-        minutes.value = newValue[0].getMinutes();
-        seconds.value = newValue[0].getSeconds();
-      }
-      if (newValue[1]) {
-        endHours.value = newValue[1].getHours();
-        endMinutes.value = newValue[1].getMinutes();
-        endSeconds.value = newValue[1].getSeconds();
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (isRangeMode.value) {
+      if (Array.isArray(newValue) && newValue.length === 2) {
+        rangeStart.value = newValue[0];
+        rangeEnd.value = newValue[1];
+        if (newValue[0]) {
+          currentDate.value = new Date(newValue[0]);
+          hours.value = newValue[0].getHours();
+          minutes.value = newValue[0].getMinutes();
+          seconds.value = newValue[0].getSeconds();
+        }
+        if (newValue[1]) {
+          endHours.value = newValue[1].getHours();
+          endMinutes.value = newValue[1].getMinutes();
+          endSeconds.value = newValue[1].getSeconds();
+        }
+      } else {
+        rangeStart.value = null;
+        rangeEnd.value = null;
       }
     } else {
-      rangeStart.value = null;
-      rangeEnd.value = null;
+      if (newValue instanceof Date) {
+        selectedDate.value = newValue;
+        currentDate.value = new Date(newValue);
+        hours.value = newValue.getHours();
+        minutes.value = newValue.getMinutes();
+        seconds.value = newValue.getSeconds();
+      } else {
+        selectedDate.value = null;
+      }
     }
-  } else {
-    if (newValue instanceof Date) {
-      selectedDate.value = newValue;
-      currentDate.value = new Date(newValue);
-      hours.value = newValue.getHours();
-      minutes.value = newValue.getMinutes();
-      seconds.value = newValue.getSeconds();
-    } else {
-      selectedDate.value = null;
-    }
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
 // 生命周期
 onMounted(() => {

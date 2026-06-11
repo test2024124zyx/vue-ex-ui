@@ -1,14 +1,7 @@
 <template>
-  <div
-    ref="heatmapRef"
-    :class="heatmapClasses"
-    :style="heatmapStyles"
-  >
+  <div ref="heatmapRef" :class="heatmapClasses" :style="heatmapStyles">
     <!-- 月份标签 -->
-    <div
-      v-if="showMonthLabels"
-      class="ex-heatmap__months"
-    >
+    <div v-if="showMonthLabels" class="ex-heatmap__months">
       <div
         v-for="(month, index) in monthLabels"
         :key="index"
@@ -22,26 +15,15 @@
     <!-- 热力图主体 -->
     <div class="ex-heatmap__body">
       <!-- 星期标签 -->
-      <div
-        v-if="showWeekLabels"
-        class="ex-heatmap__weeks"
-      >
-        <div
-          v-for="(week, index) in weekLabels"
-          :key="index"
-          class="ex-heatmap__week-label"
-        >
+      <div v-if="showWeekLabels" class="ex-heatmap__weeks">
+        <div v-for="(week, index) in weekLabels" :key="index" class="ex-heatmap__week-label">
           {{ week }}
         </div>
       </div>
 
       <!-- 热力图网格 -->
       <div class="ex-heatmap__grid">
-        <div
-          v-for="(week, weekIndex) in gridData"
-          :key="weekIndex"
-          class="ex-heatmap__column"
-        >
+        <div v-for="(week, weekIndex) in gridData" :key="weekIndex" class="ex-heatmap__column">
           <div
             v-for="(day, dayIndex) in week"
             :key="dayIndex"
@@ -52,10 +34,7 @@
             @mouseenter="handleCellHover(day)"
             @mouseleave="handleCellHover(null)"
           >
-            <div
-              v-if="showTooltip && hoveredCell === day"
-              class="ex-heatmap__tooltip"
-            >
+            <div v-if="showTooltip && hoveredCell === day" class="ex-heatmap__tooltip">
               <div class="ex-heatmap__tooltip-date">
                 {{ formatDate(day.date) }}
               </div>
@@ -81,18 +60,14 @@
     </div>
 
     <!-- 空数据 -->
-    <div
-      v-if="data.length === 0"
-      class="ex-heatmap__empty"
-    >
+    <div v-if="data.length === 0" class="ex-heatmap__empty">
       <slot name="empty">
-        <img 
-          src="https://api.iconify.design/ri/calendar-line.svg" 
-          alt="空" 
-          width="48" 
-          height="48"
-          style="opacity: 0.3; margin-bottom: 12px;"
-        >
+        <ExIcon
+          icon="calendar-line"
+          :size="48"
+          style="opacity: 0.3; margin-bottom: 12px"
+          aria-hidden="true"
+        />
         <p>{{ emptyText || t('empty') }}</p>
       </slot>
     </div>
@@ -100,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
 import type { ExHeatmapProps, ExHeatmapEmits, ExHeatmapExposed, HeatmapDataItem } from './types';
 import { useLocale } from '../../locale';
@@ -126,11 +102,7 @@ const { t } = useLocale('heatmap');
 
 // 计算属性
 const heatmapClasses = computed(() => {
-  const classes = [
-    'ex-heatmap',
-    `ex-heatmap--${props.size}`,
-    `ex-heatmap--${props.theme}`,
-  ];
+  const classes = ['ex-heatmap', `ex-heatmap--${props.size}`, `ex-heatmap--${props.theme}`];
 
   if (props.class) {
     if (typeof props.class === 'string') {
@@ -156,8 +128,8 @@ const heatmapStyles = computed(() => {
 // 计算日期范围
 const dateRange = computed(() => {
   const end = props.endDate ? new Date(props.endDate) : new Date();
-  const start = props.startDate 
-    ? new Date(props.startDate) 
+  const start = props.startDate
+    ? new Date(props.startDate)
     : new Date(end.getTime() - 364 * 24 * 60 * 60 * 1000); // 默认显示一年
 
   return { start, end };
@@ -284,10 +256,10 @@ const formatDateStr = (date: Date) => {
 // 格式化日期显示
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('zh-CN', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 };
 

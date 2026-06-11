@@ -1,21 +1,11 @@
 <template>
-  <span
-    v-if="!isEditing"
-    :class="buttonClasses"
-    @click="startEdit"
-  >
+  <span v-if="!isEditing" :class="buttonClasses" @click="startEdit">
     <slot name="icon">
-      <ExIcon
-        src="https://api.iconify.design/ri/add-line.svg"
-        :size="iconSize"
-      />
+      <ExIcon icon="add-line" :size="iconSize" />
     </slot>
     <span class="ex-tag-input__text">{{ buttonTextComputed }}</span>
   </span>
-  <span
-    v-else
-    class="ex-tag-input__wrapper"
-  >
+  <span v-else class="ex-tag-input__wrapper">
     <input
       ref="inputRef"
       v-model="inputValue"
@@ -25,26 +15,20 @@
       @blur="handleBlur"
       @keyup.enter="handleConfirm"
       @keyup.esc="handleCancel"
-    >
+    />
     <span
       class="ex-tag-input__action ex-tag-input__action--confirm"
       :title="t('tag.confirm')"
       @click="handleConfirm"
     >
-      <ExIcon
-        src="https://api.iconify.design/ri/check-line.svg"
-        :size="14"
-      />
+      <ExIcon icon="check-line" :size="14" />
     </span>
     <span
       class="ex-tag-input__action ex-tag-input__action--cancel"
       :title="t('tag.cancel')"
       @click="handleCancel"
     >
-      <ExIcon
-        src="https://api.iconify.design/ri/close-line.svg"
-        :size="14"
-      />
+      <ExIcon icon="close-line" :size="14" />
     </span>
   </span>
 </template>

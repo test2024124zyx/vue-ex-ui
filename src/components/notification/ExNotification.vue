@@ -1,8 +1,5 @@
 <template>
-  <Transition
-    name="ex-notification-fade"
-    @after-leave="handleAfterLeave"
-  >
+  <Transition name="ex-notification-fade" @after-leave="handleAfterLeave">
     <div
       v-show="visible"
       ref="notificationRef"
@@ -13,44 +10,26 @@
       @click="handleClick"
     >
       <!-- 图标 -->
-      <div
-        v-if="showIcon"
-        class="ex-notification__icon"
-        :class="iconClasses"
-      >
+      <div v-if="showIcon" class="ex-notification__icon" :class="iconClasses">
         <slot name="icon">
-          <img
-            :src="defaultIconUrl"
-            :alt="type"
-            width="24"
-            height="24"
-          >
+          <ExIcon :icon="defaultIcon" :size="24" aria-hidden="true" />
         </slot>
       </div>
 
       <!-- 内容区域 -->
       <div class="ex-notification__content">
         <!-- 标题 -->
-        <div
-          v-if="title"
-          class="ex-notification__title"
-        >
+        <div v-if="title" class="ex-notification__title">
           <slot name="title">
             {{ title }}
           </slot>
         </div>
 
         <!-- 描述内容 -->
-        <div
-          v-if="content"
-          class="ex-notification__description"
-        >
+        <div v-if="content" class="ex-notification__description">
           <slot>
             <!-- 使用 sanitizeHtml 消毒后的内容，已防止 XSS 攻击 -->
-            <span
-              v-if="dangerouslyUseHTMLString"
-              v-html="sanitizedContent"
-            />
+            <span v-if="dangerouslyUseHTMLString" v-html="sanitizedContent" />
             <span v-else>{{ content }}</span>
           </slot>
         </div>
@@ -68,12 +47,7 @@
         @keydown.space.prevent="handleClose"
       >
         <slot name="close">
-          <img
-            :src="defaultCloseIconUrl"
-            alt="close"
-            width="16"
-            height="16"
-          >
+          <ExIcon icon="close-line" :size="16" aria-hidden="true" />
         </slot>
       </div>
     </div>
@@ -85,6 +59,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { ExNotificationProps, ExNotificationEmits } from './types';
 import { useI18n } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
   name: 'ExNotification',
@@ -118,21 +93,18 @@ const visible = ref(false);
 // 定时器
 let timer: number | undefined;
 
-// 默认图标映射
+// 默认图标映射（内置 SVG 图标名）
 const defaultIconMap: Record<string, string> = {
-  info: 'https://api.iconify.design/ri/information-line.svg',
-  success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
-  warning: 'https://api.iconify.design/ri/error-warning-line.svg',
-  error: 'https://api.iconify.design/ri/close-circle-line.svg',
+  info: 'information-line',
+  success: 'checkbox-circle-line',
+  warning: 'error-warning-line',
+  error: 'close-circle-line',
 };
 
-// 默认图标 URL
-const defaultIconUrl = computed(() => {
+// 默认图标名
+const defaultIcon = computed(() => {
   return defaultIconMap[props.type];
 });
-
-// 默认关闭图标 URL
-const defaultCloseIconUrl = 'https://api.iconify.design/ri/close-line.svg';
 
 // 消毒后的 HTML 内容（防止 XSS 攻击）
 const sanitizedContent = computed(() => {

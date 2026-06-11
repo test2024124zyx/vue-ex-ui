@@ -1,20 +1,10 @@
 <template>
-  <div
-    ref="tableRef"
-    :class="tableClasses"
-    :style="tableStyles"
-  >
+  <div ref="tableRef" :class="tableClasses" :style="tableStyles">
     <!-- 表格容器 -->
-    <div
-      class="ex-table__container"
-      :style="containerStyle"
-    >
+    <div class="ex-table__container" :style="containerStyle">
       <table class="ex-table__main">
         <!-- 表头 -->
-        <thead
-          v-if="showHeader"
-          class="ex-table__header"
-        >
+        <thead v-if="showHeader" class="ex-table__header">
           <tr>
             <th
               v-for="(column, colIndex) in columns"
@@ -25,41 +15,32 @@
             >
               <div class="ex-table__cell">
                 <span class="ex-table__cell-content">
-                  <slot
-                    :name="`header-${column.key}`"
-                    :column="column"
-                  >
+                  <slot :name="`header-${column.key}`" :column="column">
                     {{ column.title }}
                   </slot>
                 </span>
-                
+
                 <!-- 排序图标 -->
-                <span
-                  v-if="column.sortable"
-                  class="ex-table__sort-icon"
-                >
-                  <img 
+                <span v-if="column.sortable" class="ex-table__sort-icon">
+                  <ExIcon
                     v-if="getSortOrder(column.key) === 'asc'"
-                    src="https://api.iconify.design/ri/arrow-up-line.svg" 
-                    alt="升序" 
-                    width="14" 
-                    height="14"
-                  >
-                  <img 
+                    icon="arrow-up-line"
+                    :size="14"
+                    aria-hidden="true"
+                  />
+                  <ExIcon
                     v-else-if="getSortOrder(column.key) === 'desc'"
-                    src="https://api.iconify.design/ri/arrow-down-line.svg" 
-                    alt="降序" 
-                    width="14" 
-                    height="14"
-                  >
-                  <img 
+                    icon="arrow-down-line"
+                    :size="14"
+                    aria-hidden="true"
+                  />
+                  <ExIcon
                     v-else
-                    src="https://api.iconify.design/ri/arrow-up-down-line.svg" 
-                    alt="排序" 
-                    width="14" 
-                    height="14"
+                    icon="arrow-up-down-line"
+                    :size="14"
                     style="opacity: 0.3"
-                  >
+                    aria-hidden="true"
+                  />
                 </span>
               </div>
             </th>
@@ -96,23 +77,16 @@
           </tr>
 
           <!-- 空数据 -->
-          <tr
-            v-if="sortedData.length === 0"
-            class="ex-table__empty-row"
-          >
-            <td
-              :colspan="columns.length"
-              class="ex-table__empty-cell"
-            >
+          <tr v-if="sortedData.length === 0" class="ex-table__empty-row">
+            <td :colspan="columns.length" class="ex-table__empty-cell">
               <div class="ex-table__empty">
                 <slot name="empty">
-                  <img 
-                    src="https://api.iconify.design/ri/inbox-line.svg" 
-                    alt="空" 
-                    width="48" 
-                    height="48"
-                    style="opacity: 0.3; margin-bottom: 12px;"
-                  >
+                  <ExIcon
+                    icon="inbox-line"
+                    :size="48"
+                    style="opacity: 0.3; margin-bottom: 12px"
+                    aria-hidden="true"
+                  />
                   <p>{{ emptyText || t('empty') }}</p>
                 </slot>
               </div>
@@ -123,18 +97,23 @@
     </div>
 
     <!-- 加载遮罩 -->
-    <div
-      v-if="loading"
-      class="ex-table__loading"
-    >
+    <div v-if="loading" class="ex-table__loading">
       <div class="ex-table__loading-spinner" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
-import type { ExTableProps, ExTableEmits, ExTableExposed, TableColumn, TableDataItem, TableSortInfo } from './types';
+import type {
+  ExTableProps,
+  ExTableEmits,
+  ExTableExposed,
+  TableColumn,
+  TableDataItem,
+  TableSortInfo,
+} from './types';
 import { useLocale } from '../../locale';
 
 defineOptions({
@@ -160,11 +139,7 @@ const sortInfo = ref<TableSortInfo>({ key: '', order: null });
 
 // 计算属性
 const tableClasses = computed(() => {
-  const classes = [
-    'ex-table',
-    `ex-table--${props.size}`,
-    `ex-table--layout-${props.layout}`,
-  ];
+  const classes = ['ex-table', `ex-table--${props.size}`, `ex-table--layout-${props.layout}`];
 
   if (props.bordered) classes.push('ex-table--bordered');
   if (props.striped) classes.push('ex-table--striped');
@@ -195,9 +170,8 @@ const tableStyles = computed(() => {
 const containerStyle = computed(() => {
   const styles: Record<string, string> = {};
   if (props.maxHeight) {
-    styles.maxHeight = typeof props.maxHeight === 'number' 
-      ? `${props.maxHeight}px` 
-      : props.maxHeight;
+    styles.maxHeight =
+      typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight;
     styles.overflowY = 'auto';
   }
   return styles;
@@ -240,24 +214,21 @@ const lastAutoWidthColumnIndex = computed(() => {
 const getColumnStyle = (column: TableColumn, index?: number) => {
   const styles: Record<string, string> = {};
   if (column.width) {
-    styles.width = typeof column.width === 'number' 
-      ? `${column.width}px` 
-      : column.width;
+    styles.width = typeof column.width === 'number' ? `${column.width}px` : column.width;
   } else if (index === lastAutoWidthColumnIndex.value) {
     // 最后一个没有指定宽度的列，设置为 100% 以填充剩余空间
     styles.width = '100%';
   }
   if (column.minWidth) {
-    styles.minWidth = typeof column.minWidth === 'number' 
-      ? `${column.minWidth}px` 
-      : column.minWidth;
+    styles.minWidth =
+      typeof column.minWidth === 'number' ? `${column.minWidth}px` : column.minWidth;
   }
   return styles;
 };
 
 const getRowKey = (record: TableDataItem, index: number): string | number => {
-  const value = record[props.rowKey]
-  return (typeof value === 'string' || typeof value === 'number') ? value : index;
+  const value = record[props.rowKey];
+  return typeof value === 'string' || typeof value === 'number' ? value : index;
 };
 
 const getCellValue = (record: TableDataItem, column: TableColumn) => {
@@ -295,9 +266,7 @@ const sortedData = computed(() => {
 
     const aStr = String(aVal);
     const bStr = String(bVal);
-    return sortInfo.value.order === 'asc' 
-      ? aStr.localeCompare(bStr) 
-      : bStr.localeCompare(aStr);
+    return sortInfo.value.order === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
   });
 
   return sorted;

@@ -9,18 +9,11 @@
     >
       <!-- 遮罩层 -->
       <Transition name="ex-drawer-mask-fade">
-        <div
-          v-if="visible && mask"
-          class="ex-drawer-mask"
-          @click="handleMaskClick"
-        />
+        <div v-if="visible && mask" class="ex-drawer-mask" @click="handleMaskClick" />
       </Transition>
 
       <!-- 抽屉容器 -->
-      <Transition
-        :name="`ex-drawer-slide-${placement}`"
-        @after-leave="handleAfterLeave"
-      >
+      <Transition :name="`ex-drawer-slide-${placement}`" @after-leave="handleAfterLeave">
         <div
           v-if="visible"
           :class="drawerClasses"
@@ -34,10 +27,7 @@
           <div class="ex-drawer__border" />
 
           <!-- 头部 -->
-          <div
-            v-if="$slots.header || title || closable"
-            class="ex-drawer__header"
-          >
+          <div v-if="$slots.header || title || closable" class="ex-drawer__header">
             <slot name="header">
               <div class="ex-drawer__title">
                 <slot name="title">
@@ -54,11 +44,7 @@
               :aria-label="t('close')"
               @click="handleClose"
             >
-              <img
-                src="https://api.iconify.design/ri/close-line.svg"
-                alt="关闭"
-                class="ex-drawer__close-icon"
-              >
+              <ExIcon icon="close-line" class="ex-drawer__close-icon" aria-hidden="true" />
             </button>
           </div>
 
@@ -68,15 +54,9 @@
           </div>
 
           <!-- 底部 -->
-          <div
-            v-if="$slots.footer || showFooter"
-            class="ex-drawer__footer"
-          >
+          <div v-if="$slots.footer || showFooter" class="ex-drawer__footer">
             <slot name="footer">
-              <ExButton
-                :disabled="cancelDisabled"
-                @click="handleCancel"
-              >
+              <ExButton :disabled="cancelDisabled" @click="handleCancel">
                 {{ cancelText || t('cancel') }}
               </ExButton>
               <ExButton
@@ -96,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import type { ExDrawerProps, ExDrawerEmits, ExDrawerExposed } from './types';
 import { useLocale } from '../../locale';
@@ -133,10 +114,7 @@ const originalOverflow = ref('');
 
 // 计算属性
 const drawerClasses = computed(() => {
-  const classes = [
-    'ex-drawer',
-    `ex-drawer--${props.placement}`,
-  ];
+  const classes = ['ex-drawer', `ex-drawer--${props.placement}`];
 
   if (props.customClass) {
     classes.push(props.customClass);
@@ -147,14 +125,14 @@ const drawerClasses = computed(() => {
 
 const wrapperStyle = computed(() => {
   const style: Record<string, string> = {};
-  
+
   // 如果用户指定了 zIndex，直接使用该值；否则使用 CSS 变量表达式
   if (props.zIndex !== undefined) {
     style.zIndex = String(props.zIndex);
   } else {
     style.zIndex = 'calc(var(--ex-z-overlay) - 1000 + var(--ex-z-index-base, 1000))';
   }
-  
+
   return style;
 });
 
@@ -168,11 +146,12 @@ const drawerStyles = computed(() => {
     large: '800px',
   };
 
-  const size = typeof props.size === 'string' && sizeMap[props.size]
-    ? sizeMap[props.size]
-    : typeof props.size === 'number'
-      ? `${props.size}px`
-      : props.size;
+  const size =
+    typeof props.size === 'string' && sizeMap[props.size]
+      ? sizeMap[props.size]
+      : typeof props.size === 'number'
+        ? `${props.size}px`
+        : props.size;
 
   // 根据位置设置宽度或高度
   if (size) {
@@ -186,7 +165,9 @@ const drawerStyles = computed(() => {
   // 自定义样式
   if (props.customStyle) {
     if (typeof props.customStyle === 'string') {
-      return `${Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('; ')}; ${props.customStyle}`;
+      return `${Object.entries(styles)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; ')}; ${props.customStyle}`;
     } else {
       Object.assign(styles, props.customStyle);
     }
@@ -268,15 +249,18 @@ const close = () => {
 const getElement = () => drawerRef.value || null;
 
 // 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== visible.value) {
-    if (newVal) {
-      handleOpen();
-    } else {
-      handleClose();
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (newVal !== visible.value) {
+      if (newVal) {
+        handleOpen();
+      } else {
+        handleClose();
+      }
     }
   }
-});
+);
 
 // ESC 键关闭
 const handleKeydown = (e: KeyboardEvent) => {

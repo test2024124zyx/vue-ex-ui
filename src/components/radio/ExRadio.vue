@@ -1,12 +1,6 @@
 <template>
-  <div
-    :class="wrapperClasses"
-    :style="wrapperStyles"
-  >
-    <label
-      :class="radioClasses"
-      :for="radioId"
-    >
+  <div :class="wrapperClasses" :style="wrapperStyles">
+    <label :class="radioClasses" :for="radioId">
       <!-- 隐藏的原生单选框 -->
       <input
         v-if="radioGroupContext"
@@ -25,7 +19,7 @@
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
       <input
         v-else
         :id="radioId"
@@ -43,36 +37,23 @@
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
 
       <!-- 自定义单选框外观 -->
       <span :class="radioBoxClasses">
-        <span
-          v-if="isChecked"
-          class="ex-radio__dot"
-        />
+        <span v-if="isChecked" class="ex-radio__dot" />
       </span>
 
       <!-- 标签文本 -->
-      <span
-        v-if="hasLabel"
-        class="ex-radio__label-text"
-      >
+      <span v-if="hasLabel" class="ex-radio__label-text">
         <slot>{{ label }}</slot>
       </span>
     </label>
 
     <!-- 底部信息 -->
-    <div
-      v-if="showBottomInfo"
-      class="ex-radio__bottom"
-    >
+    <div v-if="showBottomInfo" class="ex-radio__bottom">
       <!-- 帮助文本 -->
-      <div
-        v-if="helpText || $slots.help"
-        :id="`${radioId}-help`"
-        class="ex-radio__help"
-      >
+      <div v-if="helpText || $slots.help" :id="`${radioId}-help`" class="ex-radio__help">
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -87,11 +68,7 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon
-            src="https://api.iconify.design/ri/error-warning-line.svg"
-            :size="14"
-            class="ex-radio__error-icon"
-          />
+          <ex-icon icon="error-warning-line" :size="14" class="ex-radio__error-icon" />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -139,7 +116,7 @@ const radioGroupContext = inject<{
   disabled?: boolean;
   readonly?: boolean;
   updateValue: (value: string | number | boolean) => void;
-    } | null>('radioGroup', null);
+} | null>('radioGroup', null);
 
 const radioId = `ex-radio-${Math.random().toString(36).substring(2, 11)}`;
 const radioRef = ref<HTMLInputElement>();
@@ -151,7 +128,7 @@ const radioValue = computed({
   get: () => {
     return radioGroupContext ? radioGroupContext.modelValue.value : props.modelValue;
   },
-  set: (value) => {
+  set: value => {
     if (value !== undefined) {
       if (radioGroupContext) {
         radioGroupContext.updateValue(value);
@@ -306,7 +283,7 @@ const validateRadio = (value: string | number | boolean) => {
 
 watch(
   () => props.errorMessage,
-  (newError) => {
+  newError => {
     if (newError) {
       currentErrorMessage.value = newError;
     }

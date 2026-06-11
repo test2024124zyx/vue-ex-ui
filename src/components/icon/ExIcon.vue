@@ -9,6 +9,15 @@
     <!-- 插槽内容优先级最高 (SVG) -->
     <slot v-if="hasSlotContent" />
 
+    <!-- 内置 SVG 图标 -->
+    <svg
+      v-else-if="builtinIconBody"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      v-html="builtinIconBody"
+    />
+
     <!-- 图片单色着色（mask） -->
     <span
       v-else-if="src && effectiveMonochrome"
@@ -17,18 +26,10 @@
     />
 
     <!-- 图片图标 -->
-    <img
-      v-else-if="src"
-      :src="src"
-      :alt="alt || 'icon'"
-      class="ex-icon__image"
-    >
+    <img v-else-if="src" :src="src" :alt="alt || 'icon'" class="ex-icon__image" />
 
     <!-- 字体图标 -->
-    <i
-      v-else-if="name"
-      :class="fontIconClasses"
-    />
+    <i v-else-if="name" :class="fontIconClasses" />
 
     <!-- 默认SVG图标 -->
     <svg
@@ -48,6 +49,7 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue';
 import type { ExIconProps } from './types';
+import { getBuiltinIcon } from './icons';
 
 defineOptions({
   name: 'ExIcon',
@@ -71,7 +73,12 @@ const slots = useSlots();
 
 // 检查是否有插槽内容
 const hasSlotContent = computed(() => {
-  return !!slots.default?.({})?.length;
+  return !!slots.default;
+});
+
+// 内置 SVG 图标内容（静态注册表，内容可信，v-html 安全）
+const builtinIconBody = computed(() => {
+  return props.icon ? getBuiltinIcon(props.icon) : '';
 });
 
 // 图标类名
@@ -150,7 +157,7 @@ const handleClick = (event: MouseEvent) => {
     event.preventDefault();
     return;
   }
-  
+
   // 始终 emit 点击事件，让父组件决定如何处理
   // clickable 属性只影响样式（光标、悬停效果等）
   emit('click', event);

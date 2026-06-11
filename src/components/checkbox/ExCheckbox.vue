@@ -1,13 +1,7 @@
 <template>
-  <div
-    :class="wrapperClasses"
-    :style="wrapperStyles"
-  >
+  <div :class="wrapperClasses" :style="wrapperStyles">
     <!-- 复选框容器 -->
-    <label
-      :class="checkboxClasses"
-      :for="checkboxId"
-    >
+    <label :class="checkboxClasses" :for="checkboxId">
       <!-- 隐藏的原生复选框 -->
       <input
         v-if="checkboxGroupContext"
@@ -25,7 +19,7 @@
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown"
-      >
+      />
       <input
         v-else
         :id="checkboxId"
@@ -44,46 +38,36 @@
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown"
-      >
+      />
 
       <!-- 自定义复选框外观 -->
       <span :class="checkboxBoxClasses">
         <!-- 选中状态图标 -->
         <ex-icon
           v-if="isChecked && !indeterminate"
-          src="https://api.iconify.design/ri/check-line.svg"
+          icon="check-line"
           class="ex-checkbox__check-icon"
           :size="iconSize"
         />
         <!-- 中间状态图标 -->
         <ex-icon
           v-else-if="indeterminate"
-          src="https://api.iconify.design/ri/subtract-line.svg"
+          icon="subtract-line"
           class="ex-checkbox__indeterminate-icon"
           :size="iconSize"
         />
       </span>
 
       <!-- 标签文本 -->
-      <span
-        v-if="hasLabel"
-        class="ex-checkbox__label-text"
-      >
+      <span v-if="hasLabel" class="ex-checkbox__label-text">
         <slot>{{ label }}</slot>
       </span>
     </label>
 
     <!-- 底部信息 -->
-    <div
-      v-if="showBottomInfo"
-      class="ex-checkbox__bottom"
-    >
+    <div v-if="showBottomInfo" class="ex-checkbox__bottom">
       <!-- 帮助文本 -->
-      <div
-        v-if="helpText || $slots.help"
-        :id="`${checkboxId}-help`"
-        class="ex-checkbox__help"
-      >
+      <div v-if="helpText || $slots.help" :id="`${checkboxId}-help`" class="ex-checkbox__help">
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -98,11 +82,7 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon
-            src="https://api.iconify.design/ri/error-warning-line.svg"
-            :size="14"
-            class="ex-checkbox__error-icon"
-          />
+          <ex-icon icon="error-warning-line" :size="14" class="ex-checkbox__error-icon" />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -114,7 +94,12 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch, useSlots, inject } from 'vue';
-import type { ExCheckboxProps, ExCheckboxEmits, ExCheckboxSlots, ExCheckboxInstance } from './types';
+import type {
+  ExCheckboxProps,
+  ExCheckboxEmits,
+  ExCheckboxSlots,
+  ExCheckboxInstance,
+} from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -154,7 +139,7 @@ const checkboxGroupContext = inject<{
   disabled?: boolean;
   readonly?: boolean;
   updateValue: (value: string | number, checked: boolean) => void;
-    } | null>('checkboxGroup', null);
+} | null>('checkboxGroup', null);
 
 // 生成唯一ID
 const checkboxId = `ex-checkbox-${Math.random().toString(36).substring(2, 11)}`;
@@ -175,7 +160,7 @@ const checkboxValue = computed({
     }
     return props.modelValue;
   },
-  set: (checked) => {
+  set: checked => {
     if (checkboxGroupContext && props.value !== undefined) {
       checkboxGroupContext.updateValue(props.value, checked as boolean);
     } else if (checked !== undefined) {
@@ -298,17 +283,17 @@ const handleChange = (event: Event) => {
   }
 
   const target = event.target as HTMLInputElement;
-  
+
   if (checkboxGroupContext && props.value !== undefined) {
     // CheckboxGroup 模式
     checkboxGroupContext.updateValue(props.value, target.checked);
   } else {
     // 独立模式
     const value = target.checked ? props.trueValue : props.falseValue;
-    
+
     // 验证
     validateCheckbox(value);
-    
+
     emit('change', value, event);
   }
 };
@@ -357,7 +342,7 @@ const validateCheckbox = (value: boolean | string | number) => {
 // 监听错误信息变化
 watch(
   () => props.errorMessage,
-  (newError) => {
+  newError => {
     if (newError) {
       currentErrorMessage.value = newError;
     }

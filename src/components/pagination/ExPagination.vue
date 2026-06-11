@@ -8,10 +8,7 @@
     :aria-label="ariaLabel || t('pagination')"
   >
     <!-- 总数显示 -->
-    <div
-      v-if="showTotal"
-      class="ex-pagination__total"
-    >
+    <div v-if="showTotal" class="ex-pagination__total">
       {{ totalDisplayText }}
     </div>
 
@@ -24,12 +21,7 @@
         :aria-label="t('prev')"
         @click="handlePrev"
       >
-        <img
-          src="https://api.iconify.design/ri/arrow-left-s-line.svg"
-          alt="上一页"
-          width="16"
-          height="16"
-        >
+        <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
       </button>
 
       <!-- 简洁模式 -->
@@ -43,7 +35,7 @@
             :max="totalPages"
             :disabled="disabled"
             @keyup.enter="handleJump"
-          >
+          />
           <span class="ex-pagination__simple-separator">/</span>
           <span class="ex-pagination__simple-total">{{ totalPages }}</span>
         </div>
@@ -71,20 +63,13 @@
           :aria-label="t('prev') + ' 5 页'"
           @click="handlePrevMore"
         >
-          <img
-            src="https://api.iconify.design/ri/more-fill.svg"
-            alt="更多"
-            width="16"
-            height="16"
-            class="ex-pagination__more-icon"
-          >
-          <img
-            src="https://api.iconify.design/ri/arrow-left-double-line.svg"
-            alt="向前"
-            width="16"
-            height="16"
+          <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-left-double-line"
+            :size="16"
             class="ex-pagination__more-icon-hover"
-          >
+            aria-hidden="true"
+          />
         </button>
 
         <!-- 中间页码 -->
@@ -109,20 +94,13 @@
           :aria-label="t('next') + ' 5 页'"
           @click="handleNextMore"
         >
-          <img
-            src="https://api.iconify.design/ri/more-fill.svg"
-            alt="更多"
-            width="16"
-            height="16"
-            class="ex-pagination__more-icon"
-          >
-          <img
-            src="https://api.iconify.design/ri/arrow-right-double-line.svg"
-            alt="向后"
-            width="16"
-            height="16"
+          <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-right-double-line"
+            :size="16"
             class="ex-pagination__more-icon-hover"
-          >
+            aria-hidden="true"
+          />
         </button>
 
         <!-- 末页 -->
@@ -146,20 +124,12 @@
         :aria-label="t('next')"
         @click="handleNext"
       >
-        <img
-          src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-          alt="下一页"
-          width="16"
-          height="16"
-        >
+        <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
       </button>
     </div>
 
     <!-- 每页条数选择器 -->
-    <div
-      v-if="showSizeChanger && !simple"
-      class="ex-pagination__sizes"
-    >
+    <div v-if="showSizeChanger && !simple" class="ex-pagination__sizes">
       <select
         v-model.number="currentPageSize"
         class="ex-pagination__size-select"
@@ -167,21 +137,14 @@
         :aria-label="t('pageSize')"
         @change="handleSizeChange"
       >
-        <option
-          v-for="size in pageSizeOptions"
-          :key="size"
-          :value="size"
-        >
+        <option v-for="size in pageSizeOptions" :key="size" :value="size">
           {{ size }} {{ t('page') }}
         </option>
       </select>
     </div>
 
     <!-- 快速跳转 -->
-    <div
-      v-if="showQuickJumper && !simple"
-      class="ex-pagination__jumper"
-    >
+    <div v-if="showQuickJumper && !simple" class="ex-pagination__jumper">
       <span class="ex-pagination__jumper-text">{{ t('jumpTo') }}</span>
       <input
         v-model.number="jumpValue"
@@ -192,13 +155,14 @@
         :disabled="disabled"
         :aria-label="t('jumpTo')"
         @keyup.enter="handleJump"
-      >
+      />
       <span class="ex-pagination__jumper-text">{{ t('page') }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import type { ExPaginationProps, ExPaginationEmits, ExPaginationExposed } from './types';
 import { useLocale } from '../../locale';
@@ -333,18 +297,24 @@ const paginationStyles = computed(() => {
 });
 
 // 监听外部变化
-watch(() => props.current, (val) => {
-  if (val !== currentPage.value) {
-    currentPage.value = val;
-    jumpValue.value = val;
+watch(
+  () => props.current,
+  val => {
+    if (val !== currentPage.value) {
+      currentPage.value = val;
+      jumpValue.value = val;
+    }
   }
-});
+);
 
-watch(() => props.pageSize, (val) => {
-  if (val !== currentPageSize.value) {
-    currentPageSize.value = val;
+watch(
+  () => props.pageSize,
+  val => {
+    if (val !== currentPageSize.value) {
+      currentPageSize.value = val;
+    }
   }
-});
+);
 
 // 页码改变
 const handlePageChange = (page: number) => {
@@ -391,7 +361,7 @@ const handleSizeChange = () => {
 
   // 重新计算当前页，保持数据位置
   const newPage = Math.min(
-    Math.ceil((currentPage.value - 1) * props.pageSize / newPageSize) + 1,
+    Math.ceil(((currentPage.value - 1) * props.pageSize) / newPageSize) + 1,
     Math.ceil(props.total / newPageSize)
   );
 

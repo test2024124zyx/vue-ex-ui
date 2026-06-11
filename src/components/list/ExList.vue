@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="listRef"
-    :class="listClasses"
-    :style="listStyles"
-  >
+  <div ref="listRef" :class="listClasses" :style="listStyles">
     <!-- 列表项 -->
     <div
       v-for="(item, index) in data"
@@ -15,21 +11,14 @@
         <!-- 左侧内容 -->
         <div class="ex-list__item-main">
           <!-- 图标/头像 -->
-          <div
-            v-if="$slots.icon || item.icon || item.avatar"
-            class="ex-list__item-prefix"
-          >
-            <slot
-              name="icon"
-              :item="item"
-              :index="index"
-            >
+          <div v-if="$slots.icon || item.icon || item.avatar" class="ex-list__item-prefix">
+            <slot name="icon" :item="item" :index="index">
               <img
                 v-if="item.avatar"
                 :src="item.avatar"
                 :alt="item.title"
                 class="ex-list__item-avatar"
-              >
+              />
               <img
                 v-else-if="item.icon"
                 :src="item.icon"
@@ -37,33 +26,19 @@
                 class="ex-list__item-icon"
                 width="24"
                 height="24"
-              >
+              />
             </slot>
           </div>
 
           <!-- 标题和描述 -->
           <div class="ex-list__item-body">
-            <div
-              v-if="$slots.title || item.title"
-              class="ex-list__item-title"
-            >
-              <slot
-                name="title"
-                :item="item"
-                :index="index"
-              >
+            <div v-if="$slots.title || item.title" class="ex-list__item-title">
+              <slot name="title" :item="item" :index="index">
                 {{ item.title }}
               </slot>
             </div>
-            <div
-              v-if="$slots.description || item.description"
-              class="ex-list__item-description"
-            >
-              <slot
-                name="description"
-                :item="item"
-                :index="index"
-              >
+            <div v-if="$slots.description || item.description" class="ex-list__item-description">
+              <slot name="description" :item="item" :index="index">
                 {{ item.description }}
               </slot>
             </div>
@@ -71,15 +46,8 @@
         </div>
 
         <!-- 右侧额外内容 -->
-        <div
-          v-if="$slots.extra || item.extra"
-          class="ex-list__item-extra"
-        >
-          <slot
-            name="extra"
-            :item="item"
-            :index="index"
-          >
+        <div v-if="$slots.extra || item.extra" class="ex-list__item-extra">
+          <slot name="extra" :item="item" :index="index">
             {{ item.extra }}
           </slot>
         </div>
@@ -87,33 +55,27 @@
     </div>
 
     <!-- 空数据 -->
-    <div
-      v-if="!data || data.length === 0"
-      class="ex-list__empty"
-    >
+    <div v-if="!data || data.length === 0" class="ex-list__empty">
       <slot name="empty">
-        <img 
-          src="https://api.iconify.design/ri/inbox-line.svg" 
-          alt="空" 
-          width="48" 
-          height="48"
-          style="opacity: 0.3; margin-bottom: 12px;"
-        >
+        <ExIcon
+          icon="inbox-line"
+          :size="48"
+          style="opacity: 0.3; margin-bottom: 12px"
+          aria-hidden="true"
+        />
         <p>{{ emptyText || t('empty') }}</p>
       </slot>
     </div>
 
     <!-- 加载遮罩 -->
-    <div
-      v-if="loading"
-      class="ex-list__loading"
-    >
+    <div v-if="loading" class="ex-list__loading">
       <div class="ex-list__loading-spinner" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
 import type { ExListProps, ExListEmits, ExListExposed, ListItem } from './types';
 import { useLocale } from '../../locale';
@@ -139,10 +101,7 @@ const { t } = useLocale('list');
 
 // 计算属性
 const listClasses = computed(() => {
-  const classes = [
-    'ex-list',
-    `ex-list--${props.size}`,
-  ];
+  const classes = ['ex-list', `ex-list--${props.size}`];
 
   if (props.bordered) classes.push('ex-list--bordered');
   if (props.split) classes.push('ex-list--split');
@@ -179,7 +138,7 @@ const getItemClasses = (item: ListItem) => {
 // 获取列表项的唯一 key
 const getItemKey = (item: ListItem, index: number): string | number => {
   const key = item[props.itemKey];
-  return (typeof key === 'string' || typeof key === 'number') ? key : index;
+  return typeof key === 'string' || typeof key === 'number' ? key : index;
 };
 
 // 事件处理

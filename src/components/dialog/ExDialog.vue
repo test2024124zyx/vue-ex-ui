@@ -1,13 +1,6 @@
 <template>
-  <Teleport
-    to="body"
-    :disabled="!appendToBody"
-  >
-    <Transition
-      name="ex-dialog-fade"
-      @after-enter="handleOpened"
-      @after-leave="handleClosed"
-    >
+  <Teleport to="body" :disabled="!appendToBody">
+    <Transition name="ex-dialog-fade" @after-enter="handleOpened" @after-leave="handleClosed">
       <div
         v-if="visible"
         ref="dialogRef"
@@ -18,11 +11,7 @@
         @click.self="handleWrapperClick"
       >
         <!-- 遮罩层 -->
-        <div
-          v-if="modal"
-          class="ex-dialog-modal"
-          :class="modalClass"
-        />
+        <div v-if="modal" class="ex-dialog-modal" :class="modalClass" />
 
         <!-- 对话框容器 -->
         <Transition name="ex-dialog-zoom">
@@ -38,24 +27,15 @@
             @click.stop
           >
             <!-- 头部 -->
-            <div
-              v-if="showHeader"
-              class="ex-dialog__header"
-            >
+            <div v-if="showHeader" class="ex-dialog__header">
               <!-- 图标插槽 -->
-              <div
-                v-if="$slots.icon"
-                class="ex-dialog__icon"
-              >
+              <div v-if="$slots.icon" class="ex-dialog__icon">
                 <slot name="icon" />
               </div>
 
               <!-- 标题 -->
               <div class="ex-dialog__title-wrapper">
-                <h3
-                  id="ex-dialog-title"
-                  class="ex-dialog__title"
-                >
+                <h3 id="ex-dialog-title" class="ex-dialog__title">
                   <slot name="title">
                     {{ title }}
                   </slot>
@@ -71,12 +51,7 @@
                 @click="handleClose"
               >
                 <slot name="close">
-                  <img
-                    src="https://api.iconify.design/ri/close-line.svg"
-                    alt="关闭"
-                    width="20"
-                    height="20"
-                  >
+                  <ExIcon icon="close-line" :size="20" aria-hidden="true" />
                 </slot>
               </button>
             </div>
@@ -87,20 +62,10 @@
             </div>
 
             <!-- 底部 -->
-            <div
-              v-if="showFooterSlot"
-              class="ex-dialog__footer"
-            >
+            <div v-if="showFooterSlot" class="ex-dialog__footer">
               <slot name="footer">
-                <div
-                  v-if="showFooter"
-                  class="ex-dialog__footer-actions"
-                >
-                  <ExButton
-                    v-if="showCancel"
-                    type="default"
-                    @click="handleCancel"
-                  >
+                <div v-if="showFooter" class="ex-dialog__footer-actions">
+                  <ExButton v-if="showCancel" type="default" @click="handleCancel">
                     {{ cancelText || t('cancel') }}
                   </ExButton>
                   <ExButton
@@ -123,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount, useSlots } from 'vue';
 import type { ExDialogProps, ExDialogEmits, ExDialogExposed } from './types';
 import { useLocale } from '../../locale';
@@ -188,19 +154,19 @@ const wrapperStyles = computed(() => {
 
 const dialogClasses = computed(() => {
   const classes = ['ex-dialog'];
-  
+
   if (props.size) classes.push(`ex-dialog--${props.size}`);
   if (props.type) classes.push(`ex-dialog--${props.type}`);
   if (props.fullscreen) classes.push('ex-dialog--fullscreen');
   if (props.customClass) classes.push(props.customClass);
-  
+
   return classes;
 });
 
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  async (newVal) => {
+  async newVal => {
     if (newVal) {
       await handleBeforeOpen();
     } else {
@@ -215,12 +181,12 @@ const handleBeforeOpen = async () => {
     const result = await props.beforeOpen();
     if (result === false) return;
   }
-  
+
   visible.value = true;
   emit('open');
-  
+
   await nextTick();
-  
+
   if (props.lockScroll) {
     document.body.style.overflow = 'hidden';
   }
@@ -232,10 +198,10 @@ const handleBeforeClose = async () => {
     const result = await props.beforeClose();
     if (result === false) return;
   }
-  
+
   visible.value = false;
   emit('close');
-  
+
   if (props.lockScroll) {
     document.body.style.overflow = '';
   }

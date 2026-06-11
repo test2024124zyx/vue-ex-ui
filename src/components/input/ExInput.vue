@@ -15,32 +15,22 @@
         'ex-input--with-append': $slots.append || append,
         'ex-input--textarea': type === 'textarea',
       },
-      customClass
+      customClass,
     ]"
     :style="customStyle"
   >
     <!-- 标签 -->
-    <label
-      v-if="label || $slots.label"
-      :for="inputId"
-      class="ex-input__label"
-    >
+    <label v-if="label || $slots.label" :for="inputId" class="ex-input__label">
       <slot name="label">
         {{ label }}
-        <span
-          v-if="required"
-          class="ex-input__required"
-        >*</span>
+        <span v-if="required" class="ex-input__required">*</span>
       </slot>
     </label>
 
     <!-- 输入框容器 -->
     <div class="ex-input__wrapper">
       <!-- 前置内容 -->
-      <div
-        v-if="$slots.prepend || prepend"
-        class="ex-input__prepend"
-      >
+      <div v-if="$slots.prepend || prepend" class="ex-input__prepend">
         <slot name="prepend">
           {{ prepend }}
         </slot>
@@ -49,10 +39,7 @@
       <!-- 输入框主体 -->
       <div class="ex-input__inner">
         <!-- 前缀图标 -->
-        <div
-          v-if="$slots.prefix"
-          class="ex-input__prefix"
-        >
+        <div v-if="$slots.prefix" class="ex-input__prefix">
           <slot name="prefix" />
         </div>
 
@@ -62,7 +49,13 @@
           :id="inputId"
           ref="inputRef"
           :value="inputValue"
-          :class="['ex-input__control', { 'ex-input__control--with-prefix': $slots.prefix, 'ex-input__control--with-suffix': showSuffix }]"
+          :class="[
+            'ex-input__control',
+            {
+              'ex-input__control--with-prefix': $slots.prefix,
+              'ex-input__control--with-suffix': showSuffix,
+            },
+          ]"
           :type="actualType"
           :placeholder="placeholder"
           :disabled="disabled"
@@ -86,15 +79,12 @@
         />
 
         <!-- 后缀区域 -->
-        <div
-          v-if="showSuffix"
-          class="ex-input__suffix"
-        >
+        <div v-if="showSuffix" class="ex-input__suffix">
           <!-- 清除图标 -->
           <ex-icon
             v-if="showClearButton"
             class="ex-input__clear-icon"
-            src="https://api.iconify.design/ri/close-line.svg"
+            icon="close-line"
             :size="16"
             clickable
             :aria-label="t('input.clear')"
@@ -106,7 +96,7 @@
           <ex-icon
             v-if="showPasswordToggle"
             class="ex-input__password-icon"
-            :src="isPasswordVisible ? 'https://api.iconify.design/ri/eye-off-line.svg' : 'https://api.iconify.design/ri/eye-line.svg'"
+            :icon="isPasswordVisible ? 'eye-off-line' : 'eye-line'"
             :size="16"
             clickable
             :aria-label="isPasswordVisible ? t('input.hidePassword') : t('input.showPassword')"
@@ -115,10 +105,7 @@
           />
 
           <!-- 字数统计 -->
-          <span
-            v-if="showWordLimit && maxlength"
-            class="ex-input__word-limit"
-          >
+          <span v-if="showWordLimit && maxlength" class="ex-input__word-limit">
             {{ currentLength }}/{{ maxlength }}
           </span>
 
@@ -128,10 +115,7 @@
       </div>
 
       <!-- 后置内容 -->
-      <div
-        v-if="$slots.append || append"
-        class="ex-input__append"
-      >
+      <div v-if="$slots.append || append" class="ex-input__append">
         <slot name="append">
           {{ append }}
         </slot>
@@ -146,17 +130,14 @@
       role="alert"
       :aria-live="actualStatus === 'error' ? 'assertive' : 'polite'"
     >
-      <transition
-        name="ex-input-help"
-        mode="out-in"
-      >
+      <transition name="ex-input-help" mode="out-in">
         <div
           v-if="actualStatus === 'error' && (actualErrorMessage || $slots.error)"
           key="error"
           class="ex-input__error"
         >
-          <ex-icon 
-            src="https://api.iconify.design/ri/error-warning-line.svg" 
+          <ex-icon
+            icon="error-warning-line"
             :size="14"
             class="ex-input__error-icon"
             aria-hidden="true"
@@ -165,24 +146,11 @@
             {{ actualErrorMessage }}
           </slot>
         </div>
-        <div
-          v-else-if="actualStatus === 'success'"
-          key="success"
-          class="ex-input__success"
-        >
-          <ex-icon 
-            src="https://api.iconify.design/ri/check-line.svg" 
-            :size="14"
-            class="ex-input__success-icon"
-            aria-hidden="true"
-          />
+        <div v-else-if="actualStatus === 'success'" key="success" class="ex-input__success">
+          <ex-icon icon="check-line" :size="14" class="ex-input__success-icon" aria-hidden="true" />
           <span class="ex-input__success-text">{{ t('input.validationSuccess') }}</span>
         </div>
-        <div
-          v-else-if="helpText || $slots.help"
-          key="help"
-          class="ex-input__help-text"
-        >
+        <div v-else-if="helpText || $slots.help" key="help" class="ex-input__help-text">
           <slot name="help">
             {{ helpText }}
           </slot>
@@ -255,21 +223,11 @@ const currentLength = computed(() => {
 });
 
 const showClearButton = computed(() => {
-  return (
-    props.clearable &&
-    !props.disabled &&
-    !props.readonly &&
-    inputValue.value !== ''
-  );
+  return props.clearable && !props.disabled && !props.readonly && inputValue.value !== '';
 });
 
 const showPasswordToggle = computed(() => {
-  return (
-    props.showPassword &&
-    props.type === 'password' &&
-    !props.disabled &&
-    !props.readonly
-  );
+  return props.showPassword && props.type === 'password' && !props.disabled && !props.readonly;
 });
 
 const showSuffix = computed<boolean>(() => {
@@ -303,10 +261,10 @@ const actualErrorMessage = computed(() => {
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue !== inputValue.value) {
       inputValue.value = newValue ?? '';
-      
+
       // 应用格式化
       if (props.formatter && inputRef.value) {
         nextTick(() => {

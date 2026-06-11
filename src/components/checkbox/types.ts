@@ -90,53 +90,6 @@ export interface ExCheckboxInstance {
   getCheckboxElement: () => HTMLInputElement | null;
 }
 
-// 复选框组相关类型
-export interface ExCheckboxGroupProps {
-  /** 绑定值 */
-  modelValue?: Array<string | number>;
-  /** 选项列表 */
-  options?: CheckboxOption[];
-  /** 组件大小 */
-  size?: CheckboxSize;
-  /** 组件状态 */
-  status?: CheckboxStatus;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 是否只读 */
-  readonly?: boolean;
-  /** 最小选择数量 */
-  min?: number;
-  /** 最大选择数量 */
-  max?: number;
-  /** 是否垂直排列 */
-  vertical?: boolean;
-  /** 标签文本 */
-  label?: string;
-  /** 是否必填 */
-  required?: boolean;
-  /** 帮助文本 */
-  helpText?: string;
-  /** 错误信息 */
-  errorMessage?: string;
-  /** 表单验证规则 */
-  rules?: Array<(value: Array<string | number>) => boolean | string>;
-  /** 自定义类名 */
-  customClass?: string;
-  /** 自定义样式 */
-  customStyle?: Record<string, string>;
-}
-
-export interface CheckboxOption {
-  /** 选项值 */
-  value: string | number;
-  /** 选项标签 */
-  label: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 自定义数据 */
-  data?: Record<string, unknown>;
-}
-
 // ============================================================================
 // CheckboxGroup 组件 Props
 // ============================================================================

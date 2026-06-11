@@ -49,7 +49,7 @@ describe('ExAlert', () => {
       'error',
     ];
 
-    types.forEach((type) => {
+    types.forEach(type => {
       it(`renders ${type} type correctly`, () => {
         const wrapper = mount(ExAlert, {
           props: {
@@ -58,7 +58,7 @@ describe('ExAlert', () => {
           },
         });
 
-        expect(wrapper.classes()).toContain(`ex-alert--${type}`);
+        expect(wrapper.find('.ex-alert').classes()).toContain(`ex-alert--${type}`);
       });
     });
   });
@@ -66,7 +66,7 @@ describe('ExAlert', () => {
   describe('Sizes', () => {
     const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExAlert, {
           props: {
@@ -75,19 +75,15 @@ describe('ExAlert', () => {
           },
         });
 
-        expect(wrapper.classes()).toContain(`ex-alert--${size}`);
+        expect(wrapper.find('.ex-alert').classes()).toContain(`ex-alert--${size}`);
       });
     });
   });
 
   describe('Variants', () => {
-    const variants: Array<'standard' | 'filled' | 'outlined'> = [
-      'standard',
-      'filled',
-      'outlined',
-    ];
+    const variants: Array<'standard' | 'filled' | 'outlined'> = ['standard', 'filled', 'outlined'];
 
-    variants.forEach((variant) => {
+    variants.forEach(variant => {
       it(`renders ${variant} variant correctly`, () => {
         const wrapper = mount(ExAlert, {
           props: {
@@ -96,7 +92,7 @@ describe('ExAlert', () => {
           },
         });
 
-        expect(wrapper.classes()).toContain(`ex-alert--${variant}`);
+        expect(wrapper.find('.ex-alert').classes()).toContain(`ex-alert--${variant}`);
       });
     });
   });
@@ -238,7 +234,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.classes()).toContain('ex-alert--center');
+      expect(wrapper.find('.ex-alert').classes()).toContain('ex-alert--center');
     });
   });
 
@@ -250,7 +246,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.classes()).not.toContain('ex-alert--borderless');
+      expect(wrapper.find('.ex-alert').classes()).not.toContain('ex-alert--borderless');
     });
 
     it('hides border when bordered is false', () => {
@@ -261,7 +257,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.classes()).toContain('ex-alert--borderless');
+      expect(wrapper.find('.ex-alert').classes()).toContain('ex-alert--borderless');
     });
   });
 
@@ -301,7 +297,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.classes()).toContain('custom-alert');
+      expect(wrapper.find('.ex-alert').classes()).toContain('custom-alert');
     });
 
     it('applies custom style', () => {
@@ -312,7 +308,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.attributes('style')).toContain('color: red');
+      expect(wrapper.find('.ex-alert').attributes('style')).toContain('color: red');
     });
   });
 
@@ -351,7 +347,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.attributes('role')).toBe('alert');
+      expect(wrapper.find('.ex-alert').attributes('role')).toBe('alert');
     });
 
     it('has correct aria-live for error', () => {
@@ -362,7 +358,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.attributes('aria-live')).toBe('assertive');
+      expect(wrapper.find('.ex-alert').attributes('aria-live')).toBe('assertive');
     });
 
     it('has correct aria-live for non-error', () => {
@@ -373,7 +369,7 @@ describe('ExAlert', () => {
         },
       });
 
-      expect(wrapper.attributes('aria-live')).toBe('polite');
+      expect(wrapper.find('.ex-alert').attributes('aria-live')).toBe('polite');
     });
 
     it('close button has aria-label', () => {

@@ -1,85 +1,36 @@
 <template>
   <Teleport to="body">
     <Transition name="ex-preview-fade">
-      <div
-        v-if="visible"
-        ref="previewRef"
-        class="ex-file-preview"
-        @click="handleMaskClick"
-      >
+      <div v-if="visible" ref="previewRef" class="ex-file-preview" @click="handleMaskClick">
         <!-- 遮罩层 -->
-        <div
-          class="ex-file-preview__mask"
-          :style="{ background: maskBackground }"
-        />
+        <div class="ex-file-preview__mask" :style="{ background: maskBackground }" />
 
         <!-- 工具栏 -->
-        <div
-          v-if="showToolbar"
-          class="ex-file-preview__toolbar"
-        >
+        <div v-if="showToolbar" class="ex-file-preview__toolbar">
           <div class="ex-file-preview__toolbar-left">
             <span class="ex-file-preview__filename">{{ currentFile.name || '预览' }}</span>
           </div>
           <div class="ex-file-preview__toolbar-actions">
             <template v-if="currentType === 'image' && zoomable">
-              <button
-                class="ex-file-preview__toolbar-btn"
-                @click.stop="zoomOut"
-              >
-                <img
-                  src="https://api.iconify.design/ri/zoom-out-line.svg"
-                  alt="缩小"
-                  width="20"
-                  height="20"
-                >
+              <button class="ex-file-preview__toolbar-btn" @click.stop="zoomOut">
+                <ExIcon icon="zoom-out-line" :size="20" aria-hidden="true" />
               </button>
-              <span class="ex-file-preview__toolbar-scale">{{ Math.round(currentScale * 100) }}%</span>
-              <button
-                class="ex-file-preview__toolbar-btn"
-                @click.stop="zoomIn"
-              >
-                <img
-                  src="https://api.iconify.design/ri/zoom-in-line.svg"
-                  alt="放大"
-                  width="20"
-                  height="20"
-                >
+              <span class="ex-file-preview__toolbar-scale">
+                {{ Math.round(currentScale * 100) }}%
+              </span>
+              <button class="ex-file-preview__toolbar-btn" @click.stop="zoomIn">
+                <ExIcon icon="zoom-in-line" :size="20" aria-hidden="true" />
               </button>
-              <button
-                class="ex-file-preview__toolbar-btn"
-                @click.stop="resetZoom"
-              >
-                <img
-                  src="https://api.iconify.design/ri/aspect-ratio-line.svg"
-                  alt="重置"
-                  width="20"
-                  height="20"
-                >
+              <button class="ex-file-preview__toolbar-btn" @click.stop="resetZoom">
+                <ExIcon icon="aspect-ratio-line" :size="20" aria-hidden="true" />
               </button>
             </template>
             <template v-if="currentType === 'image' && rotatable">
-              <button
-                class="ex-file-preview__toolbar-btn"
-                @click.stop="rotateLeft"
-              >
-                <img
-                  src="https://api.iconify.design/ri/anticlockwise-line.svg"
-                  alt="逆时针"
-                  width="20"
-                  height="20"
-                >
+              <button class="ex-file-preview__toolbar-btn" @click.stop="rotateLeft">
+                <ExIcon icon="anticlockwise-line" :size="20" aria-hidden="true" />
               </button>
-              <button
-                class="ex-file-preview__toolbar-btn"
-                @click.stop="rotateRight"
-              >
-                <img
-                  src="https://api.iconify.design/ri/clockwise-line.svg"
-                  alt="顺时针"
-                  width="20"
-                  height="20"
-                >
+              <button class="ex-file-preview__toolbar-btn" @click.stop="rotateRight">
+                <ExIcon icon="clockwise-line" :size="20" aria-hidden="true" />
               </button>
             </template>
             <button
@@ -87,57 +38,30 @@
               class="ex-file-preview__toolbar-btn"
               @click.stop="handleDownload"
             >
-              <img
-                src="https://api.iconify.design/ri/download-2-line.svg"
-                alt="下载"
-                width="20"
-                height="20"
-              >
+              <ExIcon icon="download-2-line" :size="20" aria-hidden="true" />
             </button>
-            <button
-              v-if="showClose"
-              class="ex-file-preview__toolbar-btn"
-              @click.stop="handleClose"
-            >
-              <img
-                src="https://api.iconify.design/ri/close-line.svg"
-                alt="关闭"
-                width="20"
-                height="20"
-              >
+            <button v-if="showClose" class="ex-file-preview__toolbar-btn" @click.stop="handleClose">
+              <ExIcon icon="close-line" :size="20" aria-hidden="true" />
             </button>
           </div>
         </div>
 
         <!-- 内容区域 -->
-        <div
-          class="ex-file-preview__content"
-          @click.stop
-        >
+        <div class="ex-file-preview__content" @click.stop>
           <!-- 上一个/下一个按钮 -->
           <button
             v-if="fileList.length > 1 && currentIndex > 0"
             class="ex-file-preview__nav ex-file-preview__nav--prev"
             @click.stop="handlePrev"
           >
-            <img
-              src="https://api.iconify.design/ri/arrow-left-s-line.svg"
-              alt="上一个"
-              width="32"
-              height="32"
-            >
+            <ExIcon icon="arrow-left-s-line" :size="32" aria-hidden="true" />
           </button>
           <button
             v-if="fileList.length > 1 && currentIndex < fileList.length - 1"
             class="ex-file-preview__nav ex-file-preview__nav--next"
             @click.stop="handleNext"
           >
-            <img
-              src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-              alt="下一个"
-              width="32"
-              height="32"
-            >
+            <ExIcon icon="arrow-right-s-line" :size="32" aria-hidden="true" />
           </button>
 
           <!-- 图片预览 -->
@@ -153,7 +77,7 @@
               :style="imageStyle"
               @load="handleLoad"
               @error="handleError"
-            >
+            />
           </div>
 
           <!-- 视频预览 -->
@@ -194,33 +118,14 @@
               v-if="textContent"
               :class="{ 'show-line-numbers': showLineNumbers }"
             ><code>{{ textContent }}</code></pre>
-            <div
-              v-else
-              class="ex-file-preview__loading"
-            >
-              加载中...
-            </div>
+            <div v-else class="ex-file-preview__loading">加载中...</div>
           </div>
 
           <!-- 不支持的类型 -->
-          <div
-            v-else
-            class="ex-file-preview__unsupported"
-          >
-            <img
-              src="https://api.iconify.design/ri/file-unknow-line.svg"
-              alt="不支持"
-              width="64"
-              height="64"
-            >
+          <div v-else class="ex-file-preview__unsupported">
+            <ExIcon icon="file-unknow-line" :size="64" aria-hidden="true" />
             <p>不支持预览此文件类型</p>
-            <ExButton
-              v-if="showDownload"
-              type="primary"
-              @click="handleDownload"
-            >
-              下载文件
-            </ExButton>
+            <ExButton v-if="showDownload" type="primary" @click="handleDownload">下载文件</ExButton>
           </div>
         </div>
       </div>
@@ -229,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type {
   ExFilePreviewProps,
@@ -273,7 +179,7 @@ const currentIndex = ref(props.initialIndex);
 // 文件列表
 const fileList = computed<PreviewFile[]>(() => {
   if (props.files && props.files.length > 0) {
-    return props.files.map((f) => (typeof f === 'string' ? { url: f } : f));
+    return props.files.map(f => (typeof f === 'string' ? { url: f } : f));
   }
   if (props.file) {
     const file = typeof props.file === 'string' ? { url: props.file } : props.file;
@@ -326,7 +232,7 @@ const imageStyle = computed(() => ({
 // 监听可见性
 watch(
   () => props.visible,
-  (newVal) => {
+  newVal => {
     if (newVal) {
       document.body.style.overflow = 'hidden';
       if (currentType.value === 'text' || currentType.value === 'code') {
@@ -449,19 +355,19 @@ const handleKeydown = (e: KeyboardEvent) => {
   if (!props.visible) return;
 
   switch (e.key) {
-  case 'Escape':
-    if (props.maskClosable) handleClose();
-    break;
-  case '+':
-  case '=':
-    if (props.zoomable) zoomIn();
-    break;
-  case '-':
-    if (props.zoomable) zoomOut();
-    break;
-  case '0':
-    if (props.zoomable) resetZoom();
-    break;
+    case 'Escape':
+      if (props.maskClosable) handleClose();
+      break;
+    case '+':
+    case '=':
+      if (props.zoomable) zoomIn();
+      break;
+    case '-':
+      if (props.zoomable) zoomOut();
+      break;
+    case '0':
+      if (props.zoomable) resetZoom();
+      break;
   }
 };
 

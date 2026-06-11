@@ -1,8 +1,5 @@
 <template>
-  <transition
-    name="ex-alert-fade"
-    @after-leave="handleAfterLeave"
-  >
+  <transition name="ex-alert-fade" @after-leave="handleAfterLeave">
     <div
       v-show="visible"
       ref="alertRef"
@@ -12,37 +9,23 @@
       :aria-live="type === 'error' ? 'assertive' : 'polite'"
     >
       <!-- 图标 -->
-      <div
-        v-if="showIcon"
-        class="ex-alert__icon"
-      >
+      <div v-if="showIcon" class="ex-alert__icon">
         <slot name="icon">
-          <img
-            :src="iconUrl"
-            :alt="type"
-            width="20"
-            height="20"
-          >
+          <ExIcon :icon="builtinIcon" :src="customIconUrl" :size="20" aria-hidden="true" />
         </slot>
       </div>
 
       <!-- 内容区域 -->
       <div class="ex-alert__content">
         <!-- 标题 -->
-        <div
-          v-if="title || $slots.title"
-          class="ex-alert__title"
-        >
+        <div v-if="title || $slots.title" class="ex-alert__title">
           <slot name="title">
             {{ title }}
           </slot>
         </div>
 
         <!-- 描述/默认内容 -->
-        <div
-          v-if="description || $slots.default"
-          class="ex-alert__description"
-        >
+        <div v-if="description || $slots.default" class="ex-alert__description">
           <slot>
             {{ description }}
           </slot>
@@ -50,10 +33,7 @@
       </div>
 
       <!-- 操作区域 -->
-      <div
-        v-if="$slots.action"
-        class="ex-alert__action"
-      >
+      <div v-if="$slots.action" class="ex-alert__action">
         <slot name="action" />
       </div>
 
@@ -69,19 +49,16 @@
         @keydown.space.prevent="handleClose"
       >
         <slot name="close">
-          <span
-            v-if="closeText"
-            class="ex-alert__close-text"
-          >
+          <span v-if="closeText" class="ex-alert__close-text">
             {{ closeText }}
           </span>
-          <img
+          <ExIcon
             v-else
-            :src="closeIconUrl"
-            alt="close"
-            width="16"
-            height="16"
-          >
+            :icon="builtinCloseIcon"
+            :src="customCloseIconUrl"
+            :size="16"
+            aria-hidden="true"
+          />
         </slot>
       </div>
     </div>
@@ -91,6 +68,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { ExAlertProps, ExAlertEmits, ExAlertInstance } from './types';
+import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 
@@ -118,21 +96,19 @@ const componentSize = useComponentSize(computed(() => props.size));
 const alertRef = ref<HTMLElement>();
 const visible = ref(true);
 
-// 图标映射
+// 图标映射（内置 SVG 图标名）
 const iconMap = {
-  success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
-  info: 'https://api.iconify.design/ri/information-line.svg',
-  warning: 'https://api.iconify.design/ri/error-warning-line.svg',
-  error: 'https://api.iconify.design/ri/close-circle-line.svg',
+  success: 'checkbox-circle-line',
+  info: 'information-line',
+  warning: 'error-warning-line',
+  error: 'close-circle-line',
 };
 
-const iconUrl = computed(() => {
-  return props.icon || iconMap[props.type];
-});
-
-const closeIconUrl = computed(() => {
-  return props.closeIcon || 'https://api.iconify.design/ri/close-line.svg';
-});
+// props.icon / props.closeIcon 允许传入自定义图片 URL，否则使用内置图标
+const builtinIcon = computed(() => (props.icon ? undefined : iconMap[props.type]));
+const customIconUrl = computed(() => props.icon);
+const builtinCloseIcon = computed(() => (props.closeIcon ? undefined : 'close-line'));
+const customCloseIconUrl = computed(() => props.closeIcon);
 
 // 样式类
 const alertClasses = computed(() => {

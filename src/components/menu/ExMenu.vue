@@ -7,10 +7,7 @@
     :aria-label="ariaLabel || 'Main menu'"
   >
     <!-- 搜索框 -->
-    <div
-      v-if="searchable"
-      class="ex-menu__search"
-    >
+    <div v-if="searchable" class="ex-menu__search">
       <input
         v-model="searchQuery"
         type="text"
@@ -18,14 +15,9 @@
         :placeholder="t('search') || '搜索菜单...'"
         :aria-label="t('search') || '搜索菜单'"
         @input="handleSearch"
-      >
+      />
       <span class="ex-menu__search-icon">
-        <img
-          src="https://api.iconify.design/ri/search-line.svg"
-          alt="搜索"
-          width="16"
-          height="16"
-        >
+        <ExIcon icon="search-line" :size="16" aria-hidden="true" />
       </span>
     </div>
 
@@ -36,26 +28,15 @@
     >
       <slot v-if="$slots.default" />
       <template v-else-if="items && items.length > 0">
-        <template
-          v-for="item in items"
-          :key="item.key"
-        >
+        <template v-for="item in items" :key="item.key">
           <ExSubMenu
             v-if="item.children && item.children.length > 0"
             :item-key="item.key"
             :title="item.label"
             :disabled="item.disabled"
           >
-            <template
-              v-if="item.icon"
-              #icon
-            >
-              <img
-                :src="item.icon"
-                :alt="item.label"
-                width="20"
-                height="20"
-              >
+            <template v-if="item.icon" #icon>
+              <img :src="item.icon" :alt="item.label" width="20" height="20" />
             </template>
             <ExMenuItem
               v-for="child in item.children"
@@ -64,36 +45,15 @@
               :disabled="child.disabled"
               :path="child.path"
             >
-              <template
-                v-if="child.icon"
-                #icon
-              >
-                <img
-                  :src="child.icon"
-                  :alt="child.label"
-                  width="18"
-                  height="18"
-                >
+              <template v-if="child.icon" #icon>
+                <img :src="child.icon" :alt="child.label" width="18" height="18" />
               </template>
               {{ child.label }}
             </ExMenuItem>
           </ExSubMenu>
-          <ExMenuItem
-            v-else
-            :item-key="item.key"
-            :disabled="item.disabled"
-            :path="item.path"
-          >
-            <template
-              v-if="item.icon"
-              #icon
-            >
-              <img
-                :src="item.icon"
-                :alt="item.label"
-                width="20"
-                height="20"
-              >
+          <ExMenuItem v-else :item-key="item.key" :disabled="item.disabled" :path="item.path">
+            <template v-if="item.icon" #icon>
+              <img :src="item.icon" :alt="item.label" width="20" height="20" />
             </template>
             {{ item.label }}
           </ExMenuItem>
@@ -104,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, provide, ref, watch, onMounted, onUnmounted } from 'vue';
 import type { ExMenuProps, ExMenuEmits, ExMenuExposed, MenuItem } from './types';
 import { useLocale } from '../../locale';
@@ -156,13 +117,19 @@ onUnmounted(() => {
   _mql = null;
 });
 
-watch(() => props.activeKey, (newKey) => {
-  if (newKey !== undefined) internalActiveKey.value = newKey;
-});
+watch(
+  () => props.activeKey,
+  newKey => {
+    if (newKey !== undefined) internalActiveKey.value = newKey;
+  }
+);
 
-watch(() => props.openKeys, (newKeys) => {
-  if (newKeys !== undefined) internalOpenKeys.value = [...newKeys];
-});
+watch(
+  () => props.openKeys,
+  newKeys => {
+    if (newKeys !== undefined) internalOpenKeys.value = [...newKeys];
+  }
+);
 
 // 全局配置
 const { t } = useLocale('menu');
@@ -170,26 +137,26 @@ const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
 
 const menuClasses = computed(() => {
-  const classes = [
-    'ex-menu',
-    `ex-menu--${props.mode}`,
-  ];
+  const classes = ['ex-menu', `ex-menu--${props.mode}`];
 
   if (props.collapsed && props.mode === 'inline') classes.push('ex-menu--collapsed');
-  
+
   // 支持全局霓虹效果
   if (globalNeonEffect.value) classes.push('ex-menu--neon');
-  
+
   // 支持全局动画配置
   if (!globalAnimation.value) classes.push('ex-menu--no-animation');
-  
+
   // 响应式支持
   if (props.responsive && isMobile.value) classes.push('ex-menu--mobile');
-  
+
   if (props.class) {
     if (typeof props.class === 'string') classes.push(props.class);
     else if (Array.isArray(props.class)) classes.push(...props.class);
-    else Object.entries(props.class).forEach(([key, value]) => { if (value) classes.push(key); });
+    else
+      Object.entries(props.class).forEach(([key, value]) => {
+        if (value) classes.push(key);
+      });
   }
   return classes;
 });
@@ -235,8 +202,14 @@ provide('exMenu', {
 defineExpose<ExMenuExposed>({
   getActiveKey: () => internalActiveKey.value,
   getOpenKeys: () => [...internalOpenKeys.value],
-  setActiveKey: (key: string) => { internalActiveKey.value = key; emit('update:activeKey', key); },
-  setOpenKeys: (keys: string[]) => { internalOpenKeys.value = [...keys]; emit('update:openKeys', keys); },
+  setActiveKey: (key: string) => {
+    internalActiveKey.value = key;
+    emit('update:activeKey', key);
+  },
+  setOpenKeys: (keys: string[]) => {
+    internalOpenKeys.value = [...keys];
+    emit('update:openKeys', keys);
+  },
   getElement: () => menuRef.value || null,
 });
 </script>

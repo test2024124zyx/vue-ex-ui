@@ -15,36 +15,13 @@
     @drop="handleDrop"
     @dragend="handleDragEnd"
   >
-    <div
-      class="ex-tree-node__content"
-      @click="handleClick"
-      @contextmenu="handleContextmenu"
-    >
+    <div class="ex-tree-node__content" @click="handleClick" @contextmenu="handleContextmenu">
       <!-- 展开/收起图标 -->
-      <span
-        v-if="hasChildren"
-        class="ex-tree-node__expand-icon"
-        @click.stop="handleToggle"
-      >
-        <img
-          v-if="isExpanded"
-          src="https://api.iconify.design/ri/arrow-down-s-line.svg"
-          alt="展开"
-          width="16"
-          height="16"
-        >
-        <img
-          v-else
-          src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-          alt="收起"
-          width="16"
-          height="16"
-        >
+      <span v-if="hasChildren" class="ex-tree-node__expand-icon" @click.stop="handleToggle">
+        <ExIcon v-if="isExpanded" icon="arrow-down-s-line" :size="16" aria-hidden="true" />
+        <ExIcon v-else icon="arrow-right-s-line" :size="16" aria-hidden="true" />
       </span>
-      <span
-        v-else
-        class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder"
-      />
+      <span v-else class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder" />
 
       <!-- 复选框 -->
       <span
@@ -58,35 +35,20 @@
           :indeterminate="isHalfChecked"
           :disabled="isDisabled"
           @change="handleCheck"
-        >
+        />
       </span>
 
       <!-- 图标 -->
-      <span
-        v-if="showIcon"
-        class="ex-tree-node__icon"
-      >
-        <img
-          v-if="node.icon"
-          :src="node.icon"
-          alt="图标"
-          width="16"
-          height="16"
-        >
-        <img
+      <span v-if="showIcon" class="ex-tree-node__icon">
+        <!-- node.icon 支持内置图标名或图片 URL（内置名优先，未命中时按 URL 渲染） -->
+        <ExIcon v-if="node.icon" :icon="node.icon" :src="node.icon" :size="16" aria-hidden="true" />
+        <ExIcon
           v-else-if="hasChildren"
-          :src="isExpanded ? 'https://api.iconify.design/ri/folder-open-line.svg' : 'https://api.iconify.design/ri/folder-line.svg'"
-          alt="文件夹"
-          width="16"
-          height="16"
-        >
-        <img
-          v-else
-          src="https://api.iconify.design/ri/file-line.svg"
-          alt="文件"
-          width="16"
-          height="16"
-        >
+          :icon="isExpanded ? 'folder-open-line' : 'folder-line'"
+          :size="16"
+          aria-hidden="true"
+        />
+        <ExIcon v-else icon="file-line" :size="16" aria-hidden="true" />
       </span>
 
       <!-- 标题 -->
@@ -96,11 +58,7 @@
     </div>
 
     <!-- 子节点 -->
-    <div
-      v-if="hasChildren && isExpanded"
-      class="ex-tree-node__children"
-      role="group"
-    >
+    <div v-if="hasChildren && isExpanded" class="ex-tree-node__children" role="group">
       <ExTreeNode
         v-for="child in node.children"
         :key="child.key"
@@ -125,13 +83,17 @@
         @node-drag-enter="(node, event) => $emit('node-drag-enter', node, event)"
         @node-drag-leave="(node, event) => $emit('node-drag-leave', node, event)"
         @node-drag-end="(node, event) => $emit('node-drag-end', node, event)"
-        @node-drop="(dragNode, dropNode, position, event) => $emit('node-drop', dragNode, dropNode, position, event)"
+        @node-drop="
+          (dragNode, dropNode, position, event) =>
+            $emit('node-drop', dragNode, dropNode, position, event)
+        "
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
 import type { TreeNode } from './types';
 
@@ -376,8 +338,7 @@ const handleDragEnd = (event: DragEvent) => {
     transition: transform var(--ex-transition-base);
 
     img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-        hue-rotate(180deg);
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
     }
 
     &--placeholder {
@@ -404,8 +365,7 @@ const handleDragEnd = (event: DragEvent) => {
     flex-shrink: 0;
 
     img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-        hue-rotate(180deg);
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
     }
   }
 

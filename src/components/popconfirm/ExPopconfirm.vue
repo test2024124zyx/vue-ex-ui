@@ -18,18 +18,14 @@
         <!-- 头部 -->
         <div class="ex-popconfirm__header">
           <!-- 图标 -->
-          <div
-            v-if="showIcon"
-            class="ex-popconfirm__icon"
-          >
+          <div v-if="showIcon" class="ex-popconfirm__icon">
             <slot name="icon">
-              <img
-                v-if="defaultIcon"
-                :src="defaultIcon"
-                :alt="type"
-                width="20"
-                height="20"
-              >
+              <ExIcon
+                :icon="customIconUrl ? undefined : defaultIcon"
+                :src="customIconUrl"
+                :size="20"
+                aria-hidden="true"
+              />
             </slot>
           </div>
 
@@ -40,10 +36,7 @@
                 {{ title }}
               </slot>
             </div>
-            <div
-              v-if="description || $slots.description"
-              class="ex-popconfirm__description"
-            >
+            <div v-if="description || $slots.description" class="ex-popconfirm__description">
               <slot name="description">
                 {{ description }}
               </slot>
@@ -53,11 +46,7 @@
 
         <!-- 底部按钮 -->
         <div class="ex-popconfirm__footer">
-          <ExButton
-            v-if="showCancel"
-            size="small"
-            @click.stop="handleCancel"
-          >
+          <ExButton v-if="showCancel" size="small" @click.stop="handleCancel">
             {{ cancelText || t('cancel') }}
           </ExButton>
           <ExButton
@@ -80,6 +69,7 @@ import type { ExPopconfirmProps, ExPopconfirmEmits, ExPopconfirmExposed } from '
 import { useLocale } from '../../locale';
 import ExPopover from '../popover/ExPopover.vue';
 import ExButton from '../button/ExButton.vue';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
   name: 'ExPopconfirm',
@@ -118,16 +108,19 @@ const popupClasses = computed(() => {
 
 const defaultIcon = computed(() => {
   const iconMap: Record<string, string> = {
-    default: 'https://api.iconify.design/ri/question-line.svg',
-    primary: 'https://api.iconify.design/ri/information-line.svg',
-    success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
-    warning: 'https://api.iconify.design/ri/error-warning-line.svg',
-    danger: 'https://api.iconify.design/ri/close-circle-line.svg',
-    info: 'https://api.iconify.design/ri/information-line.svg',
-    error: 'https://api.iconify.design/ri/close-circle-line.svg',
+    default: 'question-line',
+    primary: 'information-line',
+    success: 'checkbox-circle-line',
+    warning: 'error-warning-line',
+    danger: 'close-circle-line',
+    info: 'information-line',
+    error: 'close-circle-line',
   };
-  return props.icon || iconMap[props.type] || iconMap.default;
+  return iconMap[props.type] || iconMap.default;
 });
+
+// 允许通过 icon prop 传入自定义图片 URL
+const customIconUrl = computed(() => props.icon);
 
 // 事件处理
 const handleVisibleChange = (visible: boolean) => {

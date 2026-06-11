@@ -1,6 +1,3 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import storybook from 'eslint-plugin-storybook';
-
 import js from '@eslint/js';
 import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
@@ -44,6 +41,5 @@ export default tseslint.config(
       'vue/singleline-html-element-content-newline': 'warn', // 启用单行HTML元素换行检查
       'vue/multi-word-component-names': 'off', // 允许单词组件名称
     },
-  },
-  storybook.configs['flat/recommended']
+  }
 );

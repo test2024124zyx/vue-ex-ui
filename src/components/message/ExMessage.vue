@@ -1,8 +1,5 @@
 <template>
-  <Transition
-    name="ex-message-fade"
-    @after-leave="handleAfterLeave"
-  >
+  <Transition name="ex-message-fade" @after-leave="handleAfterLeave">
     <div
       v-show="visible"
       ref="messageRef"
@@ -12,28 +9,14 @@
       :aria-live="type === 'error' ? 'assertive' : 'polite'"
     >
       <!-- 图标 -->
-      <div
-        v-if="showIcon"
-        class="ex-message__icon"
-        :class="iconClasses"
-      >
+      <div v-if="showIcon" class="ex-message__icon" :class="iconClasses">
         <slot name="icon">
-          <!-- 加载图标使用旋转动画 -->
-          <img
-            v-if="type === 'loading'"
-            :src="defaultIconUrl"
-            :alt="type"
-            class="ex-message__icon-loading"
-            width="20"
-            height="20"
-          >
-          <img
-            v-else
-            :src="defaultIconUrl"
-            :alt="type"
-            width="20"
-            height="20"
-          >
+          <ExIcon
+            :icon="defaultIcon"
+            :size="20"
+            :class="{ 'ex-message__icon-loading': type === 'loading' }"
+            aria-hidden="true"
+          />
         </slot>
       </div>
 
@@ -41,10 +24,7 @@
       <div class="ex-message__content">
         <slot>
           <!-- 使用 sanitizeHtml 消毒后的内容，已防止 XSS 攻击 -->
-          <span
-            v-if="dangerouslyUseHTMLString"
-            v-html="sanitizedContent"
-          />
+          <span v-if="dangerouslyUseHTMLString" v-html="sanitizedContent" />
           <span v-else>{{ content }}</span>
         </slot>
       </div>
@@ -61,12 +41,7 @@
         @keydown.space.prevent="handleClose"
       >
         <slot name="close">
-          <img
-            :src="defaultCloseIconUrl"
-            alt="close"
-            width="16"
-            height="16"
-          >
+          <ExIcon icon="close-line" :size="16" aria-hidden="true" />
         </slot>
       </div>
     </div>
@@ -78,6 +53,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { ExMessageProps, ExMessageEmits } from './types';
 import { useI18n } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
   name: 'ExMessage',
@@ -108,22 +84,19 @@ const visible = ref(false);
 // 定时器
 let timer: number | undefined;
 
-// 默认图标映射
+// 默认图标映射（内置 SVG 图标名）
 const defaultIconMap: Record<string, string> = {
-  info: 'https://api.iconify.design/ri/information-line.svg',
-  success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
-  warning: 'https://api.iconify.design/ri/error-warning-line.svg',
-  error: 'https://api.iconify.design/ri/close-circle-line.svg',
-  loading: 'https://api.iconify.design/ri/loader-4-line.svg',
+  info: 'information-line',
+  success: 'checkbox-circle-line',
+  warning: 'error-warning-line',
+  error: 'close-circle-line',
+  loading: 'loader-4-line',
 };
 
-// 默认图标 URL
-const defaultIconUrl = computed(() => {
+// 默认图标名
+const defaultIcon = computed(() => {
   return defaultIconMap[props.type];
 });
-
-// 默认关闭图标 URL
-const defaultCloseIconUrl = 'https://api.iconify.design/ri/close-line.svg';
 
 // 消毒后的 HTML 内容（防止 XSS 攻击）
 const sanitizedContent = computed(() => {
@@ -135,10 +108,7 @@ const sanitizedContent = computed(() => {
 
 // 计算样式类
 const messageClasses = computed(() => {
-  const classes = [
-    'ex-message',
-    `ex-message--${props.type}`,
-  ];
+  const classes = ['ex-message', `ex-message--${props.type}`];
 
   if (props.closable) classes.push('ex-message--closable');
   if (props.customClass) classes.push(props.customClass);

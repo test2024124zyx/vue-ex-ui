@@ -1,34 +1,14 @@
 <template>
-  <Teleport
-    to="body"
-    :disabled="!appendToBody"
-  >
-    <div
-      v-if="visible"
-      class="ex-modal-root"
-      :style="rootStyles"
-      v-bind="$attrs"
-    >
+  <Teleport to="body" :disabled="!appendToBody">
+    <div v-if="visible" class="ex-modal-root" :style="rootStyles" v-bind="$attrs">
       <!-- 遮罩层 -->
       <Transition name="ex-modal-mask-fade">
-        <div
-          v-if="mask && visible"
-          class="ex-modal-mask"
-          @click="handleMaskClick"
-        />
+        <div v-if="mask && visible" class="ex-modal-mask" @click="handleMaskClick" />
       </Transition>
 
       <!-- 模态框包装器 -->
-      <div
-        ref="wrapRef"
-        class="ex-modal-wrap"
-        :class="wrapClasses"
-        @click.self="handleMaskClick"
-      >
-        <Transition
-          name="ex-modal-zoom"
-          @after-leave="handleAfterClose"
-        >
+      <div ref="wrapRef" class="ex-modal-wrap" :class="wrapClasses" @click.self="handleMaskClick">
+        <Transition name="ex-modal-zoom" @after-leave="handleAfterClose">
           <div
             v-if="visible"
             ref="modalRef"
@@ -50,30 +30,16 @@
                 @click="handleCancel"
               >
                 <slot name="closeIcon">
-                  <img
-                    src="https://api.iconify.design/ri/close-line.svg"
-                    alt="关闭"
-                    width="20"
-                    height="20"
-                  >
+                  <ExIcon icon="close-line" :size="20" aria-hidden="true" />
                 </slot>
               </button>
 
               <!-- 头部 -->
-              <div
-                v-if="hasHeader"
-                class="ex-modal-header"
-              >
-                <div
-                  v-if="$slots.icon"
-                  class="ex-modal-header__icon"
-                >
+              <div v-if="hasHeader" class="ex-modal-header">
+                <div v-if="$slots.icon" class="ex-modal-header__icon">
                   <slot name="icon" />
                 </div>
-                <div
-                  id="ex-modal-title"
-                  class="ex-modal-title"
-                >
+                <div id="ex-modal-title" class="ex-modal-title">
                   <slot name="title">
                     {{ title }}
                   </slot>
@@ -81,27 +47,17 @@
               </div>
 
               <!-- 内容 -->
-              <div
-                class="ex-modal-body"
-                :style="bodyStyle"
-              >
+              <div class="ex-modal-body" :style="bodyStyle">
                 <slot />
               </div>
 
               <!-- 底部 -->
-              <div
-                v-if="hasFooter"
-                class="ex-modal-footer"
-              >
+              <div v-if="hasFooter" class="ex-modal-footer">
                 <slot name="footer">
                   <ExButton @click="handleCancel">
                     {{ cancelText || t('cancel') }}
                   </ExButton>
-                  <ExButton
-                    :type="okType"
-                    :loading="confirmLoading"
-                    @click="handleOk"
-                  >
+                  <ExButton :type="okType" :loading="confirmLoading" @click="handleOk">
                     {{ okText || t('ok') }}
                   </ExButton>
                 </slot>
@@ -115,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount, useSlots } from 'vue';
 import type { ExModalProps, ExModalEmits, ExModalExposed } from './types';
 import { useLocale } from '../../locale';
@@ -199,7 +156,7 @@ const rootStyles = computed(() => {
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newVal) => {
+  newVal => {
     visible.value = newVal;
     if (newVal) {
       nextTick(() => {

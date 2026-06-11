@@ -33,12 +33,7 @@
         @click="prev"
       >
         <slot name="arrow-prev">
-          <img
-            src="https://api.iconify.design/ri/arrow-left-s-line.svg"
-            alt="Previous"
-            width="24"
-            height="24"
-          >
+          <ExIcon icon="arrow-left-s-line" :size="24" aria-hidden="true" />
         </slot>
       </button>
 
@@ -53,12 +48,7 @@
         @click="next"
       >
         <slot name="arrow-next">
-          <img
-            src="https://api.iconify.design/ri/arrow-right-s-line.svg"
-            alt="Next"
-            width="24"
-            height="24"
-          >
+          <ExIcon icon="arrow-right-s-line" :size="24" aria-hidden="true" />
         </slot>
       </button>
     </div>
@@ -85,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, onMounted, onBeforeUnmount, provide, watch } from 'vue';
 import type { ExCarouselProps, ExCarouselEmits, ExCarouselExposed } from './types';
 import { useI18n } from '../../locale';
@@ -301,7 +292,7 @@ const handleMouseLeave = () => {
 const handleTouchStart = (e: TouchEvent) => {
   const touch = e.touches[0];
   if (!touch) return;
-  
+
   touchStartX.value = touch.clientX;
   touchStartY.value = touch.clientY;
 };
@@ -309,7 +300,7 @@ const handleTouchStart = (e: TouchEvent) => {
 const handleTouchMove = (e: TouchEvent) => {
   const touch = e.touches[0];
   if (!touch) return;
-  
+
   touchEndX.value = touch.clientX;
   touchEndY.value = touch.clientY;
 };
@@ -345,14 +336,11 @@ const handleTouchEnd = () => {
 };
 
 // 监听 modelValue 变化
-watch(
-  modelValue,
-  (newValue) => {
-    if (newValue !== currentIndex.value) {
-      goTo(newValue);
-    }
+watch(modelValue, newValue => {
+  if (newValue !== currentIndex.value) {
+    goTo(newValue);
   }
-);
+});
 
 // 生命周期
 onMounted(() => {
