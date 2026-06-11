@@ -1,0 +1,451 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Skeleton 骨架屏组件样�?- 游戏主题
+// ============================================================================
+
+.ex-skeleton {
+  position: relative;
+  display: block;
+  width: 100%;
+
+  // 屏幕阅读器专用文�?
+  &__sr-only {
+    @include sr-only;
+  }
+
+  // 布局容器
+  &__layout {
+    display: flex;
+    gap: var(--ex-spacing-4);
+    align-items: flex-start;
+  }
+
+  // 内容区域
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // 头像
+  &__avatar {
+    flex-shrink: 0;
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-alpha-10),
+      var(--ex-color-neon-pink-alpha-10)
+    );
+    border: 1px solid var(--ex-color-neon-blue-alpha-20);
+    overflow: hidden;
+    position: relative;
+
+    // 形状
+    &--circle {
+      border-radius: 50%;
+    }
+
+    &--square {
+      border-radius: 0;
+    }
+
+    &--rounded {
+      border-radius: var(--ex-radius-md);
+    }
+
+    // 尺寸
+    &--small {
+      width: 32px;
+      height: 32px;
+    }
+
+    &--default {
+      width: 40px;
+      height: 40px;
+    }
+
+    &--large {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  // 标题
+  &__title {
+    height: 20px;
+    width: 40%;
+    margin-bottom: var(--ex-spacing-3);
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-alpha-15),
+      var(--ex-color-neon-pink-alpha-15)
+    );
+    border: 1px solid var(--ex-color-neon-blue-alpha-20);
+    border-radius: var(--ex-radius-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  // 段落
+  &__paragraph {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-2);
+  }
+
+  // 段落�?
+  &__row {
+    height: 16px;
+    width: 100%;
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-alpha-10),
+      var(--ex-color-neon-pink-alpha-10)
+    );
+    border: 1px solid var(--ex-color-neon-blue-alpha-15);
+    border-radius: var(--ex-radius-sm);
+    position: relative;
+    overflow: hidden;
+
+    &:last-child {
+      width: 60%;
+    }
+  }
+
+  // 单个元素
+  &__element {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-alpha-10),
+      var(--ex-color-neon-pink-alpha-10)
+    );
+    border: 1px solid var(--ex-color-neon-blue-alpha-20);
+    border-radius: var(--ex-radius-md);
+    position: relative;
+    overflow: hidden;
+
+    &--text {
+      height: 16px;
+      width: 100%;
+    }
+
+    &--image {
+      height: 200px;
+      width: 100%;
+    }
+
+    &--button {
+      height: 40px;
+      width: 120px;
+    }
+
+    &--card {
+      height: 300px;
+      width: 100%;
+    }
+  }
+
+  // ============================================================================
+  // 动画效果 - 游戏主题增强
+  // ============================================================================
+
+  // 脉冲动画
+  &--animation-pulse {
+    .ex-skeleton__avatar,
+    .ex-skeleton__title,
+    .ex-skeleton__row,
+    .ex-skeleton__element {
+      animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  }
+
+  // 波浪动画
+  &--animation-wave {
+    .ex-skeleton__avatar,
+    .ex-skeleton__title,
+    .ex-skeleton__row,
+    .ex-skeleton__element {
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--ex-color-neon-blue-alpha-30),
+          var(--ex-color-neon-pink-alpha-30),
+          transparent
+        );
+        animation: skeleton-wave 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  // ============================================================================
+  // 变体样式
+  // ============================================================================
+
+  &--text {
+    .ex-skeleton__element {
+      height: 16px;
+    }
+  }
+
+  &--avatar {
+    .ex-skeleton__avatar {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  &--title {
+    .ex-skeleton__title {
+      height: 24px;
+      width: 50%;
+    }
+  }
+
+  &--paragraph {
+    .ex-skeleton__paragraph {
+      gap: var(--ex-spacing-3);
+    }
+  }
+
+  &--image {
+    .ex-skeleton__element {
+      height: 200px;
+      border-radius: var(--ex-radius-lg);
+    }
+  }
+
+  &--button {
+    .ex-skeleton__element {
+      height: 40px;
+      width: 120px;
+      border-radius: var(--ex-radius-base);
+    }
+  }
+
+  &--card {
+    .ex-skeleton__element {
+      height: 300px;
+      border-radius: var(--ex-radius-lg);
+    }
+  }
+
+  &--list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-4);
+  }
+
+  &--table {
+    .ex-skeleton__row {
+      height: 48px;
+    }
+  }
+
+  &--article {
+    .ex-skeleton__title {
+      height: 32px;
+      width: 70%;
+      margin-bottom: var(--ex-spacing-4);
+    }
+
+    .ex-skeleton__paragraph {
+      gap: var(--ex-spacing-3);
+    }
+
+    .ex-skeleton__row {
+      height: 18px;
+    }
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-skeleton__title {
+      height: 16px;
+    }
+
+    .ex-skeleton__row {
+      height: 12px;
+    }
+
+    .ex-skeleton__paragraph {
+      gap: var(--ex-spacing-1);
+    }
+  }
+
+  &--large {
+    .ex-skeleton__title {
+      height: 24px;
+    }
+
+    .ex-skeleton__row {
+      height: 20px;
+    }
+
+    .ex-skeleton__paragraph {
+      gap: var(--ex-spacing-3);
+    }
+  }
+
+  // ============================================================================
+  // 形状变体
+  // ============================================================================
+
+  &--circle {
+    .ex-skeleton__avatar,
+    .ex-skeleton__title,
+    .ex-skeleton__row,
+    .ex-skeleton__element {
+      border-radius: 50%;
+    }
+  }
+
+  &--square {
+    .ex-skeleton__avatar,
+    .ex-skeleton__title,
+    .ex-skeleton__row,
+    .ex-skeleton__element {
+      border-radius: 0;
+    }
+  }
+
+  &--rounded {
+    .ex-skeleton__avatar,
+    .ex-skeleton__title,
+    .ex-skeleton__row,
+    .ex-skeleton__element {
+      border-radius: var(--ex-radius-md);
+    }
+  }
+}
+
+// ============================================================================
+// 动画关键�?- 游戏主题
+// ============================================================================
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--ex-color-neon-blue-alpha-20);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 20px var(--ex-color-neon-pink-alpha-30);
+  }
+}
+
+@keyframes skeleton-wave {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-skeleton {
+    &__layout {
+      gap: var(--ex-spacing-3);
+    }
+
+    &__avatar {
+      &--small {
+        width: 28px;
+        height: 28px;
+      }
+
+      &--default {
+        width: 36px;
+        height: 36px;
+      }
+
+      &--large {
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    &__title {
+      height: 18px;
+      margin-bottom: var(--ex-spacing-2);
+    }
+
+    &__row {
+      height: 14px;
+    }
+
+    &__paragraph {
+      gap: var(--ex-spacing-1);
+    }
+  }
+}
+
+// ============================================================================
+// 无障碍支�?
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-skeleton {
+    &--animation-pulse,
+    &--animation-wave {
+      .ex-skeleton__avatar,
+      .ex-skeleton__title,
+      .ex-skeleton__row,
+      .ex-skeleton__element {
+        animation: none;
+
+        &::after {
+          animation: none;
+        }
+      }
+    }
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-skeleton {
+    &__avatar,
+    &__title,
+    &__row,
+    &__element {
+      border-width: 2px;
+      background: var(--ex-color-white-alpha-10);
+    }
+  }
+}
+
+// ============================================================================
+// 过渡动画
+// ============================================================================
+
+.ex-skeleton-fade-enter-active,
+.ex-skeleton-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ex-skeleton-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.ex-skeleton-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+

@@ -1,0 +1,483 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Checkbox 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-checkbox {
+  position: relative;
+  display: inline-flex;
+  font-family: var(--ex-font-secondary);
+  line-height: var(--ex-leading-normal);
+  user-select: none;
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 基础包装
+  // ============================================================================
+
+  &__wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    @include safe-transition(all);
+
+    &--disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  // ============================================================================
+  // 隐藏的原生复选框
+  // ============================================================================
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    pointer-events: none;
+  }
+
+  // ============================================================================
+  // 自定义复选框外观 - 游戏主题增强
+  // ============================================================================
+
+  &__box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    background: transparent;
+    @include safe-transition(all);
+    @include optimized-text-rendering;
+
+    // 霓虹发光效果
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: var(--ex-radius-sm);
+      opacity: 0;
+      @include safe-transition(opacity);
+      pointer-events: none;
+    }
+
+    // 选中状态的图标
+    .ex-checkbox__check-icon,
+    .ex-checkbox__indeterminate-icon {
+      color: var(--ex-color-white);
+      @include safe-transition(all, var(--ex-motion-duration-fast));
+    }
+
+    // 选中状- 霓虹蓝渐
+    &--checked {
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'sm');
+
+      &::before {
+        opacity: 1;
+        @include optimized-neon-glow('blue', 'md');
+      }
+    }
+
+    // 中间状- 霓虹粉渐
+    &--indeterminate {
+      background: linear-gradient(135deg, var(--ex-color-neon-pink-500), var(--ex-color-neon-pink-600));
+      border-color: var(--ex-color-neon-pink-500);
+      @include optimized-neon-glow('pink', 'sm');
+
+      &::before {
+        opacity: 1;
+        @include optimized-neon-glow('pink', 'md');
+      }
+    }
+
+    // 禁用状
+    &--disabled {
+      background: var(--ex-color-bg-tertiary);
+      border-color: var(--ex-color-border-primary);
+      opacity: 0.5;
+
+      &.ex-checkbox__box--checked,
+      &.ex-checkbox__box--indeterminate {
+        background: var(--ex-color-text-disabled);
+        border-color: var(--ex-color-text-disabled);
+        box-shadow: none;
+
+        &::before {
+          opacity: 0;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 标签文本
+  // ============================================================================
+
+  &__label-text {
+    margin-left: var(--ex-spacing-2);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-normal);
+    @include safe-transition(color);
+    @include optimized-text-rendering;
+  }
+
+  // ============================================================================
+  // 底部信息区域
+  // ============================================================================
+
+  &__bottom {
+    margin-top: var(--ex-spacing-2);
+    min-height: 20px;
+  }
+
+  // 帮助文本
+  &__help {
+    @include helper-text;
+  }
+
+  // 错误信息
+  &__error {
+    @include error-text;
+
+    &-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  // 错误信息过渡动画
+  &-error-enter-active,
+  &-error-leave-active {
+    @include safe-transition(all, var(--ex-motion-duration-base));
+  }
+
+  &-error-enter-from,
+  &-error-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-checkbox__box {
+      width: 16px;
+      height: 16px;
+    }
+
+    .ex-checkbox__label-text {
+      font-size: var(--ex-text-sm);
+      line-height: var(--ex-leading-snug);
+    }
+  }
+
+  &--medium {
+    .ex-checkbox__box {
+      width: 18px;
+      height: 18px;
+    }
+
+    .ex-checkbox__label-text {
+      font-size: var(--ex-text-base);
+      line-height: var(--ex-leading-normal);
+    }
+  }
+
+  &--large {
+    .ex-checkbox__box {
+      width: 20px;
+      height: 20px;
+    }
+
+    .ex-checkbox__label-text {
+      font-size: var(--ex-text-lg);
+      line-height: var(--ex-leading-relaxed);
+    }
+  }
+
+  // ============================================================================
+  // 状态变- 游戏主题增强
+  // ============================================================================
+
+  &--error {
+    .ex-checkbox__box {
+      border-color: var(--ex-color-error);
+
+      &:not(.ex-checkbox__box--checked):not(.ex-checkbox__box--indeterminate) {
+        background: rgba(239, 68, 68, 0.1);
+        @include optimized-shadow('sm');
+      }
+    }
+
+    .ex-checkbox__label-text {
+      color: var(--ex-color-error);
+    }
+  }
+
+  &--success {
+    .ex-checkbox__box {
+      &.ex-checkbox__box--checked,
+      &.ex-checkbox__box--indeterminate {
+        background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
+        border-color: var(--ex-color-success);
+        box-shadow: 0 0 10px var(--ex-color-success-alpha-30);
+      }
+    }
+  }
+
+  &--warning {
+    .ex-checkbox__box {
+      &.ex-checkbox__box--checked,
+      &.ex-checkbox__box--indeterminate {
+        background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
+        border-color: var(--ex-color-warning);
+        box-shadow: 0 0 10px var(--ex-color-warning-alpha-30);
+      }
+    }
+  }
+
+  // ============================================================================
+  // 交互状- 游戏主题增强
+  // ============================================================================
+
+  &--focused {
+    .ex-checkbox__box {
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'md');
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid var(--ex-color-neon-blue-500);
+        border-radius: var(--ex-radius-base);
+        opacity: 0.3;
+        @include safe-transition(opacity);
+      }
+    }
+
+    .ex-checkbox__label-text {
+      color: var(--ex-color-neon-blue-400);
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+    }
+  }
+
+  // 悬停效果（仅在非禁用状态）
+  &:not(&--disabled) {
+    @include hover-capable {
+      .ex-checkbox__wrapper:hover {
+        .ex-checkbox__box {
+          border-color: var(--ex-color-neon-pink-400);
+          transform: scale(1.05);
+
+          &:not(.ex-checkbox__box--checked):not(.ex-checkbox__box--indeterminate) {
+            background: rgba(255, 0, 127, 0.05);
+            @include optimized-neon-glow('pink', 'sm');
+          }
+
+          &.ex-checkbox__box--checked {
+            @include optimized-neon-glow('blue', 'md');
+          }
+
+          &.ex-checkbox__box--indeterminate {
+            @include optimized-neon-glow('pink', 'md');
+          }
+        }
+
+        .ex-checkbox__label-text {
+          color: var(--ex-color-neon-pink-400);
+        }
+      }
+    }
+  }
+
+  // 激活状
+  &:not(&--disabled) {
+    .ex-checkbox__wrapper:active {
+      .ex-checkbox__box {
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  // ============================================================================
+  // 禁用状
+  // ============================================================================
+
+  &--disabled {
+    .ex-checkbox__label-text {
+      color: var(--ex-color-text-disabled);
+    }
+  }
+
+  // ============================================================================
+  // 只读状
+  // ============================================================================
+
+  &--readonly {
+    .ex-checkbox__wrapper {
+      cursor: default;
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设- 移动端优
+// ============================================================================
+
+@include mobile {
+  .ex-checkbox {
+    // 在移动端增加触摸区域
+    &__wrapper {
+      min-height: 44px;
+      align-items: center;
+      padding: var(--ex-spacing-2) 0;
+    }
+
+    &__box {
+      // 移动端稍大的复选框
+      width: 20px !important;
+      height: 20px !important;
+    }
+
+    &__label-text {
+      // 移动端更大的字体
+      font-size: var(--ex-text-base) !important;
+    }
+  }
+}
+
+// ============================================================================
+// 触摸设备优化
+// ============================================================================
+
+@include touch-device {
+  .ex-checkbox {
+    &__wrapper {
+      // 触摸设备上增加点击区
+      padding: var(--ex-spacing-2);
+      margin: calc(var(--ex-spacing-2) * -1);
+    }
+
+    // 禁用悬停效果
+    &:not(&--disabled) {
+      .ex-checkbox__wrapper:hover {
+        .ex-checkbox__box {
+          transform: none;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 高对比度模式支持
+// ============================================================================
+
+@media (prefers-contrast: high) {
+  .ex-checkbox {
+    &__box {
+      border-width: 3px;
+
+      &--checked,
+      &--indeterminate {
+        border-color: var(--ex-color-text-primary);
+        background: var(--ex-color-text-primary);
+      }
+    }
+
+    &__label-text {
+      font-weight: var(--ex-font-medium);
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-checkbox {
+    &__wrapper,
+    &__box,
+    &__label-text,
+    .ex-checkbox__check-icon,
+    .ex-checkbox__indeterminate-icon {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    &__box {
+      &::before,
+      &::after {
+        transition: none !important;
+      }
+    }
+
+    &:not(&--disabled) {
+      .ex-checkbox__wrapper:hover,
+      .ex-checkbox__wrapper:active {
+        .ex-checkbox__box {
+          transform: none !important;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-checkbox {
+  // 使用 CSS containment 优化性能
+  contain: layout style;
+
+  &__box {
+    // GPU 加
+    @include gpu-accelerate;
+
+    // 动画结束后移GPU 加
+    &:not(:hover):not(:focus) {
+      @include remove-gpu-accelerate;
+    }
+  }
+
+  // 低端设备优化
+  @include low-end-device {
+    &__box {
+      box-shadow: none !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+

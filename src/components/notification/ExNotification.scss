@@ -1,0 +1,356 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Notification 组件样式 - 赛博朋克风格
+// ============================================================================
+
+.ex-notification {
+  display: flex;
+  align-items: flex-start;
+  width: 330px;
+  padding: var(--ex-spacing-4);
+  border-radius: var(--ex-radius-lg);
+  border: 1px solid transparent;
+  background: var(--ex-color-bg-secondary);
+  box-shadow: var(--ex-shadow-xl);
+  pointer-events: all;
+  cursor: pointer;
+  @include safe-transition(all);
+  @include optimized-text-rendering;
+  @include optimized-backdrop-blur(12px);
+
+  &:hover {
+    transform: translateX(-4px);
+  }
+
+  // ============================================================================
+  // 图标
+  // ============================================================================
+
+  &__icon {
+    flex-shrink: 0;
+    margin-right: var(--ex-spacing-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+
+    img {
+      display: block;
+    }
+
+    // 图标颜色变体
+    &--info {
+      filter: brightness(0) saturate(100%) invert(67%) sepia(89%) saturate(1000%) hue-rotate(166deg) brightness(101%) contrast(101%);
+    }
+
+    &--success {
+      filter: brightness(0) saturate(100%) invert(67%) sepia(52%) saturate(500%) hue-rotate(100deg) brightness(95%) contrast(90%);
+    }
+
+    &--warning {
+      filter: brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%) hue-rotate(10deg) brightness(100%) contrast(95%);
+    }
+
+    &--error {
+      filter: brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(1000%) hue-rotate(310deg) brightness(100%) contrast(100%);
+    }
+  }
+
+  // ============================================================================
+  // 内容区域
+  // ============================================================================
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+    line-height: var(--ex-leading-normal);
+    margin-bottom: var(--ex-spacing-1);
+  }
+
+  &__description {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    line-height: var(--ex-leading-relaxed);
+    word-break: break-word;
+  }
+
+  // ============================================================================
+  // 关闭按钮
+  // ============================================================================
+
+  &__close {
+    flex-shrink: 0;
+    margin-left: var(--ex-spacing-3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--ex-spacing-1);
+    border-radius: var(--ex-radius-sm);
+    opacity: 0.6;
+    @include safe-transition(all);
+
+    &:hover {
+      opacity: 1;
+      background: var(--ex-color-white-alpha-10);
+      transform: scale(1.1);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+    }
+
+    img {
+      display: block;
+      filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(180deg) brightness(100%) contrast(90%);
+    }
+  }
+
+  // ============================================================================
+  // 类型变体 - 赛博朋克风格
+  // ============================================================================
+
+  &--info {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary) 0%,
+      rgba(0, 240, 255, 0.05) 100%
+    );
+    border-color: var(--ex-color-neon-blue-alpha-30);
+    @include optimized-neon-glow('blue', 'sm');
+
+    .ex-notification__title {
+      color: var(--ex-color-neon-blue-400);
+    }
+  }
+
+  &--success {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary) 0%,
+      rgba(16, 185, 129, 0.05) 100%
+    );
+    border-color: var(--ex-color-success-alpha-30);
+    box-shadow: 
+      var(--ex-shadow-xl),
+      0 0 10px var(--ex-color-success-alpha-20);
+
+    .ex-notification__title {
+      color: var(--ex-color-success);
+    }
+  }
+
+  &--warning {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary) 0%,
+      rgba(245, 158, 11, 0.05) 100%
+    );
+    border-color: var(--ex-color-warning-alpha-30);
+    box-shadow: 
+      var(--ex-shadow-xl),
+      0 0 10px var(--ex-color-warning-alpha-20);
+
+    .ex-notification__title {
+      color: var(--ex-color-warning);
+    }
+  }
+
+  &--error {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary) 0%,
+      rgba(255, 0, 127, 0.05) 100%
+    );
+    border-color: var(--ex-color-neon-pink-alpha-30);
+    @include optimized-neon-glow('pink', 'sm');
+
+    .ex-notification__title {
+      color: var(--ex-color-neon-pink-400);
+    }
+  }
+
+  // ============================================================================
+  // 位置变体
+  // ============================================================================
+
+  &--top-right,
+  &--bottom-right {
+    &:hover {
+      transform: translateX(-4px);
+    }
+  }
+
+  &--top-left,
+  &--bottom-left {
+    &:hover {
+      transform: translateX(4px);
+    }
+  }
+
+  // ============================================================================
+  // 可关闭状态
+  // ============================================================================
+
+  &--closable {
+    padding-right: var(--ex-spacing-3);
+  }
+}
+
+// ============================================================================
+// 过渡动画
+// ============================================================================
+
+.ex-notification-fade-enter-active {
+  animation: ex-notification-fade-in var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+}
+
+.ex-notification-fade-leave-active {
+  animation: ex-notification-fade-out var(--ex-motion-duration-base) var(--ex-motion-ease-in);
+}
+
+// ============================================================================
+// 关键帧动画
+// ============================================================================
+
+@keyframes ex-notification-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ex-notification-fade-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+// 左侧位置的动画
+.ex-notification--top-left,
+.ex-notification--bottom-left {
+  &.ex-notification-fade-enter-active {
+    animation-name: ex-notification-fade-in-left;
+  }
+
+  &.ex-notification-fade-leave-active {
+    animation-name: ex-notification-fade-out-left;
+  }
+}
+
+@keyframes ex-notification-fade-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ex-notification-fade-out-left {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+// ============================================================================
+// 响应式设计
+// ============================================================================
+
+@include mobile {
+  .ex-notification {
+    width: calc(100vw - 32px);
+    max-width: 330px;
+    padding: var(--ex-spacing-3);
+
+    &__icon {
+      margin-right: var(--ex-spacing-2);
+
+      img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &__title {
+      font-size: var(--ex-text-sm);
+    }
+
+    &__description {
+      font-size: var(--ex-text-xs);
+    }
+
+    &__close {
+      margin-left: var(--ex-spacing-2);
+
+      img {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-notification {
+    transition: none !important;
+
+    &:hover {
+      transform: none !important;
+    }
+  }
+
+  .ex-notification-fade-enter-active,
+  .ex-notification-fade-leave-active {
+    animation: none !important;
+  }
+
+  .ex-notification-fade-enter-from,
+  .ex-notification-fade-leave-to {
+    opacity: 0;
+  }
+}
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-notification {
+  contain: layout style;
+  @include gpu-accelerate;
+}

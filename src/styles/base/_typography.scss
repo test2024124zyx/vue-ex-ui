@@ -1,0 +1,189 @@
+// ExUI Typography Styles
+// 字体和文本样式
+
+@use '../mixins' as *;
+
+// ============================================================================
+// 字体说明
+// ============================================================================
+// Audiowide 字体已通过 @fontsource/audiowide 包导入
+// 其他字体（Orbitron, Rajdhani 等）作为备用字体，如果系统中没有会降级到 sans-serif
+
+// 节能模式下使用系统字体
+@media (prefers-reduced-data: reduce) {
+  :root {
+    --ex-font-primary: system-ui, -apple-system, sans-serif;
+    --ex-font-secondary: system-ui, -apple-system, sans-serif;
+    --ex-font-mono: 'Courier New', monospace;
+  }
+}
+
+// ============================================================================
+// 标题元素
+// ============================================================================
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: var(--ex-font-bold);
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-color-text-primary);
+}
+
+h1 {
+  @include gaming-title('2xl');
+  margin-bottom: var(--ex-spacing-6);
+  
+  @include respond-to(md) {
+    font-size: var(--ex-text-6xl);
+  }
+}
+
+h2 {
+  @include gaming-title('xl');
+  margin-bottom: var(--ex-spacing-5);
+  
+  @include respond-to(md) {
+    font-size: var(--ex-text-5xl);
+  }
+}
+
+h3 {
+  @include gaming-title('lg');
+  margin-bottom: var(--ex-spacing-4);
+  
+  @include respond-to(md) {
+    font-size: var(--ex-text-4xl);
+  }
+}
+
+h4 {
+  @include gaming-title('md');
+  margin-bottom: var(--ex-spacing-3);
+  
+  @include respond-to(md) {
+    font-size: var(--ex-text-3xl);
+  }
+}
+
+h5 {
+  @include gaming-title('sm');
+  margin-bottom: var(--ex-spacing-2);
+  
+  @include respond-to(md) {
+    font-size: var(--ex-text-2xl);
+  }
+}
+
+h6 {
+  font-family: var(--ex-font-secondary);
+  font-size: var(--ex-text-lg);
+  font-weight: var(--ex-font-semibold);
+  margin-bottom: var(--ex-spacing-2);
+  color: var(--ex-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--ex-tracking-wide);
+}
+
+// ============================================================================
+// 文本元素
+// ============================================================================
+
+p {
+  margin: 0 0 var(--ex-spacing-4) 0;
+  color: var(--ex-color-text-secondary);
+  line-height: var(--ex-leading-relaxed);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+a {
+  color: var(--ex-color-neon-blue-500);
+  text-decoration: none;
+  @include transition(color);
+  
+  &:hover {
+    color: var(--ex-color-neon-blue-400);
+    @include neon-text('blue');
+  }
+  
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+strong, b {
+  font-weight: var(--ex-font-bold);
+  color: var(--ex-color-text-primary);
+}
+
+em, i {
+  font-style: italic;
+}
+
+small {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-text-tertiary);
+}
+
+mark {
+  background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+  color: var(--ex-color-text-inverse);
+  padding: 0.1em 0.3em;
+  border-radius: var(--ex-radius-sm);
+}
+
+code {
+  font-family: var(--ex-font-mono);
+  font-size: 0.9em;
+  background: var(--ex-color-bg-tertiary);
+  color: var(--ex-color-neon-blue-400);
+  padding: 0.2em 0.4em;
+  border-radius: var(--ex-radius-sm);
+  border: 1px solid var(--ex-color-border-primary);
+}
+
+pre {
+  font-family: var(--ex-font-mono);
+  background: var(--ex-color-bg-secondary);
+  color: var(--ex-color-text-primary);
+  padding: var(--ex-spacing-4);
+  border-radius: var(--ex-radius-lg);
+  border: 1px solid var(--ex-color-border-primary);
+  overflow-x: auto;
+  margin: var(--ex-spacing-4) 0;
+  @include custom-scrollbar;
+  
+  code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+}
+
+blockquote {
+  margin: var(--ex-spacing-6) 0;
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  border-left: 4px solid var(--ex-color-neon-blue-500);
+  background: var(--ex-color-bg-secondary);
+  border-radius: 0 var(--ex-radius-md) var(--ex-radius-md) 0;
+  
+  p {
+    margin: 0;
+    font-style: italic;
+    color: var(--ex-color-text-secondary);
+  }
+  
+  cite {
+    display: block;
+    margin-top: var(--ex-spacing-2);
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-tertiary);
+    
+    &::before {
+      content: '— ';
+    }
+  }
+}

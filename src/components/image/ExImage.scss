@@ -1,0 +1,224 @@
+// ExImage 图片组件样式
+// 游戏主题风格 - ClutchZone
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/performance' as *;
+@use '../../styles/component-mixins' as *;
+
+.ex-image {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-base);
+  @include safe-transition(all);
+
+  // 霓虹边框效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-500),
+      var(--ex-color-neon-pink-500)
+    );
+    border-radius: var(--ex-radius-base);
+    opacity: 0;
+    z-index: -1;
+    @include safe-transition(opacity);
+  }
+
+  &:hover::before {
+    opacity: 0.3;
+  }
+
+  // ============================================================================
+  // 图片元素
+  // ============================================================================
+  
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    @include safe-transition(transform, filter);
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  // ============================================================================
+  // 加载占位
+  // ============================================================================
+  
+  &__placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ex-color-bg-tertiary);
+    color: var(--ex-color-text-tertiary);
+    z-index: 1;
+
+    // 加载动画
+    &::after {
+      content: '';
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--ex-color-neon-blue-500);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      @include optimized-neon-glow('blue', 'sm');
+    }
+  }
+
+  // ============================================================================
+  // 错误状态
+  // ============================================================================
+  
+  &__error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-2);
+    background: var(--ex-color-bg-tertiary);
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    text-align: center;
+    padding: var(--ex-spacing-4);
+    z-index: 1;
+
+    &-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--ex-color-error);
+      opacity: 0.6;
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    &-text {
+      font-family: var(--ex-font-secondary);
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // ============================================================================
+  // 预览模式
+  // ============================================================================
+  
+  &--preview {
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'sm');
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // ============================================================================
+  // 圆形图片
+  // ============================================================================
+  
+  &--circle {
+    border-radius: 50%;
+
+    &::before {
+      border-radius: 50%;
+    }
+
+    .ex-image__img {
+      border-radius: 50%;
+    }
+  }
+
+  // ============================================================================
+  // 响应式设计
+  // ============================================================================
+  
+  @include mobile {
+    &__placeholder::after {
+      width: 32px;
+      height: 32px;
+      border-width: 2px;
+    }
+
+    &__error {
+      font-size: var(--ex-text-xs);
+      padding: var(--ex-spacing-3);
+
+      &-icon {
+        width: 36px;
+        height: 36px;
+      }
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支持
+  // ============================================================================
+  
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &__img,
+    &::before {
+      transition: none;
+      animation: none;
+    }
+
+    &__img:hover {
+      transform: none;
+    }
+
+    &__placeholder::after {
+      animation: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    border-width: 2px;
+
+    &:hover {
+      border-width: 3px;
+    }
+  }
+}
+
+// ============================================================================
+// 动画定义
+// ============================================================================
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,40 @@
+// BEM Mixins
+// Provides helper mixins for BEM (Block, Element, Modifier) methodology.
+
+// Block
+// Defines a block.
+// @param {String} $block - The block name.
+@mixin b($block) {
+  $B: & !global;
+  .ex-#{$block} {
+    @content;
+  }
+}
+
+// Element
+// Defines an element within a block.
+// @param {String} $element - The element name.
+@mixin e($element) {
+  $E: & !global;
+  &__#{$element} {
+    @content;
+  }
+}
+
+// Modifier
+// Defines a modifier for a block or element.
+// @param {String} $modifier - The modifier name.
+@mixin m($modifier) {
+  &--#{$modifier} {
+    @content;
+  }
+}
+
+// State
+// Defines a state for a block or element (e.g., is-active, has-error).
+// @param {String} $state - The state name.
+@mixin when($state) {
+  &.is-#{$state} {
+    @content;
+  }
+}

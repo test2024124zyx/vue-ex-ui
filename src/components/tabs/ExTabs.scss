@@ -1,0 +1,362 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Tabs 标签页组件样式 - 游戏主题
+// ============================================================================
+
+.ex-tabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  // 垂直布局
+  &--left,
+  &--right {
+    flex-direction: row;
+
+    .ex-tabs__nav-wrap {
+      flex-direction: column;
+    }
+
+    .ex-tabs__nav {
+      flex-direction: column;
+    }
+
+    .ex-tabs__indicator {
+      width: 2px;
+      height: 0;
+      left: auto;
+      right: 0;
+      bottom: auto;
+      top: 0;
+    }
+  }
+
+  &--right {
+    .ex-tabs__nav-wrap {
+      order: 2;
+    }
+
+    .ex-tabs__indicator {
+      right: auto;
+      left: 0;
+    }
+  }
+
+  &--bottom {
+    .ex-tabs__nav-wrap {
+      order: 2;
+    }
+  }
+}
+
+// 导航包装器
+.ex-tabs__nav-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  &--top,
+  &--bottom {
+    border-bottom: 1px solid var(--ex-color-border-primary);
+  }
+
+  &--left,
+  &--right {
+    border-right: 1px solid var(--ex-color-border-primary);
+  }
+
+  &--right {
+    border-right: none;
+    border-left: 1px solid var(--ex-color-border-primary);
+  }
+}
+
+// 导航滚动容器
+.ex-tabs__nav-scroll {
+  overflow: hidden;
+  flex: 1;
+}
+
+// 导航容器
+.ex-tabs__nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  padding: var(--ex-spacing-2);
+  @include transition(transform);
+}
+
+// 标签页项
+.ex-tabs__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-base);
+  font-weight: var(--ex-font-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--ex-radius-base);
+  @include transition(all);
+
+  &:hover:not(&--disabled):not(&--active) {
+    color: var(--ex-color-text-primary);
+    background: var(--ex-color-bg-hover);
+  }
+
+  &--active {
+    color: var(--ex-color-neon-blue-500);
+    font-weight: var(--ex-font-semibold);
+  }
+
+  &--disabled {
+    color: var(--ex-color-text-disabled);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--add {
+    color: var(--ex-color-text-tertiary);
+    padding: var(--ex-spacing-2);
+
+    &:hover {
+      color: var(--ex-color-neon-blue-500);
+      background: var(--ex-color-bg-hover);
+    }
+  }
+}
+
+// 标签页图标
+.ex-tabs__tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ex-text-lg);
+}
+
+// 标签页标题
+.ex-tabs__tab-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+// 关闭按钮
+.ex-tabs__tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: var(--ex-spacing-1);
+  border-radius: 50%;
+  opacity: 0.6;
+  @include transition(all);
+
+  &:hover {
+    opacity: 1;
+    background: var(--ex-color-bg-hover);
+  }
+}
+
+// 激活指示器
+.ex-tabs__indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--ex-color-neon-blue-500),
+    var(--ex-color-neon-pink-500)
+  );
+  border-radius: 2px;
+  @include transition(all);
+  @include neon-glow('blue', 'sm');
+}
+
+// 内容区域
+.ex-tabs__content {
+  flex: 1;
+  padding: var(--ex-spacing-4);
+}
+
+// ============================================================================
+// 类型变体
+// ============================================================================
+
+// 线条类型
+.ex-tabs--line {
+  .ex-tabs__nav-wrap {
+    background: transparent;
+  }
+
+  .ex-tabs__tab {
+    border-radius: 0;
+
+    &--active {
+      background: transparent;
+    }
+  }
+}
+
+// 卡片类型
+.ex-tabs--card {
+  .ex-tabs__nav-wrap {
+    background: var(--ex-color-bg-elevated);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-lg) var(--ex-radius-lg) 0 0;
+  }
+
+  .ex-tabs__nav {
+    gap: 0;
+  }
+
+  .ex-tabs__tab {
+    border-radius: 0;
+    border-right: 1px solid var(--ex-color-border-primary);
+
+    &:first-child {
+      border-radius: var(--ex-radius-lg) 0 0 0;
+    }
+
+    &:last-child {
+      border-right: none;
+      border-radius: 0 var(--ex-radius-lg) 0 0;
+    }
+
+    &--active {
+      background: var(--ex-color-bg-primary);
+      border-bottom: 2px solid var(--ex-color-neon-blue-500);
+    }
+  }
+
+  .ex-tabs__indicator {
+    display: none;
+  }
+
+  .ex-tabs__content {
+    border: 1px solid var(--ex-color-border-primary);
+    border-top: none;
+    border-radius: 0 0 var(--ex-radius-lg) var(--ex-radius-lg);
+  }
+}
+
+// 按钮类型
+.ex-tabs--button {
+  .ex-tabs__nav-wrap {
+    background: var(--ex-color-bg-elevated);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-lg);
+    padding: var(--ex-spacing-1);
+  }
+
+  .ex-tabs__nav {
+    gap: var(--ex-spacing-1);
+    padding: 0;
+  }
+
+  .ex-tabs__tab {
+    border-radius: var(--ex-radius-base);
+
+    &--active {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-pink-500)
+      );
+      color: var(--ex-color-white);
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  .ex-tabs__indicator {
+    display: none;
+  }
+}
+
+// ============================================================================
+// 尺寸变体
+// ============================================================================
+
+.ex-tabs--small {
+  .ex-tabs__tab {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+  }
+
+  .ex-tabs__content {
+    padding: var(--ex-spacing-3);
+  }
+}
+
+.ex-tabs--medium {
+  .ex-tabs__tab {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    font-size: var(--ex-text-base);
+  }
+
+  .ex-tabs__content {
+    padding: var(--ex-spacing-4);
+  }
+}
+
+.ex-tabs--large {
+  .ex-tabs__tab {
+    padding: var(--ex-spacing-4) var(--ex-spacing-6);
+    font-size: var(--ex-text-lg);
+  }
+
+  .ex-tabs__content {
+    padding: var(--ex-spacing-6);
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-tabs__nav {
+    gap: var(--ex-spacing-1);
+  }
+
+  .ex-tabs__tab {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+  }
+
+  .ex-tabs__content {
+    padding: var(--ex-spacing-3);
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-tabs__nav,
+  .ex-tabs__tab,
+  .ex-tabs__indicator {
+    transition: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-tabs__nav-wrap {
+    border-width: 2px;
+  }
+
+  .ex-tabs__tab--active {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: -2px;
+  }
+}

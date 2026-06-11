@@ -1,0 +1,195 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Collapse Item 折叠面板项样�?
+// ============================================================================
+
+.ex-collapse-item {
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  @include transition(all);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // 激活状�?
+  &.is-active {
+    .ex-collapse-item__header {
+      background: var(--ex-color-neon-blue-alpha-05);
+      border-bottom: 1px solid var(--ex-color-neon-blue-500);
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  // 禁用状�?
+  &.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    .ex-collapse-item__header {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+}
+
+// 面板头部
+.ex-collapse-item__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-3);
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  background: var(--ex-color-bg-secondary);
+  cursor: pointer;
+  user-select: none;
+  @include transition(all);
+
+  &:hover:not(.is-disabled) {
+    background: var(--ex-color-neon-blue-alpha-08);
+    @include neon-glow('blue', 'sm');
+  }
+
+  &:focus-visible {
+    outline: none;
+    @include neon-glow('blue', 'md');
+  }
+
+  &.is-disabled {
+    cursor: not-allowed;
+  }
+}
+
+// 箭头图标
+.ex-collapse-item__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ex-color-text-secondary);
+  @include transition(transform, color);
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.is-active {
+    transform: rotate(180deg);
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  .ex-collapse-item__header:hover & {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  &--left {
+    order: -1;
+  }
+
+  &--right {
+    order: 1;
+    margin-left: auto;
+  }
+}
+
+// 标题
+.ex-collapse-item__title {
+  flex: 1;
+  font-size: var(--ex-text-base);
+  font-weight: var(--ex-font-medium);
+  color: var(--ex-color-text-primary);
+  @include transition(color);
+
+  .ex-collapse-item.is-active & {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  .ex-collapse-item__header:hover & {
+    color: var(--ex-color-neon-blue-500);
+  }
+}
+
+// 额外内容
+.ex-collapse-item__extra {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+}
+
+// 内容包裹�?
+.ex-collapse-item__wrap {
+  overflow: hidden;
+  @include transition(height);
+}
+
+// 内容区域
+.ex-collapse-item__content {
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-base);
+  line-height: var(--ex-leading-relaxed);
+  background: var(--ex-color-bg-primary);
+}
+
+// ============================================================================
+// 动画
+// ============================================================================
+
+.ex-collapse-enter-active,
+.ex-collapse-leave-active {
+  transition: height var(--ex-motion-duration-medium) var(--ex-motion-ease-out);
+}
+
+.ex-collapse-enter-from,
+.ex-collapse-leave-to {
+  height: 0;
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-collapse-item__header {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  }
+
+  .ex-collapse-item__content {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  }
+
+  .ex-collapse-item__title {
+    font-size: var(--ex-text-sm);
+  }
+}
+
+// ============================================================================
+// 无障碍支�?
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-collapse-item__header,
+  .ex-collapse-item__arrow,
+  .ex-collapse-item__title,
+  .ex-collapse-item__wrap,
+  .ex-collapse-enter-active,
+  .ex-collapse-leave-active {
+    transition: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-collapse-item {
+    border-bottom: 2px solid var(--ex-color-border-primary);
+  }
+
+  .ex-collapse-item.is-active .ex-collapse-item__header {
+    border-bottom: 2px solid var(--ex-color-neon-blue-500);
+  }
+}
+

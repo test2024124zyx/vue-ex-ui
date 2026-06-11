@@ -1,0 +1,42 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Collapse 折叠面板组件样式
+// ============================================================================
+
+.ex-collapse {
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-color-bg-secondary);
+  overflow: hidden;
+  @include transition(all);
+
+  // 无边框模式
+  &--borderless {
+    border: none;
+    background: transparent;
+
+    .ex-collapse-item {
+      border: none;
+      border-bottom: 1px solid var(--ex-color-border-primary);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  // 禁用状态
+  &--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  // 图标在右侧
+  &--icon-right {
+    .ex-collapse-item__header {
+      flex-direction: row-reverse;
+    }
+  }
+}

@@ -1,0 +1,129 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// ExBreadcrumb - 赛博朋克风格面包屑导航
+// ============================================================================
+
+.ex-breadcrumb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--ex-font-secondary);
+  
+  // 强制重置列表样式
+  ol, ul {
+    list-style: none !important;
+    list-style-type: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+  }
+  
+  li {
+    list-style: none !important;
+    list-style-type: none !important;
+  }
+  
+  li::before,
+  li::marker {
+    display: none !important;
+    content: none !important;
+  }
+  
+  &__list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0; // 移除gap，让每个item自己控制间距
+    list-style: none;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 0;
+  }
+
+  // 省略号样式
+  &__ellipsis {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-base);
+    user-select: none;
+    list-style: none;
+    list-style-type: none;
+    
+    &::before,
+    &::marker {
+      display: none !important;
+      content: none !important;
+    }
+  }
+
+  &__text {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &__separator {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    user-select: none;
+    opacity: 0.6;
+    margin: 0 var(--ex-spacing-2);
+    @include transition(opacity);
+  }
+
+  // 尺寸变体
+  &--small {
+    font-size: var(--ex-text-sm);
+
+    .ex-breadcrumb__separator {
+      font-size: var(--ex-text-xs);
+      margin: 0 var(--ex-spacing-1);
+    }
+  }
+
+  &--medium {
+    font-size: var(--ex-text-base);
+
+    .ex-breadcrumb__separator {
+      font-size: var(--ex-text-sm);
+      margin: 0 var(--ex-spacing-2);
+    }
+  }
+
+  &--large {
+    font-size: var(--ex-text-lg);
+
+    .ex-breadcrumb__separator {
+      font-size: var(--ex-text-base);
+      margin: 0 var(--ex-spacing-2);
+    }
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-breadcrumb {
+    &__separator {
+      margin: 0 var(--ex-spacing-1);
+    }
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-breadcrumb__separator {
+    transition: none;
+  }
+}

@@ -1,0 +1,450 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// Pagination 分页组件样式 - 游戏主题
+// ============================================================================
+
+.ex-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-3);
+  font-family: var(--ex-font-secondary);
+  user-select: none;
+
+  // 对齐方式
+  &--left {
+    justify-content: flex-start;
+  }
+
+  &--center {
+    justify-content: center;
+  }
+
+  &--right {
+    justify-content: flex-end;
+  }
+
+  // 禁用状态
+  &--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  // 简洁模式
+  &--simple {
+    .ex-pagination__items {
+      gap: var(--ex-spacing-2);
+    }
+  }
+}
+
+// 总数显示
+.ex-pagination__total {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-medium);
+  white-space: nowrap;
+}
+
+// 分页按钮组
+.ex-pagination__items {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+}
+
+// 分页按钮
+.ex-pagination__item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--ex-spacing-2);
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-base);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-medium);
+  cursor: pointer;
+  @include transition(all);
+
+  &:hover:not(:disabled):not(.ex-pagination__item--active) {
+    background: var(--ex-color-bg-hover);
+    border-color: var(--ex-color-neon-blue-500);
+    color: var(--ex-color-neon-blue-500);
+    transform: translateY(-2px);
+    @include neon-glow('blue', 'sm');
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: var(--ex-color-bg-tertiary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--ex-color-neon-blue-500);
+    @include neon-glow('blue', 'sm');
+  }
+
+  // 激活状态
+  &--active {
+    background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+    border-color: var(--ex-color-neon-blue-500);
+    color: var(--ex-color-white);
+    font-weight: var(--ex-font-bold);
+    cursor: default;
+    @include neon-glow('blue', 'md');
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  // 更多按钮
+  &--more {
+    .ex-pagination__more-icon-hover {
+      display: none;
+    }
+
+    &:hover {
+      .ex-pagination__more-icon {
+        display: none;
+      }
+
+      .ex-pagination__more-icon-hover {
+        display: block;
+      }
+    }
+  }
+
+  // 上一页/下一页按钮
+  &.ex-pagination__prev,
+  &.ex-pagination__next {
+    img {
+      filter: brightness(0) invert(1);
+      @include transition(filter);
+    }
+
+    &:hover:not(:disabled) {
+      img {
+        filter: brightness(0) saturate(100%) invert(67%) sepia(98%) saturate(2000%) hue-rotate(160deg);
+      }
+    }
+  }
+}
+
+// 简洁模式
+.ex-pagination__simple {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  padding: 0 var(--ex-spacing-2);
+
+  &-input {
+    width: 48px;
+    height: 32px;
+    padding: 0 var(--ex-spacing-2);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    text-align: center;
+    @include transition(border-color);
+
+    &:focus {
+      outline: none;
+      border-color: var(--ex-color-neon-blue-500);
+      @include neon-glow('blue', 'sm');
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    // 隐藏数字输入框的箭头
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+
+    &[type='number'] {
+      appearance: textfield;
+    }
+  }
+
+  &-separator {
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+  }
+
+  &-total {
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+  }
+}
+
+// 每页条数选择器
+.ex-pagination__sizes {
+  display: flex;
+  align-items: center;
+}
+
+.ex-pagination__size-select {
+  height: 32px;
+  padding: 0 var(--ex-spacing-3);
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-base);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+  cursor: pointer;
+  @include transition(border-color);
+
+  &:hover:not(:disabled) {
+    border-color: var(--ex-color-neon-blue-500);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--ex-color-neon-blue-500);
+    @include neon-glow('blue', 'sm');
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background: var(--ex-color-bg-secondary);
+    color: var(--ex-color-text-primary);
+  }
+}
+
+// 快速跳转
+.ex-pagination__jumper {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+
+  &-text {
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    white-space: nowrap;
+  }
+
+  &-input {
+    width: 56px;
+    height: 32px;
+    padding: 0 var(--ex-spacing-2);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    text-align: center;
+    @include transition(border-color);
+
+    &:focus {
+      outline: none;
+      border-color: var(--ex-color-neon-blue-500);
+      @include neon-glow('blue', 'sm');
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    // 隐藏数字输入框的箭头
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+
+    &[type='number'] {
+      appearance: textfield;
+    }
+  }
+}
+
+// ============================================================================
+// 尺寸变体
+// ============================================================================
+
+.ex-pagination--small {
+  gap: var(--ex-spacing-2);
+
+  .ex-pagination__total {
+    font-size: var(--ex-text-xs);
+  }
+
+  .ex-pagination__items {
+    gap: var(--ex-spacing-1);
+  }
+
+  .ex-pagination__item {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 var(--ex-spacing-1);
+    font-size: var(--ex-text-xs);
+
+    img {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .ex-pagination__simple-input,
+  .ex-pagination__size-select,
+  .ex-pagination__jumper-input {
+    height: 28px;
+    font-size: var(--ex-text-xs);
+  }
+
+  .ex-pagination__simple-input {
+    width: 40px;
+  }
+
+  .ex-pagination__jumper-input {
+    width: 48px;
+  }
+
+  .ex-pagination__jumper-text {
+    font-size: var(--ex-text-xs);
+  }
+}
+
+.ex-pagination--medium {
+  // 默认尺寸，已在基础样式中定义
+}
+
+.ex-pagination--large {
+  gap: var(--ex-spacing-4);
+
+  .ex-pagination__total {
+    font-size: var(--ex-text-base);
+  }
+
+  .ex-pagination__items {
+    gap: var(--ex-spacing-3);
+  }
+
+  .ex-pagination__item {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 var(--ex-spacing-3);
+    font-size: var(--ex-text-base);
+
+    img {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .ex-pagination__simple-input,
+  .ex-pagination__size-select,
+  .ex-pagination__jumper-input {
+    height: 40px;
+    font-size: var(--ex-text-base);
+  }
+
+  .ex-pagination__simple-input {
+    width: 56px;
+  }
+
+  .ex-pagination__jumper-input {
+    width: 64px;
+  }
+
+  .ex-pagination__jumper-text {
+    font-size: var(--ex-text-base);
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-pagination {
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-2);
+
+    &__total {
+      width: 100%;
+      text-align: center;
+      margin-bottom: var(--ex-spacing-2);
+    }
+
+    &__items {
+      flex: 1;
+      justify-content: center;
+    }
+
+    &__sizes,
+    &__jumper {
+      display: none; // 移动端隐藏高级功能
+    }
+  }
+
+  .ex-pagination--small {
+    .ex-pagination__item {
+      min-width: 32px;
+      height: 32px;
+    }
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-pagination__item {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-pagination__item {
+    border-width: 2px;
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+    }
+
+    &--active {
+      border-width: 3px;
+    }
+  }
+}
+
+// 触摸设备优化
+@media (hover: none) and (pointer: coarse) {
+  .ex-pagination__item {
+    min-width: 44px; // 增大触摸目标
+    height: 44px;
+  }
+}

@@ -1,0 +1,371 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-sm);
+
+  // 线性进度条
+  &--line {
+    .ex-progress__track {
+      flex: 1;
+      position: relative;
+      background: var(--ex-color-bg-tertiary);
+      border-radius: var(--ex-radius-full);
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px var(--ex-color-black-alpha-30);
+    }
+
+    .ex-progress__bar {
+      position: relative;
+      height: 8px;
+      background: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
+      border-radius: var(--ex-radius-full);
+      transition: width var(--ex-transition-base) var(--ex-easing-standard);
+      overflow: hidden;
+      box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
+    }
+
+    .ex-progress__glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--ex-color-white-alpha-30) 50%,
+        transparent 100%
+      );
+      animation: ex-progress-glow 2s ease-in-out infinite;
+    }
+
+    .ex-progress__stripes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: linear-gradient(
+        45deg,
+        var(--ex-color-white-alpha-15) 25%,
+        transparent 25%,
+        transparent 50%,
+        var(--ex-color-white-alpha-15) 50%,
+        var(--ex-color-white-alpha-15) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 20px 20px;
+
+      &--animated {
+        animation: ex-progress-stripes 1s linear infinite;
+      }
+    }
+
+    .ex-progress__text-inside {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: var(--ex-text-xs);
+      font-weight: var(--ex-font-weight-semibold);
+      color: var(--ex-color-white);
+      white-space: nowrap;
+      text-shadow: 0 1px 2px var(--ex-color-black-alpha-50);
+      z-index: 1;
+    }
+
+    .ex-progress__text-outside {
+      flex-shrink: 0;
+      min-width: 50px;
+      font-size: var(--ex-text-sm);
+      font-weight: var(--ex-font-weight-semibold);
+      color: var(--ex-color-text-primary);
+      text-align: right;
+    }
+
+    .ex-progress__icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+    }
+
+    .ex-progress__icon-image {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+  }
+
+  // 内部文字样式
+  &--text-inside {
+    .ex-progress__track {
+      min-height: 20px;
+    }
+
+    .ex-progress__bar {
+      min-height: 20px;
+    }
+  }
+
+  // 状态样- 游戏主题增强
+  &--success {
+    .ex-progress__bar {
+      background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
+      box-shadow: 0 0 10px var(--ex-color-success-alpha-50);
+    }
+
+    .ex-progress__icon {
+      color: var(--ex-color-success);
+    }
+  }
+
+  &--exception {
+    .ex-progress__bar {
+      background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
+      box-shadow: 0 0 10px var(--ex-color-error-alpha-50);
+    }
+
+    .ex-progress__icon {
+      color: var(--ex-color-danger);
+    }
+  }
+
+  &--warning {
+    .ex-progress__bar {
+      background: linear-gradient(135deg, var(--ex-color-warning) 0%, var(--ex-color-warning-hover) 100%);
+      box-shadow: 0 0 10px var(--ex-color-warning-alpha-50);
+    }
+
+    .ex-progress__icon {
+      color: var(--ex-color-warning);
+    }
+  }
+
+  // 环形进度条
+  &--circle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+  }
+
+  .ex-progress__circle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    
+    svg {
+      display: block;
+      overflow: visible;
+    }
+  }
+
+  .ex-progress__circle-track {
+    opacity: 0.3;
+  }
+
+  .ex-progress__circle-path {
+    transition: stroke-dashoffset 0.6s ease;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+
+  .ex-progress__circle-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-1);
+    pointer-events: none;
+  }
+
+  .ex-progress__circle-percentage {
+    font-size: var(--ex-text-2xl);
+    font-weight: var(--ex-font-weight-bold);
+    color: var(--ex-color-text-primary);
+    line-height: 1;
+  }
+
+  .ex-progress__circle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+  }
+
+
+
+  // 波浪进度条（矩形）
+  &--wave {
+    display: block;
+    width: 100%;
+  }
+
+  .ex-progress__wave-container {
+    position: relative;
+    width: 100%;
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px var(--ex-color-black-alpha-20);
+  }
+
+  .ex-progress__wave-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .ex-progress__wave-path {
+    transition: d 0.1s linear;
+  }
+
+  .ex-progress__wave-text {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: var(--ex-text-lg);
+    font-weight: var(--ex-font-weight-bold);
+    color: var(--ex-color-text-primary);
+    z-index: 1;
+    text-shadow: 0 2px 4px var(--ex-color-black-alpha-50);
+  }
+
+  // 波浪进度条（圆形）
+  &--wave-circle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ex-progress__wave-circle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ex-progress__wave-circle-bg {
+    opacity: 0.3;
+  }
+
+  .ex-progress__wave-circle-path {
+    transition: d 0.1s linear;
+  }
+
+  .ex-progress__wave-circle-border {
+    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 3px currentColor);
+  }
+
+  .ex-progress__wave-circle-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--ex-text-2xl);
+    font-weight: var(--ex-font-weight-bold);
+    color: var(--ex-color-text-primary);
+    z-index: 1;
+    text-shadow: 0 2px 4px var(--ex-color-black-alpha-50);
+  }
+
+  // 动画
+  @keyframes ex-progress-glow {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes ex-progress-stripes {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 20px 0;
+    }
+  }
+
+
+
+  // 响应式设
+  @media (max-width: 768px) {
+    &--line {
+      .ex-progress__text-outside {
+        min-width: 40px;
+        font-size: var(--ex-text-xs);
+      }
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    .ex-progress__bar {
+      transition: none;
+    }
+
+    .ex-progress__glow {
+      animation: none;
+    }
+
+    .ex-progress__stripes--animated {
+      animation: none;
+    }
+
+    .ex-progress__circle-path {
+      transition: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    .ex-progress__track {
+      border: 1px solid var(--ex-color-border-primary);
+    }
+
+    .ex-progress__bar {
+      border: 1px solid currentColor;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,392 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Panel 面板组件样式
+// ============================================================================
+
+.ex-panel {
+  position: relative;
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  overflow: hidden;
+  @include transition(all);
+
+  // 边框
+  &:not(.ex-panel--borderless) {
+    border: 1px solid var(--ex-color-border-primary);
+  }
+
+  // 阴影变体
+  &--shadow-none {
+    box-shadow: none;
+  }
+
+  &--shadow-sm {
+    box-shadow: var(--ex-shadow-sm);
+  }
+
+  &--shadow-base {
+    box-shadow: var(--ex-shadow-base);
+  }
+
+  &--shadow-md {
+    box-shadow: var(--ex-shadow-md);
+  }
+
+  &--shadow-lg {
+    box-shadow: var(--ex-shadow-lg);
+  }
+
+  &--shadow-xl {
+    box-shadow: var(--ex-shadow-xl);
+  }
+
+  &--shadow-neon {
+    @include neon-glow('blue', 'sm');
+  }
+
+  // 可悬�?
+  &--hoverable {
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--ex-shadow-lg);
+      @include neon-glow('blue', 'md');
+    }
+  }
+
+  // 加载�?
+  &--loading {
+    pointer-events: none;
+    opacity: 0.6;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--ex-color-bg-primary);
+      opacity: 0.5;
+      z-index: 10;
+    }
+  }
+
+  // 类型变体
+  &--primary {
+    border-color: var(--ex-color-neon-blue-500);
+
+    .ex-panel__header {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-alpha-10),
+        var(--ex-color-neon-blue-alpha-05)
+      );
+      border-bottom-color: var(--ex-color-neon-blue-500);
+    }
+
+    .ex-panel__title-text {
+      color: var(--ex-color-neon-blue-500);
+    }
+  }
+
+  &--success {
+    border-color: var(--ex-color-success);
+
+    .ex-panel__header {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-success-alpha-10),
+        var(--ex-color-success-alpha-05)
+      );
+      border-bottom-color: var(--ex-color-success);
+    }
+
+    .ex-panel__title-text {
+      color: var(--ex-color-success);
+    }
+  }
+
+  &--warning {
+    border-color: var(--ex-color-warning);
+
+    .ex-panel__header {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-warning-alpha-10),
+        var(--ex-color-warning-alpha-05)
+      );
+      border-bottom-color: var(--ex-color-warning);
+    }
+
+    .ex-panel__title-text {
+      color: var(--ex-color-warning);
+    }
+  }
+
+  &--danger {
+    border-color: var(--ex-color-danger);
+
+    .ex-panel__header {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-error-alpha-10),
+        var(--ex-color-error-alpha-05)
+      );
+      border-bottom-color: var(--ex-color-danger);
+    }
+
+    .ex-panel__title-text {
+      color: var(--ex-color-danger);
+    }
+  }
+
+  &--info {
+    border-color: var(--ex-color-info);
+
+    .ex-panel__header {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-info-alpha-10),
+        var(--ex-color-info-alpha-05)
+      );
+      border-bottom-color: var(--ex-color-info);
+    }
+
+    .ex-panel__title-text {
+      color: var(--ex-color-info);
+    }
+  }
+
+  // 尺寸变体
+  &--small {
+    .ex-panel__header {
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    }
+
+    .ex-panel__body {
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    }
+
+    .ex-panel__footer {
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    }
+
+    .ex-panel__title-text {
+      font-size: var(--ex-text-base);
+    }
+
+    .ex-panel__subtitle {
+      font-size: var(--ex-text-xs);
+    }
+  }
+
+  &--medium {
+    .ex-panel__header {
+      padding: var(--ex-spacing-4) var(--ex-spacing-6);
+    }
+
+    .ex-panel__body {
+      padding: var(--ex-spacing-4) var(--ex-spacing-6);
+    }
+
+    .ex-panel__footer {
+      padding: var(--ex-spacing-4) var(--ex-spacing-6);
+    }
+
+    .ex-panel__title-text {
+      font-size: var(--ex-text-lg);
+    }
+
+    .ex-panel__subtitle {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--large {
+    .ex-panel__header {
+      padding: var(--ex-spacing-6) var(--ex-spacing-8);
+    }
+
+    .ex-panel__body {
+      padding: var(--ex-spacing-6) var(--ex-spacing-8);
+    }
+
+    .ex-panel__footer {
+      padding: var(--ex-spacing-6) var(--ex-spacing-8);
+    }
+
+    .ex-panel__title-text {
+      font-size: var(--ex-text-xl);
+    }
+
+    .ex-panel__subtitle {
+      font-size: var(--ex-text-base);
+    }
+  }
+}
+
+// 面板头部
+.ex-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ex-spacing-4);
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  background: var(--ex-color-bg-elevated);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  @include transition(all);
+}
+
+// 标题区域
+.ex-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-3);
+  flex: 1;
+  min-width: 0;
+}
+
+// 图标
+.ex-panel__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ex-color-neon-blue-500);
+  font-size: var(--ex-text-xl);
+  flex-shrink: 0;
+}
+
+// 标题内容
+.ex-panel__title-content {
+  flex: 1;
+  min-width: 0;
+}
+
+// 标题文本
+.ex-panel__title-text {
+  margin: 0;
+  font-size: var(--ex-text-lg);
+  font-weight: var(--ex-font-semibold);
+  color: var(--ex-color-text-primary);
+  line-height: var(--ex-leading-tight);
+  @include text-truncate;
+}
+
+// 副标�?
+.ex-panel__subtitle {
+  margin: var(--ex-spacing-1) 0 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-text-secondary);
+  line-height: var(--ex-leading-normal);
+  @include text-truncate;
+}
+
+// 额外内容
+.ex-panel__extra {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  flex-shrink: 0;
+}
+
+// 面板内容
+.ex-panel__body {
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-base);
+  line-height: var(--ex-leading-relaxed);
+}
+
+// 面板底部
+.ex-panel__footer {
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  background: var(--ex-color-bg-elevated);
+  border-top: 1px solid var(--ex-color-border-primary);
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-panel {
+    &--small {
+      .ex-panel__header,
+      .ex-panel__body,
+      .ex-panel__footer {
+        padding: var(--ex-spacing-2) var(--ex-spacing-3);
+      }
+    }
+
+    &--medium {
+      .ex-panel__header,
+      .ex-panel__body,
+      .ex-panel__footer {
+        padding: var(--ex-spacing-3) var(--ex-spacing-4);
+      }
+    }
+
+    &--large {
+      .ex-panel__header,
+      .ex-panel__body,
+      .ex-panel__footer {
+        padding: var(--ex-spacing-4) var(--ex-spacing-6);
+      }
+    }
+  }
+
+  .ex-panel__title {
+    gap: var(--ex-spacing-2);
+  }
+
+  .ex-panel__icon {
+    width: 24px;
+    height: 24px;
+    font-size: var(--ex-text-lg);
+  }
+
+  .ex-panel__title-text {
+    font-size: var(--ex-text-base);
+  }
+
+  .ex-panel__subtitle {
+    font-size: var(--ex-text-xs);
+  }
+}
+
+// ============================================================================
+// 无障碍支�?
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-panel,
+  .ex-panel__header {
+    transition: none;
+  }
+
+  .ex-panel--hoverable:hover {
+    transform: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-panel:not(.ex-panel--borderless) {
+    border-width: 2px;
+  }
+
+  .ex-panel__header {
+    border-bottom-width: 2px;
+  }
+
+  .ex-panel__footer {
+    border-top-width: 2px;
+  }
+}
+

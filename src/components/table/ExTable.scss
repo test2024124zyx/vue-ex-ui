@@ -1,0 +1,538 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Table 表格组件样式 - 游戏主题
+// ============================================================================
+
+.ex-table {
+  position: relative;
+  width: 100%;
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  overflow: hidden;
+
+  // 边框样式
+  &--bordered {
+    border: 1px solid var(--ex-color-border-primary);
+
+    .ex-table__main {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .ex-table__header-cell,
+    .ex-table__body-cell {
+      border-right: 1px solid var(--ex-color-border-primary);
+      border-bottom: 1px solid var(--ex-color-border-primary);
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    .ex-table__row:last-child {
+      .ex-table__body-cell {
+        border-bottom: none;
+      }
+    }
+  }
+
+  // 斑马纹
+  &--striped {
+    .ex-table__row--striped {
+      background: var(--ex-color-bg-elevated);
+    }
+  }
+
+  // 可悬停
+  &--hoverable {
+    .ex-table__row {
+      @include transition(background-color);
+
+      &:hover {
+        background: var(--ex-color-bg-hover);
+        cursor: pointer;
+      }
+    }
+  }
+
+  // 加载中
+  &--loading {
+    pointer-events: none;
+  }
+}
+
+// 表格容器
+.ex-table__container {
+  width: 100%;
+  overflow-x: auto;
+  @include custom-scrollbar();
+}
+
+// 表格主体
+.ex-table__main {
+  width: 100%;
+  min-width: 100%; // 确保表格至少占满容器宽度
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+// 表头
+.ex-table__header {
+  background: var(--ex-color-bg-elevated);
+  border-bottom: 2px solid var(--ex-color-neon-blue-500);
+}
+
+// 表头单元格
+.ex-table__header-cell {
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-semibold);
+  text-align: left;
+  white-space: nowrap;
+  user-select: none;
+  @include transition(background-color);
+
+  &--sortable {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--ex-color-bg-hover);
+    }
+  }
+}
+
+// 表体
+.ex-table__body {
+  background: transparent;
+}
+
+// 表体单元格
+.ex-table__body-cell {
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-base);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+}
+
+// 表格行
+.ex-table__row {
+  @include transition(background-color);
+
+  &:last-child {
+    .ex-table__body-cell {
+      border-bottom: none;
+    }
+  }
+}
+
+// 单元格
+.ex-table__cell {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  min-height: 20px;
+}
+
+// 单元格内容
+.ex-table__cell-content {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0; // 允许 flex 子元素收缩
+}
+
+// 对齐方式
+.ex-table__cell--left {
+  text-align: left;
+
+  .ex-table__cell {
+    justify-content: flex-start;
+  }
+}
+
+.ex-table__cell--center {
+  text-align: center;
+
+  .ex-table__cell {
+    justify-content: center;
+  }
+}
+
+.ex-table__cell--right {
+  text-align: right;
+
+  .ex-table__cell {
+    justify-content: flex-end;
+  }
+}
+
+// 排序图标
+.ex-table__sort-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ex-color-neon-blue-500);
+  @include transition(transform);
+
+  img {
+    display: block;
+  }
+}
+
+// 空数据
+.ex-table__empty-row {
+  &:hover {
+    background: transparent !important;
+    cursor: default !important;
+  }
+}
+
+.ex-table__empty-cell {
+  padding: var(--ex-spacing-8) var(--ex-spacing-4);
+  border-bottom: none !important;
+}
+
+.ex-table__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-base);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+// 加载遮罩
+.ex-table__loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ex-color-black-alpha-70);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  @include transition(opacity);
+
+  &-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--ex-color-neon-blue-alpha-20);
+    border-top-color: var(--ex-color-neon-blue-500);
+    border-right-color: var(--ex-color-neon-blue-500);
+    border-radius: 50%;
+    animation: table-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    @include neon-glow('blue', 'md');
+  }
+}
+
+@keyframes table-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================================================
+// 尺寸变体
+// ============================================================================
+
+.ex-table--small {
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+  }
+}
+
+.ex-table--medium {
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  }
+
+  .ex-table__header-cell {
+    font-size: var(--ex-text-sm);
+  }
+
+  .ex-table__body-cell {
+    font-size: var(--ex-text-base);
+  }
+}
+
+.ex-table--large {
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  }
+
+  .ex-table__header-cell {
+    font-size: var(--ex-text-base);
+  }
+
+  .ex-table__body-cell {
+    font-size: var(--ex-text-lg);
+  }
+}
+
+// ============================================================================
+// 卡片布局模式（移动端友好）
+// ============================================================================
+
+.ex-table--layout-card {
+  @include mobile {
+    .ex-table__container {
+      overflow-x: visible;
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+
+    .ex-table__main {
+      display: block;
+      min-width: 100%;
+    }
+
+    .ex-table__header {
+      display: none; // 隐藏表头
+    }
+
+    .ex-table__body {
+      display: block;
+    }
+
+    .ex-table__row {
+      display: block;
+      margin-bottom: var(--ex-spacing-3);
+      padding: var(--ex-spacing-4);
+      background: var(--ex-color-bg-elevated);
+      border: 1px solid var(--ex-color-border-primary);
+      border-radius: var(--ex-radius-base);
+      @include transition(all);
+
+      &:hover {
+        border-color: var(--ex-color-neon-blue-500);
+        @include neon-glow('blue', 'sm');
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .ex-table__body-cell {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--ex-spacing-2) 0;
+      border-bottom: 1px solid var(--ex-color-border-secondary);
+      text-align: left;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      // 在每个单元格前显示列标题
+      &::before {
+        content: attr(data-label);
+        font-weight: var(--ex-font-semibold);
+        color: var(--ex-color-text-primary);
+        font-size: var(--ex-text-sm);
+        flex-shrink: 0;
+        margin-right: var(--ex-spacing-3);
+      }
+
+      .ex-table__cell {
+        justify-content: flex-end;
+        flex: 1;
+      }
+    }
+
+    .ex-table__empty-row {
+      display: block;
+      margin-bottom: 0;
+      padding: var(--ex-spacing-6) var(--ex-spacing-4);
+      background: transparent;
+      border: none;
+
+      &:hover {
+        border: none;
+        box-shadow: none;
+      }
+    }
+
+    .ex-table__empty-cell {
+      display: block;
+      padding: 0;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 响应式适配 - 移动端优先
+// ============================================================================
+
+@include mobile {
+  .ex-table {
+    border-radius: var(--ex-radius-base);
+  }
+
+  .ex-table__container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+
+    // 滚动提示阴影
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 20px;
+      pointer-events: none;
+      z-index: 2;
+      @include transition(opacity);
+    }
+
+    &::before {
+      left: 0;
+      background: linear-gradient(
+        to right,
+        var(--ex-color-bg-secondary),
+        transparent
+      );
+    }
+
+    &::after {
+      right: 0;
+      background: linear-gradient(
+        to left,
+        var(--ex-color-bg-secondary),
+        transparent
+      );
+    }
+  }
+
+  .ex-table__main {
+    min-width: 600px; // 确保表格有最小宽度
+  }
+
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+    white-space: nowrap;
+  }
+
+  .ex-table__cell {
+    gap: var(--ex-spacing-1);
+  }
+
+  // 小尺寸在移动端更紧凑
+  .ex-table--small {
+    .ex-table__header-cell,
+    .ex-table__body-cell {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+      font-size: var(--ex-text-xs);
+    }
+  }
+
+  // 空数据在移动端更紧凑
+  .ex-table__empty-cell {
+    padding: var(--ex-spacing-6) var(--ex-spacing-3);
+  }
+
+  .ex-table__empty {
+    font-size: var(--ex-text-sm);
+
+    img {
+      width: 32px !important;
+      height: 32px !important;
+      margin-bottom: 8px !important;
+    }
+  }
+}
+
+// 平板适配
+@include tablet {
+  .ex-table__main {
+    min-width: 100%; // 平板上可以自适应
+  }
+
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  }
+}
+
+// 超小屏幕（<375px）
+@media (max-width: 374px) {
+  .ex-table__main {
+    min-width: 500px; // 更小的最小宽度
+  }
+
+  .ex-table__header-cell,
+  .ex-table__body-cell {
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    font-size: var(--ex-text-xs);
+  }
+
+  .ex-table__sort-icon img {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-table__row,
+  .ex-table__header-cell,
+  .ex-table__sort-icon,
+  .ex-table__loading {
+    transition: none;
+  }
+
+  .ex-table__loading-spinner {
+    animation: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-table--bordered {
+    border-width: 2px;
+
+    .ex-table__header-cell,
+    .ex-table__body-cell {
+      border-width: 2px;
+    }
+  }
+
+  .ex-table__header {
+    border-bottom-width: 3px;
+  }
+}

@@ -1,0 +1,415 @@
+// ExVirtualList - 虚拟列表组件样式
+// 赛博朋克游戏风格 - 霓虹蓝紫主题
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// 虚拟列表容器
+// ============================================================================
+
+.ex-virtual-list {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--ex-color-bg-secondary-alpha-80) 0%,
+    var(--ex-color-bg-primary-alpha-90) 100%
+  );
+  border: 2px solid var(--ex-color-neon-blue-500);
+  border-radius: var(--ex-radius-lg);
+  backdrop-filter: blur(8px);
+  @include transition(all);
+  
+  // 霓虹发光效果
+  @include neon-glow('blue', 'sm');
+  
+  // 悬停效果
+  &:hover {
+    border-color: var(--ex-color-neon-pink-400);
+    @include neon-glow('pink', 'sm');
+  }
+  
+  // 聚焦效果（当内部有焦点时）
+  &:focus-within {
+    border-color: var(--ex-color-neon-pink-500);
+    @include neon-glow('pink', 'md');
+    transform: translateY(-1px);
+  }
+}
+
+// ============================================================================
+// 滚动容器
+// ============================================================================
+
+.ex-virtual-list__wrapper {
+  position: relative;
+  height: 100%;
+  overflow: auto;
+  
+  // 自定义滚动条 - 赛博朋克风格
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: var(--ex-color-bg-tertiary-alpha-50);
+    border-radius: 5px;
+    margin: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-500) 0%,
+      var(--ex-color-secondary) 100%
+    );
+    border-radius: 5px;
+    border: 2px solid var(--ex-color-bg-tertiary-alpha-50);
+    @include transition(all);
+    
+    &:hover {
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-pink-500) 0%,
+        var(--ex-color-accent) 100%
+      );
+      @include neon-glow('pink', 'sm');
+    }
+    
+    &:active {
+      background: var(--ex-gradient-secondary);
+    }
+  }
+  
+  // 滚动条角落
+  &::-webkit-scrollbar-corner {
+    background: var(--ex-color-bg-tertiary-alpha-50);
+  }
+  
+  // Firefox 滚动条样式
+  scrollbar-width: thin;
+  scrollbar-color: var(--ex-color-neon-blue-500) var(--ex-color-bg-tertiary-alpha-50);
+}
+
+// ============================================================================
+// 占位元素（用于撑开滚动高度）
+// ============================================================================
+
+.ex-virtual-list__spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+// ============================================================================
+// 可见项目容器
+// ============================================================================
+
+.ex-virtual-list__items {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  
+  // 只在滚动时启用 will-change 优化
+  &.is-scrolling {
+    will-change: transform;
+  }
+}
+
+// ============================================================================
+// 列表项
+// ============================================================================
+
+.ex-virtual-list__item {
+  position: relative;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  background: transparent;
+  @include transition(all);
+  
+  // 移除最后一项的边框
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  // 悬停效果 - 赛博朋克风格
+  &:hover {
+    background: linear-gradient(
+      90deg,
+      var(--ex-color-neon-blue-alpha-05) 0%,
+      var(--ex-color-neon-blue-alpha-10) 50%,
+      var(--ex-color-neon-blue-alpha-05) 100%
+    );
+    border-bottom-color: var(--ex-color-neon-blue-alpha-30);
+    
+    // 左侧霓虹指示条
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(
+        to bottom,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-secondary)
+      );
+      @include neon-glow('blue', 'sm');
+      opacity: 1;
+      @include transition(opacity);
+    }
+  }
+  
+  // 激活/点击效果
+  &:active {
+    background: linear-gradient(
+      90deg,
+      var(--ex-color-neon-pink-alpha-10) 0%,
+      var(--ex-color-neon-pink-alpha-15) 50%,
+      var(--ex-color-neon-pink-alpha-10) 100%
+    );
+    border-bottom-color: var(--ex-color-neon-pink-alpha-40);
+    
+    &::before {
+      background: linear-gradient(
+        to bottom,
+        var(--ex-color-neon-pink-500),
+        var(--ex-color-accent)
+      );
+      @include neon-glow('pink', 'sm');
+    }
+  }
+  
+  // 聚焦效果（键盘导航）
+  &:focus-visible {
+    outline: none;
+    background: var(--ex-color-neon-blue-alpha-10);
+    border-bottom-color: var(--ex-color-neon-blue-500);
+    box-shadow: inset 0 0 0 2px var(--ex-color-neon-blue-500);
+    
+    &::before {
+      opacity: 1;
+      width: 4px;
+    }
+  }
+  
+  // 左侧指示条默认隐藏
+  &::before {
+    opacity: 0;
+  }
+}
+
+// ============================================================================
+// 空状态
+// ============================================================================
+
+.ex-virtual-list--empty {
+  .ex-virtual-list__wrapper {
+    @include flex-center;
+    min-height: 200px;
+  }
+  
+  .ex-virtual-list__empty {
+    text-align: center;
+    color: var(--ex-color-text-tertiary);
+    padding: var(--ex-spacing-8);
+    
+    &-icon {
+      font-size: 48px;
+      margin-bottom: var(--ex-spacing-4);
+      opacity: 0.5;
+      @include neon-text('blue');
+    }
+    
+    &-text {
+      font-size: var(--ex-text-base);
+      font-family: var(--ex-font-secondary);
+    }
+  }
+}
+
+// ============================================================================
+// 加载状态
+// ============================================================================
+
+.ex-virtual-list--loading {
+  pointer-events: none;
+  
+  .ex-virtual-list__loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    @include flex-center;
+    background: var(--ex-color-bg-primary-alpha-80);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    
+    &-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--ex-color-neon-blue-alpha-20);
+      border-top-color: var(--ex-color-neon-blue-500);
+      border-right-color: var(--ex-color-neon-blue-500);
+      border-radius: 50%;
+      animation: virtual-list-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      @include neon-glow('blue', 'md');
+    }
+  }
+}
+
+@keyframes virtual-list-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================================================
+// 尺寸变体
+// ============================================================================
+
+.ex-virtual-list--small {
+  .ex-virtual-list__item {
+    font-size: var(--ex-text-sm);
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+  }
+}
+
+.ex-virtual-list--medium {
+  .ex-virtual-list__item {
+    font-size: var(--ex-text-base);
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  }
+}
+
+.ex-virtual-list--large {
+  .ex-virtual-list__item {
+    font-size: var(--ex-text-lg);
+    padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  }
+}
+
+// ============================================================================
+// 响应式适配 - 移动端优先
+// ============================================================================
+
+@include mobile {
+  .ex-virtual-list {
+    border-width: 1px;
+    
+    &:hover {
+      // 移动端禁用悬停效果
+      border-color: var(--ex-color-neon-blue-500);
+      box-shadow: var(--ex-shadow-neon-sm);
+    }
+  }
+  
+  .ex-virtual-list__wrapper {
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+  }
+  
+  .ex-virtual-list__item {
+    // 移动端增加触摸目标大小
+    min-height: 44px;
+    
+    &:hover::before {
+      // 移动端禁用悬停指示条
+      opacity: 0;
+    }
+    
+    // 移动端激活效果
+    &:active {
+      background: var(--ex-color-neon-pink-alpha-15);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+// 减少动画
+@media (prefers-reduced-motion: reduce) {
+  .ex-virtual-list,
+  .ex-virtual-list__item,
+  .ex-virtual-list__wrapper::-webkit-scrollbar-thumb {
+    transition: none;
+  }
+  
+  .ex-virtual-list:focus-within {
+    transform: none;
+  }
+  
+  .ex-virtual-list__loading-spinner {
+    animation: none;
+    border-top-color: var(--ex-color-neon-blue-500);
+    border-right-color: var(--ex-color-neon-blue-500);
+    border-bottom-color: var(--ex-color-neon-blue-500);
+    border-left-color: var(--ex-color-neon-blue-500);
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-virtual-list {
+    border-width: 3px;
+    box-shadow: none;
+  }
+  
+  .ex-virtual-list__item {
+    border-bottom-width: 2px;
+    
+    &:hover,
+    &:focus-visible {
+      box-shadow: inset 0 0 0 3px var(--ex-color-neon-blue-500);
+    }
+  }
+}
+
+// 暗色主题偏好
+@media (prefers-color-scheme: dark) {
+  .ex-virtual-list {
+    background: var(--ex-color-bg-primary);
+  }
+}
+
+// ============================================================================
+// 性能优化 - 低端设备
+// ============================================================================
+
+@media (max-width: 768px) and (max-height: 1024px) {
+  .ex-virtual-list {
+    backdrop-filter: none;
+    background: var(--ex-color-bg-secondary);
+    box-shadow: none;
+    
+    &:hover {
+      box-shadow: none;
+    }
+  }
+  
+  .ex-virtual-list__item {
+    &:hover::before,
+    &:active::before {
+      box-shadow: none;
+    }
+  }
+}

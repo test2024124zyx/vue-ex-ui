@@ -1,0 +1,378 @@
+// ExUI Layout Utilities
+// 布局工具类
+
+@use 'sass:map';
+@use '../tokens' as *;
+@use '../mixins' as *;
+
+// ============================================================================
+// Flexbox 工具类
+// ============================================================================
+
+.ex-flex {
+  display: flex;
+}
+
+.ex-inline-flex {
+  display: inline-flex;
+}
+
+.ex-flex-col {
+  flex-direction: column;
+}
+
+.ex-flex-row {
+  flex-direction: row;
+}
+
+.ex-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.ex-flex-nowrap {
+  flex-wrap: nowrap;
+}
+
+// 对齐方式
+.ex-justify-start {
+  justify-content: flex-start;
+}
+
+.ex-justify-center {
+  justify-content: center;
+}
+
+.ex-justify-end {
+  justify-content: flex-end;
+}
+
+.ex-justify-between {
+  justify-content: space-between;
+}
+
+.ex-justify-around {
+  justify-content: space-around;
+}
+
+.ex-justify-evenly {
+  justify-content: space-evenly;
+}
+
+.ex-items-start {
+  align-items: flex-start;
+}
+
+.ex-items-center {
+  align-items: center;
+}
+
+.ex-items-end {
+  align-items: flex-end;
+}
+
+.ex-items-stretch {
+  align-items: stretch;
+}
+
+.ex-items-baseline {
+  align-items: baseline;
+}
+
+// Flex 增长和收缩
+.ex-flex-1 {
+  flex: 1 1 0%;
+}
+
+.ex-flex-auto {
+  flex: 1 1 auto;
+}
+
+.ex-flex-initial {
+  flex: 0 1 auto;
+}
+
+.ex-flex-none {
+  flex: none;
+}
+
+.ex-grow {
+  flex-grow: 1;
+}
+
+.ex-grow-0 {
+  flex-grow: 0;
+}
+
+.ex-shrink {
+  flex-shrink: 1;
+}
+
+.ex-shrink-0 {
+  flex-shrink: 0;
+}
+
+// ============================================================================
+// Grid 工具类
+// ============================================================================
+
+.ex-grid {
+  display: grid;
+}
+
+.ex-inline-grid {
+  display: inline-grid;
+}
+
+// Grid 列数
+@for $i from 1 through 12 {
+  .ex-grid-cols-#{$i} {
+    grid-template-columns: repeat(#{$i}, minmax(0, 1fr));
+  }
+}
+
+// Grid 行数
+@for $i from 1 through 6 {
+  .ex-grid-rows-#{$i} {
+    grid-template-rows: repeat(#{$i}, minmax(0, 1fr));
+  }
+}
+
+// Grid 跨列
+@for $i from 1 through 12 {
+  .ex-col-span-#{$i} {
+    grid-column: span #{$i} / span #{$i};
+  }
+}
+
+.ex-col-span-full {
+  grid-column: 1 / -1;
+}
+
+// Grid 跨行
+@for $i from 1 through 6 {
+  .ex-row-span-#{$i} {
+    grid-row: span #{$i} / span #{$i};
+  }
+}
+
+.ex-row-span-full {
+  grid-row: 1 / -1;
+}
+
+// Grid 间距
+.ex-gap-0 { gap: 0; }
+.ex-gap-1 { gap: var(--ex-spacing-1); }
+.ex-gap-2 { gap: var(--ex-spacing-2); }
+.ex-gap-3 { gap: var(--ex-spacing-3); }
+.ex-gap-4 { gap: var(--ex-spacing-4); }
+.ex-gap-5 { gap: var(--ex-spacing-5); }
+.ex-gap-6 { gap: var(--ex-spacing-6); }
+.ex-gap-8 { gap: var(--ex-spacing-8); }
+
+// ============================================================================
+// 定位工具类
+// ============================================================================
+
+.ex-static {
+  position: static;
+}
+
+.ex-fixed {
+  position: fixed;
+}
+
+.ex-absolute {
+  position: absolute;
+}
+
+.ex-relative {
+  position: relative;
+}
+
+.ex-sticky {
+  position: sticky;
+}
+
+// 定位值
+.ex-inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.ex-top-0 { top: 0; }
+.ex-right-0 { right: 0; }
+.ex-bottom-0 { bottom: 0; }
+.ex-left-0 { left: 0; }
+
+.ex-top-1 { top: var(--ex-spacing-1); }
+.ex-right-1 { right: var(--ex-spacing-1); }
+.ex-bottom-1 { bottom: var(--ex-spacing-1); }
+.ex-left-1 { left: var(--ex-spacing-1); }
+
+// ============================================================================
+// 显示工具类
+// ============================================================================
+
+.ex-block {
+  display: block;
+}
+
+.ex-inline-block {
+  display: inline-block;
+}
+
+.ex-inline {
+  display: inline;
+}
+
+.ex-hidden {
+  display: none;
+}
+
+// ============================================================================
+// 可见性工具类
+// ============================================================================
+
+.ex-visible {
+  visibility: visible;
+}
+
+.ex-invisible {
+  visibility: hidden;
+}
+
+// ============================================================================
+// 溢出工具类
+// ============================================================================
+
+.ex-overflow-auto {
+  overflow: auto;
+}
+
+.ex-overflow-hidden {
+  overflow: hidden;
+}
+
+.ex-overflow-visible {
+  overflow: visible;
+}
+
+.ex-overflow-scroll {
+  overflow: scroll;
+}
+
+.ex-overflow-x-auto {
+  overflow-x: auto;
+}
+
+.ex-overflow-x-hidden {
+  overflow-x: hidden;
+}
+
+.ex-overflow-y-auto {
+  overflow-y: auto;
+}
+
+.ex-overflow-y-hidden {
+  overflow-y: hidden;
+}
+
+// ============================================================================
+// Z-Index 工具类
+// ============================================================================
+
+.ex-z-auto { z-index: auto; }
+.ex-z-0 { z-index: 0; }
+.ex-z-10 { z-index: 10; }
+.ex-z-20 { z-index: 20; }
+.ex-z-30 { z-index: 30; }
+.ex-z-40 { z-index: 40; }
+.ex-z-50 { z-index: 50; }
+
+// ============================================================================
+// 容器工具类
+// ============================================================================
+
+.ex-container {
+  @include container;
+}
+
+.ex-container-sm {
+  @include container(map.get($sizes, container-sm));
+}
+
+.ex-container-md {
+  @include container(map.get($sizes, container-md));
+}
+
+.ex-container-lg {
+  @include container(map.get($sizes, container-lg));
+}
+
+.ex-container-xl {
+  @include container(map.get($sizes, container-xl));
+}
+
+.ex-container-2xl {
+  @include container(map.get($sizes, container-2xl));
+}
+
+// ============================================================================
+// 响应式工具类
+// ============================================================================
+
+@include respond-to(sm) {
+  .ex-sm\:flex { display: flex; }
+  .ex-sm\:hidden { display: none; }
+  .ex-sm\:block { display: block; }
+  
+  .ex-sm\:flex-col { flex-direction: column; }
+  .ex-sm\:flex-row { flex-direction: row; }
+  
+  .ex-sm\:justify-start { justify-content: flex-start; }
+  .ex-sm\:justify-center { justify-content: center; }
+  .ex-sm\:justify-end { justify-content: flex-end; }
+  .ex-sm\:justify-between { justify-content: space-between; }
+  
+  .ex-sm\:items-start { align-items: flex-start; }
+  .ex-sm\:items-center { align-items: center; }
+  .ex-sm\:items-end { align-items: flex-end; }
+}
+
+@include respond-to(md) {
+  .ex-md\:flex { display: flex; }
+  .ex-md\:hidden { display: none; }
+  .ex-md\:block { display: block; }
+  
+  .ex-md\:flex-col { flex-direction: column; }
+  .ex-md\:flex-row { flex-direction: row; }
+  
+  .ex-md\:justify-start { justify-content: flex-start; }
+  .ex-md\:justify-center { justify-content: center; }
+  .ex-md\:justify-end { justify-content: flex-end; }
+  .ex-md\:justify-between { justify-content: space-between; }
+  
+  .ex-md\:items-start { align-items: flex-start; }
+  .ex-md\:items-center { align-items: center; }
+  .ex-md\:items-end { align-items: flex-end; }
+}
+
+@include respond-to(lg) {
+  .ex-lg\:flex { display: flex; }
+  .ex-lg\:hidden { display: none; }
+  .ex-lg\:block { display: block; }
+  
+  .ex-lg\:flex-col { flex-direction: column; }
+  .ex-lg\:flex-row { flex-direction: row; }
+  
+  .ex-lg\:justify-start { justify-content: flex-start; }
+  .ex-lg\:justify-center { justify-content: center; }
+  .ex-lg\:justify-end { justify-content: flex-end; }
+  .ex-lg\:justify-between { justify-content: space-between; }
+  
+  .ex-lg\:items-start { align-items: flex-start; }
+  .ex-lg\:items-center { align-items: center; }
+  .ex-lg\:items-end { align-items: flex-end; }
+}

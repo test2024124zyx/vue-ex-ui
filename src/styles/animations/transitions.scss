@@ -1,0 +1,56 @@
+// Transition Animations
+// 过渡动画定义
+
+@use '../_tokens' as tokens;
+@use 'sass:map';
+
+// 基础过渡动画
+.ex-transition {
+  &--fast {
+    transition: all map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out);
+  }
+  
+  &--normal {
+    transition: all map.get(tokens.$motion, duration-base) map.get(tokens.$motion, ease-in-out);
+  }
+  
+  &--slow {
+    transition: all map.get(tokens.$motion, duration-slow) map.get(tokens.$motion, ease-in-out);
+  }
+}
+
+// 文本相关过渡
+.ex-typography {
+  // 基础过渡
+  transition: color map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+              text-shadow map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+              transform map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out);
+  
+  // 链接过渡
+  &--link {
+    transition: color map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+                text-shadow map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+                transform map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+                opacity map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out);
+  }
+  
+  // 悬停状态过渡
+  &:hover {
+    transition-timing-function: map.get(tokens.$motion, ease-out);
+  }
+  
+  // 激活状态过渡
+  &:active {
+    transition-duration: map.get(tokens.$motion, duration-fast);
+    transition-timing-function: map.get(tokens.$motion, ease-in);
+  }
+}
+
+// 减少动画偏好支持
+@media (prefers-reduced-motion: reduce) {
+  .ex-typography,
+  .ex-transition {
+    transition: none !important;
+    animation: none !important;
+  }
+}

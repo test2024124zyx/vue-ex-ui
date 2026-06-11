@@ -1,0 +1,166 @@
+// Neon Blue 主题（默认主题）
+// ClutchZone 游戏风格主题配色 - 霓虹蓝主导
+
+@use './base' as *;
+
+// 默认主题（无 data-theme 属性时使用）
+:root,
+[data-theme='neon-blue'] {
+  // ========== 主色- 霓虹==========
+  --ex-color-primary: #29abe2;
+  --ex-color-primary-hover: #0f7ae5;
+  --ex-color-primary-active: #0958d9;
+
+  // ========== 次要色 - 霓虹紫 ==========
+  --ex-color-secondary: #a86bff;
+  --ex-color-secondary-hover: #9254de;
+  --ex-color-secondary-active: #7c3aed;
+
+  // ========== 强调色 - 霓虹粉 ==========
+  --ex-color-accent: #ff3bd1;
+
+  // ========== 背景色系 ==========
+  --ex-color-bg-primary: #0b0f14;
+  --ex-color-bg-secondary: #0f1720;
+  --ex-color-bg-tertiary: #1a2332;
+  --ex-color-bg-elevated: #1a2332;
+  --ex-color-bg-hover: #1a2332;
+  --ex-color-bg-active: #243447;
+
+  // ========== 文本色系 ==========
+  --ex-color-text-primary: #e6f0ff;
+  --ex-color-text-secondary: #8fa3b8;
+  --ex-color-text-tertiary: #6b7d91;
+  --ex-color-text-disabled: #4a5568;
+
+  // ========== 边框色系 ==========
+  --ex-color-border-primary: #243447;
+  --ex-color-border-secondary: #2d4058;
+
+  // ========== 状态色系 ==========
+  --ex-color-success: #10b981;
+  --ex-color-success-hover: #059669;
+  --ex-color-success-active: #047857;
+
+  --ex-color-warning: #f59e0b;
+  --ex-color-warning-hover: #d97706;
+  --ex-color-warning-active: #b45309;
+
+  --ex-color-error: #ef4444;
+  --ex-color-danger: #ef4444;
+  --ex-color-danger-hover: #dc2626;
+  --ex-color-danger-active: #b91c1c;
+
+  --ex-color-info: var(--ex-color-primary);
+  --ex-color-info-hover: #0f7ae5;
+  --ex-color-info-active: #0958d9;
+
+  // ========== 渐变定义 ==========
+  --ex-gradient-primary: linear-gradient(
+    135deg,
+    var(--ex-color-primary) 0%,
+    var(--ex-color-secondary) 100%
+  );
+  --ex-gradient-secondary: linear-gradient(
+    135deg,
+    var(--ex-color-secondary) 0%,
+    var(--ex-color-accent) 100%
+  );
+  --ex-gradient-bg:
+    radial-gradient(circle at 20% 80%, rgba(41, 171, 226, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(168, 107, 255, 0.1) 0%, transparent 50%);
+
+  // ========== 阴影系统（霓虹蓝发光=========
+  --ex-shadow-neon-sm: 0 0 5px rgba(41, 171, 226, 0.3);
+  --ex-shadow-neon-md: 0 0 10px rgba(41, 171, 226, 0.3), 0 0 20px rgba(41, 171, 226, 0.2);
+  --ex-shadow-neon-lg: 0 0 15px rgba(41, 171, 226, 0.3), 0 0 30px rgba(41, 171, 226, 0.2);
+
+  // 应用共享的基础颜色
+  @include theme-common-colors;
+
+  // 应用共享的状态色
+  @include theme-status-colors;
+
+  // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-500: #29abe2;
+  --ex-color-neon-blue-600: #0f7ae5;
+  --ex-color-neon-pink-500: #ff3bd1;
+
+  // ========== 透明度颜色变量（用于替换硬编rgba=========
+  // 主色透明
+  --ex-color-primary-alpha-05: rgba(41, 171, 226, 0.05);
+  --ex-color-primary-alpha-10: rgba(41, 171, 226, 0.1);
+  --ex-color-primary-alpha-20: rgba(41, 171, 226, 0.2);
+  --ex-color-primary-alpha-30: rgba(41, 171, 226, 0.3);
+  --ex-color-primary-alpha-40: rgba(41, 171, 226, 0.4);
+  --ex-color-primary-alpha-50: rgba(41, 171, 226, 0.5);
+  --ex-color-primary-alpha-60: rgba(41, 171, 226, 0.6);
+
+  // 次要色透明
+  --ex-color-secondary-alpha-05: rgba(168, 107, 255, 0.05);
+  --ex-color-secondary-alpha-10: rgba(168, 107, 255, 0.1);
+  --ex-color-secondary-alpha-20: rgba(168, 107, 255, 0.2);
+  --ex-color-secondary-alpha-30: rgba(168, 107, 255, 0.3);
+  --ex-color-secondary-alpha-40: rgba(168, 107, 255, 0.4);
+  --ex-color-secondary-alpha-60: rgba(168, 107, 255, 0.6);
+  --ex-color-secondary-alpha-80: rgba(168, 107, 255, 0.8);
+
+  // 霓虹蓝透明度（用于发光效果）
+  --ex-color-neon-blue-alpha-05: rgba(41, 171, 226, 0.05);
+  --ex-color-neon-blue-alpha-10: rgba(41, 171, 226, 0.1);
+  --ex-color-neon-blue-alpha-15: rgba(41, 171, 226, 0.15);
+  --ex-color-neon-blue-alpha-20: rgba(41, 171, 226, 0.2);
+  --ex-color-neon-blue-alpha-25: rgba(41, 171, 226, 0.25);
+  --ex-color-neon-blue-alpha-30: rgba(41, 171, 226, 0.3);
+  --ex-color-neon-blue-alpha-40: rgba(41, 171, 226, 0.4);
+  --ex-color-neon-blue-alpha-50: rgba(41, 171, 226, 0.5);
+  --ex-color-neon-blue-alpha-60: rgba(41, 171, 226, 0.6);
+  --ex-color-neon-blue-alpha-80: rgba(41, 171, 226, 0.8);
+
+  // 霓虹粉透明度
+  --ex-color-neon-pink-alpha-05: rgba(255, 59, 209, 0.05);
+  --ex-color-neon-pink-alpha-10: rgba(255, 59, 209, 0.1);
+  --ex-color-neon-pink-alpha-15: rgba(255, 59, 209, 0.15);
+  --ex-color-neon-pink-alpha-20: rgba(255, 59, 209, 0.2);
+  --ex-color-neon-pink-alpha-30: rgba(255, 59, 209, 0.3);
+  --ex-color-neon-pink-alpha-40: rgba(255, 59, 209, 0.4);
+
+  // 背景色透明度
+  --ex-color-bg-primary-alpha-30: rgba(11, 15, 20, 0.3);
+  --ex-color-bg-primary-alpha-50: rgba(11, 15, 20, 0.5);
+  --ex-color-bg-primary-alpha-80: rgba(11, 15, 20, 0.8);
+  --ex-color-bg-primary-alpha-90: rgba(11, 15, 20, 0.9);
+  --ex-color-bg-primary-alpha-95: rgba(11, 15, 20, 0.95);
+  --ex-color-bg-primary-alpha-98: rgba(11, 15, 20, 0.98);
+
+  --ex-color-bg-secondary-alpha-30: rgba(15, 23, 32, 0.3);
+  --ex-color-bg-secondary-alpha-50: rgba(15, 23, 32, 0.5);
+  --ex-color-bg-secondary-alpha-80: rgba(15, 23, 32, 0.8);
+
+  --ex-color-bg-tertiary-alpha-30: rgba(26, 35, 50, 0.3);
+  --ex-color-bg-tertiary-alpha-50: rgba(26, 35, 50, 0.5);
+
+  --ex-color-bg-surface-alpha-80: rgba(15, 23, 32, 0.8);
+
+  --ex-color-info-alpha-05: rgba(59, 130, 246, 0.05);
+  --ex-color-info-alpha-10: rgba(59, 130, 246, 0.1);
+  --ex-color-info-alpha-20: rgba(59, 130, 246, 0.2);
+  --ex-color-info-alpha-30: rgba(59, 130, 246, 0.3);
+  --ex-color-info-alpha-40: rgba(59, 130, 246, 0.4);
+  --ex-color-info-alpha-60: rgba(59, 130, 246, 0.6);
+  --ex-color-info-alpha-80: rgba(59, 130, 246, 0.8);
+  // ========== RGB 格式变量（用于 Select 组件等）==========
+  --ex-color-bg-primary-rgb: 11, 15, 20;
+  --ex-color-bg-secondary-rgb: 15, 23, 32;
+  --ex-color-bg-tertiary-rgb: 26, 35, 50;
+  --ex-color-neon-blue-500-rgb: 41, 171, 226;
+}
+
+// 霓虹蓝主题特定样式
+:root,
+[data-theme='neon-blue'] {
+  color-scheme: dark;
+
+  // 应用主题切换过渡动画
+  @include theme-transition;
+}

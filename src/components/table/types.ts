@@ -1,0 +1,183 @@
+/**
+ * 表格列对齐方式
+ */
+export type TableColumnAlign = 'left' | 'center' | 'right';
+
+/**
+ * 表格尺寸
+ */
+export type TableSize = 'small' | 'medium' | 'large';
+
+/**
+ * 表格布局模式
+ */
+export type TableLayout = 'table' | 'card';
+
+/**
+ * 表格行数据
+ */
+export interface TableRowData {
+  [key: string]: unknown;
+}
+
+/**
+ * 表格排序器
+ */
+export interface TableSorter {
+  field: string;
+  order: 'asc' | 'desc' | 'descend' | null;
+  sorter?: (a: unknown, b: unknown) => number;
+}
+
+/**
+ * 表格分页
+ */
+export interface TablePagination {
+  current: number;
+  pageSize: number;
+  total: number;
+}
+
+/**
+ * 单元格渲染信息
+ */
+export interface CellRenderInfo<T = unknown> {
+  value: unknown;
+  record: TableRowData;
+  index: number;
+  column: TableColumn<T>;
+  editing?: boolean;
+}
+
+/**
+ * 表头渲染信息
+ */
+export interface HeaderRenderInfo<T = unknown> {
+  column: TableColumn<T>;
+  index: number;
+  sortOrder?: 'asc' | 'desc' | null;
+  filteredValue?: unknown[];
+  sortable?: boolean;
+  filtered?: boolean;
+}
+
+/**
+ * 表格渲染选项
+ */
+export interface TableRenderOptions {
+  bordered?: boolean;
+  striped?: boolean;
+  hoverable?: boolean;
+  size?: TableSize;
+  showHeader?: boolean;
+  tableLayout?: 'auto' | 'fixed';
+}
+
+/**
+ * 表格列定义
+ */
+export interface TableColumn<T = unknown> {
+  /** 列的唯一标识 */
+  key: string;
+  /** 列标题 */
+  title?: string;
+  /** 数据字段名 */
+  dataIndex?: string;
+  /** 列宽度 */
+  width?: string | number;
+  /** 最小宽度 */
+  minWidth?: string | number;
+  /** 对齐方式 */
+  align?: TableColumnAlign;
+  /** 是否固定列 */
+  fixed?: 'left' | 'right' | boolean;
+  /** 是否可排序 */
+  sortable?: boolean;
+  /** 自定义渲染函数 */
+  render?: (value: unknown, record: unknown, index: number) => unknown;
+  /** 自定义插槽名称 */
+  slot?: string;
+  /** 子列 */
+  children?: TableColumn<T>[];
+  /** 过滤器 */
+  onFilter?: (value: unknown, record: T) => boolean;
+  /** 是否省略显示 */
+  ellipsis?: boolean;
+  /** 自定义类名 */
+  className?: string;
+  /** 表头自定义类名 */
+  headerClassName?: string;
+}
+
+/**
+ * 表格数据项
+ */
+export interface TableDataItem {
+  /** 唯一标识 */
+  key?: string | number;
+  [key: string]: unknown;
+}
+
+/**
+ * 排序信息
+ */
+export interface TableSortInfo {
+  /** 排序字段 */
+  key: string;
+  /** 排序方向 */
+  order: 'asc' | 'desc' | null;
+}
+
+/**
+ * 表格组件属性接口
+ */
+export interface ExTableProps {
+  /** 表格列配置 */
+  columns: TableColumn[];
+  /** 表格数据 */
+  data: TableDataItem[];
+  /** 表格尺寸 */
+  size?: TableSize;
+  /** 是否显示边框 */
+  bordered?: boolean;
+  /** 是否显示斑马纹 */
+  striped?: boolean;
+  /** 是否可悬停 */
+  hoverable?: boolean;
+  /** 是否加载中 */
+  loading?: boolean;
+  /** 空数据文本 */
+  emptyText?: string;
+  /** 是否显示表头 */
+  showHeader?: boolean;
+  /** 行的 key 字段名 */
+  rowKey?: string;
+  /** 最大高度（超出显示滚动条） */
+  maxHeight?: string | number;
+  /** 布局模式（移动端可使用卡片模式） */
+  layout?: TableLayout;
+  /** 自定义CSS类名 */
+  class?: string | string[] | Record<string, boolean>;
+  /** 自定义样式 */
+  style?: string | Record<string, string | number>;
+}
+
+/**
+ * 表格组件事件接口
+ */
+export interface ExTableEmits {
+  /** 行点击事件 */
+  'row-click': [record: TableDataItem, index: number, event: MouseEvent];
+  /** 排序变化事件 */
+  'sort-change': [sortInfo: TableSortInfo];
+}
+
+/**
+ * 表格组件暴露的方法接口
+ */
+export interface ExTableExposed {
+  /** 获取表格DOM元素 */
+  getElement: () => HTMLDivElement | null;
+  /** 清除排序 */
+  clearSort: () => void;
+}

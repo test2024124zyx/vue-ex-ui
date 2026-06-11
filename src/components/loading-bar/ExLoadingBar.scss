@@ -1,0 +1,122 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  pointer-events: none;
+
+  &__bar {
+    position: relative;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
+    box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
+    transition: width var(--ex-transition-base) var(--ex-easing-standard);
+    overflow: hidden;
+
+    // 霓虹发光效果
+    &__glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--ex-color-white-alpha-40) 50%,
+        transparent 100%
+      );
+      animation: ex-loading-bar-glow 1.5s ease-in-out infinite;
+    }
+
+    // 流动动画
+    &__flow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: linear-gradient(
+        45deg,
+        var(--ex-color-white-alpha-20) 25%,
+        transparent 25%,
+        transparent 50%,
+        var(--ex-color-white-alpha-20) 50%,
+        var(--ex-color-white-alpha-20) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 20px 20px;
+      animation: ex-loading-bar-flow 0.5s linear infinite;
+    }
+
+    // 状态样�?
+    &--loading {
+      background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
+      box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
+    }
+
+    &--success {
+      background: linear-gradient(90deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
+      box-shadow: 0 0 10px var(--ex-color-success-alpha-60);
+    }
+
+    &--error {
+      background: linear-gradient(90deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
+      box-shadow: 0 0 10px var(--ex-color-error-alpha-60);
+    }
+
+    &--warning {
+      background: linear-gradient(90deg, var(--ex-color-warning) 0%, var(--ex-color-warning-hover) 100%);
+      box-shadow: 0 0 10px var(--ex-color-warning-alpha-60);
+    }
+  }
+}
+
+// 动画
+@keyframes ex-loading-bar-glow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ex-loading-bar-flow {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 20px 0;
+  }
+}
+
+// 过渡动画
+.ex-loading-bar-fade-enter-active,
+.ex-loading-bar-fade-leave-active {
+  transition: opacity var(--ex-transition-fast) var(--ex-easing-standard);
+}
+
+.ex-loading-bar-fade-enter-from,
+.ex-loading-bar-fade-leave-to {
+  opacity: 0;
+}
+
+// 无障碍支�?
+@media (prefers-reduced-motion: reduce) {
+  .ex-loading-bar__bar {
+    transition: none;
+  }
+
+  .ex-loading-bar__glow,
+  .ex-loading-bar__flow {
+    animation: none;
+  }
+}
+
+

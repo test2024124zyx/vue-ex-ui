@@ -1,0 +1,565 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+.ex-input {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-family: var(--ex-font-secondary);
+  
+  // 使用设计令牌系统的高度变量
+  --input-height: var(--ex-input-height-md);
+  
+  // 标签
+  &__label {
+    @include form-label;
+    cursor: pointer;
+    @include safe-transition(color);
+    
+    // 标签悬停效果（仅在支持悬停的设备上）
+    @include hover-capable {
+      &:hover {
+        color: var(--ex-color-neon-blue-500);
+      }
+    }
+    
+    // 聚焦时标签高亮
+    .ex-input--focused & {
+      color: var(--ex-color-neon-blue-500);
+    }
+  }
+  
+  &__required {
+    @include required-indicator;
+  }
+  
+  // 输入框容
+  &__wrapper {
+    @include flex-center-vertical;
+    width: 100%;
+  }
+  
+  &__inner {
+    @include flex-center-vertical;
+    flex: 1;
+    height: var(--input-height);
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary-alpha-80) 0%,
+      var(--ex-color-bg-primary-alpha-90) 100%
+    );
+    border: 2px solid var(--ex-color-neon-blue-500);
+    border-radius: var(--ex-radius-lg);
+    @include optimized-backdrop-blur(8px);
+    @include prevent-layout-shift;
+    overflow: hidden;
+    @include safe-transition(all);
+    
+    // 仅在支持悬停的设备上应用悬停效果
+    @include hover-capable {
+      .ex-input__wrapper:hover & {
+        border-color: var(--ex-color-neon-pink-400);
+      }
+      
+      // 标签悬停时高亮输入框
+      .ex-input__label:hover ~ .ex-input__wrapper & {
+        border-color: var(--ex-color-neon-pink-400);
+      }
+    }
+    
+    .ex-input--focused & {
+      border-color: var(--ex-color-neon-pink-500);
+      @include optimized-neon-glow('pink', 'md');
+      transform: translateY(-1px);
+    }
+  }
+  
+  // 输入框控
+  &__control {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--ex-color-text-primary);
+    font-family: var(--ex-font-secondary);
+    font-weight: var(--ex-font-medium);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    outline: none;
+    padding: 0 var(--ex-spacing-4);
+    @include safe-transition(all);
+    @include optimized-text-rendering;
+    
+    &::placeholder {
+      color: var(--ex-color-text-tertiary);
+      font-weight: var(--ex-font-normal);
+      opacity: 0.85; // 确保符合 WCAG 对比度要求（至少 4.5:1）
+    }
+    
+    // 自定义聚焦环
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-pink-500);
+      outline-offset: -2px;
+      border-radius: var(--ex-radius-md);
+    }
+    
+    &--with-prefix { padding-left: 0; }
+    &--with-suffix { padding-right: 0; }
+  }
+  
+  // 前缀/后缀
+  &__prefix,
+  &__suffix {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-3); // 使用 12px 间距，符合 8px 网格系统
+    padding: 0 var(--ex-spacing-3);
+    color: var(--ex-color-text-secondary);
+    flex-shrink: 0;
+    @include safe-transition(color);
+    
+    .ex-input--focused & {
+      color: var(--ex-color-neon-pink-400);
+    }
+  }
+  
+  &__prefix { 
+    padding-left: var(--ex-spacing-4);
+    padding-right: var(--ex-spacing-2);
+    
+    // 有前置内容时，调整padding
+    .ex-input--with-prepend & {
+      padding-left: var(--ex-spacing-3);
+    }
+  }
+  
+  &__suffix { 
+    padding-left: var(--ex-spacing-2);
+    padding-right: var(--ex-spacing-4);
+    
+    // 有后置内容时，调整padding
+    .ex-input--with-append & {
+      padding-right: var(--ex-spacing-3);
+    }
+  }
+  
+  // 清除/密码切换图标容器
+  &__clear-icon,
+  &__password-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+    @include safe-transition(all);
+    
+    // 扩大触摸区域（桌面端 8px，移动端 12px 以满足 44x44px 最小触摸区域）
+    &::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 50%;
+      
+      // 移动端扩大触摸区域
+      @include touch-device {
+        top: -12px;
+        left: -12px;
+        right: -12px;
+        bottom: -12px;
+      }
+    }
+    
+    // 仅在支持悬停的设备上应用悬停效果
+    @include hover-capable {
+      &:hover {
+        color: var(--ex-color-neon-pink-500);
+        transform: scale(1.1);
+      }
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  // 字数统计
+  &__word-limit {
+    font-size: var(--ex-text-xs);
+    color: var(--ex-color-text-tertiary);
+    font-family: var(--ex-font-mono);
+    white-space: nowrap;
+    
+    .ex-input--error & {
+      color: var(--ex-color-error);
+    }
+  }
+  
+  // 前置/后置内容
+  &__prepend,
+  &__append {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--ex-spacing-4);
+    background: var(--ex-color-bg-tertiary-alpha-50);
+    border: 2px solid var(--ex-color-neon-blue-500);
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    white-space: nowrap;
+    height: var(--input-height);
+    box-shadow: none;
+    @include safe-transition(all);
+    
+    // 悬停时与 inner 保持相同的边框颜色（仅在支持悬停的设备上）
+    @include hover-capable {
+      .ex-input__wrapper:hover & {
+        border-color: var(--ex-color-neon-pink-400);
+      }
+    }
+    
+    // 聚焦时与 inner 保持相同的边框颜色和位移
+    .ex-input--focused & {
+      border-color: var(--ex-color-neon-pink-500);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &__prepend {
+    border-right: none;
+    border-radius: var(--ex-radius-lg) 0 0 var(--ex-radius-lg);
+  }
+  
+  &__append {
+    border-left: none;
+    border-radius: 0 var(--ex-radius-lg) var(--ex-radius-lg) 0;
+  }
+  
+  // 有前置内容时，移inner 的左边框和左圆角
+  &--with-prepend &__inner {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+  }
+  
+  // 有后置内容时，移inner 的右边框和右圆角
+  &--with-append &__inner {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+  }
+  
+  // 尺寸适配 - 使用设计令牌系统
+  &--small {
+    --input-height: var(--ex-input-height-sm);
+  }
+  
+  &--medium {
+    --input-height: var(--ex-input-height-md);
+  }
+  
+  &--large {
+    --input-height: var(--ex-input-height-lg);
+  }
+  
+  // 帮助文本/错误信息
+  &__help {
+    @include helper-text-container;
+  }
+  
+  &__help-text {
+    @include helper-text;
+  }
+  
+  &__error {
+    @include error-text;
+    
+    &-icon {
+      flex-shrink: 0;
+    }
+  }
+  
+  &__success {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-success);
+    line-height: 1.4;
+    
+    &-icon {
+      flex-shrink: 0;
+    }
+    
+    &-text {
+      flex: 1;
+    }
+  }
+  
+  // ============================================================================
+  // 尺寸变体 - 使用 mixin
+  // ============================================================================
+  
+  &--small .ex-input__control {
+    @include form-control-size('small');
+  }
+  
+  &--medium .ex-input__control {
+    @include form-control-size('medium');
+  }
+  
+  &--large .ex-input__control {
+    @include form-control-size('large');
+  }
+  
+  // ============================================================================
+  // 变体样式 - 使用 mixin
+  // ============================================================================
+  
+  &--ghost .ex-input__inner {
+    @include component-variant-ghost;
+    
+    .ex-input--focused & {
+      border-color: var(--ex-color-neon-pink-500);
+      background: var(--ex-color-bg-secondary-alpha-50);
+      @include optimized-neon-glow('pink', 'sm');
+    }
+  }
+  
+  &--filled .ex-input__inner {
+    @include component-variant-filled;
+    
+    .ex-input--focused & {
+      background: var(--ex-color-bg-secondary);
+      border-color: var(--ex-color-neon-pink-500);
+      @include optimized-neon-glow('pink', 'sm');
+    }
+  }
+  
+  // ============================================================================
+  // 状态样- 使用 mixin
+  // ============================================================================
+  
+  &--success {
+    .ex-input__inner {
+      @include form-control-status('success');
+      border-color: var(--ex-color-success);
+    }
+    
+    .ex-input__prepend,
+    .ex-input__append {
+      border-color: var(--ex-color-success);
+    }
+  }
+  
+  &--warning {
+    .ex-input__inner {
+      @include form-control-status('warning');
+      border-color: var(--ex-color-warning);
+    }
+    
+    .ex-input__prepend,
+    .ex-input__append {
+      border-color: var(--ex-color-warning);
+    }
+  }
+  
+  &--error {
+    .ex-input__inner {
+      @include form-control-status('error');
+      border-color: var(--ex-color-error);
+    }
+    
+    .ex-input__prepend,
+    .ex-input__append {
+      border-color: var(--ex-color-error);
+    }
+  }
+  
+  // 禁用状态 - 确保在所有主题下都清晰可辨
+  &--disabled {
+    @include component-disabled;
+  }
+  
+  &--disabled &__inner {
+    border-color: var(--ex-color-border-secondary);
+    background: var(--ex-color-bg-tertiary);
+    box-shadow: none;
+    opacity: 0.5;
+    filter: grayscale(0.5); // 增加灰度以提升禁用状态的视觉反馈
+  }
+  
+  &--disabled &__prepend,
+  &--disabled &__append {
+    border-color: var(--ex-color-border-secondary);
+    background: var(--ex-color-bg-tertiary);
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+  
+  // 只读状
+  &--readonly .ex-input__control {
+    cursor: default;
+    background: var(--ex-color-bg-tertiary-alpha-30);
+  }
+  
+  // ============================================================================
+  // 文本域样
+  // ============================================================================
+  
+  &--textarea {
+    .ex-input__inner {
+      height: auto; // 文本域不使用固定高度
+    }
+    
+    .ex-input__control {
+      height: auto;
+      min-height: 80px;
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+      line-height: 1.6;
+      resize: vertical;
+      
+      @include custom-scrollbar(
+        6px,
+        var(--ex-color-neon-blue-alpha-20),
+        var(--ex-color-neon-blue-500)
+      );
+    }
+  }
+  
+  // ============================================================================
+  // 响应式设计 - 移动端优化
+  // ============================================================================
+  
+  @include mobile-form-control-sizes;
+  
+  // 移动端触摸优化
+  @include touch-device {
+    &__label {
+      font-size: var(--ex-text-base); // 移动端标签字体稍大
+      margin-bottom: var(--ex-spacing-2);
+    }
+    
+    &__control {
+      font-size: var(--ex-text-base); // 防止 iOS 自动缩放
+      
+      &::placeholder {
+        font-size: var(--ex-text-base);
+      }
+    }
+    
+    // 移动端增加内边距，提升触摸体验
+    &--small &__control {
+      padding: 0 var(--ex-spacing-4);
+    }
+    
+    &--medium &__control {
+      padding: 0 var(--ex-spacing-5);
+    }
+    
+    &--large &__control {
+      padding: 0 var(--ex-spacing-6);
+    }
+  }
+  
+  // ============================================================================
+  // 无障碍和特殊效果
+  // ============================================================================
+  
+  &__control:focus-visible {
+    outline: none;
+  }
+  
+  @media (prefers-contrast: high) {
+    &__inner {
+      border-width: 3px;
+    }
+    
+    &--focused &__inner {
+      border-width: 4px;
+    }
+    
+    &__control::placeholder {
+      opacity: 1;
+    }
+  }
+  
+  // 暗黑模式优化
+  @media (prefers-color-scheme: dark) {
+    &__inner {
+      border-width: 2px;
+    }
+    
+    &__control {
+      font-weight: var(--ex-font-semibold);
+    }
+  }
+  
+  // 低端设备优化 - 使用更高优先级的选择器而非 !important
+  @include low-end-device {
+    &.ex-input &__inner {
+      backdrop-filter: none;
+      background: var(--ex-color-bg-secondary);
+      box-shadow: none;
+    }
+  }
+}
+
+// ============================================================================
+// 动画
+// ============================================================================
+
+.ex-input-help-enter-active,
+.ex-input-help-leave-active {
+  @include safe-transition(all, 200ms);
+}
+
+.ex-input-help-enter-from,
+.ex-input-help-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+// 高端设备特效 - 仅在悬停和聚焦时激活，避免持续消耗 GPU
+@include high-end-device {
+  .ex-input__inner {
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500), var(--ex-color-neon-blue-500));
+      background-size: 200% 200%;
+      border-radius: inherit;
+      opacity: 0;
+      z-index: -1;
+      @include safe-transition(opacity, 300ms);
+      animation-play-state: paused; // 默认暂停动画
+    }
+    
+    // 仅在悬停或聚焦时播放动画
+    @include hover-capable {
+      &:hover::before,
+      .ex-input--focused &::before {
+        opacity: 0.3;
+        animation: border-flow 2s linear infinite;
+        animation-play-state: running;
+      }
+    }
+  }
+}
+
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+

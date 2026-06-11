@@ -1,0 +1,554 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// TimelineItem 时间轴项组件样式
+// ============================================================================
+
+.ex-timeline-item {
+  position: relative;
+  @include transition(all);
+
+  // ============================================================================
+  // 垂直布局
+  // ============================================================================
+
+  &--vertical {
+    display: grid;
+    padding-bottom: var(--ex-spacing-6);
+
+    // 正常顺序：最后一项隐藏连接线
+    &:last-child {
+      padding-bottom: 0;
+
+      .ex-timeline-item__tail {
+        display: none;
+      }
+    }
+
+    // 反转顺序：第一项隐藏连接线
+    .ex-timeline--reverse > &:first-child {
+      padding-bottom: 0;
+
+      .ex-timeline-item__tail {
+        display: none;
+      }
+    }
+
+    // 反转顺序时，最后一项需要显示连接线
+    .ex-timeline--reverse > &:last-child {
+      .ex-timeline-item__tail {
+        display: block;
+      }
+    }
+
+    // 左侧模式
+    &.ex-timeline-item--left {
+      grid-template-columns: auto 1fr;
+      gap: var(--ex-spacing-4);
+
+      .ex-timeline-item__content--left {
+        display: none;
+      }
+    }
+
+    // 右侧模式
+    &.ex-timeline-item--right {
+      grid-template-columns: 1fr auto;
+      gap: var(--ex-spacing-4);
+
+      .ex-timeline-item__tail-wrapper {
+        order: 2;
+      }
+
+      .ex-timeline-item__content--right {
+        order: 1;
+        text-align: right;
+      }
+
+      .ex-timeline-item__content--left {
+        display: none;
+      }
+    }
+
+    // 交替模式
+    &.ex-timeline-item--alternate {
+      grid-template-columns: 1fr auto 1fr;
+      gap: var(--ex-spacing-4);
+
+      .ex-timeline-item__tail-wrapper {
+        order: 2;
+      }
+
+      .ex-timeline-item__content--left {
+        order: 1;
+        text-align: right;
+      }
+
+      .ex-timeline-item__content--right {
+        order: 3;
+      }
+
+      // 左侧项
+      &:not(.ex-timeline-item--right) {
+        .ex-timeline-item__content--left {
+          display: none;
+        }
+      }
+
+      // 右侧项
+      &.ex-timeline-item--right {
+        .ex-timeline-item__content--right {
+          display: none;
+        }
+
+        .ex-timeline-item__content--left {
+          display: block;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 水平布局
+  // ============================================================================
+
+  &--horizontal {
+    flex-shrink: 0;
+    min-width: 200px;
+    max-width: 300px;
+
+    &:last-child {
+      .ex-timeline-item__tail-horizontal {
+        display: none;
+      }
+    }
+  }
+
+  // ============================================================================
+  // 节点和连接线（垂直）
+  // ============================================================================
+
+  &__tail-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__tail {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: calc(100% + var(--ex-spacing-6));
+    background: linear-gradient(
+      to bottom,
+      var(--ex-color-border-primary),
+      var(--ex-color-border-secondary)
+    );
+    @include transition(all);
+  }
+
+  &__node {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--ex-color-bg-primary);
+    border-radius: 50%;
+    @include transition(all);
+  }
+
+  &__dot {
+    border-radius: 50%;
+    @include transition(all);
+  }
+
+  // ============================================================================
+  // 水平布局节点和连接线
+  // ============================================================================
+
+  &__horizontal-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-3);
+  }
+
+  &__node-horizontal {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  &__tail-horizontal {
+    flex: 1;
+    height: 2px;
+    min-width: var(--ex-spacing-8);
+    background: linear-gradient(
+      to right,
+      var(--ex-color-border-primary),
+      var(--ex-color-border-secondary)
+    );
+    @include transition(all);
+  }
+
+  // ============================================================================
+  // 内容区域
+  // ============================================================================
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-2);
+    min-height: 24px;
+
+    &--horizontal {
+      min-width: 0;
+    }
+  }
+
+  &__card {
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-md);
+    padding: var(--ex-spacing-4);
+    color: var(--ex-color-text-secondary);
+    line-height: var(--ex-leading-relaxed);
+    @include transition(all);
+
+    &:hover {
+      border-color: var(--ex-color-border-hover);
+      box-shadow: var(--ex-shadow-sm);
+    }
+  }
+
+  &__timestamp {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-tertiary);
+    font-family: var(--ex-font-mono);
+    letter-spacing: var(--ex-tracking-wide);
+
+    &--top {
+      order: -1;
+    }
+
+    &--bottom {
+      order: 1;
+    }
+
+    &--horizontal {
+      text-align: center;
+      font-weight: var(--ex-font-medium);
+    }
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-timeline-item__node {
+      width: 16px;
+      height: 16px;
+    }
+
+    .ex-timeline-item__dot {
+      width: 8px;
+      height: 8px;
+    }
+
+    .ex-timeline-item__card {
+      padding: var(--ex-spacing-2) var(--ex-spacing-3);
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-timeline-item__timestamp {
+      font-size: var(--ex-text-xs);
+    }
+  }
+
+  &--medium {
+    .ex-timeline-item__node {
+      width: 24px;
+      height: 24px;
+    }
+
+    .ex-timeline-item__dot {
+      width: 12px;
+      height: 12px;
+    }
+
+    .ex-timeline-item__card {
+      padding: var(--ex-spacing-4);
+      font-size: var(--ex-text-base);
+    }
+
+    .ex-timeline-item__timestamp {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--large {
+    .ex-timeline-item__node {
+      width: 32px;
+      height: 32px;
+    }
+
+    .ex-timeline-item__dot {
+      width: 16px;
+      height: 16px;
+    }
+
+    .ex-timeline-item__card {
+      padding: var(--ex-spacing-5) var(--ex-spacing-6);
+      font-size: var(--ex-text-lg);
+    }
+
+    .ex-timeline-item__timestamp {
+      font-size: var(--ex-text-base);
+    }
+  }
+
+  // ============================================================================
+  // 类型变体（游戏主题）
+  // ============================================================================
+
+  &--default {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-border-primary);
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-border-primary);
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  &--primary {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-neon-blue-500);
+      @include neon-glow('blue', 'sm');
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-neon-blue-500);
+      box-shadow: 0 0 8px var(--ex-color-neon-blue-500);
+    }
+
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal {
+      background: linear-gradient(
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-border-primary)
+      );
+    }
+
+    .ex-timeline-item__card {
+      border-color: var(--ex-color-neon-blue-500);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-alpha-05),
+        var(--ex-color-bg-secondary)
+      );
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  &--success {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-success);
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-success);
+      box-shadow: 0 0 8px var(--ex-color-success);
+    }
+
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal {
+      background: linear-gradient(
+        var(--ex-color-success),
+        var(--ex-color-border-primary)
+      );
+    }
+
+    .ex-timeline-item__card {
+      border-color: var(--ex-color-success);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-success-alpha-05),
+        var(--ex-color-bg-secondary)
+      );
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  &--warning {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-warning);
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-warning);
+      box-shadow: 0 0 8px var(--ex-color-warning);
+    }
+
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal {
+      background: linear-gradient(
+        var(--ex-color-warning),
+        var(--ex-color-border-primary)
+      );
+    }
+
+    .ex-timeline-item__card {
+      border-color: var(--ex-color-warning);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-warning-alpha-05),
+        var(--ex-color-bg-secondary)
+      );
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  &--danger {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-danger);
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-danger);
+      box-shadow: 0 0 8px var(--ex-color-danger);
+    }
+
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal {
+      background: linear-gradient(
+        var(--ex-color-danger),
+        var(--ex-color-border-primary)
+      );
+    }
+
+    .ex-timeline-item__card {
+      border-color: var(--ex-color-danger);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-error-alpha-05),
+        var(--ex-color-bg-secondary)
+      );
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  &--info {
+    .ex-timeline-item__node {
+      border: 2px solid var(--ex-color-info);
+    }
+
+    .ex-timeline-item__dot {
+      background: var(--ex-color-info);
+      box-shadow: 0 0 8px var(--ex-color-info);
+    }
+
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal {
+      background: linear-gradient(
+        var(--ex-color-info),
+        var(--ex-color-border-primary)
+      );
+    }
+
+    .ex-timeline-item__card {
+      border-color: var(--ex-color-info);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-info-alpha-05),
+        var(--ex-color-bg-secondary)
+      );
+    }
+
+    &.ex-timeline-item--hollow .ex-timeline-item__dot {
+      background: transparent;
+    }
+  }
+
+  // ============================================================================
+  // 响应式适配
+  // ============================================================================
+
+  @include mobile {
+    &--vertical.ex-timeline-item--alternate {
+      grid-template-columns: auto 1fr;
+
+      .ex-timeline-item__content--left {
+        display: none !important;
+      }
+
+      .ex-timeline-item__content--right {
+        display: block !important;
+        text-align: left !important;
+        order: 3;
+      }
+
+      .ex-timeline-item__tail-wrapper {
+        order: 2;
+      }
+    }
+
+    &--horizontal {
+      min-width: 150px;
+      max-width: 250px;
+    }
+
+    .ex-timeline-item__card {
+      padding: var(--ex-spacing-3);
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支持
+  // ============================================================================
+
+  @media (prefers-reduced-motion: reduce) {
+    .ex-timeline-item__node,
+    .ex-timeline-item__dot,
+    .ex-timeline-item__tail,
+    .ex-timeline-item__tail-horizontal,
+    .ex-timeline-item__card {
+      transition: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    .ex-timeline-item__node {
+      border-width: 3px;
+    }
+
+    .ex-timeline-item__card {
+      border-width: 2px;
+    }
+  }
+}

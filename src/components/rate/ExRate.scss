@@ -1,0 +1,239 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Rate 组件样式 - ClutchZone 游戏主题风格
+// ============================================================================
+
+.ex-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  font-family: var(--ex-font-secondary);
+
+  // ============================================================================
+  // 星星容器
+  // ============================================================================
+
+  &__stars {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+  }
+
+  // ============================================================================
+  // 单个星星
+  // ============================================================================
+
+  &__star {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+    @include safe-transition(all);
+
+    &.is-interactive:hover {
+      transform: scale(1.2);
+      animation: pulse 0.9s ease-in-out;
+    }
+
+    // 未选中状态
+    .ex-rate__icon--void {
+      display: inline-flex;
+      @include safe-transition(all);
+    }
+
+    // 选中状态 - ClutchZone 霓虹蓝发光
+    .ex-rate__icon--active {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: inline-flex;
+      opacity: 0;
+      @include safe-transition(all);
+      
+      // 发光效果应用到图标
+      :deep(.ex-icon) {
+        @include optimized-neon-glow('blue', 'md');
+      }
+    }
+
+    // 激活状态
+    &.is-active {
+      .ex-rate__icon--void {
+        opacity: 0;
+      }
+
+      .ex-rate__icon--active {
+        opacity: 1;
+      }
+    }
+
+    // 半选状态
+    &.is-half {
+      .ex-rate__icon--void {
+        opacity: 0.3;
+      }
+
+      .ex-rate__icon--active {
+        opacity: 1;
+      }
+    }
+
+    // 交互效果 - ClutchZone 颜色反转（蓝 → 粉）
+    &.is-interactive:hover {
+      .ex-rate__icon--active {
+        :deep(.ex-icon) {
+          @include optimized-neon-glow('pink', 'lg');
+        }
+      }
+    }
+  }
+
+  // 脉冲动画
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1.2);
+    }
+    50% {
+      transform: scale(1.25);
+    }
+  }
+
+  // ============================================================================
+  // 文本显示 - ClutchZone 霓虹文字效果
+  // ============================================================================
+
+  &__text {
+    margin-left: var(--ex-spacing-3);
+    color: var(--ex-color-neon-blue-500);
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-semibold);
+    @include safe-transition(all);
+    @include optimized-text-rendering;
+    text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-50);
+    letter-spacing: 0.5px; // 增加字间距，更有科技感
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-rate__text {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--medium {
+    .ex-rate__text {
+      font-size: var(--ex-text-base);
+    }
+  }
+
+  &--large {
+    .ex-rate__text {
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  // ============================================================================
+  // 禁用状态 - ClutchZone 灰度处理
+  // ============================================================================
+
+  &.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.8); // 灰度效果
+
+    .ex-rate__star {
+      cursor: not-allowed;
+
+      &:hover {
+        transform: none;
+        animation: none;
+      }
+    }
+
+    .ex-rate__icon--active {
+      color: var(--ex-color-text-disabled);
+      filter: none;
+      box-shadow: none;
+    }
+
+    .ex-rate__text {
+      color: var(--ex-color-text-disabled);
+      text-shadow: none;
+    }
+  }
+
+  // ============================================================================
+  // 只读状态 - 保持发光但不可交互
+  // ============================================================================
+
+  &.is-readonly {
+    .ex-rate__star {
+      cursor: default;
+
+      &:hover {
+        transform: none;
+        animation: none;
+      }
+
+      &.is-interactive:hover {
+        .ex-rate__icon--active {
+          color: var(--ex-color-neon-blue-500);
+          @include optimized-neon-glow('blue', 'md');
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设计
+// ============================================================================
+
+@include mobile {
+  .ex-rate {
+    &__star {
+      &.is-interactive:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-rate {
+    &__star,
+    &__icon--void,
+    &__icon--active,
+    &__text {
+      transition: none !important;
+    }
+  }
+}
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-rate {
+  contain: layout style;
+
+  @include low-end-device {
+    &__icon--active {
+      filter: none !important;
+    }
+
+    &__text {
+      text-shadow: none !important;
+    }
+  }
+}

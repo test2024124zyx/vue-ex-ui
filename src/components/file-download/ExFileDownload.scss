@@ -1,0 +1,61 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-file-download {
+  display: inline-block;
+
+  &__progress {
+    margin-top: var(--ex-spacing-3);
+  }
+
+  &__progress-bar {
+    height: 8px;
+    background: var(--ex-color-bg-tertiary);
+    border-radius: var(--ex-radius-full);
+    overflow: hidden;
+    position: relative;
+  }
+
+  &__progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ex-color-primary), var(--ex-color-secondary));
+    border-radius: var(--ex-radius-full);
+    transition: width var(--ex-transition-base);
+    box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        var(--ex-color-white-alpha-30),
+        transparent
+      );
+      animation: shimmer 2s infinite;
+    }
+  }
+
+  &__progress-text {
+    margin-top: var(--ex-spacing-2);
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+

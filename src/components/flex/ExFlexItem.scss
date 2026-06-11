@@ -1,0 +1,7 @@
+@use '../../styles/mixins' as *;
+
+.ex-flex-item {
+  // 防止 flex 项目溢出
+  min-width: 0;  // 水平方向
+  min-height: 0; // 垂直方向
+}

@@ -1,0 +1,402 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-badge {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+
+  // 带内容的徽章
+  &--with-content {
+    .ex-badge__sup {
+      position: absolute;
+      z-index: var(--ex-badge-z-index);
+      
+      // 位置定位
+      &--top-right {
+        top: 0;
+        right: 0;
+        transform: translate(50%, -50%);
+      }
+      
+      &--top-left {
+        top: 0;
+        left: 0;
+        transform: translate(-50%, -50%);
+      }
+      
+      &--bottom-right {
+        bottom: 0;
+        right: 0;
+        transform: translate(50%, 50%);
+      }
+      
+      &--bottom-left {
+        bottom: 0;
+        left: 0;
+        transform: translate(-50%, 50%);
+      }
+    }
+  }
+
+  // 状态模式
+  &--status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+  }
+
+  // 徽章内容容器
+  &__content {
+    position: relative;
+  }
+
+  // 徽章主体
+  &__sup {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-family: var(--ex-font-primary);
+    font-weight: var(--ex-badge-font-weight);
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    border: var(--ex-badge-border-width) solid transparent;
+    transition: var(--ex-badge-transition);
+    cursor: pointer;
+
+    // 游戏主题增强 - 霓虹发光效果
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: inherit;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      opacity: 0;
+      transition: opacity var(--ex-motion-duration-base);
+      pointer-events: none;
+    }
+
+    &:hover::before {
+      opacity: 1;
+    }
+
+    // 数字徽章
+    &--count {
+      min-width: var(--ex-badge-min-width);
+      height: var(--ex-badge-height);
+      padding: 0 var(--ex-badge-padding-x);
+      border-radius: var(--ex-badge-border-radius);
+      font-size: var(--ex-badge-font-size);
+
+      &.ex-badge__sup--small {
+        min-width: var(--ex-badge-sm-min-width);
+        height: var(--ex-badge-sm-height);
+        padding: 0 var(--ex-badge-sm-padding-x);
+        border-radius: var(--ex-badge-sm-border-radius);
+        font-size: var(--ex-badge-sm-font-size);
+      }
+
+      &.ex-badge__sup--large {
+        min-width: var(--ex-badge-lg-min-width);
+        height: var(--ex-badge-lg-height);
+        padding: 0 var(--ex-badge-lg-padding-x);
+        border-radius: var(--ex-badge-lg-border-radius);
+        font-size: var(--ex-badge-lg-font-size);
+      }
+    }
+
+    // 点状徽章
+    &--dot {
+      width: var(--ex-badge-md-dot-size);
+      height: var(--ex-badge-md-dot-size);
+      min-width: auto;
+      padding: 0;
+      border-radius: 50%;
+
+      &.ex-badge__sup--small {
+        width: var(--ex-badge-sm-dot-size);
+        height: var(--ex-badge-sm-dot-size);
+      }
+
+      &.ex-badge__sup--large {
+        width: var(--ex-badge-lg-dot-size);
+        height: var(--ex-badge-lg-dot-size);
+      }
+    }
+
+    // 状态徽章
+    &--status {
+      position: static;
+      transform: none;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: default;
+
+      &:hover::before {
+        opacity: 0;
+      }
+    }
+
+    // 类型样式 - 游戏主题
+    &--default {
+      background: linear-gradient(135deg, var(--ex-color-text-tertiary) 0%, var(--ex-color-text-quaternary) 100%);
+      border-color: var(--ex-color-text-tertiary);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(156, 163, 175, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, var(--ex-color-text-secondary) 0%, var(--ex-color-text-tertiary) 100%);
+        box-shadow: 
+          0 0 15px rgba(156, 163, 175, 0.5),
+          0 2px 8px rgba(156, 163, 175, 0.25);
+      }
+    }
+
+    &--primary {
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500) 0%, var(--ex-color-neon-blue-600) 100%);
+      border-color: var(--ex-color-neon-blue-500);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(0, 240, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, var(--ex-color-neon-blue-400) 0%, var(--ex-color-neon-blue-500) 100%);
+        box-shadow: 
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 2px 8px rgba(0, 240, 255, 0.25);
+      }
+    }
+
+    &--secondary {
+      background: linear-gradient(135deg, var(--ex-color-neon-pink-500) 0%, var(--ex-color-neon-pink-600) 100%);
+      border-color: var(--ex-color-neon-pink-500);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(255, 0, 127, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, var(--ex-color-neon-pink-400) 0%, var(--ex-color-neon-pink-500) 100%);
+        box-shadow: 
+          0 0 15px rgba(255, 0, 127, 0.5),
+          0 2px 8px rgba(255, 0, 127, 0.25);
+      }
+    }
+
+    &--success {
+      background: linear-gradient(135deg, var(--ex-color-success) 0%, #059669 100%);
+      border-color: var(--ex-color-success);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(16, 185, 129, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+        box-shadow: 
+          0 0 15px rgba(16, 185, 129, 0.5),
+          0 2px 8px rgba(16, 185, 129, 0.25);
+      }
+    }
+
+    &--warning {
+      background: linear-gradient(135deg, var(--ex-color-warning) 0%, #d97706 100%);
+      border-color: var(--ex-color-warning);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(245, 158, 11, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+        box-shadow: 
+          0 0 15px rgba(245, 158, 11, 0.5),
+          0 2px 8px rgba(245, 158, 11, 0.25);
+      }
+    }
+
+    &--danger {
+      background: linear-gradient(135deg, var(--ex-color-danger) 0%, #dc2626 100%);
+      border-color: var(--ex-color-danger);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(239, 68, 68, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        box-shadow: 
+          0 0 15px rgba(239, 68, 68, 0.5),
+          0 2px 8px rgba(239, 68, 68, 0.25);
+      }
+    }
+
+    &--info {
+      background: linear-gradient(135deg, var(--ex-color-info) 0%, #2563eb 100%);
+      border-color: var(--ex-color-info);
+      color: var(--ex-color-white);
+      box-shadow: 
+        0 0 10px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        box-shadow: 
+          0 0 15px rgba(59, 130, 246, 0.5),
+          0 2px 8px rgba(59, 130, 246, 0.25);
+      }
+    }
+
+    // 状态点样式
+    &--status-success,
+    &--status-processing,
+    &--status-default,
+    &--status-error,
+    &--status-warning {
+      .ex-badge__status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          border: 1px solid currentColor;
+          animation: ex-badge-status-processing 1.2s infinite ease-in-out;
+          opacity: 0;
+        }
+      }
+    }
+
+    &--status-success .ex-badge__status-dot {
+      background-color: var(--ex-color-success);
+    }
+
+    &--status-processing .ex-badge__status-dot {
+      background-color: var(--ex-color-neon-blue-500);
+      
+      &::after {
+        opacity: 1;
+        border-color: var(--ex-color-neon-blue-500);
+      }
+    }
+
+    &--status-default .ex-badge__status-dot {
+      background-color: var(--ex-color-text-tertiary);
+    }
+
+    &--status-error .ex-badge__status-dot {
+      background-color: var(--ex-color-danger);
+    }
+
+    &--status-warning .ex-badge__status-dot {
+      background-color: var(--ex-color-warning);
+    }
+  }
+
+  // 状态文本
+  &__status-text {
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    line-height: 1.5;
+  }
+
+  // 数字文本
+  &__count-text {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+
+  // 响应式设计
+  @media (max-width: 768px) {
+    &__sup--count {
+      &.ex-badge__sup--small {
+        min-width: 16px;
+        height: 16px;
+        font-size: 10px;
+      }
+
+      &.ex-badge__sup--medium {
+        min-width: 18px;
+        height: 18px;
+        font-size: 11px;
+      }
+
+      &.ex-badge__sup--large {
+        min-width: 20px;
+        height: 20px;
+        font-size: 12px;
+      }
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    &__sup {
+      transition: none;
+      
+      &:hover {
+        transform: none;
+      }
+
+      &::before {
+        transition: none;
+      }
+    }
+
+    .ex-badge__status-dot::after {
+      animation: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    &__sup {
+      border-width: 2px;
+      
+      &--primary,
+      &--secondary,
+      &--success,
+      &--warning,
+      &--danger,
+      &--info {
+        background: var(--ex-color-text-primary) !important;
+        color: var(--ex-color-bg-primary) !important;
+        border-color: var(--ex-color-text-primary) !important;
+        box-shadow: none !important;
+      }
+    }
+  }
+}
+
+// 状态点动画
+@keyframes ex-badge-status-processing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题

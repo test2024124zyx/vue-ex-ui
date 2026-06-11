@@ -1,0 +1,692 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-calendar {
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  padding: var(--ex-spacing-4);
+  @include transition(all);
+
+  // 头部
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--ex-spacing-4);
+    padding-bottom: var(--ex-spacing-3);
+    border-bottom: 1px solid var(--ex-color-border-primary);
+  }
+
+  // 导航区域
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+  }
+
+  // 导航按钮
+  &__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    color: var(--ex-color-text-secondary);
+    cursor: pointer;
+    @include transition(all);
+
+    &:hover {
+      border-color: var(--ex-color-primary);
+      background: var(--ex-color-primary-alpha-10);
+      @include neon-glow('blue', 'sm');
+
+      img {
+        filter: brightness(0) saturate(100%) invert(70%) sepia(100%) saturate(1000%) hue-rotate(180deg) brightness(1.2);
+      }
+    }
+
+    img {
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
+      @include transition(filter);
+    }
+  }
+
+  // 当前年月
+  &__current {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    font-size: var(--ex-text-lg);
+    font-weight: var(--ex-font-bold);
+    color: var(--ex-color-text-primary);
+    font-family: var(--ex-font-primary);
+    text-transform: uppercase;
+  }
+
+  &__year {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  &__month {
+    color: var(--ex-color-neon-pink-500);
+  }
+
+  &__day {
+    color: var(--ex-color-neon-purple-500);
+  }
+
+  &__week {
+    color: var(--ex-color-neon-green-500);
+    font-size: var(--ex-text-sm);
+  }
+
+  // 操作区域
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-3);
+  }
+
+  // 视图模式切换
+  &__mode-switch {
+    display: flex;
+    gap: var(--ex-spacing-1);
+    padding: 2px;
+    background: var(--ex-color-bg-tertiary);
+    border-radius: var(--ex-radius-base);
+  }
+
+  &__mode-btn {
+    padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    background: transparent;
+    border: none;
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    cursor: pointer;
+    @include transition(all);
+
+    &:hover {
+      color: var(--ex-color-primary);
+      background: var(--ex-color-primary-alpha-10);
+    }
+
+    &--active {
+      color: var(--ex-color-white);
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  // 今天按钮
+  &__today-btn {
+    padding: var(--ex-spacing-2) var(--ex-spacing-4);
+    background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+    border: none;
+    border-radius: var(--ex-radius-base);
+    color: var(--ex-color-white);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-semibold);
+    cursor: pointer;
+    @include transition(all);
+    @include neon-glow('blue', 'sm');
+
+    &:hover {
+      @include neon-glow('blue', 'md');
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // 日视图
+  &__day-view {
+    min-height: 400px;
+  }
+
+  &__day-header {
+    padding: var(--ex-spacing-4);
+    background: linear-gradient(135deg, var(--ex-color-primary-alpha-10), var(--ex-color-secondary-alpha-10));
+    border-radius: var(--ex-radius-base);
+    margin-bottom: var(--ex-spacing-4);
+  }
+
+  &__day-title {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-3);
+  }
+
+  &__day-weekday {
+    font-size: var(--ex-text-2xl);
+    font-weight: var(--ex-font-bold);
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  &__day-lunar {
+    font-size: var(--ex-text-base);
+    color: var(--ex-color-text-tertiary);
+  }
+
+  &__day-content {
+    padding: var(--ex-spacing-2);
+  }
+
+  &__day-events {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-3);
+  }
+
+  &__day-event {
+    padding: var(--ex-spacing-4);
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-left: 4px solid var(--ex-color-neon-blue-500);
+    border-radius: var(--ex-radius-base);
+    cursor: pointer;
+    @include transition(all);
+
+    &:hover {
+      border-color: var(--ex-color-neon-blue-500);
+      transform: translateX(4px);
+      @include neon-glow('blue', 'sm');
+    }
+
+    &--success {
+      border-left-color: var(--ex-color-success);
+    }
+
+    &--warning {
+      border-left-color: var(--ex-color-warning);
+    }
+
+    &--danger {
+      border-left-color: var(--ex-color-danger);
+    }
+
+    &--info {
+      border-left-color: var(--ex-color-info);
+    }
+
+    &--primary {
+      border-left-color: var(--ex-color-neon-blue-500);
+    }
+  }
+
+  &__day-event-header {
+    margin-bottom: var(--ex-spacing-2);
+  }
+
+  &__day-event-title {
+    font-size: var(--ex-text-lg);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+  }
+
+  &__day-event-description {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    line-height: 1.6;
+  }
+
+  &__day-empty {
+    padding: var(--ex-spacing-8);
+    text-align: center;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-base);
+  }
+
+  // 周视图
+  &__week-view {
+    .ex-calendar__week-body {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--ex-spacing-1);
+    }
+  }
+
+  // 星期标题
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--ex-spacing-1);
+    margin-bottom: var(--ex-spacing-2);
+  }
+
+  &__weekday {
+    text-align: center;
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-tertiary);
+    padding: var(--ex-spacing-2);
+  }
+
+  // 月视图
+  &__month-view {
+    // 使用默认样式
+  }
+
+  // 日历主体
+  &__body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--ex-spacing-1);
+  }
+
+  // 日期单元格
+  &__cell {
+    min-height: 100px;
+    padding: var(--ex-spacing-2);
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    cursor: pointer;
+    @include transition(all);
+    position: relative;
+    overflow: hidden;
+
+    &:hover:not(&--disabled) {
+      border-color: var(--ex-color-primary);
+      background: var(--ex-color-primary-alpha-05);
+      transform: translateY(-2px);
+      @include neon-glow('blue', 'sm');
+    }
+
+    // 其他月份
+    &--other-month {
+      opacity: 0.4;
+
+      .ex-calendar__date-number {
+        color: var(--ex-color-text-tertiary);
+      }
+    }
+
+    // 今天
+    &--today {
+      border-color: var(--ex-color-primary);
+      background: var(--ex-color-primary-alpha-10);
+
+      .ex-calendar__date-number {
+        color: var(--ex-color-primary);
+        font-weight: var(--ex-font-bold);
+      }
+    }
+
+    // 选中
+    &--selected {
+      border-color: var(--ex-color-secondary);
+      background: linear-gradient(135deg, var(--ex-color-primary-alpha-20), var(--ex-color-secondary-alpha-20));
+      @include neon-glow('pink', 'sm');
+
+      .ex-calendar__date-number {
+        color: var(--ex-color-white);
+        font-weight: var(--ex-font-bold);
+      }
+    }
+
+    // 禁用
+    &--disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    // 已签到
+    &--checked-in {
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 20px 20px 0;
+        border-color: transparent var(--ex-color-success) transparent transparent;
+      }
+    }
+
+    // 有事件
+    &--has-events {
+      .ex-calendar__date-number {
+        font-weight: var(--ex-font-semibold);
+      }
+    }
+
+    // 节假日
+    &--holiday {
+      .ex-calendar__holiday {
+        color: var(--ex-color-danger);
+      }
+    }
+
+    // 节气
+    &--solar-term {
+      .ex-calendar__solar-term {
+        color: var(--ex-color-neon-green-500);
+      }
+    }
+  }
+
+  // 日期内容
+  &__date-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--ex-spacing-2);
+  }
+
+  &__date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__date-number {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-primary);
+  }
+
+  &__lunar {
+    font-size: 10px;
+    color: var(--ex-color-text-tertiary);
+    line-height: 1;
+  }
+
+  &__solar-term {
+    font-size: 10px;
+    color: var(--ex-color-neon-green-500);
+    line-height: 1;
+    font-weight: var(--ex-font-semibold);
+  }
+
+  &__holiday {
+    font-size: 10px;
+    color: var(--ex-color-danger);
+    line-height: 1;
+    font-weight: var(--ex-font-semibold);
+  }
+
+  &__day-solar-term {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-neon-green-500);
+    font-weight: var(--ex-font-semibold);
+  }
+
+  &__day-holiday {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-danger);
+    font-weight: var(--ex-font-semibold);
+  }
+
+  // 签到标记
+  &__check-in {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      filter: brightness(0) saturate(100%) invert(60%) sepia(100%) saturate(500%) hue-rotate(100deg);
+    }
+  }
+
+  // 事件列表
+  &__events {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-1);
+  }
+
+  // 事件项
+  &__event {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    background: var(--ex-color-primary-alpha-10);
+    border-left: 2px solid var(--ex-color-primary);
+    border-radius: var(--ex-radius-sm);
+    font-size: var(--ex-text-xs);
+    @include transition(all);
+
+    &:hover {
+      background: var(--ex-color-primary-alpha-20);
+      transform: translateX(2px);
+    }
+
+    &--success {
+      background: var(--ex-color-success-alpha-10);
+      border-left-color: var(--ex-color-success);
+
+      .ex-calendar__event-dot {
+        background: var(--ex-color-success);
+      }
+      
+      &:hover {
+        background: var(--ex-color-success-alpha-20);
+      }
+    }
+
+    &--warning {
+      background: var(--ex-color-warning-alpha-10);
+      border-left-color: var(--ex-color-warning);
+
+      .ex-calendar__event-dot {
+        background: var(--ex-color-warning);
+      }
+      
+      &:hover {
+        background: var(--ex-color-warning-alpha-20);
+      }
+    }
+
+    &--danger {
+      background: var(--ex-color-error-alpha-10);
+      border-left-color: var(--ex-color-danger);
+
+      .ex-calendar__event-dot {
+        background: var(--ex-color-danger);
+      }
+      
+      &:hover {
+        background: var(--ex-color-error-alpha-20);
+      }
+    }
+
+    &--info {
+      background: var(--ex-color-info-alpha-10);
+      border-left-color: var(--ex-color-info);
+
+      .ex-calendar__event-dot {
+        background: var(--ex-color-info);
+      }
+      
+      &:hover {
+        background: var(--ex-color-info-alpha-20);
+      }
+    }
+
+    &--primary {
+      background: var(--ex-color-primary-alpha-10);
+      border-left-color: var(--ex-color-primary);
+
+      .ex-calendar__event-dot {
+        background: var(--ex-color-primary);
+      }
+      
+      &:hover {
+        background: var(--ex-color-primary-alpha-20);
+      }
+    }
+  }
+
+  &__event-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ex-color-neon-blue-500);
+    flex-shrink: 0;
+  }
+
+  &__event-title {
+    flex: 1;
+    color: var(--ex-color-text-primary);
+    @include text-truncate;
+  }
+
+  &__event-more {
+    padding: var(--ex-spacing-1);
+    font-size: var(--ex-text-xs);
+    color: var(--ex-color-text-tertiary);
+    text-align: center;
+  }
+
+  // 年视图
+  &__year-view {
+    padding: var(--ex-spacing-2);
+  }
+
+  &__year-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--ex-spacing-4);
+  }
+
+  &__year-month {
+    padding: var(--ex-spacing-3);
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    cursor: pointer;
+    @include transition(all);
+
+    &:hover {
+      border-color: var(--ex-color-neon-blue-500);
+      transform: translateY(-2px);
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  &__year-month-title {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-neon-blue-500);
+    margin-bottom: var(--ex-spacing-2);
+    text-align: center;
+  }
+
+  &__year-month-preview {
+    font-size: var(--ex-text-xs);
+  }
+
+  &__year-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+
+    span {
+      text-align: center;
+      color: var(--ex-color-text-tertiary);
+      font-size: 10px;
+    }
+  }
+
+  &__year-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  &__year-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--ex-color-text-secondary);
+    border-radius: 2px;
+
+    &--today {
+      background: var(--ex-color-neon-blue-500);
+      color: var(--ex-color-white);
+      font-weight: var(--ex-font-bold);
+    }
+  }
+
+  // 全屏模式
+  &--fullscreen {
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+
+    .ex-calendar__cell {
+      min-height: 120px;
+    }
+  }
+
+  // 响应式
+  @include mobile {
+    padding: var(--ex-spacing-2);
+
+    .ex-calendar__header {
+      flex-direction: column;
+      gap: var(--ex-spacing-2);
+    }
+
+    .ex-calendar__nav {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .ex-calendar__actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .ex-calendar__cell {
+      min-height: 80px;
+      padding: var(--ex-spacing-1);
+    }
+
+    .ex-calendar__date-number {
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-calendar__event {
+      font-size: 10px;
+      padding: 2px 4px;
+    }
+
+    .ex-calendar__year-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    border-width: 2px;
+
+    .ex-calendar__cell {
+      border-width: 2px;
+    }
+  }
+}

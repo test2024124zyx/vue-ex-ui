@@ -1,0 +1,72 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// Tree 树形控件样式 - 游戏主题
+// ============================================================================
+
+.ex-tree {
+  padding: var(--ex-spacing-2);
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-base);
+  font-family: var(--ex-font-secondary);
+  overflow: auto;
+  @include custom-scrollbar;
+
+  &--show-line {
+    .ex-tree-node {
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--ex-color-border-primary);
+      }
+
+      &:last-child::before {
+        height: 50%;
+      }
+    }
+  }
+
+  &--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-tree {
+    padding: var(--ex-spacing-1);
+  }
+
+  .ex-tree-node__content {
+    padding: var(--ex-spacing-2);
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-tree-node__content,
+  .ex-tree-node__expand-icon {
+    transition: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-tree-node--selected > .ex-tree-node__content {
+    outline: 2px solid var(--ex-color-primary);
+  }
+}

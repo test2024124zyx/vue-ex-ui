@@ -1,0 +1,7 @@
+.ex-loading-bar-provider {
+  // 提供者容器样式
+}
+
+:deep(.ex-loading-bar--global) {
+  border-radius: 0;
+}

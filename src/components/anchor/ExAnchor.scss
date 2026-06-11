@@ -1,0 +1,73 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-anchor {
+  position: relative;
+  padding-left: var(--ex-spacing-4);
+
+  &__ink {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--ex-color-border);
+  }
+
+  &__ink-ball {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
+    box-shadow: 0 0 10px rgba(41, 171, 226, 0.5);
+    transition: top var(--ex-transition-base);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.ex-anchor-link {
+  position: relative;
+  padding: var(--ex-spacing-2) 0;
+  padding-left: var(--ex-spacing-4);
+
+  &__title {
+    display: block;
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    text-decoration: none;
+    transition: all var(--ex-transition-base);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--ex-color-primary);
+    }
+
+    &.is-active {
+      color: var(--ex-color-primary);
+      font-weight: var(--ex-font-weight-medium);
+    }
+  }
+
+  // 嵌套的锚点链�?
+  .ex-anchor-link {
+    padding-left: var(--ex-spacing-6);
+    font-size: var(--ex-text-xs);
+  }
+
+  &.is-active {
+    > .ex-anchor-link__title {
+      color: var(--ex-color-primary);
+    }
+  }
+}
+

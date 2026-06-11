@@ -1,0 +1,239 @@
+<template>
+  <Transition
+    name="ex-notification-fade"
+    @after-leave="handleAfterLeave"
+  >
+    <div
+      v-show="visible"
+      ref="notificationRef"
+      :class="notificationClasses"
+      :style="notificationStyles"
+      role="alert"
+      :aria-live="type === 'error' ? 'assertive' : 'polite'"
+      @click="handleClick"
+    >
+      <!-- 图标 -->
+      <div
+        v-if="showIcon"
+        class="ex-notification__icon"
+        :class="iconClasses"
+      >
+        <slot name="icon">
+          <img
+            :src="defaultIconUrl"
+            :alt="type"
+            width="24"
+            height="24"
+          >
+        </slot>
+      </div>
+
+      <!-- 内容区域 -->
+      <div class="ex-notification__content">
+        <!-- 标题 -->
+        <div
+          v-if="title"
+          class="ex-notification__title"
+        >
+          <slot name="title">
+            {{ title }}
+          </slot>
+        </div>
+
+        <!-- 描述内容 -->
+        <div
+          v-if="content"
+          class="ex-notification__description"
+        >
+          <slot>
+            <!-- 使用 sanitizeHtml 消毒后的内容，已防止 XSS 攻击 -->
+            <span
+              v-if="dangerouslyUseHTMLString"
+              v-html="sanitizedContent"
+            />
+            <span v-else>{{ content }}</span>
+          </slot>
+        </div>
+      </div>
+
+      <!-- 关闭按钮 -->
+      <div
+        v-if="closable"
+        class="ex-notification__close"
+        role="button"
+        tabindex="0"
+        :aria-label="t('notification.close')"
+        @click.stop="handleClose"
+        @keydown.enter="handleClose"
+        @keydown.space.prevent="handleClose"
+      >
+        <slot name="close">
+          <img
+            :src="defaultCloseIconUrl"
+            alt="close"
+            width="16"
+            height="16"
+          >
+        </slot>
+      </div>
+    </div>
+  </Transition>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import type { ExNotificationProps, ExNotificationEmits } from './types';
+import { useI18n } from '../../locale';
+import { sanitizeHtml } from '../../utils/sanitize';
+
+defineOptions({
+  name: 'ExNotification',
+});
+
+const props = withDefaults(defineProps<ExNotificationProps>(), {
+  type: 'info',
+  title: '',
+  content: '',
+  showIcon: true,
+  closable: true,
+  duration: 4500,
+  customClass: '',
+  customStyle: undefined,
+  zIndex: undefined,
+  offset: 16,
+  position: 'top-right',
+  dangerouslyUseHTMLString: false,
+  onClose: undefined,
+  onClick: undefined,
+});
+
+const emit = defineEmits<ExNotificationEmits>();
+
+const { t } = useI18n();
+
+// 组件引用
+const notificationRef = ref<HTMLElement>();
+// 可见状态
+const visible = ref(false);
+// 定时器
+let timer: number | undefined;
+
+// 默认图标映射
+const defaultIconMap: Record<string, string> = {
+  info: 'https://api.iconify.design/ri/information-line.svg',
+  success: 'https://api.iconify.design/ri/checkbox-circle-line.svg',
+  warning: 'https://api.iconify.design/ri/error-warning-line.svg',
+  error: 'https://api.iconify.design/ri/close-circle-line.svg',
+};
+
+// 默认图标 URL
+const defaultIconUrl = computed(() => {
+  return defaultIconMap[props.type];
+});
+
+// 默认关闭图标 URL
+const defaultCloseIconUrl = 'https://api.iconify.design/ri/close-line.svg';
+
+// 消毒后的 HTML 内容（防止 XSS 攻击）
+const sanitizedContent = computed(() => {
+  if (props.dangerouslyUseHTMLString && props.content) {
+    return sanitizeHtml(props.content);
+  }
+  return props.content;
+});
+
+// 计算样式类
+const notificationClasses = computed(() => {
+  const classes = [
+    'ex-notification',
+    `ex-notification--${props.type}`,
+    `ex-notification--${props.position}`,
+  ];
+
+  if (props.closable) classes.push('ex-notification--closable');
+  if (props.customClass) classes.push(props.customClass);
+
+  return classes;
+});
+
+// 计算图标样式类
+const iconClasses = computed(() => {
+  return [`ex-notification__icon--${props.type}`];
+});
+
+// 计算内联样式
+const notificationStyles = computed(() => {
+  const styles: Record<string, string> = {};
+
+  if (props.zIndex !== undefined) {
+    styles.zIndex = String(props.zIndex);
+  }
+
+  if (props.customStyle) {
+    Object.assign(styles, props.customStyle);
+  }
+
+  return styles;
+});
+
+// 开始计时器
+const startTimer = () => {
+  if (props.duration > 0) {
+    timer = window.setTimeout(() => {
+      close();
+    }, props.duration);
+  }
+};
+
+// 清除计时器
+const clearTimer = () => {
+  if (timer) {
+    clearTimeout(timer);
+    timer = undefined;
+  }
+};
+
+// 关闭通知
+const close = () => {
+  visible.value = false;
+};
+
+// 处理关闭按钮点击
+const handleClose = () => {
+  close();
+};
+
+// 处理点击事件
+const handleClick = () => {
+  props.onClick?.();
+  emit('click');
+};
+
+// 处理过渡动画结束
+const handleAfterLeave = () => {
+  props.onClose?.();
+  emit('close');
+  emit('destroy');
+};
+
+// 生命周期
+onMounted(() => {
+  visible.value = true;
+  // 仅在浏览器环境且 duration > 0 时启动定时器
+  if (typeof window !== 'undefined' && props.duration > 0) {
+    startTimer();
+  }
+});
+
+onUnmounted(() => {
+  clearTimer();
+});
+
+// 暴露方法
+defineExpose({
+  visible,
+  close,
+});
+</script>
+
+<style scoped lang="scss" src="./ExNotification.scss"></style>

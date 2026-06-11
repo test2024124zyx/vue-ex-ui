@@ -1,0 +1,468 @@
+# Notification 通知提醒
+
+悬浮出现在页面角落，显示全局的通知提醒消息。
+
+<script setup>
+import { ref } from 'vue'
+import { notification } from '../../src/components/notification'
+
+const showInfo = () => {
+  notification.info({
+    title: '信息提示',
+    content: '这是一条信息通知',
+  })
+}
+
+const showSuccess = () => {
+  notification.success({
+    title: '操作成功',
+    content: '您的操作已成功完成',
+  })
+}
+
+const showWarning = () => {
+  notification.warning({
+    title: '警告',
+    content: '请注意，此操作可能有风险',
+  })
+}
+
+const showError = () => {
+  notification.error({
+    title: '错误',
+    content: '操作失败，请稍后重试',
+  })
+}
+
+const showTopLeft = () => {
+  notification.info({
+    title: '左上角通知',
+    content: '这条通知显示在左上角',
+    position: 'top-left',
+  })
+}
+
+const showBottomRight = () => {
+  notification.info({
+    title: '右下角通知',
+    content: '这条通知显示在右下角',
+    position: 'bottom-right',
+  })
+}
+
+const showBottomLeft = () => {
+  notification.info({
+    title: '左下角通知',
+    content: '这条通知显示在左下角',
+    position: 'bottom-left',
+  })
+}
+
+const showCustomDuration = () => {
+  notification.info({
+    title: '自定义时长',
+    content: '这条通知将在 10 秒后关闭',
+    duration: 10000,
+  })
+}
+
+const showNonClosable = () => {
+  notification.info({
+    title: '不可关闭',
+    content: '这条通知不会自动关闭，也没有关闭按钮',
+    duration: 0,
+    closable: false,
+  })
+}
+
+const showHtml = () => {
+  notification.info({
+    title: 'HTML 内容',
+    content: '<strong>加粗文本</strong> 和 <em>斜体文本</em>',
+    dangerouslyUseHTMLString: true,
+  })
+}
+
+const showWithCallback = () => {
+  notification.success({
+    title: '带回调的通知',
+    content: '点击通知或关闭按钮会触发回调',
+    onClick: () => {
+      console.log('通知被点击')
+    },
+    onClose: () => {
+      console.log('通知已关闭')
+    },
+  })
+}
+
+const closeAll = () => {
+  notification.closeAll()
+}
+</script>
+
+## 基础用法
+
+从页面角落悬浮出现，4.5 秒后自动消失。
+
+<div class="demo-container">
+  <ex-button @click="showInfo">信息通知</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showInfo">信息通知</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showInfo = () => {
+  notification.info({
+    title: '信息提示',
+    content: '这是一条信息通知',
+  })
+}
+</script>
+```
+
+## 不同类型
+
+用来显示「成功、警告、消息、错误」类的通知。
+
+<div class="demo-container">
+  <ex-button @click="showInfo">信息</ex-button>
+  <ex-button type="success" @click="showSuccess">成功</ex-button>
+  <ex-button type="warning" @click="showWarning">警告</ex-button>
+  <ex-button type="danger" @click="showError">错误</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showInfo">信息</ex-button>
+  <ex-button type="success" @click="showSuccess">成功</ex-button>
+  <ex-button type="warning" @click="showWarning">警告</ex-button>
+  <ex-button type="danger" @click="showError">错误</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showInfo = () => {
+  notification.info({
+    title: '信息提示',
+    content: '这是一条信息通知',
+  })
+}
+
+const showSuccess = () => {
+  notification.success({
+    title: '操作成功',
+    content: '您的操作已成功完成',
+  })
+}
+
+const showWarning = () => {
+  notification.warning({
+    title: '警告',
+    content: '请注意，此操作可能有风险',
+  })
+}
+
+const showError = () => {
+  notification.error({
+    title: '错误',
+    content: '操作失败，请稍后重试',
+  })
+}
+</script>
+```
+
+## 不同位置
+
+可以设置通知从四个角落弹出。
+
+<div class="demo-container">
+  <ex-button @click="showInfo">右上角（默认）</ex-button>
+  <ex-button @click="showTopLeft">左上角</ex-button>
+  <ex-button @click="showBottomRight">右下角</ex-button>
+  <ex-button @click="showBottomLeft">左下角</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showTopRight">右上角</ex-button>
+  <ex-button @click="showTopLeft">左上角</ex-button>
+  <ex-button @click="showBottomRight">右下角</ex-button>
+  <ex-button @click="showBottomLeft">左下角</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showTopLeft = () => {
+  notification.info({
+    title: '左上角通知',
+    content: '这条通知显示在左上角',
+    position: 'top-left',
+  })
+}
+
+const showBottomRight = () => {
+  notification.info({
+    title: '右下角通知',
+    content: '这条通知显示在右下角',
+    position: 'bottom-right',
+  })
+}
+</script>
+```
+
+## 自定义时长
+
+自定义通知显示时长。
+
+<div class="demo-container">
+  <ex-button @click="showCustomDuration">10 秒后关闭</ex-button>
+  <ex-button @click="showNonClosable">不自动关闭</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showCustomDuration">10 秒后关闭</ex-button>
+  <ex-button @click="showNonClosable">不自动关闭</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showCustomDuration = () => {
+  notification.info({
+    title: '自定义时长',
+    content: '这条通知将在 10 秒后关闭',
+    duration: 10000,
+  })
+}
+
+const showNonClosable = () => {
+  notification.info({
+    title: '不可关闭',
+    content: '这条通知不会自动关闭',
+    duration: 0,
+    closable: false,
+  })
+}
+</script>
+```
+
+## HTML 内容
+
+支持渲染 HTML 字符串。
+
+<div class="demo-container">
+  <ex-button @click="showHtml">HTML 内容</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showHtml">HTML 内容</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showHtml = () => {
+  notification.info({
+    title: 'HTML 内容',
+    content: '<strong>加粗文本</strong> 和 <em>斜体文本</em>',
+    dangerouslyUseHTMLString: true,
+  })
+}
+</script>
+```
+
+::: warning 安全提示
+`dangerouslyUseHTMLString` 属性会将 `content` 作为 HTML 片段处理，这可能会导致 XSS 攻击。请确保 `content` 的内容是可信的。
+:::
+
+## 带回调
+
+可以设置点击和关闭时的回调函数。
+
+<div class="demo-container">
+  <ex-button @click="showWithCallback">带回调的通知</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showWithCallback">带回调的通知</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showWithCallback = () => {
+  notification.success({
+    title: '带回调的通知',
+    content: '点击通知或关闭按钮会触发回调',
+    onClick: () => {
+      console.log('通知被点击')
+    },
+    onClose: () => {
+      console.log('通知已关闭')
+    },
+  })
+}
+</script>
+```
+
+## 关闭所有
+
+一次性关闭所有通知。
+
+<div class="demo-container">
+  <ex-button @click="showInfo">显示通知</ex-button>
+  <ex-button @click="showSuccess">显示通知</ex-button>
+  <ex-button @click="showWarning">显示通知</ex-button>
+  <ex-button type="danger" @click="closeAll">关闭所有</ex-button>
+</div>
+
+```vue
+<template>
+  <ex-button @click="showInfo">显示通知</ex-button>
+  <ex-button type="danger" @click="closeAll">关闭所有</ex-button>
+</template>
+
+<script setup>
+import { notification } from 'vue-ex-ui'
+
+const showInfo = () => {
+  notification.info({
+    title: '信息提示',
+    content: '这是一条信息通知',
+  })
+}
+
+const closeAll = () => {
+  notification.closeAll()
+}
+</script>
+```
+
+## 全局配置
+
+可以通过 `notification.config` 方法配置全局默认选项。
+
+```typescript
+import { notification } from 'vue-ex-ui'
+
+// 配置全局默认选项
+notification.config({
+  duration: 5000,           // 默认显示时长
+  offset: 20,               // 距离边缘的偏移量
+  maxCount: 3,              // 最大显示数量
+  showIcon: true,           // 是否显示图标
+  closable: true,           // 是否可关闭
+  position: 'top-right',    // 默认位置
+})
+```
+
+## API
+
+### 方法
+
+| 方法名 | 说明 | 参数 | 返回值 |
+| --- | --- | --- | --- |
+| notification(options) | 显示通知 | `NotificationOptions` | `NotificationInstance` |
+| notification.info(options) | 显示信息通知 | `NotificationOptions` | `NotificationInstance` |
+| notification.success(options) | 显示成功通知 | `NotificationOptions` | `NotificationInstance` |
+| notification.warning(options) | 显示警告通知 | `NotificationOptions` | `NotificationInstance` |
+| notification.error(options) | 显示错误通知 | `NotificationOptions` | `NotificationInstance` |
+| notification.close(id) | 关闭指定通知 | `string` | — |
+| notification.closeAll() | 关闭所有通知 | — | — |
+| notification.config(options) | 配置全局选项 | `NotificationGlobalConfig` | — |
+
+### NotificationOptions
+
+| 参数 | 说明 | 类型 | 可选值 | 默认值 |
+| --- | --- | --- | --- | --- |
+| id | 通知唯一标识 | string | — | 自动生成 |
+| type | 通知类型 | string | info / success / warning / error | info |
+| title | 通知标题 | string | — | — |
+| content | 通知内容 | string | — | — |
+| showIcon | 是否显示图标 | boolean | — | true |
+| closable | 是否可关闭 | boolean | — | true |
+| duration | 显示时长（毫秒），设为 0 则不自动关闭 | number | — | 4500 |
+| position | 显示位置 | string | top-right / top-left / bottom-right / bottom-left | top-right |
+| customClass | 自定义 CSS 类名 | string | — | — |
+| customStyle | 自定义样式 | object | — | — |
+| zIndex | 层级 | number | — | 2000 |
+| offset | 距离边缘的偏移量 | number | — | 16 |
+| dangerouslyUseHTMLString | 是否将内容作为 HTML 处理 | boolean | — | false |
+| onClose | 关闭时的回调 | () => void | — | — |
+| onClick | 点击时的回调 | () => void | — | — |
+
+### Slots
+
+| 插槽名 | 说明 |
+| --- | --- |
+| default | 通知内容 |
+| title | 自定义标题 |
+| icon | 自定义图标 |
+| close | 自定义关闭按钮 |
+
+### NotificationInstance
+
+| 属性/方法 | 说明 | 类型 |
+| --- | --- | --- |
+| id | 通知唯一标识 | string |
+| close | 关闭通知 | () => void |
+
+### NotificationGlobalConfig
+
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| duration | 默认显示时长 | number | 4500 |
+| offset | 默认偏移量 | number | 16 |
+| zIndex | 默认层级 | number | 2000 |
+| maxCount | 最大显示数量 | number | 5 |
+| showIcon | 是否显示图标 | boolean | true |
+| closable | 是否可关闭 | boolean | true |
+| position | 默认位置 | string | top-right |
+
+## 最佳实践
+
+### 使用场景
+
+- **info**：用于普通的信息通知
+- **success**：用于操作成功后的反馈
+- **warning**：用于警告用户注意某些事项
+- **error**：用于操作失败后的错误提示
+
+### 与 Message 的区别
+
+| 特性 | Message | Notification |
+| --- | --- | --- |
+| 显示位置 | 页面顶部居中 | 页面四个角落 |
+| 内容复杂度 | 简单文本 | 标题 + 描述 |
+| 使用场景 | 轻量级反馈 | 详细通知 |
+| 默认时长 | 3 秒 | 4.5 秒 |
+
+### 无障碍
+
+- 通知组件使用 `role="alert"` 属性，屏幕阅读器会自动朗读通知内容
+- 错误通知使用 `aria-live="assertive"`，会立即打断当前朗读
+- 其他类型通知使用 `aria-live="polite"`，会等待当前朗读完成
+- 关闭按钮支持键盘操作（Enter 和 Space 键）
+
+<style scoped>
+.demo-container {
+  padding: 24px;
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  margin: 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+</style>

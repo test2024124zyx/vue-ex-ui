@@ -1,0 +1,296 @@
+@use '../../styles/mixins' as *;
+
+.ex-carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  border: 1px solid var(--ex-color-border-primary);
+
+  // 容器
+  &__container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  // 轨道
+  &__track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
+
+  // 水平方向
+  &--horizontal {
+    .ex-carousel__track {
+      flex-direction: row;
+    }
+  }
+
+  // 垂直方向
+  &--vertical {
+    .ex-carousel__track {
+      flex-direction: column;
+    }
+  }
+
+  // 滑动效果
+  &--slide {
+    .ex-carousel__track {
+      display: flex;
+    }
+  }
+
+  // 水平滑动
+  &--horizontal.ex-carousel--slide {
+    :deep(.ex-carousel-item) {
+      flex-shrink: 0;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  // 垂直滑动
+  &--vertical.ex-carousel--slide {
+    :deep(.ex-carousel-item) {
+      flex-shrink: 0;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  // 淡入淡出效果
+  &--fade {
+    .ex-carousel__track {
+      transition: none;
+      display: block;
+      position: relative;
+    }
+
+    :deep(.ex-carousel-item) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    :deep(.ex-carousel-item--active) {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+      z-index: 1;
+    }
+  }
+
+  // 箭头按钮
+  &__arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: rgba(15, 23, 32, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: 50%;
+    color: var(--ex-color-text-primary);
+    cursor: pointer;
+    transition: all var(--ex-transition-base);
+    outline: none;
+
+    &:hover:not(&--disabled) {
+      background: var(--ex-color-bg-hover);
+      border-color: var(--ex-color-neon-blue-500);
+      box-shadow: 0 0 20px rgba(41, 171, 226, 0.4);
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    &:active:not(&--disabled) {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+    }
+
+    &--prev {
+      left: 16px;
+    }
+
+    &--next {
+      right: 16px;
+    }
+
+    &--disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    img {
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  // 指示器
+  &__indicators {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-2);
+
+    &--bottom {
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+    }
+
+    &--top {
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+    }
+
+    &--left {
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      flex-direction: column;
+    }
+
+    &--right {
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      flex-direction: column;
+    }
+
+    &--outside {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      transform: none;
+      justify-content: center;
+      margin-top: var(--ex-spacing-3);
+    }
+  }
+
+  &__indicator {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--ex-transition-base);
+    outline: none;
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+      border-radius: 50%;
+    }
+
+    &:hover {
+      .ex-carousel__indicator-dot {
+        background: var(--ex-color-neon-blue-400);
+        box-shadow: 0 0 10px rgba(41, 171, 226, 0.5);
+      }
+    }
+
+    &--active {
+      .ex-carousel__indicator-dot {
+        background: var(--ex-color-neon-blue-500);
+        box-shadow: 0 0 15px rgba(41, 171, 226, 0.6);
+        transform: scale(1.2);
+      }
+    }
+  }
+
+  &__indicator-dot {
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: all var(--ex-transition-base);
+  }
+
+  // 响应式
+  @media (max-width: 768px) {
+    &__arrow {
+      width: 40px;
+      height: 40px;
+
+      &--prev {
+        left: 8px;
+      }
+
+      &--next {
+        right: 8px;
+      }
+
+      img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &__indicators {
+      &--bottom,
+      &--top {
+        bottom: 8px;
+      }
+
+      &--left {
+        left: 8px;
+      }
+
+      &--right {
+        right: 8px;
+      }
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    .ex-carousel__track,
+    .ex-carousel-item,
+    .ex-carousel__arrow,
+    .ex-carousel__indicator-dot {
+      transition: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    border-width: 2px;
+
+    .ex-carousel__arrow {
+      border-width: 2px;
+    }
+  }
+}
+
+

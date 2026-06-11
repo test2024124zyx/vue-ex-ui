@@ -1,0 +1,228 @@
+/**
+ * VitePress 自定义 SCSS 样式
+ * 用于深度定制文档主题
+ */
+
+// ==================== 导入组件库样式 ====================
+// 注意：这会导入所有 ExUI 组件样式
+@use '../../../src/styles/index.scss';
+
+// ==================== VitePress 主题覆盖 ====================
+:root {
+  // 覆盖 VitePress 默认颜色
+  --vp-c-bg: var(--ex-color-bg-primary);
+  --vp-c-bg-soft: var(--ex-color-bg-secondary);
+  --vp-c-bg-alt: var(--ex-color-bg-tertiary);
+  --vp-c-bg-elv: var(--ex-color-bg-elevated);
+  
+  --vp-c-text-1: var(--ex-color-text-primary);
+  --vp-c-text-2: var(--ex-color-text-secondary);
+  --vp-c-text-3: var(--ex-color-text-tertiary);
+  
+  --vp-c-brand-1: var(--ex-color-primary);
+  --vp-c-brand-2: var(--ex-color-primary-hover);
+  --vp-c-brand-3: var(--ex-color-primary-active);
+  --vp-c-brand-soft: var(--ex-color-primary-alpha-20);
+  
+  --vp-c-border: var(--ex-color-border);
+  --vp-c-divider: var(--ex-color-border);
+  --vp-c-gutter: var(--ex-color-border);
+  
+
+  
+  // 按钮样式
+  --vp-button-brand-bg: var(--ex-color-primary);
+  --vp-button-brand-hover-bg: var(--ex-color-primary-hover);
+  --vp-button-brand-active-bg: var(--ex-color-primary-active);
+}
+
+// ==================== 文档内容区域 ====================
+.vp-doc {
+  // 确保文档使用赛博朋克主题
+  background-color: var(--ex-color-bg-primary);
+  color: var(--ex-color-text-primary);
+  
+  // 标题样式
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--ex-color-text-primary);
+    border-bottom-color: var(--ex-color-border);
+  }
+  
+  // 链接样式
+  a {
+    color: var(--ex-color-primary);
+    
+    &:hover {
+      color: var(--ex-color-primary-hover);
+    }
+  }
+  
+  
+  // 引用块样式
+  blockquote {
+    border-left-color: var(--ex-color-primary);
+    background-color: var(--ex-color-bg-secondary);
+  }
+}
+
+// ==================== 侧边栏样式 ====================
+.VPSidebar {
+  background-color: var(--ex-color-bg-secondary);
+  border-right-color: var(--ex-color-border);
+}
+
+// ==================== 导航栏样式 ====================
+.VPNav {
+  background-color: var(--ex-color-bg-primary);
+  border-bottom-color: var(--ex-color-border);
+}
+
+// ==================== 组件演示容器 ====================
+.demo-container {
+  padding: 24px;
+  margin: 16px 0;
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border);
+  border-radius: var(--ex-border-radius-lg);
+  
+  // 霓虹边框效果（可选）
+  &.neon-border {
+    border: 1px solid var(--ex-color-primary);
+    box-shadow: 
+      0 0 10px var(--ex-color-primary-alpha-30),
+      inset 0 0 10px var(--ex-color-primary-alpha-10);
+  }
+  
+  // 演示项间距
+  .demo-item {
+    margin-bottom: 16px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  // 确保组件正常显示
+  [class*="ex-"] {
+    // 组件使用自己的样式
+    font-family: var(--ex-font-family-base);
+  }
+}
+
+// ==================== 演示标题 ====================
+.demo-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ex-color-text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ex-color-border);
+}
+
+// ==================== 演示描述 ====================
+.demo-description {
+  font-size: 14px;
+  color: var(--ex-color-text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+// ==================== 代码块优化 ====================
+.vp-doc {
+  div[class*='language-'] {
+    background-color: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border);
+    border-radius: var(--ex-border-radius-md);
+    
+    // 代码高亮
+    .line {
+      color: var(--ex-color-text-primary);
+    }
+    
+    // 行号
+    .line-number {
+      color: var(--ex-color-text-tertiary);
+    }
+  }
+}
+
+// ==================== 表格优化 ====================
+.vp-doc {
+  table {
+    border-color: var(--ex-color-border);
+    
+    th {
+      background-color: var(--ex-color-bg-secondary);
+      color: var(--ex-color-text-primary);
+      border-color: var(--ex-color-border);
+    }
+    
+    td {
+      border-color: var(--ex-color-border);
+      color: var(--ex-color-text-secondary);
+    }
+    
+    tr:hover {
+      background-color: var(--ex-color-bg-hover);
+    }
+  }
+}
+
+// ==================== 警告框样式 ====================
+.vp-doc {
+  .tip,
+  .warning,
+  .danger,
+  .info {
+    border-left-width: 4px;
+    border-radius: var(--ex-border-radius-md);
+  }
+  
+  .tip {
+    background-color: var(--ex-color-success-alpha-10);
+    border-left-color: var(--ex-color-success);
+  }
+  
+  .warning {
+    background-color: var(--ex-color-warning-alpha-10);
+    border-left-color: var(--ex-color-warning);
+  }
+  
+  .danger {
+    background-color: var(--ex-color-error-alpha-10);
+    border-left-color: var(--ex-color-error);
+  }
+  
+  .info {
+    background-color: var(--ex-color-info-alpha-10);
+    border-left-color: var(--ex-color-info);
+  }
+}
+
+// ==================== 响应式调整 ====================
+@media (max-width: 768px) {
+  .demo-container {
+    padding: 16px;
+    margin: 12px 0;
+    
+    .demo-item {
+      margin-bottom: 12px;
+    }
+  }
+  
+  .demo-title {
+    font-size: 14px;
+  }
+  
+  .demo-description {
+    font-size: 13px;
+  }
+}
+
+// ==================== 打印样式 ====================
+@media print {
+  .demo-container {
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+}

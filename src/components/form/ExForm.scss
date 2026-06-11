@@ -1,0 +1,191 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Form 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-form {
+  position: relative;
+  font-family: var(--ex-font-secondary);
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 布局变体
+  // ============================================================================
+
+  // 垂直布局（默认）
+  &--vertical {
+    .ex-form-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ex-form-item__label {
+      margin-bottom: var(--ex-spacing-2);
+    }
+
+    .ex-form-item__content {
+      width: 100%;
+    }
+  }
+
+  // 水平布局
+  &--horizontal {
+    .ex-form-item {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    .ex-form-item__label {
+      flex-shrink: 0;
+      padding-top: var(--ex-spacing-2);
+    }
+
+    .ex-form-item__content {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  // 内联布局
+  &--inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-4);
+
+    .ex-form-item {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      margin-right: var(--ex-spacing-4);
+      margin-bottom: 0;
+    }
+
+    .ex-form-item__label {
+      margin-right: var(--ex-spacing-2);
+      margin-bottom: 0;
+    }
+
+    .ex-form-item__content {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    font-size: var(--ex-text-sm);
+
+    .ex-form-item {
+      margin-bottom: var(--ex-spacing-4);
+    }
+
+    .ex-form-item__label {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--medium {
+    font-size: var(--ex-text-base);
+
+    .ex-form-item {
+      margin-bottom: var(--ex-spacing-5);
+    }
+
+    .ex-form-item__label {
+      font-size: var(--ex-text-base);
+    }
+  }
+
+  &--large {
+    font-size: var(--ex-text-lg);
+
+    .ex-form-item {
+      margin-bottom: var(--ex-spacing-6);
+    }
+
+    .ex-form-item__label {
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  // ============================================================================
+  // 状态
+  // ============================================================================
+
+  &.is-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    * {
+      pointer-events: none;
+    }
+  }
+
+  &.is-readonly {
+    .ex-form-item__control {
+      pointer-events: none;
+    }
+  }
+
+  &.has-feedback {
+    .ex-form-item__control {
+      position: relative;
+      padding-right: var(--ex-spacing-8);
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设计 - 移动端优化
+// ============================================================================
+
+@include mobile {
+  .ex-form {
+    &--horizontal {
+      .ex-form-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .ex-form-item__label {
+        margin-bottom: var(--ex-spacing-2);
+        padding-top: 0;
+      }
+
+      .ex-form-item__content {
+        width: 100%;
+      }
+    }
+
+    &--inline {
+      display: block;
+
+      .ex-form-item {
+        display: flex;
+        flex-direction: column;
+        margin-right: 0;
+        margin-bottom: var(--ex-spacing-4);
+      }
+
+      .ex-form-item__label {
+        margin-right: 0;
+        margin-bottom: var(--ex-spacing-2);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-form {
+  contain: layout style;
+}

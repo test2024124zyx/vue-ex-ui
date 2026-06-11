@@ -1,0 +1,165 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Popconfirm Container - 气泡确认框容器
+// ============================================================================
+
+.ex-popconfirm {
+  min-width: 280px;
+  max-width: 400px;
+  padding: var(--ex-spacing-4);
+
+  @include mobile {
+    min-width: 240px;
+    max-width: 320px;
+  }
+}
+
+// ============================================================================
+// Popconfirm Header - 头部
+// ============================================================================
+
+.ex-popconfirm__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ex-spacing-2);
+  margin-bottom: var(--ex-spacing-3);
+}
+
+.ex-popconfirm__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+
+  img,
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  // 类型变体
+  .ex-popconfirm--default & {
+    color: var(--ex-color-text-secondary);
+  }
+
+  .ex-popconfirm--primary & {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  .ex-popconfirm--success & {
+    color: var(--ex-color-success);
+  }
+
+  .ex-popconfirm--warning & {
+    color: var(--ex-color-warning);
+  }
+
+  .ex-popconfirm--danger & {
+    color: var(--ex-color-error);
+  }
+
+  .ex-popconfirm--info & {
+    color: var(--ex-color-info);
+  }
+}
+
+.ex-popconfirm__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ex-popconfirm__title {
+  margin: 0;
+  font-size: var(--ex-text-base);
+  font-weight: var(--ex-font-semibold);
+  color: var(--ex-color-text-primary);
+  line-height: var(--ex-leading-snug);
+  word-wrap: break-word;
+}
+
+.ex-popconfirm__description {
+  margin: var(--ex-spacing-1) 0 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-text-secondary);
+  line-height: var(--ex-leading-normal);
+  word-wrap: break-word;
+}
+
+// ============================================================================
+// Popconfirm Footer - 底部按钮
+// ============================================================================
+
+.ex-popconfirm__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ex-spacing-2);
+  margin-top: var(--ex-spacing-3);
+
+  @include mobile {
+    flex-direction: column-reverse;
+    gap: var(--ex-spacing-2);
+
+    .ex-button {
+      width: 100%;
+    }
+  }
+}
+
+// ============================================================================
+// Type Variants - 类型变体
+// ============================================================================
+
+.ex-popconfirm--default {
+  .ex-popconfirm__title {
+    color: var(--ex-color-text-primary);
+  }
+}
+
+.ex-popconfirm--primary {
+  .ex-popconfirm__title {
+    color: var(--ex-color-neon-blue-500);
+  }
+}
+
+.ex-popconfirm--success {
+  .ex-popconfirm__title {
+    color: var(--ex-color-success);
+  }
+}
+
+.ex-popconfirm--warning {
+  .ex-popconfirm__title {
+    color: var(--ex-color-warning);
+  }
+}
+
+.ex-popconfirm--danger {
+  .ex-popconfirm__title {
+    color: var(--ex-color-error);
+  }
+}
+
+.ex-popconfirm--info {
+  .ex-popconfirm__title {
+    color: var(--ex-color-info);
+  }
+}
+
+// ============================================================================
+// Animations - 动画
+// ============================================================================
+
+.ex-popconfirm {
+  @include transition(all);
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题

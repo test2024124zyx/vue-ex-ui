@@ -1,0 +1,125 @@
+/**
+ * VitePress 自定义样式
+ * 用于文档演示和布局
+ */
+
+/* ==================== 全局样式重置 ==================== */
+:root {
+  /* 确保 VitePress 使用 ExUI 主题变量 */
+  --vp-c-bg: var(--ex-color-bg-primary, #0b0f14);
+  --vp-c-bg-soft: var(--ex-color-bg-secondary, #0f1720);
+  --vp-c-bg-alt: var(--ex-color-bg-tertiary, #1a2332);
+
+  --vp-c-text-1: var(--ex-color-text-primary, #e6f0ff);
+  --vp-c-text-2: var(--ex-color-text-secondary, #8fa3b8);
+  --vp-c-text-3: var(--ex-color-text-tertiary, #6b7c8f);
+
+  --vp-c-brand-1: var(--ex-color-primary, #29abe2);
+  --vp-c-brand-2: var(--ex-color-primary-hover, #3dbef5);
+  --vp-c-brand-3: var(--ex-color-primary-active, #1a9ad1);
+}
+
+._components_grid > div{
+  padding: 20px !important;;
+}
+/* ==================== 文档内容区域 ==================== */
+.vp-doc {
+
+  /* 确保组件在文档中正常显示 */
+  [class*="ex-"] {
+    font-family: var(--ex-font-family-base);
+  }
+
+  /* 强制重置面包屑组件的列表样式 */
+  .ex-breadcrumb ol,
+  .ex-breadcrumb ul {
+    list-style: none !important;
+    list-style-type: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+  }
+  .ex-breadcrumb li {
+    list-style: none !important;
+    list-style-type: none !important;
+  }
+
+  .ex-breadcrumb li::before,
+  .ex-breadcrumb li::marker {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+/* ==================== 演示容器样式 ==================== */
+.demo-container {
+  padding: 24px;
+  margin: 16px 0;
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border);
+  border-radius: 8px;
+}
+
+.demo-item {
+  margin-bottom: 16px;
+}
+
+.demo-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ==================== 网格演示样式 ==================== */
+.grid-content {
+  border-radius: 4px;
+  min-height: 36px;
+  padding: 8px;
+  text-align: center;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-purple-light {
+  background: linear-gradient(135deg, #a86bff 0%, #ff3bd1 100%);
+}
+
+.bg-purple {
+  background: linear-gradient(135deg, #29abe2 0%, #a86bff 100%);
+}
+
+/* ==================== 代码块样式优化 ==================== */
+.vp-doc div[class*='language-'] {
+  margin: 16px 0;
+  border-radius: 8px;
+  background: var(--ex-color-bg-tertiary);
+}
+
+/* ==================== 表格样式优化 ==================== */
+.vp-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.vp-doc table th,
+.vp-doc table td {
+  border: 1px solid var(--ex-color-border);
+  padding: 12px;
+}
+
+.vp-doc table th {
+  background: var(--ex-color-bg-secondary);
+  font-weight: 600;
+}
+
+/* ==================== 响应式调整 ==================== */
+@media (max-width: 768px) {
+  .demo-container {
+    padding: 16px;
+  }
+
+  .demo-item {
+    margin-bottom: 12px;
+  }
+}

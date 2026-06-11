@@ -1,0 +1,51 @@
+// ExUI Table Styles
+// 表格样式
+
+@use '../mixins' as *;
+
+// ============================================================================
+// 表格元素
+// ============================================================================
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--ex-spacing-6) 0;
+  background: var(--ex-color-bg-surface);
+  border-radius: var(--ex-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--ex-color-border-primary);
+}
+
+thead {
+  background: var(--ex-gradient-primary);
+}
+
+th {
+  padding: var(--ex-table-cell-padding-y) var(--ex-table-cell-padding-x);
+  text-align: left;
+  font-weight: var(--ex-font-semibold);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ex-tracking-wide);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+}
+
+td {
+  padding: var(--ex-table-cell-padding-y) var(--ex-table-cell-padding-x);
+  color: var(--ex-color-text-secondary);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+}
+
+tbody tr {
+  @include transition(background-color);
+  
+  &:hover {
+    background: var(--ex-color-neon-blue-alpha-05);
+  }
+  
+  &:last-child td {
+    border-bottom: none;
+  }
+}
