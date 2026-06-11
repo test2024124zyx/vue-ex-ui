@@ -105,6 +105,7 @@ import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } fro
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
+import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -131,6 +132,9 @@ const emit = defineEmits<ExNumberInputEmits>();
 
 const { t } = useI18n();
 const componentSize = useComponentSize(computed(() => props.size));
+
+// 所在 FormItem 的字段上下文（用于 blur 自动校验；change 由 FormItem 的 model watch 兜底）
+const formItem = useFormItem();
 
 const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
@@ -337,6 +341,7 @@ const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
   updateDisplayValue();
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {

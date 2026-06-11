@@ -134,6 +134,7 @@ import type {
 } from './types';
 import { useLocale } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExSelect',
@@ -155,6 +156,9 @@ const { t } = useLocale('selector');
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
+
+// 所在 FormItem 的字段上下文（用于 blur/change 自动校验）
+const formItem = useFormItem();
 
 // Refs
 const selectRef = ref<HTMLElement>();
@@ -355,6 +359,7 @@ const handleSelect = (option: SelectOption) => {
 
   emit('update:modelValue', option.value);
   emit('change', option.value, option);
+  formItem?.onFieldChange();
   hideDropdown();
 };
 
@@ -362,6 +367,7 @@ const handleClear = () => {
   emit('update:modelValue', null);
   emit('change', null, null);
   emit('clear');
+  formItem?.onFieldChange();
   hideDropdown();
 };
 
@@ -371,6 +377,7 @@ const handleFocus = (event: FocusEvent) => {
 
 const handleBlur = (event: FocusEvent) => {
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 const handleSearch = () => {

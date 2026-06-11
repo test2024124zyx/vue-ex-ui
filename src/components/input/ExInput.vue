@@ -167,6 +167,7 @@ import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
 import { generateId } from '../../utils/id';
+import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -195,6 +196,9 @@ const slots = useSlots() as ReturnType<typeof useSlots>;
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
+
+// 所在 FormItem 的字段上下文（用于 blur/change 自动校验）
+const formItem = useFormItem();
 
 // Refs
 const inputRef = ref<HTMLInputElement | HTMLTextAreaElement>();
@@ -349,6 +353,7 @@ const handleInput = (event: Event) => {
 const handleChange = (event: Event) => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
   emit('change', target.value, event);
+  formItem?.onFieldChange();
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -359,6 +364,7 @@ const handleFocus = (event: FocusEvent) => {
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -378,6 +384,7 @@ const handleClear = () => {
   inputValue.value = '';
   emit('update:modelValue', '');
   emit('clear');
+  formItem?.onFieldChange();
 
   // 聚焦输入框
   nextTick(() => {

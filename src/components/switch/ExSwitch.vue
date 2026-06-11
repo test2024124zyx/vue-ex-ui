@@ -1,9 +1,5 @@
 <template>
-  <div
-    :class="switchClasses"
-    :style="switchStyles"
-    @click="handleClick"
-  >
+  <div :class="switchClasses" :style="switchStyles" @click="handleClick">
     <!-- 开关前文本 -->
     <span
       v-if="inactiveText && !inlinePrompt"
@@ -14,31 +10,16 @@
     </span>
 
     <!-- 开关主体 -->
-    <div
-      class="ex-switch__core"
-      :style="coreStyle"
-    >
+    <div class="ex-switch__core" :style="coreStyle">
       <!-- 内联文本 -->
-      <span
-        v-if="inlinePrompt && hasText"
-        class="ex-switch__inner"
-      >
-        <slot
-          v-if="isChecked"
-          name="active"
-        >{{ activeText }}</slot>
-        <slot
-          v-else
-          name="inactive"
-        >{{ inactiveText }}</slot>
+      <span v-if="inlinePrompt && hasText" class="ex-switch__inner">
+        <slot v-if="isChecked" name="active">{{ activeText }}</slot>
+        <slot v-else name="inactive">{{ inactiveText }}</slot>
       </span>
 
       <!-- 开关按钮 -->
       <div class="ex-switch__action">
-        <div
-          v-if="loading"
-          class="ex-switch__loading"
-        >
+        <div v-if="loading" class="ex-switch__loading">
           <div class="ex-switch__spinner" />
         </div>
       </div>
@@ -58,7 +39,7 @@
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown"
-      >
+      />
     </div>
 
     <!-- 开关后文本 -->
@@ -76,6 +57,7 @@
 import { ref, computed } from 'vue';
 import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance } from './types';
 import { useComponentSize } from '../config-provider/composables';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExSwitch',
@@ -100,6 +82,9 @@ const isFocused = ref(false);
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
+// 所在 FormItem 的字段上下文（用于 change 自动校验）
+const formItem = useFormItem();
+
 // 计算属性
 const isChecked = computed(() => {
   return props.modelValue === props.activeValue;
@@ -110,10 +95,7 @@ const hasText = computed(() => {
 });
 
 const switchClasses = computed(() => {
-  const classes = [
-    'ex-switch',
-    `ex-switch--${componentSize.value}`,
-  ];
+  const classes = ['ex-switch', `ex-switch--${componentSize.value}`];
 
   if (isChecked.value) classes.push('is-checked');
   if (props.disabled) classes.push('is-disabled');
@@ -176,6 +158,7 @@ const handleChange = (event: Event) => {
 
   emit('update:modelValue', newValue);
   emit('change', newValue);
+  formItem?.onFieldChange();
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -213,6 +196,7 @@ const toggle = () => {
   const newValue = isChecked.value ? props.inactiveValue : props.activeValue;
   emit('update:modelValue', newValue);
   emit('change', newValue);
+  formItem?.onFieldChange();
 };
 
 defineExpose<ExSwitchInstance>({

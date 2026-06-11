@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, onMounted, onUnmounted, watch, useSlots } from 'vue';
+import { ref, computed, inject, nextTick, onMounted, onUnmounted, watch, useSlots } from 'vue';
 import type {
   ExFormItemProps,
   ExFormItemEmits,
@@ -53,6 +53,7 @@ import type {
   FormRule,
 } from './types';
 import { validateField, getFieldValue, setFieldValue } from './utils';
+import { provideFormItem } from './use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { deepClone } from '../../utils/clone';
@@ -84,6 +85,33 @@ const validateStatus = ref<FormValidateStatus>('');
 const validateMessage = ref('');
 const isValidating = ref(false);
 const initialValue = ref<unknown>(undefined);
+
+// 向子表单控件提供字段上下文：控件 blur/change 时按规则 trigger 自动校验
+provideFormItem({
+  onFieldBlur: () => {
+    if (props.prop && formContext) {
+      void validateFieldMethod('blur');
+    }
+  },
+  onFieldChange: () => {
+    if (props.prop && formContext) {
+      // 等待 v-model 写回 model 后再校验
+      void nextTick(() => validateFieldMethod('change'));
+    }
+  },
+});
+
+// 兜底：直接监听 model 中字段值的变化触发 change 校验，
+// 覆盖未显式接入字段上下文的控件（含程序化赋值）
+watch(
+  () => (formContext && props.prop ? getFieldValue(formContext.model, props.prop) : undefined),
+  (newValue, oldValue) => {
+    if (!formContext || !props.prop) return;
+    if (newValue === oldValue) return;
+    void validateFieldMethod('change');
+  },
+  { deep: true }
+);
 
 // 计算属性
 const actualSize = computed(() => {
