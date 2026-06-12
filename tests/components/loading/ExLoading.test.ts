@@ -8,28 +8,28 @@ describe('ExLoading', () => {
     const wrapper = mount(ExLoading);
 
     expect(wrapper.find('.ex-loading').exists()).toBe(true);
-    expect(wrapper.classes()).toContain('ex-loading--medium');
+    expect(wrapper.find('.ex-loading').classes()).toContain('ex-loading--medium');
   });
 
   it('renders different loading sizes', () => {
     const sizes: ExLoadingProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       const wrapper = mount(ExLoading, {
         props: { size },
       });
-      expect(wrapper.classes()).toContain(`ex-loading--${size}`);
+      expect(wrapper.find('.ex-loading').classes()).toContain(`ex-loading--${size}`);
     });
   });
 
   it('renders different loading types', () => {
     const types: ExLoadingProps['type'][] = ['spinner', 'dots', 'bars'];
 
-    types.forEach((type) => {
+    types.forEach(type => {
       const wrapper = mount(ExLoading, {
         props: { type },
       });
-      expect(wrapper.classes()).toContain(`ex-loading--${type}`);
+      expect(wrapper.find('.ex-loading').classes()).toContain(`ex-loading--${type}`);
     });
   });
 
@@ -44,11 +44,15 @@ describe('ExLoading', () => {
   });
 
   it('handles fullscreen mode', () => {
-    const wrapper = mount(ExLoading, {
+    mount(ExLoading, {
       props: { fullscreen: true },
+      attachTo: document.body,
     });
 
-    expect(wrapper.classes()).toContain('ex-loading--fullscreen');
+    // 全屏模式 teleport 到 body
+    const el = document.querySelector('.ex-loading');
+    expect(el).not.toBeNull();
+    expect(el!.classList.contains('ex-loading--fullscreen')).toBe(true);
   });
 
   it('handles loading state', () => {
@@ -74,7 +78,7 @@ describe('ExLoading', () => {
       props: { class: 'custom-loading' },
     });
 
-    expect(wrapper.classes()).toContain('custom-loading');
+    expect(wrapper.find('.ex-loading').classes()).toContain('custom-loading');
   });
 
   it('renders with custom style', () => {
@@ -83,7 +87,7 @@ describe('ExLoading', () => {
       props: { style: customStyle },
     });
 
-    expect(wrapper.attributes('style')).toContain('color: red');
+    expect(wrapper.find('.ex-loading').attributes('style')).toContain('color: red');
   });
 
   it('exposes getElement method', () => {

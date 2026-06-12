@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
-import { useConfig, useTheme, useGlobalSize } from '../../../src/components/config-provider/composables';
+import {
+  useConfig,
+  useConfigTheme,
+  useGlobalSize,
+} from '../../../src/components/config-provider/composables';
 
 describe('ExConfigProvider', () => {
   beforeEach(() => {
@@ -157,13 +161,13 @@ describe('ExConfigProvider', () => {
 });
 
 describe('Config Composables', () => {
-  it('useTheme returns theme', () => {
-    let theme: ReturnType<typeof useTheme> | null = null;
+  it('useConfigTheme returns theme', () => {
+    let theme: ReturnType<typeof useConfigTheme> | null = null;
 
     const TestComponent = {
       name: 'TestComponent',
       setup() {
-        theme = useTheme();
+        theme = useConfigTheme();
         return () => null;
       },
     };

@@ -534,6 +534,10 @@ export default {
     outputFormat: 'Output format',
     startCompress: 'Start compress',
     minValue: 'Min {value}',
+    qualityFirst: 'Quality first',
+    sizeFirst: 'Size first',
+    dimensionFirst: 'Dimension first',
+    compressQuality: 'Quality',
   },
 
   fileList: {

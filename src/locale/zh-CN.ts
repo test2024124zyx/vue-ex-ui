@@ -534,6 +534,10 @@ export default {
     outputFormat: '输出格式',
     startCompress: '开始压缩',
     minValue: '最小 {value}',
+    qualityFirst: '质量优先',
+    sizeFirst: '大小优先',
+    dimensionFirst: '尺寸优先',
+    compressQuality: '压缩质量',
   },
 
   fileList: {

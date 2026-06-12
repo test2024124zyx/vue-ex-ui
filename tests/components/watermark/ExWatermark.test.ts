@@ -19,7 +19,7 @@ beforeAll(() => {
     } as any;
   };
   HTMLCanvasElement.prototype.toDataURL = () => 'data:image/png;base64,EX';
-  
+
   // Mock devicePixelRatio
   Object.defineProperty(window, 'devicePixelRatio', {
     writable: true,
@@ -36,9 +36,9 @@ describe('ExWatermark', () => {
     const wrapper = mount(ExWatermark, {
       props: { type: 'text', text: 'TEST', gapX: 100, gapY: 80, fullPage: false },
     });
-    
+
     await waitAsync(); // 等待 onMounted 中的异步操作
-    
+
     const overlay = wrapper.find('.ex-watermark__overlay');
     expect(overlay.exists()).toBe(true);
     const style = overlay.attributes('style');
@@ -61,7 +61,7 @@ describe('ExWatermark', () => {
 
   it('暴露 refresh 和 toDataURL 方法', async () => {
     const wrapper = mount(ExWatermark);
-    
+
     await waitAsync(); // 等待 onMounted 中的异步操作
 
     const vm = wrapper.vm as any;
@@ -80,9 +80,9 @@ describe('ExWatermark', () => {
         selectable: true,
       },
     });
-    
+
     await waitAsync();
-    
+
     const overlay = wrapper.find('.ex-watermark__overlay');
     const style = overlay.attributes('style');
     expect(style).toContain('opacity: 0.5');
@@ -101,9 +101,9 @@ describe('ExWatermark', () => {
         repeat: false,
       },
     });
-    
+
     await waitAsync();
-    
+
     const overlay = wrapper.find('.ex-watermark__overlay');
     const style = overlay.attributes('style');
     expect(style).toContain('background-size: 150px 100px');
@@ -120,8 +120,9 @@ describe('ExWatermark', () => {
 
     const root = wrapper.get('.ex-watermark');
     expect(root.attributes('role')).toBe('presentation');
-    expect(root.attributes('aria-hidden')).toBe('true');
-    expect(root.attributes('aria-label')).toBe('测试水印');
+    // 水印为纯装饰元素：覆盖层 aria-hidden，容器不再携带 aria-label
+    expect(root.attributes('aria-label')).toBeUndefined();
+    expect(wrapper.get('.ex-watermark__overlay').attributes('aria-hidden')).toBe('true');
   });
 
   it('支持防篡改保护配置', async () => {

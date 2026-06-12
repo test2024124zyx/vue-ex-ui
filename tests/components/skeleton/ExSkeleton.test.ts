@@ -10,13 +10,20 @@ describe('ExSkeleton', () => {
     });
 
     expect(wrapper.find('.ex-skeleton').exists()).toBe(true);
-    expect(wrapper.classes()).toContain('ex-skeleton--pulse');
+    expect(wrapper.find('.ex-skeleton').classes()).toContain('ex-skeleton--animation-pulse');
   });
 
   it('renders different skeleton variants', () => {
-    const variants: ExSkeletonProps['variant'][] = ['text', 'avatar', 'image', 'button', 'card', 'list'];
+    const variants: ExSkeletonProps['variant'][] = [
+      'text',
+      'avatar',
+      'image',
+      'button',
+      'card',
+      'list',
+    ];
 
-    variants.forEach((variant) => {
+    variants.forEach(variant => {
       const wrapper = mount(ExSkeleton, {
         props: { loading: true, variant },
       });
@@ -25,24 +32,31 @@ describe('ExSkeleton', () => {
   });
 
   it('renders different animations', () => {
-    const animations: ExSkeletonProps['animation'][] = ['pulse', 'wave', 'none'];
+    const animations: ExSkeletonProps['animation'][] = ['pulse', 'wave'];
 
-    animations.forEach((animation) => {
+    animations.forEach(animation => {
       const wrapper = mount(ExSkeleton, {
         props: { animation },
       });
-      expect(wrapper.classes()).toContain(`ex-skeleton--${animation}`);
+      expect(wrapper.find('.ex-skeleton').classes()).toContain(
+        `ex-skeleton--animation-${animation}`
+      );
     });
+
+    // animation: 'none' 不添加动画类
+    const noneWrapper = mount(ExSkeleton, { props: { animation: 'none' } });
+    const classes = noneWrapper.find('.ex-skeleton').classes();
+    expect(classes.some(c => c.startsWith('ex-skeleton--animation-'))).toBe(false);
   });
 
   it('renders different sizes', () => {
     const sizes: ExSkeletonProps['size'][] = ['small', 'default', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       const wrapper = mount(ExSkeleton, {
         props: { size },
       });
-      expect(wrapper.classes()).toContain(`ex-skeleton--${size}`);
+      expect(wrapper.find('.ex-skeleton').classes()).toContain(`ex-skeleton--${size}`);
     });
   });
 
@@ -103,7 +117,7 @@ describe('ExSkeleton', () => {
       props: { loading: true, class: 'custom-skeleton' },
     });
 
-    expect(wrapper.classes()).toContain('custom-skeleton');
+    expect(wrapper.find('.ex-skeleton').classes()).toContain('custom-skeleton');
   });
 
   it('renders with custom style', () => {
@@ -112,7 +126,7 @@ describe('ExSkeleton', () => {
       props: { loading: true, style: customStyle },
     });
 
-    const styleAttr = wrapper.attributes('style');
+    const styleAttr = wrapper.find('.ex-skeleton').attributes('style');
     expect(styleAttr).toBeDefined();
   });
 

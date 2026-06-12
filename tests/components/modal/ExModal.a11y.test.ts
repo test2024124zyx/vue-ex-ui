@@ -5,7 +5,10 @@ import ExModal from '../../../src/components/modal/ExModal.vue';
 
 describe('ExModal a11y & keyboard', () => {
   it('traps focus when opened and releases on close', async () => {
-    const wrapper = mount(ExModal, { attachTo: document.body, props: { modelValue: true, title: 'Title' } });
+    const wrapper = mount(ExModal, {
+      attachTo: document.body,
+      props: { modelValue: true, title: 'Title' },
+    });
     await nextTick();
     const el = document.querySelector('.ex-modal') as HTMLElement | null;
     expect(el).toBeTruthy();
@@ -22,7 +25,7 @@ describe('ExModal a11y & keyboard', () => {
     const onUpdate = vi.fn();
     const wrapper = mount(ExModal, {
       attachTo: document.body,
-      props: { modelValue: true, keyboard: true, 'onUpdate:modelValue': onUpdate as any }
+      props: { modelValue: true, keyboard: true, 'onUpdate:modelValue': onUpdate as any },
     });
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));

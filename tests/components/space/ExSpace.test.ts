@@ -3,17 +3,21 @@ import { mount } from '@vue/test-utils';
 import ExSpace from '@/components/space/ExSpace.vue';
 
 describe('ExSpace', () => {
-  it('renders with default horizontal direction and role=group', () => {
+  it('renders with default horizontal direction', () => {
     const wrapper = mount(ExSpace, { slots: { default: '<div>child</div>' } });
     const root = wrapper.find('.ex-space');
     expect(root.exists()).toBe(true);
-    expect(root.attributes('role')).toBe('group');
+    // 纯布局容器不应携带 ARIA role
+    expect(root.attributes('role')).toBeUndefined();
     const style = root.attributes('style') || '';
     expect(style).toContain('flex-direction: row');
   });
 
   it('supports vertical direction', () => {
-    const wrapper = mount(ExSpace, { props: { direction: 'vertical' }, slots: { default: '<div>child</div>' } });
+    const wrapper = mount(ExSpace, {
+      props: { direction: 'vertical' },
+      slots: { default: '<div>child</div>' },
+    });
     const style = wrapper.find('.ex-space').attributes('style') || '';
     expect(style).toContain('flex-direction: column');
   });
@@ -31,13 +35,19 @@ describe('ExSpace', () => {
   });
 
   it('supports wrap', () => {
-    const wrapper = mount(ExSpace, { props: { wrap: true }, slots: { default: '<div>child</div>' } });
+    const wrapper = mount(ExSpace, {
+      props: { wrap: true },
+      slots: { default: '<div>child</div>' },
+    });
     const style = wrapper.find('.ex-space').attributes('style') || '';
     expect(style).toContain('flex-wrap: wrap');
   });
 
   it('supports align and justify', () => {
-    const wrapper = mount(ExSpace, { props: { align: 'center', justify: 'space-between' }, slots: { default: '<div>child</div>' } });
+    const wrapper = mount(ExSpace, {
+      props: { align: 'center', justify: 'space-between' },
+      slots: { default: '<div>child</div>' },
+    });
     const style = wrapper.find('.ex-space').attributes('style') || '';
     expect(style).toContain('align-items: center');
     expect(style).toContain('justify-content: space-between');

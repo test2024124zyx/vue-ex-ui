@@ -13,8 +13,10 @@
     <div class="ex-switch__core" :style="coreStyle">
       <!-- 内联文本 -->
       <span v-if="inlinePrompt && hasText" class="ex-switch__inner">
-        <slot v-if="isChecked" name="active">{{ activeText }}</slot>
-        <slot v-else name="inactive">{{ inactiveText }}</slot>
+        <span class="ex-switch__inner-text">
+          <slot v-if="isChecked" name="active">{{ activeText }}</slot>
+          <slot v-else name="inactive">{{ inactiveText }}</slot>
+        </span>
       </span>
 
       <!-- 开关按钮 -->
@@ -54,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, useSlots } from 'vue';
 import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance } from './types';
 import { useComponentSize } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
@@ -90,8 +92,10 @@ const isChecked = computed(() => {
   return props.modelValue === props.activeValue;
 });
 
+const slots = useSlots();
+
 const hasText = computed(() => {
-  return !!(props.activeText || props.inactiveText);
+  return !!(props.activeText || props.inactiveText || slots.active || slots.inactive);
 });
 
 const switchClasses = computed(() => {

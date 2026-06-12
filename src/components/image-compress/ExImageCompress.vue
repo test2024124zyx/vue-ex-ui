@@ -52,28 +52,28 @@
             size="small"
             @click="currentMode = 'quality'"
           >
-            质量优先
+            {{ t('imageCompress.qualityFirst') }}
           </ExButton>
           <ExButton
             :type="currentMode === 'size' ? 'primary' : 'default'"
             size="small"
             @click="currentMode = 'size'"
           >
-            大小优先
+            {{ t('imageCompress.sizeFirst') }}
           </ExButton>
           <ExButton
             :type="currentMode === 'dimension' ? 'primary' : 'default'"
             size="small"
             @click="currentMode = 'dimension'"
           >
-            尺寸优先
+            {{ t('imageCompress.dimensionFirst') }}
           </ExButton>
         </div>
       </div>
 
       <div v-if="currentMode === 'quality'" class="ex-image-compress__control-group">
         <label class="ex-image-compress__control-label">
-          压缩质量: {{ Math.round(currentQuality * 100) }}%
+          {{ t('imageCompress.compressQuality') }}: {{ Math.round(currentQuality * 100) }}%
         </label>
         <ExSlider v-model="currentQuality" :min="0.1" :max="1" :step="0.05" />
       </div>
@@ -131,7 +131,7 @@
         <template #prefix>
           <ExIcon icon="download-2-line" :size="16" aria-hidden="true" />
         </template>
-        下载
+        {{ t('imageCompress.download') }}
       </ExButton>
     </div>
 
