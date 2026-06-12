@@ -21,7 +21,7 @@
           v-if="clearable && modelValue && !disabled"
           class="ex-datetime-picker__clear"
           type="button"
-          :aria-label="t('clear')"
+          :aria-label="t('common.clear')"
           @click.stop="handleClear"
         >
           <ExIcon icon="close-circle-line" :size="16" aria-hidden="true" />
@@ -44,7 +44,7 @@
             <button
               class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('prevYear')"
+              :aria-label="t('common.prevYear')"
               @click="changeYear(-1)"
             >
               <ExIcon icon="arrow-left-double-line" :size="16" aria-hidden="true" />
@@ -52,7 +52,7 @@
             <button
               class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('prevMonth')"
+              :aria-label="t('common.prevMonth')"
               @click="changeMonth(-1)"
             >
               <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
@@ -65,7 +65,7 @@
             <button
               class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('nextMonth')"
+              :aria-label="t('common.nextMonth')"
               @click="changeMonth(1)"
             >
               <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
@@ -73,7 +73,7 @@
             <button
               class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('nextYear')"
+              :aria-label="t('common.nextYear')"
               @click="changeYear(1)"
             >
               <ExIcon icon="arrow-right-double-line" :size="16" aria-hidden="true" />
@@ -109,18 +109,18 @@
             class="ex-datetime-picker__time-panel"
           >
             <div class="ex-datetime-picker__time-header">
-              {{ isRangeMode ? '选择时间' : '选择时间' }}
+              {{ t('timePicker.selectTime') }}
             </div>
             <div class="ex-datetime-picker__time-inputs">
               <div v-if="!isRangeMode || rangeStart" class="ex-datetime-picker__time-input-group">
-                <label v-if="isRangeMode">开始时间</label>
+                <label v-if="isRangeMode">{{ t('timePicker.startTime') }}</label>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
                     v-model.number="hours"
                     type="number"
                     min="0"
                     max="23"
-                    placeholder="时"
+                    :placeholder="t('timePicker.hour')"
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
@@ -131,7 +131,7 @@
                     type="number"
                     min="0"
                     max="59"
-                    placeholder="分"
+                    :placeholder="t('timePicker.minute')"
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
@@ -142,7 +142,7 @@
                     type="number"
                     min="0"
                     max="59"
-                    placeholder="秒"
+                    :placeholder="t('timePicker.second')"
                     class="ex-datetime-picker__time-input"
                     @input="updateTime"
                     @blur="updateTime"
@@ -150,14 +150,14 @@
                 </div>
               </div>
               <div v-if="isRangeMode && rangeEnd" class="ex-datetime-picker__time-input-group">
-                <label>结束时间</label>
+                <label>{{ t('timePicker.endTime') }}</label>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
                     v-model.number="endHours"
                     type="number"
                     min="0"
                     max="23"
-                    placeholder="时"
+                    :placeholder="t('timePicker.hour')"
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
@@ -168,7 +168,7 @@
                     type="number"
                     min="0"
                     max="59"
-                    placeholder="分"
+                    :placeholder="t('timePicker.minute')"
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
@@ -179,7 +179,7 @@
                     type="number"
                     min="0"
                     max="59"
-                    placeholder="秒"
+                    :placeholder="t('timePicker.second')"
                     class="ex-datetime-picker__time-input"
                     @input="updateEndTime"
                     @blur="updateEndTime"
@@ -197,10 +197,10 @@
               type="button"
               @click="selectToday"
             >
-              {{ t('today') }}
+              {{ t('common.today') }}
             </button>
             <button class="ex-datetime-picker__confirm-btn" type="button" @click="handleConfirm">
-              {{ t('confirm') }}
+              {{ t('common.confirm') }}
             </button>
           </div>
         </div>
@@ -217,7 +217,7 @@ import type {
   ExDateTimePickerEmits,
   ExDateTimePickerExposed,
 } from './types';
-import { useLocale } from '../../locale';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExDateTimePicker',
@@ -239,7 +239,7 @@ const props = withDefaults(defineProps<ExDateTimePickerProps>(), {
 
 const emit = defineEmits<ExDateTimePickerEmits>();
 
-const { t } = useLocale('common');
+const { t } = useI18n();
 const pickerRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const isOpen = ref(false);
@@ -263,7 +263,7 @@ const isRangeMode = computed(() => {
 });
 
 // 星期标题
-const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
 
 // 计算属性
 const pickerClasses = computed(() => {
@@ -296,7 +296,7 @@ const pickerStyles = computed(() => {
 const currentPlaceholder = computed(() => {
   if (props.placeholder) return props.placeholder;
   if (isRangeMode.value) {
-    return `${props.startPlaceholder || '开始日期'} ~ ${props.endPlaceholder || '结束日期'}`;
+    return `${props.startPlaceholder || t('datePicker.startDate')} ~ ${props.endPlaceholder || t('datePicker.endDate')}`;
   }
   return t('input.placeholder');
 });

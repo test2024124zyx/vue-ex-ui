@@ -292,7 +292,7 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
       validateMessage.value = '';
     } else {
       validateStatus.value = 'error';
-      validateMessage.value = result.error || t('common.validationError') || '验证失败';
+      validateMessage.value = result.error || t('common.validationError');
     }
 
     emit('validate-status-change', validateStatus.value, validateMessage.value);

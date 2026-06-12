@@ -16,6 +16,7 @@ export default {
     nextYear: 'Next Year',
     prevMonth: 'Previous Month',
     nextMonth: 'Next Month',
+    validationError: 'Validation failed',
   },
 
   // Button
@@ -144,6 +145,9 @@ export default {
     pageSize: 'Page Size',
     prev: 'Previous',
     next: 'Next',
+    prev5: 'Previous 5 pages',
+    next5: 'Next 5 pages',
+    pageNumber: 'Page {page}',
     jumpTo: 'Jump to',
     go: 'Go',
     first: 'First',
@@ -262,6 +266,50 @@ export default {
     now: 'Now',
     confirm: 'Confirm',
     clear: 'Clear',
+    startTime: 'Start time',
+    endTime: 'End time',
+  },
+
+  // Date Picker
+  datePicker: {
+    startDate: 'Start date',
+    endDate: 'End date',
+    weekdaysShort: 'Su,Mo,Tu,We,Th,Fr,Sa',
+    monthsShort: 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
+  },
+
+  // Calendar
+  calendar: {
+    prevYear: 'Previous year',
+    nextYear: 'Next year',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+    prevWeek: 'Previous week',
+    nextWeek: 'Next week',
+    prevDay: 'Previous day',
+    nextDay: 'Next day',
+    yearFormat: '{year}',
+    monthFormat: 'M{month}',
+    dayFormat: 'D{day}',
+    weekFormat: 'Week {week}',
+    weekdaysShort: 'Su,Mo,Tu,We,Th,Fr,Sa',
+    noEvents: 'No events',
+    modeDay: 'Day',
+    modeWeek: 'Week',
+    modeMonth: 'Month',
+    modeYear: 'Year',
+  },
+
+  // Page Header
+  pageHeader: {
+    back: 'Back',
+    breadcrumb: 'Breadcrumb',
+  },
+
+  // Timeline
+  timeline: {
+    horizontal: 'Horizontal timeline',
+    vertical: 'Vertical timeline',
   },
 
   // Checkbox
@@ -445,6 +493,8 @@ export default {
     preview: 'Preview',
     close: 'Close',
     download: 'Download',
+    downloadFile: 'Download file',
+    loading: 'Loading...',
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
     rotateLeft: 'Rotate Left',
@@ -457,6 +507,7 @@ export default {
     crop: 'Crop',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    confirmCrop: 'Confirm crop',
     reset: 'Reset',
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
@@ -476,12 +527,25 @@ export default {
     quality: 'Quality',
     size: 'Size',
     dimension: 'Dimension',
+    mode: 'Compress mode',
+    targetSize: 'Target size (KB)',
+    maxWidth: 'Max width (px)',
+    maxHeight: 'Max height (px)',
+    outputFormat: 'Output format',
+    startCompress: 'Start compress',
+    minValue: 'Min {value}',
   },
 
   fileList: {
     empty: 'No files',
     loading: 'Loading...',
     search: 'Search files',
+    searchPlaceholder: 'Search files...',
+    name: 'Name',
+    size: 'Size',
+    type: 'Type',
+    modifiedTime: 'Modified',
+    folder: 'Folder',
     selectAll: 'Select All',
     unselectAll: 'Unselect All',
     preview: 'Preview',

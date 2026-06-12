@@ -13,10 +13,13 @@
 <script setup lang="ts">
 import { computed, provide, ref } from 'vue';
 import type { ExTimelineProps, ExTimelineExposed } from './types';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExTimeline',
 });
+
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<ExTimelineProps>(), {
   direction: 'vertical',
@@ -28,16 +31,22 @@ const props = withDefaults(defineProps<ExTimelineProps>(), {
 const timelineRef = ref<HTMLDivElement>();
 
 // 提供给子组件的上下文
-provide('timeline-direction', computed(() => props.direction));
-provide('timeline-mode', computed(() => props.mode));
-provide('timeline-show-line', computed(() => props.showLine));
+provide(
+  'timeline-direction',
+  computed(() => props.direction)
+);
+provide(
+  'timeline-mode',
+  computed(() => props.mode)
+);
+provide(
+  'timeline-show-line',
+  computed(() => props.showLine)
+);
 
 // 计算属性
 const timelineClasses = computed(() => {
-  const classes = [
-    'ex-timeline',
-    `ex-timeline--${props.direction}`,
-  ];
+  const classes = ['ex-timeline', `ex-timeline--${props.direction}`];
 
   if (props.direction === 'vertical') {
     classes.push(`ex-timeline--${props.mode}`);
@@ -69,7 +78,7 @@ const timelineStyles = computed(() => {
 });
 
 const ariaLabel = computed(() => {
-  return props.direction === 'horizontal' ? '水平时间轴' : '垂直时间轴';
+  return props.direction === 'horizontal' ? t('timeline.horizontal') : t('timeline.vertical');
 });
 
 // 暴露的方法

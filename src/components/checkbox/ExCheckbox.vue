@@ -335,8 +335,7 @@ const validateCheckbox = (value: boolean | string | number) => {
   for (const rule of props.rules) {
     const result = rule(value);
     if (result !== true) {
-      currentErrorMessage.value =
-        typeof result === 'string' ? result : t('common.validationError') || '验证失败';
+      currentErrorMessage.value = typeof result === 'string' ? result : t('common.validationError');
       return false;
     }
   }

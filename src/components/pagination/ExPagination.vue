@@ -48,7 +48,7 @@
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === 1 }"
           :disabled="disabled"
-          :aria-label="`第 1 页`"
+          :aria-label="t('pageNumber', { page: 1 })"
           :aria-current="currentPage === 1 ? 'page' : undefined"
           @click="handlePageChange(1)"
         >
@@ -60,7 +60,7 @@
           v-if="showPrevMore"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
-          :aria-label="t('prev') + ' 5 页'"
+          :aria-label="t('prev5')"
           @click="handlePrevMore"
         >
           <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
@@ -79,7 +79,7 @@
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === page }"
           :disabled="disabled"
-          :aria-label="`第 ${page} 页`"
+          :aria-label="t('pageNumber', { page })"
           :aria-current="currentPage === page ? 'page' : undefined"
           @click="handlePageChange(page)"
         >
@@ -91,7 +91,7 @@
           v-if="showNextMore"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
-          :aria-label="t('next') + ' 5 页'"
+          :aria-label="t('next5')"
           @click="handleNextMore"
         >
           <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
@@ -109,7 +109,7 @@
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === totalPages }"
           :disabled="disabled"
-          :aria-label="`第 ${totalPages} 页`"
+          :aria-label="t('pageNumber', { page: totalPages })"
           :aria-current="currentPage === totalPages ? 'page' : undefined"
           @click="handlePageChange(totalPages)"
         >

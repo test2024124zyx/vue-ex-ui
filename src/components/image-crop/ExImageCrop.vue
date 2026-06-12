@@ -20,8 +20,12 @@
         </button>
       </div>
       <div class="ex-image-crop__toolbar-group">
-        <ExButton size="small" @click.stop="handleCancel">取消</ExButton>
-        <ExButton type="primary" size="small" @click.stop="handleCrop">确认裁剪</ExButton>
+        <ExButton size="small" @click.stop="handleCancel">
+          {{ t('imageCrop.cancel') }}
+        </ExButton>
+        <ExButton type="primary" size="small" @click.stop="handleCrop">
+          {{ t('imageCrop.confirmCrop') }}
+        </ExButton>
       </div>
     </div>
 
@@ -137,8 +141,12 @@
         </button>
       </div>
       <div class="ex-image-crop__toolbar-group">
-        <ExButton size="small" @click.stop="handleCancel">取消</ExButton>
-        <ExButton type="primary" size="small" @click.stop="handleCrop">确认裁剪</ExButton>
+        <ExButton size="small" @click.stop="handleCancel">
+          {{ t('imageCrop.cancel') }}
+        </ExButton>
+        <ExButton type="primary" size="small" @click.stop="handleCrop">
+          {{ t('imageCrop.confirmCrop') }}
+        </ExButton>
       </div>
     </div>
   </div>
@@ -148,6 +156,7 @@
 import ExIcon from '../icon/ExIcon.vue';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { generateId } from '../../utils/id';
+import { useI18n } from '../../locale';
 import type {
   ExImageCropProps,
   ExImageCropEmits,
@@ -183,6 +192,8 @@ const props = withDefaults(defineProps<ExImageCropProps>(), {
 });
 
 const emit = defineEmits<ExImageCropEmits>();
+
+const { t } = useI18n();
 
 const cropRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();

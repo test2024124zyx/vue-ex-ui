@@ -49,14 +49,14 @@
 
     <!-- 图例 -->
     <div class="ex-heatmap__legend">
-      <span class="ex-heatmap__legend-label">少</span>
+      <span class="ex-heatmap__legend-label">{{ t('heatmap.less') }}</span>
       <div
         v-for="level in 5"
         :key="level"
         class="ex-heatmap__legend-item"
         :data-level="level - 1"
       />
-      <span class="ex-heatmap__legend-label">多</span>
+      <span class="ex-heatmap__legend-label">{{ t('heatmap.more') }}</span>
     </div>
 
     <!-- 空数据 -->
@@ -68,7 +68,7 @@
           style="opacity: 0.3; margin-bottom: 12px"
           aria-hidden="true"
         />
-        <p>{{ emptyText || t('empty') }}</p>
+        <p>{{ emptyText || t('heatmap.empty') }}</p>
       </slot>
     </div>
   </div>
@@ -78,7 +78,7 @@
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
 import type { ExHeatmapProps, ExHeatmapEmits, ExHeatmapExposed, HeatmapDataItem } from './types';
-import { useLocale } from '../../locale';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExHeatmap',
@@ -98,7 +98,7 @@ const emit = defineEmits<ExHeatmapEmits>();
 
 const heatmapRef = ref<HTMLDivElement>();
 const hoveredCell = ref<HeatmapDataItem | null>(null);
-const { t } = useLocale('heatmap');
+const { t } = useI18n();
 
 // 计算属性
 const heatmapClasses = computed(() => {
@@ -201,9 +201,10 @@ const monthLabels = computed(() => {
   return labels;
 });
 
-// 星期标签
+// 星期标签（取周一/三/五，跟随语言包）
 const weekLabels = computed(() => {
-  return ['一', '三', '五'];
+  const days = t('calendar.weekdaysShort').split(',');
+  return [days[1], days[3], days[5]];
 });
 
 // 获取单元格大小

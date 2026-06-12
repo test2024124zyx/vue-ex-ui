@@ -3,9 +3,11 @@
     <!-- 预览区域 -->
     <div v-if="showPreview" class="ex-image-compress__preview">
       <div class="ex-image-compress__preview-item">
-        <div class="ex-image-compress__preview-label">原图</div>
+        <div class="ex-image-compress__preview-label">
+          {{ t('imageCompress.original') }}
+        </div>
         <div class="ex-image-compress__preview-image">
-          <img v-if="originalUrl" :src="originalUrl" alt="原图" />
+          <img v-if="originalUrl" :src="originalUrl" :alt="t('imageCompress.original')" />
           <div v-else class="ex-image-compress__preview-placeholder">
             <ExIcon icon="image-line" :size="48" aria-hidden="true" />
           </div>
@@ -21,9 +23,11 @@
       </div>
 
       <div v-if="showComparison" class="ex-image-compress__preview-item">
-        <div class="ex-image-compress__preview-label">压缩后</div>
+        <div class="ex-image-compress__preview-label">
+          {{ t('imageCompress.compressed') }}
+        </div>
         <div class="ex-image-compress__preview-image">
-          <img v-if="compressedUrl" :src="compressedUrl" alt="压缩后" />
+          <img v-if="compressedUrl" :src="compressedUrl" :alt="t('imageCompress.compressed')" />
           <div v-else class="ex-image-compress__preview-placeholder">
             <ExIcon icon="image-line" :size="48" aria-hidden="true" />
           </div>
@@ -41,7 +45,7 @@
     <!-- 控制面板 -->
     <div class="ex-image-compress__controls">
       <div class="ex-image-compress__control-group">
-        <label class="ex-image-compress__control-label">压缩模式</label>
+        <label class="ex-image-compress__control-label">{{ t('imageCompress.mode') }}</label>
         <div class="ex-image-compress__control-buttons">
           <ExButton
             :type="currentMode === 'quality' ? 'primary' : 'default'"
@@ -75,49 +79,53 @@
       </div>
 
       <div v-if="currentMode === 'size'" class="ex-image-compress__control-group">
-        <label class="ex-image-compress__control-label">目标大小 (KB)</label>
+        <label class="ex-image-compress__control-label">{{ t('imageCompress.targetSize') }}</label>
         <ExNumberInput
           v-model="currentTargetSize"
           :min="10"
           :max="10240"
           :step="10"
-          placeholder="最小 10"
+          :placeholder="t('imageCompress.minValue', { value: 10 })"
         />
       </div>
 
       <div v-if="currentMode === 'dimension'" class="ex-image-compress__control-group">
-        <label class="ex-image-compress__control-label">最大宽度 (px)</label>
+        <label class="ex-image-compress__control-label">{{ t('imageCompress.maxWidth') }}</label>
         <ExNumberInput
           v-model="currentMaxWidth"
           :min="100"
           :max="7680"
           :step="10"
-          placeholder="最小 100"
+          :placeholder="t('imageCompress.minValue', { value: 100 })"
         />
       </div>
 
       <div v-if="currentMode === 'dimension'" class="ex-image-compress__control-group">
-        <label class="ex-image-compress__control-label">最大高度 (px)</label>
+        <label class="ex-image-compress__control-label">{{ t('imageCompress.maxHeight') }}</label>
         <ExNumberInput
           v-model="currentMaxHeight"
           :min="100"
           :max="4320"
           :step="10"
-          placeholder="最小 100"
+          :placeholder="t('imageCompress.minValue', { value: 100 })"
         />
       </div>
 
       <div class="ex-image-compress__control-group">
-        <label class="ex-image-compress__control-label">输出格式</label>
+        <label class="ex-image-compress__control-label">
+          {{ t('imageCompress.outputFormat') }}
+        </label>
         <ExSelect v-model="currentOutputType" :options="outputTypeOptions" />
       </div>
     </div>
 
     <!-- 操作按钮 -->
     <div class="ex-image-compress__actions">
-      <ExButton @click="handleReset">重置</ExButton>
+      <ExButton @click="handleReset">
+        {{ t('imageCompress.reset') }}
+      </ExButton>
       <ExButton type="primary" :loading="isCompressing" @click="handleCompress">
-        {{ isCompressing ? '压缩中...' : '开始压缩' }}
+        {{ isCompressing ? t('imageCompress.compressing') : t('imageCompress.startCompress') }}
       </ExButton>
       <ExButton v-if="compressedBlob" type="success" @click="() => handleDownload()">
         <template #prefix>
@@ -147,6 +155,7 @@ import ExButton from '../button/ExButton.vue';
 import ExNumberInput from '../number-input/ExNumberInput.vue';
 import ExSelect from '../select/ExSelect.vue';
 import ExSlider from '../slider/ExSlider.vue';
+import { useI18n } from '../../locale';
 import { formatBytes } from './utils';
 
 defineOptions({
@@ -168,6 +177,8 @@ const props = withDefaults(defineProps<ExImageCompressProps>(), {
 });
 
 const emit = defineEmits<ExImageCompressEmits>();
+
+const { t } = useI18n();
 
 const compressRef = ref<HTMLDivElement>();
 const canvasRef = ref<HTMLCanvasElement>();

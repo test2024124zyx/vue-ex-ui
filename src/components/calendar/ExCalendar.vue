@@ -3,34 +3,52 @@
     <!-- 日历头部 -->
     <div class="ex-calendar__header">
       <div class="ex-calendar__nav">
-        <button class="ex-calendar__nav-btn" type="button" aria-label="上一年" @click="prevYear">
+        <button
+          class="ex-calendar__nav-btn"
+          type="button"
+          :aria-label="t('calendar.prevYear')"
+          @click="prevYear"
+        >
           <ExIcon icon="arrow-left-double-line" :size="20" aria-hidden="true" />
         </button>
         <button
           class="ex-calendar__nav-btn"
           type="button"
-          :aria-label="mode === 'day' ? '上一天' : mode === 'week' ? '上一周' : '上个月'"
+          :aria-label="prevPeriodLabel"
           @click="prevPeriod"
         >
           <ExIcon icon="arrow-left-s-line" :size="20" aria-hidden="true" />
         </button>
 
         <div class="ex-calendar__current">
-          <span class="ex-calendar__year">{{ currentYear }}年</span>
-          <span v-if="mode !== 'year'" class="ex-calendar__month">{{ currentMonth }}月</span>
-          <span v-if="mode === 'day'" class="ex-calendar__day">{{ currentDay }}日</span>
-          <span v-if="mode === 'week'" class="ex-calendar__week">第{{ currentWeek }}周</span>
+          <span class="ex-calendar__year">
+            {{ t('calendar.yearFormat', { year: currentYear }) }}
+          </span>
+          <span v-if="mode !== 'year'" class="ex-calendar__month">
+            {{ t('calendar.monthFormat', { month: currentMonth }) }}
+          </span>
+          <span v-if="mode === 'day'" class="ex-calendar__day">
+            {{ t('calendar.dayFormat', { day: currentDay }) }}
+          </span>
+          <span v-if="mode === 'week'" class="ex-calendar__week">
+            {{ t('calendar.weekFormat', { week: currentWeek }) }}
+          </span>
         </div>
 
         <button
           class="ex-calendar__nav-btn"
           type="button"
-          :aria-label="mode === 'day' ? '下一天' : mode === 'week' ? '下一周' : '下个月'"
+          :aria-label="nextPeriodLabel"
           @click="nextPeriod"
         >
           <ExIcon icon="arrow-right-s-line" :size="20" aria-hidden="true" />
         </button>
-        <button class="ex-calendar__nav-btn" type="button" aria-label="下一年" @click="nextYear">
+        <button
+          class="ex-calendar__nav-btn"
+          type="button"
+          :aria-label="t('calendar.nextYear')"
+          @click="nextYear"
+        >
           <ExIcon icon="arrow-right-double-line" :size="20" aria-hidden="true" />
         </button>
       </div>
@@ -52,7 +70,7 @@
         </div>
 
         <button v-if="showToday" class="ex-calendar__today-btn" type="button" @click="goToday">
-          今天
+          {{ t('common.today') }}
         </button>
       </div>
     </div>
@@ -91,7 +109,9 @@
             </div>
           </div>
         </div>
-        <div v-else class="ex-calendar__day-empty">暂无事件</div>
+        <div v-else class="ex-calendar__day-empty">
+          {{ t('calendar.noEvents') }}
+        </div>
       </div>
     </div>
 
@@ -204,10 +224,12 @@
           class="ex-calendar__year-month"
           @click="selectMonth(month)"
         >
-          <div class="ex-calendar__year-month-title">{{ month }}月</div>
+          <div class="ex-calendar__year-month-title">
+            {{ t('calendar.monthFormat', { month }) }}
+          </div>
           <div class="ex-calendar__year-month-preview">
             <div class="ex-calendar__year-weekdays">
-              <span v-for="day in ['日', '一', '二', '三', '四', '五', '六']" :key="day">
+              <span v-for="day in weekdays" :key="day">
                 {{ day }}
               </span>
             </div>
@@ -231,6 +253,7 @@
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import { Solar } from 'lunar-javascript';
+import { useI18n } from '../../locale';
 import type {
   ExCalendarProps,
   ExCalendarEmits,
@@ -257,20 +280,35 @@ const props = withDefaults(defineProps<ExCalendarProps>(), {
 
 const emit = defineEmits<ExCalendarEmits>();
 
+const { t } = useI18n();
+
 const calendarRef = ref<HTMLDivElement>();
 const currentDate = ref(new Date());
 const selectedDate = ref<Date | null>(null);
 
 // 视图模式选项
-const modes = [
-  { value: 'day' as CalendarMode, label: '日' },
-  { value: 'week' as CalendarMode, label: '周' },
-  { value: 'month' as CalendarMode, label: '月' },
-  { value: 'year' as CalendarMode, label: '年' },
-];
+const modes = computed(() => [
+  { value: 'day' as CalendarMode, label: t('calendar.modeDay') },
+  { value: 'week' as CalendarMode, label: t('calendar.modeWeek') },
+  { value: 'month' as CalendarMode, label: t('calendar.modeMonth') },
+  { value: 'year' as CalendarMode, label: t('calendar.modeYear') },
+]);
 
 // 星期标题
-const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
+
+// 上/下一周期的无障碍标签
+const prevPeriodLabel = computed(() => {
+  if (props.mode === 'day') return t('calendar.prevDay');
+  if (props.mode === 'week') return t('calendar.prevWeek');
+  return t('calendar.prevMonth');
+});
+
+const nextPeriodLabel = computed(() => {
+  if (props.mode === 'day') return t('calendar.nextDay');
+  if (props.mode === 'week') return t('calendar.nextWeek');
+  return t('calendar.nextMonth');
+});
 
 // 计算属性
 const calendarClasses = computed(() => {
@@ -302,7 +340,7 @@ const calendarStyles = computed(() => {
 const currentYear = computed(() => currentDate.value.getFullYear());
 const currentMonth = computed(() => currentDate.value.getMonth() + 1);
 const currentDay = computed(() => currentDate.value.getDate());
-const currentWeekday = computed(() => weekdays[currentDate.value.getDay()]);
+const currentWeekday = computed(() => weekdays.value[currentDate.value.getDay()]);
 
 // 计算当前周数
 const currentWeek = computed(() => {

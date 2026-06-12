@@ -7,7 +7,7 @@
         <div v-if="showSearch" class="ex-file-list__search">
           <ExInput
             v-model="searchKeyword"
-            placeholder="搜索文件..."
+            :placeholder="t('fileList.searchPlaceholder')"
             clearable
             @input="handleSearch"
           >
@@ -83,7 +83,7 @@
 
         <!-- 全选 -->
         <ExButton v-if="selectable && multiple" size="small" @click="toggleSelectAll">
-          {{ isAllSelected ? '取消全选' : '全选' }}
+          {{ isAllSelected ? t('fileList.unselectAll') : t('fileList.selectAll') }}
         </ExButton>
       </div>
     </div>
@@ -91,10 +91,10 @@
     <!-- 文件列表内容 -->
     <div v-if="loading" class="ex-file-list__loading">
       <ExLoading :visible="true" :fullscreen="false" :mask="false" type="spinner" size="large" />
-      <p>加载中...</p>
+      <p>{{ t('fileList.loading') }}</p>
     </div>
 
-    <ExEmpty v-else-if="displayFiles.length === 0" :description="emptyText || '暂无文件'">
+    <ExEmpty v-else-if="displayFiles.length === 0" :description="emptyText || t('fileList.empty')">
       <template #image>
         <ExIcon icon="folder-open-line" :size="64" aria-hidden="true" />
       </template>
@@ -289,10 +289,18 @@
                 @change="toggleSelectAll"
               />
             </th>
-            <th class="ex-file-list__table-cell">名称</th>
-            <th v-if="showSize" class="ex-file-list__table-cell">大小</th>
-            <th v-if="showType" class="ex-file-list__table-cell">类型</th>
-            <th v-if="showModifiedTime" class="ex-file-list__table-cell">修改时间</th>
+            <th class="ex-file-list__table-cell">
+              {{ t('fileList.name') }}
+            </th>
+            <th v-if="showSize" class="ex-file-list__table-cell">
+              {{ t('fileList.size') }}
+            </th>
+            <th v-if="showType" class="ex-file-list__table-cell">
+              {{ t('fileList.type') }}
+            </th>
+            <th v-if="showModifiedTime" class="ex-file-list__table-cell">
+              {{ t('fileList.modifiedTime') }}
+            </th>
             <th
               v-if="showActions"
               class="ex-file-list__table-cell ex-file-list__table-cell--actions"
@@ -336,7 +344,7 @@
               {{ file.isDirectory ? '-' : formatBytes(file.size) }}
             </td>
             <td v-if="showType" class="ex-file-list__table-cell">
-              {{ file.isDirectory ? '文件夹' : file.type }}
+              {{ file.isDirectory ? t('fileList.folder') : file.type }}
             </td>
             <td v-if="showModifiedTime" class="ex-file-list__table-cell">
               {{ file.modifiedTime ? formatDate(file.modifiedTime) : '-' }}
@@ -409,6 +417,7 @@ import ExSelect from '../select/ExSelect.vue';
 import ExPagination from '../pagination/ExPagination.vue';
 import ExEmpty from '../empty/ExEmpty.vue';
 import type { SelectOption } from '../select/types';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExFileList',
@@ -441,6 +450,8 @@ const props = withDefaults(defineProps<ExFileListProps>(), {
 
 const emit = defineEmits<ExFileListEmits>();
 
+const { t } = useI18n();
+
 const listRef = ref<HTMLDivElement>();
 const searchKeyword = ref('');
 const currentViewMode = ref<ViewMode>(props.viewMode);
@@ -452,10 +463,10 @@ const defaultExpandedKeys = ref<string[]>([]);
 
 // 排序选项
 const sortOptions: SelectOption[] = [
-  { value: 'name', label: '名称' },
-  { value: 'size', label: '大小' },
-  { value: 'type', label: '类型' },
-  { value: 'modifiedTime', label: '修改时间' },
+  { value: 'name', label: t('fileList.name') },
+  { value: 'size', label: t('fileList.size') },
+  { value: 'type', label: t('fileList.type') },
+  { value: 'modifiedTime', label: t('fileList.modifiedTime') },
 ];
 
 // 过滤和排序后的文件列表

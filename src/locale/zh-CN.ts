@@ -16,6 +16,7 @@ export default {
     nextYear: '下一年',
     prevMonth: '上个月',
     nextMonth: '下个月',
+    validationError: '验证失败',
   },
 
   // 按钮
@@ -144,6 +145,9 @@ export default {
     pageSize: '每页条数',
     prev: '上一页',
     next: '下一页',
+    prev5: '向前 5 页',
+    next5: '向后 5 页',
+    pageNumber: '第 {page} 页',
     jumpTo: '跳至',
     go: '确定',
     first: '首页',
@@ -262,6 +266,50 @@ export default {
     now: '此刻',
     confirm: '确定',
     clear: '清空',
+    startTime: '开始时间',
+    endTime: '结束时间',
+  },
+
+  // 日期选择器
+  datePicker: {
+    startDate: '开始日期',
+    endDate: '结束日期',
+    weekdaysShort: '日,一,二,三,四,五,六',
+    monthsShort: '1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月',
+  },
+
+  // 日历
+  calendar: {
+    prevYear: '上一年',
+    nextYear: '下一年',
+    prevMonth: '上个月',
+    nextMonth: '下个月',
+    prevWeek: '上一周',
+    nextWeek: '下一周',
+    prevDay: '上一天',
+    nextDay: '下一天',
+    yearFormat: '{year}年',
+    monthFormat: '{month}月',
+    dayFormat: '{day}日',
+    weekFormat: '第{week}周',
+    weekdaysShort: '日,一,二,三,四,五,六',
+    noEvents: '暂无事件',
+    modeDay: '日',
+    modeWeek: '周',
+    modeMonth: '月',
+    modeYear: '年',
+  },
+
+  // 页头
+  pageHeader: {
+    back: '返回',
+    breadcrumb: '面包屑导航',
+  },
+
+  // 时间轴
+  timeline: {
+    horizontal: '水平时间轴',
+    vertical: '垂直时间轴',
   },
 
   // 复选框
@@ -445,6 +493,8 @@ export default {
     preview: '预览',
     close: '关闭',
     download: '下载',
+    downloadFile: '下载文件',
+    loading: '加载中...',
     zoomIn: '放大',
     zoomOut: '缩小',
     rotateLeft: '逆时针旋转',
@@ -457,6 +507,7 @@ export default {
     crop: '裁剪',
     cancel: '取消',
     confirm: '确认',
+    confirmCrop: '确认裁剪',
     reset: '重置',
     zoomIn: '放大',
     zoomOut: '缩小',
@@ -476,12 +527,25 @@ export default {
     quality: '质量',
     size: '大小',
     dimension: '尺寸',
+    mode: '压缩模式',
+    targetSize: '目标大小 (KB)',
+    maxWidth: '最大宽度 (px)',
+    maxHeight: '最大高度 (px)',
+    outputFormat: '输出格式',
+    startCompress: '开始压缩',
+    minValue: '最小 {value}',
   },
 
   fileList: {
     empty: '暂无文件',
     loading: '加载中...',
     search: '搜索文件',
+    searchPlaceholder: '搜索文件...',
+    name: '名称',
+    size: '大小',
+    type: '类型',
+    modifiedTime: '修改时间',
+    folder: '文件夹',
     selectAll: '全选',
     unselectAll: '取消全选',
     preview: '预览',

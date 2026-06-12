@@ -8,7 +8,9 @@
         <!-- 工具栏 -->
         <div v-if="showToolbar" class="ex-file-preview__toolbar">
           <div class="ex-file-preview__toolbar-left">
-            <span class="ex-file-preview__filename">{{ currentFile.name || '预览' }}</span>
+            <span class="ex-file-preview__filename">
+              {{ currentFile.name || t('filePreview.preview') }}
+            </span>
           </div>
           <div class="ex-file-preview__toolbar-actions">
             <template v-if="currentType === 'image' && zoomable">
@@ -118,14 +120,18 @@
               v-if="textContent"
               :class="{ 'show-line-numbers': showLineNumbers }"
             ><code>{{ textContent }}</code></pre>
-            <div v-else class="ex-file-preview__loading">加载中...</div>
+            <div v-else class="ex-file-preview__loading">
+              {{ t('filePreview.loading') }}
+            </div>
           </div>
 
           <!-- 不支持的类型 -->
           <div v-else class="ex-file-preview__unsupported">
             <ExIcon icon="file-unknow-line" :size="64" aria-hidden="true" />
-            <p>不支持预览此文件类型</p>
-            <ExButton v-if="showDownload" type="primary" @click="handleDownload">下载文件</ExButton>
+            <p>{{ t('filePreview.unsupported') }}</p>
+            <ExButton v-if="showDownload" type="primary" @click="handleDownload">
+              {{ t('filePreview.downloadFile') }}
+            </ExButton>
           </div>
         </div>
       </div>
@@ -144,6 +150,7 @@ import type {
   PreviewType,
 } from './types';
 import ExButton from '../button/ExButton.vue';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExFilePreview',
@@ -169,6 +176,8 @@ const props = withDefaults(defineProps<ExFilePreviewProps>(), {
 });
 
 const emit = defineEmits<ExFilePreviewEmits>();
+
+const { t } = useI18n();
 
 const previewRef = ref<HTMLDivElement>();
 const currentScale = ref(props.scale);

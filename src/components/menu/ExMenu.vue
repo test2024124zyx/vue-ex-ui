@@ -12,8 +12,8 @@
         v-model="searchQuery"
         type="text"
         class="ex-menu__search-input"
-        :placeholder="t('search') || '搜索菜单...'"
-        :aria-label="t('search') || '搜索菜单'"
+        :placeholder="t('search')"
+        :aria-label="t('search')"
         @input="handleSearch"
       />
       <span class="ex-menu__search-icon">
