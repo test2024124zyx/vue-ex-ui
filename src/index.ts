@@ -425,7 +425,7 @@ const install: Plugin['install'] = (app: App) => {
 
 // 版本号：优先使用构建期注入的 __EX_UI_VERSION__，在未注入场景下回退为 'dev'
 // 使用 typeof 检测可以在未声明变量时避免运行时错误
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const version =
   typeof (__EX_UI_VERSION__ as any) !== 'undefined' ? (__EX_UI_VERSION__ as string) : 'dev';
 
