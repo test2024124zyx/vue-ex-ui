@@ -21,8 +21,8 @@
       z-index: calc(var(--ex-avatar-z-index, 10) + 1);
       transform: translateY(-2px) scale(1.05);
       box-shadow: 
-        0 8px 25px rgba(0, 240, 255, 0.2),
-        0 0 20px rgba(0, 240, 255, 0.3);
+        0 8px 25px rgba(var(--ex-color-neon-blue-500-rgb), 0.2),
+        0 0 20px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
     }
   }
 
@@ -43,8 +43,8 @@
       color: var(--ex-color-text-primary);
       transform: translateY(-2px) scale(1.05);
       box-shadow: 
-        0 8px 25px rgba(255, 0, 127, 0.2),
-        0 0 20px rgba(255, 0, 127, 0.3);
+        0 8px 25px rgba(var(--ex-color-neon-pink-500-rgb), 0.2),
+        0 0 20px rgba(var(--ex-color-neon-pink-500-rgb), 0.3);
     }
   }
 

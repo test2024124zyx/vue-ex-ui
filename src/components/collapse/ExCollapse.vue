@@ -11,8 +11,15 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, provide, ref, watch } from 'vue';
-import type { ExCollapseProps, ExCollapseEmits, ExCollapseExposed, CollapseItemName, CollapseActiveName } from './types';
+import type {
+  ExCollapseProps,
+  ExCollapseEmits,
+  ExCollapseExposed,
+  CollapseItemName,
+  CollapseActiveName,
+} from './types';
 
 defineOptions({
   name: 'ExCollapse',
@@ -44,17 +51,7 @@ const collapseClasses = computed(() => {
   if (props.disabled) classes.push('ex-collapse--disabled');
   if (props.expandIconPosition === 'right') classes.push('ex-collapse--icon-right');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -81,7 +78,7 @@ const handleItemClick = (name: CollapseItemName) => {
   } else {
     // 普通模式：可以展开多个
     if (isActive(name)) {
-      newActiveNames = activeNames.value.filter((item) => item !== name);
+      newActiveNames = activeNames.value.filter(item => item !== name);
     } else {
       newActiveNames = [...activeNames.value, name];
     }
@@ -89,9 +86,7 @@ const handleItemClick = (name: CollapseItemName) => {
 
   activeNames.value = newActiveNames;
 
-  const emitValue: CollapseActiveName = props.accordion
-    ? newActiveNames[0] || ''
-    : newActiveNames;
+  const emitValue: CollapseActiveName = props.accordion ? newActiveNames[0] || '' : newActiveNames;
 
   emit('update:modelValue', emitValue);
   emit('change', emitValue);
@@ -104,7 +99,7 @@ const setActiveNames = (names: CollapseActiveName) => {
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     activeNames.value = Array.isArray(newValue) ? newValue : newValue ? [newValue] : [];
   }
 );

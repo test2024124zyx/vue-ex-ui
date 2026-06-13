@@ -22,7 +22,7 @@
     height: 8px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
-    box-shadow: 0 0 10px rgba(41, 171, 226, 0.5);
+    box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.5);
     transition: top var(--ex-transition-base);
   }
 
@@ -58,7 +58,7 @@
     }
   }
 
-  // 嵌套的锚点链�?
+  // 嵌套的锚点链�?
   .ex-anchor-link {
     padding-left: var(--ex-spacing-6);
     font-size: var(--ex-text-xs);

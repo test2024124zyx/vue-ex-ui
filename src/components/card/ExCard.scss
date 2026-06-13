@@ -209,7 +209,7 @@
     border-color: var(--ex-color-info);
     background: linear-gradient(
       135deg,
-      rgba(59, 130, 246, 0.03),
+      rgba(var(--ex-color-neon-blue-500-rgb), 0.03),
       var(--ex-color-bg-secondary)
     );
     transition: all 0.9s ease-in-out;
@@ -217,8 +217,8 @@
     .ex-card__header {
       background: linear-gradient(
         135deg,
-        rgba(59, 130, 246, 0.15),
-        rgba(59, 130, 246, 0.08)
+        rgba(var(--ex-color-neon-blue-500-rgb), 0.15),
+        rgba(var(--ex-color-neon-blue-500-rgb), 0.08)
       );
       border-bottom-color: var(--ex-color-info);
     }

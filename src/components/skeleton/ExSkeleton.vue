@@ -1,8 +1,5 @@
 <template>
-  <transition
-    name="ex-skeleton-fade"
-    mode="out-in"
-  >
+  <transition name="ex-skeleton-fade" mode="out-in">
     <div
       v-if="loading"
       key="skeleton"
@@ -22,37 +19,21 @@
       <!-- 预设变体模式 -->
       <template v-else>
         <!-- 头像 + 内容布局 -->
-        <div
-          v-if="avatar || variant === 'avatar'"
-          class="ex-skeleton__layout"
-        >
+        <div v-if="avatar || variant === 'avatar'" class="ex-skeleton__layout">
           <!-- 头像 -->
           <div
             class="ex-skeleton__avatar"
-            :class="[
-              `ex-skeleton__avatar--${avatarShape}`,
-              `ex-skeleton__avatar--${size}`,
-            ]"
+            :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
             :style="avatarStyle"
           />
 
           <!-- 内容区域 -->
-          <div
-            v-if="variant !== 'avatar'"
-            class="ex-skeleton__content"
-          >
+          <div v-if="variant !== 'avatar'" class="ex-skeleton__content">
             <!-- 标题 -->
-            <div
-              v-if="title"
-              class="ex-skeleton__title"
-              :style="titleStyle"
-            />
+            <div v-if="title" class="ex-skeleton__title" :style="titleStyle" />
 
             <!-- 段落 -->
-            <div
-              v-if="rows > 0"
-              class="ex-skeleton__paragraph"
-            >
+            <div v-if="rows > 0" class="ex-skeleton__paragraph">
               <div
                 v-for="(_row, index) in rows"
                 :key="index"
@@ -64,22 +45,12 @@
         </div>
 
         <!-- 纯内容布局（无头像） -->
-        <div
-          v-else
-          class="ex-skeleton__content"
-        >
+        <div v-else class="ex-skeleton__content">
           <!-- 标题 -->
-          <div
-            v-if="title || variant === 'title'"
-            class="ex-skeleton__title"
-            :style="titleStyle"
-          />
+          <div v-if="title || variant === 'title'" class="ex-skeleton__title" :style="titleStyle" />
 
           <!-- 段落 -->
-          <div
-            v-if="rows > 0 || variant === 'paragraph'"
-            class="ex-skeleton__paragraph"
-          >
+          <div v-if="rows > 0 || variant === 'paragraph'" class="ex-skeleton__paragraph">
             <div
               v-for="(_row, index) in computedRows"
               :key="index"
@@ -103,10 +74,7 @@
     </div>
 
     <!-- 加载完成后显示实际内容 -->
-    <div
-      v-else
-      key="content"
-    >
+    <div v-else key="content">
       <slot name="content">
         <slot />
       </slot>
@@ -115,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExSkeletonProps, ExSkeletonExposed } from './types';
 import { useLocale } from '../../locale';
@@ -153,17 +122,7 @@ const skeletonClasses = computed(() => {
     classes.push(`ex-skeleton--animation-${props.animation}`);
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -243,8 +202,7 @@ const getRowStyle = (index: number) => {
         styles.width = typeof width === 'number' ? `${width}px` : width;
       }
     } else {
-      styles.width =
-        typeof props.rowsWidth === 'number' ? `${props.rowsWidth}px` : props.rowsWidth;
+      styles.width = typeof props.rowsWidth === 'number' ? `${props.rowsWidth}px` : props.rowsWidth;
     }
   } else {
     // 默认最后一行宽度为 60%

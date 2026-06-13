@@ -1,21 +1,10 @@
 <template>
-  <main
-    ref="contentRef"
-    :class="contentClasses"
-    :style="contentStyles"
-    role="main"
-  >
+  <main ref="contentRef" :class="contentClasses" :style="contentStyles" role="main">
     <!-- 背景网格效果 -->
-    <div
-      v-if="grid"
-      class="ex-content__grid"
-    />
+    <div v-if="grid" class="ex-content__grid" />
 
     <!-- 扫描线效果 -->
-    <div
-      v-if="scanline"
-      class="ex-content__scanline"
-    />
+    <div v-if="scanline" class="ex-content__scanline" />
 
     <!-- 内容 -->
     <div class="ex-content__inner">
@@ -25,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExContentProps, ExContentExposed } from './types';
 
@@ -46,17 +36,7 @@ const contentClasses = computed(() => {
   if (props.grid) classes.push('ex-content--grid');
   if (props.scanline) classes.push('ex-content--scanline');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -100,7 +80,7 @@ defineExpose<ExContentExposed>({
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
       linear-gradient(var(--ex-color-border-primary) 1px, transparent 1px),
       linear-gradient(90deg, var(--ex-color-border-primary) 1px, transparent 1px);
     background-size: 20px 20px;

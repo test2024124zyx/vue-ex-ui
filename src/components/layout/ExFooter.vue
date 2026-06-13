@@ -1,23 +1,12 @@
 <template>
-  <footer
-    ref="footerRef"
-    :class="footerClasses"
-    :style="footerStyles"
-    role="contentinfo"
-  >
+  <footer ref="footerRef" :class="footerClasses" :style="footerStyles" role="contentinfo">
     <!-- 左侧插槽 -->
-    <div
-      v-if="$slots.left"
-      class="ex-footer__left"
-    >
+    <div v-if="$slots.left" class="ex-footer__left">
       <slot name="left" />
     </div>
 
     <!-- 中间插槽 -->
-    <div
-      v-if="$slots.center"
-      class="ex-footer__center"
-    >
+    <div v-if="$slots.center" class="ex-footer__center">
       <slot name="center" />
     </div>
 
@@ -30,16 +19,14 @@
     </div>
 
     <!-- 右侧插槽 -->
-    <div
-      v-if="$slots.right"
-      class="ex-footer__right"
-    >
+    <div v-if="$slots.right" class="ex-footer__right">
       <slot name="right" />
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExFooterProps, ExFooterExposed } from './types';
 import { useNeonEffect, useAnimation } from '../config-provider/composables';
@@ -74,17 +61,7 @@ const footerClasses = computed(() => {
   // 支持全局动画配置
   if (!globalAnimation.value) classes.push('ex-footer--no-animation');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -101,7 +78,9 @@ const footerStyles = computed(() => {
   // 合并用户样式
   if (props.style) {
     if (typeof props.style === 'string') {
-      return `${Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('; ')}; ${props.style}`;
+      return `${Object.entries(styles)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; ')}; ${props.style}`;
     } else {
       Object.assign(styles, props.style);
     }

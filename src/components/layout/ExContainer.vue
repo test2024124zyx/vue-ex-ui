@@ -1,14 +1,11 @@
 <template>
-  <div
-    ref="containerRef"
-    :class="containerClasses"
-    :style="containerStyles"
-  >
+  <div ref="containerRef" :class="containerClasses" :style="containerStyles">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExContainerProps, ExContainerExposed } from './types';
 
@@ -33,17 +30,7 @@ const containerClasses = computed(() => {
     classes.push(`ex-container--${props.size}`);
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -74,17 +61,17 @@ defineExpose<ExContainerExposed>({
 
   // 响应式容器宽度（基于项目标准断点）
   @include respond-to(sm) {
-    max-width: 448px;  // 480px - 32px padding
+    max-width: 448px; // 480px - 32px padding
     padding-left: var(--ex-spacing-6);
     padding-right: var(--ex-spacing-6);
   }
 
   @include respond-to(md) {
-    max-width: 720px;  // 768px - 48px padding
+    max-width: 720px; // 768px - 48px padding
   }
 
   @include respond-to(lg) {
-    max-width: 960px;  // 1024px - 64px padding
+    max-width: 960px; // 1024px - 64px padding
     padding-left: var(--ex-spacing-8);
     padding-right: var(--ex-spacing-8);
   }
@@ -104,15 +91,15 @@ defineExpose<ExContainerExposed>({
 
   // 固定尺寸容器（基于项目标准断点）
   &--sm {
-    max-width: 448px;  // 480px - padding
+    max-width: 448px; // 480px - padding
   }
 
   &--md {
-    max-width: 720px;  // 768px - padding
+    max-width: 720px; // 768px - padding
   }
 
   &--lg {
-    max-width: 960px;  // 1024px - padding
+    max-width: 960px; // 1024px - padding
   }
 
   &--xl {

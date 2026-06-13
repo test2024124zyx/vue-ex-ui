@@ -1,10 +1,5 @@
 <template>
-  <div
-    ref="dropdownRef"
-    :class="dropdownClasses"
-    :style="dropdownStyles"
-    :aria-label="ariaLabel"
-  >
+  <div ref="dropdownRef" :class="dropdownClasses" :style="dropdownStyles" :aria-label="ariaLabel">
     <div
       ref="triggerRef"
       class="ex-dropdown__trigger"
@@ -27,14 +22,8 @@
           @mouseleave="handleMenuLeave"
         >
           <div class="ex-dropdown__menu-content">
-            <template
-              v-for="(item, index) in items"
-              :key="item.key || index"
-            >
-              <div
-                v-if="item.divided"
-                class="ex-dropdown__divider"
-              />
+            <template v-for="(item, index) in items" :key="item.key || index">
+              <div v-if="item.divided" class="ex-dropdown__divider" />
               <ExDropdownItem
                 :label="item.label"
                 :icon="item.icon"
@@ -51,8 +40,14 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
-import type { ExDropdownProps, ExDropdownEmits, ExDropdownExposed, DropdownItemData } from './types';
+import type {
+  ExDropdownProps,
+  ExDropdownEmits,
+  ExDropdownExposed,
+  DropdownItemData,
+} from './types';
 import ExDropdownItem from './ExDropdownItem.vue';
 
 defineOptions({
@@ -84,17 +79,7 @@ const dropdownClasses = computed(() => {
 
   if (props.disabled) classes.push('ex-dropdown--disabled');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -106,10 +91,7 @@ const dropdownStyles = computed(() => {
 });
 
 const menuClasses = computed(() => {
-  return [
-    'ex-dropdown__menu',
-    `ex-dropdown__menu--${props.placement}`,
-  ];
+  return ['ex-dropdown__menu', `ex-dropdown__menu--${props.placement}`];
 });
 
 // 方法
@@ -132,46 +114,46 @@ const updateMenuPosition = () => {
     : menuRect.width;
 
   switch (mainPlacement) {
-  case 'bottom':
-    top = triggerRect.bottom + spacing;
-    if (subPlacement === 'start') {
-      left = triggerRect.left; // 左对齐
-    } else if (subPlacement === 'end') {
-      left = triggerRect.right - effectiveMenuWidth; // 右对齐
-    } else {
-      left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
-    }
-    break;
-  case 'top':
-    top = triggerRect.top - menuRect.height - spacing;
-    if (subPlacement === 'start') {
-      left = triggerRect.left; // 左对齐
-    } else if (subPlacement === 'end') {
-      left = triggerRect.right - effectiveMenuWidth; // 右对齐
-    } else {
-      left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
-    }
-    break;
-  case 'left':
-    left = triggerRect.left - menuRect.width - spacing;
-    if (subPlacement === 'start') {
-      top = triggerRect.top;
-    } else if (subPlacement === 'end') {
-      top = triggerRect.bottom - menuRect.height;
-    } else {
-      top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
-    }
-    break;
-  case 'right':
-    left = triggerRect.right + spacing;
-    if (subPlacement === 'start') {
-      top = triggerRect.top;
-    } else if (subPlacement === 'end') {
-      top = triggerRect.bottom - menuRect.height;
-    } else {
-      top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
-    }
-    break;
+    case 'bottom':
+      top = triggerRect.bottom + spacing;
+      if (subPlacement === 'start') {
+        left = triggerRect.left; // 左对齐
+      } else if (subPlacement === 'end') {
+        left = triggerRect.right - effectiveMenuWidth; // 右对齐
+      } else {
+        left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
+      }
+      break;
+    case 'top':
+      top = triggerRect.top - menuRect.height - spacing;
+      if (subPlacement === 'start') {
+        left = triggerRect.left; // 左对齐
+      } else if (subPlacement === 'end') {
+        left = triggerRect.right - effectiveMenuWidth; // 右对齐
+      } else {
+        left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
+      }
+      break;
+    case 'left':
+      left = triggerRect.left - menuRect.width - spacing;
+      if (subPlacement === 'start') {
+        top = triggerRect.top;
+      } else if (subPlacement === 'end') {
+        top = triggerRect.bottom - menuRect.height;
+      } else {
+        top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
+      }
+      break;
+    case 'right':
+      left = triggerRect.right + spacing;
+      if (subPlacement === 'start') {
+        top = triggerRect.top;
+      } else if (subPlacement === 'end') {
+        top = triggerRect.bottom - menuRect.height;
+      } else {
+        top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
+      }
+      break;
   }
 
   // 边界检测和调整
@@ -278,10 +260,7 @@ const handleItemClick = (item: DropdownItemData) => {
 
 const handleClickOutside = (e: MouseEvent) => {
   if (!dropdownRef.value || !menuRef.value) return;
-  if (
-    !dropdownRef.value.contains(e.target as Node) &&
-    !menuRef.value.contains(e.target as Node)
-  ) {
+  if (!dropdownRef.value.contains(e.target as Node) && !menuRef.value.contains(e.target as Node)) {
     hide();
   }
 };
@@ -291,16 +270,19 @@ const getElement = () => {
 };
 
 // 监听 visible 属性
-watch(() => props.visible, (newValue) => {
-  if (newValue !== undefined) {
-    isVisible.value = newValue;
-    if (newValue) {
-      nextTick(() => {
-        updateMenuPosition();
-      });
+watch(
+  () => props.visible,
+  newValue => {
+    if (newValue !== undefined) {
+      isVisible.value = newValue;
+      if (newValue) {
+        nextTick(() => {
+          updateMenuPosition();
+        });
+      }
     }
   }
-});
+);
 
 // 生命周期
 onMounted(() => {

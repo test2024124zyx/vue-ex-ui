@@ -26,7 +26,14 @@ export type ChartType =
  * 图表主题（已废弃，使用全局主题）
  * @deprecated 使用 ConfigProvider 的全局主题配置
  */
-export type ChartTheme = 'neon-blue' | 'neon-pink' | 'dark' | 'high-contrast' | 'light' | 'custom';
+export type ChartTheme =
+  | 'neon-blue'
+  | 'neon-pink'
+  | 'dark'
+  | 'matrix'
+  | 'high-contrast'
+  | 'light'
+  | 'custom';
 
 /**
  * 图表尺寸
@@ -127,13 +134,25 @@ export interface ExChartExposed {
   /** 销毁图表实例 */
   dispose: () => void;
   /** 设置图表配置 */
-  setOption: (option: echarts.EChartsOption, opts?: { notMerge?: boolean; lazyUpdate?: boolean; silent?: boolean; replaceMerge?: string | string[] }) => void;
+  setOption: (
+    option: echarts.EChartsOption,
+    opts?: {
+      notMerge?: boolean;
+      lazyUpdate?: boolean;
+      silent?: boolean;
+      replaceMerge?: string | string[];
+    }
+  ) => void;
   /** 显示加载动画 */
   showLoading: (type?: string, opts?: object) => void;
   /** 隐藏加载动画 */
   hideLoading: () => void;
   /** 获取图表数据 URL */
-  getDataURL: (opts?: { type?: 'png' | 'jpeg' | 'svg'; pixelRatio?: number; backgroundColor?: string }) => string;
+  getDataURL: (opts?: {
+    type?: 'png' | 'jpeg' | 'svg';
+    pixelRatio?: number;
+    backgroundColor?: string;
+  }) => string;
   /** 获取图表 SVG 字符串 */
   getSvgDataURL: () => string;
   /** 转换坐标到像素 */

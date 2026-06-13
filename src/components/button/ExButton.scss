@@ -9,7 +9,7 @@
   gap: var(--ex-spacing-2);
   padding: var(--ex-spacing-2) var(--ex-spacing-4);
   border: 1px solid transparent;
-  border-radius: 0; // 默认无圆角，只有round=true时才有圆
+  border-radius: var(--ex-button-radius); // 与输入框/选择器统一的交互圆角
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
@@ -21,11 +21,17 @@
   transition: all var(--ex-motion-duration-base) ease-out;
   outline: none;
 
-  // 聚焦样式 - 游戏主题增强
+  // 默认形状采用赛博朋克切角（左上 + 右下斜切）；round/circle 保持各自轮廓。
+  // 注意：clip-path 会裁掉 box-shadow，切角按钮因此呈扁平硬朗风格（与「发光预算」一致），
+  // 发光交由 filter（见下方各类型 hover）。
+  &:not(.ex-button--round):not(.ex-button--circle) {
+    @include chamfer(var(--ex-chamfer-sm));
+  }
+
+  // 聚焦样式 - 游戏主题增强（切角下 outline 在两个斜角处略被裁切，但其余边清晰可见）
   &:focus-visible {
     outline: 2px solid var(--ex-color-primary);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px var(--ex-color-primary-alpha-20);
   }
 
   // 禁用状
@@ -89,9 +95,9 @@
   &--primary {
     background: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
     border-color: var(--ex-color-primary);
-    color: var(--ex-color-white);
+    color: var(--ex-button-ink-on-bright);
     box-shadow:
-      0 0 20px var(--ex-color-primary-alpha-30),
+      0 0 10px var(--ex-color-primary-alpha-30),
       inset 0 1px 0 var(--ex-color-white-alpha-20);
     position: relative;
     overflow: hidden;
@@ -115,9 +121,8 @@
         var(--ex-color-secondary-hover) 100%
       );
       border-color: var(--ex-color-primary-hover);
-      transform: translateY(-2px);
       box-shadow:
-        0 0 30px var(--ex-color-primary-alpha-50),
+        0 0 16px var(--ex-color-primary-alpha-50),
         0 8px 25px var(--ex-color-primary-alpha-30),
         inset 0 1px 0 var(--ex-color-white-alpha-30);
 
@@ -153,9 +158,9 @@
           var(--ex-color-primary) 0%,
           var(--ex-color-secondary) 100%
         );
-        color: var(--ex-color-white);
+        color: var(--ex-button-ink-on-bright);
         box-shadow:
-          0 0 20px var(--ex-color-primary-alpha-30),
+          0 0 10px var(--ex-color-primary-alpha-30),
           0 4px 15px var(--ex-color-primary-alpha-20);
       }
     }
@@ -170,7 +175,6 @@
     &:hover:not(:disabled):not(.ex-button--loading) {
       background: var(--ex-color-bg-hover);
       border-color: var(--ex-color-primary);
-      transform: translateY(-1px);
       box-shadow:
         var(--ex-shadow-md),
         0 0 15px var(--ex-color-secondary-alpha-20);
@@ -195,17 +199,16 @@
   &--success {
     background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
     border-color: var(--ex-color-success);
-    color: var(--ex-color-white);
+    color: var(--ex-button-ink-on-bright);
     box-shadow:
-      0 0 20px var(--ex-color-success-alpha-30),
+      0 0 10px var(--ex-color-success-alpha-30),
       inset 0 1px 0 var(--ex-color-white-alpha-20);
 
     &:hover:not(:disabled):not(.ex-button--loading) {
       background: linear-gradient(135deg, var(--ex-color-success-hover) 0%, var(--ex-color-success-dark) 100%);
       border-color: var(--ex-color-success-hover);
-      transform: translateY(-2px);
       box-shadow:
-        0 0 30px var(--ex-color-success-alpha-50),
+        0 0 16px var(--ex-color-success-alpha-50),
         0 8px 25px var(--ex-color-success-alpha-40),
         inset 0 1px 0 var(--ex-color-white-alpha-30);
     }
@@ -227,9 +230,9 @@
 
       &:hover:not(:disabled):not(.ex-button--loading) {
         background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
-        color: var(--ex-color-white);
+        color: var(--ex-button-ink-on-bright);
         box-shadow:
-          0 0 20px var(--ex-color-success-alpha-30),
+          0 0 10px var(--ex-color-success-alpha-30),
           0 4px 15px var(--ex-color-success-alpha-20);
       }
     }
@@ -238,17 +241,16 @@
   &--warning {
     background: var(--ex-color-warning);
     border-color: var(--ex-color-warning);
-    color: var(--ex-color-white);
+    color: var(--ex-button-ink-on-bright);
     box-shadow:
-      0 0 20px var(--ex-color-warning-alpha-30),
+      0 0 10px var(--ex-color-warning-alpha-30),
       inset 0 1px 0 var(--ex-color-white-alpha-20);
 
     &:hover:not(:disabled):not(.ex-button--loading) {
       background: var(--ex-color-warning-hover);
       border-color: var(--ex-color-warning-hover);
-      transform: translateY(-2px);
       box-shadow:
-        0 0 30px var(--ex-color-warning-alpha-50),
+        0 0 16px var(--ex-color-warning-alpha-50),
         0 8px 25px var(--ex-color-warning-alpha-30),
         inset 0 1px 0 var(--ex-color-white-alpha-30);
     }
@@ -270,9 +272,9 @@
 
       &:hover:not(:disabled):not(.ex-button--loading) {
         background: var(--ex-color-warning);
-        color: var(--ex-color-white);
+        color: var(--ex-button-ink-on-bright);
         box-shadow:
-          0 0 20px var(--ex-color-warning-alpha-30),
+          0 0 10px var(--ex-color-warning-alpha-30),
           0 4px 15px var(--ex-color-warning-alpha-20);
       }
     }
@@ -281,17 +283,16 @@
   &--danger {
     background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
     border-color: var(--ex-color-danger);
-    color: var(--ex-color-white);
+    color: var(--ex-button-ink-on-bright);
     box-shadow:
-      0 0 20px var(--ex-color-error-alpha-30),
+      0 0 10px var(--ex-color-error-alpha-30),
       inset 0 1px 0 var(--ex-color-white-alpha-20);
 
     &:hover:not(:disabled):not(.ex-button--loading) {
       background: linear-gradient(135deg, var(--ex-color-danger-hover) 0%, var(--ex-color-danger-dark) 100%);
       border-color: var(--ex-color-danger-hover);
-      transform: translateY(-2px);
       box-shadow:
-        0 0 30px var(--ex-color-error-alpha-50),
+        0 0 16px var(--ex-color-error-alpha-50),
         0 8px 25px var(--ex-color-error-alpha-40),
         inset 0 1px 0 var(--ex-color-white-alpha-30);
     }
@@ -313,9 +314,9 @@
 
       &:hover:not(:disabled):not(.ex-button--loading) {
         background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
-        color: var(--ex-color-white);
+        color: var(--ex-button-ink-on-bright);
         box-shadow:
-          0 0 20px var(--ex-color-error-alpha-30),
+          0 0 10px var(--ex-color-error-alpha-30),
           0 4px 15px var(--ex-color-error-alpha-20);
       }
     }
@@ -324,17 +325,16 @@
   &--info {
     background: var(--ex-color-info);
     border-color: var(--ex-color-info);
-    color: var(--ex-color-white);
+    color: var(--ex-button-ink-on-bright);
     box-shadow:
-      0 0 20px var(--ex-color-info-alpha-30),
+      0 0 10px var(--ex-color-info-alpha-30),
       inset 0 1px 0 var(--ex-color-white-alpha-20);
 
     &:hover:not(:disabled):not(.ex-button--loading) {
       background: var(--ex-color-info-hover);
       border-color: var(--ex-color-info-hover);
-      transform: translateY(-2px);
       box-shadow:
-        0 0 30px var(--ex-color-info-alpha-50),
+        0 0 16px var(--ex-color-info-alpha-50),
         0 8px 25px var(--ex-color-info-alpha-30),
         inset 0 1px 0 var(--ex-color-white-alpha-30);
     }
@@ -356,9 +356,9 @@
 
       &:hover:not(:disabled):not(.ex-button--loading) {
         background: var(--ex-color-info);
-        color: var(--ex-color-white);
+        color: var(--ex-button-ink-on-bright);
         box-shadow:
-          0 0 20px var(--ex-color-info-alpha-30),
+          0 0 10px var(--ex-color-info-alpha-30),
           0 4px 15px var(--ex-color-info-alpha-20);
       }
     }
@@ -411,11 +411,6 @@
       height: 28px;
       padding: 0;
     }
-
-    // 小尺寸圆角按
-    &.ex-button--round {
-      border-radius: var(--ex-radius-sm);
-    }
   }
 
   &--medium {
@@ -446,16 +441,11 @@
       height: 44px;
       padding: 0;
     }
-
-    // 大尺寸圆角按
-    &.ex-button--round {
-      border-radius: var(--ex-radius-lg);
-    }
   }
 
-  // 形状样式
+  // 形状样式：round = 胶囊（药丸）形，语义与 default(8px)/circle 区分清晰
   &--round {
-    border-radius: var(--ex-radius-base);
+    border-radius: var(--ex-radius-full);
   }
 
   &--circle {

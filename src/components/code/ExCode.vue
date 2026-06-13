@@ -65,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
@@ -114,17 +115,7 @@ const codeClasses = computed(() => {
   if (props.lineNumbers) classes.push('ex-code--line-numbers');
   if (props.wrap) classes.push('ex-code--wrap');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

@@ -90,6 +90,53 @@
     overflow: hidden;
   }
 
+  // 多选：值区域换行排列标签
+  &--multiple &__value {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0;
+    overflow: visible;
+  }
+
+  // 多选标签
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 0 6px;
+    height: 22px;
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-primary);
+    background: var(--ex-color-primary-alpha-10);
+    border: 1px solid var(--ex-color-primary-alpha-30);
+    border-radius: var(--ex-radius-md);
+    white-space: nowrap;
+
+    &--count {
+      color: var(--ex-color-text-secondary);
+      background: var(--ex-color-bg-tertiary);
+      border-color: var(--ex-color-border-primary);
+    }
+  }
+
+  &__tag-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__tag-close {
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity var(--ex-motion-duration-fast) ease-out;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
   // 选中标签
   &__label {
     color: var(--ex-color-text-primary);
@@ -310,6 +357,13 @@
     text-align: center;
     font-size: var(--ex-text-sm);
     font-style: italic;
+  }
+
+  &__loading {
+    padding: 24px 16px;
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+    font-size: var(--ex-text-sm);
   }
 
   // 响应式

@@ -137,7 +137,7 @@
       background: var(--ex-color-bg-hover);
       border-color: var(--ex-color-neon-blue-500);
       color: var(--ex-color-neon-blue-500);
-      box-shadow: 0 0 10px rgba(41, 171, 226, 0.3);
+      box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
     }
 
     &:active {
@@ -151,7 +151,7 @@
       &:hover {
         border-color: var(--ex-color-success);
         color: var(--ex-color-success);
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 0 10px rgba(var(--ex-color-success-rgb), 0.3);
       }
     }
   }
@@ -222,7 +222,7 @@
     }
   }
 
-  // 代码�?
+  // 代码�?
   &__pre {
     flex: 1;
     margin: 0;
@@ -251,7 +251,7 @@
     word-break: normal;
     tab-size: 4;
 
-    // 基础语法高亮（简化版�?
+    // 基础语法高亮（简化版�?
     .keyword {
       color: var(--ex-color-neon-pink-500);
       font-weight: var(--ex-font-weight-medium);
@@ -281,7 +281,7 @@
 
 
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
     font-size: var(--ex-text-xs);
 
@@ -298,7 +298,7 @@
     }
   }
 
-  // 无障碍支�?
+  // 无障碍支�?
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 

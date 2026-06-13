@@ -73,7 +73,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../locale';
 import { ExIcon } from '../icon';
 import TimePanel from './TimePanel.vue';
 import type { ExTimePickerProps, TimeValue, TimeChangeEvent } from './types';

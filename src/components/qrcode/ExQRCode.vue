@@ -6,58 +6,30 @@
     role="img"
     :aria-label="ariaLabel || `QR Code: ${value}`"
   >
-    <canvas
-      ref="canvasRef"
-      class="ex-qrcode__canvas"
-    />
+    <canvas ref="canvasRef" class="ex-qrcode__canvas" />
 
     <!-- 中心图标/Logo -->
-    <div
-      v-if="$slots.icon"
-      class="ex-qrcode__icon"
-      :style="iconStyle"
-    >
+    <div v-if="$slots.icon" class="ex-qrcode__icon" :style="iconStyle">
       <slot name="icon" />
     </div>
 
     <!-- 加载状态 -->
-    <div
-      v-if="loading"
-      class="ex-qrcode__loading"
-    >
+    <div v-if="loading" class="ex-qrcode__loading">
       <div class="ex-qrcode__loading-spinner" />
     </div>
 
     <!-- 错误状态 -->
-    <div
-      v-if="error"
-      class="ex-qrcode__error"
-    >
+    <div v-if="error" class="ex-qrcode__error">
       <div class="ex-qrcode__error-icon">
-        <svg
-          width="48"
-          height="48"
-          viewBox="0 0 48 48"
-          fill="none"
-        >
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <path
             d="M24 4L4 24L24 44L44 24L24 4Z"
             stroke="currentColor"
             stroke-width="2"
             fill="none"
           />
-          <path
-            d="M24 16V26"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="24"
-            cy="32"
-            r="1.5"
-            fill="currentColor"
-          />
+          <path d="M24 16V26" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="24" cy="32" r="1.5" fill="currentColor" />
         </svg>
       </div>
       <p class="ex-qrcode__error-text">
@@ -68,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { ExQRCodeProps, ExQRCodeExposed } from './types';
 import { useI18n } from '../../locale';
@@ -107,17 +80,7 @@ const qrcodeClasses = computed(() => {
   if (loading.value) classes.push('ex-qrcode--loading');
   if (error.value) classes.push('ex-qrcode--error');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

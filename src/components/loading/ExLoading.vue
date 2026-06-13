@@ -1,8 +1,5 @@
 <template>
-  <Teleport
-    :to="teleportTarget"
-    :disabled="!shouldTeleport"
-  >
+  <Teleport :to="teleportTarget" :disabled="!shouldTeleport">
     <transition name="ex-loading-fade">
       <div
         v-if="visible"
@@ -14,11 +11,7 @@
         :aria-label="ariaLabel || text || t('loading.loading')"
       >
         <!-- 遮罩层 -->
-        <div
-          v-if="mask"
-          class="ex-loading__mask"
-          @click="handleMaskClick"
-        />
+        <div v-if="mask" class="ex-loading__mask" @click="handleMaskClick" />
 
         <!-- 加载内容 -->
         <div class="ex-loading__spinner-wrapper">
@@ -26,10 +19,7 @@
           <div class="ex-loading__spinner">
             <slot name="spinner">
               <!-- 默认旋转圆环 -->
-              <div
-                v-if="type === 'spinner'"
-                class="ex-loading__spinner-circle"
-              >
+              <div v-if="type === 'spinner'" class="ex-loading__spinner-circle">
                 <svg viewBox="0 0 50 50">
                   <circle
                     cx="25"
@@ -45,30 +35,21 @@
               </div>
 
               <!-- 点状加载 -->
-              <div
-                v-else-if="type === 'dots'"
-                class="ex-loading__dots"
-              >
+              <div v-else-if="type === 'dots'" class="ex-loading__dots">
                 <span class="ex-loading__dot" />
                 <span class="ex-loading__dot" />
                 <span class="ex-loading__dot" />
               </div>
 
               <!-- 脉冲加载 -->
-              <div
-                v-else-if="type === 'pulse'"
-                class="ex-loading__pulse"
-              >
+              <div v-else-if="type === 'pulse'" class="ex-loading__pulse">
                 <div class="ex-loading__pulse-ring" />
                 <div class="ex-loading__pulse-ring" />
                 <div class="ex-loading__pulse-ring" />
               </div>
 
               <!-- 条形加载 -->
-              <div
-                v-else-if="type === 'bars'"
-                class="ex-loading__bars"
-              >
+              <div v-else-if="type === 'bars'" class="ex-loading__bars">
                 <span class="ex-loading__bar" />
                 <span class="ex-loading__bar" />
                 <span class="ex-loading__bar" />
@@ -76,20 +57,14 @@
               </div>
 
               <!-- 霓虹环 -->
-              <div
-                v-else-if="type === 'neon'"
-                class="ex-loading__neon"
-              >
+              <div v-else-if="type === 'neon'" class="ex-loading__neon">
                 <div class="ex-loading__neon-ring" />
               </div>
             </slot>
           </div>
 
           <!-- 加载文本 -->
-          <div
-            v-if="text || $slots.default"
-            class="ex-loading__text"
-          >
+          <div v-if="text || $slots.default" class="ex-loading__text">
             <slot>{{ text }}</slot>
           </div>
         </div>
@@ -99,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, onMounted, watch } from 'vue';
 import type { ExLoadingProps, ExLoadingEmits, ExLoadingExposed } from './types';
 import { useI18n } from '../../locale';
@@ -143,7 +119,7 @@ onMounted(() => {
     } else {
       targetElement.value = props.target;
     }
-    
+
     // 确保目标元素有 position: relative
     if (targetElement.value && getComputedStyle(targetElement.value).position === 'static') {
       targetElement.value.style.position = 'relative';
@@ -151,20 +127,23 @@ onMounted(() => {
   }
 });
 
-watch(() => props.target, (newTarget) => {
-  if (!props.fullscreen && newTarget) {
-    if (typeof newTarget === 'string') {
-      targetElement.value = document.querySelector(newTarget);
-    } else {
-      targetElement.value = newTarget;
-    }
-    
-    // 确保目标元素有 position: relative
-    if (targetElement.value && getComputedStyle(targetElement.value).position === 'static') {
-      targetElement.value.style.position = 'relative';
+watch(
+  () => props.target,
+  newTarget => {
+    if (!props.fullscreen && newTarget) {
+      if (typeof newTarget === 'string') {
+        targetElement.value = document.querySelector(newTarget);
+      } else {
+        targetElement.value = newTarget;
+      }
+
+      // 确保目标元素有 position: relative
+      if (targetElement.value && getComputedStyle(targetElement.value).position === 'static') {
+        targetElement.value.style.position = 'relative';
+      }
     }
   }
-});
+);
 
 // 计算属性
 const loadingClasses = computed(() => {
@@ -175,17 +154,7 @@ const loadingClasses = computed(() => {
   if (props.fullscreen) classes.push('ex-loading--fullscreen');
   if (!props.mask) classes.push('ex-loading--no-mask');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

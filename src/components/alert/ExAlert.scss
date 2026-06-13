@@ -12,7 +12,8 @@
   display: flex;
   align-items: flex-start;
   padding: var(--ex-spacing-4);
-  border-radius: var(--ex-radius-lg);
+  // 赛博朋克切角（左上 + 右下斜切）
+  @include chamfer(var(--ex-chamfer-md));
   border: 2px solid transparent;
   @include safe-transition(all);
   @include optimized-text-rendering;
@@ -84,7 +85,7 @@
     @include safe-transition(all);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(var(--ex-color-white-rgb), 0.1);
       transform: scale(1.1);
     }
 
@@ -183,14 +184,14 @@
 
   &--success {
     &.ex-alert--standard {
-      background: rgba(16, 185, 129, 0.1);
+      background: rgba(var(--ex-color-success-rgb), 0.1);
       border-color: var(--ex-color-success);
       color: var(--ex-color-success);
       @include optimized-neon-glow('blue', 'sm');
     }
 
     &.ex-alert--filled {
-      background: linear-gradient(135deg, var(--ex-color-success), #059669);
+      background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
       border-color: var(--ex-color-success);
       color: var(--ex-color-white);
       @include optimized-neon-glow('blue', 'md');
@@ -205,7 +206,7 @@
 
   &--info {
     &.ex-alert--standard {
-      background: rgba(0, 240, 255, 0.1);
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
       border-color: var(--ex-color-neon-blue-500);
       color: var(--ex-color-neon-blue-400);
       @include optimized-neon-glow('blue', 'sm');
@@ -227,17 +228,17 @@
 
   &--warning {
     &.ex-alert--standard {
-      background: rgba(245, 158, 11, 0.1);
+      background: rgba(var(--ex-color-warning-rgb), 0.1);
       border-color: var(--ex-color-warning);
       color: var(--ex-color-warning);
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+      box-shadow: 0 0 10px rgba(var(--ex-color-warning-rgb), 0.2);
     }
 
     &.ex-alert--filled {
-      background: linear-gradient(135deg, var(--ex-color-warning), #f59e0b);
+      background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
       border-color: var(--ex-color-warning);
       color: var(--ex-color-white);
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 0 15px rgba(var(--ex-color-warning-rgb), 0.3);
     }
 
     &.ex-alert--outlined {
@@ -249,7 +250,7 @@
 
   &--error {
     &.ex-alert--standard {
-      background: rgba(255, 0, 127, 0.1);
+      background: rgba(var(--ex-color-neon-pink-500-rgb), 0.1);
       border-color: var(--ex-color-neon-pink-500);
       color: var(--ex-color-neon-pink-400);
       @include optimized-neon-glow('pink', 'sm');

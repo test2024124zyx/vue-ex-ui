@@ -1,10 +1,5 @@
 <template>
-  <li
-    ref="subMenuRef"
-    :class="subMenuClasses"
-    :style="subMenuStyles"
-    role="none"
-  >
+  <li ref="subMenuRef" :class="subMenuClasses" :style="subMenuStyles" role="none">
     <template v-if="isHorizontal">
       <ExDropdown
         ref="dropdownRef"
@@ -27,10 +22,7 @@
           @click="handleTitleClick"
           @keydown="handleTitleKeydown"
         >
-          <span
-            v-if="$slots.icon"
-            class="ex-submenu__icon"
-          >
+          <span v-if="$slots.icon" class="ex-submenu__icon">
             <slot name="icon" />
           </span>
           <span
@@ -43,12 +35,7 @@
             v-if="!menuContext?.collapsed.value || menuContext?.mode.value !== 'inline'"
             class="ex-submenu__arrow"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M4 6L8 10L12 6"
                 stroke="currentColor"
@@ -86,10 +73,7 @@
         @click="handleTitleClick"
         @keydown="handleTitleKeydown"
       >
-        <span
-          v-if="$slots.icon"
-          class="ex-submenu__icon"
-        >
+        <span v-if="$slots.icon" class="ex-submenu__icon">
           <slot name="icon" />
         </span>
         <span
@@ -102,12 +86,7 @@
           v-if="!menuContext?.collapsed.value || menuContext?.mode.value !== 'inline'"
           class="ex-submenu__arrow"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
               d="M4 6L8 10L12 6"
               stroke="currentColor"
@@ -142,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, ref, watch, nextTick } from 'vue';
 import ExDropdown from '../dropdown/ExDropdown.vue';
 import type { DropdownPlacement } from '../dropdown/types';
@@ -193,7 +173,7 @@ const isOpen = computed(() => {
   return internalOpen.value;
 });
 
-watch(isOpen, (newVal) => {
+watch(isOpen, newVal => {
   emit('openChange', newVal);
 });
 
@@ -213,11 +193,7 @@ const subMenuClasses = computed(() => {
   const classes = ['ex-submenu'];
   if (isOpen.value) classes.push('ex-submenu--open');
   if (props.disabled) classes.push('ex-submenu--disabled');
-  if (props.class) {
-    if (typeof props.class === 'string') classes.push(props.class);
-    else if (Array.isArray(props.class)) classes.push(...props.class);
-    else Object.entries(props.class).forEach(([key, value]) => { if (value) classes.push(key); });
-  }
+  classes.push(...normalizeCustomClass(props.class));
   return classes;
 });
 

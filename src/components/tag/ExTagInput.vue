@@ -170,7 +170,7 @@ const handleBlur = () => {
       color: var(--ex-color-neon-blue-500);
       border-color: var(--ex-color-neon-blue-500);
       background: var(--ex-color-bg-hover);
-      box-shadow: 0 0 10px rgba(41, 171, 226, 0.2);
+      box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
     }
 
     &:active {
@@ -261,22 +261,22 @@ const handleBlur = () => {
 
     &--confirm {
       color: var(--ex-color-success-500);
-      background: rgba(82, 196, 26, 0.1);
+      background: rgba(var(--ex-color-success-rgb), 0.1);
 
       &:hover {
-        background: rgba(82, 196, 26, 0.2);
-        box-shadow: 0 0 8px rgba(82, 196, 26, 0.4);
+        background: rgba(var(--ex-color-success-rgb), 0.2);
+        box-shadow: 0 0 8px rgba(var(--ex-color-success-rgb), 0.4);
       }
     }
 
     &--cancel {
       color: var(--ex-color-text-secondary);
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(var(--ex-color-white-rgb), 0.05);
 
       &:hover {
         color: var(--ex-color-danger-500);
-        background: rgba(245, 34, 45, 0.1);
-        box-shadow: 0 0 8px rgba(245, 34, 45, 0.4);
+        background: rgba(var(--ex-color-error-rgb), 0.1);
+        box-shadow: 0 0 8px rgba(var(--ex-color-error-rgb), 0.4);
       }
     }
   }

@@ -1,14 +1,7 @@
 <template>
-  <div
-    ref="badgeRef"
-    :class="badgeClasses"
-    :style="badgeStyles"
-  >
+  <div ref="badgeRef" :class="badgeClasses" :style="badgeStyles">
     <!-- 子内容 -->
-    <div
-      v-if="hasSlotContent"
-      class="ex-badge__content"
-    >
+    <div v-if="hasSlotContent" class="ex-badge__content">
       <slot />
     </div>
 
@@ -23,10 +16,7 @@
       <!-- 状态点模式 -->
       <template v-if="isStatusMode">
         <span class="ex-badge__status-dot" />
-        <span
-          v-if="text"
-          class="ex-badge__status-text"
-        >
+        <span v-if="text" class="ex-badge__status-text">
           {{ text }}
         </span>
       </template>
@@ -42,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, useSlots } from 'vue';
 import type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed } from './types';
 import { useI18n } from '../../locale';
@@ -117,17 +108,7 @@ const badgeClasses = computed(() => {
     classes.push('ex-badge--status');
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

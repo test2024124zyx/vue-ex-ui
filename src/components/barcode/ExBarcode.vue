@@ -7,16 +7,10 @@
     :aria-label="ariaLabel || `Barcode: ${value}`"
   >
     <!-- SVG 容器 -->
-    <svg
-      ref="svgRef"
-      class="ex-barcode__svg"
-    />
+    <svg ref="svgRef" class="ex-barcode__svg" />
 
     <!-- 加载状态 -->
-    <div
-      v-if="loading"
-      class="ex-barcode__loading"
-    >
+    <div v-if="loading" class="ex-barcode__loading">
       <div class="ex-barcode__loading-spinner" />
       <p class="ex-barcode__loading-text">
         {{ t('barcode.generating') }}
@@ -24,39 +18,18 @@
     </div>
 
     <!-- 错误状态 -->
-    <div
-      v-if="error"
-      class="ex-barcode__error"
-    >
-      <slot
-        name="error"
-        :error="errorMessage"
-      >
+    <div v-if="error" class="ex-barcode__error">
+      <slot name="error" :error="errorMessage">
         <div class="ex-barcode__error-icon">
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 48 48"
-            fill="none"
-          >
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
             <path
               d="M24 4L4 24L24 44L44 24L24 4Z"
               stroke="currentColor"
               stroke-width="2"
               fill="none"
             />
-            <path
-              d="M24 16V26"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <circle
-              cx="24"
-              cy="32"
-              r="1.5"
-              fill="currentColor"
-            />
+            <path d="M24 16V26" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <circle cx="24" cy="32" r="1.5" fill="currentColor" />
           </svg>
         </div>
         <p class="ex-barcode__error-text">
@@ -68,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { ExBarcodeProps, ExBarcodeExposed } from './types';
 import { useI18n } from '../../locale';
@@ -115,17 +89,7 @@ const barcodeClasses = computed(() => {
   if (loading.value) classes.push('ex-barcode--loading');
   if (error.value) classes.push('ex-barcode--error');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -226,7 +190,7 @@ const download = (filename?: string) => {
       URL.revokeObjectURL(url);
 
       // 下载
-      canvas.toBlob((blob) => {
+      canvas.toBlob(blob => {
         if (!blob) return;
         const link = document.createElement('a');
         link.download = filename || `barcode-${Date.now()}.png`;

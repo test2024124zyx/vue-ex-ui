@@ -128,6 +128,27 @@
   }
 }
 
+// 选择列（复选框 / 单选框）
+.ex-table__selection-column {
+  width: 48px;
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ex-table__body .ex-table__selection-column {
+  border-bottom: 1px solid var(--ex-color-border-primary);
+}
+
+// 选中行高亮（置于 hoverable 规则之后，等特异性时后者生效，保证悬停时仍可见选中态）
+.ex-table__row--selected {
+  background: var(--ex-color-primary-alpha-10);
+}
+
+.ex-table--hoverable .ex-table__row--selected:hover {
+  background: var(--ex-color-primary-alpha-20);
+}
+
 // 单元格
 .ex-table__cell {
   display: flex;

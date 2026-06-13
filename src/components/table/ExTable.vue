@@ -6,6 +6,19 @@
         <!-- 表头 -->
         <thead v-if="showHeader" class="ex-table__header">
           <tr>
+            <!-- 选择列表头 -->
+            <th v-if="selectable" class="ex-table__selection-column">
+              <div class="ex-table__cell ex-table__cell--center">
+                <ExCheckbox
+                  v-if="selectionType === 'checkbox'"
+                  :model-value="allSelected"
+                  :indeterminate="someSelected"
+                  :disabled="selectableKeys.length === 0"
+                  aria-label="全选"
+                  @update:model-value="toggleAllSelection"
+                />
+              </div>
+            </th>
             <th
               v-for="(column, colIndex) in columns"
               :key="column.key"
@@ -52,9 +65,31 @@
           <tr
             v-for="(record, index) in sortedData"
             :key="getRowKey(record, index)"
-            :class="getRowClasses(index)"
+            :class="getRowClasses(record, index)"
             @click="handleRowClick(record, index, $event)"
           >
+            <!-- 选择列单元格 -->
+            <td v-if="selectable" class="ex-table__selection-column" @click.stop>
+              <div class="ex-table__cell ex-table__cell--center">
+                <ExCheckbox
+                  v-if="selectionType === 'checkbox'"
+                  :model-value="isRowSelected(record, index)"
+                  :disabled="!rowSelectable(record, index)"
+                  :aria-label="`选择第 ${index + 1} 行`"
+                  @update:model-value="val => toggleRowSelection(record, val === true)"
+                />
+                <ExRadio
+                  v-else
+                  :model-value="
+                    isRowSelected(record, index) ? getRowKey(record, index) : '__ex_none__'
+                  "
+                  :value="getRowKey(record, index)"
+                  :disabled="!rowSelectable(record, index)"
+                  :aria-label="`选择第 ${index + 1} 行`"
+                  @update:model-value="() => toggleRowSelection(record, true)"
+                />
+              </div>
+            </td>
             <td
               v-for="(column, colIndex) in columns"
               :key="column.key"
@@ -78,7 +113,7 @@
 
           <!-- 空数据 -->
           <tr v-if="sortedData.length === 0" class="ex-table__empty-row">
-            <td :colspan="columns.length" class="ex-table__empty-cell">
+            <td :colspan="columns.length + (selectable ? 1 : 0)" class="ex-table__empty-cell">
               <div class="ex-table__empty">
                 <slot name="empty">
                   <ExIcon
@@ -104,8 +139,11 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref } from 'vue';
+import ExCheckbox from '../checkbox/ExCheckbox.vue';
+import ExRadio from '../radio/ExRadio.vue';
+import { computed, ref, watch } from 'vue';
 import type {
   ExTableProps,
   ExTableEmits,
@@ -129,6 +167,8 @@ const props = withDefaults(defineProps<ExTableProps>(), {
   showHeader: true,
   rowKey: 'key',
   layout: 'table',
+  selectable: false,
+  selectionType: 'checkbox',
 });
 
 const emit = defineEmits<ExTableEmits>();
@@ -146,17 +186,7 @@ const tableClasses = computed(() => {
   if (props.hoverable) classes.push('ex-table--hoverable');
   if (props.loading) classes.push('ex-table--loading');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -192,10 +222,13 @@ const getBodyCellClasses = (column: TableColumn) => {
   return classes;
 };
 
-const getRowClasses = (index: number) => {
+const getRowClasses = (record: TableDataItem, index: number) => {
   const classes = ['ex-table__row'];
   if (props.striped && index % 2 === 1) {
     classes.push('ex-table__row--striped');
+  }
+  if (props.selectable && isRowSelected(record, index)) {
+    classes.push('ex-table__row--selected');
   }
   return classes;
 };
@@ -272,6 +305,104 @@ const sortedData = computed(() => {
   return sorted;
 });
 
+// ============================================================================
+// 行选择 (Row Selection)
+// ============================================================================
+
+const sameKeys = (a: Array<string | number>, b: Array<string | number>) =>
+  a.length === b.length && a.every((k, i) => k === b[i]);
+
+// 内部维护选中 keys，初始化自 prop 并随 prop 变化同步（支持受控 v-model:selectedRowKeys）
+const internalSelectedKeys = ref<Array<string | number>>([...(props.selectedRowKeys ?? [])]);
+watch(
+  () => props.selectedRowKeys,
+  keys => {
+    if (keys && !sameKeys(keys, internalSelectedKeys.value)) {
+      internalSelectedKeys.value = [...keys];
+    }
+  }
+);
+
+const rowSelectable = (record: TableDataItem, index: number): boolean =>
+  props.isRowSelectable ? props.isRowSelectable(record, index) : true;
+
+const isRowSelected = (record: TableDataItem, index: number): boolean =>
+  internalSelectedKeys.value.includes(getRowKey(record, index));
+
+// 当前展示数据中「可选行」的 key 列表（全选/半选状态以此为准）
+const selectableKeys = computed(() =>
+  sortedData.value
+    .filter((record, index) => rowSelectable(record, index))
+    .map((record, index) => getRowKey(record, index))
+);
+
+const allSelected = computed(
+  () =>
+    selectableKeys.value.length > 0 &&
+    selectableKeys.value.every(k => internalSelectedKeys.value.includes(k))
+);
+
+const someSelected = computed(
+  () => !allSelected.value && selectableKeys.value.some(k => internalSelectedKeys.value.includes(k))
+);
+
+const selectedRowsData = computed(() =>
+  props.data.filter((record, index) =>
+    internalSelectedKeys.value.includes(getRowKey(record, index))
+  )
+);
+
+const commitSelection = () => {
+  emit('update:selectedRowKeys', [...internalSelectedKeys.value]);
+  emit('selection-change', [...internalSelectedKeys.value], selectedRowsData.value);
+};
+
+const toggleRowSelection: ExTableExposed['toggleRowSelection'] = (record, selected) => {
+  const dataIndex = props.data.indexOf(record);
+  const idx = dataIndex < 0 ? 0 : dataIndex;
+  if (!rowSelectable(record, idx)) return;
+
+  const key = getRowKey(record, idx);
+  const currentlySelected = internalSelectedKeys.value.includes(key);
+  const next = selected ?? !currentlySelected;
+
+  if (props.selectionType === 'radio') {
+    if (next) internalSelectedKeys.value = [key];
+    else if (currentlySelected) internalSelectedKeys.value = [];
+    else return;
+  } else if (next && !currentlySelected) {
+    internalSelectedKeys.value = [...internalSelectedKeys.value, key];
+  } else if (!next && currentlySelected) {
+    internalSelectedKeys.value = internalSelectedKeys.value.filter(k => k !== key);
+  } else {
+    return; // 状态未变化
+  }
+
+  emit('select', record, next, selectedRowsData.value);
+  commitSelection();
+};
+
+const toggleAllSelection: ExTableExposed['toggleAllSelection'] = () => {
+  const shouldSelectAll = !allSelected.value;
+  if (shouldSelectAll) {
+    // 合并已有选中（保留不在当前可选列表中的 key），再加入全部可选行
+    const merged = new Set(internalSelectedKeys.value);
+    selectableKeys.value.forEach(k => merged.add(k));
+    internalSelectedKeys.value = Array.from(merged);
+  } else {
+    const toRemove = new Set(selectableKeys.value);
+    internalSelectedKeys.value = internalSelectedKeys.value.filter(k => !toRemove.has(k));
+  }
+  emit('select-all', shouldSelectAll, selectedRowsData.value);
+  commitSelection();
+};
+
+const clearSelection: ExTableExposed['clearSelection'] = () => {
+  if (internalSelectedKeys.value.length === 0) return;
+  internalSelectedKeys.value = [];
+  commitSelection();
+};
+
 // 事件处理
 const handleHeaderClick = (column: TableColumn) => {
   if (!column.sortable) return;
@@ -310,6 +441,9 @@ const clearSort = () => {
 defineExpose<ExTableExposed>({
   getElement,
   clearSort,
+  clearSelection,
+  toggleRowSelection,
+  toggleAllSelection,
 });
 </script>
 

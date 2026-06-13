@@ -75,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref } from 'vue';
 import type { ExHeatmapProps, ExHeatmapEmits, ExHeatmapExposed, HeatmapDataItem } from './types';
@@ -104,17 +105,7 @@ const { t } = useI18n();
 const heatmapClasses = computed(() => {
   const classes = ['ex-heatmap', `ex-heatmap--${props.size}`, `ex-heatmap--${props.theme}`];
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

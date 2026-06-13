@@ -14,6 +14,11 @@ export type TableSize = 'small' | 'medium' | 'large';
 export type TableLayout = 'table' | 'card';
 
 /**
+ * 表格行选择类型
+ */
+export type TableSelectionType = 'checkbox' | 'radio';
+
+/**
  * 表格行数据
  */
 export interface TableRowData {
@@ -152,6 +157,14 @@ export interface ExTableProps {
   showHeader?: boolean;
   /** 行的 key 字段名 */
   rowKey?: string;
+  /** 是否开启行选择列 */
+  selectable?: boolean;
+  /** 选择类型：多选 checkbox（默认）/ 单选 radio */
+  selectionType?: TableSelectionType;
+  /** 已选行的 key 列表（支持 v-model:selectedRowKeys） */
+  selectedRowKeys?: Array<string | number>;
+  /** 判断某行是否可被选择，返回 false 则该行禁用选择 */
+  isRowSelectable?: (record: TableDataItem, index: number) => boolean;
   /** 最大高度（超出显示滚动条） */
   maxHeight?: string | number;
   /** 布局模式（移动端可使用卡片模式） */
@@ -170,6 +183,14 @@ export interface ExTableEmits {
   'row-click': [record: TableDataItem, index: number, event: MouseEvent];
   /** 排序变化事件 */
   'sort-change': [sortInfo: TableSortInfo];
+  /** 选中行 key 列表更新（v-model:selectedRowKeys） */
+  'update:selectedRowKeys': [keys: Array<string | number>];
+  /** 选择变化：选中的 key 列表与对应行数据 */
+  'selection-change': [keys: Array<string | number>, rows: TableDataItem[]];
+  /** 单行选择切换 */
+  select: [record: TableDataItem, selected: boolean, selectedRows: TableDataItem[]];
+  /** 全选 / 取消全选 */
+  'select-all': [selected: boolean, selectedRows: TableDataItem[]];
 }
 
 /**
@@ -180,4 +201,10 @@ export interface ExTableExposed {
   getElement: () => HTMLDivElement | null;
   /** 清除排序 */
   clearSort: () => void;
+  /** 清空选择 */
+  clearSelection: () => void;
+  /** 切换某行选中状态（不传 selected 则取反） */
+  toggleRowSelection: (record: TableDataItem, selected?: boolean) => void;
+  /** 切换全选 */
+  toggleAllSelection: () => void;
 }

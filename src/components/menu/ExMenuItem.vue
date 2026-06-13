@@ -13,10 +13,7 @@
     @keydown="handleKeydown"
   >
     <div class="ex-menu-item__content">
-      <span
-        v-if="$slots.icon"
-        class="ex-menu-item__icon"
-      >
+      <span v-if="$slots.icon" class="ex-menu-item__icon">
         <slot name="icon" />
       </span>
       <span
@@ -26,15 +23,13 @@
         <slot />
       </span>
       <!-- 激活指示器 -->
-      <span
-        v-if="isActive"
-        class="ex-menu-item__indicator"
-      />
+      <span v-if="isActive" class="ex-menu-item__indicator" />
     </div>
   </li>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, ref } from 'vue';
 import type { ExMenuItemEmits, ExMenuItemExposed } from './types';
 
@@ -79,11 +74,7 @@ const itemClasses = computed(() => {
   if (isActive.value) classes.push('ex-menu-item--active');
   if (props.disabled) classes.push('ex-menu-item--disabled');
 
-  if (props.class) {
-    if (typeof props.class === 'string') classes.push(props.class);
-    else if (Array.isArray(props.class)) classes.push(...props.class);
-    else Object.entries(props.class).forEach(([key, value]) => { if (value) classes.push(key); });
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -125,12 +116,15 @@ const handleKeydown = (event: KeyboardEvent) => {
   const menuList = currentElement.parentElement;
   if (!menuList) return;
 
-  const items = Array.from(menuList.querySelectorAll('.ex-menu-item:not(.ex-menu-item--disabled)')) as HTMLElement[];
+  const items = Array.from(
+    menuList.querySelectorAll('.ex-menu-item:not(.ex-menu-item--disabled)')
+  ) as HTMLElement[];
   const currentIndex = items.indexOf(currentElement);
   if (currentIndex < 0) return;
 
   let targetIndex = currentIndex;
-  const isTopLevelHorizontal = (menuList.classList.contains('ex-menu__list') && (menuContext?.mode.value === 'horizontal'));
+  const isTopLevelHorizontal =
+    menuList.classList.contains('ex-menu__list') && menuContext?.mode.value === 'horizontal';
 
   switch (event.key) {
     case 'ArrowRight':

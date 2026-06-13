@@ -64,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, provide, ref, watch, onMounted, onUnmounted } from 'vue';
 import type { ExMenuProps, ExMenuEmits, ExMenuExposed, MenuItem } from './types';
@@ -150,14 +151,7 @@ const menuClasses = computed(() => {
   // 响应式支持
   if (props.responsive && isMobile.value) classes.push('ex-menu--mobile');
 
-  if (props.class) {
-    if (typeof props.class === 'string') classes.push(props.class);
-    else if (Array.isArray(props.class)) classes.push(...props.class);
-    else
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-  }
+  classes.push(...normalizeCustomClass(props.class));
   return classes;
 });
 

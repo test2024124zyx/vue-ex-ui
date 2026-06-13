@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, onBeforeUnmount, ref } from 'vue';
 import type { ExStepProps, ExStepExposed, StepsContext } from './types';
 import ExIcon from '../icon/ExIcon.vue';
@@ -142,17 +143,7 @@ const stepClasses = computed(() => {
     classes.push('ex-step--last');
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

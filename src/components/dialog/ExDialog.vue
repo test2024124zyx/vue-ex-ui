@@ -89,11 +89,11 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, nextTick, onBeforeUnmount, useSlots } from 'vue';
+import { computed, ref, watch, useSlots } from 'vue';
 import type { ExDialogProps, ExDialogEmits, ExDialogExposed } from './types';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
-import { lockScroll, unlockScroll, trapFocus, autoFocus } from '../modal/utils';
+import { useOverlay } from '../../composables/useOverlay';
 import ExButton from '../button/ExButton.vue';
 
 defineOptions({
@@ -130,9 +130,6 @@ const dialogRef = ref<HTMLDivElement>();
 const dialogContainerRef = ref<HTMLDivElement>();
 const visible = ref(false);
 const titleId = `ex-dialog-title-${generateId()}`;
-
-let releaseFocusTrap: (() => void) | null = null;
-let previousActiveElement: HTMLElement | null = null;
 
 // 获取 slots
 const slots = useSlots();
@@ -172,19 +169,18 @@ const dialogClasses = computed(() => {
 // 监听 modelValue 变化：父级状态是唯一事实来源
 // beforeClose 守卫只在"请求关闭"（handleClose）时执行，
 // 避免出现 modelValue 与内部 visible 脱钩导致对话框无法再关闭的问题
-watch(
-  () => props.modelValue,
-  newVal => {
-    if (newVal) {
-      void openDialog();
-    } else {
-      closeDialog();
-    }
-  },
-  { immediate: true }
-);
+// 浮层通用机制：滚动锁定、自动聚焦、焦点陷阱、Esc 关闭、焦点归还、卸载清理
+// （与 ExModal 共用同一套 useOverlay 实现，消除重复逻辑）
+useOverlay({
+  active: () => visible.value,
+  container: dialogContainerRef,
+  lockScroll: () => props.lockScroll,
+  closeOnEscape: () => props.closeOnPressEscape,
+  onEscape: () => handleClose(),
+  restoreFocus: true,
+});
 
-// 执行打开
+// 执行打开（守卫通过后置 visible，副作用由 useOverlay 处理）
 const openDialog = async () => {
   if (props.beforeOpen) {
     const result = await props.beforeOpen();
@@ -197,41 +193,29 @@ const openDialog = async () => {
 
   visible.value = true;
   emit('open');
-
-  await nextTick();
-
-  if (props.lockScroll) {
-    lockScroll();
-  }
-
-  // 焦点管理：记录来源焦点、自动聚焦、Tab 焦点陷阱
-  previousActiveElement = document.activeElement as HTMLElement | null;
-  if (dialogContainerRef.value) {
-    autoFocus(dialogContainerRef.value);
-    releaseFocusTrap = trapFocus(dialogContainerRef.value);
-  }
-  document.addEventListener('keydown', handleEscapeKey);
 };
 
-// 执行关闭（不经过守卫；守卫已在 handleClose 中执行）
+// 执行关闭（守卫已在 handleClose 中执行；副作用由 useOverlay 处理）
 const closeDialog = () => {
   if (!visible.value) return;
 
   visible.value = false;
   emit('close');
-
-  if (props.lockScroll) {
-    unlockScroll();
-  }
-
-  releaseFocusTrap?.();
-  releaseFocusTrap = null;
-  document.removeEventListener('keydown', handleEscapeKey);
-
-  // 焦点归还给打开前的元素
-  previousActiveElement?.focus?.();
-  previousActiveElement = null;
 };
+
+// 监听 modelValue 变化：父级状态是唯一事实来源
+// 置于 openDialog/closeDialog 之后，避免 immediate 触发时引用未初始化的 const
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (newVal) {
+      void openDialog();
+    } else {
+      closeDialog();
+    }
+  },
+  { immediate: true }
+);
 
 // 打开动画结束
 const handleOpened = () => {
@@ -272,23 +256,6 @@ const handleCancel = () => {
   emit('cancel');
   handleClose();
 };
-
-// ESC 键关闭
-// ESC 键关闭（函数声明以便在 immediate watch 中安全引用）
-function handleEscapeKey(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.closeOnPressEscape && visible.value) {
-    handleClose();
-  }
-}
-
-// 生命周期：卸载时兜底清理
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleEscapeKey);
-  releaseFocusTrap?.();
-  if (visible.value && props.lockScroll) {
-    unlockScroll();
-  }
-});
 
 // 暴露的方法
 const open = () => {

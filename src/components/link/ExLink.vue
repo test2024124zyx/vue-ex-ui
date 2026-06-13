@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, getCurrentInstance } from 'vue';
 import type { ExLinkProps, ExLinkEmits, ExLinkExposed } from './types';
 import ExIcon from '../icon/ExIcon.vue';
@@ -89,17 +90,7 @@ const linkClasses = computed(() => {
   if (!props.underline) classes.push('ex-link--no-underline');
   if (isExternalLink.value) classes.push('ex-link--external');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

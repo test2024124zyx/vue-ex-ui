@@ -27,9 +27,12 @@ export interface SelectOptionGroup {
 
 export type SelectOptions = Array<SelectOption | SelectOptionGroup>;
 
+/** 选择器绑定值：单选为标量，多选为数组 */
+export type SelectValue = string | number | null | Array<string | number>;
+
 export interface ExSelectProps {
-  /** 绑定值 */
-  modelValue?: string | number | null;
+  /** 绑定值（单选为标量，多选为数组） */
+  modelValue?: SelectValue;
   /** 选项数据 */
   options?: SelectOptions;
   /** 占位符 */
@@ -42,6 +45,20 @@ export interface ExSelectProps {
   clearable?: boolean;
   /** 是否可搜索 */
   searchable?: boolean;
+  /** 是否为远程搜索（由 remoteMethod 拉取选项；关闭本地过滤） */
+  remote?: boolean;
+  /** 远程搜索方法：输入变化时调用，父级据此更新 options */
+  remoteMethod?: (query: string) => void;
+  /** 加载中（远程搜索时由父级控制） */
+  loading?: boolean;
+  /** 远程搜索防抖（毫秒），默认 300 */
+  remoteDebounce?: number;
+  /** 是否多选 */
+  multiple?: boolean;
+  /** 多选时最多可选数量（0 表示不限制） */
+  multipleLimit?: number;
+  /** 多选时是否折叠标签（仅显示第一个，其余以 +N 计数） */
+  collapseTags?: boolean;
   /** 自定义类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
@@ -50,9 +67,11 @@ export interface ExSelectProps {
 
 export interface ExSelectEmits {
   /** 值变化事件 */
-  (e: 'update:modelValue', value: string | number | null): void;
-  /** 选择变化事件 */
-  (e: 'change', value: string | number | null, option: SelectOption | null): void;
+  (e: 'update:modelValue', value: SelectValue): void;
+  /** 选择变化事件（多选时 value 为数组，option 为本次切换的选项） */
+  (e: 'change', value: SelectValue, option: SelectOption | SelectOption[] | null): void;
+  /** 多选时移除标签 */
+  (e: 'remove-tag', value: string | number): void;
   /** 清空事件 */
   (e: 'clear'): void;
   /** 聚焦事件 */

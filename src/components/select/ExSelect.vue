@@ -14,24 +14,60 @@
     >
       <!-- 选中的值显示 -->
       <div class="ex-select__value">
-        <span v-if="selectedOption" class="ex-select__label">
-          {{ selectedOption.label }}
-        </span>
-        <input
-          v-else-if="searchable"
-          ref="inputRef"
-          v-model="searchQuery"
-          class="ex-select__input"
-          :placeholder="placeholder"
-          :disabled="disabled"
-          @focus="handleFocus"
-          @blur="handleBlur"
-          @input="handleSearch"
-          @keydown="handleKeydown"
-        />
-        <span v-else class="ex-select__placeholder">
-          {{ placeholder }}
-        </span>
+        <!-- 多选：标签 -->
+        <template v-if="multiple">
+          <span v-for="tag in displayTags" :key="tag.value" class="ex-select__tag">
+            <span class="ex-select__tag-label">{{ tag.label }}</span>
+            <span
+              v-if="!disabled"
+              class="ex-select__tag-close"
+              aria-label="移除"
+              @click.stop="removeTag(tag.value)"
+            >
+              ×
+            </span>
+          </span>
+          <span v-if="collapsedCount > 0" class="ex-select__tag ex-select__tag--count">
+            +{{ collapsedCount }}
+          </span>
+          <input
+            v-if="searchable"
+            ref="inputRef"
+            v-model="searchQuery"
+            class="ex-select__input"
+            :placeholder="selectedValues.length ? '' : placeholder"
+            :disabled="disabled"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @input="handleSearch"
+            @keydown="handleKeydown"
+          />
+          <span v-else-if="selectedValues.length === 0" class="ex-select__placeholder">
+            {{ placeholder }}
+          </span>
+        </template>
+
+        <!-- 单选 -->
+        <template v-else>
+          <span v-if="selectedOption" class="ex-select__label">
+            {{ selectedOption.label }}
+          </span>
+          <input
+            v-else-if="searchable"
+            ref="inputRef"
+            v-model="searchQuery"
+            class="ex-select__input"
+            :placeholder="placeholder"
+            :disabled="disabled"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @input="handleSearch"
+            @keydown="handleKeydown"
+          />
+          <span v-else class="ex-select__placeholder">
+            {{ placeholder }}
+          </span>
+        </template>
       </div>
 
       <!-- 右侧图标 -->
@@ -65,6 +101,7 @@
           v-if="dropdownVisible"
           ref="dropdownRef"
           class="ex-select__dropdown"
+          :class="{ 'ex-select__dropdown--multiple': multiple }"
           :style="dropdownStyles"
         >
           <ul class="ex-select__options" role="listbox">
@@ -112,8 +149,13 @@
               </li>
             </template>
 
+            <!-- 加载中（远程搜索） -->
+            <li v-if="loading" class="ex-select__loading">
+              {{ t('loading') }}
+            </li>
+
             <!-- 无数据 -->
-            <li v-if="filteredOptions.length === 0" class="ex-select__empty">
+            <li v-else-if="filteredOptions.length === 0" class="ex-select__empty">
               {{ t('noData') }}
             </li>
           </ul>
@@ -124,6 +166,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
 import type {
   ExSelectProps,
@@ -131,8 +174,10 @@ import type {
   ExSelectExposed,
   SelectOption,
   SelectOptionGroup,
+  SelectValue,
 } from './types';
 import { useLocale } from '../../locale';
+import { debounce } from '../../utils/debounce';
 import { useComponentSize } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 
@@ -148,6 +193,12 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
   disabled: false,
   clearable: false,
   searchable: false,
+  remote: false,
+  loading: false,
+  remoteDebounce: 300,
+  multiple: false,
+  multipleLimit: 0,
+  collapseTags: false,
 });
 
 const emit = defineEmits<ExSelectEmits>();
@@ -176,20 +227,11 @@ const dropdownStyles = ref<Record<string, string>>({});
 const selectClasses = computed(() => {
   const classes = ['ex-select', `ex-select--${componentSize.value}`];
 
+  if (props.multiple) classes.push('ex-select--multiple');
   if (props.disabled) classes.push('is-disabled');
   if (dropdownVisible.value) classes.push('is-focus');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -215,6 +257,10 @@ const flatOptions = computed<SelectOption[]>(() => {
 
 // 过滤选项
 const filteredOptions = computed(() => {
+  // 远程搜索：options 已是父级返回的结果，不做本地过滤
+  if (props.remote) {
+    return props.options;
+  }
   if (!props.searchable || !searchQuery.value) {
     return props.options;
   }
@@ -238,14 +284,33 @@ const filteredOptions = computed(() => {
   return result;
 });
 
-// 选中的选项
+// 选中的选项（单选）
 const selectedOption = computed(() => {
   return flatOptions.value.find(opt => opt.value === props.modelValue) || null;
 });
 
+// 多选：已选值数组
+const selectedValues = computed<Array<string | number>>(() =>
+  Array.isArray(props.modelValue) ? props.modelValue : []
+);
+
+// 多选：已选选项（按选中顺序），用于渲染标签
+const selectedOptions = computed<SelectOption[]>(() =>
+  selectedValues.value
+    .map(v => flatOptions.value.find(opt => opt.value === v))
+    .filter((opt): opt is SelectOption => !!opt)
+);
+
+// 折叠标签时实际展示的标签与被折叠数量
+const displayTags = computed<SelectOption[]>(() =>
+  props.collapseTags ? selectedOptions.value.slice(0, 1) : selectedOptions.value
+);
+const collapsedCount = computed(() => selectedOptions.value.length - displayTags.value.length);
+
 // 显示清空图标
 const showClearIcon = computed(() => {
-  return props.clearable && props.modelValue != null && !props.disabled;
+  if (!props.clearable || props.disabled) return false;
+  return props.multiple ? selectedValues.value.length > 0 : props.modelValue != null;
 });
 
 // 工具函数
@@ -260,7 +325,9 @@ const matchOption = (option: SelectOption, query: string): boolean => {
 };
 
 const isSelected = (option: SelectOption): boolean => {
-  return option.value === props.modelValue;
+  return props.multiple
+    ? selectedValues.value.includes(option.value)
+    : option.value === props.modelValue;
 };
 
 // 扁平化"过滤后"的选项：键盘导航与高亮都以此为准，
@@ -357,15 +424,55 @@ const hideDropdown = () => {
 const handleSelect = (option: SelectOption) => {
   if (option.disabled) return;
 
+  if (props.multiple) {
+    const current = selectedValues.value;
+    const already = current.includes(option.value);
+    let next: Array<string | number>;
+    if (already) {
+      next = current.filter(v => v !== option.value);
+    } else {
+      // 达到上限则忽略新增
+      if (props.multipleLimit > 0 && current.length >= props.multipleLimit) return;
+      next = [...current, option.value];
+    }
+    emit('update:modelValue', next);
+    emit(
+      'change',
+      next,
+      next
+        .map(v => flatOptions.value.find(o => o.value === v))
+        .filter((o): o is SelectOption => !!o)
+    );
+    formItem?.onFieldChange();
+    // 多选保持下拉打开；清空搜索词以便继续筛选
+    if (props.searchable) searchQuery.value = '';
+    return;
+  }
+
   emit('update:modelValue', option.value);
   emit('change', option.value, option);
   formItem?.onFieldChange();
   hideDropdown();
 };
 
+// 多选：移除某个标签
+const removeTag = (value: string | number) => {
+  if (props.disabled) return;
+  const next = selectedValues.value.filter(v => v !== value);
+  emit('update:modelValue', next);
+  emit(
+    'change',
+    next,
+    next.map(v => flatOptions.value.find(o => o.value === v)).filter((o): o is SelectOption => !!o)
+  );
+  emit('remove-tag', value);
+  formItem?.onFieldChange();
+};
+
 const handleClear = () => {
-  emit('update:modelValue', null);
-  emit('change', null, null);
+  const cleared: SelectValue = props.multiple ? [] : null;
+  emit('update:modelValue', cleared);
+  emit('change', cleared, props.multiple ? [] : null);
   emit('clear');
   formItem?.onFieldChange();
   hideDropdown();
@@ -380,9 +487,17 @@ const handleBlur = (event: FocusEvent) => {
   formItem?.onFieldBlur();
 };
 
+// 远程搜索：防抖触发父级的 remoteMethod
+const triggerRemote = debounce((query: string) => {
+  props.remoteMethod?.(query);
+}, props.remoteDebounce);
+
 const handleSearch = () => {
   if (!dropdownVisible.value) {
     showDropdown();
+  }
+  if (props.remote && props.remoteMethod) {
+    triggerRemote(searchQuery.value);
   }
 };
 

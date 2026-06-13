@@ -72,12 +72,12 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, nextTick, onBeforeUnmount, useSlots } from 'vue';
+import { computed, ref, watch, useSlots } from 'vue';
 import type { ExModalProps, ExModalEmits, ExModalExposed } from './types';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
 import ExButton from '../button/ExButton.vue';
-import { lockScroll, unlockScroll, trapFocus, autoFocus } from './utils';
+import { useOverlay } from '../../composables/useOverlay';
 
 defineOptions({
   name: 'ExModal',
@@ -109,7 +109,6 @@ const wrapRef = ref<HTMLDivElement>();
 const modalRef = ref<HTMLDivElement>();
 const visible = ref(props.modelValue);
 const titleId = `ex-modal-title-${generateId()}`;
-let releaseFocusTrap: (() => void) | null = null;
 
 // 获取 slots
 const slots = useSlots();
@@ -157,31 +156,22 @@ const rootStyles = computed(() => {
   return styles;
 });
 
-// 监听 modelValue 变化（immediate：初始即为打开状态时也要锁定滚动/设置焦点陷阱）
+// 同步父级 modelValue 到内部 visible
 watch(
   () => props.modelValue,
   newVal => {
     visible.value = newVal;
-    if (newVal) {
-      nextTick(() => {
-        lockScroll();
-        if (modalRef.value) {
-          autoFocus(modalRef.value);
-          releaseFocusTrap = trapFocus(modalRef.value);
-        }
-      });
-      document.addEventListener('keydown', handleEscapeKey);
-    } else {
-      unlockScroll();
-      if (releaseFocusTrap) {
-        releaseFocusTrap();
-        releaseFocusTrap = null;
-      }
-      document.removeEventListener('keydown', handleEscapeKey);
-    }
-  },
-  { immediate: true }
+  }
 );
+
+// 浮层通用机制：滚动锁定、自动聚焦、焦点陷阱、Esc 关闭、卸载清理
+// （与 ExDialog 共用同一套 useOverlay 实现，消除重复逻辑）
+useOverlay({
+  active: () => visible.value,
+  container: modalRef,
+  closeOnEscape: () => props.keyboard,
+  onEscape: () => handleCancel(),
+});
 
 // 点击遮罩层
 const handleMaskClick = () => {
@@ -217,23 +207,6 @@ const handleAfterClose = () => {
     // 销毁内容的逻辑可以在这里实现
   }
 };
-
-// ESC 键关闭（函数声明以便在 immediate watch 中安全引用）
-function handleEscapeKey(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.keyboard && visible.value) {
-    handleCancel();
-  }
-}
-
-// 生命周期：卸载时兜底清理
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleEscapeKey);
-  unlockScroll();
-  if (releaseFocusTrap) {
-    releaseFocusTrap();
-    releaseFocusTrap = null;
-  }
-});
 
 // 暴露的方法
 const getElement = () => modalRef.value || null;

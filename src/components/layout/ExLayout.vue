@@ -1,14 +1,11 @@
 <template>
-  <section
-    ref="layoutRef"
-    :class="layoutClasses"
-    :style="layoutStyles"
-  >
+  <section ref="layoutRef" :class="layoutClasses" :style="layoutStyles">
     <slot />
   </section>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, provide, ref } from 'vue';
 import type { ExLayoutProps, ExLayoutExposed } from './types';
 
@@ -38,17 +35,7 @@ const layoutClasses = computed(() => {
 
   classes.push(`ex-layout--${props.direction}`);
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

@@ -7,64 +7,40 @@
     @click="handleClick"
   >
     <!-- 封面图片 -->
-    <div
-      v-if="cover || $slots.cover"
-      class="ex-card__cover"
-      :style="coverStyle"
-    >
+    <div v-if="cover || $slots.cover" class="ex-card__cover" :style="coverStyle">
       <slot name="cover">
-        <img
-          :src="cover"
-          :alt="ariaLabel || 'Card cover'"
-          class="ex-card__cover-image"
-        >
+        <img :src="cover" :alt="ariaLabel || 'Card cover'" class="ex-card__cover-image" />
       </slot>
     </div>
 
     <!-- 卡片头部 -->
-    <div
-      v-if="$slots.header"
-      class="ex-card__header"
-      :style="headerStyle"
-    >
+    <div v-if="$slots.header" class="ex-card__header" :style="headerStyle">
       <slot name="header" />
     </div>
 
     <!-- 卡片内容 -->
-    <div
-      class="ex-card__body"
-      :style="bodyStyle"
-    >
+    <div class="ex-card__body" :style="bodyStyle">
       <slot />
     </div>
 
     <!-- 卡片底部 -->
-    <div
-      v-if="$slots.footer || $slots.actions"
-      class="ex-card__footer"
-      :style="footerStyle"
-    >
+    <div v-if="$slots.footer || $slots.actions" class="ex-card__footer" :style="footerStyle">
       <slot name="footer">
-        <div
-          v-if="$slots.actions"
-          class="ex-card__actions"
-        >
+        <div v-if="$slots.actions" class="ex-card__actions">
           <slot name="actions" />
         </div>
       </slot>
     </div>
 
     <!-- 加载遮罩 -->
-    <div
-      v-if="loading"
-      class="ex-card__loading"
-    >
+    <div v-if="loading" class="ex-card__loading">
       <div class="ex-card__loading-spinner" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExCardProps, ExCardEmits, ExCardExposed } from './types';
 
@@ -98,17 +74,7 @@ const cardClasses = computed(() => {
   if (props.hoverable) classes.push('ex-card--hoverable');
   if (props.loading) classes.push('ex-card--loading');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

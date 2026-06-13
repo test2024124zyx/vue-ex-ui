@@ -1,11 +1,5 @@
 <template>
-  <div
-    ref="itemRef"
-    :class="itemClasses"
-    :style="itemStyles"
-    role="listitem"
-    @click="handleClick"
-  >
+  <div ref="itemRef" :class="itemClasses" :style="itemStyles" role="listitem" @click="handleClick">
     <!-- 垂直布局 -->
     <template v-if="direction === 'vertical'">
       <!-- 左侧内容区（alternate 模式） -->
@@ -37,16 +31,10 @@
       <!-- 时间轴节点 -->
       <div class="ex-timeline-item__tail-wrapper">
         <!-- 连接线 -->
-        <div
-          v-if="showLine && !hideLine"
-          class="ex-timeline-item__tail"
-        />
-        
+        <div v-if="showLine && !hideLine" class="ex-timeline-item__tail" />
+
         <!-- 节点 -->
-        <div
-          class="ex-timeline-item__node"
-          :style="nodeStyle"
-        >
+        <div class="ex-timeline-item__node" :style="nodeStyle">
           <slot name="dot">
             <div class="ex-timeline-item__dot" />
           </slot>
@@ -54,9 +42,7 @@
       </div>
 
       <!-- 右侧内容区 -->
-      <div
-        class="ex-timeline-item__content ex-timeline-item__content--right"
-      >
+      <div class="ex-timeline-item__content ex-timeline-item__content--right">
         <div
           v-if="timestamp && timestampPosition === 'top' && (mode !== 'alternate' || !isRightSide)"
           class="ex-timeline-item__timestamp ex-timeline-item__timestamp--top"
@@ -65,14 +51,13 @@
             {{ timestamp }}
           </slot>
         </div>
-        <div
-          v-if="mode !== 'alternate' || !isRightSide"
-          class="ex-timeline-item__card"
-        >
+        <div v-if="mode !== 'alternate' || !isRightSide" class="ex-timeline-item__card">
           <slot />
         </div>
         <div
-          v-if="timestamp && timestampPosition === 'bottom' && (mode !== 'alternate' || !isRightSide)"
+          v-if="
+            timestamp && timestampPosition === 'bottom' && (mode !== 'alternate' || !isRightSide)
+          "
           class="ex-timeline-item__timestamp ex-timeline-item__timestamp--bottom"
         >
           <slot name="timestamp">
@@ -87,20 +72,14 @@
       <div class="ex-timeline-item__horizontal-wrapper">
         <!-- 节点 -->
         <div class="ex-timeline-item__node-horizontal">
-          <div
-            class="ex-timeline-item__node"
-            :style="nodeStyle"
-          >
+          <div class="ex-timeline-item__node" :style="nodeStyle">
             <slot name="dot">
               <div class="ex-timeline-item__dot" />
             </slot>
           </div>
-          
+
           <!-- 连接线 -->
-          <div
-            v-if="showLine && !hideLine"
-            class="ex-timeline-item__tail-horizontal"
-          />
+          <div v-if="showLine && !hideLine" class="ex-timeline-item__tail-horizontal" />
         </div>
 
         <!-- 内容区 -->
@@ -123,14 +102,15 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, ref, onMounted } from 'vue';
 import type { ComputedRef } from 'vue';
-import type { 
-  ExTimelineItemProps, 
-  ExTimelineItemEmits, 
+import type {
+  ExTimelineItemProps,
+  ExTimelineItemEmits,
   ExTimelineItemExposed,
   TimelineDirection,
-  TimelineMode
+  TimelineMode,
 } from './types';
 
 defineOptions({
@@ -151,9 +131,18 @@ const itemRef = ref<HTMLDivElement>();
 const itemIndex = ref(0);
 
 // 注入父组件提供的上下文
-const direction = inject<ComputedRef<TimelineDirection>>('timeline-direction', computed(() => 'vertical'));
-const mode = inject<ComputedRef<TimelineMode>>('timeline-mode', computed(() => 'left'));
-const showLine = inject<ComputedRef<boolean>>('timeline-show-line', computed(() => true));
+const direction = inject<ComputedRef<TimelineDirection>>(
+  'timeline-direction',
+  computed(() => 'vertical')
+);
+const mode = inject<ComputedRef<TimelineMode>>(
+  'timeline-mode',
+  computed(() => 'left')
+);
+const showLine = inject<ComputedRef<boolean>>(
+  'timeline-show-line',
+  computed(() => true)
+);
 
 // 计算当前项是否在右侧（alternate 模式）
 const isRightSide = computed(() => {
@@ -180,17 +169,7 @@ const itemClasses = computed(() => {
     classes.push('ex-timeline-item--hollow');
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -203,14 +182,14 @@ const itemStyles = computed(() => {
 
 const nodeStyle = computed(() => {
   const styles: Record<string, string> = {};
-  
+
   if (props.color) {
     styles.borderColor = props.color;
     if (!props.hollow) {
       styles.backgroundColor = props.color;
     }
   }
-  
+
   return styles;
 });
 

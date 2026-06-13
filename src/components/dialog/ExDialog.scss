@@ -52,8 +52,9 @@
   position: relative;
   background: var(--ex-color-bg-surface);
   border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-xl);
-  box-shadow: var(--ex-shadow-2xl);
+  // 赛博朋克切角 + drop-shadow 投影（clip-path 会裁掉 box-shadow，故改用 filter）
+  @include chamfer(var(--ex-chamfer-lg));
+  filter: drop-shadow(0 18px 40px var(--ex-color-black-alpha-40));
   max-width: 90vw;
   max-height: 90vh;
   display: flex;

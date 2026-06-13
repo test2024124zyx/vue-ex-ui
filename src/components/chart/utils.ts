@@ -191,7 +191,7 @@ export function getChartTheme(theme: string): object {
         },
       },
     },
-    'high-contrast': {
+    matrix: {
       color: [
         '#00f0ff',
         '#ff3bd1',
@@ -220,7 +220,8 @@ export function getChartTheme(theme: string): object {
     custom: {},
   };
 
-  return (themes[theme] || themes['neon-blue']) as object;
+  const key = theme === 'high-contrast' ? 'matrix' : theme;
+  return (themes[key] || themes['neon-blue']) as object;
 }
 
 /**
@@ -233,7 +234,7 @@ export function applyNeonGlow(option: echarts.EChartsOption, theme: string): voi
 
   const series = Array.isArray(option.series) ? option.series : [option.series];
 
-  series.forEach((s) => {
+  series.forEach(s => {
     if (!s) return;
 
     // 折线图发光效果

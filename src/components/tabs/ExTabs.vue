@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, provide, watch, nextTick, onMounted } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
@@ -126,17 +127,7 @@ const tabsClasses = computed(() => {
 
   if (props.animated) classes.push('ex-tabs--animated');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

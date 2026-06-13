@@ -13,7 +13,7 @@
     align-items: center;
   }
 
-  // 输入�?
+  // 输入�?
   &__input {
     width: 100%;
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
@@ -38,7 +38,7 @@
 
     &:focus {
       border-color: var(--ex-color-neon-blue-500);
-      box-shadow: 0 0 0 2px rgba(41, 171, 226, 0.2);
+      box-shadow: 0 0 0 2px rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
     }
 
     &:disabled {
@@ -107,7 +107,7 @@
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-neon-blue-500);
     border-radius: var(--ex-radius-lg);
-    box-shadow: 0 0 20px rgba(41, 171, 226, 0.3);
+    box-shadow: 0 0 20px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
     overflow: hidden;
   }
 
@@ -164,12 +164,12 @@
     }
 
     &--active {
-      background: rgba(41, 171, 226, 0.1);
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
       color: var(--ex-color-neon-blue-500);
     }
 
     &--selected {
-      background: rgba(41, 171, 226, 0.15);
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.15);
       color: var(--ex-color-neon-blue-500);
       font-weight: var(--ex-font-weight-medium);
     }
@@ -226,7 +226,7 @@
     }
   }
 
-  // 禁用状�?
+  // 禁用状�?
   &--disabled {
     cursor: not-allowed;
 
@@ -235,7 +235,7 @@
     }
   }
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
     &__dropdown {
       position: fixed;
@@ -256,7 +256,7 @@
     }
   }
 
-  // 无障碍支�?
+  // 无障碍支�?
   @media (prefers-reduced-motion: reduce) {
     .ex-cascader__input,
     .ex-cascader__option,

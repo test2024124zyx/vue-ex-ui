@@ -283,7 +283,7 @@ const handleDragEnd = (event: DragEvent) => {
   }
 
   &--selected > &__content {
-    background: rgba(41, 171, 226, 0.1);
+    background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
     color: var(--ex-color-primary);
   }
 
@@ -322,7 +322,7 @@ const handleDragEnd = (event: DragEvent) => {
     }
 
     &.ex-tree-node--drop-inner > .ex-tree-node__content {
-      background: rgba(41, 171, 226, 0.2);
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
       border: 1px dashed var(--ex-color-primary);
     }
   }

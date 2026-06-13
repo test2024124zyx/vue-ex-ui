@@ -1,23 +1,12 @@
 <template>
-  <header
-    ref="headerRef"
-    :class="headerClasses"
-    :style="headerStyles"
-    role="banner"
-  >
+  <header ref="headerRef" :class="headerClasses" :style="headerStyles" role="banner">
     <!-- 左侧插槽 -->
-    <div
-      v-if="$slots.left"
-      class="ex-header__left"
-    >
+    <div v-if="$slots.left" class="ex-header__left">
       <slot name="left" />
     </div>
 
     <!-- 中间插槽 -->
-    <div
-      v-if="$slots.center"
-      class="ex-header__center"
-    >
+    <div v-if="$slots.center" class="ex-header__center">
       <slot name="center" />
     </div>
 
@@ -30,16 +19,14 @@
     </div>
 
     <!-- 右侧插槽 -->
-    <div
-      v-if="$slots.right"
-      class="ex-header__right"
-    >
+    <div v-if="$slots.right" class="ex-header__right">
       <slot name="right" />
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
 import type { ExHeaderProps, ExHeaderExposed } from './types';
 import { useNeonEffect, useAnimation } from '../config-provider/composables';
@@ -74,17 +61,7 @@ const headerClasses = computed(() => {
   // 支持全局动画配置
   if (!globalAnimation.value) classes.push('ex-header--no-animation');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -101,7 +78,9 @@ const headerStyles = computed(() => {
   // 合并用户样式
   if (props.style) {
     if (typeof props.style === 'string') {
-      return `${Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('; ')}; ${props.style}`;
+      return `${Object.entries(styles)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; ')}; ${props.style}`;
     } else {
       Object.assign(styles, props.style);
     }

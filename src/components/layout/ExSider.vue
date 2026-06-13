@@ -1,20 +1,10 @@
 <template>
   <!-- 遮罩层（仅在 broken 状态且未收起时显示） -->
-  <Teleport
-    v-if="isBroken && !internalCollapsed"
-    to="body"
-  >
-    <div
-      class="ex-sider__mask"
-      @click="handleMaskClick"
-    />
+  <Teleport v-if="isBroken && !internalCollapsed" to="body">
+    <div class="ex-sider__mask" @click="handleMaskClick" />
   </Teleport>
 
-  <aside
-    ref="siderRef"
-    :class="siderClasses"
-    :style="siderStyles"
-  >
+  <aside ref="siderRef" :class="siderClasses" :style="siderStyles">
     <!-- 侧边栏内容 -->
     <div class="ex-sider__content">
       <slot />
@@ -31,10 +21,7 @@
       @keydown.enter="handleToggle"
       @keydown.space.prevent="handleToggle"
     >
-      <slot
-        name="trigger"
-        :collapsed="internalCollapsed"
-      >
+      <slot name="trigger" :collapsed="internalCollapsed">
         <div class="ex-sider__trigger-icon">
           <svg
             viewBox="0 0 24 24"
@@ -48,10 +35,7 @@
               v-if="position === 'left'"
               :points="internalCollapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"
             />
-            <polyline
-              v-else
-              :points="internalCollapsed ? '15 18 9 12 15 6' : '9 18 15 12 9 6'"
-            />
+            <polyline v-else :points="internalCollapsed ? '15 18 9 12 15 6' : '9 18 15 12 9 6'" />
           </svg>
         </div>
       </slot>
@@ -60,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ExSiderProps, ExSiderEmits, ExSiderExposed } from './types';
 import { useLocale } from '../../locale';
@@ -99,9 +84,12 @@ const locale = computed(() => ({
 }));
 
 // 监听 collapsed prop 变化
-watch(() => props.collapsed, (value) => {
-  internalCollapsed.value = value;
-});
+watch(
+  () => props.collapsed,
+  value => {
+    internalCollapsed.value = value;
+  }
+);
 
 // 计算类名
 const siderClasses = computed(() => {
@@ -117,17 +105,7 @@ const siderClasses = computed(() => {
   // 支持全局动画配置
   if (!globalAnimation.value) classes.push('ex-sider--no-animation');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -149,7 +127,9 @@ const siderStyles = computed(() => {
   // 合并用户样式
   if (props.style) {
     if (typeof props.style === 'string') {
-      return `${Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('; ')}; ${props.style}`;
+      return `${Object.entries(styles)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; ')}; ${props.style}`;
     } else {
       Object.assign(styles, props.style);
     }
@@ -213,11 +193,11 @@ onMounted(() => {
     // 使用 max-width 查询，当屏幕小于断点时触发
     // 断点值与项目标准一致：480/768/1024/1280/1536
     const breakpoints: Record<string, string> = {
-      xs: '(max-width: 479px)',    // 小于 480px 时触发
-      sm: '(max-width: 767px)',    // 小于 768px 时触发
-      md: '(max-width: 1023px)',   // 小于 1024px 时触发
-      lg: '(max-width: 1279px)',   // 小于 1280px 时触发
-      xl: '(max-width: 1535px)',   // 小于 1536px 时触发
+      xs: '(max-width: 479px)', // 小于 480px 时触发
+      sm: '(max-width: 767px)', // 小于 768px 时触发
+      md: '(max-width: 1023px)', // 小于 1024px 时触发
+      lg: '(max-width: 1279px)', // 小于 1280px 时触发
+      xl: '(max-width: 1535px)', // 小于 1536px 时触发
       '2xl': '(max-width: 1919px)', // 小于 1920px 时触发
     };
 

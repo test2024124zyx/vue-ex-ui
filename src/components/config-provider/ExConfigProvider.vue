@@ -11,15 +11,10 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, provide, ref, toRef, watch } from 'vue';
-import type {
-  ExConfigProviderProps,
-  ConfigContext,
-} from './types';
-import {
-  CONFIG_PROVIDER_INJECTION_KEY,
-  DEFAULT_CONFIG,
-} from './types';
+import type { ExConfigProviderProps, ConfigContext } from './types';
+import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import { setLocale } from '../../locale';
 
 defineOptions({
@@ -76,17 +71,7 @@ const providerClasses = computed(() => {
     classes.push(`${namespace.value}-no-animation`);
   }
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -116,7 +101,7 @@ const providerStyles = computed(() => {
 // 监听语言变化，更新全局语言
 watch(
   locale,
-  (newLocale) => {
+  newLocale => {
     setLocale(newLocale);
   },
   { immediate: true }
@@ -155,7 +140,7 @@ watch(
 // 监听动画偏好，更新 CSS 变量
 watch(
   animation,
-  (enabled) => {
+  enabled => {
     if (typeof document !== 'undefined') {
       if (enabled) {
         document.documentElement.style.removeProperty('--ex-motion-duration-fast');

@@ -225,7 +225,7 @@
       border-color: var(--ex-color-error);
 
       &:not(.ex-checkbox__box--checked):not(.ex-checkbox__box--indeterminate) {
-        background: rgba(239, 68, 68, 0.1);
+        background: rgba(var(--ex-color-error-rgb), 0.1);
         @include optimized-shadow('sm');
       }
     }
@@ -279,7 +279,7 @@
 
     .ex-checkbox__label-text {
       color: var(--ex-color-neon-blue-400);
-      text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+      text-shadow: 0 0 8px rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
     }
   }
 
@@ -292,7 +292,7 @@
           transform: scale(1.05);
 
           &:not(.ex-checkbox__box--checked):not(.ex-checkbox__box--indeterminate) {
-            background: rgba(255, 0, 127, 0.05);
+            background: rgba(var(--ex-color-neon-pink-500-rgb), 0.05);
             @include optimized-neon-glow('pink', 'sm');
           }
 

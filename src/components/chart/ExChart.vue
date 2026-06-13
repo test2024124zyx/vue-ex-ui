@@ -6,11 +6,7 @@
     role="img"
   >
     <!-- ECharts 容器 - 始终存在 -->
-    <div
-      ref="chartRef"
-      class="ex-chart__container"
-      :style="{ width: '100%', height: '100%' }"
-    />
+    <div ref="chartRef" class="ex-chart__container" :style="{ width: '100%', height: '100%' }" />
 
     <!-- 加载状态 - 使用 ExLoading 组件 -->
     <ex-loading
@@ -22,10 +18,7 @@
     />
 
     <!-- 空状态 - 使用 v-show 而不是 v-if -->
-    <div
-      v-show="!loading && isEmpty"
-      class="ex-chart__empty"
-    >
+    <div v-show="!loading && isEmpty" class="ex-chart__empty">
       <slot name="empty">
         <ex-empty :description="t('chart.noData')" />
       </slot>
@@ -34,8 +27,11 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, shallowRef } from 'vue';
-import * as echarts from 'echarts';
+// 仅类型导入：echarts 作为可选依赖，运行时通过动态 import() 按需加载，
+// 不会作为顶层静态依赖被打进产物。
+import type * as echarts from 'echarts';
 import type { ExChartProps, ExChartEmits, ExChartExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize, useGlobalConfig } from '../config-provider/composables';
@@ -88,17 +84,7 @@ const chartClasses = computed(() => {
 
   if (props.loading) classes.push('ex-chart--loading');
   if (globalConfig.neonEffect.value) classes.push('ex-chart--neon');
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -123,7 +109,10 @@ const chartStyles = computed(() => {
 
 const isEmpty = computed(() => {
   if (!props.option) return true;
-  if (!props.option.series || (Array.isArray(props.option.series) && props.option.series.length === 0)) {
+  if (
+    !props.option.series ||
+    (Array.isArray(props.option.series) && props.option.series.length === 0)
+  ) {
     return true;
   }
   return false;
@@ -143,18 +132,17 @@ const initChart = async () => {
       chartInstance.value = null;
     }
 
+    // 按需动态加载 echarts（可选依赖）
+    const echartsLib = await import('echarts');
+
     // 获取主题配置（使用全局主题）
     const themeConfig = getChartTheme(globalConfig.theme.value);
 
     // 初始化 ECharts 实例
-    chartInstance.value = echarts.init(
-      chartRef.value,
-      themeConfig,
-      {
-        renderer: props.renderer,
-        ...props.initOptions,
-      }
-    );
+    chartInstance.value = echartsLib.init(chartRef.value, themeConfig, {
+      renderer: props.renderer,
+      ...props.initOptions,
+    });
 
     // 设置配置选项
     updateChart();
@@ -221,37 +209,37 @@ const bindEvents = () => {
   if (!chartInstance.value) return;
 
   // 绑定点击事件
-  chartInstance.value?.on('click', (params) => {
+  chartInstance.value?.on('click', params => {
     emit('click', params as echarts.ECElementEvent);
   });
 
   // 绑定双击事件
-  chartInstance.value?.on('dblclick', (params) => {
+  chartInstance.value?.on('dblclick', params => {
     emit('dblclick', params as echarts.ECElementEvent);
   });
 
   // 绑定鼠标移入事件
-  chartInstance.value?.on('mouseover', (params) => {
+  chartInstance.value?.on('mouseover', params => {
     emit('mouseover', params as echarts.ECElementEvent);
   });
 
   // 绑定鼠标移出事件
-  chartInstance.value?.on('mouseout', (params) => {
+  chartInstance.value?.on('mouseout', params => {
     emit('mouseout', params as echarts.ECElementEvent);
   });
 
   // 绑定鼠标移动事件
-  chartInstance.value?.on('mousemove', (params) => {
+  chartInstance.value?.on('mousemove', params => {
     emit('mousemove', params as echarts.ECElementEvent);
   });
 
   // 绑定数据缩放事件
-  chartInstance.value?.on('datazoom', (params) => {
+  chartInstance.value?.on('datazoom', params => {
     emit('datazoom', params as echarts.ECElementEvent);
   });
 
   // 绑定图例选择改变事件
-  chartInstance.value?.on('legendselectchanged', (params) => {
+  chartInstance.value?.on('legendselectchanged', params => {
     emit('legendselectchanged', params as echarts.ECElementEvent);
   });
 
@@ -320,7 +308,15 @@ const dispose = () => {
   }
 };
 
-const setOption = (option: echarts.EChartsOption, opts?: { notMerge?: boolean; lazyUpdate?: boolean; silent?: boolean; replaceMerge?: string | string[] }) => {
+const setOption = (
+  option: echarts.EChartsOption,
+  opts?: {
+    notMerge?: boolean;
+    lazyUpdate?: boolean;
+    silent?: boolean;
+    replaceMerge?: string | string[];
+  }
+) => {
   chartInstance.value?.setOption(option, opts);
 };
 
@@ -329,7 +325,7 @@ const showLoading = (type?: string, opts?: object) => {
     text: props.loadingText || t('chart.loading'),
     color: 'var(--ex-color-primary)',
     textColor: 'var(--ex-color-text-primary)',
-    maskColor: 'rgba(15, 23, 32, 0.8)',
+    maskColor: 'rgba(var(--ex-color-bg-primary-rgb), 0.8)',
     zlevel: 0,
     ...opts,
   };
@@ -340,7 +336,11 @@ const hideLoading = () => {
   chartInstance.value?.hideLoading();
 };
 
-const getDataURL = (opts?: { type?: 'png' | 'jpeg' | 'svg'; pixelRatio?: number; backgroundColor?: string }) => {
+const getDataURL = (opts?: {
+  type?: 'png' | 'jpeg' | 'svg';
+  pixelRatio?: number;
+  backgroundColor?: string;
+}) => {
   return chartInstance.value?.getDataURL(opts) || '';
 };
 
@@ -376,7 +376,7 @@ watch(
 // 监听加载状态
 watch(
   () => props.loading,
-  (newVal) => {
+  newVal => {
     if (chartInstance.value) {
       if (newVal) {
         showLoading();

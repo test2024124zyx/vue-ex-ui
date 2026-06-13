@@ -18,7 +18,7 @@
       class="ex-avatar__image"
       @load="handleLoad"
       @error="handleError"
-    >
+    />
 
     <!-- 图片加载失败提示 -->
     <div
@@ -38,20 +38,12 @@
     </div>
 
     <!-- 图标头像插槽 -->
-    <div
-      v-else-if="$slots.icon"
-      class="ex-avatar__icon"
-    >
+    <div v-else-if="$slots.icon" class="ex-avatar__icon">
       <slot name="icon" />
     </div>
 
     <!-- 文字头像 -->
-    <span
-      v-else-if="displayText"
-      ref="textRef"
-      class="ex-avatar__text"
-      :style="textStyles"
-    >
+    <span v-else-if="displayText" ref="textRef" class="ex-avatar__text" :style="textStyles">
       {{ displayText }}
     </span>
 
@@ -61,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, nextTick, watch, useSlots } from 'vue';
 import type { ExAvatarProps, ExAvatarEmits, ExAvatarExposed } from './types';
 import { useI18n } from '../../locale';
@@ -82,7 +75,9 @@ const slots = useSlots();
 const { t } = useI18n();
 
 // 使用全局尺寸配置 - 只在 size 不是数字时使用
-const componentSize = useComponentSize(computed(() => typeof props.size === 'number' ? undefined : props.size));
+const componentSize = useComponentSize(
+  computed(() => (typeof props.size === 'number' ? undefined : props.size))
+);
 
 const avatarRef = ref<HTMLElement>();
 const textRef = ref<HTMLElement>();
@@ -126,7 +121,7 @@ const computedTitle = computed(() => {
 const avatarClasses = computed(() => {
   // 如果 props.size 是数字，使用它；否则使用 componentSize
   const effectiveSize = typeof props.size === 'number' ? props.size : componentSize.value;
-  
+
   const classes = [
     'ex-avatar',
     `ex-avatar--${props.shape}`,
@@ -137,17 +132,7 @@ const avatarClasses = computed(() => {
   else if (slots.icon) classes.push('ex-avatar--icon');
   else if (displayText.value) classes.push('ex-avatar--text');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

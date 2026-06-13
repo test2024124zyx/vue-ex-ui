@@ -250,9 +250,11 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch } from 'vue';
-import { Solar } from 'lunar-javascript';
+import { computed, ref, watch, shallowRef, onMounted } from 'vue';
+// lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
+// 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
 import type {
   ExCalendarProps,
@@ -281,6 +283,26 @@ const props = withDefaults(defineProps<ExCalendarProps>(), {
 const emit = defineEmits<ExCalendarEmits>();
 
 const { t } = useI18n();
+
+// 按需加载 lunar-javascript（可选依赖）。加载完成后写入响应式 ref，
+// 依赖它的 computed（农历/节气、日历单元格）会自动重新计算。
+type LunarModule = typeof import('lunar-javascript');
+const lunarLib = shallowRef<LunarModule | null>(null);
+let lunarLoading = false;
+const ensureLunarLib = async () => {
+  if (lunarLib.value || lunarLoading) return;
+  if (!props.showLunar && !props.showSolarTerm) return;
+  lunarLoading = true;
+  try {
+    lunarLib.value = await import('lunar-javascript');
+  } catch (_error) {
+    // 未安装 lunar-javascript 时静默降级
+  } finally {
+    lunarLoading = false;
+  }
+};
+onMounted(ensureLunarLib);
+watch(() => [props.showLunar, props.showSolarTerm], ensureLunarLib);
 
 const calendarRef = ref<HTMLDivElement>();
 const currentDate = ref(new Date());
@@ -316,17 +338,7 @@ const calendarClasses = computed(() => {
 
   if (props.fullscreen) classes.push('ex-calendar--fullscreen');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -436,10 +448,12 @@ const calendarCells = computed(() => {
   return cells;
 });
 
-// 使用 lunar-javascript 库进行农历转换
+// 使用 lunar-javascript 库进行农历转换（库未加载时返回空字符串）
 const getLunarDate = (date: Date): string => {
+  const SolarCls = lunarLib.value?.Solar;
+  if (!SolarCls) return '';
   try {
-    const solar = Solar.fromDate(date);
+    const solar = SolarCls.fromDate(date);
     const lunar = solar.getLunar();
 
     // 如果是初一，显示月份
@@ -455,10 +469,12 @@ const getLunarDate = (date: Date): string => {
   }
 };
 
-// 获取节气
+// 获取节气（库未加载时返回空字符串）
 const getSolarTerm = (date: Date): string => {
+  const SolarCls = lunarLib.value?.Solar;
+  if (!SolarCls) return '';
   try {
-    const solar = Solar.fromDate(date);
+    const solar = SolarCls.fromDate(date);
     const lunar = solar.getLunar();
     const jieQi = lunar.getJieQi();
 
@@ -481,9 +497,11 @@ const getHoliday = (date: Date): string => {
     return holiday.name;
   }
 
-  // 获取农历节日
+  // 获取农历节日（库未加载时跳过）
+  const SolarCls = lunarLib.value?.Solar;
+  if (!SolarCls) return '';
   try {
-    const solar = Solar.fromDate(date);
+    const solar = SolarCls.fromDate(date);
     const lunar = solar.getLunar();
     const festivals = lunar.getFestivals();
 

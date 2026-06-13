@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="itemRef"
-    :class="itemClasses"
-    :style="itemStyles"
-  >
+  <div ref="itemRef" :class="itemClasses" :style="itemStyles">
     <!-- 面板头部 -->
     <div
       class="ex-collapse-item__header"
@@ -72,11 +68,7 @@
       </div>
 
       <!-- 额外内容插槽 -->
-      <div
-        v-if="$slots.extra"
-        class="ex-collapse-item__extra"
-        @click.stop
-      >
+      <div v-if="$slots.extra" class="ex-collapse-item__extra" @click.stop>
         <slot name="extra" />
       </div>
     </div>
@@ -105,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, ref } from 'vue';
 import type { ExCollapseItemProps, ExCollapseItemExposed, CollapseItemName } from './types';
 
@@ -128,14 +121,14 @@ const collapseContext = inject<{
   expandIconPosition: 'left' | 'right';
   isActive: (name: CollapseItemName) => boolean;
   handleItemClick: (name: CollapseItemName) => void;
-    }>('exCollapse', {
-      activeNames: { value: [] },
-      accordion: false,
-      disabled: false,
-      expandIconPosition: 'left',
-      isActive: () => false,
-      handleItemClick: () => {},
-    });
+}>('exCollapse', {
+  activeNames: { value: [] },
+  accordion: false,
+  disabled: false,
+  expandIconPosition: 'left',
+  isActive: () => false,
+  handleItemClick: () => {},
+});
 
 // 计算属性
 const isActive = computed(() => collapseContext.isActive(props.name));
@@ -148,17 +141,7 @@ const itemClasses = computed(() => {
   if (isActive.value) classes.push('is-active');
   if (isDisabled.value) classes.push('is-disabled');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

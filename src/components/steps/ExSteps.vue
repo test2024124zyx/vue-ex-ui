@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
 
@@ -36,30 +37,20 @@ let stepCounter = 0;
 // 计算属性
 const stepsClasses = computed(() => {
   const classes = ['ex-steps'];
-  
+
   classes.push(`ex-steps--${props.direction}`);
   classes.push(`ex-steps--${props.size}`);
-  
+
   if (props.progressDot) {
     classes.push('ex-steps--progress-dot');
   }
-  
+
   if (props.clickable) {
     classes.push('ex-steps--clickable');
   }
-  
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
-  
+
+  classes.push(...normalizeCustomClass(props.class));
+
   return classes;
 });
 

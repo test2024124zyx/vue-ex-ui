@@ -121,7 +121,7 @@
     background: linear-gradient(
       135deg,
       var(--ex-color-bg-secondary) 0%,
-      rgba(0, 240, 255, 0.05) 100%
+      rgba(var(--ex-color-neon-blue-500-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-neon-blue-alpha-30);
     @include optimized-neon-glow('blue', 'sm');
@@ -135,7 +135,7 @@
     background: linear-gradient(
       135deg,
       var(--ex-color-bg-secondary) 0%,
-      rgba(16, 185, 129, 0.05) 100%
+      rgba(var(--ex-color-success-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-success-alpha-30);
     box-shadow: 
@@ -151,7 +151,7 @@
     background: linear-gradient(
       135deg,
       var(--ex-color-bg-secondary) 0%,
-      rgba(245, 158, 11, 0.05) 100%
+      rgba(var(--ex-color-warning-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-warning-alpha-30);
     box-shadow: 
@@ -167,7 +167,7 @@
     background: linear-gradient(
       135deg,
       var(--ex-color-bg-secondary) 0%,
-      rgba(255, 0, 127, 0.05) 100%
+      rgba(var(--ex-color-neon-pink-500-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-neon-pink-alpha-30);
     @include optimized-neon-glow('pink', 'sm');
@@ -181,7 +181,7 @@
     background: linear-gradient(
       135deg,
       var(--ex-color-bg-secondary) 0%,
-      rgba(0, 240, 255, 0.05) 100%
+      rgba(var(--ex-color-neon-blue-500-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-neon-blue-alpha-30);
     @include optimized-neon-glow('blue', 'sm');

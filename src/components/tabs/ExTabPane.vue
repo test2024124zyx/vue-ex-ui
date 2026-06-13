@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, inject, onMounted } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
 
@@ -57,17 +58,7 @@ const paneClasses = computed(() => {
 
   if (isActive.value) classes.push('ex-tab-pane--active');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

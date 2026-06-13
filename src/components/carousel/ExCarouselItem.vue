@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, getCurrentInstance } from 'vue';
 import type { ExCarouselItemProps } from './types';
 import { useI18n } from '../../locale';
@@ -49,17 +50,7 @@ const itemClasses = computed(() => {
 
   if (isActive) classes.push('ex-carousel-item--active');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

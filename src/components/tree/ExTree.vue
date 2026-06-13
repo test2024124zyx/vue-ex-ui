@@ -1,10 +1,5 @@
 <template>
-  <div
-    ref="treeRef"
-    :class="treeClasses"
-    :style="treeStyles"
-    role="tree"
-  >
+  <div ref="treeRef" :class="treeClasses" :style="treeStyles" role="tree">
     <ExTreeNode
       v-for="node in filteredData"
       :key="node.key"
@@ -35,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { ref, computed, watch, provide } from 'vue';
 import type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
@@ -70,22 +66,16 @@ const treeRef = ref<HTMLDivElement>();
 const filterValue = ref('');
 
 // 内部状态
-const internalExpandedKeys = ref<string[]>(
-  props.expandedKeys || props.defaultExpandedKeys || []
-);
-const internalSelectedKeys = ref<string[]>(
-  props.selectedKeys || props.defaultSelectedKeys || []
-);
-const internalCheckedKeys = ref<string[]>(
-  props.checkedKeys || props.defaultCheckedKeys || []
-);
+const internalExpandedKeys = ref<string[]>(props.expandedKeys || props.defaultExpandedKeys || []);
+const internalSelectedKeys = ref<string[]>(props.selectedKeys || props.defaultSelectedKeys || []);
+const internalCheckedKeys = ref<string[]>(props.checkedKeys || props.defaultCheckedKeys || []);
 const halfCheckedKeys = ref<string[]>([]);
 
 // 节点映射
 const nodeMap = computed(() => {
   const map = new Map<string, TreeNode>();
   const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       map.set(node.key, node);
       if (node.children) {
         traverse(node.children);
@@ -104,7 +94,7 @@ const filteredData = computed(() => {
 
   const filter = (nodes: TreeNode[]): TreeNode[] => {
     const result: TreeNode[] = [];
-    
+
     for (const node of nodes) {
       const match = props.filterNodeMethod!(filterValue.value, node);
       const children = node.children ? filter(node.children) : [];
@@ -116,7 +106,7 @@ const filteredData = computed(() => {
         });
       }
     }
-    
+
     return result;
   };
 
@@ -130,17 +120,7 @@ const treeClasses = computed(() => {
   if (props.showLine) classes.push('ex-tree--show-line');
   if (props.disabled) classes.push('ex-tree--disabled');
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
@@ -154,7 +134,7 @@ const treeStyles = computed(() => {
 // 监听外部变化
 watch(
   () => props.expandedKeys,
-  (val) => {
+  val => {
     if (val !== undefined) {
       internalExpandedKeys.value = [...val];
     }
@@ -163,7 +143,7 @@ watch(
 
 watch(
   () => props.selectedKeys,
-  (val) => {
+  val => {
     if (val !== undefined) {
       internalSelectedKeys.value = [...val];
     }
@@ -172,7 +152,7 @@ watch(
 
 watch(
   () => props.checkedKeys,
-  (val) => {
+  val => {
     if (val !== undefined) {
       internalCheckedKeys.value = [...val];
       updateHalfCheckedKeys();
@@ -184,7 +164,7 @@ watch(
 const expandAll = () => {
   const keys: string[] = [];
   const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       if (node.children && node.children.length > 0) {
         keys.push(node.key);
         traverse(node.children);
@@ -199,7 +179,7 @@ const expandAll = () => {
 // 默认展开所有
 watch(
   () => props.defaultExpandAll,
-  (val) => {
+  val => {
     if (val) {
       expandAll();
     }
@@ -218,10 +198,10 @@ const updateHalfCheckedKeys = () => {
   const checked = new Set(internalCheckedKeys.value);
 
   const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       if (node.children && node.children.length > 0) {
         const childKeys = getAllChildKeys(node);
-        const checkedCount = childKeys.filter((key) => checked.has(key)).length;
+        const checkedCount = childKeys.filter(key => checked.has(key)).length;
 
         if (checkedCount > 0 && checkedCount < childKeys.length) {
           half.add(node.key);
@@ -257,7 +237,7 @@ const getAllParentKeys = (key: string): string[] => {
   const findParent = (nodes: TreeNode[], targetKey: string): TreeNode | null => {
     for (const node of nodes) {
       if (node.children) {
-        if (node.children.some((child) => child.key === targetKey)) {
+        if (node.children.some(child => child.key === targetKey)) {
           return node;
         }
         const parent = findParent(node.children, targetKey);
@@ -321,15 +301,13 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
     checkedSet.add(node.key);
     if (!props.checkStrictly) {
       // 级联勾选子节点
-      getAllChildKeys(node).forEach((key) => checkedSet.add(key));
+      getAllChildKeys(node).forEach(key => checkedSet.add(key));
       // 级联勾选父节点
       const parentKeys = getAllParentKeys(node.key);
-      parentKeys.forEach((parentKey) => {
+      parentKeys.forEach(parentKey => {
         const parentNode = nodeMap.value.get(parentKey);
         if (parentNode?.children) {
-          const allChildrenChecked = parentNode.children.every((child) =>
-            checkedSet.has(child.key)
-          );
+          const allChildrenChecked = parentNode.children.every(child => checkedSet.has(child.key));
           if (allChildrenChecked) {
             checkedSet.add(parentKey);
           }
@@ -340,9 +318,9 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
     checkedSet.delete(node.key);
     if (!props.checkStrictly) {
       // 级联取消子节点
-      getAllChildKeys(node).forEach((key) => checkedSet.delete(key));
+      getAllChildKeys(node).forEach(key => checkedSet.delete(key));
       // 级联取消父节点
-      getAllParentKeys(node.key).forEach((key) => checkedSet.delete(key));
+      getAllParentKeys(node.key).forEach(key => checkedSet.delete(key));
     }
   }
 
@@ -392,19 +370,19 @@ const handleNodeDrop = (
 // 其他暴露的方法
 const getSelectedNodes = (): TreeNode[] => {
   return internalSelectedKeys.value
-    .map((key) => nodeMap.value.get(key))
+    .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
 
 const getCheckedNodes = (): TreeNode[] => {
   return internalCheckedKeys.value
-    .map((key) => nodeMap.value.get(key))
+    .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
 
 const getHalfCheckedNodes = (): TreeNode[] => {
   return halfCheckedKeys.value
-    .map((key) => nodeMap.value.get(key))
+    .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
 

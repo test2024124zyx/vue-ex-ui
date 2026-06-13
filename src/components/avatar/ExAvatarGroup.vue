@@ -1,18 +1,8 @@
 <template>
-  <div
-    :class="groupClasses"
-    :style="groupStyles"
-  >
+  <div :class="groupClasses" :style="groupStyles">
     <!-- 显示的头像 -->
-    <template
-      v-for="(vnode, index) in displayAvatars"
-      :key="index"
-    >
-      <slot
-        name="avatar"
-        :vnode="vnode"
-        :index="index"
-      >
+    <template v-for="(vnode, index) in displayAvatars" :key="index">
+      <slot name="avatar" :vnode="vnode" :index="index">
         <component
           :is="vnode"
           :size="size || vnode.props?.size"
@@ -38,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, useSlots } from 'vue';
 import type { VNode, Component } from 'vue';
 import type { ExAvatarGroupProps } from './types';
@@ -70,7 +61,7 @@ const avatars = computed(() => {
   if (!defaultSlot) return [];
 
   // 简化的插槽解析 - 直接使用插槽内容而不是提取props
-  return defaultSlot.filter((vnode) => {
+  return defaultSlot.filter(vnode => {
     return (
       vnode &&
       vnode.type &&
@@ -112,17 +103,7 @@ const overflowTitle = computed(() => {
 const groupClasses = computed(() => {
   const classes = ['ex-avatar-group'];
 
-  if (props.class) {
-    if (typeof props.class === 'string') {
-      classes.push(props.class);
-    } else if (Array.isArray(props.class)) {
-      classes.push(...props.class);
-    } else {
-      Object.entries(props.class).forEach(([key, value]) => {
-        if (value) classes.push(key);
-      });
-    }
-  }
+  classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });

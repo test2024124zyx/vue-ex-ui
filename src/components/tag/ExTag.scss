@@ -19,6 +19,11 @@
   padding: 0 var(--ex-tag-padding-x-md);
   font-size: var(--ex-tag-font-size-md);
 
+  // 赛博朋克切角（圆形标签 is-round 除外）
+  &:not(.is-round) {
+    @include chamfer(var(--ex-chamfer-sm));
+  }
+
   & + & {
     margin-left: var(--ex-spacing-2);
   }
