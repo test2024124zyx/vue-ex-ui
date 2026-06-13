@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import type { ExChartProps } from '../../../src/components/chart/types';
@@ -265,6 +265,8 @@ describe('ExChart', () => {
       },
     });
 
+    // ECharts 现为按需动态加载，需等待动态 import 完成
+    await flushPromises();
     await nextTick();
 
     expect(echarts.init).toHaveBeenCalled();

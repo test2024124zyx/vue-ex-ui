@@ -4,13 +4,12 @@ import { nextTick } from 'vue';
 import ExDatePicker from '../../../src/components/date-picker/ExDatePicker.vue';
 import { dateUtils } from '../../../src/components/date-picker/utils';
 
-// Mock i18n
+// Mock 本地 locale 模块的 useI18n（组件已从本地 locale 导入，不再直接依赖 vue-i18n）
 const mockT = vi.fn((key: string) => key);
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: mockT,
-  }),
-}));
+vi.mock('../../../src/locale', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('../../../src/locale');
+  return { ...actual, useI18n: () => ({ t: mockT }) };
+});
 
 // Mock teleport
 const mockTeleport = {

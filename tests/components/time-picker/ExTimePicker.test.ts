@@ -2,19 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExTimePicker from '../../../src/components/time-picker/ExTimePicker.vue';
-import { createI18n } from 'vue-i18n';
-import zhCN from '../../../src/locale/zh-CN';
-import enUS from '../../../src/locale/en-US';
-
-// 创建 i18n 实例
-const i18n = createI18n({
-  legacy: false,
-  locale: 'zh-CN',
-  messages: {
-    'zh-CN': zhCN,
-    'en-US': enUS,
-  },
-});
+import { setLocale } from '../../../src/locale';
 
 // Mock teleport
 vi.mock('vue', async () => {
@@ -37,13 +25,14 @@ describe('ExTimePicker', () => {
   beforeEach(() => {
     // 清理 DOM
     document.body.innerHTML = '';
+    // 该套件默认以中文渲染（与既有断言一致）
+    setLocale('zh-CN');
   });
 
   const createWrapper = (props = {}) => {
     return mount(ExTimePicker, {
       props,
       global: {
-        plugins: [i18n],
         stubs: {
           'time-panel': true,
         },
@@ -314,7 +303,7 @@ describe('ExTimePicker', () => {
     });
 
     it('应该支持英文', async () => {
-      i18n.global.locale.value = 'en-US';
+      setLocale('en-US');
       wrapper = createWrapper();
       await nextTick();
 
@@ -322,7 +311,7 @@ describe('ExTimePicker', () => {
       expect(input.attributes('placeholder')).toBe('Select Time');
 
       // 恢复中文
-      i18n.global.locale.value = 'zh-CN';
+      setLocale('zh-CN');
     });
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExSelect from '../../../src/components/select/ExSelect.vue';
@@ -55,7 +55,8 @@ describe('ExSelect', () => {
       const wrapper: VueWrapper = mount(ExSelect, {
         props: {
           modelValue: '',
-          'onUpdate:modelValue': (value: string | number | null) => wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: string | number | null) =>
+            wrapper.setProps({ modelValue: value }),
           options: basicOptions,
         },
       });
@@ -67,7 +68,7 @@ describe('ExSelect', () => {
       // 选择选项
       const options = document.querySelectorAll('.ex-select__option');
       expect(options.length).toBeGreaterThan(0);
-      
+
       (options[0] as HTMLElement).click();
       await nextTick();
 
@@ -175,7 +176,8 @@ describe('ExSelect', () => {
       const wrapper: VueWrapper = mount(ExSelect, {
         props: {
           modelValue: 'option1',
-          'onUpdate:modelValue': (value: string | number | null) => wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: string | number | null) =>
+            wrapper.setProps({ modelValue: value }),
           options: basicOptions,
           clearable: true,
         },
@@ -326,7 +328,7 @@ describe('ExSelect', () => {
       });
 
       const vm = wrapper.vm as { focus?: () => void; blur?: () => void };
-      
+
       // 验证方法存在
       expect(typeof vm.focus).toBe('function');
       expect(typeof vm.blur).toBe('function');
@@ -385,6 +387,161 @@ describe('ExSelect', () => {
       // 检查下拉菜单是否打开
       const dropdown = document.querySelector('.ex-select__dropdown');
       expect(dropdown).toBeTruthy();
+    });
+  });
+
+  describe('多选', () => {
+    const openDropdown = async (wrapper: VueWrapper) => {
+      await wrapper.find('.ex-select__trigger').trigger('click');
+      await nextTick();
+      return document.querySelectorAll('.ex-select__option');
+    };
+
+    it('应该为已选值渲染标签', () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: ['option1', 'option2'], options: basicOptions },
+      });
+      const tags = wrapper.findAll('.ex-select__tag');
+      expect(tags.length).toBe(2);
+      expect(tags[0].text()).toContain('选项一');
+      expect(tags[1].text()).toContain('选项二');
+    });
+
+    it('选择选项应累加且保持下拉打开', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: [], options: basicOptions },
+      });
+      const options = await openDropdown(wrapper);
+
+      (options[0] as HTMLElement).click();
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['option1']);
+      // 下拉保持打开
+      expect(document.querySelector('.ex-select__dropdown')).toBeTruthy();
+
+      (options[1] as HTMLElement).click();
+      await nextTick();
+      // 受控组件未回写 modelValue，第二次切换基于初始 []，断言事件被触发
+      expect(wrapper.emitted('update:modelValue')?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('再次点击已选项应取消选择', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: ['option1'], options: basicOptions },
+      });
+      const options = await openDropdown(wrapper);
+
+      (options[0] as HTMLElement).click();
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([]);
+    });
+
+    it('点击标签关闭按钮应移除该项', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: ['option1', 'option2'], options: basicOptions },
+      });
+      await wrapper.find('.ex-select__tag-close').trigger('click');
+      await nextTick();
+      expect(wrapper.emitted('remove-tag')?.[0]).toEqual(['option1']);
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['option2']);
+    });
+
+    it('应遵守 multipleLimit', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: ['option1'], multipleLimit: 1, options: basicOptions },
+      });
+      const options = await openDropdown(wrapper);
+
+      // 已达上限，点击未选项应被忽略
+      (options[1] as HTMLElement).click();
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')).toBeFalsy();
+
+      // 但取消已选仍允许
+      (options[0] as HTMLElement).click();
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([]);
+    });
+
+    it('collapseTags 应折叠多余标签为 +N', () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          multiple: true,
+          collapseTags: true,
+          modelValue: ['option1', 'option2', 'option3'],
+          options: basicOptions,
+        },
+      });
+      // 仅展示第一个标签 + 计数标签
+      expect(wrapper.findAll('.ex-select__tag-label').length).toBe(1);
+      expect(wrapper.find('.ex-select__tag--count').text()).toBe('+2');
+    });
+
+    it('清空应发出空数组', async () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          multiple: true,
+          clearable: true,
+          modelValue: ['option1', 'option2'],
+          options: basicOptions,
+        },
+      });
+      await wrapper.find('.ex-select__clear').trigger('click');
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([]);
+      expect(wrapper.emitted('clear')).toBeTruthy();
+    });
+  });
+
+  describe('远程搜索 (remote)', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      document.body.innerHTML = '';
+    });
+
+    it('remote 模式下输入触发 remoteMethod（防抖）', async () => {
+      vi.useFakeTimers();
+      const remoteMethod = vi.fn();
+      const wrapper = mount(ExSelect, {
+        props: { remote: true, searchable: true, remoteMethod, options: [], remoteDebounce: 200 },
+      });
+      await wrapper.find('.ex-select__trigger').trigger('click');
+      await wrapper.find('.ex-select__input').setValue('ab');
+      // 防抖：尚未到时不触发
+      expect(remoteMethod).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(200);
+      expect(remoteMethod).toHaveBeenCalledWith('ab');
+    });
+
+    it('remote 模式不做本地过滤（选项原样展示）', async () => {
+      const options: SelectOptions = [
+        { value: 1, label: 'Apple' },
+        { value: 2, label: 'Banana' },
+      ];
+      const wrapper = mount(ExSelect, {
+        props: { remote: true, searchable: true, options, remoteMethod: () => {} },
+      });
+      await wrapper.find('.ex-select__trigger').trigger('click');
+      await wrapper.find('.ex-select__input').setValue('zzz');
+      await nextTick();
+      // 远程模式下输入不匹配的关键词，选项仍按父级提供原样展示
+      expect(document.querySelectorAll('.ex-select__option').length).toBe(2);
+    });
+
+    it('loading 时显示加载态并隐藏空状态', async () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          remote: true,
+          searchable: true,
+          loading: true,
+          options: [],
+          remoteMethod: () => {},
+        },
+      });
+      await wrapper.find('.ex-select__trigger').trigger('click');
+      await nextTick();
+      expect(document.querySelector('.ex-select__loading')).toBeTruthy();
+      expect(document.querySelector('.ex-select__empty')).toBeFalsy();
     });
   });
 });

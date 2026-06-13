@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import ExTable from '../../../src/components/table/ExTable.vue';
+import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
+import ExRadio from '../../../src/components/radio/ExRadio.vue';
 import type { ExTableProps, TableColumn, TableDataItem } from '../../../src/components/table/types';
 
 describe('ExTable', () => {
@@ -54,7 +57,7 @@ describe('ExTable', () => {
   it('renders different table sizes', () => {
     const sizes: ExTableProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       const wrapper = mount(ExTable, {
         props: { columns, data, size },
       });
@@ -200,5 +203,137 @@ describe('ExTable', () => {
     });
 
     expect(wrapper.attributes('style')).toContain('background-color: red');
+  });
+
+  describe('row selection', () => {
+    const findRowCheckboxes = (wrapper: ReturnType<typeof mount>) =>
+      // 第一个是表头全选框，其余为行复选框
+      wrapper.findAllComponents(ExCheckbox).slice(1);
+
+    // 通过 classList 统计选中行（jsdom 在复用 DOM 节点移除类后，CSS 选择器
+    // `.ex-table__row--selected` 仍可能误匹配，classes() 读取 classList 才准确）
+    const countSelected = (wrapper: ReturnType<typeof mount>) =>
+      wrapper.findAll('.ex-table__row').filter(r => r.classes().includes('ex-table__row--selected'))
+        .length;
+
+    it('does not render a selection column by default', () => {
+      const wrapper = mount(ExTable, { props: { columns, data } });
+      expect(wrapper.find('.ex-table__selection-column').exists()).toBe(false);
+    });
+
+    it('renders a selection column when selectable', () => {
+      const wrapper = mount(ExTable, { props: { columns, data, selectable: true } });
+      // 1 个表头 + 每行各 1 个
+      expect(wrapper.findAll('.ex-table__selection-column').length).toBe(data.length + 1);
+      // 不应增加 header-cell 计数（选择列用独立类名）
+      expect(wrapper.findAll('.ex-table__header-cell').length).toBe(columns.length);
+    });
+
+    it('selects a row via its checkbox and emits events', async () => {
+      const wrapper = mount(ExTable, { props: { columns, data, selectable: true } });
+      findRowCheckboxes(wrapper)[0].vm.$emit('update:modelValue', true);
+      await nextTick();
+
+      expect(wrapper.emitted('update:selectedRowKeys')?.[0]).toEqual([[1]]);
+      const change = wrapper.emitted('selection-change')?.[0] as [number[], TableDataItem[]];
+      expect(change[0]).toEqual([1]);
+      expect(change[1]).toEqual([data[0]]);
+      expect(countSelected(wrapper)).toBe(1);
+    });
+
+    it('toggles all rows via the header checkbox', async () => {
+      const wrapper = mount(ExTable, { props: { columns, data, selectable: true } });
+
+      wrapper.findAllComponents(ExCheckbox)[0].vm.$emit('update:modelValue', true);
+      await nextTick();
+      expect(wrapper.emitted('select-all')?.[0]?.[0]).toBe(true);
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1, 2, 3]);
+      expect(countSelected(wrapper)).toBe(data.length);
+
+      // 再次点击表头全选框应取消全选
+      wrapper.findAllComponents(ExCheckbox)[0].vm.$emit('update:modelValue', false);
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([]);
+      expect(countSelected(wrapper)).toBe(0);
+    });
+
+    it('reflects controlled selectedRowKeys (v-model)', () => {
+      const wrapper = mount(ExTable, {
+        props: { columns, data, selectable: true, selectedRowKeys: [2] },
+      });
+      const selectedRows = wrapper
+        .findAll('.ex-table__row')
+        .filter(r => r.classes().includes('ex-table__row--selected'));
+      expect(selectedRows.length).toBe(1);
+      expect(selectedRows[0].text()).toContain('Player2');
+    });
+
+    it('shows indeterminate state when some rows are selected', () => {
+      const wrapper = mount(ExTable, {
+        props: { columns, data, selectable: true, selectedRowKeys: [1] },
+      });
+      const headerCheckbox = wrapper.findAllComponents(ExCheckbox)[0];
+      expect(headerCheckbox.props('indeterminate')).toBe(true);
+      expect(headerCheckbox.props('modelValue')).toBe(false);
+    });
+
+    it('supports single selection with radio type', async () => {
+      const wrapper = mount(ExTable, {
+        props: { columns, data, selectable: true, selectionType: 'radio' },
+      });
+      // radio 模式无表头全选框
+      expect(wrapper.findAllComponents(ExCheckbox).length).toBe(0);
+      const radios = wrapper.findAllComponents(ExRadio);
+      expect(radios.length).toBe(data.length);
+
+      radios[0].vm.$emit('update:modelValue', 1);
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1]);
+
+      // 选另一行应替换而非累加
+      radios[2].vm.$emit('update:modelValue', 3);
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([3]);
+      expect(countSelected(wrapper)).toBe(1);
+    });
+
+    it('respects isRowSelectable', async () => {
+      const wrapper = mount(ExTable, {
+        props: {
+          columns,
+          data,
+          selectable: true,
+          isRowSelectable: (record: TableDataItem) => record.key !== 2,
+        },
+      });
+      const rowCheckboxes = findRowCheckboxes(wrapper);
+      expect(rowCheckboxes[1].props('disabled')).toBe(true);
+
+      // 全选只选可选行（排除 key=2）
+      wrapper.findAllComponents(ExCheckbox)[0].vm.$emit('update:modelValue', true);
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1, 3]);
+    });
+
+    it('exposes selection methods', async () => {
+      const wrapper = mount(ExTable, { props: { columns, data, selectable: true } });
+      const vm = wrapper.vm as unknown as {
+        toggleRowSelection: (r: TableDataItem, s?: boolean) => void;
+        toggleAllSelection: () => void;
+        clearSelection: () => void;
+      };
+
+      vm.toggleRowSelection(data[0], true);
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1]);
+
+      vm.toggleAllSelection();
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1, 2, 3]);
+
+      vm.clearSelection();
+      await nextTick();
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([]);
+    });
   });
 });

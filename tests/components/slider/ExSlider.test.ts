@@ -4,12 +4,11 @@ import { nextTick } from 'vue';
 import ExSlider from '../../../src/components/slider/ExSlider.vue';
 import type { ExSliderProps } from '../../../src/components/slider/types';
 
-// Mock vue-i18n
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}));
+// Mock 本地 locale 模块的 useI18n（组件已从本地 locale 导入，不再直接依赖 vue-i18n）
+vi.mock('../../../src/locale', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('../../../src/locale');
+  return { ...actual, useI18n: () => ({ t: (key: string) => key }) };
+});
 
 describe('ExSlider', () => {
   let wrapper: VueWrapper<any>;
