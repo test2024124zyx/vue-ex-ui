@@ -1,51 +1,23 @@
 // ExUI CSS Reset & Normalize
 // 基础样式重置
+//
+// 设计原则：组件库不应「接管」宿主页面。这里只保留对组件渲染必要、且业界公认
+// 安全的重置；所有会改变宿主外观的内容（背景、文字颜色、字体、滚动行为、选区配色、
+// 全屏氛围光晕）都移到可选的 `.ex-app` 作用域（见 base.scss），由使用者主动启用。
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html {
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
-  scroll-behavior: smooth;
 }
 
-body {
-  margin: 0;
-  font-family: var(--ex-font-secondary);
-  font-size: var(--ex-text-base);
-  font-weight: var(--ex-font-normal);
-  line-height: var(--ex-leading-normal);
-  color: var(--ex-color-text-primary);
-  background: var(--ex-gradient-bg);
-  
-  // 防止水平滚动
-  overflow-x: hidden;
-  
-  // 移动端优化
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-// 选择样式
-::selection {
-  background: var(--ex-color-neon-blue-500);
-  color: var(--ex-color-text-inverse);
-}
-
-::-moz-selection {
-  background: var(--ex-color-neon-blue-500);
-  color: var(--ex-color-text-inverse);
-}
-
-// 焦点样式
+// 焦点样式：键盘可达性增强（仅在键盘聚焦时显示轮廓）
 :focus-visible {
   outline: 2px solid var(--ex-color-border-focus);
   outline-offset: 2px;

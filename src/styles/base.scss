@@ -85,14 +85,40 @@ details > *:not(summary) {
 }
 
 // ============================================================================
-// 游戏主题特效
+// 赛博朋克氛围（可选，opt-in）
 // ============================================================================
+//
+// 组件库默认不会改动宿主的 body。如果你的整站都使用 ExUI，想要那层深色霓虹氛围，
+// 在应用根元素加上 `ex-app` 类即可：<div class="ex-app">...</div> 或 <body class="ex-app">。
+// 这样既能渐进式接入既有项目，又能在「全站 ExUI」场景下一键启用氛围。
 
-// 应用到 body 的游戏主题效果（优化版本）
-body {
+.ex-app {
   position: relative;
+  min-height: 100%;
+  font-family: var(--ex-font-secondary);
+  font-size: var(--ex-text-base);
+  font-weight: var(--ex-font-normal);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-color-text-primary);
+  background: var(--ex-gradient-bg);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 
-  // 仅在高性能设备上应用背景效果
+  // 选区配色（仅作用于氛围容器内部，不污染宿主全局）
+  ::selection {
+    background: var(--ex-color-neon-blue-500);
+    color: var(--ex-color-text-inverse);
+  }
+
+  ::-moz-selection {
+    background: var(--ex-color-neon-blue-500);
+    color: var(--ex-color-text-inverse);
+  }
+
+  // 仅在高性能设备上应用背景光晕
   @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
     &::before {
       content: '';

@@ -38,6 +38,10 @@
   --ex-color-gray-alpha-30: rgba(128, 128, 128, 0.3);
   --ex-color-gray-alpha-50: rgba(128, 128, 128, 0.5);
   --ex-color-gray-alpha-70: rgba(128, 128, 128, 0.7);
+
+  // RGB 通道（供 rgba(var(--…-rgb), <alpha>) 使用，任意 alpha 均可且随主题自适应）
+  --ex-color-white-rgb: 255, 255, 255;
+  --ex-color-gray-rgb: 156, 163, 175;
   
   // 紫色透明度
   --ex-color-purple-alpha-80: rgba(44, 0, 62, 0.8);
@@ -97,6 +101,11 @@
   
   --ex-color-error-light: #f56c6c;
   --ex-color-error-light-alpha-90: rgba(245, 108, 108, 0.9);
+
+  // 状态色 RGB 通道（与上方 alpha 取值一致）
+  --ex-color-success-rgb: 16, 185, 129;
+  --ex-color-warning-rgb: 245, 158, 11;
+  --ex-color-error-rgb: 239, 68, 68;
   
   // 渐变中间色
   --ex-color-success-mid: #059669;

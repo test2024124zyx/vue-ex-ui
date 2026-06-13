@@ -3,6 +3,8 @@
 
 @use './base' as *;
 
+// matrix 为正式名；high-contrast 作为兼容别名同样生效
+[data-theme="matrix"],
 [data-theme="high-contrast"] {
   color-scheme: dark;
 
@@ -164,6 +166,7 @@
   --ex-color-bg-secondary-rgb: 0, 0, 0;
   --ex-color-bg-tertiary-rgb: 10, 20, 10;
   --ex-color-neon-blue-500-rgb: 0, 255, 255;
+  --ex-color-neon-pink-500-rgb: 0, 255, 65;
   
   // ========== 无障碍增强 ==========
   // 增强交互元素的边框（仅针对特定元素）

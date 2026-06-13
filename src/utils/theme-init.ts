@@ -1,9 +1,9 @@
 /**
  * ExUI Theme Initialization Utility
  * 主题初始化工具 - TypeScript 版本
- * 
+ *
  * 用于在应用启动前初始化主题，防止 FOUC (Flash of Unstyled Content)
- * 
+ *
  * @example
  * // 在 main.ts 之前导入
  * import './utils/theme-init'
@@ -14,7 +14,14 @@ import type { Theme } from '../types/theme.d';
 /**
  * 有效的主题列表
  */
-const VALID_THEMES: Theme[] = ['neon-blue', 'neon-pink', 'dark', 'high-contrast'];
+const VALID_THEMES: Theme[] = [
+  'neon-blue',
+  'neon-pink',
+  'dark',
+  'matrix',
+  'high-contrast',
+  'light',
+];
 
 /**
  * 默认主题
@@ -55,7 +62,7 @@ function getSystemTheme(): Theme {
     // 检测高对比度偏好
     const highContrast = window.matchMedia('(prefers-contrast: high)');
     if (highContrast.matches) {
-      return 'high-contrast';
+      return 'matrix';
     }
 
     // 检测暗色模式偏好

@@ -4,7 +4,9 @@
 /**
  * 主题名称
  */
-export type Theme = 'neon-blue' | 'neon-pink' | 'dark' | 'high-contrast';
+// 'high-contrast' 为兼容别名，已更名为 'matrix'（矩阵绿黑客风）。
+// 'high-contrast' 名称保留给未来「真正的无障碍高对比主题」。
+export type Theme = 'neon-blue' | 'neon-pink' | 'dark' | 'matrix' | 'high-contrast' | 'light';
 
 /**
  * 主题配置接口
@@ -162,12 +164,27 @@ export const THEME_CONFIGS: Record<Theme, ThemeConfig> = {
     isDark: true,
     isHighContrast: false,
   },
-  'high-contrast': {
-    name: 'high-contrast',
-    displayName: 'High Contrast',
-    description: '高对比度主题 - 无障碍友好',
+  matrix: {
+    name: 'matrix',
+    displayName: 'Matrix',
+    description: '矩阵绿黑客风主题 - 纯黑底 + 荧光绿，极高对比',
     isDark: true,
     isHighContrast: true,
+  },
+  // 兼容别名（已更名为 matrix），保留以免破坏既有用法
+  'high-contrast': {
+    name: 'high-contrast',
+    displayName: 'High Contrast (deprecated → matrix)',
+    description: '已更名为 matrix，保留作为兼容别名',
+    isDark: true,
+    isHighContrast: true,
+  },
+  light: {
+    name: 'light',
+    displayName: 'Light',
+    description: '明亮主题 - 白底深字，发光收敛为柔和投影',
+    isDark: false,
+    isHighContrast: false,
   },
 };
 

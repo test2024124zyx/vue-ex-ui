@@ -211,6 +211,47 @@
   }
 }
 
+// 切角（chamfer）—— 斜切「左上 + 右下」两角，赛博朋克标志性轮廓
+// 注意：clip-path 会裁掉 box-shadow，因此切角元素的发光请改用 chamfer-glow（filter）。
+@mixin chamfer($size: var(--ex-chamfer-md)) {
+  border-radius: 0;
+  clip-path: polygon(
+    #{$size} 0%,
+    100% 0%,
+    100% calc(100% - #{$size}),
+    calc(100% - #{$size}) 100%,
+    0% 100%,
+    0% #{$size}
+  );
+}
+
+// 切角元素的发光（用 filter: drop-shadow，会沿着 clip-path 形状投影）
+@mixin chamfer-glow($color: 'blue', $intensity: 'md') {
+  @if $color == 'blue' {
+    @if $intensity == 'sm' {
+      filter: drop-shadow(0 0 4px var(--ex-color-neon-blue-alpha-30));
+    } @else if $intensity == 'md' {
+      filter: drop-shadow(0 0 8px var(--ex-color-neon-blue-alpha-30));
+    } @else {
+      filter: drop-shadow(0 0 12px var(--ex-color-neon-blue-alpha-40));
+    }
+  } @else if $color == 'pink' {
+    @if $intensity == 'sm' {
+      filter: drop-shadow(0 0 4px var(--ex-color-neon-pink-alpha-30));
+    } @else if $intensity == 'md' {
+      filter: drop-shadow(0 0 8px var(--ex-color-neon-pink-alpha-30));
+    } @else {
+      filter: drop-shadow(0 0 12px var(--ex-color-neon-pink-alpha-40));
+    }
+  } @else {
+    filter: drop-shadow(0 2px 6px var(--ex-color-black-alpha-30));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    filter: none;
+  }
+}
+
 // 霓虹边框
 @mixin neon-border($color: 'blue', $width: 1px) {
   border: $width solid transparent;

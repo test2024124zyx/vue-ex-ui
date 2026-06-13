@@ -24,14 +24,14 @@ export function setTheme(theme: Theme): void {
   // 更新 document 的 data-theme 属性
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', theme);
-    
+
     // 触发主题变化事件
     const event = new CustomEvent('theme-change', { detail: { theme } });
     document.dispatchEvent(event);
   }
 
   // 执行回调
-  themeChangeCallbacks.forEach((callback) => callback(theme));
+  themeChangeCallbacks.forEach(callback => callback(theme));
 }
 
 /**
@@ -46,7 +46,7 @@ export function getTheme(): Theme {
  * @param themes 主题列表，如果不提供则在所有主题间循环
  */
 export function toggleTheme(themes?: Theme[]): void {
-  const allThemes: Theme[] = themes || ['neon-blue', 'neon-pink', 'dark', 'high-contrast'];
+  const allThemes: Theme[] = themes || ['neon-blue', 'neon-pink', 'dark', 'matrix', 'light'];
   const currentIndex = allThemes.indexOf(currentTheme.value);
   const nextIndex = (currentIndex + 1) % allThemes.length;
   const nextTheme = allThemes[nextIndex];
@@ -93,7 +93,7 @@ export function useSystemTheme(): (() => void) | undefined {
 
   const updateTheme = () => {
     if (highContrastQuery.matches) {
-      setTheme('high-contrast');
+      setTheme('matrix');
     } else if (darkModeQuery.matches) {
       setTheme('dark');
     } else {
@@ -130,7 +130,10 @@ export function saveThemeToStorage(theme: Theme): void {
 export function loadThemeFromStorage(): Theme | null {
   if (typeof localStorage !== 'undefined') {
     const saved = localStorage.getItem('ex-ui-theme');
-    if (saved && ['neon-blue', 'neon-pink', 'dark', 'high-contrast'].includes(saved)) {
+    if (
+      saved &&
+      ['neon-blue', 'neon-pink', 'dark', 'matrix', 'high-contrast', 'light'].includes(saved)
+    ) {
       return saved as Theme;
     }
   }
@@ -152,7 +155,7 @@ export function usePersistedTheme(): {
   }
 
   // 监听主题变化并保存
-  watch(currentTheme, (newTheme) => {
+  watch(currentTheme, newTheme => {
     saveThemeToStorage(newTheme);
   });
 
@@ -166,7 +169,10 @@ export function usePersistedTheme(): {
 // 初始化：从 document 读取初始主题
 if (typeof document !== 'undefined') {
   const initialTheme = document.documentElement.getAttribute('data-theme') as Theme;
-  if (initialTheme && ['neon-blue', 'neon-pink', 'dark', 'high-contrast'].includes(initialTheme)) {
+  if (
+    initialTheme &&
+    ['neon-blue', 'neon-pink', 'dark', 'matrix', 'high-contrast', 'light'].includes(initialTheme)
+  ) {
     currentTheme.value = initialTheme;
   }
 }
