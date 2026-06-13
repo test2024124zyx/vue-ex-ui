@@ -86,22 +86,22 @@
   <!-- 圆形按钮 - 图标优先显示 -->
   <ExButton circle type="primary">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/user-line.svg" alt="用户" width="16" height="16" />
+      <ex-icon icon="star-line" />
     </template>
   </ExButton>
   <ExButton circle type="success">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/heart-line.svg" alt="喜欢" width="16" height="16" />
+      <ex-icon icon="star-line" />
     </template>
   </ExButton>
   <ExButton circle type="warning">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/star-line.svg" alt="星标" width="16" height="16" />
+      <ex-icon icon="star-line" />
     </template>
   </ExButton>
   <ExButton circle type="danger">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/delete-bin-line.svg" alt="删除" width="16" height="16" />
+      <ex-icon icon="delete-bin-line" />
     </template>
   </ExButton>
   
@@ -117,15 +117,15 @@
   <!-- 圆形按钮 - 图标优先显示 -->
   <ExButton circle type="primary">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/user-line.svg" alt="用户" width="16" height="16" />
+      <ex-icon icon="star-line" />
     </template>
   </ExButton>
   <ExButton circle type="success">
     <template #prefix>
-      <img src="https://api.iconify.design/ri/heart-line.svg" alt="喜欢" width="16" height="16" />
+      <ex-icon icon="star-line" />
     </template>
   </ExButton>
-  
+
   <!-- 圆形按钮 - 文字显示第一个字符 -->
   <ExButton circle type="primary">用户</ExButton>
   <ExButton circle type="success">管理员</ExButton>
@@ -139,31 +139,31 @@
 <div class="demo-container">
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/search-line.svg" />
+      <ex-icon icon="search-line" />
     </template>
     搜索
   </ExButton>
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/edit-line.svg" />
+      <ex-icon icon="file-copy-line" />
     </template>
     编辑
   </ExButton>
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/check-line.svg" />
+      <ex-icon icon="check-line" />
     </template>
     确认
   </ExButton>
   <ExButton type="primary">
     <template #suffix>
-      <ex-icon src="https://api.iconify.design/ri/message-3-line.svg" />
+      <ex-icon icon="information-line" />
     </template>
     消息
   </ExButton>
   <ExButton type="danger">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/delete-bin-line.svg" />
+      <ex-icon icon="delete-bin-line" />
     </template>
     删除
   </ExButton>
@@ -173,31 +173,31 @@
 <template>
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/search-line.svg" />
+      <ex-icon icon="search-line" />
     </template>
     搜索
   </ExButton>
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/edit-line.svg" />
+      <ex-icon icon="file-copy-line" />
     </template>
     编辑
   </ExButton>
   <ExButton type="primary">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/check-line.svg" />
+      <ex-icon icon="check-line" />
     </template>
     确认
   </ExButton>
   <ExButton type="primary">
     <template #suffix>
-      <ex-icon src="https://api.iconify.design/ri/message-3-line.svg" />
+      <ex-icon icon="information-line" />
     </template>
     消息
   </ExButton>
   <ExButton type="danger">
     <template #prefix>
-      <ex-icon src="https://api.iconify.design/ri/delete-bin-line.svg" />
+      <ex-icon icon="delete-bin-line" />
     </template>
     删除
   </ExButton>
@@ -286,7 +286,7 @@ Button 组件提供除了默认值以外的三种尺寸，可以在不同场景�
   <ExButton type="primary" loading>加载中</ExButton>
   <ExButton type="primary" loading>
     <template #loading>
-      <ex-icon src="https://api.iconify.design/ri/loader-4-line.svg" spin />
+      <ex-icon icon="loader-4-line" spin />
     </template>
     自定义加载图标
   </ExButton>
@@ -297,7 +297,7 @@ Button 组件提供除了默认值以外的三种尺寸，可以在不同场景�
   <ExButton type="primary" loading>加载中</ExButton>
   <ExButton type="primary" loading>
     <template #loading>
-      <ex-icon src="https://api.iconify.design/ri/loader-4-line.svg" spin />
+      <ex-icon icon="loader-4-line" spin />
     </template>
     自定义加载图标
   </ExButton>
@@ -322,43 +322,43 @@ Button 组件提供除了默认值以外的三种尺寸，可以在不同场景�
 
 ### Props
 
-| 参数 | 说明 | 类型 | 可选值 | 默认值 |
-| --- | --- | --- | --- | --- |
-| type | 类型 | string | primary / secondary / success / warning / danger / info / text / link | primary |
-| size | 尺寸 | string | large / medium / small | medium |
-| shape | 形状 | string | default / round / circle | default |
-| plain | 是否朴素按钮 | boolean | — | false |
-| round | 是否圆角按钮 | boolean | — | false |
-| circle | 是否圆形按钮 | boolean | — | false |
-| loading | 是否加载中状态 | boolean | — | false |
-| disabled | 是否禁用状态 | boolean | — | false |
-| autofocus | 是否默认聚焦 | boolean | — | false |
-| native-type | 原生 type 属性 | string | button / submit / reset | button |
-| block | 是否为块级按钮 | boolean | — | false |
-| aria-label | 无障碍标签 | string | — | — |
+| 参数        | 说明           | 类型    | 可选值                                                                | 默认值  |
+| ----------- | -------------- | ------- | --------------------------------------------------------------------- | ------- |
+| type        | 类型           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
+| size        | 尺寸           | string  | large / medium / small                                                | medium  |
+| shape       | 形状           | string  | default / round / circle                                              | default |
+| plain       | 是否朴素按钮   | boolean | —                                                                     | false   |
+| round       | 是否圆角按钮   | boolean | —                                                                     | false   |
+| circle      | 是否圆形按钮   | boolean | —                                                                     | false   |
+| loading     | 是否加载中状态 | boolean | —                                                                     | false   |
+| disabled    | 是否禁用状态   | boolean | —                                                                     | false   |
+| autofocus   | 是否默认聚焦   | boolean | —                                                                     | false   |
+| native-type | 原生 type 属性 | string  | button / submit / reset                                               | button  |
+| block       | 是否为块级按钮 | boolean | —                                                                     | false   |
+| aria-label  | 无障碍标签     | string  | —                                                                     | —       |
 
 ### Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| click | 点击时触发 | (event: MouseEvent) |
-| focus | 聚焦时触发 | (event: FocusEvent) |
-| blur | 失焦时触发 | (event: FocusEvent) |
+| 事件名 | 说明       | 回调参数            |
+| ------ | ---------- | ------------------- |
+| click  | 点击时触发 | (event: MouseEvent) |
+| focus  | 聚焦时触发 | (event: FocusEvent) |
+| blur   | 失焦时触发 | (event: FocusEvent) |
 
 ### Methods
 
-| 方法名 | 说明 | 参数 |
-| --- | --- | --- |
-| focus | 使按钮获取焦点 | — |
-| blur | 使按钮失去焦点 | — |
+| 方法名 | 说明           | 参数 |
+| ------ | -------------- | ---- |
+| focus  | 使按钮获取焦点 | —    |
+| blur   | 使按钮失去焦点 | —    |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| default | 按钮内容 |
-| prefix | 前缀图标 |
-| suffix | 后缀图标 |
+| 插槽名  | 说明             |
+| ------- | ---------------- |
+| default | 按钮内容         |
+| prefix  | 前缀图标         |
+| suffix  | 后缀图标         |
 | loading | 自定义加载中图标 |
 
 <style scoped>

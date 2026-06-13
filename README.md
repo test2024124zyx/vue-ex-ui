@@ -1,4 +1,3 @@
-
 # 🎮 ExUI - Vue3 Cyberpunk UI Component Library
 
 <img src="https://img.shields.io/badge/Vue-3.4+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
@@ -10,7 +9,6 @@
 **移动端优先的响应式 Vue3 组件库 | 赛博朋克主题风格**
 
 [📖 在线文档](https://vue-ex-ui.netlify.app) | [🎨 设计系统](https://vue-ex-ui.netlify.app/design) | [🚀 快速开始](https://vue-ex-ui.netlify.app/#快速开始) | [🎯 组件列表](https://vue-ex-ui.netlify.app/#组件总览)
-
 
 ---
 
@@ -67,14 +65,16 @@ yarn add vue-ex-ui
 pnpm add vue-ex-ui
 ```
 
-> **📦 依赖说明**：ExUI 依赖以下第三方库，安装时会自动安装：
-> - `@fontsource/audiowide` - Audiowide 字体（赛博朋克风格主字体）
-> - `echarts` - 图表组件（ExChart）
-> - `qrcode` - 二维码组件（ExQRCode）
-> - `jsbarcode` - 条码组件（ExBarcode）
-> - `lunar-javascript` - 日历组件的农历支持（ExCalendar）
-> 
-> 字体会被打包到组件库中，其他依赖如果你不使用对应组件，它们不会被打包到你的应用中（支持 Tree-shaking）。
+> **📦 依赖说明**：以下依赖均为**可选 peer 依赖**，只有在使用对应组件时才需要安装：
+>
+> - `echarts` - 图表组件（ExChart）：`npm i echarts`
+> - `qrcode` - 二维码组件（ExQRCode）：`npm i qrcode`
+> - `jsbarcode` - 条码组件（ExBarcode）：`npm i jsbarcode`
+> - `lunar-javascript` - 日历组件的农历支持（ExCalendar）：`npm i lunar-javascript`
+> - `vue-i18n` - 国际化（不安装时组件库使用内置的轻量回退实现）
+>
+> 不使用这些组件时无需安装对应依赖，也不会被打包进你的应用。
+> 所有图标均为内置 SVG，**无任何运行时网络请求**。
 
 ### 完整引入
 
@@ -100,13 +100,13 @@ import 'vue-ex-ui/style.css';
 export default {
   components: {
     ExButton,
-    ExInput
+    ExInput,
   },
   methods: {
     handleClick() {
       message.success('操作成功！');
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -134,7 +134,7 @@ const handleSubmit = () => {
 ```
 
 > 💡 **提示：** 现代打包工具（Vite、Webpack 5+）会自动进行 Tree Shaking，只打包使用的组件。
-> 
+>
 > 📖 查看 [按需加载文档](https://vue-ex-ui.netlify.app/guide/on-demand) 了解更多优化方案。
 
 ```vue
@@ -148,9 +148,8 @@ const handleSubmit = () => {
     <ex-card class="user-stats" type="neon" hoverable>
       <ex-avatar :src="userAvatar" size="large" />
       <ex-badge :count="99" type="primary">
-        <ex-icon>
-          <img src="https://api.iconify.design/ri/trophy-line.svg" />
-        </ex-icon>
+        <!-- 内置图标：icon 属性引用注册表中的图标名 -->
+        <ex-icon icon="star-fill" :size="20" />
       </ex-badge>
     </ex-card>
 
@@ -203,7 +202,7 @@ const playerAvatar = ref('/avatar.jpg');
 <summary><strong>✅ 通用基础组件 (12/12) - 100%</strong></summary>
 
 - [x] **Typography** - 排版文本组件
-- [x] **Icon** - 图标组件 (基于 Iconify API)
+- [x] **Icon** - 图标组件（内置 SVG 图标注册表，无网络依赖）
 - [x] **Button** - 按钮组件
 - [x] **Badge** - 徽标计数组件
 - [x] **Image** - 图片组件
@@ -307,9 +306,8 @@ const playerAvatar = ref('/avatar.jpg');
 ### 📊 总体进度
 
 ```
-总计组件: 68 个
-已完成: 68 ✅
-完成度: 100% 🎉
+总计组件: 80+ 个（含 DatePicker / TimePicker / Calendar 等独立组件）
+测试用例: 1200+ 全部通过 ✅
 ```
 
 ### 🎨 主题系统
@@ -409,33 +407,33 @@ ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方
 ### 一、快速开始（推荐）
 
 ```ts
-import { createApp } from 'vue'
-import App from './App.vue'
-import { createLocaleProvider } from 'vue-ex-ui'
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createLocaleProvider } from 'vue-ex-ui';
 
-const app = createApp(App)
+const app = createApp(App);
 
 const i18nProvider = createLocaleProvider({
   locale: 'zh-CN', // 或 'en-US'
   messages: {
     // 可选：合并/覆盖默认文案
     // menu: { search: '查找菜单' }
-  }
-})
+  },
+});
 
-app.use(i18nProvider)
-app.mount('#app')
+app.use(i18nProvider);
+app.mount('#app');
 ```
 
 ### 二、手动集成 vue-i18n
 
 ```ts
-import { createApp } from 'vue'
-import App from './App.vue'
-import { createI18n } from 'vue-i18n'
-import { enUS, zhCN } from 'vue-ex-ui'
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createI18n } from 'vue-i18n';
+import { enUS, zhCN } from 'vue-ex-ui';
 
-const app = createApp(App)
+const app = createApp(App);
 
 const i18n = createI18n({
   legacy: false,
@@ -443,26 +441,26 @@ const i18n = createI18n({
   messages: {
     'en-US': enUS,
     'zh-CN': zhCN,
-  }
-})
+  },
+});
 
-app.use(i18n)
-app.mount('#app')
+app.use(i18n);
+app.mount('#app');
 ```
 
 ### 组件中使用
 
 ```ts
 // 方式A：vue-i18n
-import { useI18n } from 'vue-i18n'
-const { t, locale } = useI18n()
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
 
 // 方式B：ExUI 提供的作用域翻译（内部优先代理到 vue-i18n）
-import { useLocale } from 'vue-ex-ui'
-const { t: tm } = useLocale('menu')
+import { useLocale } from 'vue-ex-ui';
+const { t: tm } = useLocale('menu');
 
 // 示例
-tm('search') // => '搜索菜单'
+tm('search'); // => '搜索菜单'
 ```
 
 ### 依赖与外部化
@@ -496,12 +494,11 @@ $breakpoints: (
 
 ### 🎯 移动端特性
 
-- **触摸友好** - 44px 最小点击区域，符合人体工程学
-- **手势支持** - 滑动、长按、双击等手势操作
-- **性能优化** - 懒加载、虚拟滚动、按需加载
+- **触摸友好** - 移动端可点击元素保证 44px 最小触达区域
+- **手势支持** - Carousel 支持触摸滑动切换
+- **性能优化** - 图片懒加载、虚拟滚动
 - **自适应布局** - 流式布局，自动适配屏幕尺寸
-- **高清适配** - 支持 Retina 屏幕
-- **离线支持** - PWA 兼容，可离线使用
+- **离线可用** - 图标与字体全部内置，无运行时网络请求
 
 ### 📱 响应式示例
 
@@ -537,7 +534,7 @@ const handleBreakpoint = broken => {
 | **TypeScript**       | 5.9+  | 类型安全的 JavaScript    |
 | **Vite**             | 7.1+  | 下一代前端构建工具       |
 | **SCSS**             | 1.92+ | CSS 预处理器             |
-| **Iconify**          | API   | 图标解决方案（无需安装） |
+| **内置 SVG 图标**    | -     | 60+ 内联图标，零网络依赖 |
 | **Vitest**           | 3.2+  | 单元测试框架             |
 | **VitePress**        | 1.6+  | 文档生成工具             |
 | **Vue I18n**         | 11.1+ | 国际化支持               |
@@ -582,25 +579,22 @@ const handleBreakpoint = broken => {
 
 ## 🌍 国际化支持
 
-ExUI 内置中英文语言包，支持全局配置和局部覆盖。
+ExUI 内置中英文语言包。语言包从主入口导出，语言切换通过 `setLocale` / `ConfigProvider` 完成：
 
 ```typescript
 import { createApp } from 'vue';
-import ExUI from 'vue-ex-ui';
-import { zhCN, enUS } from 'vue-ex-ui/locale';
+import ExUI, { setLocale, zhCN, enUS } from 'vue-ex-ui';
 
 const app = createApp(App);
+app.use(ExUI);
 
-// 全局配置语言
-app.use(ExUI, {
-  locale: zhCN, // 或 enUS
-});
-
-// 或使用 ConfigProvider 局部配置
+// 全局切换语言（'zh-CN' | 'en-US'）
+setLocale('zh-CN');
 ```
 
 ```vue
 <template>
+  <!-- ConfigProvider 的 locale 接收语言代码字符串 -->
   <ex-config-provider :locale="locale">
     <your-app />
   </ex-config-provider>
@@ -608,12 +602,11 @@ app.use(ExUI, {
 
 <script setup>
 import { ref } from 'vue';
-import { zhCN, enUS } from 'vue-ex-ui/locale';
 
-const locale = ref(zhCN);
+const locale = ref('zh-CN');
 
 const switchLanguage = () => {
-  locale.value = locale.value === zhCN ? enUS : zhCN;
+  locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN';
 };
 </script>
 ```
@@ -623,34 +616,17 @@ const switchLanguage = () => {
 - 🇨🇳 简体中文 (zh-CN)
 - 🇺🇸 英文 (en-US)
 
-### 自定义语言包
+### 覆盖默认文案
 
-```typescript
-import type { Locale } from 'vue-ex-ui';
-
-const customLocale: Locale = {
-  name: 'ja-JP',
-  button: {
-    confirm: '確認',
-    cancel: 'キャンセル',
-    // ...
-  },
-  // ...
-};
-```
+通过 `createLocaleProvider` 在初始化时合并自定义文案（详见上文"国际化（i18n）"一节）。
 
 ---
-
-
-## 🌟 特别感谢
-
-感谢所有 AI 为 ExUI 做出贡献！
 
 ---
 
 <div align="center">
 
-** 让我们一一起打造最酷的赛博朋克 UI 组件库！**
+**让我们一起打造最酷的赛博朋克 UI 组件库！**
 
 Made with ❤️ by ExUI Team
 

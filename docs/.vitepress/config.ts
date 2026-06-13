@@ -4,7 +4,7 @@ export default defineConfig({
   title: 'ExUI',
   description: '赛博朋克风格的 Vue 3 组件库 - 未来科技主题',
   lang: 'zh-CN',
-  
+
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['meta', { name: 'theme-color', content: '#29abe2' }],
@@ -12,7 +12,7 @@ export default defineConfig({
     ['meta', { name: 'og:title', content: 'ExUI - Vue3 Cyberpunk UI Library' }],
     ['meta', { name: 'og:description', content: '专为赛博朋克风格应用打造的 Vue3 组件库' }],
   ],
-  
+
   // Markdown 配置
   markdown: {
     theme: 'github-dark',
@@ -31,7 +31,7 @@ export default defineConfig({
       noExternal: ['vue-ex-ui'],
     },
   },
-  
+
   // 忽略死链接警告（开发中）
   ignoreDeadLinks: false,
 
@@ -49,6 +49,8 @@ export default defineConfig({
           items: [
             { text: '介绍', link: '/guide/' },
             { text: '快速开始', link: '/guide/quickstart' },
+            { text: '按需加载', link: '/guide/on-demand' },
+            { text: '可选依赖', link: '/guide/optional-dependencies' },
             { text: '主题定制', link: '/guide/theming' },
             { text: '主题使用指南', link: '/guide/theme-usage' },
           ],
@@ -85,7 +87,9 @@ export default defineConfig({
             { text: 'Rate 评分', link: '/components/rate' },
             { text: 'Switch 开关', link: '/components/switch' },
             { text: 'Slider 滑块', link: '/components/slider' },
-            { text: 'DateTimePicker 日期选择器', link: '/components/datetime-picker' },
+            { text: 'DatePicker 日期选择器', link: '/components/date-picker' },
+            { text: 'TimePicker 时间选择器', link: '/components/time-picker' },
+            { text: 'DateTimePicker 日期时间选择器', link: '/components/datetime-picker' },
             { text: 'Form 表单容器', link: '/components/form' },
             { text: 'Form 表单示例', link: '/components/form-examples' },
             { text: '验证码输入', link: '/components/verification-code' },
@@ -127,6 +131,8 @@ export default defineConfig({
             { text: 'Steps 步骤条', link: '/components/steps' },
             { text: 'Anchor 锚点', link: '/components/anchor' },
             { text: 'Pagination 分页器', link: '/components/pagination' },
+            { text: 'BackTop 回到顶部', link: '/components/back-top' },
+            { text: 'PageHeader 页头', link: '/components/page-header' },
             { text: 'Calendar 日历', link: '/components/calendar' },
           ],
         },

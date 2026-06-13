@@ -149,33 +149,114 @@ const options = [
 </template>
 ```
 
+## 多选
+
+设置 `multiple` 开启多选，此时绑定值为数组。选中项以可移除标签的形式展示，
+下拉中已选项右侧显示对勾，选择后下拉保持打开。
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+const value = ref<Array<string | number>>(['option1']);
+const options = [
+  { value: 'option1', label: '选项一' },
+  { value: 'option2', label: '选项二' },
+  { value: 'option3', label: '选项三' },
+];
+</script>
+
+<template>
+  <ExSelect v-model="value" :options="options" multiple clearable />
+</template>
+```
+
+- `multiple-limit` 限制最多可选数量（`0` 不限制）。
+- `collapse-tags` 仅展示第一个标签，其余折叠为 `+N`。
+- 多选支持搜索：同时设置 `searchable` 即可。
+
+## 远程搜索
+
+设置 `remote` 并配合 `searchable`，输入时会（防抖后）调用 `remote-method`，由你在
+回调里请求接口并更新 `options`；组件不再做本地过滤。用 `loading` 控制加载态。
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+const value = ref<string | number | null>(null);
+const options = ref<{ value: number; label: string }[]>([]);
+const loading = ref(false);
+
+const remoteSearch = async (query: string) => {
+  if (!query) {
+    options.value = [];
+    return;
+  }
+  loading.value = true;
+  try {
+    // 用你的接口替换：const res = await api.search(query)
+    await new Promise(r => setTimeout(r, 300));
+    options.value = Array.from({ length: 5 }, (_, i) => ({
+      value: i,
+      label: `${query} - 结果 ${i + 1}`,
+    }));
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+
+<template>
+  <ExSelect
+    v-model="value"
+    :options="options"
+    :loading="loading"
+    :remote-method="remoteSearch"
+    remote
+    searchable
+    clearable
+    placeholder="输入以远程搜索"
+  />
+</template>
+```
+
+- `remote-debounce` 调整防抖间隔（毫秒，默认 `300`）。
+- 远程模式下本地过滤被关闭，`options` 即为下拉展示内容。
+
 ## API
 
 ### Props
 
-| 参数                 | 说明           | 类型            | 可选值                 | 默认值     |
-| -------------------- | -------------- | --------------- | ---------------------- | ---------- |
-| modelValue / v-model | 绑定值         | string / number | —                      | —          |
-| options              | 选项数据       | SelectOptions   | —                      | []         |
-| placeholder          | 占位文本       | string          | —                      | '请选择'   |
-| size                 | 尺寸           | SelectSize      | small / medium / large | medium     |
-| disabled             | 是否禁用       | boolean         | —                      | false      |
-| clearable            | 是否可清空     | boolean         | —                      | false      |
-| searchable           | 是否可搜索     | boolean         | —                      | false      |
-| searchPlaceholder    | 搜索框占位文本 | string          | —                      | '搜索...'  |
-| noDataText           | 无数据时的文本 | string          | —                      | '暂无数据' |
-| popperClass          | 下拉框的类名   | string          | —                      | —          |
+| 参数                 | 说明                         | 类型                    | 可选值                 | 默认值     |
+| -------------------- | ---------------------------- | ----------------------- | ---------------------- | ---------- |
+| modelValue / v-model | 绑定值（多选时为数组）       | string / number / array | —                      | —          |
+| options              | 选项数据                     | SelectOptions           | —                      | []         |
+| placeholder          | 占位文本                     | string                  | —                      | '请选择'   |
+| size                 | 尺寸                         | SelectSize              | small / medium / large | medium     |
+| disabled             | 是否禁用                     | boolean                 | —                      | false      |
+| clearable            | 是否可清空                   | boolean                 | —                      | false      |
+| searchable           | 是否可搜索                   | boolean                 | —                      | false      |
+| remote               | 是否远程搜索（关闭本地过滤） | boolean                 | —                      | false      |
+| remote-method        | 远程搜索回调                 | (query: string) => void | —                      | —          |
+| loading              | 加载中（远程时由父级控制）   | boolean                 | —                      | false      |
+| remote-debounce      | 远程搜索防抖（毫秒）         | number                  | —                      | 300        |
+| multiple             | 是否多选                     | boolean                 | —                      | false      |
+| multiple-limit       | 多选时最多可选数量（0 不限） | number                  | —                      | 0          |
+| collapse-tags        | 多选时折叠多余标签为 +N      | boolean                 | —                      | false      |
+| searchPlaceholder    | 搜索框占位文本               | string                  | —                      | '搜索...'  |
+| noDataText           | 无数据时的文本               | string                  | —                      | '暂无数据' |
+| popperClass          | 下拉框的类名                 | string                  | —                      | —          |
 
 ### Events
 
-| 事件名            | 说明                  | 回调参数                  |
-| ----------------- | --------------------- | ------------------------- |
-| update:modelValue | 值变化时触发          | (value: string \| number) |
-| change            | 选中值发生变化时触发  | (value: string \| number) |
-| visible-change    | 下拉框出现/隐藏时触发 | (visible: boolean)        |
-| clear             | 点击清空按钮时触发    | —                         |
-| blur              | 失去焦点时触发        | (event: FocusEvent)       |
-| focus             | 获得焦点时触发        | (event: FocusEvent)       |
+| 事件名            | 说明                  | 回调参数                           |
+| ----------------- | --------------------- | ---------------------------------- |
+| update:modelValue | 值变化时触发          | (value: string \| number \| array) |
+| change            | 选中值发生变化时触发  | (value, option \| options)         |
+| remove-tag        | 多选时移除标签触发    | (value: string \| number)          |
+| visible-change    | 下拉框出现/隐藏时触发 | (visible: boolean)                 |
+| clear             | 点击清空按钮时触发    | —                                  |
+| blur              | 失去焦点时触发        | (event: FocusEvent)                |
+| focus             | 获得焦点时触发        | (event: FocusEvent)                |
 
 ### Exposes
 

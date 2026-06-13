@@ -4,12 +4,14 @@ ExUI 提供了灵活的主题系统，让你可以轻松定制组件的外观以
 
 ## 默认主题
 
-ExUI 内置了多个赛博朋克风格主题：
+ExUI 内置了多个主题：
 
-- **neon-blue** - 霓虹蓝主题（默认）
-- **neon-purple** - 霓虹紫主题  
-- **dark** - 纯黑暗主题
-- **high-contrast** - 高对比度主题
+- **neon-blue** - 霓虹蓝主题（默认，赛博朋克）
+- **neon-pink** - 霓虹粉主题（赛博朋克）
+- **dark** - 纯黑暗主题（冷蓝灰，无霓虹）
+- **matrix** - 矩阵绿黑客风主题（纯黑底 + 荧光绿，极高对比）。旧名 `high-contrast`
+  仍作为兼容别名生效，但建议使用 `matrix`；`high-contrast` 名称保留给未来的无障碍主题
+- **light** - 明亮主题（白底深字，发光收敛为柔和投影，适合后台/文档场景）
 
 ## 切换主题
 
@@ -19,10 +21,10 @@ ExUI 内置了多个赛博朋克风格主题：
 
 ```vue
 <script setup>
-import { ref } from 'vue'
-import { ExConfigProvider } from 'vue-ex-ui'
+import { ref } from 'vue';
+import { ExConfigProvider } from 'vue-ex-ui';
 
-const theme = ref('neon-blue')
+const theme = ref('neon-blue');
 </script>
 
 <template>
@@ -31,9 +33,10 @@ const theme = ref('neon-blue')
       <button @click="theme = 'neon-blue'">霓虹蓝</button>
       <button @click="theme = 'neon-pink'">霓虹粉</button>
       <button @click="theme = 'dark'">暗黑</button>
-      <button @click="theme = 'high-contrast'">高对比度</button>
+      <button @click="theme = 'matrix'">矩阵绿</button>
+      <button @click="theme = 'light'">明亮</button>
     </div>
-    
+
     <App />
   </ExConfigProvider>
 </template>
@@ -45,17 +48,17 @@ const theme = ref('neon-blue')
 
 ```vue
 <script setup>
-import { useTheme } from 'vue-ex-ui'
+import { useTheme } from 'vue-ex-ui';
 
-const theme = useTheme()
+const theme = useTheme();
 
 // 获取当前主题
-console.log(theme.value) // 'neon-blue'
+console.log(theme.value); // 'neon-blue'
 
 // 切换主题（需要在 ConfigProvider 内部）
-const switchTheme = (newTheme) => {
+const switchTheme = newTheme => {
   // 通过更新 ConfigProvider 的 theme prop 来切换
-}
+};
 </script>
 ```
 
@@ -70,11 +73,11 @@ const switchTheme = (newTheme) => {
   /* 主色调 */
   --ex-primary: #ff6b35;
   --ex-secondary: #f7931e;
-  
+
   /* 背景色 */
   --ex-bg-primary: #1a1a2e;
   --ex-bg-secondary: #16213e;
-  
+
   /* 文本色 */
   --ex-text-primary: #ffffff;
   --ex-text-secondary: #b8b8b8;
@@ -87,22 +90,22 @@ const switchTheme = (newTheme) => {
 
 ```scss
 // themes/custom.scss
-:root[data-theme="custom"] {
+:root[data-theme='custom'] {
   --ex-primary: #ff6b35;
   --ex-primary-hover: #ff5722;
   --ex-primary-active: #e64a19;
-  
+
   --ex-secondary: #f7931e;
   --ex-accent: #4caf50;
-  
+
   --ex-bg-primary: #1a1a2e;
   --ex-bg-secondary: #16213e;
   --ex-bg-elevated: #0f3460;
-  
+
   --ex-text-primary: #ffffff;
   --ex-text-secondary: #b8b8b8;
   --ex-text-disabled: #666666;
-  
+
   --ex-border: #333333;
   --ex-shadow: rgba(255, 107, 53, 0.2);
 }
@@ -111,10 +114,10 @@ const switchTheme = (newTheme) => {
 然后在应用中引入：
 
 ```typescript
-import './themes/custom.scss'
+import './themes/custom.scss';
 
 // 使用自定义主题
-setTheme('custom')
+setTheme('custom');
 ```
 
 ## 主题变量参考
@@ -123,7 +126,7 @@ setTheme('custom')
 
 ```scss
 // 主色调
---ex-primary: #29ABE2;
+--ex-primary: #29abe2;
 --ex-primary-hover: #1e8bb8;
 --ex-primary-active: #1a7ba3;
 
@@ -220,23 +223,23 @@ ExUI 自动支持系统暗色模式：
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
-import { ExConfigProvider } from 'vue-ex-ui'
+import { ref, onMounted } from 'vue';
+import { ExConfigProvider } from 'vue-ex-ui';
 
-const theme = ref('neon-blue')
+const theme = ref('neon-blue');
 
 // 检测系统暗色模式偏好
 onMounted(() => {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   if (prefersDark) {
-    theme.value = 'dark'
+    theme.value = 'dark';
   }
-  
+
   // 监听系统主题变化
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    theme.value = e.matches ? 'dark' : 'neon-blue'
-  })
-})
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    theme.value = e.matches ? 'dark' : 'neon-blue';
+  });
+});
 </script>
 
 <template>
@@ -252,23 +255,23 @@ onMounted(() => {
 
 ```vue
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { ExConfigProvider } from 'vue-ex-ui'
+import { ref, watch, onMounted } from 'vue';
+import { ExConfigProvider } from 'vue-ex-ui';
 
-const theme = ref('neon-blue')
+const theme = ref('neon-blue');
 
 // 从 localStorage 恢复主题
 onMounted(() => {
-  const savedTheme = localStorage.getItem('ex-ui-theme')
+  const savedTheme = localStorage.getItem('ex-ui-theme');
   if (savedTheme) {
-    theme.value = savedTheme
+    theme.value = savedTheme;
   }
-})
+});
 
 // 保存主题到 localStorage
-watch(theme, (newTheme) => {
-  localStorage.setItem('ex-ui-theme', newTheme)
-})
+watch(theme, newTheme => {
+  localStorage.setItem('ex-ui-theme', newTheme);
+});
 </script>
 
 <template>
