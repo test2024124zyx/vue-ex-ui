@@ -240,7 +240,7 @@
     }
   }
 
-  // 代码�?
+  // 代码预览层
   &__pre {
     flex: 1;
     margin: 0;
@@ -317,7 +317,7 @@
     word-break: normal;
     tab-size: 4;
 
-    // 基础语法高亮（简化版�?
+    // 基础语法高亮（简化版）
     .keyword {
       color: var(--ex-color-neon-pink-500);
       font-weight: var(--ex-font-weight-medium);
@@ -413,7 +413,7 @@
 
 
 
-  // 响应�?
+  // 响应式适配
   @media (max-width: 768px) {
     font-size: var(--ex-text-xs);
 
@@ -430,7 +430,7 @@
     }
   }
 
-  // 无障碍支�?
+  // 无障碍支持
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 
@@ -448,5 +448,4 @@
     }
   }
 }
-
 

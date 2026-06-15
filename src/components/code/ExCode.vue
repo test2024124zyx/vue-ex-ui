@@ -57,6 +57,8 @@
 
       <!-- 代码块（可编辑时在高亮层上叠加透明 textarea） -->
       <div class="ex-code__main" :class="{ 'ex-code__main--editable': isEditable }">
+        <!-- 高亮 HTML 已在 highlighter.ts 中通过 sanitizeHtml 统一消毒。 -->
+        <!-- eslint-disable vue/no-v-html -->
         <pre
           class="ex-code__pre hljs"
           :class="{ 'ex-code__pre--wrap': wrap }"
@@ -66,6 +68,7 @@
           :class="`language-${language}`"
           v-html="codeHtml"
         /></pre>
+        <!-- eslint-enable vue/no-v-html -->
         <textarea
           v-if="isEditable"
           ref="textareaRef"

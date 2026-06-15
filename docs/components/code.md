@@ -85,7 +85,7 @@ class UserService {
 
 ## 语法高亮
 
-基于 `highlight.js` 自动着色：关键字、字符串、数字、注释、函数等不同 token 使用不同颜色，配色已对接主题变量。指定 `language` 可获得最准确的高亮，省略时自动探测。
+基于 `highlight.js` 自动着色：关键字、字符串、数字、注释、函数等不同 token 使用不同颜色，配色已对接主题变量。指定受支持的 `language` 可获得稳定高亮，省略时按 `plaintext` 纯文本展示。
 
 <div class="demo-container">
   <ExCode :code="highlightDemo" language="javascript" line-numbers />

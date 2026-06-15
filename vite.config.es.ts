@@ -16,7 +16,16 @@ import { glob } from 'glob';
  * 仍需引入一次：见 dist/es/style.css（由 src/style-base.ts 产出）。
  */
 
-const external = ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-javascript'];
+const external = [
+  'vue',
+  'vue-i18n',
+  'echarts',
+  'qrcode',
+  'jsbarcode',
+  'lunar-javascript',
+  'highlight.js',
+  'highlight.js/lib/common',
+];
 
 // 入口为「公共 API 出口」：整包 barrel、基础样式、各组件 index、composables、
 // 工具与国际化入口。组件内部的子文件（如 DatePanel.vue）会作为依赖被打进各自
