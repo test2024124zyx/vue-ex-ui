@@ -1,7 +1,7 @@
 <template>
   <div ref="heatmapRef" :class="heatmapClasses" :style="heatmapStyles">
     <!-- 月份标签 -->
-    <div v-if="showMonthLabels" class="ex-heatmap__months">
+    <div v-if="showMonthLabels && data.length > 0" class="ex-heatmap__months">
       <div
         v-for="(month, index) in monthLabels"
         :key="index"
@@ -13,7 +13,7 @@
     </div>
 
     <!-- 热力图主体 -->
-    <div class="ex-heatmap__body">
+    <div v-if="data.length > 0" class="ex-heatmap__body">
       <!-- 星期标签 -->
       <div v-if="showWeekLabels" class="ex-heatmap__weeks">
         <div v-for="(week, index) in weekLabels" :key="index" class="ex-heatmap__week-label">
@@ -30,9 +30,15 @@
             :class="getCellClasses(day)"
             :style="getCellStyle(day)"
             :title="getCellTitle(day)"
+            role="button"
+            :tabindex="0"
+            :aria-label="getCellTitle(day)"
             @click="handleCellClick(day, $event)"
+            @keydown="handleCellKeydown(day, $event)"
             @mouseenter="handleCellHover(day)"
             @mouseleave="handleCellHover(null)"
+            @focus="handleCellHover(day)"
+            @blur="handleCellHover(null)"
           >
             <div v-if="showTooltip && hoveredCell === day" class="ex-heatmap__tooltip">
               <div class="ex-heatmap__tooltip-date">
@@ -48,7 +54,7 @@
     </div>
 
     <!-- 图例 -->
-    <div class="ex-heatmap__legend">
+    <div v-if="data.length > 0" class="ex-heatmap__legend">
       <span class="ex-heatmap__legend-label">{{ t('heatmap.less') }}</span>
       <div
         v-for="level in 5"
@@ -255,10 +261,16 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-// 事件处理
+// 事件处理（任意单元格均可点击，由消费方决定如何处理空值日）
 const handleCellClick = (day: HeatmapDataItem, event: MouseEvent) => {
-  if (day.value > 0) {
-    emit('cell-click', day, event);
+  emit('cell-click', day, event);
+};
+
+// 键盘支持（Enter/Space 触发点击）
+const handleCellKeydown = (day: HeatmapDataItem, event: KeyboardEvent) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    emit('cell-click', day, event as unknown as MouseEvent);
   }
 };
 
@@ -270,8 +282,9 @@ const handleCellHover = (day: HeatmapDataItem | null) => {
 // 暴露的方法
 const getElement = () => heatmapRef.value || null;
 
+// 刷新：清除当前悬浮/聚焦的瞬时状态（网格数据由 props 响应式驱动，会自动重渲染）
 const refresh = () => {
-  // 刷新逻辑
+  hoveredCell.value = null;
 };
 
 defineExpose<ExHeatmapExposed>({

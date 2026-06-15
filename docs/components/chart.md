@@ -3,7 +3,7 @@
 基于 ECharts 的专业图表组件，支持所有 ECharts 图表类型，提供赛博朋克风格的霓虹发光效果。
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 // 折线图配置
 const lineOption = ref({
@@ -257,6 +257,71 @@ const fullOption = ref({
   ]
 })
 
+// 平滑面积图（弧形折线 + 渐变填充）
+const areaLineOption = ref({
+  tooltip: { trigger: 'axis' },
+  grid: { left: 50, right: 20, top: 30, bottom: 30 },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  },
+  yAxis: { type: 'value' },
+  series: [{
+    name: '活跃用户',
+    data: [820, 932, 901, 934, 1290, 1330, 1320],
+    type: 'line',
+    smooth: true,
+    symbol: 'circle',
+    symbolSize: 8,
+    lineStyle: { width: 3 },
+    areaStyle: {
+      color: {
+        type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [
+          { offset: 0, color: 'rgba(41, 171, 226, 0.55)' },
+          { offset: 1, color: 'rgba(41, 171, 226, 0.02)' }
+        ]
+      }
+    }
+  }]
+})
+
+// 动态实时折线（每秒推入一个新数据点）
+const genPoint = (i) => Math.round(60 + Math.sin(i / 3) * 30 + Math.random() * 20)
+const dynamicSeed = Array.from({ length: 20 }, (_, i) => genPoint(i))
+const dynamicTime = Array.from({ length: 20 }, (_, i) => `${i}s`)
+let dynamicCursor = 20
+const buildDynamicOption = () => ({
+  tooltip: { trigger: 'axis' },
+  grid: { left: 50, right: 20, top: 30, bottom: 30 },
+  xAxis: { type: 'category', boundaryGap: false, data: [...dynamicTime] },
+  yAxis: { type: 'value', max: 140 },
+  series: [{
+    name: '实时吞吐',
+    type: 'line',
+    smooth: true,
+    showSymbol: false,
+    data: [...dynamicSeed],
+    lineStyle: { width: 2 },
+    areaStyle: { opacity: 0.15 }
+  }]
+})
+const dynamicLineOption = ref(buildDynamicOption())
+let dynamicTimer
+onMounted(() => {
+  dynamicTimer = setInterval(() => {
+    dynamicSeed.shift()
+    dynamicSeed.push(genPoint(dynamicCursor))
+    dynamicTime.shift()
+    dynamicTime.push(`${dynamicCursor}s`)
+    dynamicCursor += 1
+    // 替换整个 option 引用以触发图表更新
+    dynamicLineOption.value = buildDynamicOption()
+  }, 1000)
+})
+onUnmounted(() => clearInterval(dynamicTimer))
+
 // 加载状态（注意：这个示例会在2秒后自动隐藏加载状态）
 const loading = ref(false)
 
@@ -289,22 +354,24 @@ const handleFinished = () => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const lineOption = ref({
   xAxis: {
     type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
   },
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],
-    type: 'line',
-    smooth: true
-  }]
-})
+  series: [
+    {
+      data: [120, 200, 150, 80, 70, 110, 130],
+      type: 'line',
+      smooth: true,
+    },
+  ],
+});
 </script>
 ```
 
@@ -322,21 +389,23 @@ const lineOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const barOption = ref({
   xAxis: {
     type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
   },
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],
-    type: 'bar'
-  }]
-})
+  series: [
+    {
+      data: [120, 200, 150, 80, 70, 110, 130],
+      type: 'bar',
+    },
+  ],
+});
 </script>
 ```
 
@@ -354,21 +423,23 @@ const barOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const pieOption = ref({
-  series: [{
-    type: 'pie',
-    radius: '50%',
-    data: [
-      { value: 1048, name: 'Search Engine' },
-      { value: 735, name: 'Direct' },
-      { value: 580, name: 'Email' },
-      { value: 484, name: 'Union Ads' },
-      { value: 300, name: 'Video Ads' }
-    ]
-  }]
-})
+  series: [
+    {
+      type: 'pie',
+      radius: '50%',
+      data: [
+        { value: 1048, name: 'Search Engine' },
+        { value: 735, name: 'Direct' },
+        { value: 580, name: 'Email' },
+        { value: 484, name: 'Union Ads' },
+        { value: 300, name: 'Video Ads' },
+      ],
+    },
+  ],
+});
 </script>
 ```
 
@@ -386,28 +457,30 @@ const pieOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const scatterOption = ref({
   xAxis: {},
   yAxis: {},
-  series: [{
-    type: 'scatter',
-    data: [
-      [10, 8.04],
-      [8, 6.95],
-      [13, 7.58],
-      [9, 8.81],
-      [11, 8.33],
-      [14, 9.96],
-      [6, 7.24],
-      [4, 4.26],
-      [12, 10.84],
-      [7, 4.82],
-      [5, 5.68]
-    ]
-  }]
-})
+  series: [
+    {
+      type: 'scatter',
+      data: [
+        [10, 8.04],
+        [8, 6.95],
+        [13, 7.58],
+        [9, 8.81],
+        [11, 8.33],
+        [14, 9.96],
+        [6, 7.24],
+        [4, 4.26],
+        [12, 10.84],
+        [7, 4.82],
+        [5, 5.68],
+      ],
+    },
+  ],
+});
 </script>
 ```
 
@@ -425,15 +498,15 @@ const scatterOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const radarOption = ref({
   tooltip: {
-    trigger: 'item'
+    trigger: 'item',
   },
   legend: {
     data: ['预算分配', '实际支出'],
-    bottom: 0
+    bottom: 0,
   },
   radar: {
     indicator: [
@@ -442,28 +515,130 @@ const radarOption = ref({
       { name: '信息技术', max: 30000 },
       { name: '客户支持', max: 40000 },
       { name: '研发', max: 55000 },
-      { name: '市场', max: 25000 }
+      { name: '市场', max: 25000 },
     ],
     splitNumber: 5,
     // 禁用 alignTicks 避免刻度不可读警告
-    alignTicks: false
+    alignTicks: false,
   },
-  series: [{
-    type: 'radar',
-    data: [
-      {
-        value: [4200, 3000, 20000, 35000, 50000, 18000],
-        name: '预算分配',
-        areaStyle: { opacity: 0.3 }
+  series: [
+    {
+      type: 'radar',
+      data: [
+        {
+          value: [4200, 3000, 20000, 35000, 50000, 18000],
+          name: '预算分配',
+          areaStyle: { opacity: 0.3 },
+        },
+        {
+          value: [5000, 14000, 28000, 26000, 42000, 21000],
+          name: '实际支出',
+          areaStyle: { opacity: 0.3 },
+        },
+      ],
+    },
+  ],
+});
+</script>
+```
+
+## 平滑面积图
+
+弧形折线配合渐变填充，常用于趋势展示。
+
+<div class="demo-container">
+  <ex-chart :option="areaLineOption" height="300px" />
+</div>
+
+```vue
+<template>
+  <ex-chart :option="areaLineOption" height="300px" />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const areaLineOption = ref({
+  tooltip: { trigger: 'axis' },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+  },
+  yAxis: { type: 'value' },
+  series: [
+    {
+      data: [820, 932, 901, 934, 1290, 1330, 1320],
+      type: 'line',
+      smooth: true,
+      lineStyle: { width: 3 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(41, 171, 226, 0.55)' },
+            { offset: 1, color: 'rgba(41, 171, 226, 0.02)' },
+          ],
+        },
       },
-      {
-        value: [5000, 14000, 28000, 26000, 42000, 21000],
-        name: '实际支出',
-        areaStyle: { opacity: 0.3 }
-      }
-    ]
-  }]
-})
+    },
+  ],
+});
+</script>
+```
+
+## 动态实时折线
+
+通过定时替换 `option` 实现实时数据流动效果（每秒推入一个新数据点）。
+
+<div class="demo-container">
+  <ex-chart :option="dynamicLineOption" height="300px" />
+</div>
+
+```vue
+<template>
+  <ex-chart :option="dynamicLineOption" height="300px" />
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const data = Array.from({ length: 20 }, (_, i) => Math.round(60 + Math.sin(i / 3) * 30));
+const time = Array.from({ length: 20 }, (_, i) => `${i}s`);
+let cursor = 20;
+
+const build = () => ({
+  tooltip: { trigger: 'axis' },
+  xAxis: { type: 'category', boundaryGap: false, data: [...time] },
+  yAxis: { type: 'value', max: 140 },
+  series: [
+    {
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      data: [...data],
+      areaStyle: { opacity: 0.15 },
+    },
+  ],
+});
+
+const dynamicLineOption = ref(build());
+let timer;
+onMounted(() => {
+  timer = setInterval(() => {
+    data.shift();
+    data.push(Math.round(60 + Math.sin(cursor / 3) * 30 + Math.random() * 20));
+    time.shift();
+    time.push(`${cursor}s`);
+    cursor++;
+    dynamicLineOption.value = build(); // 替换引用触发更新
+  }, 1000);
+});
+onUnmounted(() => clearInterval(timer));
 </script>
 ```
 
@@ -481,21 +656,23 @@ const radarOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const gaugeOption = ref({
-  series: [{
-    type: 'gauge',
-    progress: {
-      show: true
+  series: [
+    {
+      type: 'gauge',
+      progress: {
+        show: true,
+      },
+      detail: {
+        valueAnimation: true,
+        formatter: '{value}%',
+      },
+      data: [{ value: 75, name: 'Progress' }],
     },
-    detail: {
-      valueAnimation: true,
-      formatter: '{value}%'
-    },
-    data: [{ value: 75, name: 'Progress' }]
-  }]
-})
+  ],
+});
 </script>
 ```
 
@@ -513,23 +690,23 @@ const gaugeOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const fullOption = ref({
   title: {
     text: '销售数据统计',
     subtext: '2024年度',
-    left: 'center'
+    left: 'center',
   },
   tooltip: {
     trigger: 'axis',
     axisPointer: {
-      type: 'cross'
-    }
+      type: 'cross',
+    },
   },
   legend: {
     data: ['销售额', '利润'],
-    bottom: 10
+    bottom: 10,
   },
   toolbox: {
     show: true,
@@ -538,46 +715,46 @@ const fullOption = ref({
       dataView: { title: '数据视图', readOnly: false },
       restore: { title: '还原' },
       dataZoom: { title: { zoom: '区域缩放', back: '还原缩放' } },
-      magicType: { 
+      magicType: {
         title: { line: '切换为折线图', bar: '切换为柱状图' },
-        type: ['line', 'bar'] 
-      }
-    }
+        type: ['line', 'bar'],
+      },
+    },
   },
   grid: {
     left: '3%',
     right: '4%',
     bottom: '15%',
     top: '15%',
-    containLabel: true
+    containLabel: true,
   },
   xAxis: {
     type: 'category',
     data: ['1月', '2月', '3月', '4月', '5月', '6月'],
     name: '月份',
     nameLocation: 'middle',
-    nameGap: 30
+    nameGap: 30,
   },
   yAxis: {
     type: 'value',
     name: '金额（万元）',
     nameLocation: 'middle',
-    nameGap: 50
+    nameGap: 50,
   },
   series: [
     {
       name: '销售额',
       type: 'bar',
-      data: [120, 200, 150, 80, 70, 110]
+      data: [120, 200, 150, 80, 70, 110],
     },
     {
       name: '利润',
       type: 'line',
       data: [60, 100, 75, 40, 35, 55],
-      smooth: true
-    }
-  ]
-})
+      smooth: true,
+    },
+  ],
+});
 </script>
 ```
 
@@ -600,34 +777,31 @@ const fullOption = ref({
     <ex-button @click="loading = !loading">
       {{ loading ? '隐藏加载' : '显示加载' }}
     </ex-button>
-    <ex-chart 
-      :option="lineOption" 
-      :loading="loading" 
-      loading-text="数据加载中..." 
-      height="300px" 
-    />
+    <ex-chart :option="lineOption" :loading="loading" loading-text="数据加载中..." height="300px" />
   </ex-space>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(false)
+const loading = ref(false);
 
 const lineOption = ref({
   xAxis: {
     type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
   },
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],
-    type: 'line',
-    smooth: true
-  }]
-})
+  series: [
+    {
+      data: [120, 200, 150, 80, 70, 110, 130],
+      type: 'line',
+      smooth: true,
+    },
+  ],
+});
 </script>
 ```
 
@@ -645,11 +819,11 @@ const lineOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const emptyOption = ref({
-  series: []
-})
+  series: [],
+});
 </script>
 ```
 
@@ -686,22 +860,17 @@ const emptyOption = ref({
 
 ```vue
 <template>
-  <ex-chart 
-    :option="lineOption" 
-    height="300px"
-    @click="handleClick"
-    @finished="handleFinished"
-  />
+  <ex-chart :option="lineOption" height="300px" @click="handleClick" @finished="handleFinished" />
 </template>
 
 <script setup>
-const handleClick = (params) => {
-  console.log('Chart clicked:', params)
-}
+const handleClick = params => {
+  console.log('Chart clicked:', params);
+};
 
 const handleFinished = () => {
-  console.log('Chart render finished')
-}
+  console.log('Chart render finished');
+};
 </script>
 ```
 
@@ -709,65 +878,65 @@ const handleFinished = () => {
 
 ### Props
 
-| 参数 | 说明 | 类型 | 可选值 | 默认值 |
-| --- | --- | --- | --- | --- |
-| option | ECharts 配置选项 | EChartsOption | — | — |
-| type | 图表类型（用于预设配置） | string | line / bar / pie / scatter / radar / gauge / funnel / candlestick / heatmap / tree / treemap / sunburst / graph / sankey / boxplot / parallel / custom | — |
-| size | 图表尺寸 | string | small / medium / large | medium |
-| width | 图表宽度 | string / number | — | 100% |
-| height | 图表高度 | string / number | — | 400px |
-| loading | 是否显示加载动画 | boolean | — | false |
-| loading-text | 加载文本 | string | — | — |
-| auto-resize | 是否自动调整大小 | boolean | — | true |
-| resize-delay | 调整大小防抖延迟（毫秒） | number | — | 300 |
-| show-toolbox | 是否显示工具栏 | boolean | — | false |
-| show-data-zoom | 是否显示数据缩放 | boolean | — | false |
-| show-legend | 是否显示图例 | boolean | — | true |
-| show-tooltip | 是否显示提示框 | boolean | — | true |
-| show-grid | 是否显示网格 | boolean | — | true |
-| animation-duration | 动画时长（毫秒） | number | — | 1000 |
-| renderer | 图表渲染器 | string | canvas / svg | canvas |
-| init-options | 初始化配置 | EChartsInitOpts | — | — |
-| aria-label | 无障碍标签 | string | — | — |
+| 参数               | 说明                     | 类型            | 可选值                                                                                                                                                 | 默认值 |
+| ------------------ | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| option             | ECharts 配置选项         | EChartsOption   | —                                                                                                                                                      | —      |
+| type               | 图表类型（用于预设配置） | string          | line / bar / pie / scatter / radar / gauge / funnel / candlestick / heatmap / tree / treemap / sunburst / graph / sankey / boxplot / parallel / custom | —      |
+| size               | 图表尺寸                 | string          | small / medium / large                                                                                                                                 | medium |
+| width              | 图表宽度                 | string / number | —                                                                                                                                                      | 100%   |
+| height             | 图表高度                 | string / number | —                                                                                                                                                      | 400px  |
+| loading            | 是否显示加载动画         | boolean         | —                                                                                                                                                      | false  |
+| loading-text       | 加载文本                 | string          | —                                                                                                                                                      | —      |
+| auto-resize        | 是否自动调整大小         | boolean         | —                                                                                                                                                      | true   |
+| resize-delay       | 调整大小防抖延迟（毫秒） | number          | —                                                                                                                                                      | 300    |
+| show-toolbox       | 是否显示工具栏           | boolean         | —                                                                                                                                                      | false  |
+| show-data-zoom     | 是否显示数据缩放         | boolean         | —                                                                                                                                                      | false  |
+| show-legend        | 是否显示图例             | boolean         | —                                                                                                                                                      | true   |
+| show-tooltip       | 是否显示提示框           | boolean         | —                                                                                                                                                      | true   |
+| show-grid          | 是否显示网格             | boolean         | —                                                                                                                                                      | true   |
+| animation-duration | 动画时长（毫秒）         | number          | —                                                                                                                                                      | 1000   |
+| renderer           | 图表渲染器               | string          | canvas / svg                                                                                                                                           | canvas |
+| init-options       | 初始化配置               | EChartsInitOpts | —                                                                                                                                                      | —      |
+| aria-label         | 无障碍标签               | string          | —                                                                                                                                                      | —      |
 
 ### Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| init | 图表初始化完成 | (instance: ECharts) |
-| click | 图表点击事件 | (params: ECElementEvent) |
-| dblclick | 图表双击事件 | (params: ECElementEvent) |
-| mouseover | 图表鼠标移入事件 | (params: ECElementEvent) |
-| mouseout | 图表鼠标移出事件 | (params: ECElementEvent) |
-| mousemove | 图表鼠标移动事件 | (params: ECElementEvent) |
-| datazoom | 图表数据缩放事件 | (params: ECElementEvent) |
+| 事件名              | 说明                 | 回调参数                 |
+| ------------------- | -------------------- | ------------------------ |
+| init                | 图表初始化完成       | (instance: ECharts)      |
+| click               | 图表点击事件         | (params: ECElementEvent) |
+| dblclick            | 图表双击事件         | (params: ECElementEvent) |
+| mouseover           | 图表鼠标移入事件     | (params: ECElementEvent) |
+| mouseout            | 图表鼠标移出事件     | (params: ECElementEvent) |
+| mousemove           | 图表鼠标移动事件     | (params: ECElementEvent) |
+| datazoom            | 图表数据缩放事件     | (params: ECElementEvent) |
 | legendselectchanged | 图表图例选择改变事件 | (params: ECElementEvent) |
-| finished | 图表渲染完成事件 | — |
-| updated | 图表更新完成事件 | — |
-| error | 图表错误事件 | (error: Error) |
+| finished            | 图表渲染完成事件     | —                        |
+| updated             | 图表更新完成事件     | —                        |
+| error               | 图表错误事件         | (error: Error)           |
 
 ### Methods
 
-| 方法名 | 说明 | 参数 |
-| --- | --- | --- |
-| getInstance | 获取 ECharts 实例 | — |
-| getElement | 获取图表 DOM 元素 | — |
-| resize | 手动调整图表大小 | (opts?: ResizeOpts) |
-| clear | 清空图表 | — |
-| dispose | 销毁图表实例 | — |
-| setOption | 设置图表配置 | (option: EChartsOption, opts?: SetOptionOpts) |
-| showLoading | 显示加载动画 | (type?: string, opts?: object) |
-| hideLoading | 隐藏加载动画 | — |
-| getDataURL | 获取图表数据 URL | (opts?: object) |
-| getSvgDataURL | 获取图表 SVG 字符串 | — |
-| convertToPixel | 转换坐标 | (finder: ConvertFinder, value: unknown) |
-| convertFromPixel | 转换坐标 | (finder: ConvertFinder, value: unknown) |
+| 方法名           | 说明                | 参数                                          |
+| ---------------- | ------------------- | --------------------------------------------- |
+| getInstance      | 获取 ECharts 实例   | —                                             |
+| getElement       | 获取图表 DOM 元素   | —                                             |
+| resize           | 手动调整图表大小    | (opts?: ResizeOpts)                           |
+| clear            | 清空图表            | —                                             |
+| dispose          | 销毁图表实例        | —                                             |
+| setOption        | 设置图表配置        | (option: EChartsOption, opts?: SetOptionOpts) |
+| showLoading      | 显示加载动画        | (type?: string, opts?: object)                |
+| hideLoading      | 隐藏加载动画        | —                                             |
+| getDataURL       | 获取图表数据 URL    | (opts?: object)                               |
+| getSvgDataURL    | 获取图表 SVG 字符串 | —                                             |
+| convertToPixel   | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
+| convertFromPixel | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| empty | 自定义空状态内容 |
+| 插槽名 | 说明             |
+| ------ | ---------------- |
+| empty  | 自定义空状态内容 |
 
 <style scoped>
 .demo-container {

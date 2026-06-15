@@ -34,8 +34,6 @@ import {
   ExContainer,
 } from './components/layout';
 import ExImage from './components/image';
-import ExDatePicker from './components/date-picker';
-import ExTimePicker from './components/time-picker';
 import ExDateTimePicker from './components/datetime-picker';
 import ExInput from './components/input';
 import ExLink from './components/link';
@@ -164,8 +162,6 @@ export {
   ExTypography,
   ExVirtualList,
   ExWatermark,
-  ExDatePicker,
-  ExTimePicker,
   ExDateTimePicker,
   ExTag,
   ExTagInput,
@@ -253,7 +249,6 @@ export type * from './components/steps/types';
 export type * from './components/switch/types';
 export type * from './components/table/types';
 export type * from './components/tabs/types';
-// export type * from './components/time-picker/types' // DisabledTime, TimePanelProps conflicts with date-picker/types
 export type { TooltipPlacement, TooltipTrigger, TooltipEffect } from './components/tooltip/types';
 export type * from './components/tree/types';
 export type * from './components/typography/types';
@@ -276,42 +271,6 @@ export type * from './components/chart/types';
 export type * from './components/back-top/types';
 export type { PageHeaderProps, PageHeaderEmits } from './components/page-header/types';
 export type * from './components/verification-code/types';
-export type {
-  DateValue,
-  DateRangeValue,
-  DatePickerType,
-  DatePickerSize,
-  DatePickerPlacement,
-  DatePickerShortcut,
-  DateShortcut,
-  DatePickerDisabledDate,
-  ExDatePickerProps,
-  ExDatePickerEmits,
-  DatePickerPanelProps,
-  DatePickerCalendarProps,
-  DatePickerTimeProps,
-  DisabledTime as DatePickerDisabledTime,
-  TimePanelProps as DatePickerTimePanelProps,
-  DatePanelProps,
-  DateUtils as DatePickerUtils,
-} from './components/date-picker/types';
-export type {
-  TimeValue,
-  TimeFormat,
-  TimePickerSize,
-  TimePickerStatus,
-  TimeStep,
-  TimeRange,
-  DisabledTime as TimePickerDisabledTime,
-  ExTimePickerProps,
-  ExTimeRangePickerProps,
-  TimePanelProps as TimePickerPanelProps,
-  TimeColumnProps,
-  TimeOption,
-  TimeChangeEvent,
-  TimeRangeChangeEvent,
-  TimeUtils as TimePickerUtils,
-} from './components/time-picker/types';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
 export {
@@ -386,8 +345,6 @@ const components = [
   ExTable,
   ExTabs,
   ExTabPane,
-  ExDatePicker,
-  ExTimePicker,
   ExDateTimePicker,
   ExTooltip,
   ExTree,

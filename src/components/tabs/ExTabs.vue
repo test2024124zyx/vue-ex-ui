@@ -29,9 +29,9 @@
               </slot>
             </span>
 
-            <!-- 关闭按钮 -->
+            <!-- 关闭按钮（editable 同时启用增删，与添加按钮配套） -->
             <div
-              v-if="(closable || pane.closable) && !pane.disabled"
+              v-if="(closable || editable || pane.closable) && !pane.disabled"
               class="ex-tabs__tab-close"
               @click.stop="handleTabRemove(pane.name)"
             >
@@ -48,9 +48,9 @@
             <ExIcon icon="add-line" :size="16" aria-hidden="true" />
           </div>
 
-          <!-- 激活指示器 -->
+          <!-- 激活指示器（无标签时不显示，避免关闭全部后残留指示条） -->
           <div
-            v-if="type === 'line'"
+            v-if="type === 'line' && panes.length > 0"
             ref="indicatorRef"
             class="ex-tabs__indicator"
             :style="indicatorStyle"

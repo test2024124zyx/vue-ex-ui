@@ -51,6 +51,9 @@ const timelineClasses = computed(() => {
 
   if (props.direction === 'vertical') {
     classes.push(`ex-timeline--${props.mode}`);
+  } else if (props.mode === 'alternate') {
+    // 水平方向同样支持 alternate（内容在轴线上下交替）
+    classes.push('ex-timeline--alternate');
   }
 
   if (props.reverse) {

@@ -50,6 +50,8 @@ export interface ExCascaderProps {
   showAllLevels?: boolean;
   /** 是否可以选择任意一级 */
   changeOnSelect?: boolean;
+  /** 下拉面板是否传送到 body（默认 true，避免被祖先 overflow 裁剪） */
+  teleported?: boolean;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */

@@ -63,6 +63,13 @@ export interface ExSelectProps {
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
   style?: string | Record<string, string | number>;
+  /**
+   * 是否对选项启用虚拟滚动（仅在「非分组」的扁平选项场景生效）。
+   * 适用于上千选项的大列表，避免一次性渲染全部 DOM 导致卡顿。默认 false。
+   */
+  virtual?: boolean;
+  /** 虚拟滚动时单个选项的固定高度（像素），默认 34 */
+  optionHeight?: number;
 }
 
 export interface ExSelectEmits {

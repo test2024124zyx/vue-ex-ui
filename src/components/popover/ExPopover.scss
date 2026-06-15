@@ -13,7 +13,7 @@
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
   box-shadow: var(--ex-shadow-xl);
-  z-index: 2000;
+  z-index: var(--ex-z-popover, 1060);
   word-wrap: break-word;
 
   // 霓虹边框效果
@@ -170,7 +170,7 @@
   transform: scale(0.95);
 }
 
-// 响应式设�?
+// 响应式设�?
 @media (max-width: 768px) {
   .ex-popover__popper {
     max-width: calc(100vw - 32px);
@@ -178,7 +178,7 @@
   }
 }
 
-// 无障碍支�?
+// 无障碍支�?
 @media (prefers-reduced-motion: reduce) {
   .ex-popover-fade-enter-active,
   .ex-popover-fade-leave-active {

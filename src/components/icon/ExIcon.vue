@@ -3,8 +3,12 @@
     :is="tag"
     :class="iconClasses"
     :style="iconStyles"
+    :role="clickable && !disabled ? 'button' : undefined"
+    :tabindex="clickable && !disabled ? 0 : undefined"
+    :aria-disabled="clickable && disabled ? true : undefined"
     v-bind="$attrs"
     @click="handleClick"
+    @keydown="handleKeydown"
   >
     <!-- 插槽内容优先级最高 (SVG) -->
     <slot v-if="hasSlotContent" />
@@ -161,6 +165,16 @@ const handleClick = (event: MouseEvent) => {
   // 始终 emit 点击事件，让父组件决定如何处理
   // clickable 属性只影响样式（光标、悬停效果等）
   emit('click', event);
+};
+
+// 键盘处理：仅在可点击图标（role=button）上响应 Enter / Space，
+// 与原生 button 行为一致，保证键盘可达性
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.clickable || props.disabled) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    emit('click', event as unknown as MouseEvent);
+  }
 };
 </script>
 <style lang="scss" src="./ExIcon.scss" scoped></style>

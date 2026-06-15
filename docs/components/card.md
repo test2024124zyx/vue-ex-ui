@@ -66,7 +66,7 @@ const handleAction = (action) => {
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     cover="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=200&fit=crop"
     hoverable
   >
@@ -164,7 +164,7 @@ const handleAction = (action) => {
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     type="primary"
     hoverable
     cover="https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&h=150&fit=crop"
@@ -217,7 +217,7 @@ const handleAction = (action) => {
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     type="primary"
     cover="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=180&fit=crop"
   >
@@ -271,9 +271,9 @@ const handleAction = (action) => {
     <template #header>
       <h3>玩家排行榜</h3>
     </template>
-    
+
     <div>排行榜内容...</div>
-    
+
     <template #footer>
       <ExButton type="primary" size="small">查看完整排行榜</ExButton>
     </template>
@@ -306,12 +306,12 @@ const handleAction = (action) => {
     <h4>小尺寸卡片</h4>
     <p>内边距较小</p>
   </ExCard>
-  
+
   <ExCard size="medium">
     <h4>中等尺寸卡片</h4>
     <p>默认尺寸</p>
   </ExCard>
-  
+
   <ExCard size="large">
     <h4>大尺寸卡片</h4>
     <p>内边距较大</p>
@@ -413,7 +413,7 @@ const handleAction = (action) => {
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     type="primary"
     hoverable
     shadow="neon"
@@ -425,9 +425,9 @@ const handleAction = (action) => {
         <ExBadge count="HOT" type="danger" />
       </div>
     </template>
-    
+
     <p>5v5 竞技对战，策略制胜</p>
-    
+
     <template #actions>
       <ExButton size="small">收藏</ExButton>
       <ExButton type="primary" size="small">开始游戏</ExButton>
@@ -480,13 +480,13 @@ const handleAction = (action) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(false)
+const loading = ref(false);
 </script>
 
 <template>
-  <ExCard 
+  <ExCard
     type="primary"
     :loading="loading"
     cover="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=180&fit=crop"
@@ -494,9 +494,9 @@ const loading = ref(false)
     <template #header>
       <h3>加载中的卡片</h3>
     </template>
-    
+
     <p>卡片内容...</p>
-    
+
     <template #actions>
       <ExButton size="small" @click="loading = !loading">
         {{ loading ? '停止加载' : '开始加载' }}
@@ -531,7 +531,7 @@ const loading = ref(false)
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     cover="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop"
     :cover-height="300"
     hoverable
@@ -567,13 +567,13 @@ const loading = ref(false)
 
 ```vue
 <template>
-  <ExCard 
+  <ExCard
     type="primary"
-    :header-style="{ 
-      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 0, 127, 0.2))' 
+    :header-style="{
+      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 0, 127, 0.2))',
     }"
-    :body-style="{ 
-      background: 'rgba(0, 0, 0, 0.3)' 
+    :body-style="{
+      background: 'rgba(0, 0, 0, 0.3)',
     }"
   >
     <template #header>
@@ -588,50 +588,48 @@ const loading = ref(false)
 
 ### Card Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `type` | 卡片类型 | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
-| `size` | 卡片尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `shadow` | 阴影效果 | `'none' \| 'sm' \| 'base' \| 'md' \| 'lg' \| 'xl' \| 'neon'` | `'base'` |
-| `bordered` | 是否显示边框 | `boolean` | `true` |
-| `hoverable` | 是否可悬停 | `boolean` | `false` |
-| `loading` | 是否加载中 | `boolean` | `false` |
-| `cover` | 封面图片 URL | `string` | `undefined` |
-| `cover-height` | 封面图片高度 | `string \| number` | `200` |
-| `header-style` | 头部样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `body-style` | 内容样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `footer-style` | 底部样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
+| 属性           | 说明         | 类型                                                                     | 默认值      |
+| -------------- | ------------ | ------------------------------------------------------------------------ | ----------- |
+| `type`         | 卡片类型     | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
+| `size`         | 卡片尺寸     | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  |
+| `shadow`       | 阴影效果     | `'none' \| 'sm' \| 'base' \| 'md' \| 'lg' \| 'xl' \| 'neon'`             | `'base'`    |
+| `bordered`     | 是否显示边框 | `boolean`                                                                | `true`      |
+| `hoverable`    | 是否可悬停   | `boolean`                                                                | `false`     |
+| `loading`      | 是否加载中   | `boolean`                                                                | `false`     |
+| `cover`        | 封面图片 URL | `string`                                                                 | `undefined` |
+| `cover-height` | 封面图片高度 | `string \| number`                                                       | `200`       |
+| `header-style` | 头部样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `body-style`   | 内容样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `footer-style` | 底部样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `aria-label`   | 无障碍标签   | `string`                                                                 | `undefined` |
 
 ### Card Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
+| 事件名  | 说明           | 类型                          |
+| ------- | -------------- | ----------------------------- |
 | `click` | 点击卡片时触发 | `(event: MouseEvent) => void` |
 
 ### Card Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 卡片内容 |
-| `cover` | 自定义封面 |
-| `header` | 头部内容 |
-| `footer` | 底部内容 |
+| 插槽名    | 说明                             |
+| --------- | -------------------------------- |
+| `default` | 卡片内容                         |
+| `cover`   | 自定义封面                       |
+| `header`  | 头部内容                         |
+| `footer`  | 底部内容                         |
 | `actions` | 操作按钮（会自动放在 footer 中） |
 
 ### Card Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取卡片DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
 
-- 使用语义化的 HTML 标签
-- 完整的 ARIA 属性支持
-- 支持屏幕阅读器
-- 支持键盘导航
-- 支持减少动画偏好设置
+- 可通过 `aria-label` 为卡片提供无障碍标签
+- 尊重用户的「减少动画」(`prefers-reduced-motion`) 偏好
+- 注意：Card 默认是内容容器，`click` 事件只是便捷能力。若把整张卡片作为「可点击操作项」，请自行为其补充 `role="button"`、`tabindex="0"` 与键盘事件，或在卡片内放置真正的 `ExButton`/链接来承载交互。
 
 ## 主题定制
 

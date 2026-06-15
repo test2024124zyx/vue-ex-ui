@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed, defineOptions } from 'vue';
+import { computed, defineOptions, ref } from 'vue';
 import type { ExSpaceProps } from './types';
 
 defineOptions({ name: 'ExSpace' });
+
+const rootRef = ref<HTMLElement>();
+const getElement = () => rootRef.value || null;
+defineExpose({ getElement });
 
 const presetMap = {
   small: 8,
@@ -61,6 +65,7 @@ const alignItems = computed(() => {
 
 <template>
   <div
+    ref="rootRef"
     class="ex-space"
     :class="classes"
     :style="{

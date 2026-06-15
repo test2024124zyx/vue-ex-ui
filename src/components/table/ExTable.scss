@@ -70,6 +70,27 @@
   @include custom-scrollbar();
 }
 
+// 虚拟滚动模式：表头吸顶、行高固定、单元格裁剪溢出，保证占位高度与渲染对齐
+.ex-table--virtual {
+  .ex-table__header {
+    position: sticky;
+    top: 0;
+    z-index: var(--ex-z-docked, 10);
+  }
+
+  .ex-table__body .ex-table__cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ex-table__spacer-row {
+    &:hover {
+      background: transparent !important;
+    }
+  }
+}
+
 // 表格主体
 .ex-table__main {
   width: 100%;

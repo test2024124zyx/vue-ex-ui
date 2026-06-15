@@ -75,10 +75,10 @@ const toggleLoading3 = () => {
 <template>
   <!-- 脉冲动画 -->
   <ExSkeleton animation="pulse" avatar :title="true" :rows="3" />
-  
+
   <!-- 波浪动画 -->
   <ExSkeleton animation="wave" avatar :title="true" :rows="3" />
-  
+
   <!-- 无动画 -->
   <ExSkeleton animation="none" avatar :title="true" :rows="3" />
 </template>
@@ -134,25 +134,25 @@ const toggleLoading3 = () => {
 <template>
   <!-- 文本 -->
   <ExSkeleton variant="text" />
-  
+
   <!-- 头像 -->
   <ExSkeleton variant="avatar" />
-  
+
   <!-- 标题 -->
   <ExSkeleton variant="title" />
-  
+
   <!-- 段落 -->
   <ExSkeleton variant="paragraph" :rows="4" />
-  
+
   <!-- 图片 -->
   <ExSkeleton variant="image" />
-  
+
   <!-- 按钮 -->
   <ExSkeleton variant="button" />
-  
+
   <!-- 卡片 -->
   <ExSkeleton variant="card" />
-  
+
   <!-- 文章 -->
   <ExSkeleton variant="article" :rows="5" />
 </template>
@@ -207,25 +207,30 @@ const toggleLoading3 = () => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(true)
+const loading = ref(true);
 
 const toggleLoading = () => {
-  loading.value = !loading.value
-}
+  loading.value = !loading.value;
+};
 </script>
 
 <template>
   <ExButton type="primary" @click="toggleLoading">
     {{ loading ? '显示内容' : '显示骨架屏' }}
   </ExButton>
-  
+
   <ExSkeleton :loading="loading" avatar :title="true" :rows="3">
     <template #content>
       <ExPanel type="primary">
         <template #icon>
-          <img src="https://api.iconify.design/ri/user-line.svg" alt="用户" width="24" height="24" />
+          <img
+            src="https://api.iconify.design/ri/user-line.svg"
+            alt="用户"
+            width="24"
+            height="24"
+          />
         </template>
         <div>
           <h3>玩家信息</h3>
@@ -272,9 +277,9 @@ const toggleLoading = () => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(true)
+const loading = ref(true);
 </script>
 
 <template>
@@ -327,11 +332,7 @@ const loading = ref(true)
 
 ```vue
 <template>
-  <ExSkeleton 
-    :title="true" 
-    :rows="4" 
-    :rows-width="['100%', '90%', '80%', '60%']"
-  />
+  <ExSkeleton :title="true" :rows="4" :rows-width="['100%', '90%', '80%', '60%']" />
 </template>
 ```
 
@@ -358,10 +359,10 @@ const loading = ref(true)
 <template>
   <!-- 圆形头像 -->
   <ExSkeleton avatar avatar-shape="circle" :title="true" :rows="2" />
-  
+
   <!-- 方形头像 -->
   <ExSkeleton avatar avatar-shape="square" :title="true" :rows="2" />
-  
+
   <!-- 圆角头像 -->
   <ExSkeleton avatar avatar-shape="rounded" :title="true" :rows="2" />
 </template>
@@ -390,10 +391,10 @@ const loading = ref(true)
 <template>
   <!-- 小尺寸 -->
   <ExSkeleton size="small" avatar :title="true" :rows="3" />
-  
+
   <!-- 默认尺寸 -->
   <ExSkeleton size="default" avatar :title="true" :rows="3" />
-  
+
   <!-- 大尺寸 -->
   <ExSkeleton size="large" avatar :title="true" :rows="3" />
 </template>
@@ -448,9 +449,9 @@ const loading = ref(true)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(true)
+const loading = ref(true);
 </script>
 
 <template>
@@ -459,7 +460,7 @@ const loading = ref(true)
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
       <ExSkeleton variant="card" v-for="i in 3" :key="i" />
     </div>
-    
+
     <!-- 真实内容 -->
     <template #content>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
@@ -476,36 +477,36 @@ const loading = ref(true)
 
 ### Skeleton Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `loading` | 是否显示加载状态 | `boolean` | `true` |
-| `animation` | 动画类型 | `'pulse' \| 'wave' \| 'none'` | `'pulse'` |
-| `shape` | 形状 | `'circle' \| 'square' \| 'rounded'` | `'rounded'` |
-| `size` | 尺寸 | `'small' \| 'default' \| 'large'` | `'default'` |
-| `variant` | 变体类型 | `'text' \| 'avatar' \| 'title' \| 'paragraph' \| 'image' \| 'button' \| 'card' \| 'list' \| 'table' \| 'article' \| 'custom'` | `'text'` |
-| `active` | 是否激活动画 | `boolean` | `true` |
-| `width` | 宽度 | `string \| number` | `undefined` |
-| `height` | 高度 | `string \| number` | `undefined` |
-| `count` | 重复次数 | `number` | `1` |
-| `avatar` | 是否显示头像 | `boolean` | `false` |
-| `avatar-shape` | 头像形状 | `'circle' \| 'square' \| 'rounded'` | `'circle'` |
-| `avatar-size` | 头像尺寸 | `string \| number` | `undefined` |
-| `title` | 是否显示标题 | `boolean` | `false` |
-| `title-width` | 标题宽度 | `string \| number` | `undefined` |
-| `rows` | 段落行数 | `number` | `3` |
-| `rows-width` | 段落宽度 | `(string \| number)[] \| string` | `undefined` |
+| 属性           | 说明             | 类型                                                                                                                          | 默认值      |
+| -------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `loading`      | 是否显示加载状态 | `boolean`                                                                                                                     | `true`      |
+| `animation`    | 动画类型         | `'pulse' \| 'wave' \| 'none'`                                                                                                 | `'pulse'`   |
+| `shape`        | 形状             | `'circle' \| 'square' \| 'rounded'`                                                                                           | `'rounded'` |
+| `size`         | 尺寸             | `'small' \| 'default' \| 'large'`                                                                                             | `'default'` |
+| `variant`      | 变体类型         | `'text' \| 'avatar' \| 'title' \| 'paragraph' \| 'image' \| 'button' \| 'card' \| 'list' \| 'table' \| 'article' \| 'custom'` | `'text'`    |
+| `active`       | 是否激活动画     | `boolean`                                                                                                                     | `true`      |
+| `width`        | 宽度             | `string \| number`                                                                                                            | `undefined` |
+| `height`       | 高度             | `string \| number`                                                                                                            | `undefined` |
+| `count`        | 重复次数         | `number`                                                                                                                      | `1`         |
+| `avatar`       | 是否显示头像     | `boolean`                                                                                                                     | `false`     |
+| `avatar-shape` | 头像形状         | `'circle' \| 'square' \| 'rounded'`                                                                                           | `'circle'`  |
+| `avatar-size`  | 头像尺寸         | `string \| number`                                                                                                            | `undefined` |
+| `title`        | 是否显示标题     | `boolean`                                                                                                                     | `false`     |
+| `title-width`  | 标题宽度         | `string \| number`                                                                                                            | `undefined` |
+| `rows`         | 段落行数         | `number`                                                                                                                      | `3`         |
+| `rows-width`   | 段落宽度         | `(string \| number)[] \| string`                                                                                              | `undefined` |
 
 ### Skeleton Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名    | 说明                                    |
+| --------- | --------------------------------------- |
 | `default` | 自定义骨架屏内容（variant="custom" 时） |
-| `content` | 加载完成后显示的真实内容 |
+| `content` | 加载完成后显示的真实内容                |
 
 ### Skeleton Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明              | 类型                           |
+| ------------ | ----------------- | ------------------------------ |
 | `getElement` | 获取骨架屏DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
@@ -518,15 +519,7 @@ const loading = ref(true)
 
 ## 主题定制
 
-可以通过 CSS 变量自定义骨架屏样式：
-
-```css
-:root {
-  --ex-skeleton-bg: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 0, 127, 0.1));
-  --ex-skeleton-border: rgba(0, 240, 255, 0.2);
-  --ex-skeleton-animation-duration: 2s;
-}
-```
+骨架屏跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

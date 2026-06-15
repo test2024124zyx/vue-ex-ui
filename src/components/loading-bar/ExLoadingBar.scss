@@ -6,7 +6,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: var(--ex-z-loading, 1100);
   pointer-events: none;
 
   &__bar {
@@ -54,7 +54,7 @@
       animation: ex-loading-bar-flow 0.5s linear infinite;
     }
 
-    // 状态样�?
+    // 状态样�?
     &--loading {
       background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
       box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
@@ -107,7 +107,7 @@
   opacity: 0;
 }
 
-// 无障碍支�?
+// 无障碍支�?
 @media (prefers-reduced-motion: reduce) {
   .ex-loading-bar__bar {
     transition: none;

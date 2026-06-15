@@ -10,17 +10,11 @@ export interface ExTypographyProps {
   variant?: 'display' | 'heading' | 'title' | 'body' | 'caption' | 'overline';
   /** 文本大小 */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
-  /** 文本颜色 */
-  color?:
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'warning'
-    | 'error'
-    | 'info'
-    | 'text-primary'
-    | 'text-secondary'
-    | 'text-disabled';
+  /**
+   * 文本颜色：可填主题色名（如 'primary' / 'text-secondary'，映射为 var(--ex-color-*)），
+   * 也可直接填原始 CSS 颜色值（如 '#fff' / 'rgb(...)' / 'var(...)'）。
+   */
+  color?: TypographyColor | (string & {});
   /** 是否截断文本 */
   truncate?: boolean;
   /** 是否使用渐变色 */

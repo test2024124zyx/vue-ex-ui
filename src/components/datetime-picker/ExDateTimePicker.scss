@@ -14,7 +14,7 @@
     align-items: center;
   }
 
-  // 输入�?
+  // 输入�?
   &__input {
     width: 100%;
     height: 36px;
@@ -105,7 +105,7 @@
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    z-index: 1000;
+    z-index: var(--ex-z-dropdown, 1000);
     min-width: 280px;
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
@@ -191,7 +191,7 @@
     margin-bottom: var(--ex-spacing-3);
   }
 
-  // 日期单元�?
+  // 日期单元�?
   &__day {
     aspect-ratio: 1;
     display: flex;
@@ -279,7 +279,7 @@
       }
     }
 
-    // 范围起始和结束同时存在时的特殊处�?
+    // 范围起始和结束同时存在时的特殊处�?
     &--range-start#{&--range-end} {
       border-radius: var(--ex-radius-base);
     }
@@ -456,14 +456,14 @@
       padding-right: 60px;
     }
   }
-   // 禁用状�?
+   // 禁用状�?
   &--disabled {
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
   }
 
-  // 打开状�?
+  // 打开状�?
   &--open {
     .ex-datetime-picker__input {
       border-color: var(--ex-color-neon-blue-500);
@@ -486,7 +486,7 @@
   transform: translateY(-8px);
 }
 
-// 响应�?
+// 响应�?
 @include mobile {
   .ex-datetime-picker {
     max-width: 100%;
@@ -499,7 +499,7 @@
   }
 }
 
-// 无障碍支�?
+// 无障碍支�?
 @media (prefers-reduced-motion: reduce) {
   .ex-datetime-picker {
     * {

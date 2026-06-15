@@ -1,13 +1,17 @@
 <template>
   <div
+    ref="nodeRootRef"
     :class="nodeClasses"
-    :style="{ paddingLeft: `${level * 24}px` }"
+    :style="{ paddingLeft: `${level * 24}px`, '--ex-tree-indent': `${level * 24}px` }"
     role="treeitem"
-    :aria-expanded="isExpanded"
+    :tabindex="isDisabled ? -1 : 0"
+    :aria-expanded="hasChildren ? isExpanded : undefined"
     :aria-selected="isSelected"
-    :aria-checked="isChecked"
+    :aria-checked="checkable ? isChecked : undefined"
     :aria-disabled="isDisabled"
+    :aria-level="level + 1"
     :draggable="draggable && !isDisabled"
+    @keydown="handleKeydown"
     @dragstart="handleDragStart"
     @dragenter="handleDragEnter"
     @dragleave="handleDragLeave"
@@ -24,17 +28,12 @@
       <span v-else class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder" />
 
       <!-- 复选框 -->
-      <span
-        v-if="checkable && node.checkable !== false"
-        class="ex-tree-node__checkbox"
-        @click.stop="handleCheckboxClick"
-      >
-        <input
-          type="checkbox"
-          :checked="isChecked"
+      <span v-if="checkable && node.checkable !== false" class="ex-tree-node__checkbox" @click.stop>
+        <ExCheckbox
+          :model-value="isChecked"
           :indeterminate="isHalfChecked"
           :disabled="isDisabled"
-          @change="handleCheck"
+          @update:model-value="handleCheckChange"
         />
       </span>
 
@@ -57,8 +56,8 @@
       </span>
     </div>
 
-    <!-- 子节点 -->
-    <div v-if="hasChildren && isExpanded" class="ex-tree-node__children" role="group">
+    <!-- 子节点（虚拟滚动 flat 模式下由父级统一扁平渲染，这里不再递归） -->
+    <div v-if="hasChildren && isExpanded && !flat" class="ex-tree-node__children" role="group">
       <ExTreeNode
         v-for="child in node.children"
         :key="child.key"
@@ -94,7 +93,8 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref } from 'vue';
+import ExCheckbox from '../checkbox/ExCheckbox.vue';
+import { computed, ref, nextTick } from 'vue';
 import type { TreeNode } from './types';
 
 interface Props {
@@ -110,6 +110,8 @@ interface Props {
   showIcon: boolean;
   draggable: boolean;
   disabled: boolean;
+  /** 扁平模式：不递归渲染子节点（供虚拟滚动使用） */
+  flat?: boolean;
 }
 
 interface Emits {
@@ -136,6 +138,7 @@ const emit = defineEmits<Emits>();
 
 const isDragOver = ref(false);
 const dropPosition = ref<'before' | 'after' | 'inner' | null>(null);
+const nodeRootRef = ref<HTMLElement>();
 
 const hasChildren = computed(() => {
   return props.node.children && props.node.children.length > 0;
@@ -194,14 +197,72 @@ const handleContextmenu = (event: MouseEvent) => {
   emit('node-contextmenu', props.node, event);
 };
 
-const handleCheckboxClick = () => {
+const handleCheckChange = (val: boolean) => {
   if (isDisabled.value) return;
-  emit('check', props.node, !isChecked.value);
+  emit('check', props.node, val);
 };
 
-const handleCheck = () => {
-  if (isDisabled.value) return;
-  emit('check', props.node, !isChecked.value);
+// 键盘导航（WAI-ARIA tree 模式）
+const handleKeydown = (event: KeyboardEvent) => {
+  const key = event.key;
+  const root = nodeRootRef.value?.closest('.ex-tree');
+
+  switch (key) {
+    case 'ArrowDown':
+    case 'ArrowUp':
+    case 'Home':
+    case 'End': {
+      event.preventDefault();
+      if (!root) return;
+      const items = Array.from(
+        root.querySelectorAll<HTMLElement>('.ex-tree-node[role="treeitem"]')
+      ).filter(el => el.tabIndex >= 0);
+      const idx = nodeRootRef.value ? items.indexOf(nodeRootRef.value) : -1;
+      let target: HTMLElement | undefined;
+      if (key === 'ArrowDown') target = items[idx + 1];
+      else if (key === 'ArrowUp') target = items[idx - 1];
+      else if (key === 'Home') target = items[0];
+      else target = items[items.length - 1];
+      target?.focus();
+      break;
+    }
+    case 'ArrowRight': {
+      event.preventDefault();
+      if (hasChildren.value && !isExpanded.value) {
+        emit('toggle', props.node, true);
+      } else if (hasChildren.value && isExpanded.value) {
+        nextTick(() => {
+          nodeRootRef.value
+            ?.querySelector<HTMLElement>('.ex-tree-node__children > .ex-tree-node[role="treeitem"]')
+            ?.focus();
+        });
+      }
+      break;
+    }
+    case 'ArrowLeft': {
+      event.preventDefault();
+      if (hasChildren.value && isExpanded.value) {
+        emit('toggle', props.node, false);
+      } else {
+        (
+          nodeRootRef.value?.parentElement?.closest(
+            '.ex-tree-node[role="treeitem"]'
+          ) as HTMLElement | null
+        )?.focus();
+      }
+      break;
+    }
+    case 'Enter':
+    case ' ': {
+      event.preventDefault();
+      if (props.checkable && props.node.checkable !== false && !isDisabled.value) {
+        emit('check', props.node, !isChecked.value);
+      } else {
+        handleClick(event as unknown as MouseEvent);
+      }
+      break;
+    }
+  }
 };
 
 // 拖拽相关

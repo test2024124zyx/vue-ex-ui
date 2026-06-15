@@ -1,37 +1,84 @@
 <template>
   <div ref="treeRef" :class="treeClasses" :style="treeStyles" role="tree">
-    <ExTreeNode
-      v-for="node in filteredData"
-      :key="node.key"
-      :node="node"
-      :level="0"
-      :expanded-keys="internalExpandedKeys"
-      :selected-keys="internalSelectedKeys"
-      :checked-keys="internalCheckedKeys"
-      :half-checked-keys="halfCheckedKeys"
-      :selectable="selectable"
-      :checkable="checkable"
-      :show-line="showLine"
-      :show-icon="showIcon"
-      :draggable="draggable"
-      :disabled="disabled"
-      @toggle="handleToggle"
-      @select="handleSelect"
-      @check="handleCheck"
-      @node-click="handleNodeClick"
-      @node-contextmenu="handleNodeContextmenu"
-      @node-drag-start="handleNodeDragStart"
-      @node-drag-enter="handleNodeDragEnter"
-      @node-drag-leave="handleNodeDragLeave"
-      @node-drag-end="handleNodeDragEnd"
-      @node-drop="handleNodeDrop"
-    />
+    <!-- 虚拟滚动模式：扁平化 + 窗口化渲染 -->
+    <div
+      v-if="virtual"
+      class="ex-tree__viewport"
+      :style="viewportStyle"
+      @scroll.passive="handleVirtualScroll"
+    >
+      <div
+        class="ex-tree__phantom"
+        :style="{ height: `${totalSpacerHeight}px`, position: 'relative' }"
+      >
+        <div :style="{ transform: `translateY(${topSpacerHeight}px)` }">
+          <ExTreeNode
+            v-for="{ node, level } in virtualNodes"
+            :key="node.key"
+            flat
+            :node="node"
+            :level="level"
+            :style="{ height: `${itemHeight}px` }"
+            :expanded-keys="internalExpandedKeys"
+            :selected-keys="internalSelectedKeys"
+            :checked-keys="internalCheckedKeys"
+            :half-checked-keys="halfCheckedKeys"
+            :selectable="selectable"
+            :checkable="checkable"
+            :show-line="showLine"
+            :show-icon="showIcon"
+            :draggable="draggable"
+            :disabled="disabled"
+            @toggle="handleToggle"
+            @select="handleSelect"
+            @check="handleCheck"
+            @node-click="handleNodeClick"
+            @node-contextmenu="handleNodeContextmenu"
+            @node-drag-start="handleNodeDragStart"
+            @node-drag-enter="handleNodeDragEnter"
+            @node-drag-leave="handleNodeDragLeave"
+            @node-drag-end="handleNodeDragEnd"
+            @node-drop="handleNodeDrop"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- 普通递归渲染 -->
+    <template v-else>
+      <ExTreeNode
+        v-for="node in filteredData"
+        :key="node.key"
+        :node="node"
+        :level="0"
+        :expanded-keys="internalExpandedKeys"
+        :selected-keys="internalSelectedKeys"
+        :checked-keys="internalCheckedKeys"
+        :half-checked-keys="halfCheckedKeys"
+        :selectable="selectable"
+        :checkable="checkable"
+        :show-line="showLine"
+        :show-icon="showIcon"
+        :draggable="draggable"
+        :disabled="disabled"
+        @toggle="handleToggle"
+        @select="handleSelect"
+        @check="handleCheck"
+        @node-click="handleNodeClick"
+        @node-contextmenu="handleNodeContextmenu"
+        @node-drag-start="handleNodeDragStart"
+        @node-drag-enter="handleNodeDragEnter"
+        @node-drag-leave="handleNodeDragLeave"
+        @node-drag-end="handleNodeDragEnd"
+        @node-drop="handleNodeDrop"
+      />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { ref, computed, watch, provide } from 'vue';
+import { ref, computed, watch, provide, onBeforeUnmount } from 'vue';
 import type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
 
@@ -58,6 +105,8 @@ const props = withDefaults(defineProps<ExTreeProps>(), {
   disabled: false,
   virtual: false,
   itemHeight: 28,
+  height: 400,
+  virtualBuffer: 6,
 });
 
 const emit = defineEmits<ExTreeEmits>();
@@ -65,10 +114,16 @@ const emit = defineEmits<ExTreeEmits>();
 const treeRef = ref<HTMLDivElement>();
 const filterValue = ref('');
 
-// 内部状态
-const internalExpandedKeys = ref<string[]>(props.expandedKeys || props.defaultExpandedKeys || []);
-const internalSelectedKeys = ref<string[]>(props.selectedKeys || props.defaultSelectedKeys || []);
-const internalCheckedKeys = ref<string[]>(props.checkedKeys || props.defaultCheckedKeys || []);
+// 内部状态（始终持有副本，避免原地 mutate 外部传入的 prop 数组）
+const internalExpandedKeys = ref<string[]>([
+  ...(props.expandedKeys ?? props.defaultExpandedKeys ?? []),
+]);
+const internalSelectedKeys = ref<string[]>([
+  ...(props.selectedKeys ?? props.defaultSelectedKeys ?? []),
+]);
+const internalCheckedKeys = ref<string[]>([
+  ...(props.checkedKeys ?? props.defaultCheckedKeys ?? []),
+]);
 const halfCheckedKeys = ref<string[]>([]);
 
 // 节点映射
@@ -129,6 +184,69 @@ const treeStyles = computed(() => {
   if (!props.style) return undefined;
   if (typeof props.style === 'string') return props.style;
   return props.style;
+});
+
+// ============================================================================
+// 虚拟滚动：将当前可见（已展开）的节点扁平化后做窗口化渲染
+// ============================================================================
+const scrollTop = ref(0);
+
+const viewportStyle = computed(() => ({
+  height: typeof props.height === 'number' ? `${props.height}px` : props.height,
+  overflowY: 'auto' as const,
+}));
+
+// 扁平化所有当前可见节点（携带层级），仅展开的分支才向下递归
+const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
+  const result: { node: TreeNode; level: number }[] = [];
+  const walk = (nodes: TreeNode[], level: number) => {
+    for (const node of nodes) {
+      result.push({ node, level });
+      if (
+        node.children &&
+        node.children.length > 0 &&
+        internalExpandedKeys.value.includes(node.key)
+      ) {
+        walk(node.children, level + 1);
+      }
+    }
+  };
+  walk(filteredData.value, 0);
+  return result;
+});
+
+const virtualRange = computed(() => {
+  const total = flattenedNodes.value.length;
+  const viewport = typeof props.height === 'number' ? props.height : 400;
+  const buffer = props.virtualBuffer;
+  const start = Math.max(0, Math.floor(scrollTop.value / props.itemHeight) - buffer);
+  const visibleCount = Math.ceil(viewport / props.itemHeight) + buffer * 2;
+  const end = Math.min(total, start + visibleCount);
+  return { start, end };
+});
+
+const virtualNodes = computed(() =>
+  flattenedNodes.value.slice(virtualRange.value.start, virtualRange.value.end)
+);
+
+const topSpacerHeight = computed(() => virtualRange.value.start * props.itemHeight);
+const totalSpacerHeight = computed(() => flattenedNodes.value.length * props.itemHeight);
+
+let virtualRaf: number | null = null;
+const handleVirtualScroll = (e: Event) => {
+  if (virtualRaf !== null) cancelAnimationFrame(virtualRaf);
+  const el = e.target as HTMLElement;
+  virtualRaf = requestAnimationFrame(() => {
+    scrollTop.value = el.scrollTop;
+    virtualRaf = null;
+  });
+};
+
+onBeforeUnmount(() => {
+  if (virtualRaf !== null) {
+    cancelAnimationFrame(virtualRaf);
+    virtualRaf = null;
+  }
 });
 
 // 监听外部变化
@@ -258,18 +376,20 @@ const getAllParentKeys = (key: string): string[] => {
   return keys;
 };
 
-// 处理展开/收起
+// 处理展开/收起（不可变更新 + emit 拷贝，避免外泄内部引用）
 const handleToggle = (node: TreeNode, expanded: boolean) => {
-  const index = internalExpandedKeys.value.indexOf(node.key);
+  const has = internalExpandedKeys.value.includes(node.key);
 
-  if (expanded && index === -1) {
-    internalExpandedKeys.value.push(node.key);
-  } else if (!expanded && index > -1) {
-    internalExpandedKeys.value.splice(index, 1);
+  if (expanded && !has) {
+    internalExpandedKeys.value = [...internalExpandedKeys.value, node.key];
+  } else if (!expanded && has) {
+    internalExpandedKeys.value = internalExpandedKeys.value.filter(k => k !== node.key);
+  } else {
+    return;
   }
 
-  emit('update:expandedKeys', internalExpandedKeys.value);
-  emit('expand', internalExpandedKeys.value, node, expanded);
+  emit('update:expandedKeys', [...internalExpandedKeys.value]);
+  emit('expand', [...internalExpandedKeys.value], node, expanded);
 };
 
 // 处理选择
@@ -277,18 +397,18 @@ const handleSelect = (node: TreeNode, selected: boolean) => {
   if (!props.selectable || node.disabled || node.selectable === false) return;
 
   if (props.multiple) {
-    const index = internalSelectedKeys.value.indexOf(node.key);
-    if (selected && index === -1) {
-      internalSelectedKeys.value.push(node.key);
-    } else if (!selected && index > -1) {
-      internalSelectedKeys.value.splice(index, 1);
+    const has = internalSelectedKeys.value.includes(node.key);
+    if (selected && !has) {
+      internalSelectedKeys.value = [...internalSelectedKeys.value, node.key];
+    } else if (!selected && has) {
+      internalSelectedKeys.value = internalSelectedKeys.value.filter(k => k !== node.key);
     }
   } else {
     internalSelectedKeys.value = selected ? [node.key] : [];
   }
 
-  emit('update:selectedKeys', internalSelectedKeys.value);
-  emit('select', internalSelectedKeys.value, node, selected);
+  emit('update:selectedKeys', [...internalSelectedKeys.value]);
+  emit('select', [...internalSelectedKeys.value], node, selected);
 };
 
 // 处理勾选
@@ -327,8 +447,8 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
   internalCheckedKeys.value = Array.from(checkedSet);
   updateHalfCheckedKeys();
 
-  emit('update:checkedKeys', internalCheckedKeys.value);
-  emit('check', internalCheckedKeys.value, node, checked);
+  emit('update:checkedKeys', [...internalCheckedKeys.value]);
+  emit('check', [...internalCheckedKeys.value], node, checked);
 };
 
 // 处理节点点击
@@ -364,7 +484,9 @@ const handleNodeDrop = (
   position: 'before' | 'after' | 'inner',
   event: DragEvent
 ) => {
-  emit('node-drop', dragNode, dropNode, position, event);
+  // 子组件只携带 key 透传，这里用 nodeMap 还原出完整的拖拽节点
+  const resolvedDragNode = nodeMap.value.get(dragNode.key) ?? dragNode;
+  emit('node-drop', resolvedDragNode, dropNode, position, event);
 };
 
 // 其他暴露的方法
@@ -418,6 +540,24 @@ const collapseAll = () => {
 
 const filter = (value: string) => {
   filterValue.value = value;
+
+  // 过滤时自动展开命中节点的所有祖先，确保命中项可见
+  if (value && props.filterNodeMethod) {
+    const toExpand = new Set(internalExpandedKeys.value);
+    const walk = (nodes: TreeNode[], ancestors: string[]) => {
+      for (const node of nodes) {
+        if (props.filterNodeMethod!(value, node)) {
+          ancestors.forEach(k => toExpand.add(k));
+        }
+        if (node.children && node.children.length > 0) {
+          walk(node.children, [...ancestors, node.key]);
+        }
+      }
+    };
+    walk(props.data, []);
+    internalExpandedKeys.value = Array.from(toExpand);
+    emit('update:expandedKeys', [...internalExpandedKeys.value]);
+  }
 };
 
 const getElement = () => treeRef.value || null;

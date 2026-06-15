@@ -15,8 +15,10 @@ export interface ExImageProps {
   radius?: string;
   /** 懒加载（原生 loading="lazy"） */
   lazy?: boolean;
-  /** 预览模式 */
+  /** 预览模式：开启后点击/回车打开内置全屏预览，并仍会触发 preview 事件 */
   preview?: boolean;
+  /** 预览时展示的高清图地址，缺省时使用 src */
+  previewSrc?: string;
 }
 
 export type ExImageEmits = {

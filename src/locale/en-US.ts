@@ -19,6 +19,21 @@ export default {
     validationError: 'Validation failed',
   },
 
+  // Form validators
+  validators: {
+    required: 'This field is required',
+    email: 'Please enter a valid email address',
+    url: 'Please enter a valid URL',
+    number: 'Please enter a valid number',
+    integer: 'Please enter an integer',
+    min: 'At least {min} characters required',
+    max: 'No more than {max} characters allowed',
+    minValue: 'Value cannot be less than {min}',
+    maxValue: 'Value cannot be greater than {max}',
+    pattern: 'Invalid format',
+    enum: 'Value is not in the allowed set',
+  },
+
   // Button
   button: {
     loading: 'Loading...',
@@ -46,6 +61,10 @@ export default {
   empty: {
     description: 'No Data',
     imageAlt: 'Empty',
+    noData: 'No Data',
+    noResult: 'No Results Found',
+    error: 'Something Went Wrong',
+    networkError: 'Network Error, Please Retry',
   },
 
   // Heatmap
@@ -119,6 +138,7 @@ export default {
     empty: 'No Data',
     selectAll: 'Select All',
     selectRow: 'Select Row',
+    selectRowAria: 'Select row {index}',
     expand: 'Expand',
     collapse: 'Collapse',
     filter: 'Filter',
@@ -196,6 +216,7 @@ export default {
     loading: 'Loading...',
     error: 'Load Error',
     preview: 'Preview',
+    closePreview: 'Close preview',
     alt: 'Image',
   },
 
@@ -555,6 +576,7 @@ export default {
     preview: 'Preview',
     download: 'Download',
     delete: 'Delete',
+    actions: 'Actions',
     rename: 'Rename',
     sort: 'Sort',
     viewMode: 'View Mode',
@@ -582,6 +604,7 @@ export default {
     inputPlaceholder: 'Enter tag name',
     confirm: 'Confirm',
     cancel: 'Cancel',
+    close: 'Remove tag',
   },
 
   // Chart

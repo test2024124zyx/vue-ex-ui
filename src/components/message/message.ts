@@ -32,6 +32,16 @@ const defaultConfig: MessageGlobalConfig = {
 /** 当前全局配置 */
 let globalConfig: MessageGlobalConfig = { ...defaultConfig };
 
+/**
+ * 解析容器 z-index：未自定义时走设计令牌 var(--ex-z-toast)，
+ * 使 toast 与 Modal/Popover 等浮层共享同一套层级体系；
+ * 用户显式设置 zIndex 时仍以其数值为准。
+ */
+const resolveZIndex = (): string =>
+  globalConfig.zIndex === defaultConfig.zIndex
+    ? `var(--ex-z-toast, ${defaultConfig.zIndex})`
+    : String(globalConfig.zIndex);
+
 // ============================================================================
 // 消息队列管理
 // ============================================================================
@@ -60,7 +70,7 @@ const getContainer = (): HTMLElement => {
       top: 0;
       left: 0;
       right: 0;
-      z-index: ${globalConfig.zIndex};
+      z-index: ${resolveZIndex()};
       pointer-events: none;
       display: flex;
       flex-direction: column;
@@ -78,7 +88,7 @@ const getContainer = (): HTMLElement => {
  */
 const updateContainerStyle = (): void => {
   if (messageContainer) {
-    messageContainer.style.zIndex = String(globalConfig.zIndex);
+    messageContainer.style.zIndex = resolveZIndex();
     messageContainer.style.paddingTop = `${globalConfig.offset}px`;
   }
 };
@@ -128,9 +138,7 @@ const findSameMessage = (options: MessageOptions): MessageQueueItem | undefined 
     return undefined;
   }
   return messageQueue.find(
-    item =>
-      item.options.type === options.type &&
-      item.options.content === options.content
+    item => item.options.type === options.type && item.options.content === options.content
   );
 };
 
@@ -238,10 +246,7 @@ const createMessage = (options: MessageOptions): MessageInstance => {
 /**
  * 解析消息选项
  */
-const parseOptions = (
-  content: string | MessageOptions,
-  type: MessageType
-): MessageOptions => {
+const parseOptions = (content: string | MessageOptions, type: MessageType): MessageOptions => {
   if (typeof content === 'string') {
     return { content, type };
   }

@@ -79,11 +79,21 @@
             :style="circlePathStyle"
           />
 
-          <!-- 渐变定义 -->
+          <!-- 渐变定义（id 带 componentId，避免多实例冲突） -->
           <defs v-if="isGradientColor">
-            <linearGradient id="ex-progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" :stop-color="gradientColors[0]" />
-              <stop offset="100%" :stop-color="gradientColors[1]" />
+            <linearGradient
+              :id="`ex-progress-gradient-${componentId}`"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop
+                v-for="(stop, i) in gradientStops"
+                :key="i"
+                :offset="stop.offset"
+                :stop-color="stop.color"
+              />
             </linearGradient>
           </defs>
         </svg>
@@ -388,6 +398,12 @@ const circleColor = computed(() => {
     if (typeof props.color === 'string') {
       return props.color;
     }
+    if (typeof props.color === 'function') {
+      return props.color(percentage.value);
+    }
+    if (Array.isArray(props.color)) {
+      return `url(#ex-progress-gradient-${componentId})`;
+    }
   }
 
   // 根据状态返回颜色
@@ -397,18 +413,28 @@ const circleColor = computed(() => {
 
   // 渐变色
   if (isGradientColor.value) {
-    return 'url(#ex-progress-gradient)';
+    return `url(#ex-progress-gradient-${componentId})`;
   }
 
   return 'var(--ex-color-primary)';
 });
 
+// 数组色（自定义渐变）或无 color/status 时使用内置渐变
 const isGradientColor = computed(() => {
-  return !props.color && !props.status;
+  return Array.isArray(props.color) || (!props.color && !props.status);
 });
 
-const gradientColors = computed(() => {
-  return ['var(--ex-color-primary)', 'var(--ex-color-secondary)'];
+// 渐变停靠点：数组色按 percentage 排序生成，否则用默认主/辅色
+const gradientStops = computed<{ offset: string; color: string }[]>(() => {
+  if (Array.isArray(props.color)) {
+    return [...props.color]
+      .sort((a, b) => a.percentage - b.percentage)
+      .map(item => ({ offset: `${item.percentage}%`, color: item.color }));
+  }
+  return [
+    { offset: '0%', color: 'var(--ex-color-primary)' },
+    { offset: '100%', color: 'var(--ex-color-secondary)' },
+  ];
 });
 
 const circlePathStyle = computed(() => {
@@ -528,6 +554,8 @@ function updateWaveAnimation() {
 
 function startWaveAnimation() {
   if (!props.waveAnimated) return;
+  // 防止重复启动导致多个 RAF 循环叠加
+  if (waveAnimationFrame.value !== null) return;
 
   const animate = () => {
     // 使用 demo 中的速度参数

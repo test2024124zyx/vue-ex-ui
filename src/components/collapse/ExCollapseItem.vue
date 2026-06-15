@@ -2,6 +2,7 @@
   <div ref="itemRef" :class="itemClasses" :style="itemStyles">
     <!-- 面板头部 -->
     <div
+      :id="`ex-collapse-header-${name}`"
       class="ex-collapse-item__header"
       :class="{ 'is-disabled': isDisabled }"
       role="button"
@@ -116,24 +117,24 @@ const itemRef = ref<HTMLDivElement>();
 // 注入父组件的上下文
 const collapseContext = inject<{
   activeNames: { value: CollapseItemName[] };
-  accordion: boolean;
-  disabled: boolean;
-  expandIconPosition: 'left' | 'right';
+  accordion: { value: boolean };
+  disabled: { value: boolean };
+  expandIconPosition: { value: 'left' | 'right' };
   isActive: (name: CollapseItemName) => boolean;
   handleItemClick: (name: CollapseItemName) => void;
 }>('exCollapse', {
   activeNames: { value: [] },
-  accordion: false,
-  disabled: false,
-  expandIconPosition: 'left',
+  accordion: { value: false },
+  disabled: { value: false },
+  expandIconPosition: { value: 'left' },
   isActive: () => false,
   handleItemClick: () => {},
 });
 
 // 计算属性
 const isActive = computed(() => collapseContext.isActive(props.name));
-const isDisabled = computed(() => props.disabled || collapseContext.disabled);
-const expandIconPosition = computed(() => collapseContext.expandIconPosition);
+const isDisabled = computed(() => props.disabled || collapseContext.disabled.value);
+const expandIconPosition = computed(() => collapseContext.expandIconPosition.value);
 
 const itemClasses = computed(() => {
   const classes = ['ex-collapse-item'];

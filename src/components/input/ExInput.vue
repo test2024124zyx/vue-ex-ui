@@ -66,7 +66,7 @@
           :autocomplete="autocomplete"
           :rows="rows"
           :aria-invalid="actualStatus === 'error'"
-          :aria-describedby="helpTextId"
+          :aria-describedby="showHelp ? helpTextId : undefined"
           :aria-required="required"
           @input="handleInput"
           @change="handleChange"
@@ -512,6 +512,8 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(rafId);
     rafId = null;
   }
+  // 清理 autosize 防抖待执行的定时器
+  debouncedAdjustHeight.cancel();
 });
 
 // 暴露实例方法

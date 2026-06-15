@@ -130,18 +130,6 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
   
   <div class="component-card completed">
-    <h3><a href="./date-picker">DatePicker</a></h3>
-    <p>日期选择器，支持日期范围选择</p>
-    <div class="status">✅ 已完成</div>
-  </div>
-  
-  <div class="component-card completed">
-    <h3><a href="./time-picker">TimePicker</a></h3>
-    <p>时间选择器，支持时分秒选择</p>
-    <div class="status">✅ 已完成</div>
-  </div>
-  
-  <div class="component-card completed">
     <h3><a href="./datetime-picker">DateTimePicker</a></h3>
     <p>日期时间选择器，组合日期和时间选择</p>
     <div class="status">✅ 已完成</div>
@@ -512,8 +500,6 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
 <div class="progress-bar">
   <div class="progress-fill" style="width: 100%"></div>
 </div>
-
-
 
 <style scoped>
 .component-grid {

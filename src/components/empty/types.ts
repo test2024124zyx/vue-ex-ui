@@ -1,4 +1,4 @@
-export type EmptySize = 'small' | 'medium' | 'large'
+export type EmptySize = 'small' | 'medium' | 'large';
 
 /**
  * 空状态类型
@@ -20,38 +20,45 @@ export interface EmptyImageConfig {
 /**
  * 空状态配置映射
  */
-export type EmptyConfigMap = Record<EmptyType | 'search' | 'network' | 'data' | 'permission' | 'maintenance', EmptyImageConfig>;
+export type EmptyConfigMap = Record<
+  EmptyType | 'search' | 'network' | 'data' | 'permission' | 'maintenance',
+  EmptyImageConfig
+>;
 
 export interface EmptyProps {
   /**
    * 图片地址
    */
-  image?: string
+  image?: string;
   /**
    * 图片尺寸
    */
-  imageSize?: EmptySize | number
+  imageSize?: EmptySize | number;
   /**
-   * 描述文字
+   * 描述文字（不传时按 type 取对应的预设文案）
    */
-  description?: string
+  description?: string;
   /**
    * 是否显示默认图片
    */
-  showImage?: boolean
+  showImage?: boolean;
+  /**
+   * 空状态场景预设：决定未显式传 description 时的默认文案
+   */
+  type?: EmptyType;
 }
 
 export interface EmptySlots {
   /**
    * 自定义图片
    */
-  image?: () => unknown
+  image?: () => unknown;
   /**
    * 自定义描述
    */
-  description?: () => unknown
+  description?: () => unknown;
   /**
    * 自定义操作按钮
    */
-  default?: () => unknown
+  default?: () => unknown;
 }

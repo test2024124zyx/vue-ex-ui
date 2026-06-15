@@ -116,7 +116,7 @@ import { ref } from 'vue';
 const selectedDate = ref(new Date());
 const mode = ref('month');
 
-const handleModeChange = (newMode) => {
+const handleModeChange = newMode => {
   mode.value = newMode;
   console.log('视图模式切换:', newMode);
 };
@@ -376,7 +376,7 @@ import { ref } from 'vue';
 const selectedDate = ref(new Date());
 
 // 禁用周末
-const disabledDate = (date) => {
+const disabledDate = date => {
   return date.getDay() === 0 || date.getDay() === 6;
 };
 </script>
@@ -525,14 +525,4 @@ type CalendarMode = 'day' | 'week' | 'month' | 'year';
 
 ## 主题定制
 
-日历组件使用 CSS 变量进行主题定制：
-
-```css
-.ex-calendar {
-  --ex-calendar-bg: var(--ex-color-bg-secondary);
-  --ex-calendar-border: var(--ex-color-border-primary);
-  --ex-calendar-text: var(--ex-color-text-primary);
-  --ex-calendar-today: var(--ex-color-neon-blue-500);
-  --ex-calendar-selected: var(--ex-color-neon-pink-500);
-}
-```
+日历跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。

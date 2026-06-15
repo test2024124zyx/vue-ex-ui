@@ -3,6 +3,7 @@
 用于标记和选择。
 
 ## 基础用法
+
 <div class="tag-group">
     <ex-tag>标签一</ex-tag>
     <ex-tag type="success">标签二</ex-tag>
@@ -10,7 +11,6 @@
     <ex-tag type="warning">标签四</ex-tag>
     <ex-tag type="danger">标签五</ex-tag>
   </div>
-
 
 ```vue
 <template>
@@ -23,7 +23,6 @@
   </div>
 </template>
 ```
-
 
 ## 不同主题
 
@@ -51,16 +50,15 @@
 </template>
 ```
 
-
 ## 自定义颜色
 
 你可以通过 `color`、`bgColor` 和 `borderColor` 属性来自定义标签的颜色。
+
 <div class="tag-group">
     <ex-tag color="#fff" bg-color="#f00">红色背景</ex-tag>
     <ex-tag color="#f00" border-color="#f00" effect="plain">红色边框</ex-tag>
     <ex-tag color="#00f" bg-color="#e0f" border-color="#00f">自定义组合</ex-tag>
   </div>
-
 
 ```vue
 <template>
@@ -71,7 +69,6 @@
   </div>
 </template>
 ```
-
 
 ## 动态编辑标签
 
@@ -97,16 +94,16 @@
 ```vue
 <template>
   <div class="tag-group">
-    <ex-tag 
-      v-for="tag in dynamicTags" 
-      :key="tag.name" 
-      closable 
-      :type="tag.type" 
+    <ex-tag
+      v-for="tag in dynamicTags"
+      :key="tag.name"
+      closable
+      :type="tag.type"
       @close="handleClose(tag)"
     >
       {{ tag.name }}
     </ex-tag>
-    <ExTagInput 
+    <ExTagInput
       :existing-tags="dynamicTags.map(t => t.name)"
       @confirm="handleAdd"
       @duplicate="handleDuplicate"
@@ -124,23 +121,21 @@ const dynamicTags = ref([
   { name: '标签三', type: 'info' },
 ]);
 
-const handleClose = (tag) => {
+const handleClose = tag => {
   dynamicTags.value.splice(dynamicTags.value.indexOf(tag), 1);
 };
 
-const handleAdd = (value) => {
+const handleAdd = value => {
   const types = ['primary', 'success', 'info', 'warning', 'danger'];
   const randomType = types[Math.floor(Math.random() * types.length)];
   dynamicTags.value.push({ name: value, type: randomType });
 };
 
-const handleDuplicate = (value) => {
+const handleDuplicate = value => {
   message.warning(`标签 "${value}" 已存在`);
 };
 </script>
 ```
-
-
 
 ## 不同尺寸
 
@@ -169,19 +164,19 @@ const handleDuplicate = (value) => {
 <div class="tag-group" style="align-items: center;">
     <ex-tag size="large">
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/star-fill.svg" :size="16" />
+        <ExIcon icon="star-fill" :size="16" />
       </template>
       大号标签
     </ex-tag>
     <ex-tag size="medium">
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/heart-fill.svg" :size="14" />
+        <ExIcon icon="star-line" :size="14" />
       </template>
       中号标签
     </ex-tag>
     <ex-tag size="small" round>
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/fire-fill.svg" :size="12" />
+        <ExIcon icon="checkbox-circle-fill" :size="12" />
       </template>
       小号圆形
     </ex-tag>
@@ -192,19 +187,19 @@ const handleDuplicate = (value) => {
   <div class="tag-group" style="align-items: center;">
     <ex-tag size="large">
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/star-fill.svg" :size="16" />
+        <ExIcon icon="star-fill" :size="16" />
       </template>
       大号标签
     </ex-tag>
     <ex-tag size="medium">
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/heart-fill.svg" :size="14" />
+        <ExIcon icon="star-line" :size="14" />
       </template>
       中号标签
     </ex-tag>
     <ex-tag size="small" round>
       <template #prefix>
-        <ExIcon src="https://api.iconify.design/ri/fire-fill.svg" :size="12" />
+        <ExIcon icon="checkbox-circle-fill" :size="12" />
       </template>
       小号圆形
     </ex-tag>
@@ -220,13 +215,13 @@ const handleDuplicate = (value) => {
     <ex-tag closable type="primary">默认关闭图标</ex-tag>
     <ex-tag closable type="success">
       <template #close>
-        <ExIcon src="https://api.iconify.design/ri/delete-bin-line.svg" :size="12" />
+        <ExIcon icon="delete-bin-line" :size="12" />
       </template>
       自定义删除图标
     </ex-tag>
     <ex-tag closable type="warning">
       <template #close>
-        <ExIcon src="https://api.iconify.design/ri/close-circle-line.svg" :size="12" />
+        <ExIcon icon="close-circle-line" :size="12" />
       </template>
       圆形关闭图标
     </ex-tag>
@@ -238,13 +233,13 @@ const handleDuplicate = (value) => {
     <ex-tag closable type="primary">默认关闭图标</ex-tag>
     <ex-tag closable type="success">
       <template #close>
-        <ExIcon src="https://api.iconify.design/ri/delete-bin-line.svg" :size="12" />
+        <ExIcon icon="delete-bin-line" :size="12" />
       </template>
       自定义删除图标
     </ex-tag>
     <ex-tag closable type="warning">
       <template #close>
-        <ExIcon src="https://api.iconify.design/ri/close-circle-line.svg" :size="12" />
+        <ExIcon icon="close-circle-line" :size="12" />
       </template>
       圆形关闭图标
     </ex-tag>
@@ -252,37 +247,35 @@ const handleDuplicate = (value) => {
 </template>
 ```
 
-
-
 ## Tag API
 
 ### Tag Props
 
-| 属性          | 说明                                      | 类型      | 可选值                                      | 默认值    |
-| ------------- | ----------------------------------------- | --------- | ------------------------------------------- | --------- |
-| type          | 类型                                      | `string`  | `primary / success / warning / danger / info` | `primary` |
-| effect        | 主题                                      | `string`  | `dark / light / plain`                      | `light`   |
-| closable      | 是否可关闭                                | `boolean` | —                                           | `false`   |
-| round         | 是否为圆形                                | `boolean` | —                                           | `false`   |
-| size          | 尺寸                                      | `string`  | `large / default / small`                   | `default` |
-| color         | 自定义文本颜色                            | `string`  | —                                           | —         |
-| bg-color      | 自定义背景颜色                            | `string`  | —                                           | —         |
-| border-color  | 自定义边框颜色                            | `string`  | —                                           | —         |
+| 属性         | 说明           | 类型      | 可选值                                        | 默认值    |
+| ------------ | -------------- | --------- | --------------------------------------------- | --------- |
+| type         | 类型           | `string`  | `primary / success / warning / danger / info` | `primary` |
+| effect       | 主题           | `string`  | `dark / light / plain`                        | `light`   |
+| closable     | 是否可关闭     | `boolean` | —                                             | `false`   |
+| round        | 是否为圆形     | `boolean` | —                                             | `false`   |
+| size         | 尺寸           | `string`  | `large / medium / small`                      | `medium`  |
+| color        | 自定义文本颜色 | `string`  | —                                             | —         |
+| bg-color     | 自定义背景颜色 | `string`  | —                                             | —         |
+| border-color | 自定义边框颜色 | `string`  | —                                             | —         |
 
 ### Tag Events
 
-| 事件名 | 说明                | 回调参数              |
-| ------ | ------------------- | --------------------- |
+| 事件名 | 说明                  | 回调参数              |
+| ------ | --------------------- | --------------------- |
 | click  | 点击 Tag 时触发的事件 | `(event: MouseEvent)` |
 | close  | 关闭 Tag 时触发的事件 | `(event: MouseEvent)` |
 
 ### Tag Slots
 
-| 名称    | 说明                                                                 |
-| ------- | -------------------------------------------------------------------- |
-| default | 自定义默认内容                                                       |
-| prefix  | 标签前置内容，通常用于放置图标，建议使用 `<ExIcon>` 组件            |
-| close   | 自定义关闭图标，默认使用 `<ExIcon src="...">` 形式的关闭图标        |
+| 名称    | 说明                                                         |
+| ------- | ------------------------------------------------------------ |
+| default | 自定义默认内容                                               |
+| prefix  | 标签前置内容，通常用于放置图标，建议使用 `<ExIcon>` 组件     |
+| close   | 自定义关闭图标，默认使用 `<ExIcon src="...">` 形式的关闭图标 |
 
 ## TagInput 组件说明
 
@@ -297,22 +290,22 @@ const handleDuplicate = (value) => {
 
 ### TagInput Props
 
-| 属性               | 说明                     | 类型       | 默认值       |
-| ------------------ | ------------------------ | ---------- | ------------ |
-| button-text        | 按钮文本                 | `string`   | `'+ 新标签'` |
-| placeholder        | 输入框占位符             | `string`   | `'请输入标签名称'` |
-| size               | 尺寸                     | `string`   | `'medium'`   |
-| maxlength          | 最大长度                 | `number`   | `20`         |
-| existing-tags      | 已存在的标签列表         | `string[]` | `[]`         |
-| validate-duplicate | 是否验证重复             | `boolean`  | `true`       |
+| 属性               | 说明             | 类型       | 默认值             |
+| ------------------ | ---------------- | ---------- | ------------------ |
+| button-text        | 按钮文本         | `string`   | `'+ 新标签'`       |
+| placeholder        | 输入框占位符     | `string`   | `'请输入标签名称'` |
+| size               | 尺寸             | `string`   | `'medium'`         |
+| maxlength          | 最大长度         | `number`   | `20`               |
+| existing-tags      | 已存在的标签列表 | `string[]` | `[]`               |
+| validate-duplicate | 是否验证重复     | `boolean`  | `true`             |
 
 ### TagInput Events
 
-| 事件名    | 说明             | 回调参数            |
-| --------- | ---------------- | ------------------- |
-| confirm   | 确认添加标签     | `(value: string)`   |
-| cancel    | 取消添加         | `()`                |
-| duplicate | 标签重复时触发   | `(value: string)`   |
+| 事件名    | 说明           | 回调参数          |
+| --------- | -------------- | ----------------- |
+| confirm   | 确认添加标签   | `(value: string)` |
+| cancel    | 取消添加       | `()`              |
+| duplicate | 标签重复时触发 | `(value: string)` |
 
 ### TagInput Slots
 
@@ -330,7 +323,7 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 <!-- ✅ 推荐：使用 ExIcon 组件 + 插槽 -->
 <ex-tag>
   <template #prefix>
-    <ExIcon src="https://api.iconify.design/ri/star-fill.svg" :size="14" />
+    <ExIcon icon="star-fill" :size="14" />
   </template>
   标签文本
 </ex-tag>
@@ -338,7 +331,7 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 <!-- ✅ 推荐：自定义关闭图标 -->
 <ex-tag closable>
   <template #close>
-    <ExIcon src="https://api.iconify.design/ri/close-circle-line.svg" :size="12" />
+    <ExIcon icon="close-circle-line" :size="12" />
   </template>
   可关闭标签
 </ex-tag>
@@ -359,19 +352,10 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 ```vue
 <template>
   <div class="tag-group">
-    <ex-tag 
-      v-for="tag in tags" 
-      :key="tag" 
-      closable 
-      @close="removeTag(tag)"
-    >
+    <ex-tag v-for="tag in tags" :key="tag" closable @close="removeTag(tag)">
       {{ tag }}
     </ex-tag>
-    <ExTagInput 
-      :existing-tags="tags"
-      @confirm="addTag"
-      @duplicate="handleDuplicate"
-    />
+    <ExTagInput :existing-tags="tags" @confirm="addTag" @duplicate="handleDuplicate" />
   </div>
 </template>
 
@@ -380,24 +364,23 @@ import { ref } from 'vue';
 
 const tags = ref(['标签1', '标签2']);
 
-const addTag = (value) => {
+const addTag = value => {
   tags.value.push(value);
 };
 
-const removeTag = (tag) => {
+const removeTag = tag => {
   const index = tags.value.indexOf(tag);
   if (index > -1) {
     tags.value.splice(index, 1);
   }
 };
 
-const handleDuplicate = (value) => {
+const handleDuplicate = value => {
   // 提示用户标签已存在
   console.warn(`标签 "${value}" 已存在`);
 };
 </script>
 ```
-
 
 <script setup>
 import { ref } from 'vue';

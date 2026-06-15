@@ -56,7 +56,7 @@ const handleRefresh = () => {
 
 ```vue
 <template>
-  <ExEmpty 
+  <ExEmpty
     image="https://images.unsplash.com/photo-1614294148960-9aa740632a87?w=200&h=200&fit=crop"
     description="暂无战绩记录"
   />
@@ -157,16 +157,16 @@ const handleRefresh = () => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const loading = ref(false)
+const loading = ref(false);
 
 const handleRefresh = () => {
-  loading.value = true
+  loading.value = true;
   setTimeout(() => {
-    loading.value = false
-  }, 2000)
-}
+    loading.value = false;
+  }, 2000);
+};
 </script>
 
 <template>
@@ -174,13 +174,23 @@ const handleRefresh = () => {
     <ExSpace>
       <ExButton @click="handleRefresh" :loading="loading">
         <template #prefix>
-          <img src="https://api.iconify.design/ri/refresh-line.svg" alt="刷新" width="16" height="16" />
+          <img
+            src="https://api.iconify.design/ri/refresh-line.svg"
+            alt="刷新"
+            width="16"
+            height="16"
+          />
         </template>
         刷新
       </ExButton>
       <ExButton type="primary">
         <template #prefix>
-          <img src="https://api.iconify.design/ri/search-line.svg" alt="搜索" width="16" height="16" />
+          <img
+            src="https://api.iconify.design/ri/search-line.svg"
+            alt="搜索"
+            width="16"
+            height="16"
+          />
         </template>
         重新搜索
       </ExButton>
@@ -245,7 +255,12 @@ const handleRefresh = () => {
     </template>
     <ExButton type="primary" size="large">
       <template #prefix>
-        <img src="https://api.iconify.design/ri/gamepad-line.svg" alt="游戏" width="18" height="18" />
+        <img
+          src="https://api.iconify.design/ri/gamepad-line.svg"
+          alt="游戏"
+          width="18"
+          height="18"
+        />
       </template>
       开始游戏
     </ExButton>
@@ -304,13 +319,15 @@ const handleRefresh = () => {
 ```vue
 <template>
   <ExCard type="primary">
-    <ExEmpty 
-      image-size="small"
-      description="暂无好友在线"
-    >
+    <ExEmpty image-size="small" description="暂无好友在线">
       <ExButton type="primary" size="small">
         <template #prefix>
-          <img src="https://api.iconify.design/ri/user-add-line.svg" alt="添加" width="16" height="16" />
+          <img
+            src="https://api.iconify.design/ri/user-add-line.svg"
+            alt="添加"
+            width="16"
+            height="16"
+          />
         </template>
         添加好友
       </ExButton>
@@ -334,10 +351,7 @@ const handleRefresh = () => {
 
 ```vue
 <template>
-  <ExEmpty 
-    :show-image="false"
-    description="暂无数据"
-  >
+  <ExEmpty :show-image="false" description="暂无数据">
     <ExButton type="primary">刷新</ExButton>
   </ExEmpty>
 </template>
@@ -372,13 +386,15 @@ Empty 组件常用于表格无数据时的展示。
     <template #header>
       <h3>玩家排行榜</h3>
     </template>
-    <ExEmpty 
-      image-size="small"
-      description="暂无排行数据"
-    >
+    <ExEmpty image-size="small" description="暂无排行数据">
       <ExButton type="primary" size="small">
         <template #prefix>
-          <img src="https://api.iconify.design/ri/refresh-line.svg" alt="刷新" width="16" height="16" />
+          <img
+            src="https://api.iconify.design/ri/refresh-line.svg"
+            alt="刷新"
+            width="16"
+            height="16"
+          />
         </template>
         刷新数据
       </ExButton>
@@ -391,20 +407,20 @@ Empty 组件常用于表格无数据时的展示。
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `image` | 图片地址 | `string` | - |
-| `image-size` | 图片尺寸 | `'small' \| 'medium' \| 'large' \| number` | `'medium'` |
-| `description` | 描述文字 | `string` | `'暂无数据'` |
-| `show-image` | 是否显示图片 | `boolean` | `true` |
+| 参数          | 说明         | 类型                                       | 默认值       |
+| ------------- | ------------ | ------------------------------------------ | ------------ |
+| `image`       | 图片地址     | `string`                                   | -            |
+| `image-size`  | 图片尺寸     | `'small' \| 'medium' \| 'large' \| number` | `'medium'`   |
+| `description` | 描述文字     | `string`                                   | `'暂无数据'` |
+| `show-image`  | 是否显示图片 | `boolean`                                  | `true`       |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `image` | 自定义图片内容 |
+| 插槽名        | 说明           |
+| ------------- | -------------- |
+| `image`       | 自定义图片内容 |
 | `description` | 自定义描述内容 |
-| `default` | 自定义操作按钮 |
+| `default`     | 自定义操作按钮 |
 
 ## 无障碍支持
 
@@ -415,15 +431,7 @@ Empty 组件常用于表格无数据时的展示。
 
 ## 主题定制
 
-可以通过 CSS 变量自定义 Empty 组件样式：
-
-```css
-:root {
-  --ex-empty-bg: var(--ex-color-bg-secondary);
-  --ex-empty-text-color: var(--ex-color-text-secondary);
-  --ex-empty-image-opacity: 0.8;
-}
-```
+Empty 跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

@@ -107,8 +107,12 @@
           v-for="file in paginatedFiles"
           :key="file.id"
           :class="['ex-file-list__list-item', { 'is-selected': isSelected(file.id) }]"
+          role="button"
+          tabindex="0"
+          :aria-label="file.name"
           @click="handleClick(file)"
           @dblclick="handleDblClick(file)"
+          @keydown="handleItemKeydown(file, $event)"
         >
           <div class="ex-file-list__list-item-left">
             <input
@@ -171,8 +175,12 @@
           v-for="file in paginatedFiles"
           :key="file.id"
           :class="['ex-file-list__grid-item', { 'is-selected': isSelected(file.id) }]"
+          role="button"
+          tabindex="0"
+          :aria-label="file.name"
           @click="handleClick(file)"
           @dblclick="handleDblClick(file)"
+          @keydown="handleItemKeydown(file, $event)"
         >
           <input
             v-if="selectable"
@@ -232,11 +240,12 @@
       <div v-else-if="currentViewMode === 'tree'" class="ex-file-list__tree">
         <ExTree
           :data="treeData"
-          :default-expanded-keys="defaultExpandedKeys"
+          :expanded-keys="expandedFolderKeys"
           :selected-keys="internalSelectedIds"
           :checkable="selectable && multiple"
           :checked-keys="selectable && multiple ? internalSelectedIds : []"
           :show-icon="true"
+          @update:expanded-keys="expandedFolderKeys = $event"
           @select="handleTreeSelect"
           @check="handleTreeCheck"
           @node-click="handleTreeNodeClick"
@@ -305,7 +314,7 @@
               v-if="showActions"
               class="ex-file-list__table-cell ex-file-list__table-cell--actions"
             >
-              操作
+              {{ t('fileList.actions') }}
             </th>
           </tr>
         </thead>
@@ -459,7 +468,7 @@ const currentSortField = ref<SortField>(props.sortField);
 const currentSortOrder = ref<SortOrder>(props.sortOrder);
 const internalSelectedIds = ref<string[]>([...props.selectedIds]);
 const currentPage = ref(1);
-const defaultExpandedKeys = ref<string[]>([]);
+const expandedFolderKeys = ref<string[]>([]);
 
 // 排序选项
 const sortOptions: SelectOption[] = [
@@ -546,6 +555,26 @@ watch(
   () => props.selectedIds,
   newIds => {
     internalSelectedIds.value = [...newIds];
+  }
+);
+
+// 同步受控的视图模式与排序（运行时改 prop 生效，支持 v-model:viewMode）
+watch(
+  () => props.viewMode,
+  v => {
+    currentViewMode.value = v;
+  }
+);
+watch(
+  () => props.sortField,
+  v => {
+    currentSortField.value = v;
+  }
+);
+watch(
+  () => props.sortOrder,
+  v => {
+    currentSortOrder.value = v;
   }
 );
 
@@ -649,6 +678,14 @@ const handleDblClick = (file: FileItem) => {
   emit('dblclick', file);
 };
 
+// 键盘支持（Enter/Space 等价于点击该项）
+const handleItemKeydown = (file: FileItem, event: KeyboardEvent) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleClick(file);
+  }
+};
+
 // 预览
 const handlePreview = (file: FileItem) => {
   emit('preview', file);
@@ -704,12 +741,11 @@ const handleTreeNodeClick = (node: TreeNode) => {
   if (file) {
     emit('click', file);
     if (file.isDirectory) {
-      // 展开/收起文件夹
-      const index = defaultExpandedKeys.value.indexOf(node.key);
-      if (index > -1) {
-        defaultExpandedKeys.value.splice(index, 1);
+      // 展开/收起文件夹（受控 expanded-keys，不可变更新使 Tree 实时响应）
+      if (expandedFolderKeys.value.includes(node.key)) {
+        expandedFolderKeys.value = expandedFolderKeys.value.filter(k => k !== node.key);
       } else {
-        defaultExpandedKeys.value.push(node.key);
+        expandedFolderKeys.value = [...expandedFolderKeys.value, node.key];
       }
     }
   }

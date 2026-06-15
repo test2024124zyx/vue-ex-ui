@@ -35,7 +35,39 @@ export default defineConfig({
   // 忽略死链接警告（开发中）
   ignoreDeadLinks: false,
 
+  // 强制深色：文档配色全程绑定 ExUI 霓虹深色主题，原生明暗切换无意义，固定为深色
+  appearance: 'force-dark',
+
   themeConfig: {
+    logo: '/logo.svg',
+
+    // 本地全文搜索
+    search: {
+      provider: 'local',
+      options: {
+        translations: {
+          button: { buttonText: '搜索文档', buttonAriaLabel: '搜索文档' },
+          modal: {
+            noResultsText: '无法找到相关结果',
+            resetButtonTitle: '清除查询条件',
+            footer: {
+              selectText: '选择',
+              navigateText: '切换',
+              closeText: '关闭',
+            },
+          },
+        },
+      },
+    },
+
+    // zh-CN 界面文案
+    outline: { level: [2, 3], label: '本页目录' },
+    docFooter: { prev: '上一篇', next: '下一篇' },
+    sidebarMenuLabel: '菜单',
+    returnToTopLabel: '回到顶部',
+    darkModeSwitchLabel: '主题',
+    lastUpdatedText: '最后更新',
+
     nav: [
       { text: '指南', link: '/guide/' },
       { text: '组件', link: '/components/' },
@@ -87,8 +119,6 @@ export default defineConfig({
             { text: 'Rate 评分', link: '/components/rate' },
             { text: 'Switch 开关', link: '/components/switch' },
             { text: 'Slider 滑块', link: '/components/slider' },
-            { text: 'DatePicker 日期选择器', link: '/components/date-picker' },
-            { text: 'TimePicker 时间选择器', link: '/components/time-picker' },
             { text: 'DateTimePicker 日期时间选择器', link: '/components/datetime-picker' },
             { text: 'Form 表单容器', link: '/components/form' },
             { text: 'Form 表单示例', link: '/components/form-examples' },

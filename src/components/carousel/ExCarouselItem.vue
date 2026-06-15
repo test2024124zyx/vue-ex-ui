@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, inject, getCurrentInstance } from 'vue';
+import { computed, inject, getCurrentInstance, onBeforeUnmount } from 'vue';
 import type { ExCarouselItemProps } from './types';
 import { useI18n } from '../../locale';
 
@@ -25,28 +25,37 @@ const props = defineProps<ExCarouselItemProps>();
 const { t } = useI18n();
 
 const instance = getCurrentInstance();
+const uid = instance?.uid ?? 0;
 
 // 注入父组件数据
 const carousel = inject<{
   currentIndex: { value: number };
   direction: { value: string };
   effect: { value: string };
-  registerItem: (uid: number) => number;
+  registerItem: (uid: number) => void;
+  unregisterItem: (uid: number) => void;
+  getItemIndex: (uid: number) => number;
 }>('carousel', {
   currentIndex: { value: 0 },
   direction: { value: 'horizontal' },
   effect: { value: 'slide' },
-  registerItem: () => 0,
+  registerItem: () => {},
+  unregisterItem: () => {},
+  getItemIndex: () => 0,
 });
 
-// 获取当前项的索引
-const index = carousel.registerItem(instance?.uid || 0);
+// 注册到父组件；卸载时注销，避免索引错位与泄漏
+carousel.registerItem(uid);
+onBeforeUnmount(() => carousel.unregisterItem(uid));
+
+// 当前项索引（实时计算，随增删/重排更新）
+const index = computed(() => carousel.getItemIndex(uid));
 
 // 计算属性
 const itemClasses = computed(() => {
   const classes = ['ex-carousel-item'];
 
-  const isActive = index === carousel.currentIndex.value;
+  const isActive = index.value === carousel.currentIndex.value;
 
   if (isActive) classes.push('ex-carousel-item--active');
 

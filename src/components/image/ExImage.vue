@@ -2,8 +2,12 @@
 import { ref, watch, computed, defineOptions } from 'vue';
 import type { ExImageProps, ExImageEmits } from './types';
 import { useI18n } from '../../locale';
+import { useOverlay } from '../../composables/useOverlay';
 
 defineOptions({ name: 'ExImage' });
+
+const rootRef = ref<HTMLElement>();
+const overlayRef = ref<HTMLElement>();
 
 const props = withDefaults(defineProps<ExImageProps>(), {
   fit: 'cover',
@@ -14,6 +18,23 @@ const emit = defineEmits<ExImageEmits>();
 const { t } = useI18n();
 
 const status = ref<'idle' | 'loading' | 'loaded' | 'error'>(props.src ? 'loading' : 'idle');
+
+// 内置全屏预览
+const previewVisible = ref(false);
+const previewSource = computed(() => props.previewSrc || props.src);
+
+function closePreview() {
+  previewVisible.value = false;
+}
+
+// 复用浮层通用机制：Esc 关闭、滚动锁定、焦点陷阱与归还
+useOverlay({
+  active: () => previewVisible.value,
+  container: overlayRef,
+  closeOnEscape: () => true,
+  onEscape: closePreview,
+  restoreFocus: true,
+});
 
 const imageClasses = computed(() => [
   'ex-image',
@@ -41,23 +62,39 @@ function onError(e: Event) {
 }
 
 function handlePreview() {
-  if (props.preview) {
-    emit('preview');
+  if (!props.preview) return;
+  emit('preview');
+  previewVisible.value = true;
+}
+
+// 键盘触发预览：preview 模式下根元素可聚焦，Enter / Space 等同点击
+function handleKeydown(e: KeyboardEvent) {
+  if (!props.preview) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    handlePreview();
   }
 }
+
+const getElement = () => rootRef.value || null;
+
+defineExpose({ getElement });
 </script>
 
 <template>
   <div
+    ref="rootRef"
     :class="imageClasses"
     role="img"
     :aria-label="alt"
+    :tabindex="preview ? 0 : undefined"
     :style="{
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
       borderRadius: radius,
     }"
     @click="handlePreview"
+    @keydown="handleKeydown"
   >
     <img
       v-if="src && status !== 'error'"
@@ -100,5 +137,37 @@ function handlePreview() {
     <!-- 默认插槽：额外装饰内容 -->
     <slot v-if="status === 'loaded'" />
   </div>
+
+  <!-- 内置全屏预览 -->
+  <Teleport to="body">
+    <Transition name="ex-image-preview-fade">
+      <div
+        v-if="previewVisible"
+        ref="overlayRef"
+        class="ex-image-preview"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="alt"
+        @click.self="closePreview"
+      >
+        <button
+          type="button"
+          class="ex-image-preview__close"
+          :aria-label="t('image.closePreview')"
+          @click="closePreview"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <img class="ex-image-preview__img" :src="previewSource" :alt="alt" />
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 <style scoped lang="scss" src="./ExImage.scss"></style>

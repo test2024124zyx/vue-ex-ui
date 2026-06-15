@@ -88,6 +88,11 @@ export interface ExFileUploadProps {
   dragText?: string;
   /** 拖拽区域描述文本 */
   dragDescription?: string;
+  /**
+   * 上传前钩子。返回 false 阻止上传；返回 File（或其 Promise）替换待上传文件。
+   * 在文件大小 / 类型校验通过后调用。
+   */
+  beforeUpload?: (file: File) => BeforeUploadResult;
 }
 
 /**
@@ -110,6 +115,10 @@ export interface ExFileUploadEmits {
   remove: [file: UploadFile, fileList: UploadFile[]];
   /** 超出文件数量限制 */
   exceed: [files: File[], fileList: UploadFile[]];
+  /** 文件超出大小限制（maxSize） */
+  oversize: [file: File, maxSize: number];
+  /** 文件类型不匹配 accept */
+  'type-mismatch': [file: File, accept: string];
   /** 文件预览 */
   preview: [file: UploadFile];
 }

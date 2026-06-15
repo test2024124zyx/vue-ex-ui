@@ -44,7 +44,9 @@ const activeNames6 = ref(['1'])
   <ExCollapse v-model="activeNames">
     <ExCollapseItem name="1" title="一致性 Consistency">
       <div>与现实生活一致：与现实生活的流程、逻辑保持一致，遵循用户习惯的语言和概念；</div>
-      <div>在界面中一致：所有的元素和结构需保持一致，比如：设计样式、图标和文本、元素的位置等。</div>
+      <div>
+        在界面中一致：所有的元素和结构需保持一致，比如：设计样式、图标和文本、元素的位置等。
+      </div>
     </ExCollapseItem>
     <ExCollapseItem name="2" title="反馈 Feedback">
       <div>控制反馈：通过界面样式和交互动效让用户可以清晰的感知自己的操作；</div>
@@ -63,8 +65,8 @@ const activeNames6 = ref(['1'])
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const activeNames = ref(['1'])
+import { ref } from 'vue';
+const activeNames = ref(['1']);
 </script>
 ```
 
@@ -113,8 +115,8 @@ const activeNames = ref(['1'])
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const activeNames = ref('1')
+import { ref } from 'vue';
+const activeNames = ref('1');
 </script>
 ```
 
@@ -162,9 +164,7 @@ const activeNames = ref('1')
   <ExCollapse v-model="activeNames">
     <ExCollapseItem name="1">
       <template #title>
-        <span style="color: var(--ex-color-neon-blue-500);">
-          🎮 游戏设置
-        </span>
+        <span style="color: var(--ex-color-neon-blue-500);">🎮 游戏设置</span>
       </template>
       <div>画质：超高</div>
       <div>帧率：144 FPS</div>
@@ -327,53 +327,53 @@ const activeNames = ref('1')
 
 ### Collapse Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model-value` / `v-model` | 当前激活的面板 | `string \| number \| (string \| number)[]` | `[]` |
-| `accordion` | 是否开启手风琴模式 | `boolean` | `false` |
-| `bordered` | 是否显示边框 | `boolean` | `true` |
-| `disabled` | 是否禁用所有面板 | `boolean` | `false` |
-| `expand-icon-position` | 展开图标位置 | `'left' \| 'right'` | `'left'` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
+| 属性                      | 说明               | 类型                                       | 默认值      |
+| ------------------------- | ------------------ | ------------------------------------------ | ----------- |
+| `model-value` / `v-model` | 当前激活的面板     | `string \| number \| (string \| number)[]` | `[]`        |
+| `accordion`               | 是否开启手风琴模式 | `boolean`                                  | `false`     |
+| `bordered`                | 是否显示边框       | `boolean`                                  | `true`      |
+| `disabled`                | 是否禁用所有面板   | `boolean`                                  | `false`     |
+| `expand-icon-position`    | 展开图标位置       | `'left' \| 'right'`                        | `'left'`    |
+| `aria-label`              | 无障碍标签         | `string`                                   | `undefined` |
 
 ### Collapse Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:model-value` | 激活面板改变时触发 | `(value: string \| number \| (string \| number)[]) => void` |
-| `change` | 激活面板改变时触发 | `(activeNames: string \| number \| (string \| number)[]) => void` |
+| 事件名               | 说明               | 类型                                                              |
+| -------------------- | ------------------ | ----------------------------------------------------------------- |
+| `update:model-value` | 激活面板改变时触发 | `(value: string \| number \| (string \| number)[]) => void`       |
+| `change`             | 激活面板改变时触发 | `(activeNames: string \| number \| (string \| number)[]) => void` |
 
 ### Collapse Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getElement` | 获取折叠面板DOM元素 | `() => HTMLDivElement \| null` |
-| `setActiveNames` | 设置激活的面板 | `(names: string \| number \| (string \| number)[]) => void` |
+| 方法名           | 说明                | 类型                                                        |
+| ---------------- | ------------------- | ----------------------------------------------------------- |
+| `getElement`     | 获取折叠面板DOM元素 | `() => HTMLDivElement \| null`                              |
+| `setActiveNames` | 设置激活的面板      | `(names: string \| number \| (string \| number)[]) => void` |
 
 ### CollapseItem Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `name` | 唯一标识符 | `string \| number` | - |
-| `title` | 面板标题 | `string` | `undefined` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `show-arrow` | 是否显示箭头 | `boolean` | `true` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
+| 属性         | 说明         | 类型               | 默认值      |
+| ------------ | ------------ | ------------------ | ----------- |
+| `name`       | 唯一标识符   | `string \| number` | -           |
+| `title`      | 面板标题     | `string`           | `undefined` |
+| `disabled`   | 是否禁用     | `boolean`          | `false`     |
+| `show-arrow` | 是否显示箭头 | `boolean`          | `true`      |
+| `aria-label` | 无障碍标签   | `string`           | `undefined` |
 
 ### CollapseItem Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 面板内容 |
-| `title` | 面板标题 |
-| `extra` | 面板标题右侧的额外内容 |
+| 插槽名    | 说明                   |
+| --------- | ---------------------- |
+| `default` | 面板内容               |
+| `title`   | 面板标题               |
+| `extra`   | 面板标题右侧的额外内容 |
 
 ### CollapseItem Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getElement` | 获取面板项DOM元素 | `() => HTMLDivElement \| null` |
-| `toggle` | 切换面板展开/收起状态 | `() => void` |
+| 方法名       | 说明                  | 类型                           |
+| ------------ | --------------------- | ------------------------------ |
+| `getElement` | 获取面板项DOM元素     | `() => HTMLDivElement \| null` |
+| `toggle`     | 切换面板展开/收起状态 | `() => void`                   |
 
 ## 无障碍支持
 
@@ -385,16 +385,7 @@ const activeNames = ref('1')
 
 ## 主题定制
 
-可以通过 CSS 变量自定义折叠面板样式：
-
-```css
-:root {
-  --ex-collapse-header-bg: var(--ex-color-bg-secondary);
-  --ex-collapse-header-hover-bg: rgba(0, 240, 255, 0.08);
-  --ex-collapse-content-bg: var(--ex-color-bg-primary);
-  --ex-collapse-border-color: var(--ex-color-border-primary);
-}
-```
+折叠面板跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

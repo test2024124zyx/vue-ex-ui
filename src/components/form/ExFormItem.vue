@@ -4,7 +4,7 @@
     <div v-if="showLabel" :class="labelClasses" :style="labelStyles">
       <span v-if="label" :class="labelTextClasses">
         {{ label }}
-        <span v-if="showColon && showColonMark" class="ex-form-item__colon">:</span>
+        <span v-if="showColonMark" class="ex-form-item__colon">:</span>
       </span>
       <slot name="label" />
     </div>
@@ -62,14 +62,16 @@ defineOptions({
   name: 'ExFormItem',
 });
 
+// 可继承的展示类 prop（labelAlign / labelPlacement / size / showColon / hasFeedback）
+// 一律不设默认值，保持 undefined，以便 actualXxx 计算属性按
+// 「FormItem 自身 > Form 上下文 > 终值」的优先级正确回退继承 Form 的配置。
 const props = withDefaults(defineProps<ExFormItemProps>(), {
-  labelAlign: 'left',
-  labelPlacement: 'left',
   // 不设默认值：未显式传入时根据校验规则中的 required 自动推断
   required: undefined,
-  hasFeedback: false,
-  showColon: true,
-  size: 'medium',
+  // 布尔型可继承 prop 必须显式置 undefined，否则 Vue 的布尔 prop 转换会把
+  // 缺省值变成 false，导致 actualXxx 的 `?? 上下文 ?? 终值` 回退失效。
+  showColon: undefined,
+  hasFeedback: undefined,
 });
 
 const emit = defineEmits<ExFormItemEmits>();
@@ -119,7 +121,7 @@ const actualSize = computed(() => {
 });
 
 const actualLabelAlign = computed(() => {
-  return props.labelAlign || formContext?.props?.labelAlign || 'right';
+  return props.labelAlign || formContext?.props?.labelAlign || 'left';
 });
 
 const actualLabelPlacement = computed(() => {

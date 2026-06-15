@@ -207,38 +207,50 @@ const download = (filename?: string) => {
   }
 };
 
-// 获取条码数据URL
-const toDataURL = (type: 'image/png' | 'image/jpeg' = 'image/png'): string => {
-  if (!svgRef.value || error.value) return '';
-
-  try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '';
-
-    const svgData = new XMLSerializer().serializeToString(svgRef.value);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-
-    return canvas.toDataURL(type);
-  } catch (err) {
-    if (import.meta.env.DEV) {
-      console.error('toDataURL error:', err);
+// 获取条码数据URL（SVG→canvas 为异步绘制，必须等 img.onload 后再读取，故返回 Promise）
+const toDataURL = (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<string> => {
+  return new Promise(resolve => {
+    if (!svgRef.value || error.value) {
+      resolve('');
+      return;
     }
-    return '';
-  }
+
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve('');
+        return;
+      }
+
+      const svgEl = svgRef.value;
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width || svgEl.clientWidth || 300;
+        canvas.height = img.height || svgEl.clientHeight || 150;
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL(type));
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve('');
+      };
+      img.src = url;
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.error('toDataURL error:', err);
+      }
+      resolve('');
+    }
+  });
 };
 
-// 监听值变化
+// 监听值变化（覆盖所有影响渲染的 prop，避免改了某些 prop 不重绘）
 watch(
   () => [
     props.value,
@@ -246,8 +258,19 @@ watch(
     props.width,
     props.height,
     props.displayValue,
+    props.textPosition,
+    props.textMargin,
+    props.fontSize,
+    props.font,
+    props.textAlign,
     props.lineColor,
     props.background,
+    props.margin,
+    props.marginTop,
+    props.marginBottom,
+    props.marginLeft,
+    props.marginRight,
+    props.flat,
   ],
   () => {
     generate();

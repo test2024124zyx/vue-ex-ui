@@ -11,7 +11,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
+  z-index: var(--ex-z-modal, 1050);
   overflow: auto;
 }
 
@@ -27,7 +27,7 @@
   bottom: 0;
   background: var(--ex-color-black-alpha-70);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--ex-z-modal, 1050);
 }
 
 // ============================================================================
@@ -42,7 +42,7 @@
   bottom: 0;
   overflow: auto;
   outline: 0;
-  z-index: 1000;
+  z-index: var(--ex-z-modal, 1050);
   @include custom-scrollbar;
 
   &--centered {

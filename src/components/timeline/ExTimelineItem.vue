@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, inject, ref, onMounted } from 'vue';
+import { computed, inject, ref, onMounted, onUpdated } from 'vue';
 import type { ComputedRef } from 'vue';
 import type {
   ExTimelineItemProps,
@@ -163,6 +163,12 @@ const itemClasses = computed(() => {
     if (isRightSide.value) {
       classes.push('ex-timeline-item--right');
     }
+  } else if (mode.value === 'alternate') {
+    // 水平交替：奇数项内容置于轴线上方
+    classes.push('ex-timeline-item--alternate');
+    if (isRightSide.value) {
+      classes.push('ex-timeline-item--above');
+    }
   }
 
   if (props.hollow) {
@@ -198,13 +204,19 @@ const handleClick = (event: MouseEvent) => {
   emit('click', event);
 };
 
-// 计算当前项的索引
-onMounted(() => {
-  if (itemRef.value && itemRef.value.parentElement) {
-    const siblings = Array.from(itemRef.value.parentElement.children);
-    itemIndex.value = siblings.indexOf(itemRef.value);
+// 计算当前项在兄弟节点中的索引（onUpdated 时重算，保证动态增删/重排后 alternate 左右不错位）
+const updateItemIndex = () => {
+  const el = itemRef.value;
+  if (el && el.parentElement) {
+    const idx = Array.from(el.parentElement.children).indexOf(el);
+    if (idx !== itemIndex.value) {
+      itemIndex.value = idx;
+    }
   }
-});
+};
+
+onMounted(updateItemIndex);
+onUpdated(updateItemIndex);
 
 // 暴露的方法
 const getElement = () => itemRef.value || null;

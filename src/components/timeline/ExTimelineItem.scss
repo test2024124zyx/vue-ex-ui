@@ -125,6 +125,35 @@
     }
   }
 
+  // 水平交替：节点对齐到中线，内容在轴线上/下交替
+  &--horizontal.ex-timeline-item--alternate {
+    .ex-timeline-item__horizontal-wrapper {
+      display: grid;
+      grid-template-rows: 1fr auto 1fr;
+      align-items: center;
+      min-height: 200px;
+      gap: var(--ex-spacing-2);
+    }
+
+    // 默认（偶数项）：内容位于轴线下方
+    .ex-timeline-item__node-horizontal {
+      grid-row: 2;
+    }
+
+    .ex-timeline-item__content--horizontal {
+      grid-row: 3;
+      align-self: start;
+    }
+
+    // 奇数项：内容位于轴线上方
+    &.ex-timeline-item--above {
+      .ex-timeline-item__content--horizontal {
+        grid-row: 1;
+        align-self: end;
+      }
+    }
+  }
+
   // ============================================================================
   // 节点和连接线（垂直）
   // ============================================================================

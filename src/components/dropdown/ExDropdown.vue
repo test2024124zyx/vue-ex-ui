@@ -3,10 +3,16 @@
     <div
       ref="triggerRef"
       class="ex-dropdown__trigger"
+      role="button"
+      :tabindex="disabled ? -1 : 0"
+      aria-haspopup="menu"
+      :aria-expanded="isVisible"
+      :aria-controls="menuId"
       @mouseenter="handleTriggerEnter"
       @mouseleave="handleTriggerLeave"
       @click="handleTriggerClick"
       @contextmenu="handleContextMenu"
+      @keydown="handleKeydown"
     >
       <slot />
     </div>
@@ -15,19 +21,24 @@
       <Transition name="ex-dropdown-fade">
         <div
           v-show="isVisible"
+          :id="menuId"
           ref="menuRef"
           :class="menuClasses"
           :style="menuStyles"
+          role="menu"
+          :aria-activedescendant="activeIndex >= 0 ? `${menuId}-item-${activeIndex}` : undefined"
           @mouseenter="handleMenuEnter"
           @mouseleave="handleMenuLeave"
         >
           <div class="ex-dropdown__menu-content">
             <template v-for="(item, index) in items" :key="item.key || index">
-              <div v-if="item.divided" class="ex-dropdown__divider" />
+              <div v-if="item.divided" class="ex-dropdown__divider" role="separator" />
               <ExDropdownItem
+                :id="`${menuId}-item-${index}`"
                 :label="item.label"
                 :icon="item.icon"
                 :disabled="item.disabled"
+                :active="index === activeIndex"
                 @click="handleItemClick(item)"
               />
             </template>
@@ -49,6 +60,7 @@ import type {
   DropdownItemData,
 } from './types';
 import ExDropdownItem from './ExDropdownItem.vue';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExDropdown',
@@ -72,6 +84,41 @@ const menuRef = ref<HTMLDivElement>();
 const isVisible = ref(false);
 const menuStyles = ref<Record<string, string>>({});
 const hoverTimer = ref<number>();
+const menuId = `${generateId('ex-dropdown')}-menu`;
+/** 键盘导航当前高亮项索引（-1 表示无） */
+const activeIndex = ref(-1);
+
+/** 可被键盘导航选中的菜单项索引（跳过禁用项） */
+const enabledIndexes = computed(() =>
+  props.items.map((item, index) => (item.disabled ? -1 : index)).filter(index => index >= 0)
+);
+
+/** 将高亮项滚动进可视区域 */
+const scrollActiveIntoView = () => {
+  if (activeIndex.value < 0) return;
+  nextTick(() => {
+    const el = menuRef.value?.querySelector<HTMLElement>(`#${menuId}-item-${activeIndex.value}`);
+    // scrollIntoView 在部分环境（如 jsdom）不可用，做存在性守卫
+    if (typeof el?.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' });
+    }
+  });
+};
+
+/** 移动高亮：step=+1 向下，-1 向上；wrap 环绕 */
+const moveActive = (step: 1 | -1) => {
+  const list = enabledIndexes.value;
+  if (list.length === 0) return;
+  const current = list.indexOf(activeIndex.value);
+  const next =
+    current === -1
+      ? step === 1
+        ? 0
+        : list.length - 1
+      : (current + step + list.length) % list.length;
+  activeIndex.value = list[next]!;
+  scrollActiveIntoView();
+};
 
 // 计算属性
 const dropdownClasses = computed(() => {
@@ -173,7 +220,7 @@ const updateMenuPosition = () => {
   const styles: Record<string, string> = {
     top: `${top}px`,
     left: `${left}px`,
-    zIndex: 'calc(var(--ex-z-dropdown) - 1000 + var(--ex-z-index-base, 1000))',
+    zIndex: 'var(--ex-z-dropdown, 1000)',
   };
   if (props.matchTriggerWidth) {
     styles.minWidth = `${Math.max(triggerRect.width, menuRect.width)}px`;
@@ -193,6 +240,7 @@ const show = () => {
 
 const hide = () => {
   isVisible.value = false;
+  activeIndex.value = -1;
   emit('update:visible', false);
   emit('hide');
 };
@@ -249,6 +297,63 @@ const handleContextMenu = (e: MouseEvent) => {
   if (props.trigger === 'contextmenu') {
     e.preventDefault();
     show();
+  }
+};
+
+/**
+ * 键盘交互：
+ * - 关闭态：↓ / Enter / Space 打开并高亮首项
+ * - 打开态：↑↓ 导航、Home/End 跳转首尾、Enter/Space 选中、Esc/Tab 关闭
+ */
+const handleKeydown = (e: KeyboardEvent) => {
+  if (props.disabled) return;
+
+  if (!isVisible.value) {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      show();
+      nextTick(() => {
+        activeIndex.value = enabledIndexes.value[0] ?? -1;
+        scrollActiveIntoView();
+      });
+    }
+    return;
+  }
+
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault();
+      moveActive(1);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      moveActive(-1);
+      break;
+    case 'Home':
+      e.preventDefault();
+      activeIndex.value = enabledIndexes.value[0] ?? -1;
+      scrollActiveIntoView();
+      break;
+    case 'End':
+      e.preventDefault();
+      activeIndex.value = enabledIndexes.value[enabledIndexes.value.length - 1] ?? -1;
+      scrollActiveIntoView();
+      break;
+    case 'Enter':
+    case ' ': {
+      e.preventDefault();
+      const item = props.items[activeIndex.value];
+      if (item) handleItemClick(item);
+      break;
+    }
+    case 'Escape':
+      e.preventDefault();
+      hide();
+      triggerRef.value?.focus();
+      break;
+    case 'Tab':
+      hide();
+      break;
   }
 };
 

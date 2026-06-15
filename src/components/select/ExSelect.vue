@@ -8,6 +8,7 @@
       aria-haspopup="listbox"
       :aria-expanded="dropdownVisible"
       :aria-disabled="disabled"
+      :aria-activedescendant="activeDescendantId"
       :tabindex="disabled || searchable ? undefined : 0"
       @click="handleTriggerClick"
       @keydown="handleKeydown"
@@ -21,7 +22,7 @@
             <span
               v-if="!disabled"
               class="ex-select__tag-close"
-              aria-label="移除"
+              :aria-label="t('removeTagAria', { label: tag.label })"
               @click.stop="removeTag(tag.value)"
             >
               ×
@@ -35,6 +36,7 @@
             ref="inputRef"
             v-model="searchQuery"
             class="ex-select__input"
+            :aria-activedescendant="activeDescendantId"
             :placeholder="selectedValues.length ? '' : placeholder"
             :disabled="disabled"
             @focus="handleFocus"
@@ -57,6 +59,7 @@
             ref="inputRef"
             v-model="searchQuery"
             class="ex-select__input"
+            :aria-activedescendant="activeDescendantId"
             :placeholder="placeholder"
             :disabled="disabled"
             @focus="handleFocus"
@@ -104,7 +107,39 @@
           :class="{ 'ex-select__dropdown--multiple': multiple }"
           :style="dropdownStyles"
         >
-          <ul class="ex-select__options" role="listbox">
+          <!-- 虚拟滚动：仅在 virtual 开启且为扁平（非分组）选项时启用，适配上千选项 -->
+          <ExVirtualList
+            v-if="useVirtual"
+            ref="virtualListRef"
+            class="ex-select__options ex-select__options--virtual"
+            role="listbox"
+            :data-source="flatFilteredOptions"
+            :height="virtualHeight"
+            :item-height="optionHeight"
+            item-key="value"
+            :threshold="0"
+            :buffer="6"
+          >
+            <template #default="{ item: option }">
+              <div
+                :id="getOptionId(getOptionIndex(option))"
+                class="ex-select__option"
+                :class="{
+                  'is-selected': isSelected(option),
+                  'is-disabled': option.disabled,
+                  'is-hover': hoverIndex === getOptionIndex(option),
+                }"
+                role="option"
+                :aria-selected="isSelected(option)"
+                @click="handleSelect(option)"
+                @mouseenter="hoverIndex = getOptionIndex(option)"
+              >
+                {{ option.label }}
+              </div>
+            </template>
+          </ExVirtualList>
+
+          <ul v-else class="ex-select__options" role="listbox">
             <template v-for="(item, index) in filteredOptions" :key="index">
               <!-- 分组标题 -->
               <li v-if="isGroup(item)" class="ex-select__group">
@@ -115,6 +150,7 @@
               <template v-if="isGroup(item)">
                 <li
                   v-for="option in item.options"
+                  :id="getOptionId(getOptionIndex(option))"
                   :key="option.value"
                   class="ex-select__option"
                   :class="{
@@ -134,6 +170,7 @@
               <!-- 普通选项 -->
               <li
                 v-else
+                :id="getOptionId(getOptionIndex(item))"
                 class="ex-select__option"
                 :class="{
                   'is-selected': isSelected(item),
@@ -180,6 +217,8 @@ import { useLocale } from '../../locale';
 import { debounce } from '../../utils/debounce';
 import { useComponentSize } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
+import { generateId } from '../../utils/id';
+import ExVirtualList from '../virtual-list/ExVirtualList.vue';
 
 defineOptions({
   name: 'ExSelect',
@@ -199,6 +238,8 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
   multiple: false,
   multipleLimit: 0,
   collapseTags: false,
+  virtual: false,
+  optionHeight: 34,
 });
 
 const emit = defineEmits<ExSelectEmits>();
@@ -216,12 +257,20 @@ const selectRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
 const inputRef = ref<HTMLInputElement>();
 const dropdownRef = ref<HTMLElement>();
+const virtualListRef = ref<InstanceType<typeof ExVirtualList>>();
 
 // State
 const dropdownVisible = ref(false);
 const searchQuery = ref('');
 const hoverIndex = ref(-1);
 const dropdownStyles = ref<Record<string, string>>({});
+
+// 唯一 id 前缀：用于 option id 与 aria-activedescendant 关联（屏幕阅读器播报高亮项）
+const baseId = generateId('ex-select');
+const getOptionId = (index: number) => `${baseId}-opt-${index}`;
+const activeDescendantId = computed(() =>
+  hoverIndex.value >= 0 ? getOptionId(hoverIndex.value) : undefined
+);
 
 // 计算属性
 const selectClasses = computed(() => {
@@ -346,6 +395,29 @@ const flatFilteredOptions = computed<SelectOption[]>(() => {
 
 const getOptionIndex = (option: SelectOption): number => {
   return flatFilteredOptions.value.findIndex(opt => opt.value === option.value);
+};
+
+// 是否包含分组（分组场景不启用虚拟滚动）
+const hasGroups = computed(() => filteredOptions.value.some(item => isGroup(item)));
+
+// 是否启用虚拟滚动：开启 virtual、有数据、非加载态、且为扁平（非分组）选项
+const useVirtual = computed(
+  () => props.virtual && !hasGroups.value && !props.loading && flatFilteredOptions.value.length > 0
+);
+
+// 虚拟滚动容器高度：按选项数量自适应，最高不超过下拉的可视高度
+const virtualHeight = computed(() => {
+  const padding = 16; // 与 __options 的上下 padding 对齐
+  const contentHeight = flatFilteredOptions.value.length * props.optionHeight + padding;
+  return Math.min(contentHeight, 280);
+});
+
+// 键盘导航后将高亮项滚动进可视区域（虚拟滚动时按索引滚动）
+const scrollHoverIntoView = () => {
+  if (hoverIndex.value < 0) return;
+  if (useVirtual.value) {
+    nextTick(() => virtualListRef.value?.scrollToIndex(hoverIndex.value));
+  }
 };
 
 // 在过滤后的列表里查找下一个/上一个可用（未禁用）选项索引
@@ -493,6 +565,8 @@ const triggerRemote = debounce((query: string) => {
 }, props.remoteDebounce);
 
 const handleSearch = () => {
+  // 过滤结果变化后重置高亮，避免索引指向已被过滤掉的选项
+  hoverIndex.value = -1;
   if (!dropdownVisible.value) {
     showDropdown();
   }
@@ -511,6 +585,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         showDropdown();
       } else {
         hoverIndex.value = findEnabledIndex(hoverIndex.value, 1);
+        scrollHoverIntoView();
       }
       break;
 
@@ -523,6 +598,7 @@ const handleKeydown = (event: KeyboardEvent) => {
           hoverIndex.value < 0 ? flatFilteredOptions.value.length : hoverIndex.value,
           -1
         );
+        scrollHoverIntoView();
       }
       break;
 
@@ -592,6 +668,8 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
   window.removeEventListener('resize', updateDropdownPosition);
   window.removeEventListener('scroll', updateDropdownPosition, true);
+  // 清理远程搜索防抖待执行的定时器
+  triggerRemote.cancel();
 });
 
 // 暴露的方法

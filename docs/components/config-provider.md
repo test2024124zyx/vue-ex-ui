@@ -4,7 +4,7 @@
 
 <script setup>
 import { ref } from 'vue'
-const themelist = ['neon-blue','neon-pink','dark','high-contrast']
+const themelist = ['neon-blue','neon-pink','dark','matrix','light']
 const current_theme = ref(0)
 const current_size = ref(0)
 const sizelist = ['small','medium','large']
@@ -19,24 +19,12 @@ const checked = ref('')
 const selected = ref('')
 const value2 = ref('')
 const numericCode = ref()
-const changetheme= ()=>{
-  if(current_theme.value > 3){
-    current_theme.value = 0
-  }else if(current_theme.value==0){
-    current_theme.value = 3
-  }else{
-    current_theme.value--
-  }
+const changetheme = () => {
+  current_theme.value = (current_theme.value + 1) % themelist.length
   theme.value = themelist[current_theme.value]
 }
-const changesize= ()=>{
-  if(current_size.value > 2){
-    current_size.value = 0
-  }else if(current_size.value==0){
-    current_size.value = 2
-  }else{
-    current_size.value--
-  }
+const changesize = () => {
+  current_size.value = (current_size.value + 1) % sizelist.length
   size.value = sizelist[current_size.value]
 }
 </script>
@@ -98,33 +86,33 @@ ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方
 ### 一、快速开始（推荐）
 
 ```ts
-import { createApp } from 'vue'
-import App from './App.vue'
-import { createLocaleProvider } from 'vue-ex-ui'
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createLocaleProvider } from 'vue-ex-ui';
 
-const app = createApp(App)
+const app = createApp(App);
 
 const i18nProvider = createLocaleProvider({
   locale: 'zh-CN', // 或 'en-US'
   messages: {
     // 可选：合并/覆盖默认文案
     // menu: { search: '查找菜单' }
-  }
-})
+  },
+});
 
-app.use(i18nProvider)
-app.mount('#app')
+app.use(i18nProvider);
+app.mount('#app');
 ```
 
 ### 二、手动集成 vue-i18n
 
 ```ts
-import { createApp } from 'vue'
-import App from './App.vue'
-import { createI18n } from 'vue-i18n'
-import { enUS, zhCN } from 'vue-ex-ui'
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createI18n } from 'vue-i18n';
+import { enUS, zhCN } from 'vue-ex-ui';
 
-const app = createApp(App)
+const app = createApp(App);
 
 const i18n = createI18n({
   legacy: false,
@@ -132,23 +120,26 @@ const i18n = createI18n({
   messages: {
     'en-US': enUS,
     'zh-CN': zhCN,
-  }
-})
+  },
+});
 
-app.use(i18n)
-app.mount('#app')
+app.use(i18n);
+app.mount('#app');
 ```
 
 ### 组件中使用
 
 ```ts
-// 方式A：vue-i18n
-import { useI18n } from 'vue-i18n'
-const { t, locale } = useI18n()
+// 方式A：vue-i18n 原生 API
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
 
-// 方式B：ExUI 提供的作用域翻译（内部优先代理到 vue-i18n）
-import { useLocale } from 'vue-ex-ui'
-const { t: tm } = useLocale('menu')
+// 方式B：ExUI 代理的 useI18n（未安装 vue-i18n 时自动降级到内置翻译）
+import { useI18n as useExI18n } from 'vue-ex-ui';
+const { t: tm } = useExI18n();
+
+// 注意：从 'vue-ex-ui' 导入的 useLocale() 返回的是「当前语言」(ComputedRef<SupportedLocale>)，
+// 见下方 Composables，不是作用域翻译函数。
 ```
 
 ---
@@ -182,10 +173,17 @@ const { t: tm } = useLocale('menu')
     </ExButton>
     <ExButton 
       size="small"
-      :type="theme === 'high-contrast' ? 'primary' : 'secondary'"
-      @click="theme = 'high-contrast'"
+      :type="theme === 'matrix' ? 'primary' : 'secondary'"
+      @click="theme = 'matrix'"
     >
-      高对比度
+      矩阵
+    </ExButton>
+    <ExButton 
+      size="small"
+      :type="theme === 'light' ? 'primary' : 'secondary'"
+      @click="theme = 'light'"
+    >
+      明亮
     </ExButton>
   </div>
   <ExConfigProvider :theme="theme">
@@ -777,15 +775,15 @@ const ns = useNamespace('button');
 
 ### ConfigProvider Props
 
-| 属性          | 说明             | 类型                                                      | 默认值        |
-| ------------- | ---------------- | --------------------------------------------------------- | ------------- |
-| `theme`       | 主题             | `'neon-blue' \| 'neon-pink' \| 'dark' \| 'high-contrast'` | `'neon-blue'` |
-| `locale`      | 语言             | `'zh-CN' \| 'en-US'`                                      | `'en-US'`     |
-| `size`        | 全局组件尺寸     | `'small' \| 'medium' \| 'large'`                          | `'medium'`    |
-| `neon-effect` | 是否启用霓虹效果 | `boolean`                                                 | `true`        |
-| `animation`   | 是否启用动画     | `boolean`                                                 | `true`        |
-| `namespace`   | CSS 类名前缀     | `string`                                                  | `'ex'`        |
-| `z-index`     | z-index 基础值   | `number`                                                  | `1000`        |
+| 属性          | 说明                                                                               | 类型                                                                             | 默认值        |
+| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------- |
+| `theme`       | 主题（`'high-contrast'` 为 `'matrix'` 的兼容别名，保留待后续作真无障碍高对比主题） | `'neon-blue' \| 'neon-pink' \| 'dark' \| 'matrix' \| 'light' \| 'high-contrast'` | `'neon-blue'` |
+| `locale`      | 语言                                                                               | `'zh-CN' \| 'en-US'`                                                             | `'en-US'`     |
+| `size`        | 全局组件尺寸                                                                       | `'small' \| 'medium' \| 'large'`                                                 | `'medium'`    |
+| `neon-effect` | 是否启用霓虹效果                                                                   | `boolean`                                                                        | `true`        |
+| `animation`   | 是否启用动画                                                                       | `boolean`                                                                        | `true`        |
+| `namespace`   | CSS 类名前缀                                                                       | `string`                                                                         | `'ex'`        |
+| `z-index`     | z-index 基础值                                                                     | `number`                                                                         | `1000`        |
 
 ### ConfigProvider Slots
 

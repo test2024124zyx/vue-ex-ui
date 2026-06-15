@@ -154,11 +154,7 @@ const smallData = ref(
 
 ```vue
 <template>
-  <ExVirtualList
-    :data-source="basicData"
-    :height="400"
-    :item-height="50"
-  >
+  <ExVirtualList :data-source="basicData" :height="400" :item-height="50">
     <template #default="{ item, index }">
       <div style="padding: 12px 16px;">
         <div style="font-weight: 600;">{{ item.label }}</div>
@@ -169,15 +165,15 @@ const smallData = ref(
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const basicData = ref(
   Array.from({ length: 1000 }, (_, i) => ({
     key: i,
     label: `Item ${i + 1}`,
-    value: i
+    value: i,
   }))
-)
+);
 </script>
 ```
 
@@ -207,11 +203,7 @@ const basicData = ref(
 
 ```vue
 <template>
-  <ExVirtualList
-    :data-source="dynamicData"
-    :height="400"
-    :item-height="getDynamicHeight"
-  >
+  <ExVirtualList :data-source="dynamicData" :height="400" :item-height="getDynamicHeight">
     <template #default="{ item }">
       <div style="padding: 16px;">
         <div style="font-weight: 600;">{{ item.title }}</div>
@@ -222,21 +214,21 @@ const basicData = ref(
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const dynamicData = ref(
   Array.from({ length: 500 }, (_, i) => ({
     key: i,
     title: `Dynamic Item ${i + 1}`,
-    content: i % 3 === 0 ? 'Short' : i % 3 === 1 ? 'Medium text' : 'Long text...'
+    content: i % 3 === 0 ? 'Short' : i % 3 === 1 ? 'Medium text' : 'Long text...',
   }))
-)
+);
 
 const getDynamicHeight = (index, item) => {
-  const baseHeight = 60
-  const contentLength = item.content.length
-  return baseHeight + Math.floor(contentLength / 50) * 20
-}
+  const baseHeight = 60;
+  const contentLength = item.content.length;
+  return baseHeight + Math.floor(contentLength / 50) * 20;
+};
 </script>
 ```
 
@@ -272,12 +264,7 @@ const getDynamicHeight = (index, item) => {
       <ExButton @click="scrollToMiddle">滚动到中间</ExButton>
       <ExButton @click="scrollToBottom">滚动到底部</ExButton>
     </div>
-    <ExVirtualList
-      ref="virtualListRef"
-      :data-source="scrollData"
-      :height="300"
-      :item-height="50"
-    >
+    <ExVirtualList ref="virtualListRef" :data-source="scrollData" :height="300" :item-height="50">
       <template #default="{ item }">
         <div style="padding: 12px 16px;">{{ item.label }}</div>
       </template>
@@ -286,28 +273,28 @@ const getDynamicHeight = (index, item) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const scrollData = ref(
   Array.from({ length: 1000 }, (_, i) => ({
     key: i,
-    label: `Scroll Item ${i + 1}`
+    label: `Scroll Item ${i + 1}`,
   }))
-)
+);
 
-const virtualListRef = ref()
+const virtualListRef = ref();
 
 const scrollToTop = () => {
-  virtualListRef.value?.scrollToTop()
-}
+  virtualListRef.value?.scrollToTop();
+};
 
 const scrollToBottom = () => {
-  virtualListRef.value?.scrollToBottom()
-}
+  virtualListRef.value?.scrollToBottom();
+};
 
 const scrollToMiddle = () => {
-  virtualListRef.value?.scrollToIndex(500, 'center')
-}
+  virtualListRef.value?.scrollToIndex(500, 'smooth');
+};
 </script>
 ```
 
@@ -368,27 +355,27 @@ const scrollToMiddle = () => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const eventData = ref(
   Array.from({ length: 1000 }, (_, i) => ({
     key: i,
-    label: `Event Item ${i + 1}`
+    label: `Event Item ${i + 1}`,
   }))
-)
+);
 
-const eventListRef = ref()
-const scrollInfo = ref({ scrollTop: 0, isTop: true, isBottom: false })
-const visibleRange = ref({ startIndex: 0, endIndex: 0, visibleCount: 0 })
+const eventListRef = ref();
+const scrollInfo = ref({ scrollTop: 0, isTop: true, isBottom: false });
+const visibleRange = ref({ startIndex: 0, endIndex: 0, visibleCount: 0 });
 
-const handleScroll = (info) => {
-  scrollInfo.value = info
-  
+const handleScroll = info => {
+  scrollInfo.value = info;
+
   // 获取可见范围
   if (eventListRef.value) {
-    visibleRange.value = eventListRef.value.getVisibleRange()
+    visibleRange.value = eventListRef.value.getVisibleRange();
   }
-}
+};
 </script>
 ```
 
@@ -450,9 +437,9 @@ const handleScroll = (info) => {
     :data-source="styledData"
     :height="400"
     :item-height="60"
-    :wrap-style="{ 
+    :wrap-style="{
       background: 'var(--ex-color-bg-tertiary)',
-      borderRadius: '12px'
+      borderRadius: '12px',
     }"
   >
     <template #default="{ item }">
@@ -468,25 +455,25 @@ const handleScroll = (info) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const styledData = ref(
   Array.from({ length: 500 }, (_, i) => ({
     key: i,
     label: `Styled Item ${i + 1}`,
-    type: ['primary', 'success', 'warning', 'danger'][i % 4]
+    type: ['primary', 'success', 'warning', 'danger'][i % 4],
   }))
-)
+);
 
-const getItemColor = (type) => {
+const getItemColor = type => {
   const colors = {
     primary: 'var(--ex-color-primary)',
     success: 'var(--ex-color-success)',
     warning: 'var(--ex-color-warning)',
-    danger: 'var(--ex-color-danger)'
-  }
-  return colors[type]
-}
+    danger: 'var(--ex-color-danger)',
+  };
+  return colors[type];
+};
 </script>
 ```
 
@@ -509,14 +496,15 @@ const getItemColor = (type) => {
 
 ### 性能对比
 
-| 场景 | 数据量 | 滚动性能 | 内存占用 |
-|------|--------|---------|---------|
-| 固定高度 | 10 万条 | 60 FPS | 低 |
-| 动态高度 | 10 万条 | 60 FPS | 中 |
-| 固定高度 | 100 万条 | 60 FPS | 低 |
-| 动态高度 | 100 万条 | 55+ FPS | 中 |
+| 场景     | 数据量   | 滚动性能 | 内存占用 |
+| -------- | -------- | -------- | -------- |
+| 固定高度 | 10 万条  | 60 FPS   | 低       |
+| 动态高度 | 10 万条  | 60 FPS   | 中       |
+| 固定高度 | 100 万条 | 60 FPS   | 低       |
+| 动态高度 | 100 万条 | 55+ FPS  | 中       |
 
 **性能优化技巧：**
+
 1. 优先使用固定高度（`itemHeight` 为数字）- 性能最佳
 2. 合理设置缓冲区大小（默认 3 已足够）
 3. 避免在插槽中使用复杂计算
@@ -565,14 +553,14 @@ const getItemColor = (type) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const smallData = ref(
   Array.from({ length: 20 }, (_, i) => ({
     key: i,
-    label: `Small List Item ${i + 1}`
+    label: `Small List Item ${i + 1}`,
   }))
-)
+);
 </script>
 ```
 
@@ -603,7 +591,7 @@ const loading = ref(false)
 
 const handleLoadMore = async () => {
   if (loading.value) return
-  
+
   loading.value = true
   try {
     // 加载更多数据
@@ -620,63 +608,63 @@ const handleLoadMore = async () => {
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| dataSource | 数据源 | `unknown[]` | `[]` |
-| height | 容器高度 | `number \| string` | - |
-| itemHeight | 项目高度（固定值或函数） | `number \| ((index: number, item: unknown) => number)` | `50` |
-| buffer | 缓冲区大小（上下额外渲染的项目数） | `number` | `3` |
-| threshold | 启用虚拟滚动的阈值（数据量小于此值时不使用虚拟滚动） | `number` | `100` |
-| itemKey | 项目唯一键（字段名或函数） | `string \| ((item: unknown, index: number) => string \| number)` | `'id'` |
-| virtual | 是否启用虚拟滚动 | `boolean` | `true` |
-| loadMoreThreshold | 触发加载更多的距离阈值（距离底部多少像素时触发） | `number` | `50` |
-| wrapStyle | 滚动容器的自定义样式 | `CSSProperties` | - |
-| className | 组件根元素的自定义类名 | `string` | - |
-| style | 组件根元素的自定义样式 | `CSSProperties` | - |
+| 属性              | 说明                                                 | 类型                                                             | 默认值 |
+| ----------------- | ---------------------------------------------------- | ---------------------------------------------------------------- | ------ |
+| dataSource        | 数据源                                               | `unknown[]`                                                      | `[]`   |
+| height            | 容器高度                                             | `number \| string`                                               | -      |
+| itemHeight        | 项目高度（固定值或函数）                             | `number \| ((index: number, item: unknown) => number)`           | `50`   |
+| buffer            | 缓冲区大小（上下额外渲染的项目数）                   | `number`                                                         | `3`    |
+| threshold         | 启用虚拟滚动的阈值（数据量小于此值时不使用虚拟滚动） | `number`                                                         | `100`  |
+| itemKey           | 项目唯一键（字段名或函数）                           | `string \| ((item: unknown, index: number) => string \| number)` | `'id'` |
+| virtual           | 是否启用虚拟滚动                                     | `boolean`                                                        | `true` |
+| loadMoreThreshold | 触发加载更多的距离阈值（距离底部多少像素时触发）     | `number`                                                         | `50`   |
+| wrapStyle         | 滚动容器的自定义样式                                 | `CSSProperties`                                                  | -      |
+| className         | 组件根元素的自定义类名                               | `string`                                                         | -      |
+| style             | 组件根元素的自定义样式                               | `CSSProperties`                                                  | -      |
 
 ### Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| scroll | 滚动时触发 | `(scrollInfo: ScrollInfo) => void` |
-| item-click | 点击列表项时触发 | `(item: unknown, index: number) => void` |
-| reach-top | 滚动到顶部时触发 | `() => void` |
-| reach-bottom | 滚动到底部时触发 | `() => void` |
-| load-more | 接近底部时触发（用于无限滚动） | `() => void` |
+| 事件名       | 说明                           | 回调参数                                 |
+| ------------ | ------------------------------ | ---------------------------------------- |
+| scroll       | 滚动时触发                     | `(scrollInfo: ScrollInfo) => void`       |
+| item-click   | 点击列表项时触发               | `(item: unknown, index: number) => void` |
+| reach-top    | 滚动到顶部时触发               | `() => void`                             |
+| reach-bottom | 滚动到底部时触发               | `() => void`                             |
+| load-more    | 接近底部时触发（用于无限滚动） | `() => void`                             |
 
 ### Methods
 
-| 方法名 | 说明 | 参数 |
-| --- | --- | --- |
-| scrollToIndex | 滚动到指定索引 | `(index: number, behavior?: 'auto' \| 'smooth') => void` |
-| scrollTo | 滚动到指定位置 | `(offset: number, behavior?: 'auto' \| 'smooth') => void` |
-| scrollToTop | 滚动到顶部 | `(behavior?: 'auto' \| 'smooth') => void` |
-| scrollToBottom | 滚动到底部 | `(behavior?: 'auto' \| 'smooth') => void` |
-| getScrollInfo | 获取当前滚动信息 | `() => ScrollInfo` |
-| getVisibleRange | 获取当前可见范围 | `() => VisibleRange` |
-| refresh | 刷新虚拟列表（清除缓存并重新计算） | `() => void` |
+| 方法名          | 说明                               | 参数                                                      |
+| --------------- | ---------------------------------- | --------------------------------------------------------- |
+| scrollToIndex   | 滚动到指定索引                     | `(index: number, behavior?: 'auto' \| 'smooth') => void`  |
+| scrollTo        | 滚动到指定位置                     | `(offset: number, behavior?: 'auto' \| 'smooth') => void` |
+| scrollToTop     | 滚动到顶部                         | `(behavior?: 'auto' \| 'smooth') => void`                 |
+| scrollToBottom  | 滚动到底部                         | `(behavior?: 'auto' \| 'smooth') => void`                 |
+| getScrollInfo   | 获取当前滚动信息                   | `() => ScrollInfo`                                        |
+| getVisibleRange | 获取当前可见范围                   | `() => VisibleRange`                                      |
+| refresh         | 刷新虚拟列表（清除缓存并重新计算） | `() => void`                                              |
 
 ### Slots
 
-| 插槽名 | 说明 | 参数 |
-| --- | --- | --- |
+| 插槽名  | 说明             | 参数                           |
+| ------- | ---------------- | ------------------------------ |
 | default | 自定义列表项内容 | `{ item: any, index: number }` |
 
 ### Types
 
 ```typescript
 interface ScrollInfo {
-  scrollTop: number
-  scrollHeight: number
-  clientHeight: number
-  isTop: boolean
-  isBottom: boolean
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+  isTop: boolean;
+  isBottom: boolean;
 }
 
 interface VisibleRange {
-  startIndex: number
-  endIndex: number
-  visibleCount: number
+  startIndex: number;
+  endIndex: number;
+  visibleCount: number;
 }
 ```
 
@@ -689,17 +677,7 @@ interface VisibleRange {
 
 ## 主题定制
 
-组件使用 CSS 变量进行主题定制：
-
-```scss
-.ex-virtual-list {
-  --ex-virtual-list-bg: var(--ex-color-bg-secondary);
-  --ex-virtual-list-border: var(--ex-color-border-primary);
-  --ex-virtual-list-item-hover-bg: var(--ex-color-bg-hover);
-  --ex-virtual-list-scrollbar-bg: rgba(0, 0, 0, 0.1);
-  --ex-virtual-list-scrollbar-thumb: rgba(0, 0, 0, 0.3);
-}
-```
+虚拟列表跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配；列表项样式由插槽内容自行控制。
 
 ## 性能优化详解
 

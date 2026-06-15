@@ -206,7 +206,7 @@ Components({
   resolvers: [
     name => {
       if (name.startsWith('Ex')) {
-        // ExButton -> button, ExDatePicker -> date-picker
+        // ExButton -> button, ExDateTimePicker -> datetime-picker
         const dir = name
           .slice(2)
           .replace(/([a-z0-9])([A-Z])/g, '$1-$2')

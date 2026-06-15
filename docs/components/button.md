@@ -34,7 +34,7 @@
 
 ## 朴素按钮
 
-朴素按钮同样设置了 `plain` 属性，它们的表现为：鼠标悬停时，背景色为设置的颜色，文字变为白色；鼠标离开后，背景色恢复为白色，文字颜色恢复为设置的颜色。
+设置 `plain` 属性可得到朴素按钮：默认以浅色/透明底 + 主题色描边与文字呈现；悬停时填充为对应主题色作为强调。适合在深色界面中作次级操作按钮。
 
 <div class="demo-container">
   <ExButton plain>朴素按钮</ExButton>
@@ -322,20 +322,20 @@ Button 组件提供除了默认值以外的三种尺寸，可以在不同场景�
 
 ### Props
 
-| 参数        | 说明           | 类型    | 可选值                                                                | 默认值  |
-| ----------- | -------------- | ------- | --------------------------------------------------------------------- | ------- |
-| type        | 类型           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
-| size        | 尺寸           | string  | large / medium / small                                                | medium  |
-| shape       | 形状           | string  | default / round / circle                                              | default |
-| plain       | 是否朴素按钮   | boolean | —                                                                     | false   |
-| round       | 是否圆角按钮   | boolean | —                                                                     | false   |
-| circle      | 是否圆形按钮   | boolean | —                                                                     | false   |
-| loading     | 是否加载中状态 | boolean | —                                                                     | false   |
-| disabled    | 是否禁用状态   | boolean | —                                                                     | false   |
-| autofocus   | 是否默认聚焦   | boolean | —                                                                     | false   |
-| native-type | 原生 type 属性 | string  | button / submit / reset                                               | button  |
-| block       | 是否为块级按钮 | boolean | —                                                                     | false   |
-| aria-label  | 无障碍标签     | string  | —                                                                     | —       |
+| 参数        | 说明                                                                           | 类型    | 可选值                                                                | 默认值  |
+| ----------- | ------------------------------------------------------------------------------ | ------- | --------------------------------------------------------------------- | ------- |
+| type        | 类型                                                                           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
+| size        | 尺寸                                                                           | string  | large / medium / small                                                | medium  |
+| shape       | 形状（与下方 `round`/`circle` 布尔等价，三者任一生效即可；同时设置时圆形优先） | string  | default / round / circle                                              | default |
+| plain       | 是否朴素按钮                                                                   | boolean | —                                                                     | false   |
+| round       | 是否圆角按钮                                                                   | boolean | —                                                                     | false   |
+| circle      | 是否圆形按钮                                                                   | boolean | —                                                                     | false   |
+| loading     | 是否加载中状态                                                                 | boolean | —                                                                     | false   |
+| disabled    | 是否禁用状态                                                                   | boolean | —                                                                     | false   |
+| autofocus   | 是否默认聚焦                                                                   | boolean | —                                                                     | false   |
+| native-type | 原生 type 属性                                                                 | string  | button / submit / reset                                               | button  |
+| block       | 是否为块级按钮                                                                 | boolean | —                                                                     | false   |
+| aria-label  | 无障碍标签                                                                     | string  | —                                                                     | —       |
 
 ### Events
 

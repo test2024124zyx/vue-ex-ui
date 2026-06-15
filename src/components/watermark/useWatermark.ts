@@ -53,7 +53,7 @@ async function drawTile(props: ExWatermarkProps, t: (key: string) => string): Pr
   const dpr = props.dprAware ? Math.max(1, Math.floor(window.devicePixelRatio || 1)) : 1;
   const tileW = props.gapX!;
   const tileH = props.gapY!;
-  
+
   // 创建 Canvas
   const canvas = document.createElement('canvas');
   canvas.width = tileW * dpr;
@@ -71,7 +71,7 @@ async function drawTile(props: ExWatermarkProps, t: (key: string) => string): Pr
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, tileW, tileH);
   ctx.save();
-  
+
   // 移动到中心点并旋转
   ctx.translate(tileW / 2, tileH / 2);
   ctx.rotate((props.angle! * Math.PI) / 180);
@@ -102,7 +102,7 @@ async function drawTile(props: ExWatermarkProps, t: (key: string) => string): Pr
       // 单行文本渲染
       ctx.fillText(textContent, 0, 0);
     }
-  } 
+  }
   // 绘制图片水印
   else if (props.imageSrc) {
     try {
@@ -121,7 +121,7 @@ async function drawTile(props: ExWatermarkProps, t: (key: string) => string): Pr
   }
 
   ctx.restore();
-  
+
   try {
     return canvas.toDataURL('image/png');
   } catch (error) {
@@ -210,17 +210,16 @@ export function useWatermark(
     if (!overlayElement) return;
 
     // 创建 MutationObserver 监听 DOM 变化
-    mutationObserver = new MutationObserver((mutations) => {
+    mutationObserver = new MutationObserver(mutations => {
       for (const mutation of mutations) {
         // 监听子节点变化（删除）
         if (mutation.type === 'childList') {
           if (mutation.removedNodes.length > 0) {
             // 检查是否删除了水印覆盖层
-            mutation.removedNodes.forEach((node) => {
+            mutation.removedNodes.forEach(node => {
               if (
                 node === overlayElement ||
-                (node instanceof HTMLElement &&
-                  node.classList.contains('ex-watermark__overlay'))
+                (node instanceof HTMLElement && node.classList.contains('ex-watermark__overlay'))
               ) {
                 restoreOverlay();
               }
@@ -280,8 +279,8 @@ export function useWatermark(
     }
   });
 
-  // 响应式监听窗口大小变化
-  if (props.responsive) {
+  // 响应式监听窗口大小变化（SSR 环境无 window，需守卫，否则 setup 阶段直接抛错）
+  if (props.responsive && typeof window !== 'undefined') {
     useEventListener(window, 'resize', throttledRefresh, { passive: true });
   }
 
@@ -329,7 +328,7 @@ export function useWatermark(
   // 监听防篡改开关
   watch(
     () => props.antiTamper,
-    (newVal) => {
+    newVal => {
       if (newVal) {
         nextTick(() => startAntiTamper());
       } else {

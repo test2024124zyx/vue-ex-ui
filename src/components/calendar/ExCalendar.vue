@@ -24,13 +24,13 @@
           <span class="ex-calendar__year">
             {{ t('calendar.yearFormat', { year: currentYear }) }}
           </span>
-          <span v-if="mode !== 'year'" class="ex-calendar__month">
+          <span v-if="activeMode !== 'year'" class="ex-calendar__month">
             {{ t('calendar.monthFormat', { month: currentMonth }) }}
           </span>
-          <span v-if="mode === 'day'" class="ex-calendar__day">
+          <span v-if="activeMode === 'day'" class="ex-calendar__day">
             {{ t('calendar.dayFormat', { day: currentDay }) }}
           </span>
-          <span v-if="mode === 'week'" class="ex-calendar__week">
+          <span v-if="activeMode === 'week'" class="ex-calendar__week">
             {{ t('calendar.weekFormat', { week: currentWeek }) }}
           </span>
         </div>
@@ -60,7 +60,7 @@
             :key="m.value"
             :class="[
               'ex-calendar__mode-btn',
-              { 'ex-calendar__mode-btn--active': mode === m.value },
+              { 'ex-calendar__mode-btn--active': activeMode === m.value },
             ]"
             type="button"
             @click="changeMode(m.value)"
@@ -76,7 +76,7 @@
     </div>
 
     <!-- 日视图 -->
-    <div v-if="mode === 'day'" class="ex-calendar__day-view">
+    <div v-if="activeMode === 'day'" class="ex-calendar__day-view">
       <div class="ex-calendar__day-header">
         <div class="ex-calendar__day-title">
           <span class="ex-calendar__day-weekday">{{ currentWeekday }}</span>
@@ -116,7 +116,7 @@
     </div>
 
     <!-- 周视图 -->
-    <div v-else-if="mode === 'week'" class="ex-calendar__week-view">
+    <div v-else-if="activeMode === 'week'" class="ex-calendar__week-view">
       <div class="ex-calendar__weekdays">
         <div v-for="day in weekdays" :key="day" class="ex-calendar__weekday">
           {{ day }}
@@ -128,7 +128,12 @@
           v-for="cell in weekCells"
           :key="cell.date.getTime()"
           :class="getCellClasses(cell)"
+          role="button"
+          :tabindex="cell.disabled ? -1 : 0"
+          :aria-selected="cell.isSelected"
+          :aria-disabled="cell.disabled"
           @click="handleDateClick(cell)"
+          @keydown="handleCellKeydown(cell, $event)"
         >
           <div class="ex-calendar__date-content">
             <div class="ex-calendar__date-info">
@@ -166,7 +171,7 @@
     </div>
 
     <!-- 月视图 -->
-    <div v-else-if="mode === 'month'" class="ex-calendar__month-view">
+    <div v-else-if="activeMode === 'month'" class="ex-calendar__month-view">
       <div class="ex-calendar__weekdays">
         <div v-for="day in weekdays" :key="day" class="ex-calendar__weekday">
           {{ day }}
@@ -178,7 +183,12 @@
           v-for="cell in calendarCells"
           :key="cell.date.getTime()"
           :class="getCellClasses(cell)"
+          role="button"
+          :tabindex="cell.disabled ? -1 : 0"
+          :aria-selected="cell.isSelected"
+          :aria-disabled="cell.disabled"
           @click="handleDateClick(cell)"
+          @keydown="handleCellKeydown(cell, $event)"
         >
           <div class="ex-calendar__date-content">
             <div class="ex-calendar__date-info">
@@ -307,6 +317,14 @@ watch(() => [props.showLunar, props.showSolarTerm], ensureLunarLib);
 const calendarRef = ref<HTMLDivElement>();
 const currentDate = ref(new Date());
 const selectedDate = ref<Date | null>(null);
+// 内部视图模式：初始化自 props.mode，支持 v-model:mode；外部不接管时按钮也能切换
+const activeMode = ref<CalendarMode>(props.mode);
+watch(
+  () => props.mode,
+  m => {
+    activeMode.value = m;
+  }
+);
 
 // 视图模式选项
 const modes = computed(() => [
@@ -321,20 +339,20 @@ const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
 
 // 上/下一周期的无障碍标签
 const prevPeriodLabel = computed(() => {
-  if (props.mode === 'day') return t('calendar.prevDay');
-  if (props.mode === 'week') return t('calendar.prevWeek');
+  if (activeMode.value === 'day') return t('calendar.prevDay');
+  if (activeMode.value === 'week') return t('calendar.prevWeek');
   return t('calendar.prevMonth');
 });
 
 const nextPeriodLabel = computed(() => {
-  if (props.mode === 'day') return t('calendar.nextDay');
-  if (props.mode === 'week') return t('calendar.nextWeek');
+  if (activeMode.value === 'day') return t('calendar.nextDay');
+  if (activeMode.value === 'week') return t('calendar.nextWeek');
   return t('calendar.nextMonth');
 });
 
 // 计算属性
 const calendarClasses = computed(() => {
-  const classes = ['ex-calendar', `ex-calendar--${props.mode}`];
+  const classes = ['ex-calendar', `ex-calendar--${activeMode.value}`];
 
   if (props.fullscreen) classes.push('ex-calendar--fullscreen');
 
@@ -626,6 +644,15 @@ const handleEventClick = (event: CalendarEvent, date: Date) => {
   emit('event-click', event, date);
 };
 
+// 日期格键盘支持（Enter/Space 选择）
+const handleCellKeydown = (cell: CalendarDateCell, event: KeyboardEvent) => {
+  if (cell.disabled) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleDateClick(cell);
+  }
+};
+
 const selectDate = (date: Date) => {
   selectedDate.value = date;
   currentDate.value = new Date(date);
@@ -640,13 +667,15 @@ const goToday = () => {
 };
 
 const changeMode = (newMode: CalendarMode) => {
+  activeMode.value = newMode;
+  emit('update:mode', newMode);
   emit('mode-change', newMode);
 };
 
 const prevPeriod = () => {
   const newDate = new Date(currentDate.value);
 
-  switch (props.mode) {
+  switch (activeMode.value) {
     case 'day':
       newDate.setDate(newDate.getDate() - 1);
       break;
@@ -669,7 +698,7 @@ const prevPeriod = () => {
 const nextPeriod = () => {
   const newDate = new Date(currentDate.value);
 
-  switch (props.mode) {
+  switch (activeMode.value) {
     case 'day':
       newDate.setDate(newDate.getDate() + 1);
       break;

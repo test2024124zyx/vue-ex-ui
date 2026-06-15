@@ -104,12 +104,12 @@ watch(
   }
 );
 
-// 提供给子组件的上下文
+// 提供给子组件的上下文（用 computed 传递，保证运行时修改 prop 后子组件能响应）
 provide('exCollapse', {
   activeNames,
-  accordion: props.accordion,
-  disabled: props.disabled,
-  expandIconPosition: props.expandIconPosition,
+  accordion: computed(() => props.accordion),
+  disabled: computed(() => props.disabled),
+  expandIconPosition: computed(() => props.expandIconPosition),
   isActive,
   handleItemClick,
 });

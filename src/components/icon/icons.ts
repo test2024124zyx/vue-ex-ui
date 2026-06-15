@@ -152,6 +152,66 @@ export const ICONS: Record<string, string> = {
   'node-tree': s(
     '<rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M12 12H6v4M12 12h6v4"/>'
   ),
+
+  // ---- 常用场景图标（演示中常用，避免依赖外部 iconify CDN）----
+  'dashboard-line': s(
+    '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'
+  ),
+  'user-line': s('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>'),
+  'user-add-line': s(
+    '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3.1-6.5 7-6.5"/><path d="M18 11v6M15 14h6"/>'
+  ),
+  'group-line': s(
+    '<circle cx="8" cy="9" r="3"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M13.5 14.8c.9-.5 2-.8 3.5-.8 3 0 5 2 5 5"/>'
+  ),
+  'trophy-line': s(
+    '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 21h6M9.5 17.5h5"/>'
+  ),
+  'gamepad-line': s(
+    '<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r="0.9"/><circle cx="18" cy="14" r="0.9"/>'
+  ),
+  'settings-3-line': s(
+    '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'
+  ),
+  'settings-line': s(
+    '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'
+  ),
+  'volume-up-line': s(
+    '<path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a3.5 3.5 0 0 1 0 6M18.5 7a6.5 6.5 0 0 1 0 10"/>'
+  ),
+  'wifi-line':
+    s('<path d="M2 8.5a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0"/>') +
+    f('<circle cx="12" cy="19" r="1"/>'),
+  'notification-line': s(
+    '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/>'
+  ),
+  'heart-line': s(
+    '<path d="M12 20C6.5 15 3.5 12.2 3.5 8.5 3.5 6 5.5 4 8 4c1.6 0 3 .8 4 2 1-1.2 2.4-2 4-2 2.5 0 4.5 2 4.5 4.5 0 3.7-3 6.5-8.5 11.5z"/>'
+  ),
+  'heart-fill': f(
+    '<path d="M12 21l-1.4-1.3C5.4 15 2 11.9 2 8.1 2 5.4 4.2 3.2 6.9 3.2c1.6 0 3.1.8 4 2 .2.2.2.2 1.1 1.4 .9-1.2 2.4-2 3.9-2C19.8 3.2 22 5.4 22 8.1c0 3.8-3.4 6.9-8.6 11.6z"/>'
+  ),
+  'fire-line': s(
+    '<path d="M12 3c1 3-1 4.5-2.5 6C8 10.5 7 12 7 14.5a5 5 0 0 0 10 0c0-2-1-3.5-2.5-5C13.5 11 13 12 12 12c1-3 0-6 0-9z"/>'
+  ),
+  'fire-fill': f(
+    '<path d="M12 2c1.2 3-1 5-2.5 6.5C8 10 7 11.7 7 14a5 5 0 0 0 10 0c0-2-1-3.5-2-5-.5 1-1.2 1.5-2 1.5 1.2-2.7-.5-5.5-1-8.5z"/>'
+  ),
+  'sword-line': s('<path d="M14.5 3.5L21 3l-.5 6.5-9 9-3-3z"/><path d="M3 21l4-4M8.5 12.5l3 3"/>'),
+  'shield-line': s('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),
+  'shield-fill': f('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),
+  'magic-line': s(
+    '<path d="M4 20L15 9M18 3l.7 1.8L20.5 5.5 18.7 6.2 18 8l-.7-1.8L15.5 5.5l1.8-.7zM7 11l.5 1.3 1.3.5-1.3.5L7 15l-.5-1.3L5.2 13.2l1.3-.5z"/>'
+  ),
+  'flashlight-fill': f(
+    '<path d="M7 2h10l-1 5H8zM8 8.5h8l-.6 3.5h-6.8zM9 13.5h6l-.4 7.5a.6.6 0 0 1-.6.6h-4a.6.6 0 0 1-.6-.6z"/>'
+  ),
+  'ghost-line': s(
+    '<path d="M5 21v-9a7 7 0 0 1 14 0v9l-2.5-2-2.5 2-2-2-2 2z"/><circle cx="9.5" cy="10.5" r="0.9"/><circle cx="14.5" cy="10.5" r="0.9"/>'
+  ),
+  'refresh-2-line': s(
+    '<path d="M20 11a8 8 0 0 0-14-5L3 9M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14 5l3-3M21 20v-5h-5"/>'
+  ),
 };
 
 export type BuiltinIconName = keyof typeof ICONS;

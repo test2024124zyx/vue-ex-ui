@@ -55,7 +55,7 @@
 
     <!-- 指示器 -->
     <div
-      v-if="showIndicators"
+      v-if="indicatorsVisible"
       class="ex-carousel__indicators"
       :class="`ex-carousel__indicators--${indicatorPosition}`"
     >
@@ -85,7 +85,21 @@ defineOptions({
   name: 'ExCarousel',
 });
 
-const props = defineProps<ExCarouselProps>();
+// 注意：布尔类型 prop 未传时 Vue 默认转为 false，因此必须用 withDefaults 显式给出真值默认，
+// 否则 `props.xxx ?? true` 会因 `false ?? true === false` 而失效（导致指示器不显示、循环失效等）
+const props = withDefaults(defineProps<ExCarouselProps>(), {
+  modelValue: 0,
+  height: '400px',
+  autoplay: true,
+  interval: 3000,
+  loop: true,
+  arrow: 'hover',
+  indicatorPosition: 'bottom',
+  showIndicators: true,
+  pauseOnHover: true,
+  direction: 'horizontal',
+  effect: 'slide',
+});
 
 // 设置默认值
 const modelValue = computed(() => props.modelValue ?? 0);
@@ -95,7 +109,7 @@ const interval = computed(() => props.interval ?? 3000);
 const loop = computed(() => props.loop ?? true);
 const arrow = computed(() => props.arrow ?? 'hover');
 const indicatorPosition = computed(() => props.indicatorPosition ?? 'bottom');
-const showIndicators = computed(() => props.showIndicators ?? true);
+const indicatorsVisible = computed(() => props.showIndicators ?? true);
 const pauseOnHover = computed(() => props.pauseOnHover ?? true);
 const direction = computed(() => props.direction ?? 'horizontal');
 const effect = computed(() => props.effect ?? 'slide');
@@ -118,14 +132,17 @@ const touchStartY = ref(0);
 const touchEndX = ref(0);
 const touchEndY = ref(0);
 
-// 子组件注册
+// 子组件注册（支持动态增删，索引由 getItemIndex 实时计算，避免一次性快照错位）
 const itemUids = ref<number[]>([]);
 const registerItem = (uid: number) => {
   if (!itemUids.value.includes(uid)) {
-    itemUids.value.push(uid);
+    itemUids.value = [...itemUids.value, uid];
   }
-  return itemUids.value.indexOf(uid);
 };
+const unregisterItem = (uid: number) => {
+  itemUids.value = itemUids.value.filter(u => u !== uid);
+};
+const getItemIndex = (uid: number) => itemUids.value.indexOf(uid);
 
 // 提供给子组件
 provide('carousel', {
@@ -133,6 +150,8 @@ provide('carousel', {
   direction,
   effect,
   registerItem,
+  unregisterItem,
+  getItemIndex,
 });
 
 // 计算属性
@@ -141,6 +160,7 @@ const carouselClasses = computed(() => {
     'ex-carousel',
     `ex-carousel--${direction.value}`,
     `ex-carousel--${effect.value}`,
+    `ex-carousel--indicator-${indicatorPosition.value}`,
   ];
 
   classes.push(...normalizeCustomClass(props.class));
@@ -294,6 +314,16 @@ const handleTouchMove = (e: TouchEvent) => {
 
   touchEndX.value = touch.clientX;
   touchEndY.value = touch.clientY;
+
+  // 滑动方向与轮播方向一致时阻止默认滚动，避免与页面滚动冲突
+  const dx = Math.abs(touchEndX.value - touchStartX.value);
+  const dy = Math.abs(touchEndY.value - touchStartY.value);
+  if (
+    (direction.value === 'horizontal' && dx > dy) ||
+    (direction.value === 'vertical' && dy > dx)
+  ) {
+    if (e.cancelable) e.preventDefault();
+  }
 };
 
 const handleTouchEnd = () => {
@@ -326,10 +356,24 @@ const handleTouchEnd = () => {
   touchEndY.value = 0;
 };
 
-// 监听 modelValue 变化
+// 监听 modelValue 变化（受控）：直接同步 currentIndex，绕过过渡锁，避免脱节
 watch(modelValue, newValue => {
   if (newValue !== currentIndex.value) {
-    goTo(newValue);
+    const max = Math.max(0, itemCount.value - 1);
+    const clamped = Math.max(0, Math.min(newValue, max));
+    if (clamped !== currentIndex.value) {
+      const oldIndex = currentIndex.value;
+      currentIndex.value = clamped;
+      emit('change', clamped, oldIndex);
+    }
+  }
+});
+
+// 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）
+watch([autoplay, interval], () => {
+  stopAutoplay();
+  if (!(isHovering.value && pauseOnHover.value)) {
+    startAutoplay();
   }
 });
 

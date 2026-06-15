@@ -1,14 +1,13 @@
 <template>
   <div
+    :id="id"
     :class="itemClasses"
+    role="menuitem"
+    :tabindex="disabled ? undefined : -1"
+    :aria-disabled="disabled || undefined"
     @click="handleClick"
   >
-    <img
-      v-if="icon"
-      :src="icon"
-      alt="icon"
-      class="ex-dropdown-item__icon"
-    >
+    <img v-if="icon" :src="icon" alt="icon" class="ex-dropdown-item__icon" />
     <span class="ex-dropdown-item__label">
       <slot>{{ label }}</slot>
     </span>
@@ -37,6 +36,7 @@ const itemClasses = computed(() => {
   const classes = ['ex-dropdown-item'];
 
   if (props.disabled) classes.push('ex-dropdown-item--disabled');
+  if (props.active) classes.push('ex-dropdown-item--active');
 
   return classes;
 });

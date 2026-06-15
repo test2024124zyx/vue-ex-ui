@@ -155,6 +155,11 @@ export interface ExTableProps {
   emptyText?: string;
   /** 是否显示表头 */
   showHeader?: boolean;
+  /**
+   * 远程/受控排序：为 true 时禁用内置本地排序，仅派发 sort-change 事件，
+   * 由外部根据事件自行排序后回传 data（避免与服务端排序双重排序）。
+   */
+  remoteSort?: boolean;
   /** 行的 key 字段名 */
   rowKey?: string;
   /** 是否开启行选择列 */
@@ -167,6 +172,17 @@ export interface ExTableProps {
   isRowSelectable?: (record: TableDataItem, index: number) => boolean;
   /** 最大高度（超出显示滚动条） */
   maxHeight?: string | number;
+  /**
+   * 是否启用行虚拟滚动，适配大数据量（上千行）渲染。
+   * 需配合固定 rowHeight；开启后仅渲染可视窗口内的行。默认 false。
+   */
+  virtual?: boolean;
+  /** 虚拟滚动时的固定行高（像素），默认 48 */
+  rowHeight?: number;
+  /** 虚拟滚动视口高度（像素）；未设置时回退到 maxHeight，再回退到 400 */
+  virtualHeight?: number;
+  /** 虚拟滚动视口上下额外渲染的缓冲行数，默认 6 */
+  virtualBuffer?: number;
   /** 布局模式（移动端可使用卡片模式） */
   layout?: TableLayout;
   /** 自定义CSS类名 */

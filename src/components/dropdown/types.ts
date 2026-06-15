@@ -6,7 +6,19 @@ export type DropdownTrigger = 'hover' | 'click' | 'contextmenu';
 /**
  * 下拉菜单位置
  */
-export type DropdownPlacement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'left' | 'left-start' | 'left-end' | 'right' | 'right-start' | 'right-end';
+export type DropdownPlacement =
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left'
+  | 'left-start'
+  | 'left-end'
+  | 'right'
+  | 'right-start'
+  | 'right-end';
 
 /**
  * 下拉菜单项数据
@@ -92,4 +104,8 @@ export interface ExDropdownItemProps {
   disabled?: boolean;
   /** 是否分割线 */
   divided?: boolean;
+  /** 键盘导航高亮态（由父组件控制） */
+  active?: boolean;
+  /** 元素 id，用于 aria-activedescendant 关联 */
+  id?: string;
 }

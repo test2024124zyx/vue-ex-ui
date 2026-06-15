@@ -40,9 +40,9 @@ const number = ref('')
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const input = ref('')
+const input = ref('');
 </script>
 ```
 
@@ -143,12 +143,7 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="password" 
-    type="password" 
-    show-password 
-    placeholder="请输入密码" 
-  />
+  <ex-input v-model="password" type="password" show-password placeholder="请输入密码" />
 </template>
 ```
 
@@ -159,13 +154,13 @@ const input = ref('')
 <div class="demo-container">
   <ex-input v-model="input7" placeholder="搜索">
     <template #prefix>
-      <ex-icon name="ri:search-line" />
+      <ex-icon icon="search-line" />
     </template>
   </ex-input>
   
   <ex-input v-model="input7" placeholder="用户名">
     <template #suffix>
-      <ex-icon name="ri:user-line" />
+      <ex-icon icon="information-line" />
     </template>
   </ex-input>
 </div>
@@ -174,13 +169,13 @@ const input = ref('')
 <template>
   <ex-input v-model="input" placeholder="搜索">
     <template #prefix>
-      <ex-icon name="ri:search-line" />
+      <ex-icon icon="search-line" />
     </template>
   </ex-input>
-  
+
   <ex-input v-model="input" placeholder="用户名">
     <template #suffix>
-      <ex-icon name="ri:user-line" />
+      <ex-icon icon="information-line" />
     </template>
   </ex-input>
 </template>
@@ -217,12 +212,7 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="input" 
-    show-word-limit 
-    :maxlength="20" 
-    placeholder="最多输入20个字符" 
-  />
+  <ex-input v-model="input" show-word-limit :maxlength="20" placeholder="最多输入20个字符" />
 </template>
 ```
 
@@ -241,12 +231,7 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="input" 
-    label="用户名" 
-    required 
-    placeholder="请输入用户名" 
-  />
+  <ex-input v-model="input" label="用户名" required placeholder="请输入用户名" />
 </template>
 ```
 
@@ -271,18 +256,9 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="input" 
-    help-text="请输入6-20位字符" 
-    placeholder="用户名" 
-  />
-  
-  <ex-input 
-    v-model="input" 
-    status="error" 
-    error-message="用户名不能为空" 
-    placeholder="用户名" 
-  />
+  <ex-input v-model="input" help-text="请输入6-20位字符" placeholder="用户名" />
+
+  <ex-input v-model="input" status="error" error-message="用户名不能为空" placeholder="用户名" />
 </template>
 ```
 
@@ -301,12 +277,7 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="textarea" 
-    type="textarea" 
-    :rows="4" 
-    placeholder="请输入多行文本" 
-  />
+  <ex-input v-model="textarea" type="textarea" :rows="4" placeholder="请输入多行文本" />
 </template>
 ```
 
@@ -325,11 +296,11 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="textarea" 
-    type="textarea" 
-    :autosize="{ minRows: 2, maxRows: 6 }" 
-    placeholder="自动调整高度" 
+  <ex-input
+    v-model="textarea"
+    type="textarea"
+    :autosize="{ minRows: 2, maxRows: 6 }"
+    placeholder="自动调整高度"
   />
 </template>
 ```
@@ -363,35 +334,42 @@ const input = ref('')
 
 ```vue
 <template>
-  <ex-input 
-    v-model="amount" 
-    placeholder="输入金额" 
+  <ex-input
+    v-model="amount"
+    placeholder="输入金额"
     :formatter="formatCurrency"
     :parser="parseCurrency"
   />
-  
-  <ex-input 
-    v-model="phone" 
-    placeholder="输入手机号" 
+
+  <ex-input
+    v-model="phone"
+    placeholder="输入手机号"
     :formatter="formatPhone"
     :parser="parsePhone"
   />
-  
-  <ex-input 
-    v-model="number" 
-    placeholder="输入数字（千分位）" 
+
+  <ex-input
+    v-model="number"
+    placeholder="输入数字（千分位）"
     :formatter="formatThousands"
     :parser="parseThousands"
   />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { formatCurrency, parseCurrency, formatPhone, parsePhone, formatThousands, parseThousands } from '../../src/utils/formatters'
+import { ref } from 'vue';
+import {
+  formatCurrency,
+  parseCurrency,
+  formatPhone,
+  parsePhone,
+  formatThousands,
+  parseThousands,
+} from '../../src/utils/formatters';
 
-const amount = ref('')
-const phone = ref('')
-const number = ref('')
+const amount = ref('');
+const phone = ref('');
+const number = ref('');
 </script>
 ```
 
@@ -413,38 +391,38 @@ const number = ref('')
 
 ```vue
 <template>
-  <ex-input 
+  <ex-input
     ref="inputRef"
-    v-model="email" 
+    v-model="email"
     label="邮箱"
     placeholder="请输入邮箱"
     :rules="emailRules"
     @validation-error="handleValidationError"
   />
-  
+
   <ex-button @click="handleSubmit">提交</ex-button>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const inputRef = ref()
-const email = ref('')
+const inputRef = ref();
+const email = ref('');
 
 const emailRules = [
-  (value) => !!value || '邮箱不能为空',
-  (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || '邮箱格式不正确'
-]
+  value => !!value || '邮箱不能为空',
+  value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || '邮箱格式不正确',
+];
 
-const handleValidationError = (error) => {
-  console.log('验证失败:', error)
-}
+const handleValidationError = error => {
+  console.log('验证失败:', error);
+};
 
 const handleSubmit = () => {
   if (inputRef.value.validate()) {
-    console.log('验证通过，提交表单')
+    console.log('验证通过，提交表单');
   }
-}
+};
 </script>
 ```
 
@@ -452,74 +430,74 @@ const handleSubmit = () => {
 
 ### Props
 
-| 参数 | 说明 | 类型 | 可选值 | 默认值 |
-| --- | --- | --- | --- | --- |
-| model-value / v-model | 绑定值 | string / number | — | — |
-| type | 输入框类型 | string | text / password / email / number / tel / url / search / textarea | text |
-| size | 输入框尺寸 | string | small / medium / large | medium |
-| variant | 输入框变体 | string | neon / ghost / filled | neon |
-| status | 输入框状态 | string | default / success / warning / error | default |
-| placeholder | 占位符文本 | string | — | — |
-| disabled | 是否禁用 | boolean | — | false |
-| readonly | 是否只读 | boolean | — | false |
-| clearable | 是否显示清除按钮（有内容时显示） | boolean | — | false |
-| show-password | 是否显示密码切换按钮 | boolean | — | false |
-| formatter | 格式化显示值 | (value: string) => string | — | — |
-| parser | 解析实际值 | (value: string) => string | — | — |
-| maxlength | 最大长度 | number | — | — |
-| minlength | 最小长度 | number | — | — |
-| show-word-limit | 是否显示字数统计 | boolean | — | false |
-| prepend | 前置内容 | string | — | — |
-| append | 后置内容 | string | — | — |
-| autofocus | 是否自动聚焦 | boolean | — | false |
-| autocomplete | 自动完成 | string | — | off |
-| rules | 验证规则 | Array | — | — |
-| error-message | 错误信息 | string | — | — |
-| help-text | 帮助文本 | string | — | — |
-| label | 标签文本 | string | — | — |
-| required | 是否必填 | boolean | — | false |
-| rows | 文本域行数 | number | — | 3 |
-| autosize | 是否自适应高度 | boolean / object | — | false |
-| custom-class | 自定义类名 | string | — | — |
-| custom-style | 自定义样式 | object | — | — |
+| 参数                  | 说明                             | 类型                      | 可选值                                                           | 默认值  |
+| --------------------- | -------------------------------- | ------------------------- | ---------------------------------------------------------------- | ------- |
+| model-value / v-model | 绑定值                           | string / number           | —                                                                | —       |
+| type                  | 输入框类型                       | string                    | text / password / email / number / tel / url / search / textarea | text    |
+| size                  | 输入框尺寸                       | string                    | small / medium / large                                           | medium  |
+| variant               | 输入框变体                       | string                    | neon / ghost / filled                                            | neon    |
+| status                | 输入框状态                       | string                    | default / success / warning / error                              | default |
+| placeholder           | 占位符文本                       | string                    | —                                                                | —       |
+| disabled              | 是否禁用                         | boolean                   | —                                                                | false   |
+| readonly              | 是否只读                         | boolean                   | —                                                                | false   |
+| clearable             | 是否显示清除按钮（有内容时显示） | boolean                   | —                                                                | false   |
+| show-password         | 是否显示密码切换按钮             | boolean                   | —                                                                | false   |
+| formatter             | 格式化显示值                     | (value: string) => string | —                                                                | —       |
+| parser                | 解析实际值                       | (value: string) => string | —                                                                | —       |
+| maxlength             | 最大长度                         | number                    | —                                                                | —       |
+| minlength             | 最小长度                         | number                    | —                                                                | —       |
+| show-word-limit       | 是否显示字数统计                 | boolean                   | —                                                                | false   |
+| prepend               | 前置内容                         | string                    | —                                                                | —       |
+| append                | 后置内容                         | string                    | —                                                                | —       |
+| autofocus             | 是否自动聚焦                     | boolean                   | —                                                                | false   |
+| autocomplete          | 自动完成                         | string                    | —                                                                | off     |
+| rules                 | 验证规则                         | Array                     | —                                                                | —       |
+| error-message         | 错误信息                         | string                    | —                                                                | —       |
+| help-text             | 帮助文本                         | string                    | —                                                                | —       |
+| label                 | 标签文本                         | string                    | —                                                                | —       |
+| required              | 是否必填                         | boolean                   | —                                                                | false   |
+| rows                  | 文本域行数                       | number                    | —                                                                | 3       |
+| autosize              | 是否自适应高度                   | boolean / object          | —                                                                | false   |
+| custom-class          | 自定义类名                       | string                    | —                                                                | —       |
+| custom-style          | 自定义样式                       | object                    | —                                                                | —       |
 
 ### Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| update:model-value | 值变化时触发 | (value: string \| number) |
-| input | 输入时触发 | (value: string \| number, event: Event) |
-| change | 值改变时触发 | (value: string \| number, event: Event) |
-| focus | 获得焦点时触发 | (event: FocusEvent) |
-| blur | 失去焦点时触发 | (event: FocusEvent) |
-| clear | 点击清除按钮时触发 | — |
-| keydown | 按键按下时触发 | (event: KeyboardEvent) |
-| keyup | 按键抬起时触发 | (event: KeyboardEvent) |
-| enter | 按下回车键时触发 | (event: KeyboardEvent) |
-| validation-error | 验证失败时触发 | (error: string) |
+| 事件名             | 说明               | 回调参数                                |
+| ------------------ | ------------------ | --------------------------------------- |
+| update:model-value | 值变化时触发       | (value: string \| number)               |
+| input              | 输入时触发         | (value: string \| number, event: Event) |
+| change             | 值改变时触发       | (value: string \| number, event: Event) |
+| focus              | 获得焦点时触发     | (event: FocusEvent)                     |
+| blur               | 失去焦点时触发     | (event: FocusEvent)                     |
+| clear              | 点击清除按钮时触发 | —                                       |
+| keydown            | 按键按下时触发     | (event: KeyboardEvent)                  |
+| keyup              | 按键抬起时触发     | (event: KeyboardEvent)                  |
+| enter              | 按下回车键时触发   | (event: KeyboardEvent)                  |
+| validation-error   | 验证失败时触发     | (error: string)                         |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| prefix | 前缀内容 |
-| suffix | 后缀内容 |
+| 插槽名  | 说明     |
+| ------- | -------- |
+| prefix  | 前缀内容 |
+| suffix  | 后缀内容 |
 | prepend | 前置内容 |
-| append | 后置内容 |
-| label | 标签内容 |
-| help | 帮助文本 |
-| error | 错误信息 |
+| append  | 后置内容 |
+| label   | 标签内容 |
+| help    | 帮助文本 |
+| error   | 错误信息 |
 
 ### Exposes
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| focus | 使输入框获得焦点 | — | — |
-| blur | 使输入框失去焦点 | — | — |
-| select | 选中输入框内容 | — | — |
-| clear | 清空输入框内容 | — | — |
-| validate | 手动触发验证 | — | boolean |
-| getInputElement | 获取输入框元素 | — | HTMLInputElement \| HTMLTextAreaElement \| null |
+| 方法名          | 说明             | 参数 | 返回值                                          |
+| --------------- | ---------------- | ---- | ----------------------------------------------- |
+| focus           | 使输入框获得焦点 | —    | —                                               |
+| blur            | 使输入框失去焦点 | —    | —                                               |
+| select          | 选中输入框内容   | —    | —                                               |
+| clear           | 清空输入框内容   | —    | —                                               |
+| validate        | 手动触发验证     | —    | boolean                                         |
+| getInputElement | 获取输入框元素   | —    | HTMLInputElement \| HTMLTextAreaElement \| null |
 
 ## 最佳实践
 

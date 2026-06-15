@@ -8,7 +8,16 @@
       <slot />
     </span>
 
-    <span v-if="closable" class="ex-tag__close" @click.stop="handleClose">
+    <span
+      v-if="closable"
+      class="ex-tag__close"
+      role="button"
+      tabindex="0"
+      :aria-label="t('tag.close')"
+      @click.stop="handleClose"
+      @keydown.enter.stop.prevent="handleClose"
+      @keydown.space.stop.prevent="handleClose"
+    >
       <slot name="close">
         <ExIcon icon="close-line" :size="12" />
       </slot>
@@ -21,6 +30,7 @@ import { computed } from 'vue';
 import { TagProps } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useComponentSize } from '../config-provider/composables';
+import { useI18n } from '../../locale';
 
 const props = withDefaults(defineProps<TagProps>(), {
   type: 'primary',
@@ -31,6 +41,8 @@ const props = withDefaults(defineProps<TagProps>(), {
 });
 
 const emit = defineEmits(['click', 'close']);
+
+const { t } = useI18n();
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
@@ -70,7 +82,7 @@ const handleClick = (event: MouseEvent) => {
   emit('click', event);
 };
 
-const handleClose = (event: MouseEvent) => {
+const handleClose = (event: MouseEvent | KeyboardEvent) => {
   emit('close', event);
 };
 </script>

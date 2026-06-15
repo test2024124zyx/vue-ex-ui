@@ -13,7 +13,7 @@
   line-height: var(--ex-line-height-normal);
   border-radius: var(--ex-radius-base);
   word-wrap: break-word;
-  z-index: 2000;
+  z-index: var(--ex-z-tooltip, 1090);
   pointer-events: none;
 
   // 霓虹边框效果
@@ -185,7 +185,7 @@
   opacity: 0;
 }
 
-// 响应式设�?
+// 响应式设�?
 @media (max-width: 768px) {
   .ex-tooltip__popper {
     max-width: calc(100vw - 32px);
@@ -193,7 +193,7 @@
   }
 }
 
-// 无障碍支�?
+// 无障碍支�?
 @media (prefers-reduced-motion: reduce) {
   .ex-tooltip-fade-enter-active,
   .ex-tooltip-fade-leave-active {

@@ -23,7 +23,7 @@
 
   &__menu {
     position: fixed;
-    z-index: 2000;
+    z-index: var(--ex-z-dropdown, 1000);
     min-width: 160px;
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
@@ -43,7 +43,7 @@
     background: var(--ex-color-border-primary);
   }
 
-  // 无障碍支�?
+  // 无障碍支�?
   @media (prefers-reduced-motion: reduce) {
     * {
       transition: none !important;

@@ -19,6 +19,21 @@ export default {
     validationError: '验证失败',
   },
 
+  // 表单校验
+  validators: {
+    required: '此字段为必填项',
+    email: '请输入有效的邮箱地址',
+    url: '请输入有效的网址',
+    number: '请输入有效的数字',
+    integer: '请输入整数',
+    min: '最少需要 {min} 个字符',
+    max: '最多允许 {max} 个字符',
+    minValue: '值不能小于 {min}',
+    maxValue: '值不能大于 {max}',
+    pattern: '格式不正确',
+    enum: '值不在允许的范围内',
+  },
+
   // 按钮
   button: {
     loading: '加载中...',
@@ -46,6 +61,10 @@ export default {
   empty: {
     description: '暂无数据',
     imageAlt: '空状态',
+    noData: '暂无数据',
+    noResult: '无搜索结果',
+    error: '出错了',
+    networkError: '网络异常，请稍后重试',
   },
 
   // 热力图
@@ -119,6 +138,7 @@ export default {
     empty: '暂无数据',
     selectAll: '全选',
     selectRow: '选择行',
+    selectRowAria: '选择第 {index} 行',
     expand: '展开',
     collapse: '收起',
     filter: '筛选',
@@ -196,6 +216,7 @@ export default {
     loading: '加载中...',
     error: '加载失败',
     preview: '预览',
+    closePreview: '关闭预览',
     alt: '图片',
   },
 
@@ -555,6 +576,7 @@ export default {
     preview: '预览',
     download: '下载',
     delete: '删除',
+    actions: '操作',
     rename: '重命名',
     sort: '排序',
     viewMode: '视图模式',
@@ -582,6 +604,7 @@ export default {
     inputPlaceholder: '请输入标签名称',
     confirm: '确认',
     cancel: '取消',
+    close: '移除标签',
   },
 
   // 图表

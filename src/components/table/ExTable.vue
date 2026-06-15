@@ -1,7 +1,12 @@
 <template>
   <div ref="tableRef" :class="tableClasses" :style="tableStyles">
     <!-- 表格容器 -->
-    <div class="ex-table__container" :style="containerStyle">
+    <div
+      ref="containerRef"
+      class="ex-table__container"
+      :style="containerStyle"
+      @scroll.passive="handleVirtualScroll"
+    >
       <table class="ex-table__main">
         <!-- 表头 -->
         <thead v-if="showHeader" class="ex-table__header">
@@ -14,7 +19,7 @@
                   :model-value="allSelected"
                   :indeterminate="someSelected"
                   :disabled="selectableKeys.length === 0"
-                  aria-label="全选"
+                  :aria-label="t('selectAll')"
                   @update:model-value="toggleAllSelection"
                 />
               </div>
@@ -24,7 +29,11 @@
               :key="column.key"
               :class="getHeaderCellClasses(column)"
               :style="getColumnStyle(column, colIndex)"
+              :role="column.sortable ? 'button' : undefined"
+              :tabindex="column.sortable ? 0 : undefined"
+              :aria-sort="column.sortable ? getAriaSort(column.key) : undefined"
               @click="handleHeaderClick(column)"
+              @keydown="handleHeaderKeydown(column, $event)"
             >
               <div class="ex-table__cell">
                 <span class="ex-table__cell-content">
@@ -62,10 +71,16 @@
 
         <!-- 表体 -->
         <tbody class="ex-table__body">
+          <!-- 虚拟滚动上方占位 -->
+          <tr v-if="topSpacerHeight > 0" aria-hidden="true" class="ex-table__spacer-row">
+            <td :colspan="totalColspan" :style="{ height: `${topSpacerHeight}px`, padding: 0 }" />
+          </tr>
+
           <tr
-            v-for="(record, index) in sortedData"
+            v-for="{ record, index } in renderRows"
             :key="getRowKey(record, index)"
             :class="getRowClasses(record, index)"
+            :style="useVirtual ? { height: `${rowHeight}px` } : undefined"
             @click="handleRowClick(record, index, $event)"
           >
             <!-- 选择列单元格 -->
@@ -75,7 +90,7 @@
                   v-if="selectionType === 'checkbox'"
                   :model-value="isRowSelected(record, index)"
                   :disabled="!rowSelectable(record, index)"
-                  :aria-label="`选择第 ${index + 1} 行`"
+                  :aria-label="t('selectRowAria', { index: index + 1 })"
                   @update:model-value="val => toggleRowSelection(record, val === true)"
                 />
                 <ExRadio
@@ -85,7 +100,7 @@
                   "
                   :value="getRowKey(record, index)"
                   :disabled="!rowSelectable(record, index)"
-                  :aria-label="`选择第 ${index + 1} 行`"
+                  :aria-label="t('selectRowAria', { index: index + 1 })"
                   @update:model-value="() => toggleRowSelection(record, true)"
                 />
               </div>
@@ -101,18 +116,26 @@
                 <slot
                   :name="column.slot || `cell-${column.key}`"
                   :record="record"
-                  :value="getCellValue(record, column)"
+                  :value="getCellValue(record, column, index)"
                   :index="index"
                   :column="column"
                 >
-                  {{ getCellValue(record, column) }}
+                  {{ getCellValue(record, column, index) }}
                 </slot>
               </div>
             </td>
           </tr>
 
-          <!-- 空数据 -->
-          <tr v-if="sortedData.length === 0" class="ex-table__empty-row">
+          <!-- 虚拟滚动下方占位 -->
+          <tr v-if="bottomSpacerHeight > 0" aria-hidden="true" class="ex-table__spacer-row">
+            <td
+              :colspan="totalColspan"
+              :style="{ height: `${bottomSpacerHeight}px`, padding: 0 }"
+            />
+          </tr>
+
+          <!-- 空数据（加载中不显示，避免与 loading 遮罩叠加） -->
+          <tr v-if="!loading && sortedData.length === 0" class="ex-table__empty-row">
             <td :colspan="columns.length + (selectable ? 1 : 0)" class="ex-table__empty-cell">
               <div class="ex-table__empty">
                 <slot name="empty">
@@ -143,7 +166,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import ExCheckbox from '../checkbox/ExCheckbox.vue';
 import ExRadio from '../radio/ExRadio.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type {
   ExTableProps,
   ExTableEmits,
@@ -165,17 +188,25 @@ const props = withDefaults(defineProps<ExTableProps>(), {
   hoverable: true,
   loading: false,
   showHeader: true,
+  remoteSort: false,
   rowKey: 'key',
   layout: 'table',
   selectable: false,
   selectionType: 'checkbox',
+  virtual: false,
+  rowHeight: 48,
+  virtualBuffer: 6,
 });
 
 const emit = defineEmits<ExTableEmits>();
 
 const tableRef = ref<HTMLDivElement>();
+const containerRef = ref<HTMLDivElement>();
 const { t } = useLocale('table');
 const sortInfo = ref<TableSortInfo>({ key: '', order: null });
+
+// 虚拟滚动：当前滚动位置
+const scrollTop = ref(0);
 
 // 计算属性
 const tableClasses = computed(() => {
@@ -185,6 +216,7 @@ const tableClasses = computed(() => {
   if (props.striped) classes.push('ex-table--striped');
   if (props.hoverable) classes.push('ex-table--hoverable');
   if (props.loading) classes.push('ex-table--loading');
+  if (props.virtual) classes.push('ex-table--virtual');
 
   classes.push(...normalizeCustomClass(props.class));
 
@@ -199,6 +231,12 @@ const tableStyles = computed(() => {
 
 const containerStyle = computed(() => {
   const styles: Record<string, string> = {};
+  // 虚拟滚动：用固定视口高度作为滚动容器
+  if (props.virtual) {
+    styles.height = `${viewportHeight.value}px`;
+    styles.overflowY = 'auto';
+    return styles;
+  }
   if (props.maxHeight) {
     styles.maxHeight =
       typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight;
@@ -264,9 +302,9 @@ const getRowKey = (record: TableDataItem, index: number): string | number => {
   return typeof value === 'string' || typeof value === 'number' ? value : index;
 };
 
-const getCellValue = (record: TableDataItem, column: TableColumn) => {
+const getCellValue = (record: TableDataItem, column: TableColumn, index = 0) => {
   if (column.render) {
-    return column.render(record[column.dataIndex || column.key], record, 0);
+    return column.render(record[column.dataIndex || column.key], record, index);
   }
   return record[column.dataIndex || column.key];
 };
@@ -277,6 +315,11 @@ const getSortOrder = (key: string) => {
 
 // 排序数据
 const sortedData = computed(() => {
+  // 远程排序：不在本地排序，直接用外部传入的 data
+  if (props.remoteSort) {
+    return props.data;
+  }
+
   if (!sortInfo.value.key || !sortInfo.value.order) {
     return props.data;
   }
@@ -303,6 +346,68 @@ const sortedData = computed(() => {
   });
 
   return sorted;
+});
+
+// ============================================================================
+// 虚拟滚动 (Virtual Scrolling) —— opt-in，需配合固定 rowHeight
+// ============================================================================
+
+const useVirtual = computed(() => props.virtual && sortedData.value.length > 0);
+
+// 视口高度：优先 virtualHeight，其次数值型 maxHeight，最后回退 400
+const viewportHeight = computed(() => {
+  if (props.virtualHeight) return props.virtualHeight;
+  if (typeof props.maxHeight === 'number') return props.maxHeight;
+  return 400;
+});
+
+// 可视窗口起止索引
+const virtualRange = computed(() => {
+  const total = sortedData.value.length;
+  if (!useVirtual.value) return { start: 0, end: total };
+  const buffer = props.virtualBuffer;
+  const start = Math.max(0, Math.floor(scrollTop.value / props.rowHeight) - buffer);
+  const visibleCount = Math.ceil(viewportHeight.value / props.rowHeight) + buffer * 2;
+  const end = Math.min(total, start + visibleCount);
+  return { start, end };
+});
+
+// 实际渲染的行（携带绝对索引，保证选择/排序/插槽索引正确）
+const renderRows = computed<{ record: TableDataItem; index: number }[]>(() => {
+  const { start, end } = virtualRange.value;
+  const rows: { record: TableDataItem; index: number }[] = [];
+  for (let i = start; i < end; i++) {
+    rows.push({ record: sortedData.value[i]!, index: i });
+  }
+  return rows;
+});
+
+// 上/下占位高度，保持滚动条总高度正确
+const topSpacerHeight = computed(() =>
+  useVirtual.value ? virtualRange.value.start * props.rowHeight : 0
+);
+const bottomSpacerHeight = computed(() =>
+  useVirtual.value ? (sortedData.value.length - virtualRange.value.end) * props.rowHeight : 0
+);
+
+// 选择列 + 数据列的总列数（占位行 colspan 用）
+const totalColspan = computed(() => props.columns.length + (props.selectable ? 1 : 0));
+
+let virtualRaf: number | null = null;
+const handleVirtualScroll = () => {
+  if (!useVirtual.value || !containerRef.value) return;
+  if (virtualRaf !== null) cancelAnimationFrame(virtualRaf);
+  virtualRaf = requestAnimationFrame(() => {
+    if (containerRef.value) scrollTop.value = containerRef.value.scrollTop;
+    virtualRaf = null;
+  });
+};
+
+onBeforeUnmount(() => {
+  if (virtualRaf !== null) {
+    cancelAnimationFrame(virtualRaf);
+    virtualRaf = null;
+  }
 });
 
 // ============================================================================
@@ -423,6 +528,23 @@ const handleHeaderClick = (column: TableColumn) => {
   }
 
   emit('sort-change', { ...sortInfo.value });
+};
+
+// 排序表头的无障碍 aria-sort 值
+const getAriaSort = (key: string): 'ascending' | 'descending' | 'none' => {
+  const order = getSortOrder(key);
+  if (order === 'asc') return 'ascending';
+  if (order === 'desc') return 'descending';
+  return 'none';
+};
+
+// 排序表头键盘支持（Enter/Space 触发排序）
+const handleHeaderKeydown = (column: TableColumn, event: KeyboardEvent) => {
+  if (!column.sortable) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleHeaderClick(column);
+  }
 };
 
 const handleRowClick = (record: TableDataItem, index: number, event: MouseEvent) => {

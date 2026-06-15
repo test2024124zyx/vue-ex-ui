@@ -73,6 +73,9 @@ const chartRef = ref<HTMLDivElement>();
 const chartInstance = shallowRef<echarts.ECharts | null>(null);
 const resizeObserver = ref<ResizeObserver | null>(null);
 const resizeTimer = ref<number | null>(null);
+// 异步初始化竞态控制：序号 + 卸载标记
+let initSeq = 0;
+let isUnmounted = false;
 
 // 计算属性
 const chartClasses = computed(() => {
@@ -125,6 +128,8 @@ const initChart = async () => {
     return;
   }
 
+  const token = ++initSeq;
+
   try {
     // 销毁旧实例
     if (chartInstance.value) {
@@ -134,6 +139,11 @@ const initChart = async () => {
 
     // 按需动态加载 echarts（可选依赖）
     const echartsLib = await import('echarts');
+
+    // await 之后校验：组件已卸载、容器丢失、或有更新的初始化调用，则放弃，避免泄漏
+    if (isUnmounted || token !== initSeq || !chartRef.value) {
+      return;
+    }
 
     // 获取主题配置（使用全局主题）
     const themeConfig = getChartTheme(globalConfig.theme.value);
@@ -191,10 +201,10 @@ const updateChart = () => {
       applyNeonGlow(mergedOption, globalConfig.theme.value);
     }
 
-    // 设置配置
+    // 设置配置：notMerge 保证声明式 option 为完整状态，series 减少时不残留旧系列
     chartInstance.value.setOption(mergedOption, {
-      notMerge: false,
-      lazyUpdate: false,
+      notMerge: true,
+      lazyUpdate: true,
     });
 
     logger.info('Chart updated successfully');
@@ -373,19 +383,8 @@ watch(
   { deep: false }
 );
 
-// 监听加载状态
-watch(
-  () => props.loading,
-  newVal => {
-    if (chartInstance.value) {
-      if (newVal) {
-        showLoading();
-      } else {
-        hideLoading();
-      }
-    }
-  }
-);
+// 加载状态由模板中的 ExLoading 遮罩统一呈现，避免与 echarts 原生 loading 双重叠加；
+// showLoading/hideLoading 仍作为公开方法保留，供需要时手动调用。
 
 // 监听全局主题变化
 watch(
@@ -406,6 +405,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   cleanupResizeObserver();
   if (resizeTimer.value) {
     clearTimeout(resizeTimer.value);

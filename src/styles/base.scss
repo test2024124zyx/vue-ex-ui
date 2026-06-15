@@ -9,88 +9,29 @@
 // 导入基础样式模块
 // ============================================================================
 
+// 安全、必要的最小重置（box-sizing、focus-visible 等）——可全局生效而不改宿主外观。
 @use 'base/reset';
+// 仅类名选择器（.sr-only / .skip-link），不污染裸元素。
+@use 'base/accessibility';
+// 打印样式，仅在 @media print 下生效。
+@use 'base/print';
+
+// 以下模块只暴露 `base-styles` mixin，会改动宿主裸元素外观，
+// 因此仅在用户主动启用 `.ex-app` 作用域时注入，默认产物不含全局 h1/p/ul/table/input 等样式。
 @use 'base/typography';
 @use 'base/lists';
 @use 'base/tables';
 @use 'base/forms';
 @use 'base/media';
-@use 'base/accessibility';
-@use 'base/print';
-
-// ============================================================================
-// 滚动条样式
-// ============================================================================
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--ex-color-bg-tertiary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--ex-color-border-primary);
-  border-radius: 4px;
-  @include transition(background-color);
-
-  &:hover {
-    background: var(--ex-color-neon-blue-500);
-    @include neon-glow('blue', 'sm');
-  }
-}
-
-::-webkit-scrollbar-corner {
-  background: var(--ex-color-bg-tertiary);
-}
-
-// ============================================================================
-// 交互元素
-// ============================================================================
-
-details {
-  background: var(--ex-color-bg-surface);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-md);
-  margin: var(--ex-spacing-4) 0;
-  overflow: hidden;
-}
-
-summary {
-  padding: var(--ex-spacing-3) var(--ex-spacing-4);
-  background: var(--ex-color-bg-secondary);
-  cursor: pointer;
-  font-weight: var(--ex-font-medium);
-  color: var(--ex-color-text-primary);
-  @include transition(background-color);
-
-  &:hover {
-    background: var(--ex-color-bg-tertiary);
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-details[open] summary {
-  border-bottom: 1px solid var(--ex-color-border-primary);
-}
-
-details > *:not(summary) {
-  padding: var(--ex-spacing-4);
-}
 
 // ============================================================================
 // 赛博朋克氛围（可选，opt-in）
 // ============================================================================
 //
-// 组件库默认不会改动宿主的 body。如果你的整站都使用 ExUI，想要那层深色霓虹氛围，
-// 在应用根元素加上 `ex-app` 类即可：<div class="ex-app">...</div> 或 <body class="ex-app">。
-// 这样既能渐进式接入既有项目，又能在「全站 ExUI」场景下一键启用氛围。
+// 组件库默认不会改动宿主的 body 或任何裸元素。如果你的整站都使用 ExUI，想要那层
+// 深色霓虹氛围与页面级排版/表单/表格/滚动条样式，在应用根元素加上 `ex-app` 类即可：
+// <div class="ex-app">...</div> 或 <body class="ex-app">。
+// 这样既能渐进式接入既有项目，又能在「全站 ExUI」场景下一键启用。
 
 .ex-app {
   position: relative;
@@ -106,6 +47,73 @@ details > *:not(summary) {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  // 页面级裸元素样式（排版、列表、表格、表单、媒体）——仅在 .ex-app 内生效
+  @include typography.base-styles;
+  @include lists.base-styles;
+  @include tables.base-styles;
+  @include forms.base-styles;
+  @include media.base-styles;
+
+  // 滚动条样式（仅作用于氛围容器及其内部，不污染宿主全局）
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--ex-color-bg-tertiary);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--ex-color-border-primary);
+    border-radius: 4px;
+    @include transition(background-color);
+
+    &:hover {
+      background: var(--ex-color-neon-blue-500);
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: var(--ex-color-bg-tertiary);
+  }
+
+  // 交互元素 details / summary
+  details {
+    background: var(--ex-color-bg-surface);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-md);
+    margin: var(--ex-spacing-4) 0;
+    overflow: hidden;
+  }
+
+  summary {
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    background: var(--ex-color-bg-secondary);
+    cursor: pointer;
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-primary);
+    @include transition(background-color);
+
+    &:hover {
+      background: var(--ex-color-bg-tertiary);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  details[open] summary {
+    border-bottom: 1px solid var(--ex-color-border-primary);
+  }
+
+  details > *:not(summary) {
+    padding: var(--ex-spacing-4);
+  }
 
   // 选区配色（仅作用于氛围容器内部，不污染宿主全局）
   ::selection {

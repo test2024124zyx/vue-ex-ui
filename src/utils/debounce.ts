@@ -1,18 +1,27 @@
 /**
+ * 防抖函数返回类型：可调用，并带 cancel() 用于在组件卸载时清理待执行的定时器
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface DebouncedFunction<T extends (...args: any[]) => any> {
+  (...args: Parameters<T>): void;
+  /** 取消尚未触发的延迟调用 */
+  cancel: () => void;
+}
+
+/**
  * 防抖函数
  * @param fn 要防抖的函数
  * @param delay 延迟时间（毫秒）
- * @returns 防抖后的函数
+ * @returns 防抖后的函数（带 cancel 方法）
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   delay: number
-): (...args: Parameters<T>) => void {
+): DebouncedFunction<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function (this: any, ...args: Parameters<T>) {
+  const debounced = function (this: unknown, ...args: Parameters<T>) {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -21,7 +30,16 @@ export function debounce<T extends (...args: any[]) => any>(
       fn.apply(this, args);
       timeoutId = null;
     }, delay);
+  } as DebouncedFunction<T>;
+
+  debounced.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
   };
+
+  return debounced;
 }
 
 /**

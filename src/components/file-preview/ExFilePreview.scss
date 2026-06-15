@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 2000;
+  z-index: var(--ex-z-modal, 1050);
   display: flex;
   flex-direction: column;
 
@@ -265,7 +265,7 @@
     }
   }
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
     &__toolbar {
       padding: var(--ex-spacing-3) var(--ex-spacing-4);

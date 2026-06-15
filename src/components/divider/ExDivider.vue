@@ -71,13 +71,15 @@ const ariaLabel = computed(() => {
     :aria-label="ariaLabel"
     :style="dividerStyle"
   >
-    <!-- 水平分割线 -->
+    <!-- 水平分割线：无文字时渲染单条连续线，避免两条半线在正中相接处出现断开 -->
     <template v-if="!isVertical">
       <div class="ex-divider__line" aria-hidden="true" />
-      <div v-if="hasTitle" class="ex-divider__content">
-        <slot />
-      </div>
-      <div class="ex-divider__line" aria-hidden="true" />
+      <template v-if="hasTitle">
+        <div class="ex-divider__content">
+          <slot />
+        </div>
+        <div class="ex-divider__line" aria-hidden="true" />
+      </template>
     </template>
 
     <!-- 垂直分割线 -->

@@ -34,6 +34,7 @@
         :false-value="falseValue"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
+        @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -104,6 +105,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExCheckbox',
@@ -130,6 +132,9 @@ const { t } = useI18n();
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
+
+// 所在 FormItem 的字段上下文（用于 blur 自动校验）
+const formItem = useFormItem();
 
 // 注入 CheckboxGroup 上下文（如果存在）
 const checkboxGroupContext = inject<{
@@ -276,6 +281,13 @@ const ariaDescribedBy = computed(() => {
   return ids.length > 0 ? ids.join(' ') : undefined;
 });
 
+// 只读/禁用时拦截点击的默认切换行为（独立模式用 v-model 时 change 守卫为时已晚）
+const handleReadonlyGuard = (event: MouseEvent) => {
+  if (currentDisabled.value || currentReadonly.value) {
+    event.preventDefault();
+  }
+};
+
 // 事件处理
 const handleChange = (event: Event) => {
   if (currentDisabled.value || currentReadonly.value) {
@@ -307,6 +319,7 @@ const handleFocus = (event: FocusEvent) => {
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 // 空格键切换：preventDefault 阻止原生切换后手动更新，
@@ -348,9 +361,8 @@ const validateCheckbox = (value: boolean | string | number) => {
 watch(
   () => props.errorMessage,
   newError => {
-    if (newError) {
-      currentErrorMessage.value = newError;
-    }
+    // 父级清空 errorMessage 时同步清除，避免残留旧错误
+    currentErrorMessage.value = newError || '';
   },
   { immediate: true }
 );

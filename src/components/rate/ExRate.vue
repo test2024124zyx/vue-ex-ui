@@ -11,6 +11,7 @@
     :aria-readonly="readonly"
     @mouseleave="handleMouseLeave"
     @keydown="handleKeydown"
+    @blur="handleBlur"
   >
     <!-- 评分星星 -->
     <div class="ex-rate__stars">
@@ -54,6 +55,7 @@
 import { ref, computed, watch } from 'vue';
 import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRate',
@@ -75,6 +77,9 @@ const props = withDefaults(defineProps<ExRateProps>(), {
 });
 
 const emit = defineEmits<ExRateEmits>();
+
+// 所在 FormItem 的字段上下文（用于 blur 自动校验）
+const formItem = useFormItem();
 
 // 响应式状态
 const currentValue = ref(props.modelValue);
@@ -188,6 +193,11 @@ function handleMouseLeave() {
   hoverValue.value = -1;
 }
 
+// 失焦：触发 FormItem 的 blur 校验
+function handleBlur() {
+  formItem?.onFieldBlur();
+}
+
 function handleClick(item: number, event: MouseEvent) {
   if (props.disabled || props.readonly) return;
 
@@ -200,6 +210,8 @@ function handleClick(item: number, event: MouseEvent) {
 
 function setCurrentValue(value: number) {
   currentValue.value = value;
+  emit('update:modelValue', value);
+  emit('change', value);
 }
 
 function resetCurrentValue() {

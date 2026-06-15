@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -221,10 +221,15 @@ const validateValue = (value: number): number => {
   if (result < props.min) result = props.min;
   if (result > props.max) result = props.max;
 
-  // 严格步长模式
+  // 严格步长模式：以有限的基准对齐步长（min 为 ±Infinity 时退化为 0，避免 NaN）
   if (props.strictStep && props.step !== 0) {
-    const steps = Math.round((result - props.min) / props.step);
-    result = props.min + steps * props.step;
+    const base = Number.isFinite(props.min) ? props.min : 0;
+    const steps = Math.round((result - base) / props.step);
+    result = base + steps * props.step;
+
+    // 对齐后再次夹取范围，避免步长对齐导致越界
+    if (result < props.min) result = props.min;
+    if (result > props.max) result = props.max;
   }
 
   return formatNumber(result);
@@ -411,6 +416,11 @@ const handleDecrease = (customStepOrEvent?: number | Event) => {
   emit('change', newValue, oldValue);
   emit('decrease', newValue);
 };
+
+// 卸载时清理防抖待执行的定时器
+onBeforeUnmount(() => {
+  debouncedInput?.cancel();
+});
 
 // 暴露的方法
 const focus = () => {

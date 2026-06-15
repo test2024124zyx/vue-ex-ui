@@ -107,6 +107,8 @@ export interface ExCalendarEmits {
   'month-change': [year: number, month: number];
   /** 年份改变事件 */
   'year-change': [year: number];
+  /** 模式更新事件（支持 v-model:mode） */
+  'update:mode': [mode: CalendarMode];
   /** 模式改变事件 */
   'mode-change': [mode: CalendarMode];
   /** 日期单元格点击事件 */

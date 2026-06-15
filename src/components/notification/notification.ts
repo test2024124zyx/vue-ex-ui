@@ -32,6 +32,16 @@ const defaultConfig: NotificationGlobalConfig = {
 /** 当前全局配置 */
 let globalConfig: NotificationGlobalConfig = { ...defaultConfig };
 
+/**
+ * 解析容器 z-index：未自定义时走设计令牌 var(--ex-z-toast)，
+ * 与 Modal/Popover 等浮层共享同一套层级体系；
+ * 用户显式设置 zIndex 时仍以其数值为准。
+ */
+const resolveZIndex = (): string =>
+  globalConfig.zIndex === defaultConfig.zIndex
+    ? `var(--ex-z-toast, ${defaultConfig.zIndex})`
+    : String(globalConfig.zIndex);
+
 // ============================================================================
 // 通知队列管理
 // ============================================================================
@@ -64,7 +74,7 @@ const generateId = (): string => {
 const getPositionStyle = (position: NotificationPosition, offset: number): string => {
   const styles: Record<string, string> = {
     position: 'fixed',
-    zIndex: String(globalConfig.zIndex),
+    zIndex: resolveZIndex(),
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',

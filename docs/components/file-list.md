@@ -346,7 +346,7 @@ const files = ref([
   // ... 更多文件
 ]);
 
-const handleClick = (file) => {
+const handleClick = file => {
   console.log('点击文件:', file.name);
 };
 </script>
@@ -408,7 +408,7 @@ const handleClick = (file) => {
 </template>
 
 <script setup>
-const handleSearch = (keyword) => {
+const handleSearch = keyword => {
   console.log('搜索:', keyword);
 };
 </script>
@@ -557,15 +557,15 @@ const selectedIds = ref([]);
 </template>
 
 <script setup>
-const handlePreview = (file) => {
+const handlePreview = file => {
   // 预览文件
 };
 
-const handleDownload = (file) => {
+const handleDownload = file => {
   // 下载文件
 };
 
-const handleDelete = (file) => {
+const handleDelete = file => {
   // 删除文件
 };
 </script>
@@ -865,7 +865,7 @@ FileList 组件充分复用了现有组件，提供统一的交互体验：
           :expanded-keys="treeExpandedKeys"
           :show-icon="true"
           @node-click="handleTreeNodeClick"
-          @update:expanded-keys="(keys) => (treeExpandedKeys = keys)"
+          @update:expanded-keys="keys => (treeExpandedKeys = keys)"
         />
       </div>
 
@@ -892,7 +892,7 @@ FileList 组件充分复用了现有组件，提供统一的交互体验：
     <!-- 状态栏 -->
     <div class="explorer-statusbar">
       <span>{{ currentFiles.length }} 个项目</span>
-      <span v-if="selectedFileIds.length > 0"> 已选择 {{ selectedFileIds.length }} 个项目 </span>
+      <span v-if="selectedFileIds.length > 0">已选择 {{ selectedFileIds.length }} 个项目</span>
     </div>
   </div>
 </template>
@@ -936,7 +936,7 @@ const currentFiles = computed(() => {
 
   for (let i = 1; i < currentPath.value.length; i++) {
     const folderId = currentPath.value[i];
-    const folder = current.children?.find((f) => f.id === folderId);
+    const folder = current.children?.find(f => f.id === folderId);
     if (folder && folder.isDirectory) {
       current = folder;
     }
@@ -952,7 +952,7 @@ const breadcrumbs = computed(() => {
 
   for (let i = 1; i < currentPath.value.length; i++) {
     const folderId = currentPath.value[i];
-    const folder = current.children?.find((f) => f.id === folderId);
+    const folder = current.children?.find(f => f.id === folderId);
     if (folder) {
       crumbs.push({ id: folder.id, name: folder.name });
       current = folder;
@@ -965,14 +965,14 @@ const breadcrumbs = computed(() => {
 const canGoBack = computed(() => currentPath.value.length > 1);
 
 // 文件操作
-const handleFileClick = (file) => {
+const handleFileClick = file => {
   if (file.isDirectory) {
     currentPath.value.push(file.id);
     selectedFileIds.value = [];
   }
 };
 
-const handleBreadcrumbClick = (index) => {
+const handleBreadcrumbClick = index => {
   currentPath.value = currentPath.value.slice(0, index + 1);
   selectedFileIds.value = [];
 };
@@ -995,9 +995,9 @@ const treeData = computed(() => {
         ? 'https://api.iconify.design/ri/folder-line.svg'
         : 'https://api.iconify.design/ri/file-text-line.svg',
       children: item.children
-        ?.filter((child) => child.isDirectory)
-        .map((child) => convertToTreeNode(child, path)),
-      isLeaf: !item.isDirectory || !item.children?.some((c) => c.isDirectory),
+        ?.filter(child => child.isDirectory)
+        .map(child => convertToTreeNode(child, path)),
+      isLeaf: !item.isDirectory || !item.children?.some(c => c.isDirectory),
       data: { path },
     };
   };
@@ -1011,7 +1011,7 @@ const treeSelectedKeys = computed(() => {
 
 const treeExpandedKeys = ref(['root']);
 
-const handleTreeNodeClick = (node) => {
+const handleTreeNodeClick = node => {
   if (node.data?.path) {
     currentPath.value = node.data.path;
     selectedFileIds.value = [];
@@ -1151,15 +1151,7 @@ const handleTreeNodeClick = (node) => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义文件列表样式：
-
-```css
-:root {
-  --ex-file-list-bg: var(--ex-color-bg-secondary);
-  --ex-file-list-border-color: var(--ex-color-border-primary);
-  --ex-file-list-hover-bg: rgba(0, 240, 255, 0.1);
-}
-```
+文件列表跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

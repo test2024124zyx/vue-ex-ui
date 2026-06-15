@@ -40,6 +40,12 @@ const equipmentData = [
 ]
 
 const loading = ref(false)
+
+// 行选择演示
+const selectedKeys = ref([1, 3])
+const onSelectionChange = (keys, rows) => {
+  console.log('已选 key：', keys, '已选行：', rows)
+}
 </script>
 
 ## 基础用法
@@ -345,6 +351,21 @@ Table 组件完全支持响应式设计。在移动端，可以使用 `layout="c
 设置 `selectable` 开启选择列。配合 `v-model:selectedRowKeys` 获取/控制选中项，
 `selection-change` 事件可拿到选中的 key 列表与对应行数据。
 
+<div class="demo-container">
+  <ExTable
+    v-model:selectedRowKeys="selectedKeys"
+    :columns="columns"
+    :data="data"
+    row-key="key"
+    selectable
+    bordered
+    @selection-change="onSelectionChange"
+  />
+  <p style="margin: 12px 0 0; color: var(--ex-color-text-secondary);">
+    已选 {{ selectedKeys.length }} 项：{{ selectedKeys.join(', ') }}
+  </p>
+</div>
+
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';
@@ -405,24 +426,29 @@ const onSelectionChange = (keys, rows: TableDataItem[]) => {
 
 ### Table Props
 
-| 属性                | 说明                                              | 类型                             | 默认值       |
-| ------------------- | ------------------------------------------------- | -------------------------------- | ------------ |
-| `columns`           | 表格列配置                                        | `TableColumn[]`                  | `[]`         |
-| `data`              | 表格数据                                          | `TableDataItem[]`                | `[]`         |
-| `size`              | 表格尺寸                                          | `'small' \| 'medium' \| 'large'` | `'medium'`   |
-| `bordered`          | 是否显示边框                                      | `boolean`                        | `false`      |
-| `striped`           | 是否显示斑马纹                                    | `boolean`                        | `false`      |
-| `hoverable`         | 是否可悬停                                        | `boolean`                        | `true`       |
-| `loading`           | 是否加载中                                        | `boolean`                        | `false`      |
-| `empty-text`        | 空数据文本                                        | `string`                         | `'暂无数据'` |
-| `show-header`       | 是否显示表头                                      | `boolean`                        | `true`       |
-| `row-key`           | 行的 key 字段名                                   | `string`                         | `'key'`      |
-| `selectable`        | 是否开启行选择列                                  | `boolean`                        | `false`      |
-| `selection-type`    | 选择类型（多选/单选）                             | `'checkbox' \| 'radio'`          | `'checkbox'` |
-| `selectedRowKeys`   | 已选行 key 列表（支持 `v-model:selectedRowKeys`） | `Array<string \| number>`        | `[]`         |
-| `is-row-selectable` | 判断某行是否可选                                  | `(record, index) => boolean`     | `undefined`  |
-| `max-height`        | 最大高度                                          | `string \| number`               | `undefined`  |
-| `layout`            | 布局模式（移动端友好）                            | `'table' \| 'card'`              | `'table'`    |
+| 属性                | 说明                                                   | 类型                             | 默认值       |
+| ------------------- | ------------------------------------------------------ | -------------------------------- | ------------ |
+| `columns`           | 表格列配置                                             | `TableColumn[]`                  | `[]`         |
+| `data`              | 表格数据                                               | `TableDataItem[]`                | `[]`         |
+| `size`              | 表格尺寸                                               | `'small' \| 'medium' \| 'large'` | `'medium'`   |
+| `bordered`          | 是否显示边框                                           | `boolean`                        | `false`      |
+| `striped`           | 是否显示斑马纹                                         | `boolean`                        | `false`      |
+| `hoverable`         | 是否可悬停                                             | `boolean`                        | `true`       |
+| `loading`           | 是否加载中                                             | `boolean`                        | `false`      |
+| `empty-text`        | 空数据文本                                             | `string`                         | `'暂无数据'` |
+| `show-header`       | 是否显示表头                                           | `boolean`                        | `true`       |
+| `row-key`           | 行的 key 字段名                                        | `string`                         | `'key'`      |
+| `selectable`        | 是否开启行选择列                                       | `boolean`                        | `false`      |
+| `selection-type`    | 选择类型（多选/单选）                                  | `'checkbox' \| 'radio'`          | `'checkbox'` |
+| `selectedRowKeys`   | 已选行 key 列表（支持 `v-model:selectedRowKeys`）      | `Array<string \| number>`        | `[]`         |
+| `is-row-selectable` | 判断某行是否可选                                       | `(record, index) => boolean`     | `undefined`  |
+| `max-height`        | 最大高度                                               | `string \| number`               | `undefined`  |
+| `layout`            | 布局模式（移动端友好）                                 | `'table' \| 'card'`              | `'table'`    |
+| `remote-sort`       | 远程/受控排序：禁用内置本地排序，仅派发 `sort-change`  | `boolean`                        | `false`      |
+| `virtual`           | 是否启用行虚拟滚动（大数据量，需固定 `row-height`）    | `boolean`                        | `false`      |
+| `row-height`        | 虚拟滚动行高（像素）                                   | `number`                         | `48`         |
+| `virtual-height`    | 虚拟滚动视口高度（像素，回退 `max-height` 再回退 400） | `number`                         | `undefined`  |
+| `virtual-buffer`    | 虚拟滚动上下缓冲行数                                   | `number`                         | `6`          |
 
 ### Table Events
 
@@ -485,17 +511,7 @@ const onSelectionChange = (keys, rows: TableDataItem[]) => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义表格样式：
-
-```css
-:root {
-  --ex-table-bg: var(--ex-color-bg-secondary);
-  --ex-table-header-bg: var(--ex-color-bg-elevated);
-  --ex-table-header-border: var(--ex-color-neon-blue-500);
-  --ex-table-border-color: var(--ex-color-border-primary);
-  --ex-table-hover-bg: var(--ex-color-bg-hover);
-}
-```
+表格跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

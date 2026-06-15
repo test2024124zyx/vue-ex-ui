@@ -66,9 +66,9 @@ const handleTabRemove = (targetName) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const activeTab = ref('overview')
+const activeTab = ref('overview');
 </script>
 
 <template>
@@ -223,7 +223,7 @@ const activeTab = ref('overview')
       <p>小尺寸内容</p>
     </ExTabPane>
   </ExTabs>
-  
+
   <ExTabs v-model="activeTab" size="large">
     <ExTabPane name="settings" label="设置">
       <p>大尺寸内容</p>
@@ -239,13 +239,13 @@ const activeTab = ref('overview')
 <div class="demo-container">
   <ExTabs v-model="activeTab">
     <template #icon-overview>
-      <img src="https://api.iconify.design/ri/dashboard-line.svg" alt="概览" width="18" height="18" />
+      <ExIcon icon="dashboard-line" :size="18" />
     </template>
     <template #icon-characters>
-      <img src="https://api.iconify.design/ri/user-line.svg" alt="角色" width="18" height="18" />
+      <ExIcon icon="user-line" :size="18" />
     </template>
     <template #icon-achievements>
-      <img src="https://api.iconify.design/ri/trophy-line.svg" alt="成就" width="18" height="18" />
+      <ExIcon icon="trophy-line" :size="18" />
     </template>
     <ExTabPane name="overview" label="概览">
       <p style="margin: 0; color: var(--ex-color-text-secondary);">游戏概览内容</p>
@@ -263,12 +263,12 @@ const activeTab = ref('overview')
 <template>
   <ExTabs v-model="activeTab">
     <template #icon-overview>
-      <img src="https://api.iconify.design/ri/dashboard-line.svg" alt="概览" width="18" height="18" />
+      <ExIcon icon="dashboard-line" :size="18" />
     </template>
     <template #icon-characters>
-      <img src="https://api.iconify.design/ri/user-line.svg" alt="角色" width="18" height="18" />
+      <ExIcon icon="user-line" :size="18" />
     </template>
-    
+
     <ExTabPane name="overview" label="概览">
       <p>概览内容</p>
     </ExTabPane>
@@ -334,37 +334,32 @@ const activeTab = ref('overview')
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const editableTabs = ref(['tab1', 'tab2', 'tab3'])
-const editableTabsValue = ref('tab1')
+const editableTabs = ref(['tab1', 'tab2', 'tab3']);
+const editableTabsValue = ref('tab1');
 
-const handleTabRemove = (targetName) => {
-  const tabs = editableTabs.value
-  let activeName = editableTabsValue.value
+const handleTabRemove = targetName => {
+  const tabs = editableTabs.value;
+  let activeName = editableTabsValue.value;
   if (activeName === targetName) {
     tabs.forEach((tab, index) => {
       if (tab === targetName) {
-        const nextTab = tabs[index + 1] || tabs[index - 1]
+        const nextTab = tabs[index + 1] || tabs[index - 1];
         if (nextTab) {
-          activeName = nextTab
+          activeName = nextTab;
         }
       }
-    })
+    });
   }
-  editableTabsValue.value = activeName
-  editableTabs.value = tabs.filter(tab => tab !== targetName)
-}
+  editableTabsValue.value = activeName;
+  editableTabs.value = tabs.filter(tab => tab !== targetName);
+};
 </script>
 
 <template>
   <ExTabs v-model="editableTabsValue" closable @tab-remove="handleTabRemove">
-    <ExTabPane 
-      v-for="item in editableTabs" 
-      :key="item" 
-      :name="item" 
-      :label="`标签 ${item}`"
-    >
+    <ExTabPane v-for="item in editableTabs" :key="item" :name="item" :label="`标签 ${item}`">
       <p>这是 {{ item }} 的内容</p>
     </ExTabPane>
   </ExTabs>
@@ -392,27 +387,83 @@ const handleTabRemove = (targetName) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const editableTabs = ref(['tab1', 'tab2', 'tab3'])
-const editableTabsValue = ref('tab1')
-const tabIndex = ref(3)
+const editableTabs = ref(['tab1', 'tab2', 'tab3']);
+const editableTabsValue = ref('tab1');
+const tabIndex = ref(3);
 
 const handleTabAdd = () => {
-  const newTabName = `tab${++tabIndex.value}`
-  editableTabs.value.push(newTabName)
-  editableTabsValue.value = newTabName
-}
+  const newTabName = `tab${++tabIndex.value}`;
+  editableTabs.value.push(newTabName);
+  editableTabsValue.value = newTabName;
+};
 </script>
 
 <template>
   <ExTabs v-model="editableTabsValue" addable @tab-add="handleTabAdd">
-    <ExTabPane 
-      v-for="item in editableTabs" 
-      :key="item" 
-      :name="item" 
+    <ExTabPane v-for="item in editableTabs" :key="item" :name="item" :label="`标签 ${item}`">
+      <p>这是 {{ item }} 的内容</p>
+    </ExTabPane>
+  </ExTabs>
+</template>
+```
+
+## 可编辑（增删一体）
+
+使用 `editable` 属性可一次性启用「添加 + 关闭」，无需分别设置 `addable` 与 `closable`。
+
+<div class="demo-container">
+  <ExTabs v-model="editableTabsValue" editable type="card" @tab-add="handleTabAdd" @tab-remove="handleTabRemove">
+    <ExTabPane
+      v-for="item in editableTabs"
+      :key="item"
+      :name="item"
       :label="`标签 ${item}`"
     >
+      <p style="margin: 0; color: var(--ex-color-text-secondary);">
+        这是 {{ item }} 的内容，可点击标签上的 ✕ 关闭，或点击 ＋ 新增。
+      </p>
+    </ExTabPane>
+  </ExTabs>
+</div>
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const editableTabs = ref(['tab1', 'tab2', 'tab3']);
+const editableTabsValue = ref('tab1');
+const tabIndex = ref(3);
+
+const handleTabAdd = () => {
+  const newTabName = `tab${++tabIndex.value}`;
+  editableTabs.value.push(newTabName);
+  editableTabsValue.value = newTabName;
+};
+
+const handleTabRemove = targetName => {
+  const tabs = editableTabs.value;
+  let activeName = editableTabsValue.value;
+  if (activeName === targetName) {
+    const idx = tabs.findIndex(t => t === targetName);
+    const nextTab = tabs[idx + 1] || tabs[idx - 1];
+    if (nextTab) activeName = nextTab;
+  }
+  editableTabsValue.value = activeName;
+  editableTabs.value = tabs.filter(tab => tab !== targetName);
+};
+</script>
+
+<template>
+  <ExTabs
+    v-model="editableTabsValue"
+    editable
+    type="card"
+    @tab-add="handleTabAdd"
+    @tab-remove="handleTabRemove"
+  >
+    <ExTabPane v-for="item in editableTabs" :key="item" :name="item" :label="`标签 ${item}`">
       <p>这是 {{ item }} 的内容</p>
     </ExTabPane>
   </ExTabs>
@@ -426,16 +477,16 @@ const handleTabAdd = () => {
 <div class="demo-container">
   <ExTabs v-model="activeTab4" type="card">
     <template #icon-settings>
-      <img src="https://api.iconify.design/ri/settings-3-line.svg" alt="图形" width="18" height="18" />
+      <ExIcon icon="settings-3-line" :size="18" />
     </template>
     <template #icon-audio>
-      <img src="https://api.iconify.design/ri/volume-up-line.svg" alt="音频" width="18" height="18" />
+      <ExIcon icon="volume-up-line" :size="18" />
     </template>
     <template #icon-controls>
-      <img src="https://api.iconify.design/ri/gamepad-line.svg" alt="控制" width="18" height="18" />
+      <ExIcon icon="gamepad-line" :size="18" />
     </template>
     <template #icon-network>
-      <img src="https://api.iconify.design/ri/wifi-line.svg" alt="网络" width="18" height="18" />
+      <ExIcon icon="wifi-line" :size="18" />
     </template>
     <ExTabPane name="settings" label="图形设置">
       <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -490,13 +541,13 @@ const handleTabAdd = () => {
 <template>
   <ExTabs v-model="activeTab" type="card">
     <template #icon-settings>
-      <img src="https://api.iconify.design/ri/settings-3-line.svg" alt="图形" width="18" height="18" />
+      <ExIcon icon="settings-3-line" :size="18" />
     </template>
-    
+
     <ExTabPane name="settings" label="图形设置">
       <div>图形设置内容</div>
     </ExTabPane>
-    
+
     <ExTabPane name="audio" label="音频设置">
       <div>音频设置内容</div>
     </ExTabPane>
@@ -508,61 +559,61 @@ const handleTabAdd = () => {
 
 ### Tabs Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model-value / v-model` | 当前激活的标签页名称 | `string \| number` | `undefined` |
-| `type` | 标签页类型 | `'line' \| 'card' \| 'button'` | `'line'` |
-| `position` | 标签页位置 | `'top' \| 'right' \| 'bottom' \| 'left'` | `'top'` |
-| `size` | 标签页尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `closable` | 是否可关闭 | `boolean` | `false` |
-| `addable` | 是否可添加 | `boolean` | `false` |
-| `editable` | 是否可编辑（可添加和关闭） | `boolean` | `false` |
-| `animated` | 是否动画 | `boolean` | `true` |
+| 属性                    | 说明                       | 类型                                     | 默认值      |
+| ----------------------- | -------------------------- | ---------------------------------------- | ----------- |
+| `model-value / v-model` | 当前激活的标签页名称       | `string \| number`                       | `undefined` |
+| `type`                  | 标签页类型                 | `'line' \| 'card' \| 'button'`           | `'line'`    |
+| `position`              | 标签页位置                 | `'top' \| 'right' \| 'bottom' \| 'left'` | `'top'`     |
+| `size`                  | 标签页尺寸                 | `'small' \| 'medium' \| 'large'`         | `'medium'`  |
+| `closable`              | 是否可关闭                 | `boolean`                                | `false`     |
+| `addable`               | 是否可添加                 | `boolean`                                | `false`     |
+| `editable`              | 是否可编辑（可添加和关闭） | `boolean`                                | `false`     |
+| `animated`              | 是否动画                   | `boolean`                                | `true`      |
 
 ### Tabs Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:model-value` | 更新当前激活的标签页 | `(value: string \| number) => void` |
-| `change` | 标签页切换事件 | `(name: string \| number) => void` |
-| `tab-click` | 标签页点击事件 | `(name: string \| number, event: MouseEvent) => void` |
-| `tab-remove` | 标签页关闭事件 | `(name: string \| number) => void` |
-| `tab-add` | 标签页添加事件 | `() => void` |
+| 事件名               | 说明                 | 类型                                                  |
+| -------------------- | -------------------- | ----------------------------------------------------- |
+| `update:model-value` | 更新当前激活的标签页 | `(value: string \| number) => void`                   |
+| `change`             | 标签页切换事件       | `(name: string \| number) => void`                    |
+| `tab-click`          | 标签页点击事件       | `(name: string \| number, event: MouseEvent) => void` |
+| `tab-remove`         | 标签页关闭事件       | `(name: string \| number) => void`                    |
+| `tab-add`            | 标签页添加事件       | `() => void`                                          |
 
 ### Tabs Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 标签页面板内容 |
-| `icon-{name}` | 自定义标签页图标 |
+| 插槽名         | 说明             |
+| -------------- | ---------------- |
+| `default`      | 标签页面板内容   |
+| `icon-{name}`  | 自定义标签页图标 |
 | `label-{name}` | 自定义标签页标题 |
 
 ### Tabs Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明              | 类型                           |
+| ------------ | ----------------- | ------------------------------ |
 | `getElement` | 获取标签页DOM元素 | `() => HTMLDivElement \| null` |
 
 ### TabPane Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `name` | 标签页名称（唯一标识） | `string \| number` | - |
-| `label` | 标签页标题 | `string` | `undefined` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `closable` | 是否可关闭 | `boolean` | `false` |
-| `lazy` | 是否懒加载 | `boolean` | `false` |
+| 属性       | 说明                   | 类型               | 默认值      |
+| ---------- | ---------------------- | ------------------ | ----------- |
+| `name`     | 标签页名称（唯一标识） | `string \| number` | -           |
+| `label`    | 标签页标题             | `string`           | `undefined` |
+| `disabled` | 是否禁用               | `boolean`          | `false`     |
+| `closable` | 是否可关闭             | `boolean`          | `false`     |
+| `lazy`     | 是否懒加载             | `boolean`          | `false`     |
 
 ### TabPane Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名    | 说明           |
+| --------- | -------------- |
 | `default` | 标签页面板内容 |
 
 ### TabPane Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取面板DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
@@ -582,7 +633,11 @@ const handleTabAdd = () => {
   --ex-tabs-nav-bg: transparent;
   --ex-tabs-tab-color: var(--ex-color-text-secondary);
   --ex-tabs-tab-active-color: var(--ex-color-neon-blue-500);
-  --ex-tabs-indicator-bg: linear-gradient(90deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+  --ex-tabs-indicator-bg: linear-gradient(
+    90deg,
+    var(--ex-color-neon-blue-500),
+    var(--ex-color-neon-pink-500)
+  );
 }
 ```
 

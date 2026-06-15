@@ -222,6 +222,24 @@
     }
   }
 
+  // 代码块容器（可编辑时作为高亮层 + textarea 的叠加定位上下文）
+  &__main {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+
+    // 可编辑：两层统一自动换行，避免横向滚动导致高亮层与输入层错位
+    &--editable {
+      .ex-code__pre,
+      .ex-code__textarea {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        overflow-x: hidden;
+      }
+    }
+  }
+
   // 代码�?
   &__pre {
     flex: 1;
@@ -230,10 +248,58 @@
     overflow-x: auto;
     background: transparent;
     border: none;
+    // 显式继承等宽字体/行高，避免 <pre> 退回 UA 默认 monospace 与 textarea 错位
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.5;
+    tab-size: 4;
 
     &--wrap {
       white-space: pre-wrap;
       word-wrap: break-word;
+    }
+
+    // 可编辑时高亮层仅作展示，不拦截鼠标，交互全部交给上层 textarea
+    &[aria-hidden='true'] {
+      pointer-events: none;
+    }
+  }
+
+  // 可编辑：透明文字的 textarea 叠加在高亮层之上，光标可见、文字由下方高亮层呈现
+  // 字体 / 行高 / padding 必须与 &__pre / &__code 完全一致，保证光标对齐
+  &__textarea {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--ex-color-neon-blue-500, #29abe2);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.5;
+    white-space: pre;
+    word-spacing: normal;
+    tab-size: 4;
+    overflow: auto;
+
+    &--wrap {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    &::selection {
+      background: var(--ex-color-primary-alpha-30, rgba(41, 171, 226, 0.3));
+    }
+
+    &::placeholder {
+      color: var(--ex-color-text-tertiary);
     }
   }
 
@@ -276,6 +342,72 @@
 
     .operator {
       color: var(--ex-color-text-secondary);
+    }
+
+    // highlight.js token 配色（v-html 注入的 .hljs-* 子元素需用 :deep 命中）
+    :deep(.hljs-keyword),
+    :deep(.hljs-built_in),
+    :deep(.hljs-literal),
+    :deep(.hljs-type) {
+      color: var(--ex-color-neon-pink-500);
+      font-weight: var(--ex-font-weight-medium);
+    }
+
+    :deep(.hljs-string),
+    :deep(.hljs-regexp),
+    :deep(.hljs-symbol),
+    :deep(.hljs-meta .hljs-string) {
+      color: var(--ex-color-success);
+    }
+
+    :deep(.hljs-number) {
+      color: var(--ex-color-warning);
+    }
+
+    :deep(.hljs-comment),
+    :deep(.hljs-quote) {
+      color: var(--ex-color-text-tertiary);
+      font-style: italic;
+    }
+
+    :deep(.hljs-title),
+    :deep(.hljs-title.function_),
+    :deep(.hljs-section) {
+      color: var(--ex-color-neon-blue-500);
+    }
+
+    :deep(.hljs-attr),
+    :deep(.hljs-attribute),
+    :deep(.hljs-property),
+    :deep(.hljs-selector-attr),
+    :deep(.hljs-selector-class) {
+      color: var(--ex-color-neon-blue-500);
+    }
+
+    :deep(.hljs-tag),
+    :deep(.hljs-name),
+    :deep(.hljs-selector-tag) {
+      color: var(--ex-color-neon-pink-500);
+    }
+
+    :deep(.hljs-operator),
+    :deep(.hljs-punctuation) {
+      color: var(--ex-color-text-secondary);
+    }
+
+    :deep(.hljs-variable),
+    :deep(.hljs-params),
+    :deep(.hljs-template-variable) {
+      color: var(--ex-color-text-primary);
+    }
+
+    :deep(.hljs-meta),
+    :deep(.hljs-deletion) {
+      color: var(--ex-color-text-tertiary);
+    }
+
+    :deep(.hljs-addition) {
+      color: var(--ex-color-success);
     }
   }
 

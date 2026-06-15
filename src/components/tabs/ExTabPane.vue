@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, inject, onMounted } from 'vue';
+import { computed, ref, inject, onMounted, onUnmounted } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
 
 defineOptions({
@@ -33,8 +33,7 @@ const paneRef = ref<HTMLDivElement>();
 // 从父组件注入
 const activeTab = inject<{ value: string | number }>('activeTab', { value: '' });
 const registerPane = inject<(pane: Record<string, unknown>) => void>('registerPane', () => {});
-// unregisterPane 功能暂未使用
-// const unregisterPane = inject<(name: string | number) => void>('unregisterPane', () => {});
+const unregisterPane = inject<(name: string | number) => void>('unregisterPane', () => {});
 
 // 计算属性
 const isActive = computed(() => activeTab.value === props.name);
@@ -78,6 +77,11 @@ onMounted(() => {
     closable: props.closable,
   });
   checkActive();
+});
+
+// 卸载时注销，否则被删除的标签仍残留在导航里（导致"删除不了"）
+onUnmounted(() => {
+  unregisterPane(props.name);
 });
 
 // 暴露的方法

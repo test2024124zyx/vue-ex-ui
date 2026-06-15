@@ -10,7 +10,10 @@
 
 ```vue
 <template>
-  <ex-image src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=922&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="示例图片" />
+  <ex-image
+    src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=922&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    alt="示例图片"
+  />
 </template>
 ```
 
@@ -25,10 +28,18 @@
 <template>
   <ex-image
     src="https://via.placeholder.com/300x200/722ed1/ffffff?text=Cover"
-    alt="Cover" fit="cover" width="300" height="200" />
+    alt="Cover"
+    fit="cover"
+    width="300"
+    height="200"
+  />
   <ex-image
     src="https://via.placeholder.com/300x200/52c41a/ffffff?text=Contain"
-    alt="Contain" fit="contain" width="300" height="200" />
+    alt="Contain"
+    fit="contain"
+    width="300"
+    height="200"
+  />
 </template>
 ```
 
@@ -41,8 +52,39 @@
 
 ```vue
 <template>
-  <ex-image src="https://via.placeholder.com/200x200/1890ff/ffffff?text=Radius" alt="Radius" radius="12px" />
+  <ex-image
+    src="https://via.placeholder.com/200x200/1890ff/ffffff?text=Radius"
+    alt="Radius"
+    radius="12px"
+  />
   <ex-image src="https://via.placeholder.com/200x120/ff4d4f/ffffff?text=Lazy" alt="Lazy" lazy />
+</template>
+```
+
+## 图片预览
+
+设置 `preview` 后点击图片即可打开内置全屏预览，支持 Esc / 点击遮罩关闭、滚动锁定与焦点管理；如需展示更高清的版本可另传 `previewSrc`。
+
+<div class="demo-container">
+  <ex-image
+    preview
+    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop"
+    alt="可预览图片"
+    width="200"
+    height="140"
+  />
+</div>
+
+```vue
+<template>
+  <ex-image
+    preview
+    src="/thumb.jpg"
+    preview-src="/full.jpg"
+    alt="可预览图片"
+    width="200"
+    height="140"
+  />
 </template>
 ```
 
@@ -50,34 +92,39 @@
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| src | 图片地址 | `string` | - |
-| alt | 替代文本（a11y 必填） | `string` | - |
-| title | 标题（tooltip） | `string` | - |
-| width | 宽度 | `string \| number` | - |
-| height | 高度 | `string \| number` | - |
-| fit | 裁切模式 | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'none'` |
-| radius | 圆角 | `string` | - |
-| lazy | 原生懒加载 | `boolean` | `false` |
+| 参数       | 说明                                                                 | 类型                                                       | 默认值    |
+| ---------- | -------------------------------------------------------------------- | ---------------------------------------------------------- | --------- |
+| src        | 图片地址                                                             | `string`                                                   | -         |
+| alt        | 替代文本（a11y 必填）                                                | `string`                                                   | -         |
+| title      | 标题（tooltip）                                                      | `string`                                                   | -         |
+| width      | 宽度                                                                 | `string \| number`                                         | -         |
+| height     | 高度                                                                 | `string \| number`                                         | -         |
+| fit        | 裁切模式（object-fit）                                               | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` |
+| radius     | 圆角                                                                 | `string`                                                   | -         |
+| lazy       | 原生懒加载（`loading="lazy"`）                                       | `boolean`                                                  | `true`    |
+| preview    | 是否开启**内置全屏预览**（点击/回车打开，并同时触发 `preview` 事件） | `boolean`                                                  | `false`   |
+| previewSrc | 预览时展示的高清图地址，缺省用 `src`                                 | `string`                                                   | -         |
 
 ### Events
 
-| 事件名 | 说明 | 参数 |
-| --- | --- | --- |
-| load | 加载成功 | `(ev: Event)` |
-| error | 加载失败 | `(ev: Event)` |
+| 事件名  | 说明                                            | 参数          |
+| ------- | ----------------------------------------------- | ------------- |
+| load    | 加载成功                                        | `(ev: Event)` |
+| error   | 加载失败                                        | `(ev: Event)` |
+| preview | `preview` 开启时，点击或键盘（Enter/Space）触发 | `()`          |
 
 ### Slots
 
-| 名称 | 说明 |
-| --- | --- |
-| default | 覆盖内部内容（如叠加图标/蒙层） |
+| 名称        | 说明                                    |
+| ----------- | --------------------------------------- |
+| default     | 加载成功后叠加的额外内容（如图标/蒙层） |
+| placeholder | 加载中的占位内容                        |
+| error       | 加载失败时的自定义内容                  |
 
 ### Exposes
 
-| 方法名 | 说明 |
-| --- | --- |
+| 方法名     | 说明       |
+| ---------- | ---------- |
 | getElement | 获取根元素 |
 
 ## 主题定制

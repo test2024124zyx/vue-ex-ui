@@ -21,9 +21,17 @@ const showBadge = ref(true)
 ```vue
 <template>
   <div style="display: flex; gap: 16px; align-items: center;">
-    <ExAvatar size="large" src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" />
-    <ExAvatar src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face" />
-    <ExAvatar size="small" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&h=48&fit=crop&crop=face" />
+    <ExAvatar
+      size="large"
+      src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face"
+    />
+    <ExAvatar
+      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face"
+    />
+    <ExAvatar
+      size="small"
+      src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&h=48&fit=crop&crop=face"
+    />
   </div>
 </template>
 ```
@@ -62,8 +70,14 @@ const showBadge = ref(true)
 ```vue
 <template>
   <div style="display: flex; gap: 16px; align-items: center;">
-    <ExAvatar shape="circle" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face" />
-    <ExAvatar shape="square" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=64&h=64&fit=crop&crop=face" />
+    <ExAvatar
+      shape="circle"
+      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face"
+    />
+    <ExAvatar
+      shape="square"
+      src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=64&h=64&fit=crop&crop=face"
+    />
   </div>
 </template>
 ```
@@ -74,7 +88,9 @@ const showBadge = ref(true)
 
 <div style="display: flex; gap: 16px; align-items: center; margin: 20px 0;">
   <ExAvatar src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=64&h=64&fit=crop&crop=face" />
-  <ExAvatar icon="user" />
+  <ExAvatar>
+    <template #icon><ex-icon icon="star-line" /></template>
+  </ExAvatar>
   <ExAvatar text="USER" />
   <ExAvatar>AB</ExAvatar>
 </div>
@@ -82,8 +98,12 @@ const showBadge = ref(true)
 ```vue
 <template>
   <div style="display: flex; gap: 16px; align-items: center;">
-    <ExAvatar src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=64&h=64&fit=crop&crop=face" />
-    <ExAvatar icon="user" />
+    <ExAvatar
+      src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=64&h=64&fit=crop&crop=face"
+    />
+    <ExAvatar>
+      <template #icon><ex-icon icon="star-line" /></template>
+    </ExAvatar>
     <ExAvatar text="USER" />
     <ExAvatar>AB</ExAvatar>
   </div>
@@ -138,17 +158,17 @@ const showBadge = ref(true)
     <ExBadge dot type="success">
       <ExAvatar src="https://example.com/avatar1.jpg" />
     </ExBadge>
-    
+
     <!-- 消息数量 -->
     <ExBadge :count="3" type="danger">
       <ExAvatar src="https://example.com/avatar2.jpg" />
     </ExBadge>
-    
+
     <!-- 认证标识 -->
     <ExBadge count="✓" type="warning">
       <ExAvatar text="VIP" />
     </ExBadge>
-    
+
     <!-- 大数量显示 -->
     <ExBadge :count="99" type="primary">
       <ExAvatar src="https://example.com/avatar4.jpg" />
@@ -252,65 +272,64 @@ const showBadge = ref(true)
 
 ### ExAvatar Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| shape | 指定头像的形状 | `'circle' \| 'square'` | `'circle'` |
-| size | 设置头像的大小 | `'small' \| 'medium' \| 'large' \| number` | `'medium'` |
-| src | 图片头像的资源地址 | `string` | - |
-| srcset | 图片的 srcset 属性 | `string` | - |
-| alt | 图像无法显示时的替代文本 | `string` | - |
-| text | 文字头像的内容 | `string` | - |
-| backgroundColor | 自定义背景颜色 | `string` | - |
-| textColor | 自定义文字颜色 | `string` | - |
-| draggable | 是否可拖拽 | `boolean` | `false` |
-| crossOrigin | 跨域设置 | `'anonymous' \| 'use-credentials' \| ''` | - |
-| gap | 文字间距 | `number` | `4` |
-| ariaLabel | 无障碍标签 | `string` | - |
-| title | 鼠标悬停提示 | `string` | - |
+| 参数            | 说明                     | 类型                                       | 默认值     |
+| --------------- | ------------------------ | ------------------------------------------ | ---------- |
+| shape           | 指定头像的形状           | `'circle' \| 'square'`                     | `'circle'` |
+| size            | 设置头像的大小           | `'small' \| 'medium' \| 'large' \| number` | `'medium'` |
+| src             | 图片头像的资源地址       | `string`                                   | -          |
+| srcset          | 图片的 srcset 属性       | `string`                                   | -          |
+| alt             | 图像无法显示时的替代文本 | `string`                                   | -          |
+| text            | 文字头像的内容           | `string`                                   | -          |
+| backgroundColor | 自定义背景颜色           | `string`                                   | -          |
+| textColor       | 自定义文字颜色           | `string`                                   | -          |
+| draggable       | 是否可拖拽               | `boolean`                                  | `false`    |
+| crossOrigin     | 跨域设置                 | `'anonymous' \| 'use-credentials' \| ''`   | -          |
+| gap             | 文字间距                 | `number`                                   | `4`        |
+| ariaLabel       | 无障碍标签               | `string`                                   | -          |
+| title           | 鼠标悬停提示             | `string`                                   | -          |
 
 ### ExAvatar Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| error | 图片加载失败的事件 | `(e: Event) => void` |
-| load | 图片加载成功的事件 | `(e: Event) => void` |
-| click | 点击事件 | `(e: MouseEvent) => void` |
+| 事件名 | 说明               | 回调参数                  |
+| ------ | ------------------ | ------------------------- |
+| error  | 图片加载失败的事件 | `(e: Event) => void`      |
+| load   | 图片加载成功的事件 | `(e: Event) => void`      |
+| click  | 点击事件           | `(e: MouseEvent) => void` |
 
 ### ExAvatar Slots
 
-| 名称 | 说明 |
-| --- | --- |
+| 名称    | 说明               |
+| ------- | ------------------ |
 | default | 自定义头像展示内容 |
-| icon | 自定义图标内容 |
-| error | 自定义错误状态内容 |
+| icon    | 自定义图标内容     |
+| error   | 自定义错误状态内容 |
 
 ### ExAvatar Methods
 
-| 方法名 | 说明 | 参数 |
-| --- | --- | --- |
-| getElement | 获取头像DOM元素 | - |
-| reload | 重新加载图片 | - |
+| 方法名     | 说明            | 参数 |
+| ---------- | --------------- | ---- |
+| getElement | 获取头像DOM元素 | -    |
+| reload     | 重新加载图片    | -    |
 
 ### ExAvatarGroup Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| maxCount | 最大显示数量 | `number` | - |
-| maxStyle | 超出数量的样式 | `Record<string, string \| number>` | - |
-| size | 头像尺寸 | `'small' \| 'medium' \| 'large' \| number` | - |
-| shape | 头像形状 | `'circle' \| 'square'` | - |
-| spacing | 头像间距 | `number \| string` | `'8px'` |
+| 参数     | 说明           | 类型                                       | 默认值  |
+| -------- | -------------- | ------------------------------------------ | ------- |
+| maxCount | 最大显示数量   | `number`                                   | -       |
+| maxStyle | 超出数量的样式 | `Record<string, string \| number>`         | -       |
+| size     | 头像尺寸       | `'small' \| 'medium' \| 'large' \| number` | -       |
+| shape    | 头像形状       | `'circle' \| 'square'`                     | -       |
+| spacing  | 头像间距       | `number \| string`                         | `'8px'` |
 
 ### ExAvatarGroup Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
+| 事件名        | 说明               | 回调参数                  |
+| ------------- | ------------------ | ------------------------- |
 | overflowClick | 点击超出数量时触发 | `(count: number) => void` |
 
 ### ExAvatarGroup Slots
 
-| 名称 | 说明 | 参数 |
-| --- | --- | --- |
-| default | 头像列表 | - |
-| avatar | 自定义头像渲染 | `{ avatar: ExAvatarProps, index: number }` |
-
+| 名称    | 说明           | 参数                                       |
+| ------- | -------------- | ------------------------------------------ |
+| default | 头像列表       | -                                          |
+| avatar  | 自定义头像渲染 | `{ avatar: ExAvatarProps, index: number }` |

@@ -210,7 +210,7 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type {
   ExFileUploadProps,
   ExFileUploadEmits,
@@ -324,6 +324,89 @@ const handleDrop = (event: DragEvent) => {
   handleFiles(files);
 };
 
+// 校验文件是否匹配 accept（拖拽上传时原生不会过滤，需手动校验）
+const matchesAccept = (file: File): boolean => {
+  if (!props.accept) return true;
+
+  const tokens = props.accept
+    .split(',')
+    .map(t => t.trim().toLowerCase())
+    .filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const fileName = file.name.toLowerCase();
+  const fileType = file.type.toLowerCase();
+
+  return tokens.some(token => {
+    if (token.startsWith('.')) {
+      return fileName.endsWith(token);
+    }
+    if (token.endsWith('/*')) {
+      return fileType.startsWith(token.slice(0, -1));
+    }
+    return fileType === token;
+  });
+};
+
+// 将单个文件加入列表并按需上传（支持 beforeUpload 异步钩子）
+const addFile = async (file: File): Promise<void> => {
+  // 类型校验（覆盖拖拽场景）
+  if (!matchesAccept(file)) {
+    emit('type-mismatch', file, props.accept || '');
+    return;
+  }
+
+  // 大小校验：超限时给出明确反馈，而非静默丢弃
+  if (props.maxSize && file.size > props.maxSize * 1024 * 1024) {
+    emit('oversize', file, props.maxSize);
+    return;
+  }
+
+  // 上传前钩子：返回 false 阻止；返回 File 替换待上传文件
+  let rawFile = file;
+  if (props.beforeUpload) {
+    try {
+      const result = await props.beforeUpload(file);
+      if (result === false) return;
+      if (result instanceof File) rawFile = result;
+    } catch {
+      return;
+    }
+  }
+
+  const uploadFile: UploadFile = {
+    uid: generateUid(),
+    name: rawFile.name,
+    size: rawFile.size,
+    type: rawFile.type,
+    status: 'ready',
+    percent: 0,
+    raw: rawFile,
+  };
+
+  // 先添加到列表
+  internalFileList.value.push(uploadFile);
+  emit('change', uploadFile, internalFileList.value);
+  emit('update:fileList', internalFileList.value);
+
+  // 如果是图片，生成缩略图
+  if (rawFile.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = _e => {
+      uploadFile.thumbUrl = _e.target?.result as string;
+      // 触发响应式更新
+      emit('update:fileList', [...internalFileList.value]);
+    };
+    reader.readAsDataURL(rawFile);
+  }
+
+  // 自动上传
+  if (props.autoUpload && props.action) {
+    uploadFile.status = 'uploading';
+    uploadSingleFile(uploadFile);
+  }
+};
+
 // 处理文件
 const handleFiles = (files: File[]) => {
   // 检查数量限制
@@ -331,50 +414,12 @@ const handleFiles = (files: File[]) => {
     const remainingSlots = props.limit - internalFileList.value.length;
     if (files.length > remainingSlots) {
       emit('exceed', files, internalFileList.value);
-      files = files.slice(0, remainingSlots);
+      files = files.slice(0, Math.max(0, remainingSlots));
     }
   }
 
   files.forEach(file => {
-    // 检查文件大小
-    if (props.maxSize && file.size > props.maxSize * 1024 * 1024) {
-      if (import.meta.env.DEV) {
-        console.warn(`File ${file.name} exceeds size limit`);
-      }
-      return;
-    }
-
-    const uploadFile: UploadFile = {
-      uid: generateUid(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      status: 'ready',
-      percent: 0,
-      raw: file,
-    };
-
-    // 先添加到列表
-    internalFileList.value.push(uploadFile);
-    emit('change', uploadFile, internalFileList.value);
-    emit('update:fileList', internalFileList.value);
-
-    // 如果是图片，生成缩略图
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = _e => {
-        uploadFile.thumbUrl = _e.target?.result as string;
-        // 触发响应式更新
-        emit('update:fileList', [...internalFileList.value]);
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // 自动上传
-    if (props.autoUpload && props.action) {
-      uploadFile.status = 'uploading';
-      uploadSingleFile(uploadFile);
-    }
+    void addFile(file);
   });
 };
 
@@ -512,6 +557,12 @@ const abort = (file?: UploadFile) => {
 };
 
 const getElement = () => uploadRef.value || null;
+
+// 卸载时中止所有进行中的上传，避免回调落在已销毁实例上
+onBeforeUnmount(() => {
+  uploadQueue.forEach(xhr => xhr.abort());
+  uploadQueue.clear();
+});
 
 defineExpose<ExFileUploadExposed>({
   submit,

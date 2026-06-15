@@ -67,6 +67,16 @@ export interface ExListProps {
   emptyText?: string;
   /** 行的 key 字段名 */
   itemKey?: string;
+  /** 栅格布局配置（设置后以网格方式排列列表项） */
+  grid?: ListGrid;
+  /** 是否启用虚拟滚动（大数据量时仅渲染可视窗口，需配合固定 itemHeight + height） */
+  virtual?: boolean;
+  /** 虚拟滚动每项高度（像素），默认 64 */
+  itemHeight?: number;
+  /** 虚拟滚动视口高度（像素或 CSS 值），默认 400 */
+  height?: number | string;
+  /** 列表项是否可点击（启用后补全 role/tabindex/键盘可达性） */
+  clickable?: boolean;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */

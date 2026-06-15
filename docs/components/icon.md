@@ -24,6 +24,26 @@ const handleClick = () => {
 </template>
 ```
 
+### 内置 SVG 图标（推荐，无网络依赖）
+
+通过 `icon` 传入内置注册表的图标名，离线可用且可随主题着色：
+
+<div class="demo-container">
+  <ExIcon icon="search-line" :size="20" />
+  <ExIcon icon="check-line" :size="20" />
+  <ExIcon icon="close-line" :size="20" />
+  <ExIcon icon="delete-bin-line" :size="20" />
+  <ExIcon icon="star-line" :size="20" color="#ffd93d" />
+</div>
+
+```vue
+<template>
+  <ExIcon icon="search-line" :size="20" />
+  <ExIcon icon="check-line" :size="20" />
+  <ExIcon icon="star-line" :size="20" color="#ffd93d" />
+</template>
+```
+
 ### SVG 图标
 
 通过插槽传入 SVG 内容：
@@ -245,20 +265,21 @@ const handleClick = () => {
 
 ### Props
 
-| 参数        | 说明                    | 类型               | 默认值   |
-| ----------- | ----------------------- | ------------------ | -------- |
-| name        | 图标名称（字体图标）    | `string`           | -        |
-| prefix      | 图标前缀（如 fas, far） | `string`           | -        |
-| src         | 图片路径（图片图标）    | `string`           | -        |
-| alt         | 图片替代文本            | `string`           | `'icon'` |
-| size        | 图标大小                | `number \| string` | `16`     |
-| color       | 图标颜色                | `string`           | -        |
-| rotate      | 旋转角度                | `number`           | `0`      |
-| spin        | 是否旋转动画            | `boolean`          | `false`  |
-| clickable   | 是否可点击              | `boolean`          | `false`  |
-| disabled    | 是否禁用                | `boolean`          | `false`  |
-| customClass | 自定义类名              | `string`           | -        |
-| tag         | HTML 标签               | `string`           | `'span'` |
+| 参数        | 说明                                                                              | 类型               | 默认值   |
+| ----------- | --------------------------------------------------------------------------------- | ------------------ | -------- |
+| icon        | 内置 SVG 图标名（来自内置注册表，**无网络依赖**、可随主题着色，库内组件默认使用） | `string`           | -        |
+| name        | 图标名称（字体图标）                                                              | `string`           | -        |
+| prefix      | 图标前缀（如 fas, far）                                                           | `string`           | -        |
+| src         | 图片路径（图片图标）                                                              | `string`           | -        |
+| alt         | 图片替代文本                                                                      | `string`           | `'icon'` |
+| size        | 图标大小                                                                          | `number \| string` | `16`     |
+| color       | 图标颜色                                                                          | `string`           | -        |
+| rotate      | 旋转角度                                                                          | `number`           | `0`      |
+| spin        | 是否旋转动画                                                                      | `boolean`          | `false`  |
+| clickable   | 是否可点击                                                                        | `boolean`          | `false`  |
+| disabled    | 是否禁用                                                                          | `boolean`          | `false`  |
+| customClass | 自定义类名                                                                        | `string`           | -        |
+| tag         | HTML 标签                                                                         | `string`           | `'span'` |
 
 ### Events
 

@@ -14,22 +14,21 @@
   @include custom-scrollbar;
 
   &--show-line {
+    // 仅为「有子节点」的节点绘制竖向引导线，并随其缩进定位，
+    // ::before 覆盖整个子树高度，自然成为该层级的连接线（不再各层重叠在 8px）
     .ex-tree-node {
       position: relative;
+    }
 
-      &::before {
-        content: '';
-        position: absolute;
-        left: 8px;
-        top: 0;
-        bottom: 0;
-        width: 1px;
-        background: var(--ex-color-border-primary);
-      }
-
-      &:last-child::before {
-        height: 50%;
-      }
+    .ex-tree-node--expanded::before {
+      content: '';
+      position: absolute;
+      left: calc(var(--ex-tree-indent, 0px) + 11px);
+      top: 24px;
+      bottom: 0;
+      width: 1px;
+      background: var(--ex-color-border-primary);
+      pointer-events: none;
     }
   }
 

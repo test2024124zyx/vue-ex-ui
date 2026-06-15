@@ -71,7 +71,7 @@ const handleNodeClick = (node) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const treeData = ref([
   {
@@ -88,14 +88,11 @@ const treeData = ref([
       },
     ],
   },
-])
+]);
 </script>
 
 <template>
-  <ExTree
-    :data="treeData"
-    :default-expanded-keys="['1']"
-  />
+  <ExTree :data="treeData" :default-expanded-keys="['1']" />
 </template>
 ```
 
@@ -114,12 +111,7 @@ const treeData = ref([
 
 ```vue
 <template>
-  <ExTree
-    :data="treeData"
-    :default-expanded-keys="['1']"
-    checkable
-    @check="handleCheck"
-  />
+  <ExTree :data="treeData" :default-expanded-keys="['1']" checkable @check="handleCheck" />
 </template>
 ```
 
@@ -136,10 +128,7 @@ const treeData = ref([
 
 ```vue
 <template>
-  <ExTree
-    :data="treeData"
-    default-expand-all
-  />
+  <ExTree :data="treeData" default-expand-all />
 </template>
 ```
 
@@ -157,11 +146,7 @@ const treeData = ref([
 
 ```vue
 <template>
-  <ExTree
-    :data="treeData"
-    :default-expanded-keys="['1', '1-1']"
-    show-line
-  />
+  <ExTree :data="treeData" :default-expanded-keys="['1', '1-1']" show-line />
 </template>
 ```
 
@@ -214,22 +199,22 @@ const treeData = ref([
       {
         key: '1',
         label: '游戏资源',
-        icon: 'https://api.iconify.design/ri/gamepad-line.svg',
+        icon: 'folder-open-line',
         children: [
           {
             key: '1-1',
             label: '图片',
-            icon: 'https://api.iconify.design/ri/image-line.svg',
+            icon: 'image-line',
           },
           {
             key: '1-2',
             label: '音频',
-            icon: 'https://api.iconify.design/ri/music-line.svg',
+            icon: 'music-line',
           },
           {
             key: '1-3',
             label: '视频',
-            icon: 'https://api.iconify.design/ri/video-line.svg',
+            icon: 'video-line',
           },
         ],
       },
@@ -245,12 +230,12 @@ const treeData = ref([
       {
         key: '1',
         label: '游戏资源',
-        icon: 'https://api.iconify.design/ri/gamepad-line.svg',
+        icon: 'folder-open-line',
         children: [
           {
             key: '1-1',
             label: '图片',
-            icon: 'https://api.iconify.design/ri/image-line.svg',
+            icon: 'image-line',
           },
         ],
       },
@@ -272,7 +257,7 @@ const treeData = ref([
       {
         key: 'warrior',
         label: '战士技能',
-        icon: 'https://api.iconify.design/ri/sword-line.svg',
+        icon: 'star-fill',
         children: [
           {
             key: 'warrior-attack',
@@ -296,7 +281,7 @@ const treeData = ref([
       {
         key: 'mage',
         label: '法师技能',
-        icon: 'https://api.iconify.design/ri/magic-line.svg',
+        icon: 'star-line',
         children: [
           {
             key: 'mage-fire',
@@ -338,68 +323,77 @@ const treeData = ref([
 
 ### Tree Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `data` | 树节点数据 | `TreeNode[]` | `[]` |
-| `default-expanded-keys` | 默认展开的节点 key 数组 | `string[]` | `[]` |
-| `expanded-keys` / `v-model:expanded-keys` | 展开的节点 key 数组（受控） | `string[]` | — |
-| `default-selected-keys` | 默认选中的节点 key 数组 | `string[]` | `[]` |
-| `selected-keys` / `v-model:selected-keys` | 选中的节点 key 数组（受控） | `string[]` | — |
-| `default-checked-keys` | 默认勾选的节点 key 数组 | `string[]` | `[]` |
-| `checked-keys` / `v-model:checked-keys` | 勾选的节点 key 数组（受控） | `string[]` | — |
-| `selectable` | 是否可选择 | `boolean` | `true` |
-| `multiple` | 是否多选 | `boolean` | `false` |
-| `checkable` | 是否显示复选框 | `boolean` | `false` |
-| `check-strictly` | 勾选时是否级联 | `boolean` | `false` |
-| `default-expand-all` | 是否默认展开所有节点 | `boolean` | `false` |
-| `show-line` | 是否显示连接线 | `boolean` | `false` |
-| `show-icon` | 是否显示图标 | `boolean` | `true` |
-| `draggable` | 是否可拖拽 | `boolean` | `false` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `filter-node-method` | 过滤函数 | `(value: string, node: TreeNode) => boolean` | — |
+| 属性                                      | 说明                                                          | 类型                                         | 默认值  |
+| ----------------------------------------- | ------------------------------------------------------------- | -------------------------------------------- | ------- |
+| `data`                                    | 树节点数据                                                    | `TreeNode[]`                                 | `[]`    |
+| `default-expanded-keys`                   | 默认展开的节点 key 数组                                       | `string[]`                                   | `[]`    |
+| `expanded-keys` / `v-model:expanded-keys` | 展开的节点 key 数组（受控）                                   | `string[]`                                   | —       |
+| `default-selected-keys`                   | 默认选中的节点 key 数组                                       | `string[]`                                   | `[]`    |
+| `selected-keys` / `v-model:selected-keys` | 选中的节点 key 数组（受控）                                   | `string[]`                                   | —       |
+| `default-checked-keys`                    | 默认勾选的节点 key 数组                                       | `string[]`                                   | `[]`    |
+| `checked-keys` / `v-model:checked-keys`   | 勾选的节点 key 数组（受控）                                   | `string[]`                                   | —       |
+| `selectable`                              | 是否可选择                                                    | `boolean`                                    | `true`  |
+| `multiple`                                | 是否多选                                                      | `boolean`                                    | `false` |
+| `checkable`                               | 是否显示复选框                                                | `boolean`                                    | `false` |
+| `check-strictly`                          | 勾选时是否级联                                                | `boolean`                                    | `false` |
+| `default-expand-all`                      | 是否默认展开所有节点                                          | `boolean`                                    | `false` |
+| `show-line`                               | 是否显示连接线                                                | `boolean`                                    | `false` |
+| `show-icon`                               | 是否显示图标                                                  | `boolean`                                    | `true`  |
+| `draggable`                               | 是否可拖拽                                                    | `boolean`                                    | `false` |
+| `disabled`                                | 是否禁用                                                      | `boolean`                                    | `false` |
+| `filter-node-method`                      | 过滤函数                                                      | `(value: string, node: TreeNode) => boolean` | —       |
+| `virtual`                                 | 是否启用虚拟滚动（大数据量，需固定 `item-height` + `height`） | `boolean`                                    | `false` |
+| `item-height`                             | 虚拟滚动节点行高（像素）                                      | `number`                                     | `28`    |
+| `height`                                  | 虚拟滚动视口高度（像素或 CSS 值）                             | `number \| string`                           | `400`   |
+| `virtual-buffer`                          | 虚拟滚动上下缓冲行数                                          | `number`                                     | `6`     |
 
 ### TreeNode 数据结构
 
-| 属性 | 说明 | 类型 | 必填 |
-| --- | --- | --- | --- |
-| `key` | 节点唯一标识 | `string` | 是 |
-| `label` | 节点标题 | `string` | 是 |
-| `children` | 子节点 | `TreeNode[]` | 否 |
-| `disabled` | 是否禁用 | `boolean` | 否 |
-| `selectable` | 是否可选择 | `boolean` | 否 |
-| `checkable` | 是否可勾选 | `boolean` | 否 |
-| `isLeaf` | 是否为叶子节点 | `boolean` | 否 |
-| `icon` | 图标 URL | `string` | 否 |
-| `data` | 自定义数据 | `any` | 否 |
+| 属性         | 说明           | 类型         | 必填 |
+| ------------ | -------------- | ------------ | ---- |
+| `key`        | 节点唯一标识   | `string`     | 是   |
+| `label`      | 节点标题       | `string`     | 是   |
+| `children`   | 子节点         | `TreeNode[]` | 否   |
+| `disabled`   | 是否禁用       | `boolean`    | 否   |
+| `selectable` | 是否可选择     | `boolean`    | 否   |
+| `checkable`  | 是否可勾选     | `boolean`    | 否   |
+| `isLeaf`     | 是否为叶子节点 | `boolean`    | 否   |
+| `icon`       | 图标 URL       | `string`     | 否   |
+| `data`       | 自定义数据     | `any`        | 否   |
 
 ### Tree Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:expanded-keys` | 展开/收起节点时触发 | `(keys: string[]) => void` |
-| `update:selected-keys` | 选中节点时触发 | `(keys: string[]) => void` |
-| `update:checked-keys` | 勾选节点时触发 | `(keys: string[]) => void` |
-| `expand` | 节点展开时触发 | `(expandedKeys: string[], node: TreeNode, expanded: boolean) => void` |
-| `select` | 节点选中时触发 | `(selectedKeys: string[], node: TreeNode, selected: boolean) => void` |
-| `check` | 节点勾选时触发 | `(checkedKeys: string[], node: TreeNode, checked: boolean) => void` |
-| `node-click` | 节点点击时触发 | `(node: TreeNode, event: MouseEvent) => void` |
-| `node-contextmenu` | 节点右键点击时触发 | `(node: TreeNode, event: MouseEvent) => void` |
+| 事件名                 | 说明                                                                | 类型                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `update:expanded-keys` | 展开/收起节点时触发                                                 | `(keys: string[]) => void`                                                                                     |
+| `update:selected-keys` | 选中节点时触发                                                      | `(keys: string[]) => void`                                                                                     |
+| `update:checked-keys`  | 勾选节点时触发                                                      | `(keys: string[]) => void`                                                                                     |
+| `expand`               | 节点展开时触发                                                      | `(expandedKeys: string[], node: TreeNode, expanded: boolean) => void`                                          |
+| `select`               | 节点选中时触发                                                      | `(selectedKeys: string[], node: TreeNode, selected: boolean) => void`                                          |
+| `check`                | 节点勾选时触发                                                      | `(checkedKeys: string[], node: TreeNode, checked: boolean) => void`                                            |
+| `node-click`           | 节点点击时触发                                                      | `(node: TreeNode, event: MouseEvent) => void`                                                                  |
+| `node-contextmenu`     | 节点右键点击时触发                                                  | `(node: TreeNode, event: MouseEvent) => void`                                                                  |
+| `node-drag-start`      | 开始拖拽节点时触发（需 `draggable`）                                | `(node: TreeNode, event: DragEvent) => void`                                                                   |
+| `node-drag-enter`      | 拖拽进入节点时触发                                                  | `(node: TreeNode, event: DragEvent) => void`                                                                   |
+| `node-drag-leave`      | 拖拽离开节点时触发                                                  | `(node: TreeNode, event: DragEvent) => void`                                                                   |
+| `node-drag-end`        | 拖拽结束时触发                                                      | `(node: TreeNode, event: DragEvent) => void`                                                                   |
+| `node-drop`            | 放置节点时触发（`dragNode` 为完整节点，需自行更新 `data` 完成排序） | `(dragNode: TreeNode, dropNode: TreeNode, position: 'before' \| 'after' \| 'inner', event: DragEvent) => void` |
 
 ### Tree Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getSelectedNodes` | 获取当前选中的节点 | `() => TreeNode[]` |
-| `getCheckedNodes` | 获取当前勾选的节点 | `() => TreeNode[]` |
-| `getHalfCheckedNodes` | 获取半选中的节点 | `() => TreeNode[]` |
-| `setSelected` | 设置某个节点的选中状态 | `(key: string, selected: boolean) => void` |
-| `setChecked` | 设置某个节点的勾选状态 | `(key: string, checked: boolean) => void` |
-| `setExpanded` | 设置某个节点的展开状态 | `(key: string, expanded: boolean) => void` |
-| `getNode` | 获取节点 | `(key: string) => TreeNode \| null` |
-| `expandAll` | 展开所有节点 | `() => void` |
-| `collapseAll` | 收起所有节点 | `() => void` |
-| `filter` | 过滤节点 | `(value: string) => void` |
-| `getElement` | 获取组件DOM元素 | `() => HTMLDivElement \| null` |
+| 方法名                | 说明                   | 类型                                       |
+| --------------------- | ---------------------- | ------------------------------------------ |
+| `getSelectedNodes`    | 获取当前选中的节点     | `() => TreeNode[]`                         |
+| `getCheckedNodes`     | 获取当前勾选的节点     | `() => TreeNode[]`                         |
+| `getHalfCheckedNodes` | 获取半选中的节点       | `() => TreeNode[]`                         |
+| `setSelected`         | 设置某个节点的选中状态 | `(key: string, selected: boolean) => void` |
+| `setChecked`          | 设置某个节点的勾选状态 | `(key: string, checked: boolean) => void`  |
+| `setExpanded`         | 设置某个节点的展开状态 | `(key: string, expanded: boolean) => void` |
+| `getNode`             | 获取节点               | `(key: string) => TreeNode \| null`        |
+| `expandAll`           | 展开所有节点           | `() => void`                               |
+| `collapseAll`         | 收起所有节点           | `() => void`                               |
+| `filter`              | 过滤节点               | `(value: string) => void`                  |
+| `getElement`          | 获取组件DOM元素        | `() => HTMLDivElement \| null`             |
 
 ## 无障碍支持
 
@@ -410,16 +404,7 @@ const treeData = ref([
 
 ## 主题定制
 
-可以通过 CSS 变量自定义树形控件样式：
-
-```css
-:root {
-  --ex-tree-node-bg: var(--ex-color-bg-secondary);
-  --ex-tree-node-hover-bg: var(--ex-color-bg-hover);
-  --ex-tree-node-selected-bg: rgba(41, 171, 226, 0.1);
-  --ex-tree-node-color: var(--ex-color-text-primary);
-}
-```
+树形控件跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

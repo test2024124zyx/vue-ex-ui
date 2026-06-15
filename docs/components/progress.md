@@ -122,18 +122,18 @@ const customColors = [
   { color: '#f59e0b', percentage: 40 },
   { color: '#eab308', percentage: 60 },
   { color: '#84cc16', percentage: 80 },
-  { color: '#10b981', percentage: 100 }
-]
+  { color: '#10b981', percentage: 100 },
+];
 
-const customColorMethod = (percentage) => {
+const customColorMethod = percentage => {
   if (percentage < 30) {
-    return '#ef4444'
+    return '#ef4444';
   } else if (percentage < 70) {
-    return '#f59e0b'
+    return '#f59e0b';
   } else {
-    return '#10b981'
+    return '#10b981';
   }
-}
+};
 </script>
 
 <template>
@@ -175,14 +175,14 @@ const customColorMethod = (percentage) => {
 
 ```vue
 <script setup>
-const format = (percentage) => {
-  return percentage === 100 ? '完成' : `${percentage}%`
-}
+const format = percentage => {
+  return percentage === 100 ? '完成' : `${percentage}%`;
+};
 </script>
 
 <template>
   <ExProgress :percentage="100" :format="format" />
-  <ExProgress :percentage="100" :format="(percentage) => `已完成 ${percentage}%`" />
+  <ExProgress :percentage="100" :format="percentage => `已完成 ${percentage}%`" />
 </template>
 ```
 
@@ -232,23 +232,23 @@ const format = (percentage) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const percentage = ref(0)
+const percentage = ref(0);
 
 const increase = () => {
-  percentage.value += 10
+  percentage.value += 10;
   if (percentage.value > 100) {
-    percentage.value = 100
+    percentage.value = 100;
   }
-}
+};
 
 const decrease = () => {
-  percentage.value -= 10
+  percentage.value -= 10;
   if (percentage.value < 0) {
-    percentage.value = 0
+    percentage.value = 0;
   }
-}
+};
 </script>
 
 <template>
@@ -319,22 +319,50 @@ const decrease = () => {
 <template>
   <div>
     <div>生命值</div>
-    <ExProgress :percentage="85" color="#ef4444" :stroke-width="16" text-inside striped striped-flow />
+    <ExProgress
+      :percentage="85"
+      color="#ef4444"
+      :stroke-width="16"
+      text-inside
+      striped
+      striped-flow
+    />
   </div>
-  
+
   <div>
     <div>能量值</div>
-    <ExProgress :percentage="60" color="#3b82f6" :stroke-width="16" text-inside striped striped-flow />
+    <ExProgress
+      :percentage="60"
+      color="#3b82f6"
+      :stroke-width="16"
+      text-inside
+      striped
+      striped-flow
+    />
   </div>
-  
+
   <div>
     <div>护盾值</div>
-    <ExProgress :percentage="40" color="#10b981" :stroke-width="16" text-inside striped striped-flow />
+    <ExProgress
+      :percentage="40"
+      color="#10b981"
+      :stroke-width="16"
+      text-inside
+      striped
+      striped-flow
+    />
   </div>
-  
+
   <div>
     <div>经验值</div>
-    <ExProgress :percentage="75" :color="customColors" :stroke-width="16" text-inside striped striped-flow />
+    <ExProgress
+      :percentage="75"
+      :color="customColors"
+      :stroke-width="16"
+      text-inside
+      striped
+      striped-flow
+    />
   </div>
 </template>
 ```
@@ -360,8 +388,6 @@ const decrease = () => {
   <ExProgress type="circle" :percentage="60" color="#00f0ff" :width="140" :stroke-width="10" />
 </template>
 ```
-
-
 
 ## 波浪进度条（矩形）
 
@@ -440,10 +466,10 @@ const decrease = () => {
 <template>
   <!-- 标准波浪 -->
   <ExProgress type="wave" :percentage="65" />
-  
+
   <!-- 平缓波浪 -->
   <ExProgress type="wave" :percentage="65" :wave-amplitude="5" />
-  
+
   <!-- 激烈波浪 -->
   <ExProgress type="wave" :percentage="65" :wave-amplitude="15" />
 </template>
@@ -493,17 +519,17 @@ const decrease = () => {
     <div>玩家等级</div>
     <ExProgress type="circle" :percentage="85" color="#00f0ff" :width="120" />
   </div>
-  
+
   <div>
     <div>成就进度</div>
     <ExProgress type="circle" :percentage="60" status="warning" :width="120" />
   </div>
-  
+
   <div>
     <div>能量储备</div>
     <ExProgress type="wave-circle" :percentage="75" color="#3b82f6" :width="120" />
   </div>
-  
+
   <div>
     <div>下载进度</div>
     <ExProgress type="wave-circle" :percentage="45" status="success" :width="120" />
@@ -515,43 +541,43 @@ const decrease = () => {
 
 ### Progress Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `percentage` | 百分比（0-100） | `number` | `0` |
-| `type` | 进度条类型 | `'line' \| 'circle' \| 'wave' \| 'wave-circle'` | `'line'` |
-| `stroke-width` | 进度条线宽 | `number` | `8` |
-| `show-text` | 是否显示进度文字 | `boolean` | `true` |
-| `text-inside` | 进度文字是否在进度条内部（仅 line 类型） | `boolean` | `false` |
-| `status` | 进度条状态 | `'success' \| 'exception' \| 'warning'` | — |
-| `color` | 进度条颜色 | `string \| ProgressColor[] \| ((percentage: number) => string)` | — |
-| `striped` | 是否显示条纹（仅 line 类型） | `boolean` | `false` |
-| `striped-flow` | 条纹是否流动（仅 line 类型） | `boolean` | `false` |
-| `show-icon` | 是否显示状态图标 | `boolean` | `true` |
-| `format` | 自定义文字格式化函数 | `(percentage: number) => string` | — |
-| `width` | 圆形进度条宽度（circle、wave-circle 类型） | `number` | `120` |
-| `wave-speed` | 波浪动画速度（wave 和 wave-circle 类型） | `number` | `0.02` |
-| `wave-amplitude` | 波浪振幅（wave 和 wave-circle 类型） | `number` | `10` |
-| `wave-animated` | 是否显示波浪动画（wave 和 wave-circle 类型） | `boolean` | `true` |
-| `aria-label` | 无障碍标签 | `string` | — |
+| 参数             | 说明                                         | 类型                                                            | 默认值   |
+| ---------------- | -------------------------------------------- | --------------------------------------------------------------- | -------- |
+| `percentage`     | 百分比（0-100）                              | `number`                                                        | `0`      |
+| `type`           | 进度条类型                                   | `'line' \| 'circle' \| 'wave' \| 'wave-circle'`                 | `'line'` |
+| `stroke-width`   | 进度条线宽                                   | `number`                                                        | `8`      |
+| `show-text`      | 是否显示进度文字                             | `boolean`                                                       | `true`   |
+| `text-inside`    | 进度文字是否在进度条内部（仅 line 类型）     | `boolean`                                                       | `false`  |
+| `status`         | 进度条状态                                   | `'success' \| 'exception' \| 'warning'`                         | —        |
+| `color`          | 进度条颜色                                   | `string \| ProgressColor[] \| ((percentage: number) => string)` | —        |
+| `striped`        | 是否显示条纹（仅 line 类型）                 | `boolean`                                                       | `false`  |
+| `striped-flow`   | 条纹是否流动（仅 line 类型）                 | `boolean`                                                       | `false`  |
+| `show-icon`      | 是否显示状态图标                             | `boolean`                                                       | `true`   |
+| `format`         | 自定义文字格式化函数                         | `(percentage: number) => string`                                | —        |
+| `width`          | 圆形进度条宽度（circle、wave-circle 类型）   | `number`                                                        | `120`    |
+| `wave-speed`     | 波浪动画速度（wave 和 wave-circle 类型）     | `number`                                                        | `0.02`   |
+| `wave-amplitude` | 波浪振幅（wave 和 wave-circle 类型）         | `number`                                                        | `10`     |
+| `wave-animated`  | 是否显示波浪动画（wave 和 wave-circle 类型） | `boolean`                                                       | `true`   |
+| `aria-label`     | 无障碍标签                                   | `string`                                                        | —        |
 
 ### ProgressColor
 
-| 参数 | 说明 | 类型 |
-| --- | --- | --- |
-| `color` | 颜色值 | `string` |
+| 参数         | 说明   | 类型     |
+| ------------ | ------ | -------- |
+| `color`      | 颜色值 | `string` |
 | `percentage` | 百分比 | `number` |
 
 ### Progress Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名 | 说明           |
+| ------ | -------------- |
 | `text` | 自定义进度文字 |
 | `icon` | 自定义状态图标 |
 
 ### Progress Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明              | 类型                           |
+| ------------ | ----------------- | ------------------------------ |
 | `getElement` | 获取进度条DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
@@ -563,15 +589,7 @@ const decrease = () => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义进度条样式：
-
-```css
-:root {
-  --ex-progress-bg: var(--ex-color-bg-tertiary);
-  --ex-progress-color: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
-  --ex-progress-text-color: var(--ex-color-text-primary);
-}
-```
+进度条跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配；颜色亦可通过 `color` 属性传入字符串、回调函数或分段渐变数组自定义。
 
 <style scoped>
 .demo-container {

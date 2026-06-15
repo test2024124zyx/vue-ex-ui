@@ -255,6 +255,13 @@
     @include custom-scrollbar();
   }
 
+  // 虚拟滚动容器：高度与滚动由 ExVirtualList 自身管理，避免重复滚动条
+  &__options--virtual {
+    padding: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
   // 选项
   &__option {
     position: relative;

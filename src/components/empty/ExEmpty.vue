@@ -1,37 +1,17 @@
 <template>
-  <div
-    class="ex-empty"
-    :class="emptyClasses"
-  >
-    <div
-      class="ex-empty__image"
-      :style="imageStyle"
-    >
+  <div class="ex-empty" :class="emptyClasses">
+    <div class="ex-empty__image" :style="imageStyle">
       <slot name="image">
-        <img
-          v-if="image"
-          :src="image"
-          :alt="computedDescription"
-          class="ex-empty__img"
-        >
+        <img v-if="image" :src="image" :alt="computedDescription" class="ex-empty__img" />
         <svg
           v-else-if="showImage"
           class="ex-empty__svg"
           viewBox="0 0 184 152"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <g
-            fill="none"
-            fill-rule="evenodd"
-          >
+          <g fill="none" fill-rule="evenodd">
             <g transform="translate(24 31.67)">
-              <ellipse
-                class="ex-empty__ellipse"
-                cx="67.797"
-                cy="106.89"
-                rx="67.797"
-                ry="12.668"
-              />
+              <ellipse class="ex-empty__ellipse" cx="67.797" cy="106.89" rx="67.797" ry="12.668" />
               <path
                 class="ex-empty__path-1"
                 d="M122.034 69.674L98.109 40.229c-1.148-1.386-2.826-2.225-4.593-2.225h-51.44c-1.766 0-3.444.839-4.592 2.225L13.56 69.674v15.383h108.475V69.674z"
@@ -54,16 +34,8 @@
               class="ex-empty__path-5"
               d="M149.121 33.292l-6.83 2.65a1 1 0 0 1-1.317-1.23l1.937-6.207c-2.589-2.944-4.109-6.534-4.109-10.408C138.802 8.102 148.92 0 161.402 0 173.881 0 184 8.102 184 18.097c0 9.995-10.118 18.097-22.599 18.097-4.528 0-8.744-1.066-12.28-2.902z"
             />
-            <g
-              class="ex-empty__g"
-              transform="translate(149.65 15.383)"
-            >
-              <ellipse
-                cx="20.654"
-                cy="3.167"
-                rx="2.849"
-                ry="2.815"
-              />
+            <g class="ex-empty__g" transform="translate(149.65 15.383)">
+              <ellipse cx="20.654" cy="3.167" rx="2.849" ry="2.815" />
               <path d="M5.698 5.63H0L2.898.704zM9.259.704h4.985V5.63H9.259z" />
             </g>
           </g>
@@ -71,63 +43,67 @@
       </slot>
     </div>
 
-    <div
-      v-if="$slots.description || computedDescription"
-      class="ex-empty__description"
-    >
+    <div v-if="$slots.description || computedDescription" class="ex-empty__description">
       <slot name="description">
         {{ computedDescription }}
       </slot>
     </div>
 
-    <div
-      v-if="$slots.default"
-      class="ex-empty__footer"
-    >
+    <div v-if="$slots.default" class="ex-empty__footer">
       <slot />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { EmptyProps } from './types'
-import { useI18n } from '../../locale'
+import { computed } from 'vue';
+import type { EmptyProps, EmptyType } from './types';
+import { useI18n } from '../../locale';
 
 defineOptions({
-  name: 'ExEmpty'
-})
+  name: 'ExEmpty',
+});
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<EmptyProps>(), {
   imageSize: 'medium',
   description: undefined,
-  showImage: true
-})
+  showImage: true,
+  type: 'default',
+});
 
-// 计算描述文本，优先使用 props，否则使用国际化
+// type → 默认描述的 i18n key
+const TYPE_DESCRIPTION_KEY: Record<EmptyType, string> = {
+  default: 'empty.description',
+  'no-data': 'empty.noData',
+  'no-result': 'empty.noResult',
+  error: 'empty.error',
+  'network-error': 'empty.networkError',
+};
+
+// 计算描述文本：优先 props.description，否则按 type 取预设文案
 const computedDescription = computed(() => {
-  return props.description || t('empty.description')
-})
+  if (props.description) return props.description;
+  return t(TYPE_DESCRIPTION_KEY[props.type || 'default']);
+});
 
 const emptyClasses = computed(() => {
   return {
     [`ex-empty--${typeof props.imageSize === 'string' ? props.imageSize : 'custom'}`]:
-      typeof props.imageSize === 'string'
-  }
-})
+      typeof props.imageSize === 'string',
+  };
+});
 
 const imageStyle = computed(() => {
   if (typeof props.imageSize === 'number') {
     return {
       width: `${props.imageSize}px`,
-      height: `${props.imageSize}px`
-    }
+      height: `${props.imageSize}px`,
+    };
   }
-  return {}
-})
+  return {};
+});
 </script>
 
-<style scoped lang="scss" src="./ExEmpty.scss">
-</style>
+<style scoped lang="scss" src="./ExEmpty.scss"></style>

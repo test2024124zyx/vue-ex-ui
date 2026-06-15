@@ -1,4 +1,4 @@
-// ExDivider 分割线组件样�?
+// ExDivider 分割线组件样�?
 // 游戏主题风格 - ClutchZone
 
 @use '../../styles/tokens' as *;
@@ -11,47 +11,46 @@
   clear: both;
   width: 100%;
   min-width: 100%;
-  margin: 24px 0;
+  margin: var(--ex-divider-margin, 24px 0);
   font-family: var(--ex-font-secondary);
   font-size: 16px;
   color: var(--ex-color-text-primary);
 
   // ============================================================================
-  // 水平分割线（默认�?
+  // 水平分割线（默认�?
   // ============================================================================
   
   &--horizontal {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    margin: 24px 0;
+    margin: var(--ex-divider-margin, 24px 0);
   }
 
   // ============================================================================
-  // 垂直分割�?
+  // 垂直分割�?
   // ============================================================================
   
   &--vertical {
     position: relative;
-    display: inline-block;
-    flex-direction: column;
+    display: inline-flex;
+    align-items: stretch;
     width: auto;
     height: 1em;
-    margin: 0 8px;
+    margin: var(--ex-divider-margin, 0 8px);
     vertical-align: middle;
-    border-top: 0;
-    border-left: 1px solid var(--ex-color-border-primary);
+    // 线条由内层 __line--vertical 绘制，容器本身不再画 border，避免重复线
   }
 
   // ============================================================================
-  // 分割线元�?
+  // 分割线元�?
   // ============================================================================
   
   &__line {
     position: relative;
     flex: 1;
     width: 100%;
-    height: 1px;
+    height: var(--ex-divider-size, 1px);
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -81,6 +80,19 @@
     }
   }
 
+  // 垂直线：覆盖水平基础样式（竖向、纯色、无横向渐变与发光）
+  &__line--vertical {
+    flex: none;
+    width: var(--ex-divider-size, 1px);
+    height: 100%;
+    min-height: 1em;
+    background: var(--ex-divider-color, var(--ex-color-border-primary));
+
+    &::after {
+      display: none;
+    }
+  }
+
   // ============================================================================
   // 文字内容
   // ============================================================================
@@ -98,13 +110,13 @@
   }
 
   // ============================================================================
-  // 文字位置 - 左对�?
+  // 文字位置 - 左对�?
   // ============================================================================
   
   &--left {
     .ex-divider__line:first-child {
-      flex: 0 0 5%;
-      max-width: 5%;
+      flex: 0 0 var(--ex-divider-orientation-margin, 5%);
+      max-width: var(--ex-divider-orientation-margin, 5%);
     }
 
     .ex-divider__line:last-child {
@@ -123,7 +135,7 @@
   }
 
   // ============================================================================
-  // 文字位置 - 右对�?
+  // 文字位置 - 右对�?
   // ============================================================================
   
   &--right {
@@ -132,8 +144,8 @@
     }
 
     .ex-divider__line:last-child {
-      flex: 0 0 5%;
-      max-width: 5%;
+      flex: 0 0 var(--ex-divider-orientation-margin, 5%);
+      max-width: var(--ex-divider-orientation-margin, 5%);
     }
   }
 
@@ -153,8 +165,10 @@
       }
     }
 
-    &.ex-divider--vertical {
-      border-left-style: dashed;
+    &.ex-divider--vertical .ex-divider__line--vertical {
+      background: none;
+      border-left: var(--ex-divider-size, 1px) dashed
+        var(--ex-divider-color, var(--ex-color-border-primary));
     }
   }
 
@@ -176,42 +190,42 @@
   
   &--size-small {
     font-size: 14px;
-    
+
     &.ex-divider--horizontal .ex-divider__line {
       height: 1px;
     }
-    
-    &.ex-divider--vertical {
-      border-left-width: 1px;
+
+    &.ex-divider--vertical .ex-divider__line--vertical {
+      width: 1px;
     }
   }
 
   &--size-default {
     font-size: 16px;
-    
+
     &.ex-divider--horizontal .ex-divider__line {
       height: 1px;
     }
-    
-    &.ex-divider--vertical {
-      border-left-width: 1px;
+
+    &.ex-divider--vertical .ex-divider__line--vertical {
+      width: 1px;
     }
   }
 
   &--size-large {
     font-size: 18px;
-    
+
     &.ex-divider--horizontal .ex-divider__line {
       height: 2px;
     }
-    
-    &.ex-divider--vertical {
-      border-left-width: 2px;
+
+    &.ex-divider--vertical .ex-divider__line--vertical {
+      width: 2px;
     }
   }
 
   // ============================================================================
-  // 自定义颜�?
+  // 自定义颜�?
   // ============================================================================
   
   &[style*='--ex-divider-color'] {
@@ -249,7 +263,7 @@
   }
 
   // ============================================================================
-  // 响应式设�?
+  // 响应式设�?
   // ============================================================================
   
   @include mobile {
@@ -268,7 +282,7 @@
   }
 
   // ============================================================================
-  // 无障碍支�?
+  // 无障碍支�?
   // ============================================================================
   
   @media (prefers-reduced-motion: reduce) {

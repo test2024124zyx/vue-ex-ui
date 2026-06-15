@@ -69,6 +69,7 @@
   "license": "MIT",
   "peerDependencies": {
     "echarts": "^6.0.0",
+    "highlight.js": "^11.9.0",
     "jsbarcode": "^3.12.1",
     "lunar-javascript": "^1.7.6",
     "qrcode": "^1.5.4",
@@ -80,6 +81,9 @@
       "optional": true
     },
     "echarts": {
+      "optional": true
+    },
+    "highlight.js": {
       "optional": true
     },
     "jsbarcode": {
@@ -112,6 +116,7 @@
     "fast-check": "^4.5.3",
     "glob": "^11.0.3",
     "globals": "^16.4.0",
+    "highlight.js": "^11.11.1",
     "husky": "^9.1.7",
     "jsbarcode": "^3.12.1",
     "jsdom": "^27.0.0",

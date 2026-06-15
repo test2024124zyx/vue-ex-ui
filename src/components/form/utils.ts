@@ -1,4 +1,17 @@
 import type { FormRule, BuiltinValidators } from './types';
+import { t } from '../../locale';
+
+// 判断值是否为"空"（用于可选字段短路）。注意：0 / false 不算空，
+// 以免 minValue/maxValue/enum 在边界值 0 处被误判跳过。
+function isEmptyValue(value: unknown): boolean {
+  return value === undefined || value === null || value === '';
+}
+
+type BuiltinValidatorFn = (
+  rule: FormRule,
+  value: unknown,
+  callback: (error?: string) => void
+) => void;
 
 // 获取字段值
 export function getFieldValue(model: Record<string, unknown>, prop: string): unknown {
@@ -69,7 +82,7 @@ export async function validateField(
   return { valid: true };
 }
 
-// 验证单个规则
+// 验证单个规则（一条规则会校验其声明的所有维度，任一失败即返回）
 async function validateRule(
   rule: FormRule,
   value: unknown,
@@ -82,7 +95,7 @@ async function validateRule(
 
   // 自定义异步验证器
   if (rule.asyncValidator) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       rule.asyncValidator!(rule, value, (error?: string) => {
         resolve({
           valid: !error,
@@ -94,7 +107,7 @@ async function validateRule(
 
   // 自定义验证器
   if (rule.validator) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       rule.validator!(rule, value, (error?: string) => {
         resolve({
           valid: !error,
@@ -104,10 +117,10 @@ async function validateRule(
     });
   }
 
-  // 内置验证器
-  const validator = getBuiltinValidator(rule);
-  if (validator) {
-    return new Promise((resolve) => {
+  // 内置验证器：依次执行该规则声明的所有维度（required + type + min/max + pattern...）
+  const validators = getBuiltinValidators(rule);
+  for (const validator of validators) {
+    const result = await new Promise<{ valid: boolean; error?: string }>(resolve => {
       validator(rule, value, (error?: string) => {
         resolve({
           valid: !error,
@@ -115,76 +128,85 @@ async function validateRule(
         });
       });
     });
+
+    if (!result.valid) {
+      return result;
+    }
   }
 
   return { valid: true };
 }
 
-// 获取内置验证器
-function getBuiltinValidator(
-  rule: FormRule
-): ((rule: FormRule, value: unknown, callback: (error?: string) => void) => void) | null {
+// 收集一条规则声明的所有内置校验器
+function getBuiltinValidators(rule: FormRule): BuiltinValidatorFn[] {
+  const validators: BuiltinValidatorFn[] = [];
+
   if (rule.required) {
-    return builtinValidators.required;
+    validators.push(builtinValidators.required);
   }
 
   if (rule.type) {
     switch (rule.type) {
-    case 'email':
-      return builtinValidators.email;
-    case 'url':
-      return builtinValidators.url;
-    case 'number':
-      return builtinValidators.number;
-    case 'integer':
-      return builtinValidators.integer;
-    case 'float':
-      return builtinValidators.float;
+      case 'email':
+        validators.push(builtinValidators.email);
+        break;
+      case 'url':
+        validators.push(builtinValidators.url);
+        break;
+      case 'number':
+        validators.push(builtinValidators.number);
+        break;
+      case 'integer':
+        validators.push(builtinValidators.integer);
+        break;
+      case 'float':
+        validators.push(builtinValidators.float);
+        break;
     }
   }
 
   if (rule.min !== undefined) {
-    return builtinValidators.min;
+    validators.push(builtinValidators.min);
   }
 
   if (rule.max !== undefined) {
-    return builtinValidators.max;
+    validators.push(builtinValidators.max);
   }
 
   if (rule.minValue !== undefined) {
-    return builtinValidators.minValue;
+    validators.push(builtinValidators.minValue);
   }
 
   if (rule.maxValue !== undefined) {
-    return builtinValidators.maxValue;
+    validators.push(builtinValidators.maxValue);
   }
 
   if (rule.pattern) {
-    return builtinValidators.pattern;
+    validators.push(builtinValidators.pattern);
   }
 
   if (rule.enum) {
-    return builtinValidators.enum;
+    validators.push(builtinValidators.enum);
   }
 
-  return null;
+  return validators;
 }
 
 // 内置验证器
 export const builtinValidators: BuiltinValidators = {
   required(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (value === undefined || value === null || value === '') {
-      callback(rule.message || '此字段为必填项');
+    if (isEmptyValue(value)) {
+      callback(rule.message || t('validators.required'));
       return;
     }
 
     if (Array.isArray(value) && value.length === 0) {
-      callback(rule.message || '此字段为必填项');
+      callback(rule.message || t('validators.required'));
       return;
     }
 
     if (typeof value === 'string' && rule.whitespace !== false && value.trim() === '') {
-      callback(rule.message || '此字段为必填项');
+      callback(rule.message || t('validators.required'));
       return;
     }
 
@@ -192,14 +214,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   email(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(String(value))) {
-      callback(rule.message || '请输入有效的邮箱地址');
+      callback(rule.message || t('validators.email'));
       return;
     }
 
@@ -207,7 +229,7 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   url(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
@@ -216,18 +238,18 @@ export const builtinValidators: BuiltinValidators = {
       new URL(String(value));
       callback();
     } catch {
-      callback(rule.message || '请输入有效的网址');
+      callback(rule.message || t('validators.url'));
     }
   },
 
   number(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (isNaN(Number(value))) {
-      callback(rule.message || '请输入有效的数字');
+      callback(rule.message || t('validators.number'));
       return;
     }
 
@@ -235,13 +257,13 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   integer(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!Number.isInteger(Number(value))) {
-      callback(rule.message || '请输入整数');
+      callback(rule.message || t('validators.integer'));
       return;
     }
 
@@ -249,14 +271,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   float(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const num = Number(value);
     if (isNaN(num)) {
-      callback(rule.message || '请输入有效的数字');
+      callback(rule.message || t('validators.number'));
       return;
     }
 
@@ -264,14 +286,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   min(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const length = Array.isArray(value) ? value.length : String(value).length;
     if (length < rule.min!) {
-      callback(rule.message || `最少需要 ${rule.min} 个字符`);
+      callback(rule.message || t('validators.min', { min: rule.min! }));
       return;
     }
 
@@ -279,14 +301,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   max(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const length = Array.isArray(value) ? value.length : String(value).length;
     if (length > rule.max!) {
-      callback(rule.message || `最多允许 ${rule.max} 个字符`);
+      callback(rule.message || t('validators.max', { max: rule.max! }));
       return;
     }
 
@@ -294,14 +316,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   minValue(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const num = Number(value);
     if (isNaN(num) || num < rule.minValue!) {
-      callback(rule.message || `值不能小于 ${rule.minValue}`);
+      callback(rule.message || t('validators.minValue', { min: rule.minValue! }));
       return;
     }
 
@@ -309,14 +331,14 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   maxValue(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     const num = Number(value);
     if (isNaN(num) || num > rule.maxValue!) {
-      callback(rule.message || `值不能大于 ${rule.maxValue}`);
+      callback(rule.message || t('validators.maxValue', { max: rule.maxValue! }));
       return;
     }
 
@@ -324,13 +346,13 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   pattern(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!rule.pattern!.test(String(value))) {
-      callback(rule.message || '格式不正确');
+      callback(rule.message || t('validators.pattern'));
       return;
     }
 
@@ -338,13 +360,13 @@ export const builtinValidators: BuiltinValidators = {
   },
 
   enum(rule: FormRule, value: unknown, callback: (error?: string) => void) {
-    if (!value) {
+    if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!rule.enum!.includes(value)) {
-      callback(rule.message || '值不在允许的范围内');
+      callback(rule.message || t('validators.enum'));
       return;
     }
 

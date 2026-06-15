@@ -16,56 +16,62 @@
         <slot />
       </template>
 
-      <!-- 预设变体模式 -->
+      <!-- 预设变体模式（count 控制重复渲染的骨架块数量） -->
       <template v-else>
-        <!-- 头像 + 内容布局 -->
-        <div v-if="avatar || variant === 'avatar'" class="ex-skeleton__layout">
-          <!-- 头像 -->
-          <div
-            class="ex-skeleton__avatar"
-            :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
-            :style="avatarStyle"
-          />
+        <div v-for="n in count" :key="n" class="ex-skeleton__repeat">
+          <!-- 头像 + 内容布局 -->
+          <div v-if="avatar || variant === 'avatar'" class="ex-skeleton__layout">
+            <!-- 头像 -->
+            <div
+              class="ex-skeleton__avatar"
+              :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
+              :style="avatarStyle"
+            />
 
-          <!-- 内容区域 -->
-          <div v-if="variant !== 'avatar'" class="ex-skeleton__content">
+            <!-- 内容区域 -->
+            <div v-if="variant !== 'avatar'" class="ex-skeleton__content">
+              <!-- 标题 -->
+              <div v-if="title" class="ex-skeleton__title" :style="titleStyle" />
+
+              <!-- 段落 -->
+              <div v-if="rows > 0" class="ex-skeleton__paragraph">
+                <div
+                  v-for="(_row, index) in rows"
+                  :key="index"
+                  class="ex-skeleton__row"
+                  :style="getRowStyle(index)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 纯内容布局（无头像） -->
+          <div v-else class="ex-skeleton__content">
             <!-- 标题 -->
-            <div v-if="title" class="ex-skeleton__title" :style="titleStyle" />
+            <div
+              v-if="title || variant === 'title'"
+              class="ex-skeleton__title"
+              :style="titleStyle"
+            />
 
             <!-- 段落 -->
-            <div v-if="rows > 0" class="ex-skeleton__paragraph">
+            <div v-if="rows > 0 || variant === 'paragraph'" class="ex-skeleton__paragraph">
               <div
-                v-for="(_row, index) in rows"
+                v-for="(_row, index) in computedRows"
                 :key="index"
                 class="ex-skeleton__row"
                 :style="getRowStyle(index)"
               />
             </div>
-          </div>
-        </div>
 
-        <!-- 纯内容布局（无头像） -->
-        <div v-else class="ex-skeleton__content">
-          <!-- 标题 -->
-          <div v-if="title || variant === 'title'" class="ex-skeleton__title" :style="titleStyle" />
-
-          <!-- 段落 -->
-          <div v-if="rows > 0 || variant === 'paragraph'" class="ex-skeleton__paragraph">
+            <!-- 单个元素变体 -->
             <div
-              v-for="(_row, index) in computedRows"
-              :key="index"
-              class="ex-skeleton__row"
-              :style="getRowStyle(index)"
+              v-if="['text', 'image', 'button', 'card'].includes(variant)"
+              class="ex-skeleton__element"
+              :class="`ex-skeleton__element--${variant}`"
+              :style="elementStyle"
             />
           </div>
-
-          <!-- 单个元素变体 -->
-          <div
-            v-if="['text', 'image', 'button', 'card'].includes(variant)"
-            class="ex-skeleton__element"
-            :class="`ex-skeleton__element--${variant}`"
-            :style="elementStyle"
-          />
         </div>
       </template>
 

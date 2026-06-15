@@ -198,7 +198,8 @@ const { t } = useI18n();
 const cropRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();
 const canvasRef = ref<HTMLCanvasElement>();
-const image = new Image();
+// SSR 环境无 Image 构造器，需守卫；该对象仅在客户端的加载/绘制逻辑中使用
+const image = typeof Image !== 'undefined' ? new Image() : (null as unknown as HTMLImageElement);
 const maskId = generateId('crop-mask');
 
 const imageLoaded = ref(false);

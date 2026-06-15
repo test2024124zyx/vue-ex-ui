@@ -1,5 +1,5 @@
 <template>
-  <div role="group" :aria-label="computedAria" :class="ellipsisClasses">
+  <div ref="rootRef" role="group" :aria-label="computedAria" :class="ellipsisClasses">
     <div
       ref="contentRef"
       :class="contentClasses"
@@ -81,8 +81,12 @@ watch(
   () => nextTick(checkOverflow)
 );
 
+const rootRef = ref<HTMLElement>();
 const contentRef = ref<HTMLElement>();
 const expanded = ref(false);
+
+const getElement = () => rootRef.value || null;
+defineExpose({ getElement });
 
 const toggle = () => {
   expanded.value = !expanded.value;

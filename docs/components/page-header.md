@@ -2,7 +2,22 @@
 
 页面顶部的标题区域，集成返回按钮、面包屑、标签与头像展示。
 
+<script setup>
+const handleBack = () => { /* 演示用：实际可调用 history.back() */ }
+const phBreadcrumb = [
+  { title: '首页', path: '/' },
+  { title: '列表', path: '/list' },
+  { title: '详情' },
+]
+const phTags = [{ text: '运行中', type: 'success' }]
+const phAvatar = { alt: 'U', size: 'medium' }
+</script>
+
 ## 基础用法
+
+<div class="demo-container">
+  <ExPageHeader title="页面标题" subtitle="副标题说明" show-back @back="handleBack" />
+</div>
 
 ```vue
 <template>
@@ -17,6 +32,10 @@ const handleBack = () => {
 ```
 
 ## 带面包屑
+
+<div class="demo-container">
+  <ExPageHeader title="详情页" :breadcrumb="phBreadcrumb" />
+</div>
 
 ```vue
 <template>
@@ -33,6 +52,10 @@ const handleBack = () => {
 
 ## 带标签与头像
 
+<div class="demo-container">
+  <ExPageHeader title="用户中心" :tags="phTags" :avatar="phAvatar" />
+</div>
+
 ```vue
 <template>
   <ExPageHeader
@@ -44,6 +67,12 @@ const handleBack = () => {
 ```
 
 ## 固定页头
+
+设置 `fixed` 后页头会固定在视口顶部。下方为非固定预览（固定效果会覆盖文档页面，故此处不实际开启）。
+
+<div class="demo-container">
+  <ExPageHeader title="固定页头" subtitle="设置 fixed 后将固定在视口顶部" />
+</div>
 
 ```vue
 <template>
@@ -83,3 +112,13 @@ const handleBack = () => {
 | `default` | 标题下方的自定义内容 |
 | `extra`   | 右侧操作区           |
 | `footer`  | 底部内容（如选项卡） |
+
+<style scoped>
+.demo-container {
+  padding: 24px;
+  border: 1px solid var(--ex-color-border-primary, #e5e7eb);
+  border-radius: 8px;
+  background: var(--ex-color-bg-secondary, transparent);
+  margin: 16px 0;
+}
+</style>

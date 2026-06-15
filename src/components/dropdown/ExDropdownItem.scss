@@ -11,7 +11,8 @@
   font-size: var(--ex-text-sm);
   @include transition(all);
 
-  &:hover:not(&--disabled) {
+  &:hover:not(&--disabled),
+  &--active:not(&--disabled) {
     background: var(--ex-color-neon-blue-alpha-10);
     color: var(--ex-color-neon-blue-500);
   }

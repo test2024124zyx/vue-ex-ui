@@ -3,6 +3,9 @@
 
 @use '../mixins' as *;
 
+// 页面级表格样式仅在宿主主动添加 `.ex-app` 时生效，避免污染宿主全局裸元素。
+@mixin base-styles {
+
 // ============================================================================
 // 表格元素
 // ============================================================================
@@ -40,12 +43,14 @@ td {
 
 tbody tr {
   @include transition(background-color);
-  
+
   &:hover {
     background: var(--ex-color-neon-blue-alpha-05);
   }
-  
+
   &:last-child td {
     border-bottom: none;
   }
+}
+
 }

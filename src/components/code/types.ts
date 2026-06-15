@@ -54,6 +54,10 @@ export interface ExCodeProps {
   maxHeight?: string | number;
   /** 是否自动换行 */
   wrap?: boolean;
+  /** 是否可编辑（开启后代码可在原位编辑，支持 v-model:code） */
+  editable?: boolean;
+  /** 是否只读（editable 时仍禁止修改） */
+  readonly?: boolean;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
@@ -66,6 +70,10 @@ export interface ExCodeProps {
 export interface ExCodeEmits {
   /** 复制成功事件 */
   copy: [code: string];
+  /** 代码内容更新（可编辑，支持 v-model:code） */
+  'update:code': [code: string];
+  /** 代码内容变化 */
+  change: [code: string];
 }
 
 /**

@@ -451,17 +451,7 @@ const handleChange = (current, prev) => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义轮播组件样式：
-
-```css
-:root {
-  --ex-carousel-bg: var(--ex-color-bg-secondary);
-  --ex-carousel-border-color: var(--ex-color-border-primary);
-  --ex-carousel-arrow-bg: rgba(15, 23, 32, 0.8);
-  --ex-carousel-indicator-color: rgba(255, 255, 255, 0.3);
-  --ex-carousel-indicator-active-color: var(--ex-color-neon-blue-500);
-}
-```
+走马灯跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

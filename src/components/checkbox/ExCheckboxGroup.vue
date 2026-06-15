@@ -187,21 +187,32 @@ const validateGroup = (value: Array<string | number>) => {
 watch(
   () => props.errorMessage,
   newError => {
-    if (newError) {
-      currentErrorMessage.value = newError;
-    }
+    // 父级清空 errorMessage 时同步清除，避免残留旧错误
+    currentErrorMessage.value = newError || '';
   },
   { immediate: true }
 );
 
-// 提供上下文给子 Checkbox 组件
+// 提供上下文给子 Checkbox 组件。
+// size/status/disabled/readonly 用 getter 暴露，确保子组件读取时建立
+// 响应式依赖——Group 运行时改变这些属性能正确传播到所有子项。
 provide('checkboxGroup', {
   modelValue: computed(() => props.modelValue),
-  name: props.name,
-  size: componentSize.value,
-  status: props.status,
-  disabled: props.disabled,
-  readonly: props.readonly,
+  get name() {
+    return props.name;
+  },
+  get size() {
+    return componentSize.value;
+  },
+  get status() {
+    return props.status;
+  },
+  get disabled() {
+    return props.disabled;
+  },
+  get readonly() {
+    return props.readonly;
+  },
   updateValue,
 });
 

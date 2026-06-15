@@ -7,15 +7,15 @@ import type { CSSProperties } from 'vue';
  * 条码格式类型
  */
 export type BarcodeFormat =
-  | 'CODE128'      // CODE128 (默认，最常用)
-  | 'CODE39'       // CODE39
-  | 'EAN13'        // EAN-13 (商品条码)
-  | 'EAN8'         // EAN-8
-  | 'UPC'          // UPC-A
-  | 'ITF14'        // ITF-14
-  | 'MSI'          // MSI
-  | 'pharmacode'   // Pharmacode
-  | 'codabar';     // Codabar
+  | 'CODE128' // CODE128 (默认，最常用)
+  | 'CODE39' // CODE39
+  | 'EAN13' // EAN-13 (商品条码)
+  | 'EAN8' // EAN-8
+  | 'UPC' // UPC-A
+  | 'ITF14' // ITF-14
+  | 'MSI' // MSI
+  | 'pharmacode' // Pharmacode
+  | 'codabar'; // Codabar
 
 /**
  * 条码组件 Props
@@ -89,8 +89,8 @@ export interface ExBarcodeExposed {
   getElement: () => HTMLElement | null;
   /** 下载条码 */
   download: (filename?: string) => void;
-  /** 获取条码数据URL */
-  toDataURL: (type?: 'image/png' | 'image/jpeg') => string;
+  /** 获取条码数据URL（异步：等待 SVG 转 canvas 绘制完成后返回） */
+  toDataURL: (type?: 'image/png' | 'image/jpeg') => Promise<string>;
   /** 刷新条码 */
   refresh: () => void;
 }

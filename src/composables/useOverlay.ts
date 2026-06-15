@@ -52,6 +52,8 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   };
 
   const activate = () => {
+    // SSR 环境无 document：immediate watch 在 setup 阶段即触发，此处直接跳过
+    if (typeof document === 'undefined') return;
     // DOM 就绪后再锁滚动与聚焦
     nextTick(() => {
       if (shouldLock()) lockScroll();
@@ -68,6 +70,8 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   };
 
   const deactivate = () => {
+    // SSR 环境无 document：immediate watch 初始为关闭态时会调用此函数，需跳过
+    if (typeof document === 'undefined') return;
     if (shouldLock()) unlockScroll();
     releaseFocusTrap?.();
     releaseFocusTrap = null;

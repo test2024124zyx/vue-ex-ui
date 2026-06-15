@@ -6,11 +6,26 @@
 
 滚动超过 `visibilityHeight`（默认 400px）后显示。
 
+<div class="demo-container">
+  <p style="margin:0">👇 向下滚动本页面，右下角会出现"回到顶部"按钮（此处触发距离设为 200px 以便演示）。</p>
+  <ExBackTop :visibility-height="200" />
+</div>
+
 ```vue
 <template>
   <ExBackTop />
 </template>
 ```
+
+<style scoped>
+.demo-container {
+  padding: 24px;
+  border: 1px solid var(--ex-color-border-primary, #e5e7eb);
+  border-radius: 8px;
+  background: var(--ex-color-bg-secondary, transparent);
+  margin: 16px 0;
+}
+</style>
 
 ## 显示滚动进度
 

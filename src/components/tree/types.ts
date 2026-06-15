@@ -58,10 +58,14 @@ export interface ExTreeProps {
   draggable?: boolean;
   /** 是否禁用 */
   disabled?: boolean;
-  /** 是否虚拟滚动 */
+  /** 是否虚拟滚动（大数据量时仅渲染可视窗口内的节点） */
   virtual?: boolean;
-  /** 节点高度（虚拟滚动时使用） */
+  /** 节点行高（虚拟滚动时使用，像素） */
   itemHeight?: number;
+  /** 虚拟滚动视口高度（像素或 CSS 值），默认 400 */
+  height?: number | string;
+  /** 虚拟滚动视口上下额外渲染的缓冲行数，默认 6 */
+  virtualBuffer?: number;
   /** 过滤函数 */
   filterNodeMethod?: (value: string, node: TreeNode) => boolean;
   /** 自定义CSS类名 */
@@ -99,7 +103,12 @@ export interface ExTreeEmits {
   /** 节点拖拽结束时触发 */
   'node-drag-end': [node: TreeNode, event: DragEvent];
   /** 节点放置时触发 */
-  'node-drop': [dragNode: TreeNode, dropNode: TreeNode, position: 'before' | 'after' | 'inner', event: DragEvent];
+  'node-drop': [
+    dragNode: TreeNode,
+    dropNode: TreeNode,
+    position: 'before' | 'after' | 'inner',
+    event: DragEvent,
+  ];
 }
 
 /**

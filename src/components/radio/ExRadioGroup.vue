@@ -87,6 +87,10 @@ const componentSize = useComponentSize(computed(() => props.size));
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
 
+// 组内共享的 name：未显式传入时自动生成唯一值，保证同组各 radio 的
+// name 一致——原生单选语义（方向键导航、屏幕阅读器成组）才能生效。
+const radioName = computed(() => props.name || groupId);
+
 const currentErrorMessage = ref('');
 
 // 计算属性
@@ -167,21 +171,30 @@ const validateGroup = (value: RadioValue) => {
 watch(
   () => props.errorMessage,
   newError => {
-    if (newError) {
-      currentErrorMessage.value = newError;
-    }
+    // 父级清空 errorMessage 时同步清除，避免残留旧错误
+    currentErrorMessage.value = newError || '';
   },
   { immediate: true }
 );
 
-// 提供上下文给子 Radio 组件
+// 提供上下文给子 Radio 组件。
+// status/disabled/readonly 用 getter 暴露，确保子组件读取时建立响应式依赖，
+// Group 运行时改变这些属性能正确传播到所有子项。
 provide('radioGroup', {
   modelValue: computed(() => props.modelValue),
-  name: props.name,
+  get name() {
+    return radioName.value;
+  },
   size: computed(() => componentSize.value),
-  status: props.status,
-  disabled: props.disabled,
-  readonly: props.readonly,
+  get status() {
+    return props.status;
+  },
+  get disabled() {
+    return props.disabled;
+  },
+  get readonly() {
+    return props.readonly;
+  },
   updateValue,
 });
 

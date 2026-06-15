@@ -62,6 +62,7 @@
         @mousedown="handleThumbMouseDown($event, 0)"
         @touchstart="handleThumbMouseDown($event, 0)"
         @keydown="handleKeyDown($event, 0)"
+        @blur="handleThumbBlur"
       >
         <!-- 提示信息 -->
         <div
@@ -91,6 +92,7 @@
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
+          @blur="handleThumbBlur"
         >
           <div
             v-if="showTooltip && (isDraggingStart || isHoveringStart)"
@@ -117,6 +119,7 @@
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
+          @blur="handleThumbBlur"
         >
           <div
             v-if="showTooltip && (isDraggingEnd || isHoveringEnd)"
@@ -177,6 +180,7 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExSlider',
@@ -201,6 +205,14 @@ const props = withDefaults(defineProps<ExSliderProps>(), {
 
 const emit = defineEmits<ExSliderEmits>();
 const { t } = useI18n();
+
+// 所在 FormItem 的字段上下文（用于 blur 自动校验）
+const formItem = useFormItem();
+
+// 失焦：触发 FormItem 的 blur 校验
+const handleThumbBlur = () => {
+  formItem?.onFieldBlur();
+};
 
 // Refs
 const sliderRef = ref<HTMLDivElement>();
