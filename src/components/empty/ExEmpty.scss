@@ -1,0 +1,169 @@
+@use '../../styles/variables.scss' as *;
+@use '../../styles/mixins.scss' as *;
+
+.ex-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ex-spacing-8) var(--ex-spacing-4);
+  text-align: center;
+  min-height: 200px;
+
+  &__image {
+    margin-bottom: var(--ex-spacing-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &__svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  &__ellipse {
+    fill: var(--ex-color-bg-elevated);
+    opacity: 0.8;
+  }
+
+  &__path-1 {
+    fill: var(--ex-color-bg-secondary);
+  }
+
+  &__path-2 {
+    fill: var(--ex-color-bg-elevated);
+  }
+
+  &__path-3 {
+    fill: var(--ex-color-bg-secondary);
+  }
+
+  &__path-4 {
+    fill: var(--ex-color-bg-elevated);
+  }
+
+  &__path-5 {
+    fill: var(--ex-color-border-primary);
+  }
+
+  &__g {
+    fill: var(--ex-color-bg-primary);
+  }
+
+  &__description {
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-base);
+    line-height: 1.6;
+    margin-bottom: var(--ex-spacing-4);
+  }
+
+  &__footer {
+    margin-top: var(--ex-spacing-4);
+  }
+
+  // 尺寸变体
+  &--small {
+    min-height: 150px;
+    padding: var(--ex-spacing-6) var(--ex-spacing-4);
+
+    .ex-empty__image {
+      width: 80px;
+      height: 80px;
+    }
+
+    .ex-empty__description {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--medium {
+    .ex-empty__image {
+      width: 120px;
+      height: 120px;
+    }
+  }
+
+  &--large {
+    min-height: 300px;
+    padding: var(--ex-spacing-12) var(--ex-spacing-6);
+
+    .ex-empty__image {
+      width: 160px;
+      height: 160px;
+    }
+
+    .ex-empty__description {
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  // 游戏化效�?
+  .ex-empty__svg {
+    .ex-empty__path-5 {
+      fill: var(--ex-color-neon-blue-500);
+      opacity: 0.6;
+    }
+
+    .ex-empty__g {
+      fill: var(--ex-color-secondary);
+      opacity: 0.8;
+    }
+  }
+
+  // 响应�?
+  @media (max-width: 768px) {
+    padding: var(--ex-spacing-6) var(--ex-spacing-2);
+    min-height: 180px;
+
+    &--small .ex-empty__image {
+      width: 60px;
+      height: 60px;
+    }
+
+    &--medium .ex-empty__image {
+      width: 100px;
+      height: 100px;
+    }
+
+    &--large .ex-empty__image {
+      width: 140px;
+      height: 140px;
+    }
+  }
+
+  // 动画效果
+  animation: fadeIn 0.3s ease-in-out;
+
+  .ex-empty__image {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+

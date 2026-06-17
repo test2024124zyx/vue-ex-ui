@@ -1,0 +1,56 @@
+// ExUI Media Styles
+// 媒体元素样式
+
+// 页面级媒体样式仅在宿主主动添加 `.ex-app` 时生效，避免污染宿主全局裸元素。
+@mixin base-styles {
+
+// ============================================================================
+// 媒体元素
+// ============================================================================
+
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+img {
+  border-radius: var(--ex-radius-md);
+}
+
+figure {
+  margin: var(--ex-spacing-6) 0;
+
+  img {
+    margin-bottom: var(--ex-spacing-2);
+  }
+}
+
+figcaption {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-text-tertiary);
+  text-align: center;
+  font-style: italic;
+}
+
+// ============================================================================
+// 分隔元素
+// ============================================================================
+
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ex-color-neon-blue-500),
+    var(--ex-color-neon-pink-500),
+    transparent
+  );
+  margin: var(--ex-spacing-8) 0;
+}
+
+}

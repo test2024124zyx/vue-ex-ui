@@ -1,0 +1,512 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Heatmap 热力图组件样�?- 游戏主题
+// ============================================================================
+
+.ex-heatmap {
+  position: relative;
+  width: 100%;
+  padding: var(--ex-spacing-4);
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  overflow-x: auto;
+  @include custom-scrollbar();
+}
+
+// 月份标签
+.ex-heatmap__months {
+  position: relative;
+  height: 20px;
+  margin-bottom: var(--ex-spacing-2);
+  margin-left: 30px; // 为星期标签留空间
+}
+
+.ex-heatmap__month-label {
+  position: absolute;
+  top: 0;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-color-text-tertiary);
+  white-space: nowrap;
+}
+
+// 热力图主�?
+.ex-heatmap__body {
+  display: flex;
+  gap: var(--ex-spacing-2);
+}
+
+// 星期标签
+.ex-heatmap__weeks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 24px;
+  padding-right: var(--ex-spacing-2);
+}
+
+.ex-heatmap__week-label {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-color-text-tertiary);
+  text-align: right;
+  line-height: 1;
+}
+
+// 热力图网�?
+.ex-heatmap__grid {
+  display: flex;
+  gap: var(--ex-spacing-1);
+  flex: 1;
+}
+
+.ex-heatmap__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-spacing-1);
+}
+
+// 单元�?
+.ex-heatmap__cell {
+  position: relative;
+  background: var(--ex-color-bg-tertiary);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+  &:hover {
+    transform: scale(1.2);
+    z-index: 10;
+  }
+
+  // 颜色等级 - 默认主题
+  &--level-0 {
+    background: var(--ex-color-bg-tertiary);
+  }
+
+  &--level-1 {
+    background: var(--ex-color-gray-alpha-30);
+  }
+
+  &--level-2 {
+    background: var(--ex-color-gray-alpha-50);
+  }
+
+  &--level-3 {
+    background: var(--ex-color-gray-alpha-70);
+  }
+
+  &--level-4 {
+    background: var(--ex-color-white-alpha-90);
+  }
+}
+
+// 工具提示
+.ex-heatmap__tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: var(--ex-spacing-2) var(--ex-spacing-3);
+  background: var(--ex-color-black-alpha-90);
+  border: 1px solid var(--ex-color-neon-blue-500);
+  border-radius: var(--ex-radius-base);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  @include neon-glow('blue', 'sm');
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--ex-color-neon-blue-500);
+  }
+}
+
+.ex-heatmap__tooltip-date {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-color-text-secondary);
+  margin-bottom: var(--ex-spacing-1);
+}
+
+.ex-heatmap__tooltip-value {
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-semibold);
+  color: var(--ex-color-neon-blue-500);
+}
+
+// 图例
+.ex-heatmap__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ex-spacing-1);
+  margin-top: var(--ex-spacing-4);
+  padding-top: var(--ex-spacing-3);
+  border-top: 1px solid var(--ex-color-border-primary);
+}
+
+.ex-heatmap__legend-label {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-color-text-tertiary);
+}
+
+.ex-heatmap__legend-item {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ex-color-bg-tertiary);
+
+  &[data-level="0"] {
+    background: var(--ex-color-bg-tertiary);
+  }
+
+  &[data-level="1"] {
+    background: var(--ex-color-gray-alpha-30);
+  }
+
+  &[data-level="2"] {
+    background: var(--ex-color-gray-alpha-50);
+  }
+
+  &[data-level="3"] {
+    background: var(--ex-color-gray-alpha-70);
+  }
+
+  &[data-level="4"] {
+    background: var(--ex-color-white-alpha-90);
+  }
+}
+
+// 空数�?
+.ex-heatmap__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ex-spacing-8) var(--ex-spacing-4);
+  color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-base);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+// ============================================================================
+// 主题变体
+// ============================================================================
+
+// 霓虹蓝主�?
+.ex-heatmap--neon {
+  .ex-heatmap__cell {
+    &--level-1 {
+      background: var(--ex-color-neon-blue-alpha-20);
+    }
+
+    &--level-2 {
+      background: var(--ex-color-neon-blue-alpha-40);
+    }
+
+    &--level-3 {
+      background: var(--ex-color-neon-blue-alpha-60);
+    }
+
+    &--level-4 {
+      background: var(--ex-color-neon-blue-alpha-80);
+      @include neon-glow('blue', 'sm');
+    }
+
+    &:hover {
+      @include neon-glow('blue', 'md');
+    }
+  }
+
+  .ex-heatmap__legend-item {
+    &[data-level="1"] {
+      background: var(--ex-color-neon-blue-alpha-20);
+    }
+
+    &[data-level="2"] {
+      background: var(--ex-color-neon-blue-alpha-40);
+    }
+
+    &[data-level="3"] {
+      background: var(--ex-color-neon-blue-alpha-60);
+    }
+
+    &[data-level="4"] {
+      background: var(--ex-color-neon-blue-alpha-80);
+    }
+  }
+}
+
+// 蓝色主题
+.ex-heatmap--blue {
+  .ex-heatmap__cell {
+    &--level-1 {
+      background: var(--ex-color-info-alpha-20);
+    }
+
+    &--level-2 {
+      background: var(--ex-color-info-alpha-40);
+    }
+
+    &--level-3 {
+      background: var(--ex-color-info-alpha-60);
+    }
+
+    &--level-4 {
+      background: var(--ex-color-info-alpha-80);
+    }
+  }
+
+  .ex-heatmap__legend-item {
+    &[data-level="1"] {
+      background: var(--ex-color-info-alpha-20);
+    }
+
+    &[data-level="2"] {
+      background: var(--ex-color-info-alpha-40);
+    }
+
+    &[data-level="3"] {
+      background: var(--ex-color-info-alpha-60);
+    }
+
+    &[data-level="4"] {
+      background: var(--ex-color-info-alpha-80);
+    }
+  }
+}
+
+// 绿色主题
+.ex-heatmap--green {
+  .ex-heatmap__cell {
+    &--level-1 {
+      background: var(--ex-color-success-alpha-20);
+    }
+
+    &--level-2 {
+      background: var(--ex-color-success-alpha-40);
+    }
+
+    &--level-3 {
+      background: var(--ex-color-success-alpha-60);
+    }
+
+    &--level-4 {
+      background: var(--ex-color-success-alpha-80);
+    }
+  }
+
+  .ex-heatmap__legend-item {
+    &[data-level="1"] {
+      background: var(--ex-color-success-alpha-20);
+    }
+
+    &[data-level="2"] {
+      background: var(--ex-color-success-alpha-40);
+    }
+
+    &[data-level="3"] {
+      background: var(--ex-color-success-alpha-60);
+    }
+
+    &[data-level="4"] {
+      background: var(--ex-color-success-alpha-80);
+    }
+  }
+}
+
+// 紫色主题
+.ex-heatmap--purple {
+  .ex-heatmap__cell {
+    &--level-1 {
+      background: var(--ex-color-secondary-alpha-20);
+    }
+
+    &--level-2 {
+      background: var(--ex-color-secondary-alpha-40);
+    }
+
+    &--level-3 {
+      background: var(--ex-color-secondary-alpha-60);
+    }
+
+    &--level-4 {
+      background: var(--ex-color-secondary-alpha-80);
+    }
+  }
+
+  .ex-heatmap__legend-item {
+    &[data-level="1"] {
+      background: var(--ex-color-secondary-alpha-20);
+    }
+
+    &[data-level="2"] {
+      background: var(--ex-color-secondary-alpha-40);
+    }
+
+    &[data-level="3"] {
+      background: var(--ex-color-secondary-alpha-60);
+    }
+
+    &[data-level="4"] {
+      background: var(--ex-color-secondary-alpha-80);
+    }
+  }
+}
+
+// 红色主题
+.ex-heatmap--red {
+  .ex-heatmap__cell {
+    &--level-1 {
+      background: var(--ex-color-error-alpha-20);
+    }
+
+    &--level-2 {
+      background: var(--ex-color-error-alpha-40);
+    }
+
+    &--level-3 {
+      background: var(--ex-color-error-alpha-60);
+    }
+
+    &--level-4 {
+      background: var(--ex-color-error-alpha-80);
+    }
+  }
+
+  .ex-heatmap__legend-item {
+    &[data-level="1"] {
+      background: var(--ex-color-error-alpha-20);
+    }
+
+    &[data-level="2"] {
+      background: var(--ex-color-error-alpha-40);
+    }
+
+    &[data-level="3"] {
+      background: var(--ex-color-error-alpha-60);
+    }
+
+    &[data-level="4"] {
+      background: var(--ex-color-error-alpha-80);
+    }
+  }
+}
+
+// ============================================================================
+// 尺寸变体
+// ============================================================================
+
+.ex-heatmap--small {
+  .ex-heatmap__month-label,
+  .ex-heatmap__week-label,
+  .ex-heatmap__legend-label {
+    font-size: 10px;
+  }
+
+  .ex-heatmap__legend-item {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.ex-heatmap--medium {
+  .ex-heatmap__month-label,
+  .ex-heatmap__week-label,
+  .ex-heatmap__legend-label {
+    font-size: var(--ex-text-xs);
+  }
+
+  .ex-heatmap__legend-item {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.ex-heatmap--large {
+  .ex-heatmap__month-label,
+  .ex-heatmap__week-label,
+  .ex-heatmap__legend-label {
+    font-size: var(--ex-text-sm);
+  }
+
+  .ex-heatmap__legend-item {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// ============================================================================
+// 响应式适配 - 移动端优�?
+// ============================================================================
+
+@include mobile {
+  .ex-heatmap {
+    padding: var(--ex-spacing-3);
+  }
+
+  .ex-heatmap__months {
+    margin-left: 20px;
+  }
+
+  .ex-heatmap__weeks {
+    width: 16px;
+  }
+
+  .ex-heatmap__month-label,
+  .ex-heatmap__week-label {
+    font-size: 10px;
+  }
+
+  .ex-heatmap__tooltip {
+    font-size: 10px;
+  }
+
+  .ex-heatmap__legend {
+    margin-top: var(--ex-spacing-3);
+  }
+
+  .ex-heatmap__legend-label {
+    font-size: 10px;
+  }
+
+  .ex-heatmap__legend-item {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+// ============================================================================
+// 无障碍支�?
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-heatmap__cell {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-heatmap__cell {
+    border: 1px solid var(--ex-color-border-primary);
+  }
+
+  .ex-heatmap__tooltip {
+    border-width: 2px;
+  }
+}
+
+

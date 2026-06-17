@@ -1,0 +1,167 @@
+// Dark Theme for ExUI - "暗夜猎手"
+// 极简暗黑主题 - 冷蓝灰调，专业高效
+
+@use './base' as *;
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  // 应用主题切换过渡动画
+  @include theme-transition;
+
+  // 应用共享的基础颜色
+  @include theme-common-colors;
+
+  // 应用共享的状态色
+  @include theme-status-colors;
+
+  // ========== 主色调（冷蓝钢铁色）==========
+  --ex-color-primary: #5b9bd5;
+  --ex-color-primary-hover: #4a8bc2;
+  --ex-color-primary-active: #3a7aaf;
+
+  // ========== 次要色（深灰蓝）==========
+  --ex-color-secondary: #7a8fa3;
+  --ex-color-secondary-hover: #6a7f93;
+  --ex-color-secondary-active: #5a6f83;
+
+  // ========== 强调色（冰蓝）==========
+  --ex-color-accent: #70c0e8;
+
+  // ========== 背景色系（深灰蓝调）==========
+  --ex-color-bg-primary: #0d1117;
+  --ex-color-bg-secondary: #161b22;
+  --ex-color-bg-tertiary: #21262d;
+  --ex-color-bg-elevated: #21262d;
+  --ex-color-bg-hover: #2d333b;
+  --ex-color-bg-active: #373e47;
+
+  // ========== 文本色系（冷色调）==========
+  --ex-color-text-primary: #e6edf3;
+  --ex-color-text-secondary: #8b949e;
+  --ex-color-text-tertiary: #6e7681;
+  --ex-color-text-disabled: #484f58;
+
+  // ========== 边框色系（深灰蓝）==========
+  --ex-color-border-primary: #30363d;
+  --ex-color-border-secondary: #3d444d;
+
+  // ========== 状态色系（冷色调和）==========
+  --ex-color-success: #3fb950;
+  --ex-color-success-hover: #2ea043;
+  --ex-color-success-active: #238636;
+
+  --ex-color-warning: #d29922;
+  --ex-color-warning-hover: #bb8009;
+  --ex-color-warning-active: #9e6a03;
+
+  --ex-color-error: #f85149;
+  --ex-color-danger: #f85149;
+  --ex-color-danger-hover: #da3633;
+  --ex-color-danger-active: #b62324;
+
+  --ex-color-info: var(--ex-color-primary);
+  --ex-color-info-hover: #4a8bc2;
+  --ex-color-info-active: #3a7aaf;
+
+  // ========== 渐变定义（冷色调渐变）==========
+  --ex-gradient-primary: linear-gradient(
+    135deg,
+    #5b9bd5 0%,
+    #7a8fa3 100%
+  );
+  --ex-gradient-secondary: linear-gradient(
+    135deg,
+    #7a8fa3 0%,
+    #70c0e8 100%
+  );
+  --ex-gradient-bg:
+    radial-gradient(circle at 20% 80%, rgba(91, 155, 213, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(122, 143, 163, 0.06) 0%, transparent 50%);
+
+  // ========== 阴影系统（深灰阴影，微弱发光）==========
+  --ex-shadow-neon-sm: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 4px rgba(91, 155, 213, 0.1);
+  --ex-shadow-neon-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 8px rgba(91, 155, 213, 0.15);
+  --ex-shadow-neon-lg: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(91, 155, 213, 0.2);
+
+  // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-500: #5b9bd5;
+  --ex-color-neon-blue-600: #4a8bc2;
+  --ex-color-neon-pink-500: #70c0e8;
+
+  // ========== 主题特定的透明度颜色 ==========
+  // 主色透明（冷蓝）
+  --ex-color-primary-alpha-05: rgba(91, 155, 213, 0.05);
+  --ex-color-primary-alpha-08: rgba(91, 155, 213, 0.08);
+  --ex-color-primary-alpha-10: rgba(91, 155, 213, 0.1);
+  --ex-color-primary-alpha-15: rgba(91, 155, 213, 0.15);
+  --ex-color-primary-alpha-20: rgba(91, 155, 213, 0.2);
+  --ex-color-primary-alpha-30: rgba(91, 155, 213, 0.3);
+  --ex-color-primary-alpha-40: rgba(91, 155, 213, 0.4);
+  --ex-color-primary-alpha-50: rgba(91, 155, 213, 0.5);
+  --ex-color-primary-alpha-60: rgba(91, 155, 213, 0.6);
+
+  // 次要色透明（深灰蓝）
+  --ex-color-secondary-alpha-05: rgba(122, 143, 163, 0.05);
+  --ex-color-secondary-alpha-08: rgba(122, 143, 163, 0.08);
+  --ex-color-secondary-alpha-10: rgba(122, 143, 163, 0.1);
+  --ex-color-secondary-alpha-15: rgba(122, 143, 163, 0.15);
+  --ex-color-secondary-alpha-20: rgba(122, 143, 163, 0.2);
+  --ex-color-secondary-alpha-30: rgba(122, 143, 163, 0.3);
+  --ex-color-secondary-alpha-40: rgba(122, 143, 163, 0.4);
+  --ex-color-secondary-alpha-60: rgba(122, 143, 163, 0.6);
+  --ex-color-secondary-alpha-80: rgba(122, 143, 163, 0.8);
+
+  // 冷蓝透明度
+  --ex-color-neon-blue-alpha-05: rgba(91, 155, 213, 0.05);
+  --ex-color-neon-blue-alpha-10: rgba(91, 155, 213, 0.1);
+  --ex-color-neon-blue-alpha-15: rgba(91, 155, 213, 0.15);
+  --ex-color-neon-blue-alpha-20: rgba(91, 155, 213, 0.2);
+  --ex-color-neon-blue-alpha-25: rgba(91, 155, 213, 0.25);
+  --ex-color-neon-blue-alpha-30: rgba(91, 155, 213, 0.3);
+  --ex-color-neon-blue-alpha-40: rgba(91, 155, 213, 0.4);
+  --ex-color-neon-blue-alpha-50: rgba(91, 155, 213, 0.5);
+  --ex-color-neon-blue-alpha-60: rgba(91, 155, 213, 0.6);
+  --ex-color-neon-blue-alpha-80: rgba(91, 155, 213, 0.8);
+
+  // 冰蓝透明度
+  --ex-color-neon-pink-alpha-05: rgba(112, 192, 232, 0.05);
+  --ex-color-neon-pink-alpha-10: rgba(112, 192, 232, 0.1);
+  --ex-color-neon-pink-alpha-15: rgba(112, 192, 232, 0.15);
+  --ex-color-neon-pink-alpha-20: rgba(112, 192, 232, 0.2);
+  --ex-color-neon-pink-alpha-30: rgba(112, 192, 232, 0.3);
+  --ex-color-neon-pink-alpha-40: rgba(112, 192, 232, 0.4);
+
+  // 背景色透明度
+  --ex-color-bg-primary-alpha-30: rgba(13, 17, 23, 0.3);
+  --ex-color-bg-primary-alpha-50: rgba(13, 17, 23, 0.5);
+  --ex-color-bg-primary-alpha-80: rgba(13, 17, 23, 0.8);
+  --ex-color-bg-primary-alpha-90: rgba(13, 17, 23, 0.9);
+  --ex-color-bg-primary-alpha-95: rgba(13, 17, 23, 0.95);
+  --ex-color-bg-primary-alpha-98: rgba(13, 17, 23, 0.98);
+
+  --ex-color-bg-secondary-alpha-30: rgba(22, 27, 34, 0.3);
+  --ex-color-bg-secondary-alpha-50: rgba(22, 27, 34, 0.5);
+  --ex-color-bg-secondary-alpha-80: rgba(22, 27, 34, 0.8);
+
+  --ex-color-bg-tertiary-alpha-30: rgba(33, 38, 45, 0.3);
+  --ex-color-bg-tertiary-alpha-50: rgba(33, 38, 45, 0.5);
+
+  --ex-color-bg-surface-alpha-80: rgba(22, 27, 34, 0.8);
+
+  // Info 透明度
+  --ex-color-info-alpha-05: rgba(91, 155, 213, 0.05);
+  --ex-color-info-alpha-10: rgba(91, 155, 213, 0.1);
+  --ex-color-info-alpha-20: rgba(91, 155, 213, 0.2);
+  --ex-color-info-alpha-30: rgba(91, 155, 213, 0.3);
+  --ex-color-info-alpha-40: rgba(91, 155, 213, 0.4);
+  --ex-color-info-alpha-60: rgba(91, 155, 213, 0.6);
+  --ex-color-info-alpha-80: rgba(91, 155, 213, 0.8);
+
+  // ========== RGB 格式变量（用于 Select 组件等）==========
+  --ex-color-bg-primary-rgb: 13, 17, 23;
+  --ex-color-bg-secondary-rgb: 22, 27, 34;
+  --ex-color-bg-tertiary-rgb: 33, 38, 45;
+  --ex-color-neon-blue-500-rgb: 91, 155, 213;
+  --ex-color-neon-pink-500-rgb: 112, 192, 232;
+}

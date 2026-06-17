@@ -1,0 +1,417 @@
+@use '../../styles/mixins' as *;
+@use '../../styles/tokens' as *;
+
+.ex-number-input {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  background: var(--ex-number-input-bg, var(--ex-color-bg-secondary));
+  border: 1px solid var(--ex-number-input-border-color, var(--ex-color-border-primary));
+  border-radius: var(--ex-radius-md);
+  @include transition(all);
+
+  // 聚焦状态 - 增强赛博朋克效果
+  &--focused {
+    border-color: var(--ex-number-input-border-focus-color, var(--ex-color-primary));
+    box-shadow: 
+      0 0 0 2px var(--ex-color-primary-alpha-20),
+      0 0 12px var(--ex-color-primary-alpha-30);
+    @include neon-glow('blue', 'md');
+    transform: translateY(-1px);
+
+    // 聚焦时隐藏按钮的分隔线，避免视觉干扰
+    .ex-number-input__button {
+      &--increase::before,
+      &--decrease::after {
+        opacity: 0.3;
+      }
+    }
+  }
+
+  // 禁用状态
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--ex-color-bg-tertiary);
+
+    .ex-number-input__input {
+      cursor: not-allowed;
+    }
+
+    .ex-number-input__button {
+      cursor: not-allowed;
+    }
+  }
+
+  // 只读状态
+  &--readonly {
+    .ex-number-input__input {
+      cursor: default;
+    }
+
+    .ex-number-input__button {
+      display: none;
+    }
+  }
+
+  // 无控制按钮
+  &--no-controls {
+    .ex-number-input__input {
+      padding-right: var(--ex-spacing-3);
+    }
+  }
+
+  // 尺寸变体 - 移动端优先，确保触摸区域足够大
+  &--small {
+    .ex-number-input__input {
+      height: 32px;
+      padding: 0 var(--ex-spacing-2);
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-number-input__button {
+      min-width: 32px;
+      min-height: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    &.ex-number-input--controls-right {
+      .ex-number-input__controls {
+        width: 32px;
+      }
+
+      .ex-number-input__button {
+        min-height: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  &--medium {
+    .ex-number-input__input {
+      height: 40px;
+      padding: 0 var(--ex-spacing-3);
+      font-size: var(--ex-text-base);
+    }
+
+    .ex-number-input__button {
+      min-width: 40px;
+      min-height: 40px;
+      width: 40px;
+      height: 40px;
+    }
+
+    &.ex-number-input--controls-right {
+      .ex-number-input__controls {
+        width: 36px;
+      }
+
+      .ex-number-input__button {
+        min-height: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  &--large {
+    .ex-number-input__input {
+      height: 48px;
+      padding: 0 var(--ex-spacing-4);
+      font-size: var(--ex-text-lg);
+    }
+
+    .ex-number-input__button {
+      min-width: 48px;
+      min-height: 48px;
+      width: 48px;
+      height: 48px;
+    }
+
+    &.ex-number-input--controls-right {
+      .ex-number-input__controls {
+        width: 40px;
+      }
+
+      .ex-number-input__button {
+        min-height: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  // 控制按钮位置 - 两侧
+  &--controls-both {
+    .ex-number-input__input {
+      text-align: center;
+    }
+  }
+
+  // 控制按钮位置 - 右侧
+  &--controls-right {
+    .ex-number-input__input {
+      padding-right: 44px;
+    }
+  }
+}
+
+// 输入框
+.ex-number-input__input {
+  flex: 1;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--ex-spacing-3);
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ex-number-input-text-color, var(--ex-color-text-primary));
+  font-family: var(--ex-font-secondary);
+  font-size: var(--ex-text-base);
+  line-height: 1.5;
+  @include transition(color);
+
+  &::placeholder {
+    color: var(--ex-color-text-tertiary);
+  }
+
+  // 移除数字输入框的默认箭头
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+// 控制按钮 - 增强赛博朋克效果
+.ex-number-input__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--ex-number-input-button-bg, transparent);
+  border: none;
+  color: var(--ex-color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  @include transition(all);
+
+  // 赛博朋克悬停效果
+  &:hover:not(:disabled) {
+    background: var(--ex-number-input-button-hover-bg, var(--ex-color-primary-alpha-10));
+    color: var(--ex-color-primary);
+    transform: translateY(-1px);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--ex-gradient-primary);
+      opacity: 0.05;
+      pointer-events: none;
+    }
+  }
+
+  &:active:not(:disabled) {
+    background: var(--ex-color-primary-alpha-20);
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  // 增加按钮 - 使用伪元素创建分隔线，避免边框重叠
+  &--increase {
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 60%;
+      background: var(--ex-color-border-primary);
+      pointer-events: none;
+    }
+  }
+
+  // 减少按钮 - 使用伪元素创建分隔线，避免边框重叠
+  &--decrease {
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 60%;
+      background: var(--ex-color-border-primary);
+      pointer-events: none;
+    }
+  }
+}
+
+// 右侧控制按钮组
+.ex-number-input__controls {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
+  display: flex;
+  flex-direction: column;
+  width: 36px;
+  background: var(--ex-color-bg-secondary);
+  border-left: 1px solid var(--ex-color-border-primary);
+  border-radius: 0 var(--ex-radius-md) var(--ex-radius-md) 0;
+  overflow: hidden;
+
+  .ex-number-input__button {
+    width: 100%;
+    min-height: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 0;
+    min-width: auto;
+
+    // 清除两侧按钮的分隔线伪元素
+    &::before,
+    &::after {
+      display: none;
+    }
+
+    // 增加按钮 - 使用底部边框作为分隔
+    &--increase {
+      border-bottom: 1px solid var(--ex-color-border-primary);
+    }
+
+    // 减少按钮
+    &--decrease {
+      border-top: none;
+    }
+
+    // 悬停效果优化 - 避免 box-shadow 溢出
+    &:hover:not(:disabled) {
+      box-shadow: none;
+      
+      &::before {
+        opacity: 0.08;
+      }
+    }
+  }
+}
+
+// 响应式适配 - 移动端增大触摸区域
+@include mobile {
+  .ex-number-input {
+    &--small {
+      .ex-number-input__input {
+        height: 36px;
+        font-size: var(--ex-text-sm);
+      }
+
+      .ex-number-input__button {
+        min-width: 36px;
+        min-height: 36px;
+        width: 36px;
+        height: 36px;
+      }
+
+      &.ex-number-input--controls-right {
+        .ex-number-input__controls {
+          width: 36px;
+        }
+
+        .ex-number-input__button {
+          min-height: 18px;
+          height: 18px;
+        }
+      }
+    }
+
+    &--medium {
+      .ex-number-input__input {
+        height: 44px;
+      }
+
+      .ex-number-input__button {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+      }
+
+      &.ex-number-input--controls-right {
+        .ex-number-input__controls {
+          width: 40px;
+        }
+
+        .ex-number-input__button {
+          min-height: 22px;
+          height: 22px;
+        }
+      }
+    }
+
+    &--large {
+      .ex-number-input__input {
+        height: 52px;
+      }
+
+      .ex-number-input__button {
+        min-width: 52px;
+        min-height: 52px;
+        width: 52px;
+        height: 52px;
+      }
+
+      &.ex-number-input--controls-right {
+        .ex-number-input__controls {
+          width: 44px;
+        }
+
+        .ex-number-input__button {
+          min-height: 26px;
+          height: 26px;
+        }
+      }
+    }
+  }
+}
+
+// 无障碍支持
+@media (prefers-reduced-motion: reduce) {
+  .ex-number-input,
+  .ex-number-input__input,
+  .ex-number-input__button {
+    transition: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-number-input {
+    border-width: 2px;
+
+    &--focused {
+      outline: 2px solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
+  }
+
+  .ex-number-input__button {
+    border-width: 2px;
+  }
+}

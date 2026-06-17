@@ -1,0 +1,471 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Radio 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-radio {
+  position: relative;
+  display: inline-flex;
+  font-family: var(--ex-font-secondary);
+  line-height: var(--ex-leading-normal);
+  user-select: none;
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 基础包装器
+  // ============================================================================
+
+  &__wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    @include safe-transition(all);
+
+    &--disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  // ============================================================================
+  // 隐藏的原生单选框
+  // ============================================================================
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    pointer-events: none;
+  }
+
+  // ============================================================================
+  // 自定义单选框外观 - 游戏主题增强
+  // ============================================================================
+
+  &__box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--ex-color-border-primary);
+    border-radius: 50%;
+    background: transparent;
+    @include safe-transition(all);
+    @include optimized-text-rendering;
+
+    // 霓虹发光效果
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      opacity: 0;
+      @include safe-transition(opacity);
+      pointer-events: none;
+    }
+
+    // 选中状态 - 霓虹蓝渐变
+    &--checked {
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'sm');
+
+      &::before {
+        opacity: 1;
+        @include optimized-neon-glow('blue', 'md');
+      }
+    }
+
+    // 禁用状态
+    &--disabled {
+      background: var(--ex-color-bg-tertiary);
+      border-color: var(--ex-color-border-primary);
+      opacity: 0.5;
+
+      &.ex-radio__box--checked {
+        background: var(--ex-color-text-disabled);
+        border-color: var(--ex-color-text-disabled);
+        box-shadow: none;
+
+        &::before {
+          opacity: 0;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 选中状态圆点
+  // ============================================================================
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ex-color-white);
+    @include safe-transition(all, var(--ex-motion-duration-fast));
+    @include gpu-accelerate;
+  }
+
+  // ============================================================================
+  // 标签文本
+  // ============================================================================
+
+  &__label-text {
+    margin-left: var(--ex-spacing-2);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-normal);
+    @include safe-transition(color);
+    @include optimized-text-rendering;
+  }
+
+  // ============================================================================
+  // 底部信息区域
+  // ============================================================================
+
+  &__bottom {
+    margin-top: var(--ex-spacing-2);
+    min-height: 20px;
+  }
+
+  &__help {
+    @include helper-text;
+  }
+
+  &__error {
+    @include error-text;
+
+    &-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  // 错误信息过渡动画
+  &-error-enter-active,
+  &-error-leave-active {
+    @include safe-transition(all, var(--ex-motion-duration-base));
+  }
+
+  &-error-enter-from,
+  &-error-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-radio__box {
+      width: 16px;
+      height: 16px;
+    }
+
+    .ex-radio__dot {
+      width: 6px;
+      height: 6px;
+    }
+
+    .ex-radio__label-text {
+      font-size: var(--ex-text-sm);
+      line-height: var(--ex-leading-snug);
+    }
+  }
+
+  &--medium {
+    .ex-radio__box {
+      width: 18px;
+      height: 18px;
+    }
+
+    .ex-radio__dot {
+      width: 8px;
+      height: 8px;
+    }
+
+    .ex-radio__label-text {
+      font-size: var(--ex-text-base);
+      line-height: var(--ex-leading-normal);
+    }
+  }
+
+  &--large {
+    .ex-radio__box {
+      width: 20px;
+      height: 20px;
+    }
+
+    .ex-radio__dot {
+      width: 10px;
+      height: 10px;
+    }
+
+    .ex-radio__label-text {
+      font-size: var(--ex-text-lg);
+      line-height: var(--ex-leading-relaxed);
+    }
+  }
+
+  // ============================================================================
+  // 状态变体 - 游戏主题增强
+  // ============================================================================
+
+  &--error {
+    .ex-radio__box {
+      border-color: var(--ex-color-error);
+
+      &:not(.ex-radio__box--checked) {
+        background: var(--ex-color-error-alpha-10);
+        @include optimized-shadow('sm');
+      }
+    }
+
+    .ex-radio__label-text {
+      color: var(--ex-color-error);
+    }
+  }
+
+  &--success {
+    .ex-radio__box {
+      &.ex-radio__box--checked {
+        background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
+        border-color: var(--ex-color-success);
+        box-shadow: 0 0 10px var(--ex-color-success-alpha-30);
+      }
+    }
+  }
+
+  &--warning {
+    .ex-radio__box {
+      &.ex-radio__box--checked {
+        background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
+        border-color: var(--ex-color-warning);
+        box-shadow: 0 0 10px var(--ex-color-warning-alpha-30);
+      }
+    }
+  }
+
+  // ============================================================================
+  // 交互状态 - 游戏主题增强
+  // ============================================================================
+
+  &--focused {
+    .ex-radio__box {
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'md');
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid var(--ex-color-neon-blue-500);
+        border-radius: 50%;
+        opacity: 0.3;
+        @include safe-transition(opacity);
+      }
+    }
+
+    .ex-radio__label-text {
+      color: var(--ex-color-neon-blue-400);
+      text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-20);
+    }
+  }
+
+  // 悬停效果
+  &:not(&--disabled) {
+    @include hover-capable {
+      .ex-radio__wrapper:hover {
+        .ex-radio__box {
+          border-color: var(--ex-color-neon-pink-400);
+          transform: scale(1.05);
+
+          &:not(.ex-radio__box--checked) {
+            background: var(--ex-color-neon-pink-alpha-05);
+            @include optimized-neon-glow('pink', 'sm');
+          }
+
+          &.ex-radio__box--checked {
+            @include optimized-neon-glow('blue', 'md');
+          }
+        }
+
+        .ex-radio__label-text {
+          color: var(--ex-color-neon-pink-400);
+        }
+      }
+    }
+  }
+
+  // 激活状态
+  &:not(&--disabled) {
+    .ex-radio__wrapper:active {
+      .ex-radio__box {
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  // ============================================================================
+  // 禁用状态
+  // ============================================================================
+
+  &--disabled {
+    .ex-radio__label-text {
+      color: var(--ex-color-text-disabled);
+    }
+  }
+
+  // ============================================================================
+  // 只读状态
+  // ============================================================================
+
+  &--readonly {
+    .ex-radio__wrapper {
+      cursor: default;
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设计 - 移动端优化
+// ============================================================================
+
+@include mobile {
+  .ex-radio {
+    &__wrapper {
+      min-height: 44px;
+      align-items: center;
+      padding: var(--ex-spacing-2) 0;
+    }
+
+    &__box {
+      width: 20px !important;
+      height: 20px !important;
+    }
+
+    &__label-text {
+      font-size: var(--ex-text-base) !important;
+    }
+  }
+}
+
+// ============================================================================
+// 触摸设备优化
+// ============================================================================
+
+@include touch-device {
+  .ex-radio {
+    &__wrapper {
+      padding: var(--ex-spacing-2);
+      margin: calc(var(--ex-spacing-2) * -1);
+    }
+
+    &:not(&--disabled) {
+      .ex-radio__wrapper:hover {
+        .ex-radio__box {
+          transform: none;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 高对比度模式支持
+// ============================================================================
+
+@media (prefers-contrast: high) {
+  .ex-radio {
+    &__box {
+      border-width: 3px;
+
+      &--checked {
+        border-color: var(--ex-color-text-primary);
+        background: var(--ex-color-text-primary);
+      }
+    }
+
+    &__label-text {
+      font-weight: var(--ex-font-medium);
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-radio {
+    &__wrapper,
+    &__box,
+    &__dot,
+    &__label-text {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    &__box {
+      &::before,
+      &::after {
+        transition: none !important;
+      }
+    }
+
+    &:not(&--disabled) {
+      .ex-radio__wrapper:hover,
+      .ex-radio__wrapper:active {
+        .ex-radio__box {
+          transform: none !important;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-radio {
+  contain: layout style;
+
+  &__box {
+    @include gpu-accelerate;
+
+    &:not(:hover):not(:focus) {
+      @include remove-gpu-accelerate;
+    }
+  }
+
+  @include low-end-device {
+    &__box {
+      box-shadow: none !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}

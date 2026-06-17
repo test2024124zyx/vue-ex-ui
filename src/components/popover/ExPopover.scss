@@ -1,0 +1,201 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-popover {
+  display: inline-block;
+}
+
+.ex-popover__popper {
+  position: fixed;
+  max-width: 400px;
+  padding: var(--ex-spacing-4);
+  background: var(--ex-color-bg-elevated);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  box-shadow: var(--ex-shadow-xl);
+  z-index: var(--ex-z-popover, 1060);
+  word-wrap: break-word;
+
+  // 霓虹边框效果
+  &__border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--ex-radius-lg);
+    pointer-events: none;
+    box-shadow: inset 0 0 20px var(--ex-color-primary-alpha-30), 0 0 20px var(--ex-color-primary-alpha-20);
+    border: 1px solid var(--ex-color-primary);
+    opacity: 0.8;
+  }
+
+  // 标题
+  .ex-popover__title {
+    position: relative;
+    margin-bottom: var(--ex-spacing-2);
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+    line-height: var(--ex-leading-tight);
+    text-shadow: 0 0 8px var(--ex-color-primary-alpha-30);
+    z-index: 1;
+  }
+
+  // 内容
+  .ex-popover__content {
+    position: relative;
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    line-height: var(--ex-leading-normal);
+    z-index: 1;
+  }
+
+  // 箭头
+  .ex-popover__arrow {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--ex-color-bg-elevated);
+    border: 1px solid var(--ex-color-primary);
+    transform: rotate(45deg);
+    box-shadow: 0 0 8px var(--ex-color-primary-alpha-30);
+    z-index: 0;
+  }
+
+  // 位置样式 - 箭头位置
+  &--top,
+  &--top-start,
+  &--top-end {
+    .ex-popover__arrow {
+      bottom: -6px;
+      border-bottom: none;
+      border-right: none;
+    }
+  }
+
+  &--top .ex-popover__arrow {
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  &--top-start .ex-popover__arrow {
+    left: 16px;
+  }
+
+  &--top-end .ex-popover__arrow {
+    right: 16px;
+  }
+
+  &--bottom,
+  &--bottom-start,
+  &--bottom-end {
+    .ex-popover__arrow {
+      top: -6px;
+      border-top: none;
+      border-left: none;
+    }
+  }
+
+  &--bottom .ex-popover__arrow {
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  &--bottom-start .ex-popover__arrow {
+    left: 16px;
+  }
+
+  &--bottom-end .ex-popover__arrow {
+    right: 16px;
+  }
+
+  &--left,
+  &--left-start,
+  &--left-end {
+    .ex-popover__arrow {
+      right: -6px;
+      border-right: none;
+      border-bottom: none;
+    }
+  }
+
+  &--left .ex-popover__arrow {
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  &--left-start .ex-popover__arrow {
+    top: 16px;
+  }
+
+  &--left-end .ex-popover__arrow {
+    bottom: 16px;
+  }
+
+  &--right,
+  &--right-start,
+  &--right-end {
+    .ex-popover__arrow {
+      left: -6px;
+      border-left: none;
+      border-top: none;
+    }
+  }
+
+  &--right .ex-popover__arrow {
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  &--right-start .ex-popover__arrow {
+    top: 16px;
+  }
+
+  &--right-end .ex-popover__arrow {
+    bottom: 16px;
+  }
+}
+
+// 过渡动画
+.ex-popover-fade-enter-active,
+.ex-popover-fade-leave-active {
+  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+}
+
+.ex-popover-fade-enter-from,
+.ex-popover-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+// 响应式设�?
+@media (max-width: 768px) {
+  .ex-popover__popper {
+    max-width: calc(100vw - 32px);
+    padding: var(--ex-spacing-2);
+  }
+}
+
+// 无障碍支�?
+@media (prefers-reduced-motion: reduce) {
+  .ex-popover-fade-enter-active,
+  .ex-popover-fade-leave-active {
+    transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+  }
+
+  .ex-popover-fade-enter-from,
+  .ex-popover-fade-leave-to {
+    transform: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-popover__popper {
+    border-width: 2px;
+  }
+}
+
+

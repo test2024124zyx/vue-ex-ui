@@ -1,0 +1,264 @@
+// ExUI Typography Utilities - 文字工具类
+// 基于 ClutchZone 游戏主题的文字工具类
+
+@use 'sass:map';
+@use 'sass:math';
+@use '../tokens' as *;
+
+// ============================================================================
+// 字体大小工具类 (Font Size Utilities)
+// ============================================================================
+
+.text-xs { font-size: map.get($typography, text-xs) !important; }
+.text-sm { font-size: map.get($typography, text-sm) !important; }
+.text-base { font-size: map.get($typography, text-base) !important; }
+.text-lg { font-size: map.get($typography, text-lg) !important; }
+.text-xl { font-size: map.get($typography, text-xl) !important; }
+.text-2xl { font-size: map.get($typography, text-2xl) !important; }
+.text-3xl { font-size: map.get($typography, text-3xl) !important; }
+.text-4xl { font-size: map.get($typography, text-4xl) !important; }
+.text-5xl { font-size: map.get($typography, text-5xl) !important; }
+.text-6xl { font-size: map.get($typography, text-6xl) !important; }
+
+// ============================================================================
+// 字重工具类 (Font Weight Utilities)
+// ============================================================================
+
+.font-light { font-weight: map.get($typography, font-light) !important; }
+.font-normal { font-weight: map.get($typography, font-normal) !important; }
+.font-medium { font-weight: map.get($typography, font-medium) !important; }
+.font-semibold { font-weight: map.get($typography, font-semibold) !important; }
+.font-bold { font-weight: map.get($typography, font-bold) !important; }
+.font-extrabold { font-weight: map.get($typography, font-extrabold) !important; }
+
+// ============================================================================
+// 行高工具类 (Line Height Utilities)
+// ============================================================================
+
+.leading-tight { line-height: map.get($typography, leading-tight) !important; }
+.leading-snug { line-height: map.get($typography, leading-snug) !important; }
+.leading-normal { line-height: map.get($typography, leading-normal) !important; }
+.leading-relaxed { line-height: map.get($typography, leading-relaxed) !important; }
+.leading-loose { line-height: map.get($typography, leading-loose) !important; }
+
+// ============================================================================
+// 字间距工具类 (Letter Spacing Utilities)
+// ============================================================================
+
+.tracking-tighter { letter-spacing: map.get($typography, tracking-tighter) !important; }
+.tracking-tight { letter-spacing: map.get($typography, tracking-tight) !important; }
+.tracking-normal { letter-spacing: map.get($typography, tracking-normal) !important; }
+.tracking-wide { letter-spacing: map.get($typography, tracking-wide) !important; }
+.tracking-wider { letter-spacing: map.get($typography, tracking-wider) !important; }
+.tracking-widest { letter-spacing: map.get($typography, tracking-widest) !important; }
+
+// ============================================================================
+// 文本对齐工具类 (Text Alignment Utilities)
+// ============================================================================
+
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-justify { text-align: justify !important; }
+
+// ============================================================================
+// 文本装饰工具类 (Text Decoration Utilities)
+// ============================================================================
+
+.underline { text-decoration: underline !important; }
+.line-through { text-decoration: line-through !important; }
+.no-underline { text-decoration: none !important; }
+
+// ============================================================================
+// 文本变换工具类 (Text Transform Utilities)
+// ============================================================================
+
+.uppercase { text-transform: uppercase !important; }
+.lowercase { text-transform: lowercase !important; }
+.capitalize { text-transform: capitalize !important; }
+.normal-case { text-transform: none !important; }
+
+// ============================================================================
+// 文本颜色工具类 (Text Color Utilities)
+// ============================================================================
+
+.text-primary { color: map.get($colors, text-primary) !important; }
+.text-secondary { color: map.get($colors, text-secondary) !important; }
+.text-tertiary { color: map.get($colors, text-tertiary) !important; }
+.text-disabled { color: map.get($colors, text-disabled) !important; }
+.text-inverse { color: map.get($colors, text-inverse) !important; }
+
+.text-success { color: map.get($colors, success) !important; }
+.text-warning { color: map.get($colors, warning) !important; }
+.text-error { color: map.get($colors, error) !important; }
+.text-info { color: map.get($colors, info) !important; }
+
+.text-neon-blue { color: map.get($colors, neon-blue-500) !important; }
+.text-neon-pink { color: map.get($colors, neon-pink-500) !important; }
+
+// ============================================================================
+// 文本截断工具类 (Text Truncation Utilities)
+// ============================================================================
+
+.truncate {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.text-clip-1 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.text-clip-2 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.text-clip-3 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.text-clip-4 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 4 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.text-clip-5 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 5 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+// ============================================================================
+// 游戏风格文本效果工具类 (Gaming Text Effects)
+// ============================================================================
+
+.text-gradient {
+  background: linear-gradient(135deg, map.get($colors, neon-blue-500), map.get($colors, neon-pink-500)) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-size: 200% 200% !important;
+  animation: gradient-shift 3s ease-in-out infinite !important;
+}
+
+.text-glow-blue {
+  color: map.get($colors, neon-blue-500) !important;
+  text-shadow: 
+    0 0 5px map.get($colors, shadow-neon-blue),
+    0 0 10px map.get($colors, shadow-neon-blue),
+    0 0 15px map.get($colors, shadow-neon-blue) !important;
+}
+
+.text-glow-pink {
+  color: map.get($colors, neon-pink-500) !important;
+  text-shadow: 
+    0 0 5px map.get($colors, shadow-neon-pink),
+    0 0 10px map.get($colors, shadow-neon-pink),
+    0 0 15px map.get($colors, shadow-neon-pink) !important;
+}
+
+.text-gaming {
+  font-family: map.get($typography, font-primary) !important;
+  font-weight: map.get($typography, font-bold) !important;
+  letter-spacing: map.get($typography, tracking-wide) !important;
+  text-transform: uppercase !important;
+}
+
+// ============================================================================
+// 字体族工具类 (Font Family Utilities)
+// ============================================================================
+
+.font-primary {
+  font-family: map.get($typography, font-primary) !important;
+}
+
+.font-secondary {
+  font-family: map.get($typography, font-secondary) !important;
+}
+
+.font-mono {
+  font-family: map.get($typography, font-mono) !important;
+}
+
+// ============================================================================
+// 响应式文本工具类 (Responsive Typography Utilities)
+// ============================================================================
+
+// 小屏幕文本大小
+@media (max-width: #{map.get($breakpoints, sm) - 1px}) {
+  .text-responsive-xs { font-size: map.get($typography, text-xs) !important; }
+  .text-responsive-sm { font-size: map.get($typography, text-sm) !important; }
+  .text-responsive-base { font-size: map.get($typography, text-base) !important; }
+  .text-responsive-lg { font-size: map.get($typography, text-lg) !important; }
+  .text-responsive-xl { font-size: map.get($typography, text-xl) !important; }
+  .text-responsive-2xl { font-size: map.get($typography, text-2xl) !important; }
+}
+
+// 中等屏幕文本大小
+@media (min-width: map.get($breakpoints, md)) {
+  .text-responsive-xs { font-size: map.get($typography, text-sm) !important; }
+  .text-responsive-sm { font-size: map.get($typography, text-base) !important; }
+  .text-responsive-base { font-size: map.get($typography, text-lg) !important; }
+  .text-responsive-lg { font-size: map.get($typography, text-xl) !important; }
+  .text-responsive-xl { font-size: map.get($typography, text-2xl) !important; }
+  .text-responsive-2xl { font-size: map.get($typography, text-3xl) !important; }
+}
+
+// 大屏幕文本大小
+@media (min-width: map.get($breakpoints, lg)) {
+  .text-responsive-xs { font-size: map.get($typography, text-base) !important; }
+  .text-responsive-sm { font-size: map.get($typography, text-lg) !important; }
+  .text-responsive-base { font-size: map.get($typography, text-xl) !important; }
+  .text-responsive-lg { font-size: map.get($typography, text-2xl) !important; }
+  .text-responsive-xl { font-size: map.get($typography, text-3xl) !important; }
+  .text-responsive-2xl { font-size: map.get($typography, text-4xl) !important; }
+}
+
+// ============================================================================
+// 动画关键帧 (Animation Keyframes)
+// ============================================================================
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+// ============================================================================
+// 无障碍支持 (Accessibility Support)
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .text-gradient {
+    animation: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .text-gradient {
+    background: none !important;
+    -webkit-text-fill-color: unset !important;
+    color: map.get($colors, text-primary) !important;
+  }
+  
+  .text-glow-blue,
+  .text-glow-pink {
+    text-shadow: none !important;
+  }
+}

@@ -1,0 +1,471 @@
+@use '../../styles/mixins' as *;
+
+.ex-table {
+  position: relative;
+  background: var(--ex-color-bg-primary);
+  border-radius: var(--ex-radius-base);
+  
+  &--loading {
+    pointer-events: none;
+  }
+}
+
+.ex-table__title {
+  padding: var(--ex-spacing-4);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  font-weight: 500;
+  color: var(--ex-color-text-primary);
+}
+
+.ex-table__container {
+  position: relative;
+  overflow: auto;
+}
+
+.ex-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  
+  .ex-table--bordered & {
+    border: 1px solid var(--ex-color-border-primary);
+  }
+}
+
+// 表头样式
+.ex-table__header {
+  background: var(--ex-color-bg-secondary);
+}
+
+.ex-table__header-row {
+  @include transition(background-color);
+}
+
+.ex-table__header-cell {
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  font-weight: 500;
+  color: var(--ex-color-text-primary);
+  text-align: left;
+  @include transition(background-color);
+  
+  .ex-table--bordered & {
+    border-right: 1px solid var(--ex-color-border-primary);
+    
+    &:last-child {
+      border-right: none;
+    }
+  }
+  
+  &--center {
+    text-align: center;
+  }
+  
+  &--right {
+    text-align: right;
+  }
+  
+  &--sortable {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      background: var(--ex-color-bg-tertiary);
+    }
+  }
+  
+  &--filtered {
+    background: var(--ex-color-neon-blue-300);
+  }
+}
+
+.ex-table__header-cell-content {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-1);
+}
+
+// 排序器
+.ex-table__sorter {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: var(--ex-spacing-1);
+  
+  &--active {
+    color: var(--ex-color-primary);
+  }
+}
+
+.ex-table__sorter-up,
+.ex-table__sorter-down {
+  width: 12px;
+  height: 6px;
+  color: var(--ex-color-text-tertiary);
+  @include transition(color);
+  
+  &.ex-table__sorter--active {
+    color: var(--ex-color-primary);
+  }
+}
+
+// 筛选器
+.ex-table__filter {
+  width: 14px;
+  height: 14px;
+  color: var(--ex-color-text-tertiary);
+  cursor: pointer;
+  @include transition(color);
+  
+  &:hover,
+  &--active {
+    color: var(--ex-color-primary);
+  }
+}
+
+// 表体样式
+.ex-table__body {
+  background: var(--ex-color-bg-primary);
+}
+
+.ex-table__row {
+  @include transition(background-color);
+  
+  .ex-table--hoverable &:hover {
+    background: var(--ex-color-bg-secondary);
+  }
+  
+  .ex-table--striped &:nth-child(even) {
+    background: var(--ex-color-bg-secondary);
+  }
+  
+  &--selected {
+    background: var(--ex-color-neon-blue-300) !important;
+  }
+  
+  &--expanded {
+    .ex-table__expand-icon {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.ex-table__cell {
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  color: var(--ex-color-text-primary);
+  vertical-align: middle;
+  
+  .ex-table--bordered & {
+    border-right: 1px solid var(--ex-color-border-primary);
+    
+    &:last-child {
+      border-right: none;
+    }
+  }
+  
+  &--center {
+    text-align: center;
+  }
+  
+  &--right {
+    text-align: right;
+  }
+  
+  &--ellipsis {
+    .ex-table__cell-text--ellipsis {
+      @include text-ellipsis;
+      max-width: 200px;
+    }
+  }
+  
+  &--editing {
+    padding: 0;
+  }
+}
+
+.ex-table__cell-content {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-1);
+}
+
+.ex-table__cell-display {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-1);
+  width: 100%;
+}
+
+.ex-table__cell-editor {
+  padding: var(--ex-spacing-3) var(--ex-spacing-4);
+  
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    font-size: var(--ex-text-sm);
+    @include transition(border-color);
+    
+    &:focus {
+      outline: none;
+      border-color: var(--ex-color-primary);
+    }
+  }
+}
+
+// 选择列
+.ex-table__selection-column,
+.ex-table__selection-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.ex-table__checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+}
+
+.ex-table__checkbox-inner {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-sm);
+  background: var(--ex-color-bg-primary);
+  @include transition(all);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    width: 6px;
+    height: 10px;
+    border: 2px solid white;
+    border-top: 0;
+    border-left: 0;
+    transform: rotate(45deg) scale(0);
+    @include transition(transform);
+  }
+  
+  input:checked + & {
+    background: var(--ex-color-primary);
+    border-color: var(--ex-color-primary);
+    
+    &::after {
+      transform: rotate(45deg) scale(1);
+    }
+  }
+  
+  input:indeterminate + & {
+    background: var(--ex-color-primary);
+    border-color: var(--ex-color-primary);
+    
+    &::after {
+      top: 6px;
+      left: 2px;
+      width: 10px;
+      height: 2px;
+      border: none;
+      background: white;
+      transform: scale(1);
+    }
+  }
+}
+
+// 展开列
+.ex-table__expand-column,
+.ex-table__expand-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.ex-table__expand-icon {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--ex-color-text-secondary);
+  cursor: pointer;
+  @include transition(all);
+  
+  &:hover {
+    color: var(--ex-color-primary);
+  }
+  
+  &--expanded {
+    transform: rotate(90deg);
+  }
+}
+
+.ex-table__expanded-row {
+  .ex-table__expanded-cell {
+    padding: 0;
+    background: var(--ex-color-bg-secondary);
+  }
+  
+  .ex-table__expanded-content {
+    padding: var(--ex-spacing-4);
+  }
+}
+
+// 操作按钮
+.ex-table__copy-btn,
+.ex-table__edit-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--ex-color-text-tertiary);
+  cursor: pointer;
+  @include transition(color);
+  
+  &:hover {
+    color: var(--ex-color-primary);
+  }
+}
+
+// 空数据
+.ex-table__empty-row {
+  .ex-table__empty-cell {
+    padding: var(--ex-spacing-8) var(--ex-spacing-4);
+    text-align: center;
+    border-bottom: none;
+  }
+  
+  .ex-table__empty {
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+  }
+}
+
+// 加载状态
+.ex-table__loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ex-color-white-alpha-80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.ex-table__loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+}
+
+.ex-table__loading-spinner {
+  width: 24px;
+  height: 24px;
+  color: var(--ex-color-primary);
+  font-size: 24px;
+}
+
+.ex-table__loading-text {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+}
+
+// 分页器
+.ex-table__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ex-spacing-4);
+  border-top: 1px solid var(--ex-color-border-primary);
+}
+
+.ex-table__pagination-info {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+}
+
+.ex-table__pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  
+  button {
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    background: var(--ex-color-bg-primary);
+    color: var(--ex-color-text-primary);
+    cursor: pointer;
+    @include transition(all);
+    
+    &:hover:not(:disabled) {
+      border-color: var(--ex-color-primary);
+      color: var(--ex-color-primary);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.ex-table__footer {
+  padding: var(--ex-spacing-4);
+  border-top: 1px solid var(--ex-color-border-primary);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+}
+
+// 尺寸变体
+.ex-table--small {
+  .ex-table__header-cell,
+  .ex-table__cell {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+  }
+}
+
+.ex-table--large {
+  .ex-table__header-cell,
+  .ex-table__cell {
+    padding: var(--ex-spacing-4) var(--ex-spacing-5);
+    font-size: var(--ex-text-base);
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .ex-table__container {
+    overflow-x: auto;
+  }
+  
+  .ex-table__table {
+    min-width: 600px;
+  }
+  
+  .ex-table__pagination {
+    flex-direction: column;
+    gap: var(--ex-spacing-2);
+    align-items: stretch;
+  }
+  
+  .ex-table__pagination-controls {
+    justify-content: center;
+  }
+}

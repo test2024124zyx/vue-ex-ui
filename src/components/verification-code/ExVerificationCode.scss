@@ -1,0 +1,365 @@
+/**
+ * ExVerificationCode 验证码输入组件样式
+ * 赛博朋克风格设计
+ */
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+.ex-verification-code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-spacing-2);
+
+  // 标签
+  &__label {
+    @include form-label;
+    cursor: pointer;
+    @include safe-transition(color);
+
+    // 聚焦时标签高亮
+    .ex-verification-code--focused & {
+      color: var(--ex-color-neon-blue-500);
+    }
+  }
+
+  &__required {
+    @include required-indicator;
+  }
+
+  // 格子容器
+  &__cells {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    position: relative;
+  }
+
+  // 隐藏的输入框
+  &__hidden-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  // 格子
+  &__cell {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-md);
+    background: var(--ex-color-bg-secondary);
+    cursor: text;
+    @include safe-transition(all);
+    position: relative;
+
+    &--focused {
+      border-color: var(--ex-color-primary);
+      @include optimized-neon-glow('blue', 'md');
+    }
+
+    &--filled {
+      border-color: var(--ex-color-border-secondary);
+    }
+
+    &--error {
+      @include form-control-status('error');
+    }
+
+    &--success {
+      @include form-control-status('success');
+    }
+
+    &--warning {
+      @include form-control-status('warning');
+    }
+  }
+
+  // 格子内容
+  &__cell-content {
+    font-size: var(--ex-text-2xl);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+    font-family: var(--ex-font-mono);
+    @include optimized-text-rendering;
+  }
+
+  // 光标
+  &__cursor {
+    position: absolute;
+    width: 2px;
+    height: 60%;
+    background: var(--ex-color-primary);
+    @include safe-animation(ex-verification-code-blink, 1s, ease, infinite);
+  }
+
+  // 分隔符
+  &__separator {
+    font-size: var(--ex-text-xl);
+    color: var(--ex-color-text-tertiary);
+    margin: 0 var(--ex-spacing-1);
+  }
+
+  // 遮罩切换按钮
+  &__mask-toggle {
+    @include icon-button-base;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--ex-radius-sm);
+
+    @include hover-capable {
+      &:hover {
+        background: var(--ex-color-bg-tertiary);
+      }
+    }
+  }
+
+  // 加载状态
+  &__loading {
+    @include flex-center;
+    margin-top: var(--ex-spacing-2);
+  }
+
+  &__loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--ex-color-border-primary);
+    border-top-color: var(--ex-color-primary);
+    border-radius: 50%;
+    @include safe-animation(ex-verification-code-spin, 0.8s, linear, infinite);
+  }
+
+  // 帮助文本
+  &__help {
+    @include helper-text;
+
+    &--error {
+      @include error-text;
+    }
+  }
+
+  // 尺寸变体
+  &--small {
+    .ex-verification-code__cell {
+      width: 36px;
+      height: 36px;
+    }
+
+    .ex-verification-code__cell-content {
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  &--medium {
+    .ex-verification-code__cell {
+      width: 48px;
+      height: 48px;
+    }
+
+    .ex-verification-code__cell-content {
+      font-size: var(--ex-text-2xl);
+    }
+  }
+
+  &--large {
+    .ex-verification-code__cell {
+      width: 56px;
+      height: 56px;
+    }
+
+    .ex-verification-code__cell-content {
+      font-size: var(--ex-text-3xl);
+    }
+  }
+
+  // 样式变体
+  &--neon {
+    .ex-verification-code__cell--focused {
+      @include optimized-neon-glow('blue', 'lg');
+    }
+  }
+
+  &--ghost {
+    .ex-verification-code__cell {
+      @include component-variant-ghost;
+    }
+  }
+
+  &--filled {
+    .ex-verification-code__cell {
+      @include component-variant-filled;
+
+      &--focused {
+        border-color: var(--ex-color-primary);
+      }
+    }
+  }
+
+  // 状态
+  &--disabled {
+    @include component-disabled;
+
+    .ex-verification-code__cell {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  &--readonly {
+    .ex-verification-code__cell {
+      cursor: default;
+    }
+  }
+
+  &--pending {
+    .ex-verification-code__cell {
+      @include safe-animation(ex-verification-code-pulse, 1s, ease, infinite);
+    }
+  }
+
+  // 禁用霓虹效果
+  &--no-neon {
+    .ex-verification-code__cell--focused {
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+
+    &.ex-verification-code--neon {
+      .ex-verification-code__cell--focused {
+        box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+      }
+    }
+  }
+
+  // 禁用动画
+  &--no-animation {
+    .ex-verification-code__cell {
+      transition: none;
+    }
+
+    .ex-verification-code__cursor {
+      animation: none;
+      opacity: 1;
+    }
+
+    .ex-verification-code__loading-spinner {
+      animation: none;
+    }
+
+    &.ex-verification-code--pending {
+      .ex-verification-code__cell {
+        animation: none;
+      }
+    }
+  }
+
+  // ============================================================================
+  // 响应式设计 - 移动端优化
+  // ============================================================================
+
+  @include mobile {
+    &__cell {
+      width: 40px;
+      height: 40px;
+    }
+
+    &__cell-content {
+      font-size: var(--ex-text-xl);
+    }
+
+    &--small .ex-verification-code__cell {
+      width: 32px;
+      height: 32px;
+    }
+
+    &--large .ex-verification-code__cell {
+      width: 48px;
+      height: 48px;
+    }
+  }
+
+  // 触摸设备优化
+  @include touch-device {
+    &__cell {
+      // 增加触摸区域
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    &__mask-toggle {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支持
+  // ============================================================================
+
+  @media (prefers-contrast: high) {
+    &__cell {
+      border-width: 3px;
+    }
+
+    &__cell--focused {
+      border-width: 4px;
+    }
+  }
+
+  // 低端设备优化
+  @include low-end-device {
+    &__cell {
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    &__cursor,
+    &__loading-spinner,
+    &--pending .ex-verification-code__cell {
+      animation: none;
+    }
+  }
+}
+
+// ============================================================================
+// 动画关键帧
+// ============================================================================
+
+@keyframes ex-verification-code-blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ex-verification-code-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ex-verification-code-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// 无障碍：减少动画
+@media (prefers-reduced-motion: reduce) {
+  .ex-verification-code {
+    &__cursor,
+    &__loading-spinner,
+    &--pending .ex-verification-code__cell {
+      animation: none;
+    }
+  }
+}

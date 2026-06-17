@@ -1,0 +1,287 @@
+// ExUI CSS Variables - Runtime Theme Tokens
+// 运行时主题变量，支持动态主题切换
+
+@use 'sass:map';
+@use 'tokens' as *;
+
+// ============================================================================
+// CSS 变量生成函数
+// ============================================================================
+
+@function generate-css-vars($map, $prefix: '') {
+  $result: ();
+  @each $key, $value in $map {
+    @if type-of($value) == 'map' {
+      $result: map-merge($result, generate-css-vars($value, $prefix + $key + '-'));
+    } @else {
+      $result: map-merge($result, (#{$prefix}#{$key}: #{$value}));
+    }
+  }
+  @return $result;
+}
+
+// ============================================================================
+// 根变量定义 (Root Variables)
+// ============================================================================
+
+:root {
+  // 颜色变量
+  @each $name, $value in $colors {
+    --ex-color-#{$name}: #{$value};
+  }
+  
+  // 字体变量
+  @each $name, $value in $typography {
+    --ex-#{$name}: #{$value};
+  }
+  
+  // 间距变量
+  @each $name, $value in $spacing {
+    --ex-spacing-#{$name}: #{$value};
+  }
+  
+  // 尺寸变量
+  @each $name, $value in $sizes {
+    --ex-size-#{$name}: #{$value};
+  }
+  
+  // 圆角变量
+  @each $name, $value in $radius {
+    --ex-radius-#{$name}: #{$value};
+  }
+  
+  // 阴影变量
+  @each $name, $value in $shadows {
+    --ex-shadow-#{$name}: #{$value};
+  }
+  
+  // 动画变量
+  @each $name, $value in $motion {
+    --ex-motion-#{$name}: #{$value};
+  }
+  
+  // Z-Index 变量
+  @each $name, $value in $z-index {
+    --ex-z-#{$name}: #{$value};
+  }
+  
+  // 断点变量
+  @each $name, $value in $breakpoints {
+    --ex-breakpoint-#{$name}: #{$value};
+  }
+}
+
+// ============================================================================
+// 主题变体 (Theme Variants)
+// ============================================================================
+// 注意：主题颜色变量现在由 themes/*.scss 文件定义
+// 这里只保留从 tokens 生成的基础变量
+
+// ============================================================================
+// 无障碍支持 (Accessibility Support)
+// ============================================================================
+
+// 减少动画
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ex-motion-duration-fast: 0ms;
+    --ex-motion-duration-base: 0ms;
+    --ex-motion-duration-medium: 0ms;
+    --ex-motion-duration-slow: 0ms;
+    --ex-motion-duration-slower: 0ms;
+  }
+}
+
+// 高对比度偏好
+@media (prefers-contrast: high) {
+  :root {
+    --ex-color-border-primary: var(--ex-color-text-primary);
+    --ex-shadow-neon-sm: 0 0 0 2px var(--ex-color-primary);
+    --ex-shadow-neon-md: 0 0 0 3px var(--ex-color-primary);
+  }
+}
+
+// 暗色主题偏好
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ex-color-bg-primary: #0a0a0a;
+    --ex-color-text-primary: #ffffff;
+  }
+}
+
+// ============================================================================
+// 响应式变量 (Responsive Variables)
+// ============================================================================
+
+// 小屏设备 (手机)
+@media (max-width: #{map.get($breakpoints, sm) - 1px}) {
+  :root {
+    --ex-text-base: 14px;
+    --ex-spacing-container: var(--ex-spacing-4);
+    --ex-size-button-height: var(--ex-size-sm);
+  }
+}
+
+// 中屏设备 (平板)
+@media (min-width: map.get($breakpoints, md)) {
+  :root {
+    --ex-text-base: 16px;
+    --ex-spacing-container: var(--ex-spacing-6);
+    --ex-size-button-height: var(--ex-size-md);
+  }
+}
+
+// 大屏设备 (桌面)
+@media (min-width: map.get($breakpoints, lg)) {
+  :root {
+    --ex-text-base: 16px;
+    --ex-spacing-container: var(--ex-spacing-8);
+    --ex-size-button-height: var(--ex-size-lg);
+  }
+}
+
+// ============================================================================
+// 组件特定变量 (Component Specific Variables)
+// ============================================================================
+
+:root {
+  // 按钮组件
+  --ex-button-height-sm: var(--ex-size-sm);
+  --ex-button-height-md: var(--ex-size-md);
+  --ex-button-height-lg: var(--ex-size-lg);
+  --ex-button-height-xl: var(--ex-size-xl);
+  --ex-button-padding-x-sm: var(--ex-spacing-3);
+  --ex-button-padding-x-md: var(--ex-spacing-4);
+  --ex-button-padding-x-lg: var(--ex-spacing-6);
+  --ex-button-padding-x-xl: var(--ex-spacing-8);
+  // 与输入框/选择器统一的交互圆角（统一三档圆角语言：交互 lg / 容器 lg / 浮层 xl）
+  --ex-button-radius: var(--ex-radius-lg);
+  --ex-button-font-weight: var(--ex-font-medium);
+  // 亮色填充按钮上的文字「墨色」——深色油墨保证 WCAG AA 对比度（霓虹灯管式）
+  --ex-button-ink-on-bright: #0a0f16;
+  
+  // 输入框组件
+  --ex-input-height-sm: 32px;
+  --ex-input-height-md: 40px;
+  --ex-input-height-lg: 48px;
+  --ex-input-padding-x: var(--ex-spacing-3);
+  --ex-input-padding-y: var(--ex-spacing-2);
+  --ex-input-radius: var(--ex-radius-md);
+  --ex-input-border-width: 1px;
+  --ex-input-focus-ring-width: 2px;
+  
+  // 卡片组件
+  --ex-card-padding-sm: var(--ex-spacing-4);
+  --ex-card-padding-md: var(--ex-spacing-6);
+  --ex-card-padding-lg: var(--ex-spacing-8);
+  --ex-card-radius: var(--ex-radius-lg);
+  --ex-card-shadow: var(--ex-shadow-md);
+  
+  // 模态框组件
+  --ex-modal-backdrop-blur: 8px;
+  --ex-modal-max-width-sm: 400px;
+  --ex-modal-max-width-md: 500px;
+  --ex-modal-max-width-lg: 600px;
+  --ex-modal-max-width-xl: 800px;
+  --ex-modal-padding: var(--ex-spacing-6);
+  --ex-modal-radius: var(--ex-radius-xl);
+
+  // 头像组件
+  --ex-avatar-size-small: 32px;
+  --ex-avatar-size-medium: 40px;
+  --ex-avatar-size-large: 48px;
+  --ex-avatar-font-size-small: 14px;
+  --ex-avatar-font-size-medium: 16px;
+  --ex-avatar-font-size-large: 20px;
+  --ex-avatar-border-width: 2px;
+  --ex-avatar-overlap: 8px;
+  --ex-avatar-bg-default: var(--ex-color-bg-secondary);
+  --ex-avatar-bg-icon: var(--ex-color-neon-blue-alpha-10);
+  --ex-avatar-bg-icon-hover: var(--ex-color-neon-blue-alpha-20);
+  --ex-avatar-bg-text: var(--ex-color-neon-pink-alpha-10);
+  --ex-avatar-bg-text-hover: var(--ex-color-neon-pink-alpha-20);
+  --ex-avatar-text-color: var(--ex-color-text-primary);
+  --ex-avatar-border-color: var(--ex-color-border-primary);
+  --ex-avatar-z-index: 10;
+  
+  // 导航组件
+  --ex-nav-height: 64px;
+  --ex-nav-padding-x: var(--ex-spacing-4);
+  --ex-nav-item-padding-x: var(--ex-spacing-3);
+  --ex-nav-item-padding-y: var(--ex-spacing-2);
+  
+  // 表格组件
+  --ex-table-cell-padding-x: var(--ex-spacing-3);
+  --ex-table-cell-padding-y: var(--ex-spacing-2);
+  --ex-table-header-height: 48px;
+  --ex-table-row-height: 40px;
+  
+  // 工具提示组件
+  --ex-tooltip-padding-x: var(--ex-spacing-2);
+  --ex-tooltip-padding-y: var(--ex-spacing-1);
+  --ex-tooltip-radius: var(--ex-radius-base);
+  --ex-tooltip-font-size: var(--ex-text-sm);
+  --ex-tooltip-max-width: 200px;
+  
+  // 徽章组件
+  --ex-badge-z-index: 10;
+  --ex-badge-min-width: 18px;
+  --ex-badge-height: 18px;
+  --ex-badge-padding-x: 6px;
+  --ex-badge-font-size: var(--ex-text-xs);
+  --ex-badge-font-weight: var(--ex-font-medium);
+  --ex-badge-border-width: 2px;
+  --ex-badge-border-radius: 10px;
+  --ex-badge-transition: all var(--ex-motion-duration-base) var(--ex-motion-easing-standard);
+  
+  // 徽章尺寸
+  --ex-badge-sm-min-width: 14px;
+  --ex-badge-sm-height: 14px;
+  --ex-badge-sm-padding-x: 4px;
+  --ex-badge-sm-font-size: var(--ex-text-xs);
+  --ex-badge-sm-border-radius: 8px;
+  --ex-badge-sm-dot-size: 8px;
+  
+  --ex-badge-md-min-width: 18px;
+  --ex-badge-md-height: 18px;
+  --ex-badge-md-padding-x: 6px;
+  --ex-badge-md-font-size: var(--ex-text-xs);
+  --ex-badge-md-border-radius: 10px;
+  --ex-badge-md-dot-size: 10px;
+  
+  --ex-badge-lg-min-width: 22px;
+  --ex-badge-lg-height: 22px;
+  --ex-badge-lg-padding-x: 8px;
+  --ex-badge-lg-font-size: var(--ex-text-sm);
+  --ex-badge-lg-border-radius: 12px;
+  --ex-badge-lg-dot-size: 12px;
+  
+  // 分割线组件
+  --ex-divider-color: #{map.get($components, divider, color)};
+  --ex-divider-text-color: #{map.get($components, divider, text-color)};
+  --ex-divider-font-size: #{map.get($components, divider, font-size)};
+  --ex-divider-margin: #{map.get($components, divider, margin)};
+  --ex-divider-vertical-margin: #{map.get($components, divider, vertical-margin)};
+  --ex-divider-text-padding: #{map.get($components, divider, text-padding)};
+  --ex-divider-orientation-margin: #{map.get($components, divider, orientation-margin)};
+  --ex-divider-size: #{map.get($components, divider, size-default)};
+
+  // 切角（chamfer）系统 —— 赛博朋克标志性斜切角
+  // 默认切「左上 + 右下」两角，营造硬朗的未来感轮廓。
+  --ex-chamfer-sm: 6px;
+  --ex-chamfer-md: 10px;
+  --ex-chamfer-lg: 14px;
+
+  // 标签组件
+  --ex-tag-padding-x-sm: var(--ex-spacing-1);
+  --ex-tag-padding-x-md: var(--ex-spacing-2);
+  --ex-tag-padding-x-lg: var(--ex-spacing-3);
+  --ex-tag-height-sm: var(--ex-size-xs);
+  --ex-tag-height-md: var(--ex-size-sm);
+  --ex-tag-height-lg: var(--ex-size-md);
+  --ex-tag-font-size-sm: var(--ex-text-xs);
+  --ex-tag-font-size-md: var(--ex-text-sm);
+  --ex-tag-font-size-lg: var(--ex-text-base);
+  --ex-tag-radius: var(--ex-radius-sm);
+  --ex-tag-border-width: 1px;
+}

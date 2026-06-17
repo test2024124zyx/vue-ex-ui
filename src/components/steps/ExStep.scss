@@ -1,0 +1,306 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ex-step {
+  position: relative;
+  display: flex;
+  
+  &__icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  &__icon {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--ex-color-border-primary);
+    background-color: var(--ex-color-bg-secondary);
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    z-index: 1;
+  }
+  
+  &__status-icon,
+  &__custom-icon {
+    font-size: 14px;
+  }
+  
+  &__number {
+    font-size: 12px;
+    line-height: 1;
+  }
+  
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
+  
+  &__line {
+    position: absolute;
+    background-color: var(--ex-color-border-primary);
+    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    
+    &--horizontal {
+      top: 50%;
+      left: 100%;
+      width: 100%;
+      height: 1px;
+      transform: translateY(-50%);
+    }
+    
+    &--vertical {
+      top: 100%;
+      left: 50%;
+      width: 1px;
+      height: 100%;
+      transform: translateX(-50%);
+    }
+    
+    &--dashed {
+      border-style: dashed;
+      background: none;
+      border-width: 1px 0 0 0;
+      
+      &.ex-step__line--vertical {
+        border-width: 0 0 0 1px;
+      }
+    }
+    
+    &--dotted {
+      border-style: dotted;
+      background: none;
+      border-width: 1px 0 0 0;
+      
+      &.ex-step__line--vertical {
+        border-width: 0 0 0 1px;
+      }
+    }
+  }
+  
+  &__content {
+    margin-left: var(--ex-spacing-2);
+    flex: 1;
+  }
+  
+  &__title {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: var(--ex-spacing-1);
+    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+  }
+  
+  &__description {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-tertiary);
+    line-height: 1.5;
+  }
+  
+  // 水平方向
+  &--horizontal {
+    flex-direction: row;
+    flex: 1;
+    
+    &:not(.ex-step--last) {
+      .ex-step__icon-wrapper {
+        width: 100%;
+      }
+    }
+    
+    .ex-step__content {
+      margin-left: var(--ex-spacing-2);
+      margin-top: 0;
+    }
+  }
+  
+  // 垂直方向
+  &--vertical {
+    flex-direction: column;
+    
+    .ex-step__icon-wrapper {
+      height: 100%;
+      min-height: 60px;
+    }
+    
+    .ex-step__content {
+      margin-left: 0;
+      margin-top: var(--ex-spacing-2);
+      padding-left: calc(32px + var(--ex-spacing-2));
+    }
+  }
+  
+  // 状态样�?
+  &--wait {
+    .ex-step__icon {
+      border-color: var(--ex-color-border-primary);
+      background-color: var(--ex-color-bg-secondary);
+      color: var(--ex-color-text-tertiary);
+    }
+    
+    .ex-step__title {
+      color: var(--ex-color-text-tertiary);
+    }
+  }
+  
+  &--process {
+    .ex-step__icon {
+      border-color: var(--ex-color-primary);
+      background-color: var(--ex-color-primary);
+      color: var(--ex-color-white);
+    }
+    
+    .ex-step__title {
+      color: var(--ex-color-text-primary);
+    }
+    
+    .ex-step__line {
+      background-color: var(--ex-color-border-primary);
+    }
+  }
+  
+  &--finish {
+    .ex-step__icon {
+      border-color: var(--ex-color-success);
+      background-color: var(--ex-color-success);
+      color: var(--ex-color-white);
+    }
+    
+    .ex-step__title {
+      color: var(--ex-color-text-primary);
+    }
+    
+    .ex-step__line {
+      background-color: var(--ex-color-success);
+    }
+  }
+  
+  &--error {
+    .ex-step__icon {
+      border-color: var(--ex-color-error);
+      background-color: var(--ex-color-error);
+      color: var(--ex-color-white);
+    }
+    
+    .ex-step__title {
+      color: var(--ex-color-error);
+    }
+    
+    .ex-step__line {
+      background-color: var(--ex-color-border-primary);
+    }
+  }
+  
+  // 尺寸变体
+  &--small {
+    .ex-step__icon {
+      width: 24px;
+      height: 24px;
+      font-size: 10px;
+    }
+    
+    .ex-step__title {
+      font-size: var(--ex-text-sm);
+    }
+    
+    .ex-step__description {
+      font-size: var(--ex-text-xs);
+    }
+    
+    &.ex-step--vertical .ex-step__content {
+      padding-left: calc(24px + var(--ex-spacing-2));
+    }
+  }
+  
+  &--large {
+    .ex-step__icon {
+      width: 40px;
+      height: 40px;
+      font-size: var(--ex-text-base);
+    }
+    
+    .ex-step__title {
+      font-size: var(--ex-text-lg);
+    }
+    
+    .ex-step__description {
+      font-size: var(--ex-text-base);
+    }
+    
+    &.ex-step--vertical .ex-step__content {
+      padding-left: calc(40px + var(--ex-spacing-2));
+    }
+  }
+  
+  // 点状图标样式
+  &--dot {
+    .ex-step__icon {
+      width: 16px;
+      height: 16px;
+      border: none;
+      background-color: var(--ex-color-border-primary);
+    }
+    
+    &.ex-step--process .ex-step__icon {
+      background-color: var(--ex-color-primary);
+    }
+    
+    &.ex-step--finish .ex-step__icon {
+      background-color: var(--ex-color-success);
+    }
+    
+    &.ex-step--error .ex-step__icon {
+      background-color: var(--ex-color-error);
+    }
+  }
+  
+  // 可点击状�?
+  &--clickable {
+    cursor: pointer;
+    
+    &:hover:not(.ex-step--disabled) {
+      .ex-step__icon {
+        transform: scale(1.1);
+      }
+      
+      .ex-step__title {
+        color: var(--ex-color-primary);
+      }
+    }
+    
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+      border-radius: var(--ex-radius-base);
+    }
+  }
+  
+  // 禁用状�?
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    
+    .ex-step__title,
+    .ex-step__description {
+      color: var(--ex-color-text-disabled);
+    }
+  }
+  
+  // 响应式设�?
+  @include respond-to(xs) {
+    &--horizontal {
+      .ex-step__content {
+        margin-top: var(--ex-spacing-1);
+      }
+    }
+  }
+}

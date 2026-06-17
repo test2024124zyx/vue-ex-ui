@@ -1,0 +1,188 @@
+// High Contrast Theme for ExUI - "矩阵觉醒"
+// 黑客风格绿色矩阵主题 - 极高对比度，科技感十足
+
+@use './base' as *;
+
+// matrix 为正式名；high-contrast 作为兼容别名同样生效
+[data-theme="matrix"],
+[data-theme="high-contrast"] {
+  color-scheme: dark;
+
+  // 应用主题切换过渡动画
+  @include theme-transition;
+  
+  // 应用共享的基础颜色
+  @include theme-common-colors;
+  
+  // 应用共享的状态色
+  @include theme-status-colors;
+  
+  // ========== 主色调（矩阵绿）==========
+  --ex-color-primary: #00ff41;
+  --ex-color-primary-hover: #00e639;
+  --ex-color-primary-active: #00cc33;
+  
+  // ========== 次要色（电子蓝）==========
+  --ex-color-secondary: #00ffff;
+  --ex-color-secondary-hover: #00e6e6;
+  --ex-color-secondary-active: #00cccc;
+  
+  // ========== 强调色（警告黄）==========
+  --ex-color-accent: #ffff00;
+  
+  // ========== 背景色系（纯黑矩阵）==========
+  --ex-color-bg-primary: #000000;
+  --ex-color-bg-secondary: #000000;
+  --ex-color-bg-tertiary: #0a140a;
+  --ex-color-bg-elevated: #0a140a;
+  --ex-color-bg-hover: #0f1f0f;
+  --ex-color-bg-active: #142914;
+  
+  // ========== 文本色系（矩阵绿白）==========
+  --ex-color-text-primary: #e6ffe6;
+  --ex-color-text-secondary: #ccffcc;
+  --ex-color-text-tertiary: #99ff99;
+  --ex-color-text-disabled: #669966;
+  
+  // ========== 边框色系（矩阵绿）==========
+  --ex-color-border-primary: #00ff41;
+  --ex-color-border-secondary: #00cc33;
+  
+  // ========== 状态色系（矩阵风格）==========
+  --ex-color-success: #00ff41;
+  --ex-color-success-hover: #00e639;
+  --ex-color-success-active: #00cc33;
+  
+  --ex-color-warning: #ffcc00;
+  --ex-color-warning-hover: #e6b800;
+  --ex-color-warning-active: #cca300;
+  
+  --ex-color-error: #ff3333;
+  --ex-color-danger: #ff3333;
+  --ex-color-danger-hover: #ff1a1a;
+  --ex-color-danger-active: #ff0000;
+  
+  --ex-color-info: var(--ex-color-secondary);
+  --ex-color-info-hover: #00e6e6;
+  --ex-color-info-active: #00cccc;
+  
+  // ========== 渐变定义（矩阵渐变）==========
+  --ex-gradient-primary: linear-gradient(
+    135deg,
+    #00ff41 0%,
+    #00ffff 100%
+  );
+  --ex-gradient-secondary: linear-gradient(
+    135deg,
+    #00ffff 0%,
+    #ffff00 100%
+  );
+  --ex-gradient-bg: 
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, transparent 0%, rgba(0, 255, 65, 0.03) 100%);
+  
+  // ========== 阴影系统（矩阵发光）==========
+  --ex-shadow-neon-sm: 0 0 8px rgba(0, 255, 65, 0.6);
+  --ex-shadow-neon-md: 0 0 12px rgba(0, 255, 65, 0.7), 0 0 24px rgba(0, 255, 65, 0.4);
+  --ex-shadow-neon-lg: 0 0 18px rgba(0, 255, 65, 0.8), 0 0 36px rgba(0, 255, 65, 0.5), 0 0 54px rgba(0, 255, 255, 0.3);
+  
+  // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-500: #00ffff;
+  --ex-color-neon-blue-600: #00e6e6;
+  --ex-color-neon-pink-500: #00ff41;
+  
+  // ========== 主题特定的透明度颜色 ==========
+  // 主色透明（矩阵绿）
+  --ex-color-primary-alpha-05: rgba(0, 255, 65, 0.05);
+  --ex-color-primary-alpha-08: rgba(0, 255, 65, 0.08);
+  --ex-color-primary-alpha-10: rgba(0, 255, 65, 0.1);
+  --ex-color-primary-alpha-15: rgba(0, 255, 65, 0.15);
+  --ex-color-primary-alpha-20: rgba(0, 255, 65, 0.2);
+  --ex-color-primary-alpha-30: rgba(0, 255, 65, 0.3);
+  --ex-color-primary-alpha-40: rgba(0, 255, 65, 0.4);
+  --ex-color-primary-alpha-50: rgba(0, 255, 65, 0.5);
+  --ex-color-primary-alpha-60: rgba(0, 255, 65, 0.6);
+  
+  // 次要色透明（电子蓝）
+  --ex-color-secondary-alpha-05: rgba(0, 255, 255, 0.05);
+  --ex-color-secondary-alpha-08: rgba(0, 255, 255, 0.08);
+  --ex-color-secondary-alpha-10: rgba(0, 255, 255, 0.1);
+  --ex-color-secondary-alpha-15: rgba(0, 255, 255, 0.15);
+  --ex-color-secondary-alpha-20: rgba(0, 255, 255, 0.2);
+  --ex-color-secondary-alpha-30: rgba(0, 255, 255, 0.3);
+  --ex-color-secondary-alpha-40: rgba(0, 255, 255, 0.4);
+  --ex-color-secondary-alpha-60: rgba(0, 255, 255, 0.6);
+  --ex-color-secondary-alpha-80: rgba(0, 255, 255, 0.8);
+  
+  // 电子蓝透明度
+  --ex-color-neon-blue-alpha-05: rgba(0, 255, 255, 0.05);
+  --ex-color-neon-blue-alpha-10: rgba(0, 255, 255, 0.1);
+  --ex-color-neon-blue-alpha-15: rgba(0, 255, 255, 0.15);
+  --ex-color-neon-blue-alpha-20: rgba(0, 255, 255, 0.2);
+  --ex-color-neon-blue-alpha-25: rgba(0, 255, 255, 0.25);
+  --ex-color-neon-blue-alpha-30: rgba(0, 255, 255, 0.3);
+  --ex-color-neon-blue-alpha-40: rgba(0, 255, 255, 0.4);
+  --ex-color-neon-blue-alpha-50: rgba(0, 255, 255, 0.5);
+  --ex-color-neon-blue-alpha-60: rgba(0, 255, 255, 0.6);
+  --ex-color-neon-blue-alpha-80: rgba(0, 255, 255, 0.8);
+  
+  // 矩阵绿透明度
+  --ex-color-neon-pink-alpha-05: rgba(0, 255, 65, 0.05);
+  --ex-color-neon-pink-alpha-10: rgba(0, 255, 65, 0.1);
+  --ex-color-neon-pink-alpha-15: rgba(0, 255, 65, 0.15);
+  --ex-color-neon-pink-alpha-20: rgba(0, 255, 65, 0.2);
+  --ex-color-neon-pink-alpha-30: rgba(0, 255, 65, 0.3);
+  --ex-color-neon-pink-alpha-40: rgba(0, 255, 65, 0.4);
+  
+  // 背景色透明度
+  --ex-color-bg-primary-alpha-30: rgba(0, 0, 0, 0.3);
+  --ex-color-bg-primary-alpha-50: rgba(0, 0, 0, 0.5);
+  --ex-color-bg-primary-alpha-80: rgba(0, 0, 0, 0.8);
+  --ex-color-bg-primary-alpha-90: rgba(0, 0, 0, 0.9);
+  --ex-color-bg-primary-alpha-95: rgba(0, 0, 0, 0.95);
+  --ex-color-bg-primary-alpha-98: rgba(0, 0, 0, 0.98);
+  
+  --ex-color-bg-secondary-alpha-30: rgba(0, 0, 0, 0.3);
+  --ex-color-bg-secondary-alpha-50: rgba(0, 0, 0, 0.5);
+  --ex-color-bg-secondary-alpha-80: rgba(0, 0, 0, 0.8);
+  
+  --ex-color-bg-tertiary-alpha-30: rgba(10, 20, 10, 0.3);
+  --ex-color-bg-tertiary-alpha-50: rgba(10, 20, 10, 0.5);
+  
+  --ex-color-bg-surface-alpha-80: rgba(0, 0, 0, 0.8);
+  
+  // Info 透明度
+  --ex-color-info-alpha-05: rgba(0, 255, 255, 0.05);
+  --ex-color-info-alpha-10: rgba(0, 255, 255, 0.1);
+  --ex-color-info-alpha-20: rgba(0, 255, 255, 0.2);
+  --ex-color-info-alpha-30: rgba(0, 255, 255, 0.3);
+  --ex-color-info-alpha-40: rgba(0, 255, 255, 0.4);
+  --ex-color-info-alpha-60: rgba(0, 255, 255, 0.6);
+  --ex-color-info-alpha-80: rgba(0, 255, 255, 0.8);
+  
+  // ========== RGB 格式变量（用于 Select 组件等）==========
+  --ex-color-bg-primary-rgb: 0, 0, 0;
+  --ex-color-bg-secondary-rgb: 0, 0, 0;
+  --ex-color-bg-tertiary-rgb: 10, 20, 10;
+  --ex-color-neon-blue-500-rgb: 0, 255, 255;
+  --ex-color-neon-pink-500-rgb: 0, 255, 65;
+  
+  // ========== 无障碍增强 ==========
+  // 增强交互元素的边框（仅针对特定元素）
+  button,
+  input,
+  select,
+  textarea,
+  a,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"]) {
+    border-width: 2px;
+  }
+  
+  // 焦点指示器增强
+  *:focus-visible {
+    outline: 3px solid var(--ex-color-primary);
+    outline-offset: 2px;
+  }
+}

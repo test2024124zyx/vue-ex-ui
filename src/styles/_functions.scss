@@ -1,0 +1,517 @@
+// ExUI Functions - SCSS 工具函数
+// 用于计算、转换和生成样式值的工具函数
+
+@use 'sass:math';
+@use 'sass:map';
+@use 'sass:list';
+@use 'sass:string';
+@use 'sass:color';
+@use 'tokens' as *;
+
+// ============================================================================
+// 单位转换函数 (Unit Conversion Functions)
+// ============================================================================
+
+// px 转 rem
+@function to-rem($px, $base: 16) {
+  @if type-of($px) == 'number' and unit($px) == 'px' {
+    @return math.div($px, $base * 1px) * 1rem;
+  } @else {
+    @warn "to-rem() expects a pixel value, got #{$px}";
+    @return $px;
+  }
+}
+
+// rem 转 px
+@function to-px($rem, $base: 16) {
+  @if type-of($rem) == 'number' and unit($rem) == 'rem' {
+    @return $rem * $base * 1px;
+  } @else {
+    @warn "to-px() expects a rem value, got #{$rem}";
+    @return $rem;
+  }
+}
+
+// em 转 px
+@function em-to-px($em, $context: 16) {
+  @if type-of($em) == 'number' and unit($em) == 'em' {
+    @return $em * $context * 1px;
+  } @else {
+    @warn "em-to-px() expects an em value, got #{$em}";
+    @return $em;
+  }
+}
+
+// 流式字体大小计算
+@function fluid-size($min-size, $max-size, $min-width: 320px, $max-width: 1200px) {
+  $slope: math.div($max-size - $min-size, $max-width - $min-width);
+  $intersection: -$min-width * $slope + $min-size;
+  
+  @return clamp(#{$min-size}, #{$intersection} + #{$slope * 100vw}, #{$max-size});
+}
+
+// ============================================================================
+// 颜色函数 (Color Functions)
+// ============================================================================
+
+// 获取颜色值
+@function get-color($name) {
+  @if map.has-key($colors, $name) {
+    @return map.get($colors, $name);
+  } @else {
+    @warn "Color '#{$name}' not found in $colors map";
+    @return null;
+  }
+}
+
+// 颜色透明度调整
+@function alpha($color, $opacity) {
+  @if type-of($color) == 'color' {
+    @return rgba($color, $opacity);
+  } @else if type-of($color) == 'string' {
+    $color-value: get-color($color);
+    @if $color-value {
+      @return rgba($color-value, $opacity);
+    }
+  }
+  @warn "alpha() expects a color or color name, got #{$color}";
+  @return $color;
+}
+
+// 颜色混合
+@function mix-colors($color1, $color2, $weight: 50%) {
+  @if type-of($color1) == 'string' {
+    $color1: get-color($color1);
+  }
+  @if type-of($color2) == 'string' {
+    $color2: get-color($color2);
+  }
+  
+  @if $color1 and $color2 {
+    @return mix($color1, $color2, $weight);
+  } @else {
+    @warn "mix-colors() requires valid colors";
+    @return $color1 or $color2;
+  }
+}
+
+// 颜色亮度调整
+@function lighten-color($color, $amount: 10%) {
+  @if type-of($color) == 'string' {
+    $color: get-color($color);
+  }
+  
+  @if $color {
+    @return lighten($color, $amount);
+  } @else {
+    @warn "lighten-color() requires a valid color";
+    @return $color;
+  }
+}
+
+// 颜色暗度调整
+@function darken-color($color, $amount: 10%) {
+  @if type-of($color) == 'string' {
+    $color: get-color($color);
+  }
+  
+  @if $color {
+    @return darken($color, $amount);
+  } @else {
+    @warn "darken-color() requires a valid color";
+    @return $color;
+  }
+}
+
+// 对比度检查
+@function contrast-ratio($color1, $color2) {
+  $l1: lightness($color1);
+  $l2: lightness($color2);
+  
+  @if $l1 > $l2 {
+    @return math.div($l1 + 5, $l2 + 5);
+  } @else {
+    @return math.div($l2 + 5, $l1 + 5);
+  }
+}
+
+// 获取可读文本颜色
+@function readable-color($background, $light: #ffffff, $dark: #000000) {
+  $light-contrast: contrast-ratio($background, $light);
+  $dark-contrast: contrast-ratio($background, $dark);
+  
+  @if $light-contrast > $dark-contrast {
+    @return $light;
+  } @else {
+    @return $dark;
+  }
+}
+
+// ============================================================================
+// 间距函数 (Spacing Functions)
+// ============================================================================
+
+// 获取间距值
+@function get-spacing($key) {
+  @if map.has-key($spacing, $key) {
+    @return map.get($spacing, $key);
+  } @else {
+    @warn "Spacing '#{$key}' not found in $spacing map";
+    @return null;
+  }
+}
+
+// 间距计算
+@function spacing($multiplier: 1, $base: 4px) {
+  @return $base * $multiplier;
+}
+
+// 负间距
+@function negative-spacing($key) {
+  $value: get-spacing($key);
+  @if $value {
+    @return -$value;
+  } @else {
+    @return null;
+  }
+}
+
+// ============================================================================
+// 尺寸函数 (Size Functions)
+// ============================================================================
+
+// 获取尺寸值
+@function get-size($key) {
+  @if map.has-key($sizes, $key) {
+    @return map.get($sizes, $key);
+  } @else {
+    @warn "Size '#{$key}' not found in $sizes map";
+    @return null;
+  }
+}
+
+// 响应式尺寸
+@function responsive-size($mobile, $desktop, $breakpoint: 768px) {
+  @return clamp(#{$mobile}, #{$mobile} + (#{$desktop} - #{$mobile}) * ((100vw - 320px) / (#{$breakpoint} - 320px)), #{$desktop});
+}
+
+// ============================================================================
+// 圆角函数 (Border Radius Functions)
+// ============================================================================
+
+// 获取圆角值
+@function get-radius($key) {
+  @if map.has-key($radius, $key) {
+    @return map.get($radius, $key);
+  } @else {
+    @warn "Radius '#{$key}' not found in $radius map";
+    @return null;
+  }
+}
+
+// ============================================================================
+// 阴影函数 (Shadow Functions)
+// ============================================================================
+
+// 获取阴影值
+@function get-shadow($key) {
+  @if map.has-key($shadows, $key) {
+    @return map.get($shadows, $key);
+  } @else {
+    @warn "Shadow '#{$key}' not found in $shadows map";
+    @return null;
+  }
+}
+
+// 组合阴影
+@function combine-shadows($shadows...) {
+  $result: ();
+  @each $shadow in $shadows {
+    @if type-of($shadow) == 'string' {
+      $shadow: get-shadow($shadow);
+    }
+    @if $shadow {
+      $result: list.append($result, $shadow, comma);
+    }
+  }
+  @return $result;
+}
+
+// ============================================================================
+// 动画函数 (Animation Functions)
+// ============================================================================
+
+// 获取动画时长
+@function get-duration($key) {
+  @if map.has-key($motion, duration-#{$key}) {
+    @return map.get($motion, duration-#{$key});
+  } @else {
+    @warn "Duration '#{$key}' not found in $motion map";
+    @return null;
+  }
+}
+
+// 获取缓动函数
+@function get-easing($key) {
+  @if map.has-key($motion, ease-#{$key}) {
+    @return map.get($motion, ease-#{$key});
+  } @else {
+    @warn "Easing '#{$key}' not found in $motion map";
+    @return null;
+  }
+}
+
+// 计算交错延迟
+@function stagger-delay($index, $base-delay: 50ms) {
+  @return $base-delay * $index;
+}
+
+// ============================================================================
+// 断点函数 (Breakpoint Functions)
+// ============================================================================
+
+// 获取断点值
+@function get-breakpoint($key) {
+  @if map.has-key($breakpoints, $key) {
+    @return map.get($breakpoints, $key);
+  } @else {
+    @warn "Breakpoint '#{$key}' not found in $breakpoints map";
+    @return null;
+  }
+}
+
+// 断点范围
+@function breakpoint-range($min, $max: null) {
+  $min-value: get-breakpoint($min);
+  
+  @if $max {
+    $max-value: get-breakpoint($max);
+    @return "(min-width: #{$min-value}) and (max-width: #{$max-value - 1px})";
+  } @else {
+    @return "(min-width: #{$min-value})";
+  }
+}
+
+// ============================================================================
+// Z-Index 函数 (Z-Index Functions)
+// ============================================================================
+
+// 获取 z-index 值
+@function get-z-index($key) {
+  @if map.has-key($z-index, $key) {
+    @return map.get($z-index, $key);
+  } @else {
+    @warn "Z-index '#{$key}' not found in $z-index map";
+    @return null;
+  }
+}
+
+// ============================================================================
+// 字体函数 (Typography Functions)
+// ============================================================================
+
+// 获取字体大小
+@function get-font-size($key) {
+  @if map.has-key($typography, text-#{$key}) {
+    @return map.get($typography, text-#{$key});
+  } @else {
+    @warn "Font size '#{$key}' not found in $typography map";
+    @return null;
+  }
+}
+
+// 获取字重
+@function get-font-weight($key) {
+  @if map.has-key($typography, font-#{$key}) {
+    @return map.get($typography, font-#{$key});
+  } @else {
+    @warn "Font weight '#{$key}' not found in $typography map";
+    @return null;
+  }
+}
+
+// 获取行高
+@function get-line-height($key) {
+  @if map.has-key($typography, leading-#{$key}) {
+    @return map.get($typography, leading-#{$key});
+  } @else {
+    @warn "Line height '#{$key}' not found in $typography map";
+    @return null;
+  }
+}
+
+// 获取字间距
+@function get-letter-spacing($key) {
+  @if map.has-key($typography, tracking-#{$key}) {
+    @return map.get($typography, tracking-#{$key});
+  } @else {
+    @warn "Letter spacing '#{$key}' not found in $typography map";
+    @return null;
+  }
+}
+
+// ============================================================================
+// 工具函数 (Utility Functions)
+// ============================================================================
+
+// 深度获取 map 值
+@function deep-get($map, $keys...) {
+  $result: $map;
+  @each $key in $keys {
+    @if type-of($result) == 'map' and map.has-key($result, $key) {
+      $result: map.get($result, $key);
+    } @else {
+      @return null;
+    }
+  }
+  @return $result;
+}
+
+// 字符串替换
+@function str-replace($string, $search, $replace: '') {
+  $index: string.index($string, $search);
+  
+  @if $index {
+    @return string.slice($string, 1, $index - 1) + $replace + str-replace(string.slice($string, $index + string.length($search)), $search, $replace);
+  }
+  
+  @return $string;
+}
+
+// 列表包含检查
+@function list-contains($list, $value) {
+  @return list.index($list, $value) != null;
+}
+
+// 数字限制范围
+@function clamp-number($number, $min, $max) {
+  @return math.max($min, math.min($number, $max));
+}
+
+// 百分比计算
+@function percentage($value, $total) {
+  @return math.div($value, $total) * 100%;
+}
+
+// 网格列宽计算
+@function grid-width($columns, $total-columns: 12, $gutter: 0) {
+  $width: percentage($columns, $total-columns);
+  @if $gutter > 0 {
+    $width: calc(#{$width} - #{$gutter});
+  }
+  @return $width;
+}
+
+// ============================================================================
+// 验证函数 (Validation Functions)
+// ============================================================================
+
+// 验证颜色值
+@function is-valid-color($value) {
+  @return type-of($value) == 'color' or (type-of($value) == 'string' and map.has-key($colors, $value));
+}
+
+// 验证尺寸值
+@function is-valid-size($value) {
+  @return type-of($value) == 'number' or (type-of($value) == 'string' and map.has-key($sizes, $value));
+}
+
+// 验证间距值
+@function is-valid-spacing($value) {
+  @return type-of($value) == 'number' or (type-of($value) == 'string' and map.has-key($spacing, $value));
+}
+
+// ============================================================================
+// 数学函数 (Math Functions)
+// ============================================================================
+
+// 幂运算
+@function pow($base, $exponent) {
+  $result: 1;
+  @if $exponent > 0 {
+    @for $i from 1 through $exponent {
+      $result: $result * $base;
+    }
+  } @else if $exponent < 0 {
+    @for $i from 1 through -$exponent {
+      $result: math.div($result, $base);
+    }
+  }
+  @return $result;
+}
+
+// 平方根近似
+@function sqrt($number) {
+  $guess: math.div($number, 2);
+  $root: $guess;
+  @for $i from 1 through 10 {
+    $root: math.div($guess + math.div($number, $guess), 2);
+    $guess: $root;
+  }
+  @return $root;
+}
+
+// 黄金比例
+@function golden-ratio($value, $increment: true) {
+  $ratio: 1.618;
+  @if $increment {
+    @return $value * $ratio;
+  } @else {
+    @return math.div($value, $ratio);
+  }
+}
+
+// ============================================================================
+// 组件特定函数 (Component Specific Functions)
+// ============================================================================
+
+// 按钮尺寸计算
+@function button-size($size) {
+  $sizes: (
+    sm: (height: 24px, padding: 12px, font-size: 14px),
+    md: (height: 32px, padding: 16px, font-size: 16px),
+    lg: (height: 40px, padding: 24px, font-size: 18px),
+    xl: (height: 48px, padding: 32px, font-size: 20px)
+  );
+  
+  @if map.has-key($sizes, $size) {
+    @return map.get($sizes, $size);
+  } @else {
+    @warn "Button size '#{$size}' not found";
+    @return map.get($sizes, md);
+  }
+}
+
+// 输入框尺寸计算
+@function input-size($size) {
+  $sizes: (
+    sm: (height: 24px, padding: 8px, font-size: 14px),
+    md: (height: 32px, padding: 12px, font-size: 16px),
+    lg: (height: 40px, padding: 16px, font-size: 18px)
+  );
+  
+  @if map.has-key($sizes, $size) {
+    @return map.get($sizes, $size);
+  } @else {
+    @warn "Input size '#{$size}' not found";
+    @return map.get($sizes, md);
+  }
+}
+
+// 容器最大宽度
+@function container-max-width($breakpoint) {
+  $widths: (
+    sm: 640px,
+    md: 768px,
+    lg: 1024px,
+    xl: 1280px,
+    2xl: 1536px
+  );
+  
+  @if map.has-key($widths, $breakpoint) {
+    @return map.get($widths, $breakpoint);
+  } @else {
+    @warn "Container width for '#{$breakpoint}' not found";
+    @return 100%;
+  }
+}

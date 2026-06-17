@@ -1,0 +1,99 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// 头像组合样式
+.ex-avatar-group {
+  display: inline-flex;
+  align-items: center;
+
+  .ex-avatar {
+    position: relative;
+    margin-left: calc(-1 * var(--ex-avatar-overlap, 8px));
+    border: var(--ex-avatar-border-width) solid var(--ex-color-bg-primary);
+    z-index: var(--ex-avatar-z-index, 10);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &:hover {
+      z-index: calc(var(--ex-avatar-z-index, 10) + 1);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 
+        0 8px 25px rgba(var(--ex-color-neon-blue-500-rgb), 0.2),
+        0 0 20px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
+    }
+  }
+
+  // 超出数量显示
+  &__overflow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ex-color-bg-secondary);
+    color: var(--ex-color-text-secondary);
+    font-size: 0.8em;
+    font-weight: var(--ex-font-medium);
+    cursor: pointer;
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+
+    &:hover {
+      background: var(--ex-color-bg-tertiary);
+      color: var(--ex-color-text-primary);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 
+        0 8px 25px rgba(var(--ex-color-neon-pink-500-rgb), 0.2),
+        0 0 20px rgba(var(--ex-color-neon-pink-500-rgb), 0.3);
+    }
+  }
+
+  // 响应式设计
+  @include mobile {
+    .ex-avatar {
+      margin-left: calc(-1 * var(--ex-avatar-overlap, 6px));
+      
+      &:hover {
+        transform: translateY(-1px) scale(1.02);
+      }
+    }
+
+    &__overflow:hover {
+      transform: translateY(-1px) scale(1.02);
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    .ex-avatar,
+    &__overflow {
+      transition: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    .ex-avatar {
+      border-width: 3px;
+      border-color: currentColor;
+    }
+  }
+
+  // 打印样式
+  @media print {
+    .ex-avatar {
+      border: 1px solid #000;
+      box-shadow: none;
+      transform: none !important;
+    }
+
+    &__overflow {
+      box-shadow: none;
+      transform: none !important;
+    }
+  }
+}

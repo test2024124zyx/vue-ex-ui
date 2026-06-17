@@ -1,7 +1,3 @@
-# vue-ex-ui
-一个由gemini【负责修复语法报错】,chatgpt【负责总体设计架构】,claude-code【负责编写主要代码】多个大模型进行开发的vue3 ts ui组件库，使用遇到问题可以在这个仓库提issue
-<div align="center">
-
 # 🎮 ExUI - Vue3 Cyberpunk UI Component Library
 
 <img src="https://img.shields.io/badge/Vue-3.4+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
@@ -14,10 +10,7 @@
 
 [📖 在线文档](https://vue-ex-ui.netlify.app) | [🎨 设计系统](https://vue-ex-ui.netlify.app/design) | [🚀 快速开始](https://vue-ex-ui.netlify.app/#快速开始) | [🎯 组件列表](https://vue-ex-ui.netlify.app/#组件总览)
 
-</div>
-
 ---
-
 
 ## ✨ 设计理念
 
@@ -72,6 +65,17 @@ yarn add vue-ex-ui
 pnpm add vue-ex-ui
 ```
 
+> **📦 依赖说明**：以下依赖均为**可选 peer 依赖**，只有在使用对应组件时才需要安装：
+>
+> - `echarts` - 图表组件（ExChart）：`npm i echarts`
+> - `qrcode` - 二维码组件（ExQRCode）：`npm i qrcode`
+> - `jsbarcode` - 条码组件（ExBarcode）：`npm i jsbarcode`
+> - `lunar-javascript` - 日历组件的农历支持（ExCalendar）：`npm i lunar-javascript`
+> - `vue-i18n` - 国际化（不安装时组件库使用内置的轻量回退实现）
+>
+> 不使用这些组件时无需安装对应依赖，也不会被打包进你的应用。
+> 所有图标均为内置 SVG，**无任何运行时网络请求**。
+
 ### 完整引入
 
 ```typescript
@@ -96,13 +100,13 @@ import 'vue-ex-ui/style.css';
 export default {
   components: {
     ExButton,
-    ExInput
+    ExInput,
   },
   methods: {
     handleClick() {
       message.success('操作成功！');
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -130,7 +134,7 @@ const handleSubmit = () => {
 ```
 
 > 💡 **提示：** 现代打包工具（Vite、Webpack 5+）会自动进行 Tree Shaking，只打包使用的组件。
-> 
+>
 > 📖 查看 [按需加载文档](https://vue-ex-ui.netlify.app/guide/on-demand) 了解更多优化方案。
 
 ```vue
@@ -144,9 +148,8 @@ const handleSubmit = () => {
     <ex-card class="user-stats" type="neon" hoverable>
       <ex-avatar :src="userAvatar" size="large" />
       <ex-badge :count="99" type="primary">
-        <ex-icon>
-          <img src="https://api.iconify.design/ri/trophy-line.svg" />
-        </ex-icon>
+        <!-- 内置图标：icon 属性引用注册表中的图标名 -->
+        <ex-icon icon="star-fill" :size="20" />
       </ex-badge>
     </ex-card>
 
@@ -199,7 +202,7 @@ const playerAvatar = ref('/avatar.jpg');
 <summary><strong>✅ 通用基础组件 (12/12) - 100%</strong></summary>
 
 - [x] **Typography** - 排版文本组件
-- [x] **Icon** - 图标组件 (基于 Iconify API)
+- [x] **Icon** - 图标组件（内置 SVG 图标注册表，无网络依赖）
 - [x] **Button** - 按钮组件
 - [x] **Badge** - 徽标计数组件
 - [x] **Image** - 图片组件
@@ -303,9 +306,8 @@ const playerAvatar = ref('/avatar.jpg');
 ### 📊 总体进度
 
 ```
-总计组件: 68 个
-已完成: 68 ✅
-完成度: 100% 🎉
+总计组件: 80+ 个（含 DatePicker / TimePicker / Calendar 等独立组件）
+测试用例: 1200+ 全部通过 ✅
 ```
 
 ### 🎨 主题系统
@@ -395,6 +397,79 @@ const { theme } = usePersistedTheme();
 
 ---
 
+## 🌍 国际化（i18n）
+
+ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方式完成初始化。
+
+- 推荐方式：使用 ExUI 提供的 `createLocaleProvider`
+- 手动方式：自行创建 `createI18n` 并注入 ExUI 的语言包
+
+### 一、快速开始（推荐）
+
+```ts
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createLocaleProvider } from 'vue-ex-ui';
+
+const app = createApp(App);
+
+const i18nProvider = createLocaleProvider({
+  locale: 'zh-CN', // 或 'en-US'
+  messages: {
+    // 可选：合并/覆盖默认文案
+    // menu: { search: '查找菜单' }
+  },
+});
+
+app.use(i18nProvider);
+app.mount('#app');
+```
+
+### 二、手动集成 vue-i18n
+
+```ts
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createI18n } from 'vue-i18n';
+import { enUS, zhCN } from 'vue-ex-ui';
+
+const app = createApp(App);
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'zh-CN',
+  messages: {
+    'en-US': enUS,
+    'zh-CN': zhCN,
+  },
+});
+
+app.use(i18n);
+app.mount('#app');
+```
+
+### 组件中使用
+
+```ts
+// 方式A：vue-i18n
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+
+// 方式B：ExUI 提供的作用域翻译（内部优先代理到 vue-i18n）
+import { useLocale } from 'vue-ex-ui';
+const { t: tm } = useLocale('menu');
+
+// 示例
+tm('search'); // => '搜索菜单'
+```
+
+### 依赖与外部化
+
+- 组件库将 `vue-i18n` 标记为 external（见 vite.config），并声明为 peerDependencies。
+- 请在宿主项目安装：`npm i vue-i18n`，并按上述任一方式完成初始化。
+
+---
+
 ## 📱 移动端优先
 
 ExUI 采用移动端优先的响应式设计策略：
@@ -419,12 +494,11 @@ $breakpoints: (
 
 ### 🎯 移动端特性
 
-- **触摸友好** - 44px 最小点击区域，符合人体工程学
-- **手势支持** - 滑动、长按、双击等手势操作
-- **性能优化** - 懒加载、虚拟滚动、按需加载
+- **触摸友好** - 移动端可点击元素保证 44px 最小触达区域
+- **手势支持** - Carousel 支持触摸滑动切换
+- **性能优化** - 图片懒加载、虚拟滚动
 - **自适应布局** - 流式布局，自动适配屏幕尺寸
-- **高清适配** - 支持 Retina 屏幕
-- **离线支持** - PWA 兼容，可离线使用
+- **离线可用** - 图标与字体全部内置，无运行时网络请求
 
 ### 📱 响应式示例
 
@@ -460,7 +534,7 @@ const handleBreakpoint = broken => {
 | **TypeScript**       | 5.9+  | 类型安全的 JavaScript    |
 | **Vite**             | 7.1+  | 下一代前端构建工具       |
 | **SCSS**             | 1.92+ | CSS 预处理器             |
-| **Iconify**          | API   | 图标解决方案（无需安装） |
+| **内置 SVG 图标**    | -     | 60+ 内联图标，零网络依赖 |
 | **Vitest**           | 3.2+  | 单元测试框架             |
 | **VitePress**        | 1.6+  | 文档生成工具             |
 | **Vue I18n**         | 11.1+ | 国际化支持               |
@@ -505,25 +579,22 @@ const handleBreakpoint = broken => {
 
 ## 🌍 国际化支持
 
-ExUI 内置中英文语言包，支持全局配置和局部覆盖。
+ExUI 内置中英文语言包。语言包从主入口导出，语言切换通过 `setLocale` / `ConfigProvider` 完成：
 
 ```typescript
 import { createApp } from 'vue';
-import ExUI from 'vue-ex-ui';
-import { zhCN, enUS } from 'vue-ex-ui/locale';
+import ExUI, { setLocale, zhCN, enUS } from 'vue-ex-ui';
 
 const app = createApp(App);
+app.use(ExUI);
 
-// 全局配置语言
-app.use(ExUI, {
-  locale: zhCN, // 或 enUS
-});
-
-// 或使用 ConfigProvider 局部配置
+// 全局切换语言（'zh-CN' | 'en-US'）
+setLocale('zh-CN');
 ```
 
 ```vue
 <template>
+  <!-- ConfigProvider 的 locale 接收语言代码字符串 -->
   <ex-config-provider :locale="locale">
     <your-app />
   </ex-config-provider>
@@ -531,12 +602,11 @@ app.use(ExUI, {
 
 <script setup>
 import { ref } from 'vue';
-import { zhCN, enUS } from 'vue-ex-ui/locale';
 
-const locale = ref(zhCN);
+const locale = ref('zh-CN');
 
 const switchLanguage = () => {
-  locale.value = locale.value === zhCN ? enUS : zhCN;
+  locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN';
 };
 </script>
 ```
@@ -546,243 +616,20 @@ const switchLanguage = () => {
 - 🇨🇳 简体中文 (zh-CN)
 - 🇺🇸 英文 (en-US)
 
-### 自定义语言包
+### 覆盖默认文案
 
-```typescript
-import type { Locale } from 'vue-ex-ui';
-
-const customLocale: Locale = {
-  name: 'ja-JP',
-  button: {
-    confirm: '確認',
-    cancel: 'キャンセル',
-    // ...
-  },
-  // ...
-};
-```
+通过 `createLocaleProvider` 在初始化时合并自定义文案（详见上文"国际化（i18n）"一节）。
 
 ---
-
-## 🔧 开发指南
-
-### 本地开发
-
-```bash
-# 克隆项目
-git clone https://github.com/your-org/vue-ex-ui.git
-cd vue-ex-ui
-
-# 安装依赖
-pnpm install
-
-# 启动开发服务器
-pnpm dev
-
-# 启动文档服务器
-pnpm docs:dev
-
-# 构建组件库
-pnpm build
-
-# 运行测试
-pnpm test
-
-# 运行测试（监听模式）
-pnpm test:watch
-
-# 代码检查
-pnpm lint
-
-# 代码格式化
-pnpm format
-
-# 类型检查
-pnpm typecheck
-
-# 构建文档
-pnpm docs:build
-
-# 预览文档
-pnpm docs:preview
-```
-
-### 项目结构
-
-```
-vue-ex-ui/
-├── src/                    # 源代码
-│   ├── components/         # 组件目录
-│   │   ├── button/        # 按钮组件
-│   │   │   ├── ExButton.vue
-│   │   │   ├── ExButton.scss
-│   │   │   ├── types.ts
-│   │   │   ├── index.ts
-│   │   │   └── __tests__/
-│   │   └── ...
-│   ├── composables/       # 组合式 API
-│   ├── directives/        # 自定义指令
-│   ├── locale/            # 国际化
-│   ├── styles/            # 全局样式
-│   │   ├── themes/        # 主题文件
-│   │   └── index.scss
-│   ├── types/             # 类型定义
-│   ├── utils/             # 工具函数
-│   └── index.ts           # 入口文件
-├── docs/                  # 文档
-│   ├── .vitepress/        # VitePress 配置
-│   ├── components/        # 组件文档
-│   ├── design/            # 设计系统文档
-│   └── guide/             # 指南文档
-├── tests/                 # 测试文件
-├── examples/              # 示例
-└── public/                # 静态资源
-```
-
-### 组件开发规范
-
-1. **命名规范** - 所有组件以 `Ex` 前缀命名，使用时以 `ex-` 前缀
-2. **TypeScript** - 完整的类型定义，导出所有类型
-3. **测试覆盖** - 每个组件必须有单元测试
-4. **文档完善** - API 文档 + 使用示例 + 最佳实践
-5. **无障碍** - ARIA 支持，键盘导航，语义化 HTML
-6. **主题适配** - 使用 CSS 变量，支持所有主题
-7. **国际化** - 所有文本通过 locale 配置
-8. **响应式** - 移动端优先，适配所有屏幕尺寸
-
-### 组件开发流程
-
-```bash
-# 1. 创建组件目录
-mkdir -p src/components/my-component
-
-# 2. 创建组件文件
-# - MyComponent.vue (组件实现)
-# - MyComponent.scss (样式)
-# - types.ts (类型定义)
-# - locale.ts (国际化)
-# - index.ts (导出)
-# - __tests__/MyComponent.test.ts (测试)
-
-# 3. 在 src/index.ts 中导出组件
-
-# 4. 创建文档 docs/components/my-component.md
-
-# 5. 在 docs/.vitepress/config.ts 中添加菜单
-
-# 6. 运行测试
-pnpm test
-
-# 7. 提交代码
-git add .
-git commit -m "feat: add MyComponent"
-```
-
----
-
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献！
-
-### 🐛 报告问题
-
-- [提交 Bug](https://github.com/your-org/vue-ex-ui/issues/new?template=bug_report.md)
-- [功能请求](https://github.com/your-org/vue-ex-ui/issues/new?template=feature_request.md)
-
-### 💻 代码贡献
-
-1. Fork 项目到你的 GitHub 账号
-2. 克隆到本地：`git clone https://github.com/your-username/vue-ex-ui.git`
-3. 创建特性分支：`git checkout -b feature/AmazingFeature`
-4. 安装依赖：`pnpm install`
-5. 进行开发和测试
-6. 提交更改：`git commit -m 'feat: add some AmazingFeature'`
-7. 推送到分支：`git push origin feature/AmazingFeature`
-8. 开启 Pull Request
-
-### 📝 提交规范
-
-我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
-
-```
-feat: 新功能
-fix: 修复 Bug
-docs: 文档更新
-style: 代码格式（不影响功能）
-refactor: 重构
-perf: 性能优化
-test: 测试相关
-chore: 构建/工具相关
-```
-
-### ✅ Pull Request 检查清单
-
-- [ ] 代码通过 ESLint 检查
-- [ ] 代码通过 TypeScript 类型检查
-- [ ] 所有测试通过
-- [ ] 添加了必要的测试
-- [ ] 更新了相关文档
-- [ ] 遵循了组件开发规范
-
----
-
-## 📄 许可证
-
-本项目基于 [MIT License](./LICENSE) 开源协议。
-
----
-
-## 🙏 致谢
-
-- **设计灵感** - 赛博朋克美学与未来科技视觉
-- **图标支持** - [Iconify](https://iconify.design) - 10 万+ 开源图标
-- **技术栈** - [Vue.js](https://vuejs.org) 生态系统
-- **构建工具** - [Vite](https://vitejs.dev) - 极速开发体验
-- **文档工具** - [VitePress](https://vitepress.dev) - 静态站点生成
-- **测试框架** - [Vitest](https://vitest.dev) - 单元测试
-- **条码生成** - [JsBarcode](https://github.com/lindell/JsBarcode)
-- **二维码生成** - [QRCode](https://github.com/soldair/node-qrcode)
-- **农历支持** - [Lunar JavaScript](https://github.com/6tail/lunar-javascript)
-
----
-
-## 📊 项目统计
-
-- **组件数量**: 68 个
-- **测试覆盖**: 87+ 测试用例
-- **主题数量**: 4 个内置主题
-- **语言支持**: 中文、英文
-- **文档页面**: 70+ 页
-- **代码质量**: ESLint + TypeScript + Prettier
-- **构建工具**: Vite 7.1+
-- **包大小**: 轻量级，支持 Tree-shaking
-
----
-
-## 🔗 相关链接
-
-- [📖 在线文档](./docs)
-- [🎨 设计系统](./docs/design)
-- [🚀 快速开始](./docs/guide)
-- [📦 NPM 包](https://www.npmjs.com/package/vue-ex-ui)
-- [🐛 问题反馈](https://github.com/your-org/vue-ex-ui/issues)
-- [💬 讨论区](https://github.com/your-org/vue-ex-ui/discussions)
-- [📝 更新日志](./CHANGELOG.md)
-
----
-
-## 🌟 特别感谢
-
-感谢所有为 ExUI 做出贡献的开发者！
 
 ---
 
 <div align="center">
 
-**� 让我们一一起打造最酷的赛博朋克 UI 组件库！**
+**让我们一起打造最酷的赛博朋克 UI 组件库！**
 
 Made with ❤️ by ExUI Team
 
-[⭐ Star](https://github.com/your-org/vue-ex-ui) | [🐛 Issues](https://github.com/your-org/vue-ex-ui/issues) | [💬 Discussions](https://github.com/your-org/vue-ex-ui/discussions)
+[⭐ Star](https://github.com/zhuhanxin0308/vue-ex-ui) | [🐛 Issues](https://github.com/zhuhanxin0308/vue-ex-ui/issues) | [💬 Discussions](https://github.com/zhuhanxin0308/vue-ex-ui/discussions)
 
 </div>

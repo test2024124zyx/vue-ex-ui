@@ -1,0 +1,193 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// CheckboxGroup 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-checkbox-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--ex-font-secondary);
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 标签
+  // ============================================================================
+
+  &__label {
+    @include enhanced-form-label;
+  }
+
+  &__required {
+    @include required-indicator;
+  }
+
+  // ============================================================================
+  // 内容容器
+  // ============================================================================
+
+  &__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-4);
+    @include safe-transition(all);
+  }
+
+  // ============================================================================
+  // 底部信息区域
+  // ============================================================================
+
+  &__bottom {
+    @include helper-text-container;
+  }
+
+  // 帮助文本
+  &__help {
+    @include helper-text;
+  }
+
+  // 错误信息
+  &__error {
+    @include error-text;
+
+    &-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  // 错误信息过渡动画
+  &-error-enter-active,
+  &-error-leave-active {
+    @include safe-transition(all, var(--ex-motion-duration-base));
+  }
+
+  &-error-enter-from,
+  &-error-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-checkbox-group__content {
+      gap: var(--ex-spacing-3);
+    }
+  }
+
+  &--medium {
+    .ex-checkbox-group__content {
+      gap: var(--ex-spacing-4);
+    }
+  }
+
+  &--large {
+    .ex-checkbox-group__content {
+      gap: var(--ex-spacing-5);
+    }
+  }
+
+  // ============================================================================
+  // 垂直布局
+  // ============================================================================
+
+  &--vertical {
+    .ex-checkbox-group__content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  // ============================================================================
+  // 状态变体
+  // ============================================================================
+
+  &--error {
+    .ex-checkbox-group__label {
+      color: var(--ex-color-error);
+    }
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    .ex-checkbox-group__label {
+      color: var(--ex-color-text-disabled);
+    }
+  }
+
+  &--readonly {
+    .ex-checkbox-group__label {
+      cursor: default;
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设计 - 移动端优化
+// ============================================================================
+
+@include mobile {
+  .ex-checkbox-group {
+    &__content {
+      gap: var(--ex-spacing-3);
+    }
+
+    &--vertical {
+      .ex-checkbox-group__content {
+        gap: var(--ex-spacing-4);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 高对比度模式支持
+// ============================================================================
+
+@media (prefers-contrast: high) {
+  .ex-checkbox-group {
+    &__label {
+      font-weight: var(--ex-font-semibold);
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-checkbox-group {
+    &__content,
+    &__label {
+      transition: none !important;
+    }
+  }
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-checkbox-group {
+  // 使用 CSS containment 优化性能
+  contain: layout style;
+
+  &__content {
+    // 优化大量复选框的渲染
+    @include content-visibility(auto);
+  }
+}

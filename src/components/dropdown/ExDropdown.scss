@@ -1,0 +1,65 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-dropdown {
+  display: inline-block;
+  position: relative;
+
+  &__trigger {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    .ex-dropdown__trigger {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+
+  &__menu {
+    position: fixed;
+    z-index: var(--ex-z-dropdown, 1000);
+    min-width: 160px;
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    box-shadow: 0 4px 12px var(--ex-color-black-alpha-15);
+    @include transition(all);
+    @include neon-glow('blue', 'sm');
+  }
+
+  &__menu-content {
+    padding: var(--ex-spacing-2) 0;
+  }
+
+  &__divider {
+    height: 1px;
+    margin: var(--ex-spacing-2) 0;
+    background: var(--ex-color-border-primary);
+  }
+
+  // 无障碍支�?
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+}
+
+// 过渡动画
+.ex-dropdown-fade-enter-active,
+.ex-dropdown-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ex-dropdown-fade-enter-from,
+.ex-dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+

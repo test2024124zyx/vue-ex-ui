@@ -1,0 +1,202 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// ExSubMenu - 子菜单组
+// ============================================================================
+
+.ex-submenu {
+  position: relative;
+  list-style: none;
+  border-radius: var(--ex-radius-md);
+  overflow: visible;
+
+  &__title {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-3);
+    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    padding-right: calc(var(--ex-spacing-4) + 16px + var(--ex-spacing-2)); // 为箭头留出空
+    color: var(--ex-color-white-alpha-70);
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-medium);
+    font-family: var(--ex-font-secondary);
+    cursor: pointer;
+    border-radius: var(--ex-radius-md);
+    @include transition(background-color, color, box-shadow);
+
+    // Reset native button styles to align height with menu items
+    margin: 0;
+    border: 0;
+    background: transparent;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1.25;
+    min-height: calc(var(--ex-spacing-3) * 2 + 1.25em);
+
+    &:hover:not(.ex-submenu--disabled &) {
+      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-15), transparent);
+      color: var(--ex-color-white-alpha-90);
+
+      .ex-submenu__icon img,
+      .ex-submenu__icon svg {
+        // 悬停时增强霓虹蓝色效果
+        filter: brightness(0) saturate(100%) invert(65%) sepia(80%) saturate(2000%) hue-rotate(180deg) brightness(110%) contrast(95%) drop-shadow(0 0 6px var(--ex-color-neon-blue-alpha-60));
+        transform: scale(1.1);
+      }
+
+      .ex-submenu__arrow {
+        color: var(--ex-color-neon-blue-400);
+      }
+    }
+
+    &:focus-visible {
+      outline: none;
+      @include focus-ring(var(--ex-color-neon-blue-500), 2px, 2px);
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    @include transition(all);
+
+    img, svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      // 图标跟随主题颜色 - 使用滤镜将图标转换为主题色
+      filter: brightness(0) saturate(100%) invert(85%) sepia(10%) saturate(500%) hue-rotate(180deg) brightness(95%) contrast(90%);
+      @include transition(filter);
+    }
+  }
+
+  &__label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__arrow {
+    position: absolute;
+    right: var(--ex-spacing-4);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--ex-color-white-alpha-50);
+    @include transition(all);
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: var(--ex-spacing-6);
+    overflow: hidden;
+
+    .ex-menu-item {
+      margin-top: var(--ex-spacing-1);
+    }
+  }
+
+  // 展开状
+  &--open {
+    > .ex-submenu__title {
+      color: var(--ex-color-neon-blue-500);
+      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-10), transparent);
+
+      .ex-submenu__icon img,
+      .ex-submenu__icon svg {
+        // 展开时使用霓虹蓝色
+        filter: brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(2500%) hue-rotate(180deg) brightness(115%) contrast(100%) drop-shadow(0 0 6px var(--ex-color-neon-blue-alpha-50));
+      }
+
+      .ex-submenu__arrow {
+        transform: translateY(-50%) rotate(180deg);
+        color: var(--ex-color-neon-blue-500);
+      }
+    }
+  }
+
+  // 禁用状
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    filter: grayscale(0.8);
+
+    .ex-submenu__title {
+      color: var(--ex-color-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+}
+
+// 动画
+.ex-submenu-slide-enter-active,
+.ex-submenu-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ex-submenu-slide-enter-from,
+.ex-submenu-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.ex-submenu-slide-enter-to,
+.ex-submenu-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+// 响应
+@media (max-width: 768px) {
+  .ex-submenu__title {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+    gap: var(--ex-spacing-2);
+  }
+
+  .ex-submenu__icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// 无障
+@media (prefers-reduced-motion: reduce) {
+  .ex-submenu__title,
+  .ex-submenu__arrow,
+  .ex-submenu__icon img,
+  .ex-submenu__icon svg {
+    transition: none;
+  }
+
+  .ex-submenu-slide-enter-active,
+  .ex-submenu-slide-leave-active {
+    transition: none;
+  }
+
+  .ex-submenu__icon img,
+  .ex-submenu__icon svg {
+    transform: none !important;
+  }
+}
+

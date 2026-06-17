@@ -1,0 +1,41 @@
+@use '../../styles/mixins' as *;
+
+.ex-flex {
+  display: flex;
+  
+  // 为不支持 gap 的旧浏览器提供降级方案
+  @supports not (gap: 1px) {
+    // 当设置了 gap 时，使用 margin 模拟
+    &[style*="--ex-flex-gap"] {
+      margin: calc(var(--ex-flex-gap, 0px) / -2);
+      
+      > * {
+        margin: calc(var(--ex-flex-gap, 0px) / 2);
+      }
+    }
+    
+    // 当分别设置了 rowGap 和 columnGap 时
+    &[style*="--ex-flex-row-gap"],
+    &[style*="--ex-flex-column-gap"] {
+      margin-top: calc(var(--ex-flex-row-gap, 0px) / -2);
+      margin-bottom: calc(var(--ex-flex-row-gap, 0px) / -2);
+      margin-left: calc(var(--ex-flex-column-gap, 0px) / -2);
+      margin-right: calc(var(--ex-flex-column-gap, 0px) / -2);
+      
+      > * {
+        margin-top: calc(var(--ex-flex-row-gap, 0px) / 2);
+        margin-bottom: calc(var(--ex-flex-row-gap, 0px) / 2);
+        margin-left: calc(var(--ex-flex-column-gap, 0px) / 2);
+        margin-right: calc(var(--ex-flex-column-gap, 0px) / 2);
+      }
+    }
+  }
+  
+  &--inline {
+    display: inline-flex;
+  }
+  
+  &--vertical {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,284 @@
+// ExLink 链接组件样式
+// 游戏主题风格 - ClutchZone
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/performance' as *;
+@use '../../styles/component-mixins' as *;
+
+.ex-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle; // 行内多个链接/文本混排时保持垂直居中对齐
+  gap: var(--ex-spacing-1);
+  font-family: var(--ex-font-secondary);
+  font-weight: var(--ex-font-medium);
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 链接内容
+  // ============================================================================
+  
+  &__content {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  // ============================================================================
+  // 图标样式
+  // ============================================================================
+  
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    @include safe-transition(transform);
+
+    &--left {
+      margin-right: var(--ex-spacing-1);
+    }
+
+    &--right {
+      margin-left: var(--ex-spacing-1);
+    }
+  }
+
+  &__external-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--ex-spacing-1);
+    opacity: 0.7;
+    @include safe-transition(opacity, transform);
+  }
+
+  // ============================================================================
+  // 下划线效�?
+  // ============================================================================
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    @include safe-transition(transform);
+  }
+
+  &:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  // ============================================================================
+  // 类型样式
+  // ============================================================================
+  
+  &--default {
+    color: var(--ex-color-text-primary);
+
+    &:hover {
+      color: var(--ex-color-neon-blue-500);
+      text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-30);
+    }
+
+    &:active {
+      color: var(--ex-color-neon-pink-500);
+    }
+  }
+
+  &--primary {
+    color: var(--ex-color-neon-blue-500);
+    @include optimized-neon-glow('blue', 'sm');
+
+    &:hover {
+      color: var(--ex-color-neon-pink-500);
+      @include optimized-neon-glow('pink', 'md');
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--success {
+    color: var(--ex-color-success);
+
+    &:hover {
+      color: var(--ex-color-success-hover);
+      text-shadow: 0 0 8px var(--ex-color-success-alpha-30);
+    }
+  }
+
+  &--warning {
+    color: var(--ex-color-warning);
+
+    &:hover {
+      color: var(--ex-color-warning-hover);
+      text-shadow: 0 0 8px var(--ex-color-warning-alpha-30);
+    }
+  }
+
+  &--danger {
+    color: var(--ex-color-danger);
+
+    &:hover {
+      color: var(--ex-color-danger-hover);
+      text-shadow: 0 0 8px var(--ex-color-error-alpha-30);
+    }
+  }
+
+  &--info {
+    color: var(--ex-color-info);
+
+    &:hover {
+      color: var(--ex-color-info-hover);
+      text-shadow: 0 0 8px var(--ex-color-info-alpha-30);
+    }
+  }
+
+  // ============================================================================
+  // 尺寸样式
+  // ============================================================================
+  
+  &--small {
+    font-size: var(--ex-text-sm);
+    gap: calc(var(--ex-spacing-1) / 2);
+
+    .ex-link__icon {
+      font-size: 14px;
+    }
+  }
+
+  &--medium {
+    font-size: var(--ex-text-base);
+    gap: var(--ex-spacing-1);
+
+    .ex-link__icon {
+      font-size: 16px;
+    }
+  }
+
+  &--large {
+    font-size: var(--ex-text-lg);
+    gap: var(--ex-spacing-2);
+
+    .ex-link__icon {
+      font-size: 18px;
+    }
+  }
+
+  // ============================================================================
+  // 状态样�?
+  // ============================================================================
+  
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    text-shadow: none;
+    box-shadow: none;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  &--no-underline {
+    &::after {
+      display: none;
+    }
+  }
+
+  // ============================================================================
+  // 外部链接样式
+  // ============================================================================
+  
+  &--external {
+    &:hover {
+      .ex-link__external-icon {
+        opacity: 1;
+        transform: translate(2px, -2px);
+      }
+    }
+  }
+
+  // ============================================================================
+  // 聚焦样式
+  // ============================================================================
+  
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: 4px;
+    border-radius: var(--ex-radius-sm);
+    box-shadow: 0 0 0 4px var(--ex-color-neon-blue-alpha-20);
+  }
+
+  // ============================================================================
+  // 响应式设�?
+  // ============================================================================
+  
+  @include mobile {
+    min-height: 44px;
+    padding: var(--ex-spacing-2) 0;
+
+    &--small {
+      min-height: 36px;
+      font-size: var(--ex-text-base);
+    }
+
+    &--large {
+      min-height: 52px;
+      font-size: var(--ex-text-xl);
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支�?
+  // ============================================================================
+  
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &::after,
+    &__icon,
+    &__external-icon {
+      transition: none;
+      animation: none;
+    }
+
+    &:hover {
+      transform: none;
+
+      &::after {
+        transform: scaleX(1);
+      }
+
+      .ex-link__external-icon {
+        transform: none;
+      }
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    &:focus-visible {
+      outline-width: 3px;
+      outline-offset: 2px;
+    }
+
+    &::after {
+      height: 2px;
+    }
+  }
+}
+

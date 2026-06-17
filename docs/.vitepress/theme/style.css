@@ -1,0 +1,52 @@
+/**
+ * VitePress 文档辅助样式
+ *
+ * 仅保留「演示页面 Markdown 直接引用的辅助类」与少量结构修复。
+ * 主题化（颜色/导航/侧边栏/演示卡片等）统一在 custom.scss 中维护，
+ * 避免两处定义互相覆盖。本文件先于 custom.scss 引入。
+ */
+
+/* ==================== 栅格演示内边距 ==================== */
+._components_grid > div {
+  padding: 20px !important;
+}
+
+/* ==================== 面包屑组件：清除文档列表样式的污染 ==================== */
+/* `.ex-app` 的页面级列表样式会渗入 Breadcrumb 的 <ol>/<li>，这里显式还原。 */
+.vp-doc .ex-breadcrumb ol,
+.vp-doc .ex-breadcrumb ul {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.vp-doc .ex-breadcrumb li {
+  list-style: none !important;
+}
+
+.vp-doc .ex-breadcrumb li::before,
+.vp-doc .ex-breadcrumb li::marker {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== 栅格 / 布局演示用底块 ==================== */
+/* breadcrumb.md、layout.md 等页面直接使用，无局部定义，故保留为全局类。 */
+.grid-content {
+  border-radius: 6px;
+  min-height: 36px;
+  padding: 8px;
+  text-align: center;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-purple-light {
+  background: linear-gradient(135deg, #a86bff 0%, #ff3bd1 100%);
+}
+
+.bg-purple {
+  background: linear-gradient(135deg, #29abe2 0%, #a86bff 100%);
+}

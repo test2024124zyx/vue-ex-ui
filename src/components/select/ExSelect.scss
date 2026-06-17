@@ -1,0 +1,470 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-select {
+  position: relative;
+  display: inline-block;
+  width: 240px;
+  font-family: var(--ex-font-secondary);
+  color: var(--ex-color-text-primary);
+
+  // 尺寸变体
+  &--small {
+    .ex-select__trigger {
+      height: 32px;
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--medium {
+    .ex-select__trigger {
+      height: 40px;
+      font-size: var(--ex-text-base);
+    }
+  }
+
+  &--large {
+    .ex-select__trigger {
+      height: 48px;
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  // 禁用状态
+  &.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    .ex-select__trigger {
+      cursor: not-allowed;
+      border-color: var(--ex-color-border-secondary) !important;
+      background-color: var(--ex-color-bg-tertiary);
+      box-shadow: none !important;
+    }
+  }
+
+  // 聚焦状态
+  &.is-focus {
+    .ex-select__trigger {
+      border-color: var(--ex-color-neon-pink-500);
+      @include neon-glow('pink', 'md');
+    }
+  }
+
+  // 触发器
+  &__trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 12px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--ex-color-bg-secondary-rgb), 0.8) 0%,
+      rgba(var(--ex-color-bg-primary-rgb), 0.9) 100%
+    );
+    border: 2px solid var(--ex-color-neon-blue-500);
+    border-radius: var(--ex-radius-lg);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    @include transition(all);
+    @include neon-glow('blue', 'sm');
+
+    &:hover:not(.is-disabled) {
+      border-color: var(--ex-color-neon-pink-400);
+      @include neon-glow('pink', 'sm');
+      transform: translateY(-1px);
+    }
+
+    &:active:not(.is-disabled) {
+      transform: translateY(0);
+    }
+  }
+
+  // 值显示区域
+  &__value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-height: 20px;
+    overflow: hidden;
+  }
+
+  // 多选：值区域换行排列标签
+  &--multiple &__value {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0;
+    overflow: visible;
+  }
+
+  // 多选标签
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 0 6px;
+    height: 22px;
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-primary);
+    background: var(--ex-color-primary-alpha-10);
+    border: 1px solid var(--ex-color-primary-alpha-30);
+    border-radius: var(--ex-radius-md);
+    white-space: nowrap;
+
+    &--count {
+      color: var(--ex-color-text-secondary);
+      background: var(--ex-color-bg-tertiary);
+      border-color: var(--ex-color-border-primary);
+    }
+  }
+
+  &__tag-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__tag-close {
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity var(--ex-motion-duration-fast) ease-out;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  // 选中标签
+  &__label {
+    color: var(--ex-color-text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 4px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
+  }
+
+  // 搜索输入框
+  &__input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--ex-color-text-primary);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 500;
+
+    &::placeholder {
+      color: var(--ex-color-text-tertiary);
+      font-weight: 400;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  // 占位符
+  &__placeholder {
+    color: var(--ex-color-text-tertiary);
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // 后缀图标区域
+  &__suffix {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+    color: var(--ex-color-neon-blue-400);
+  }
+
+  // 清空按钮
+  &__clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: var(--ex-color-text-secondary);
+    @include transition(all);
+
+    &:hover {
+      color: var(--ex-color-neon-pink-500);
+      transform: scale(1.1);
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // 下拉箭头
+  &__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    @include transition(transform);
+
+    &.is-reverse {
+      transform: rotate(180deg);
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // 下拉菜单
+  &__dropdown {
+    position: fixed;
+    z-index: var(--ex-z-dropdown);
+    margin-top: 4px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--ex-color-bg-primary-rgb), 0.95) 0%,
+      rgba(var(--ex-color-bg-secondary-rgb), 0.9) 100%
+    );
+    border: 2px solid var(--ex-color-neon-pink-500);
+    border-radius: var(--ex-radius-lg);
+    backdrop-filter: blur(12px);
+    @include neon-glow('pink', 'lg');
+    overflow: hidden;
+    max-height: 300px;
+  }
+
+  // 选项列表
+  &__options {
+    list-style: none;
+    padding: 8px 0;
+    margin: 0;
+    max-height: 280px;
+    overflow-y: auto;
+    @include custom-scrollbar();
+  }
+
+  // 虚拟滚动容器：高度与滚动由 ExVirtualList 自身管理，避免重复滚动条
+  &__options--virtual {
+    padding: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  // 选项
+  &__option {
+    position: relative;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: var(--ex-color-text-primary);
+    font-weight: 500;
+    @include transition(all);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-pink-500)
+      );
+      @include transition(width);
+    }
+
+    &.is-hover {
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
+      color: var(--ex-color-neon-blue-400);
+      text-shadow: 0 0 8px rgba(var(--ex-color-neon-blue-500-rgb), 0.5);
+
+      &::before {
+        width: 3px;
+      }
+    }
+
+    &.is-selected {
+      color: var(--ex-color-neon-pink-400);
+      background: rgba(var(--ex-color-neon-pink-500-rgb), 0.15);
+      font-weight: 600;
+      text-shadow: 0 0 8px rgba(var(--ex-color-neon-pink-500-rgb), 0.6);
+
+      &::before {
+        width: 4px;
+        background: var(--ex-color-neon-pink-500);
+        box-shadow: 0 0 8px rgba(var(--ex-color-neon-pink-500-rgb), 0.8);
+      }
+
+      &::after {
+        content: '✓';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ex-color-neon-pink-500);
+        font-weight: bold;
+        text-shadow: 0 0 4px rgba(var(--ex-color-neon-pink-500-rgb), 0.8);
+      }
+    }
+
+    &.is-disabled {
+      color: var(--ex-color-text-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+      background: transparent;
+
+      &:hover {
+        background: transparent;
+        color: var(--ex-color-text-disabled);
+        text-shadow: none;
+
+        &::before {
+          width: 0;
+        }
+      }
+    }
+
+    &:not(.is-disabled):not(.is-selected):hover {
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.08);
+      color: var(--ex-color-neon-blue-300);
+      transform: translateX(2px);
+    }
+  }
+
+  // 分组标题
+  &__group {
+    padding: 8px 16px 4px;
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(var(--ex-color-bg-tertiary-rgb), 0.3);
+    border-bottom: 1px solid rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
+    text-shadow: 0 0 4px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
+  }
+
+  // 无数据
+  &__empty {
+    padding: 24px 16px;
+    color: var(--ex-color-text-tertiary);
+    text-align: center;
+    font-size: var(--ex-text-sm);
+    font-style: italic;
+  }
+
+  &__loading {
+    padding: 24px 16px;
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+    font-size: var(--ex-text-sm);
+  }
+
+  // 响应式
+  @include mobile {
+    width: 100%;
+
+    &__trigger {
+      min-height: 44px; // 移动端触摸友好
+    }
+
+    &__dropdown {
+      max-height: 50vh;
+    }
+  }
+
+  // 无障碍支持
+  &__trigger:focus-visible {
+    outline: none;
+    border-color: var(--ex-color-neon-pink-500);
+    @include neon-glow('pink', 'md');
+  }
+}
+
+// 下拉动画
+.ex-select-dropdown-enter-active {
+  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+}
+
+.ex-select-dropdown-leave-active {
+  transition: all var(--ex-motion-duration-fast) var(--ex-motion-ease-in);
+}
+
+.ex-select-dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+
+.ex-select-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+
+// 特殊效果
+.ex-select__trigger {
+  // 科技感边框动画
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      var(--ex-color-neon-blue-500),
+      var(--ex-color-neon-pink-500),
+      var(--ex-color-neon-blue-500)
+    );
+    border-radius: var(--ex-radius-lg);
+    opacity: 0;
+    z-index: -1;
+    @include transition(opacity);
+  }
+
+  &:hover::before {
+    opacity: 0.3;
+    animation: border-flow 2s linear infinite;
+  }
+}
+
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+// 选项进入动画
+.ex-select__option {
+  animation: option-fade-in 0.2s ease-out;
+}
+
+@keyframes option-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

@@ -1,0 +1,182 @@
+// ExEllipsis 文本省略组件样式
+// 游戏主题风格 - ClutchZone
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/performance' as *;
+@use '../../styles/component-mixins' as *;
+
+.ex-ellipsis {
+  position: relative;
+  width: 100%;
+  font-family: var(--ex-font-secondary);
+  color: var(--ex-color-text-primary);
+
+  // ============================================================================
+  // 内容区域
+  // ============================================================================
+  
+  &__content {
+    line-height: var(--ex-leading-relaxed);
+    word-break: break-word;
+    @include safe-transition(all);
+
+    &.is-ellipsis {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &.is-expanded {
+      display: block;
+      -webkit-line-clamp: unset;
+    }
+  }
+
+  // ============================================================================
+  // 操作按钮区域
+  // ============================================================================
+  
+  &__actions {
+    margin-top: var(--ex-spacing-2);
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    background: transparent;
+    border: 1px solid var(--ex-color-neon-blue-500);
+    border-radius: var(--ex-radius-base);
+    color: var(--ex-color-neon-blue-500);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    cursor: pointer;
+    outline: none;
+    @include safe-transition(all);
+    @include optimized-neon-glow('blue', 'sm');
+
+    &:hover {
+      border-color: var(--ex-color-neon-pink-500);
+      color: var(--ex-color-neon-pink-500);
+      @include optimized-neon-glow('pink', 'md');
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+      @include optimized-neon-glow('pink', 'sm');
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px var(--ex-color-neon-blue-alpha-20);
+    }
+  }
+
+  &__btn-text {
+    font-family: var(--ex-font-secondary);
+    letter-spacing: 0.5px;
+  }
+
+  &__btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    @include safe-transition(transform);
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    &.is-expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  // ============================================================================
+  // 状态样�?
+  // ============================================================================
+  
+  &--expanded {
+    .ex-ellipsis__content {
+      animation: expand-in 0.3s var(--ex-motion-ease-out);
+    }
+  }
+
+  &--expandable {
+    .ex-ellipsis__content {
+      cursor: default;
+    }
+  }
+
+  // ============================================================================
+  // 响应式设�?
+  // ============================================================================
+  
+  @include mobile {
+    &__btn {
+      min-height: 36px;
+      padding: var(--ex-spacing-2) var(--ex-spacing-4);
+      font-size: var(--ex-text-base);
+    }
+
+    &__btn-icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支�?
+  // ============================================================================
+  
+  @media (prefers-reduced-motion: reduce) {
+    &__content,
+    &__btn,
+    &__btn-icon {
+      transition: none;
+      animation: none;
+    }
+
+    &__btn:hover {
+      transform: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    &__btn {
+      border-width: 2px;
+
+      &:focus-visible {
+        outline-width: 3px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 动画定义
+// ============================================================================
+
+@keyframes expand-in {
+  from {
+    opacity: 0.8;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+

@@ -1,0 +1,206 @@
+// ExBarcode Styles
+// 条码组件样式
+
+@use '../../styles/mixins' as *;
+
+.ex-barcode {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ex-spacing-4);
+  background: var(--ex-color-bg-secondary);
+  @include transition(all);
+
+  // SVG 容器
+  &__svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  // 边框样式
+  &--bordered {
+    border: 1px solid var(--ex-color-border-primary);
+  }
+
+  // 默认样式
+  &--default {
+    // 默认样式
+  }
+
+  // 霓虹样式
+  &--neon {
+    background: var(--ex-color-bg-primary);
+    border: 1px solid var(--ex-color-primary);
+    box-shadow: 
+      0 0 10px var(--ex-color-primary-alpha-30),
+      inset 0 0 10px var(--ex-color-primary-alpha-10);
+
+    .ex-barcode__svg {
+      filter: drop-shadow(0 0 2px var(--ex-color-primary-alpha-50));
+    }
+
+    &:hover {
+      box-shadow: 
+        0 0 15px var(--ex-color-primary-alpha-40),
+        inset 0 0 15px var(--ex-color-primary-alpha-15);
+    }
+  }
+
+  // 游戏样式
+  &--gaming {
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-bg-secondary),
+      var(--ex-color-bg-tertiary)
+    );
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: var(--ex-gradient-primary);
+      border-radius: inherit;
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    .ex-barcode__svg {
+      filter: drop-shadow(0 2px 4px var(--ex-color-black-alpha-30));
+    }
+
+    &:hover::before {
+      opacity: 0.8;
+    }
+  }
+
+  // 加载状态
+  &__loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-2);
+    background: var(--ex-color-bg-secondary-alpha-80);
+    backdrop-filter: blur(4px);
+    z-index: 1;
+  }
+
+  &__loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--ex-color-border-primary);
+    border-top-color: var(--ex-color-primary);
+    border-radius: 50%;
+    animation: ex-barcode-spin 0.8s linear infinite;
+  }
+
+  &__loading-text {
+    margin: 0;
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+  }
+
+  // 错误状态
+  &__error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-3);
+    background: var(--ex-color-bg-secondary);
+    z-index: 1;
+  }
+
+  &__error-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--ex-color-error);
+    animation: ex-barcode-shake 0.5s ease-in-out;
+  }
+
+  &__error-text {
+    margin: 0;
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-error);
+    text-align: center;
+    max-width: 200px;
+  }
+
+  // 加载状态样式
+  &--loading {
+    .ex-barcode__svg {
+      opacity: 0.3;
+    }
+  }
+
+  // 错误状态样式
+  &--error {
+    border-color: var(--ex-color-error);
+
+    &.ex-barcode--neon {
+      box-shadow: 
+        0 0 10px var(--ex-color-error-alpha-30),
+        inset 0 0 10px var(--ex-color-error-alpha-10);
+    }
+  }
+
+  // 响应式
+  @include mobile {
+    padding: var(--ex-spacing-3);
+  }
+}
+
+// 旋转动画
+@keyframes ex-barcode-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 抖动动画
+@keyframes ex-barcode-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+// 尊重用户的动画偏好
+@media (prefers-reduced-motion: reduce) {
+  .ex-barcode {
+    &__loading-spinner {
+      animation: none;
+      border-top-color: var(--ex-color-border-primary);
+    }
+
+    &__error-icon {
+      animation: none;
+    }
+  }
+}

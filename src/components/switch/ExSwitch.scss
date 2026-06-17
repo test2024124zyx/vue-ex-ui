@@ -1,0 +1,532 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Switch 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  font-family: var(--ex-font-secondary);
+  line-height: var(--ex-leading-normal);
+  cursor: pointer;
+  user-select: none;
+  @include safe-transition(all);
+
+  // ============================================================================
+  // 开关主体
+  // ============================================================================
+
+  &__core {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    min-width: 44px;
+    padding: 2px;
+    border: 2px solid var(--ex-color-border-primary);
+    border-radius: 12px;
+    background: var(--ex-color-bg-tertiary);
+    @include safe-transition(all);
+    @include gpu-accelerate;
+
+    // 霓虹发光效果
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 14px;
+      opacity: 0;
+      @include safe-transition(opacity);
+      pointer-events: none;
+    }
+  }
+
+  // ============================================================================
+  // 开关按钮
+  // ============================================================================
+
+  &__action {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--ex-color-white);
+    box-shadow: 0 2px 4px var(--ex-color-black-alpha-20);
+    @include safe-transition(all);
+    @include gpu-accelerate;
+  }
+
+  // ============================================================================
+  // 加载状态
+  // ============================================================================
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__spinner {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--ex-color-neon-blue-500);
+    border-top-color: transparent;
+    border-radius: 50%;
+    @include safe-animation(spin, 0.6s, linear, infinite);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // ============================================================================
+  // 内联文本
+  // ============================================================================
+
+  &__inner {
+    flex: 1;
+    padding: 0 var(--ex-spacing-2);
+    font-size: var(--ex-text-xs);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+    @include safe-transition(all);
+    @include optimized-text-rendering;
+  }
+
+  // ============================================================================
+  // 外部标签
+  // ============================================================================
+
+  &__label {
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    @include safe-transition(color);
+    @include optimized-text-rendering;
+
+    &.is-active {
+      color: var(--ex-color-text-primary);
+      font-weight: var(--ex-font-medium);
+    }
+
+    &--left {
+      margin-right: var(--ex-spacing-2);
+    }
+
+    &--right {
+      margin-left: var(--ex-spacing-2);
+    }
+  }
+
+  // ============================================================================
+  // 隐藏的原生 input
+  // ============================================================================
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    pointer-events: none;
+  }
+
+  // ============================================================================
+  // 选中状态 - 游戏主题增强
+  // ============================================================================
+
+  &.is-checked {
+    .ex-switch__core {
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'sm');
+
+      &::before {
+        opacity: 1;
+        @include optimized-neon-glow('blue', 'md');
+      }
+    }
+
+    .ex-switch__action {
+      left: calc(100% - 18px);
+    }
+
+    .ex-switch__inner {
+      color: var(--ex-color-white);
+      text-shadow: 0 0 4px var(--ex-color-black-alpha-30);
+    }
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    .ex-switch__core {
+      height: 20px;
+      min-width: 36px;
+      border-radius: 10px;
+    }
+
+    .ex-switch__action {
+      width: 14px;
+      height: 14px;
+    }
+
+    &.is-checked .ex-switch__action {
+      left: calc(100% - 16px);
+    }
+
+    .ex-switch__inner {
+      font-size: 10px;
+      padding: 0 var(--ex-spacing-1);
+    }
+
+    .ex-switch__label {
+      font-size: var(--ex-text-xs);
+    }
+  }
+
+  &--medium {
+    .ex-switch__core {
+      height: 24px;
+      min-width: 44px;
+      border-radius: 12px;
+    }
+
+    .ex-switch__action {
+      width: 16px;
+      height: 16px;
+    }
+
+    &.is-checked .ex-switch__action {
+      left: calc(100% - 18px);
+    }
+
+    .ex-switch__inner {
+      font-size: var(--ex-text-xs);
+    }
+
+    .ex-switch__label {
+      font-size: var(--ex-text-sm);
+    }
+  }
+
+  &--large {
+    .ex-switch__core {
+      height: 28px;
+      min-width: 52px;
+      border-radius: 14px;
+    }
+
+    .ex-switch__action {
+      width: 20px;
+      height: 20px;
+    }
+
+    &.is-checked .ex-switch__action {
+      left: calc(100% - 22px);
+    }
+
+    .ex-switch__inner {
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-switch__label {
+      font-size: var(--ex-text-base);
+    }
+  }
+
+  // ============================================================================
+  // 内联文本模式
+  // ============================================================================
+
+  &.has-inline-prompt {
+    .ex-switch__core {
+      min-width: 60px;
+    }
+
+    &.ex-switch--small .ex-switch__core {
+      min-width: 50px;
+    }
+
+    &.ex-switch--large .ex-switch__core {
+      min-width: 70px;
+    }
+  }
+
+  // ============================================================================
+  // 交互状态 - 游戏主题增强
+  // ============================================================================
+
+  &.is-focused {
+    .ex-switch__core {
+      border-color: var(--ex-color-neon-blue-500);
+      @include optimized-neon-glow('blue', 'md');
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid var(--ex-color-neon-blue-500);
+        border-radius: 16px;
+        opacity: 0.3;
+        @include safe-transition(opacity);
+      }
+    }
+  }
+
+  // 悬停效果
+  &:not(.is-disabled):not(.is-loading) {
+    @include hover-capable {
+      &:hover {
+        .ex-switch__core {
+          border-color: var(--ex-color-neon-pink-400);
+          transform: scale(1.02);
+
+          &:not(.is-checked) {
+            background: var(--ex-color-neon-pink-alpha-05);
+            @include optimized-neon-glow('pink', 'sm');
+          }
+        }
+
+        &.is-checked .ex-switch__core {
+          @include optimized-neon-glow('blue', 'md');
+        }
+
+        .ex-switch__label {
+          color: var(--ex-color-neon-pink-400);
+        }
+      }
+    }
+  }
+
+  // 激活状态
+  &:not(.is-disabled):not(.is-loading):active {
+    .ex-switch__core {
+      transform: scale(0.98);
+    }
+  }
+
+  // ============================================================================
+  // 禁用状态
+  // ============================================================================
+
+  &.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+
+    .ex-switch__core {
+      background: var(--ex-color-bg-tertiary);
+      border-color: var(--ex-color-border-primary);
+      box-shadow: none;
+
+      &::before {
+        opacity: 0;
+      }
+    }
+
+    .ex-switch__action {
+      background: var(--ex-color-text-disabled);
+    }
+
+    .ex-switch__label {
+      color: var(--ex-color-text-disabled);
+    }
+  }
+
+  // ============================================================================
+  // 加载状态
+  // ============================================================================
+
+  &.is-loading {
+    cursor: default;
+    pointer-events: none;
+
+    .ex-switch__action {
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+
+  // ============================================================================
+  // 验证状态
+  // ============================================================================
+
+  &.is-success {
+    .ex-switch__core {
+      &.is-checked {
+        background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
+        border-color: var(--ex-color-success);
+        box-shadow: 0 0 10px var(--ex-color-success-alpha-30);
+      }
+    }
+  }
+
+  &.is-warning {
+    .ex-switch__core {
+      &.is-checked {
+        background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
+        border-color: var(--ex-color-warning);
+        box-shadow: 0 0 10px var(--ex-color-warning-alpha-30);
+      }
+    }
+  }
+
+  &.is-error {
+    .ex-switch__core {
+      border-color: var(--ex-color-error);
+
+      &:not(.is-checked) {
+        background: var(--ex-color-error-alpha-10);
+      }
+
+      &.is-checked {
+        background: linear-gradient(135deg, var(--ex-color-error), var(--ex-color-danger-mid));
+        border-color: var(--ex-color-error);
+        box-shadow: 0 0 10px var(--ex-color-error-alpha-30);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 响应式设计 - 移动端优化
+// ============================================================================
+
+@include mobile {
+  .ex-switch {
+    // 移动端增加触摸区域
+    padding: var(--ex-spacing-2);
+    margin: calc(var(--ex-spacing-2) * -1);
+
+    &__core {
+      // 移动端稍大的开关
+      height: 28px !important;
+      min-width: 52px !important;
+    }
+
+    &__action {
+      width: 20px !important;
+      height: 20px !important;
+    }
+
+    &.is-checked .ex-switch__action {
+      left: calc(100% - 22px) !important;
+    }
+  }
+}
+
+// ============================================================================
+// 触摸设备优化
+// ============================================================================
+
+@include touch-device {
+  .ex-switch {
+    // 禁用悬停缩放
+    &:not(.is-disabled):not(.is-loading):hover {
+      .ex-switch__core {
+        transform: none;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 高对比度模式支持
+// ============================================================================
+
+@media (prefers-contrast: high) {
+  .ex-switch {
+    &__core {
+      border-width: 3px;
+    }
+
+    &.is-checked .ex-switch__core {
+      border-color: var(--ex-color-text-primary);
+      background: var(--ex-color-text-primary);
+    }
+
+    &__label {
+      font-weight: var(--ex-font-medium);
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-switch {
+    &__core,
+    &__action,
+    &__inner,
+    &__label {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    &__core::before,
+    &__core::after {
+      transition: none !important;
+    }
+
+    &__spinner {
+      animation: none !important;
+    }
+
+    &:not(.is-disabled):not(.is-loading):hover,
+    &:not(.is-disabled):not(.is-loading):active {
+      .ex-switch__core {
+        transform: none !important;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-switch {
+  contain: layout style;
+
+  &__core {
+    @include gpu-accelerate;
+
+    &:not(:hover):not(:focus) {
+      @include remove-gpu-accelerate;
+    }
+  }
+
+  @include low-end-device {
+    &__core {
+      box-shadow: none !important;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}

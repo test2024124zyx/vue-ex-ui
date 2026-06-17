@@ -1,0 +1,163 @@
+// Light Theme for ExUI - "日光终端"
+// 明亮主题 - 白底 + 深色文字，发光收敛为柔和投影，适合后台/文档等场景。
+//
+// 设计要点：
+// 1) 品牌色/状态色均取「深饱和」值，保证在白底上作为链接/文字也满足 WCAG AA。
+// 2) 填充按钮的文字墨色（--ex-button-ink-on-bright）改为白色——因为本主题的填充
+//    色较深，白字对比度充足；其余主题仍沿用深色墨（霓虹灯管式）。
+// 3) 霓虹发光（--ex-shadow-neon-*）收敛为中性柔和投影，避免白底上的廉价光晕。
+
+@use './base' as *;
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  @include theme-transition;
+  @include theme-common-colors;
+  @include theme-status-colors;
+
+  // ========== 主色调（深饱和蓝，链接/文字在白底达标）==========
+  --ex-color-primary: #1668dc;
+  --ex-color-primary-hover: #0e57c2;
+  --ex-color-primary-active: #0a45a0;
+
+  // ========== 次要色（深紫）==========
+  --ex-color-secondary: #6645c9;
+  --ex-color-secondary-hover: #553aa8;
+  --ex-color-secondary-active: #452f8c;
+
+  // ========== 强调色（品红）==========
+  --ex-color-accent: #c2298a;
+
+  // ========== 背景色系（白 → 浅灰）==========
+  --ex-color-bg-primary: #ffffff;
+  --ex-color-bg-secondary: #f5f7fa;
+  --ex-color-bg-tertiary: #eef1f5;
+  --ex-color-bg-elevated: #ffffff;
+  --ex-color-bg-hover: #f0f3f7;
+  --ex-color-bg-active: #e6ebf2;
+
+  // ========== 文本色系（深色）==========
+  --ex-color-text-primary: #1a2332;
+  --ex-color-text-secondary: #5a6b7d;
+  --ex-color-text-tertiary: #8a98a8;
+  --ex-color-text-disabled: #b3bdc9;
+
+  // ========== 边框色系（浅灰）==========
+  --ex-color-border-primary: #d9e0e8;
+  --ex-color-border-secondary: #c4cdd8;
+
+  // ========== 状态色系（深饱和，白字达标）==========
+  --ex-color-success: #18794e;
+  --ex-color-success-hover: #0f5f3d;
+  --ex-color-success-active: #0a4a2f;
+
+  --ex-color-warning: #ad5700;
+  --ex-color-warning-hover: #8f4700;
+  --ex-color-warning-active: #743a00;
+
+  --ex-color-error: #cb2a2a;
+  --ex-color-danger: #cb2a2a;
+  --ex-color-danger-hover: #ad1f1f;
+  --ex-color-danger-active: #8f1717;
+
+  --ex-color-info: var(--ex-color-primary);
+  --ex-color-info-hover: #0e57c2;
+  --ex-color-info-active: #0a45a0;
+
+  // ========== 填充按钮墨色：本主题用白字 ==========
+  --ex-button-ink-on-bright: #ffffff;
+
+  // ========== 渐变定义 ==========
+  --ex-gradient-primary: linear-gradient(135deg, #1668dc 0%, #6645c9 100%);
+  --ex-gradient-secondary: linear-gradient(135deg, #6645c9 0%, #c2298a 100%);
+  // 白底下极轻的氛围（几乎不可见，避免突兀）
+  --ex-gradient-bg:
+    radial-gradient(circle at 20% 80%, rgba(22, 104, 220, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(102, 69, 201, 0.03) 0%, transparent 50%);
+
+  // ========== 阴影系统（中性柔和投影，替代霓虹发光）==========
+  --ex-shadow-neon-sm: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.06);
+  --ex-shadow-neon-md: 0 4px 12px rgba(16, 24, 40, 0.1), 0 2px 4px rgba(16, 24, 40, 0.06);
+  --ex-shadow-neon-lg: 0 12px 28px rgba(16, 24, 40, 0.12), 0 4px 8px rgba(16, 24, 40, 0.06);
+
+  // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-500: #1668dc;
+  --ex-color-neon-blue-600: #0e57c2;
+  --ex-color-neon-pink-500: #c2298a;
+
+  // ========== 主色透明度 ==========
+  --ex-color-primary-alpha-05: rgba(22, 104, 220, 0.05);
+  --ex-color-primary-alpha-08: rgba(22, 104, 220, 0.08);
+  --ex-color-primary-alpha-10: rgba(22, 104, 220, 0.1);
+  --ex-color-primary-alpha-15: rgba(22, 104, 220, 0.15);
+  --ex-color-primary-alpha-20: rgba(22, 104, 220, 0.2);
+  --ex-color-primary-alpha-30: rgba(22, 104, 220, 0.3);
+  --ex-color-primary-alpha-40: rgba(22, 104, 220, 0.4);
+  --ex-color-primary-alpha-50: rgba(22, 104, 220, 0.5);
+  --ex-color-primary-alpha-60: rgba(22, 104, 220, 0.6);
+
+  // ========== 次要色透明度 ==========
+  --ex-color-secondary-alpha-05: rgba(102, 69, 201, 0.05);
+  --ex-color-secondary-alpha-08: rgba(102, 69, 201, 0.08);
+  --ex-color-secondary-alpha-10: rgba(102, 69, 201, 0.1);
+  --ex-color-secondary-alpha-15: rgba(102, 69, 201, 0.15);
+  --ex-color-secondary-alpha-20: rgba(102, 69, 201, 0.2);
+  --ex-color-secondary-alpha-30: rgba(102, 69, 201, 0.3);
+  --ex-color-secondary-alpha-40: rgba(102, 69, 201, 0.4);
+  --ex-color-secondary-alpha-60: rgba(102, 69, 201, 0.6);
+  --ex-color-secondary-alpha-80: rgba(102, 69, 201, 0.8);
+
+  // ========== 霓虹蓝透明度（= 主色）==========
+  --ex-color-neon-blue-alpha-05: rgba(22, 104, 220, 0.05);
+  --ex-color-neon-blue-alpha-10: rgba(22, 104, 220, 0.1);
+  --ex-color-neon-blue-alpha-15: rgba(22, 104, 220, 0.15);
+  --ex-color-neon-blue-alpha-20: rgba(22, 104, 220, 0.2);
+  --ex-color-neon-blue-alpha-25: rgba(22, 104, 220, 0.25);
+  --ex-color-neon-blue-alpha-30: rgba(22, 104, 220, 0.3);
+  --ex-color-neon-blue-alpha-40: rgba(22, 104, 220, 0.4);
+  --ex-color-neon-blue-alpha-50: rgba(22, 104, 220, 0.5);
+  --ex-color-neon-blue-alpha-60: rgba(22, 104, 220, 0.6);
+  --ex-color-neon-blue-alpha-80: rgba(22, 104, 220, 0.8);
+
+  // ========== 霓虹粉透明度（= 强调色）==========
+  --ex-color-neon-pink-alpha-05: rgba(194, 41, 138, 0.05);
+  --ex-color-neon-pink-alpha-10: rgba(194, 41, 138, 0.1);
+  --ex-color-neon-pink-alpha-15: rgba(194, 41, 138, 0.15);
+  --ex-color-neon-pink-alpha-20: rgba(194, 41, 138, 0.2);
+  --ex-color-neon-pink-alpha-30: rgba(194, 41, 138, 0.3);
+  --ex-color-neon-pink-alpha-40: rgba(194, 41, 138, 0.4);
+
+  // ========== 背景色透明度（白底）==========
+  --ex-color-bg-primary-alpha-30: rgba(255, 255, 255, 0.3);
+  --ex-color-bg-primary-alpha-50: rgba(255, 255, 255, 0.5);
+  --ex-color-bg-primary-alpha-80: rgba(255, 255, 255, 0.8);
+  --ex-color-bg-primary-alpha-90: rgba(255, 255, 255, 0.9);
+  --ex-color-bg-primary-alpha-95: rgba(255, 255, 255, 0.95);
+  --ex-color-bg-primary-alpha-98: rgba(255, 255, 255, 0.98);
+
+  --ex-color-bg-secondary-alpha-30: rgba(245, 247, 250, 0.3);
+  --ex-color-bg-secondary-alpha-50: rgba(245, 247, 250, 0.5);
+  --ex-color-bg-secondary-alpha-80: rgba(245, 247, 250, 0.8);
+
+  --ex-color-bg-tertiary-alpha-30: rgba(238, 241, 245, 0.3);
+  --ex-color-bg-tertiary-alpha-50: rgba(238, 241, 245, 0.5);
+
+  --ex-color-bg-surface-alpha-80: rgba(245, 247, 250, 0.8);
+
+  // ========== Info 透明度 ==========
+  --ex-color-info-alpha-05: rgba(22, 104, 220, 0.05);
+  --ex-color-info-alpha-10: rgba(22, 104, 220, 0.1);
+  --ex-color-info-alpha-20: rgba(22, 104, 220, 0.2);
+  --ex-color-info-alpha-30: rgba(22, 104, 220, 0.3);
+  --ex-color-info-alpha-40: rgba(22, 104, 220, 0.4);
+  --ex-color-info-alpha-60: rgba(22, 104, 220, 0.6);
+  --ex-color-info-alpha-80: rgba(22, 104, 220, 0.8);
+
+  // ========== RGB 格式变量 ==========
+  --ex-color-bg-primary-rgb: 255, 255, 255;
+  --ex-color-bg-secondary-rgb: 245, 247, 250;
+  --ex-color-bg-tertiary-rgb: 238, 241, 245;
+  --ex-color-neon-blue-500-rgb: 22, 104, 220;
+  --ex-color-neon-pink-500-rgb: 194, 41, 138;
+}

@@ -1,0 +1,219 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// ExMenu - 游戏主题导航菜单容器
+// ============================================================================
+
+.ex-menu {
+  position: relative;
+  background: linear-gradient(135deg, var(--ex-color-bg-primary-alpha-95), var(--ex-color-purple-alpha-80));
+  border: 1px solid var(--ex-color-neon-blue-alpha-30);
+  border-radius: var(--ex-radius-lg);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  user-select: none; // 禁止文字选中
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  @include transition(all);
+  @include neon-glow('blue', 'sm');
+
+  // 霓虹边框动画
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--ex-radius-lg);
+    padding: 1px;
+    background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    @include transition(opacity);
+  }
+
+  &:hover::before {
+    opacity: 0.6;
+  }
+
+  // 搜索框
+  &__search {
+    position: relative;
+    padding: var(--ex-spacing-2);
+    padding-bottom: 0;
+  }
+
+  &__search-input {
+    width: 100%;
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    padding-right: var(--ex-spacing-8);
+    background: var(--ex-color-bg-secondary-alpha-50);
+    border: 1px solid var(--ex-color-neon-blue-alpha-20);
+    border-radius: var(--ex-radius-md);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    font-family: var(--ex-font-secondary);
+    outline: none;
+    @include transition(all);
+
+    &::placeholder {
+      color: var(--ex-color-text-disabled);
+    }
+
+    &:focus {
+      border-color: var(--ex-color-neon-blue-500);
+      background: var(--ex-color-bg-secondary-alpha-80);
+      @include neon-glow('blue', 'sm');
+    }
+  }
+
+  &__search-icon {
+    position: absolute;
+    right: var(--ex-spacing-4);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+
+    img {
+      width: 100%;
+      height: 100%;
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(300%) hue-rotate(180deg) brightness(90%) contrast(85%);
+    }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: var(--ex-spacing-2);
+  }
+
+  // 垂直模式
+  &--vertical {
+    width: 260px;
+    
+    .ex-menu__list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ex-spacing-1);
+    }
+  }
+
+  // 水平模式
+  &--horizontal {
+    width: 100%;
+    
+    .ex-menu__list {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--ex-spacing-2);
+      overflow-x: auto;
+      @include custom-scrollbar(4px);
+    }
+
+    .ex-menu__list > .ex-menu-item,
+    .ex-menu__list > .ex-submenu {
+      display: flex;
+      align-items: center;
+    }
+
+    .ex-submenu__list {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 200px;
+      background: linear-gradient(135deg, var(--ex-color-bg-primary-alpha-98), var(--ex-color-purple-alpha-95));
+      border: 1px solid var(--ex-color-neon-blue-alpha-40);
+      border-radius: var(--ex-radius-md);
+      padding: var(--ex-spacing-2);
+      box-shadow: 0 8px 32px var(--ex-color-black-alpha-80), 0 0 20px var(--ex-color-neon-blue-alpha-20);
+      backdrop-filter: blur(12px);
+      z-index: var(--ex-z-dropdown);
+    }
+  }
+
+  // 内联模式
+  &--inline {
+    width: 260px;
+    
+    .ex-menu__list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ex-spacing-1);
+    }
+  }
+
+  // 折叠状
+  &--collapsed {
+    width: 72px;
+
+    .ex-menu-item__label,
+    .ex-submenu__label,
+    .ex-submenu__arrow {
+      display: none;
+    }
+
+    .ex-menu-item__content,
+    .ex-submenu__title {
+      justify-content: center;
+      padding: var(--ex-spacing-3);
+    }
+
+    .ex-menu-item__icon,
+    .ex-submenu__icon {
+      margin: 0;
+    }
+  }
+
+  // 移动端响应式
+  &--mobile {
+    width: 100%;
+    
+    &.ex-menu--vertical,
+    &.ex-menu--inline {
+      width: 100%;
+    }
+  }
+}
+
+// 响应
+@media (max-width: 768px) {
+  .ex-menu {
+    &--vertical,
+    &--inline {
+      width: 100%;
+    }
+
+    &--collapsed {
+      width: 64px;
+    }
+  }
+}
+
+// 无障
+@media (prefers-reduced-motion: reduce) {
+  .ex-menu {
+    transition: none;
+  }
+
+  .ex-menu::before {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .ex-menu {
+    border-width: 2px;
+  }
+}
+

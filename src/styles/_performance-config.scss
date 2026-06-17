@@ -1,0 +1,338 @@
+// ExUI Performance Configuration
+// 性能优化配置
+
+// ============================================================================
+// 性能优化开关
+// ============================================================================
+
+// 全局性能优化开关
+$enable-performance-mode: true !default;
+
+// 具体功能开关
+$enable-reduced-motion-support: true !default;
+$enable-reduced-data-support: true !default;
+$enable-gpu-acceleration: true !default;
+$enable-content-visibility: true !default;
+$enable-lazy-loading: true !default;
+
+// 效果降级开关
+$enable-neon-glow-degradation: true !default;
+$enable-backdrop-blur-degradation: true !default;
+$enable-shadow-degradation: true !default;
+$enable-animation-degradation: true !default;
+
+// ============================================================================
+// 性能阈值配置
+// ============================================================================
+
+// 动画性能阈值
+$animation-performance-threshold: (
+  // 最大动画时长（毫秒）
+  max-duration: 1000ms,
+  
+  // 最大同时动画数量
+  max-concurrent: 10,
+  
+  // 最大关键帧数量
+  max-keyframes: 20,
+  
+  // 最小帧率（FPS）
+  min-fps: 30,
+);
+
+// 阴影性能阈值
+$shadow-performance-threshold: (
+  // 最大阴影层数
+  max-layers: 2,
+  
+  // 最大模糊半径（像素）
+  max-blur: 20px,
+  
+  // 最大扩散半径（像素）
+  max-spread: 10px,
+);
+
+// 模糊效果性能阈值
+$blur-performance-threshold: (
+  // 最大模糊量（像素）
+  max-blur: 10px,
+  
+  // 最大 backdrop-filter 模糊量
+  max-backdrop-blur: 8px,
+);
+
+// 渐变性能阈值
+$gradient-performance-threshold: (
+  // 最大颜色停止点数量
+  max-color-stops: 3,
+  
+  // 最大渐变层数
+  max-layers: 2,
+);
+
+// ============================================================================
+// 设备性能分级
+// ============================================================================
+
+// 低端设备定义
+$low-end-device-query: '(max-width: 480px) and (max-height: 800px), (prefers-reduced-motion: reduce)';
+
+// 中端设备定义
+$mid-end-device-query: '(min-width: 481px) and (max-width: 1023px)';
+
+// 高端设备定义
+$high-end-device-query: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)';
+
+// ============================================================================
+// 性能优化策略
+// ============================================================================
+
+// 低端设备策略
+$low-end-strategy: (
+  // 禁用所有动画
+  disable-animations: true,
+  
+  // 禁用所有效果
+  disable-effects: true,
+  
+  // 使用系统字体
+  use-system-fonts: true,
+  
+  // 禁用背景图片
+  disable-background-images: true,
+  
+  // 简化渐变
+  simplify-gradients: true,
+  
+  // 禁用阴影
+  disable-shadows: true,
+);
+
+// 中端设备策略
+$mid-end-strategy: (
+  // 简化动画
+  simplify-animations: true,
+  
+  // 减少效果层数
+  reduce-effect-layers: true,
+  
+  // 使用 Web 字体
+  use-web-fonts: true,
+  
+  // 保留背景图片
+  disable-background-images: false,
+  
+  // 简化渐变
+  simplify-gradients: true,
+  
+  // 简化阴影
+  simplify-shadows: true,
+);
+
+// 高端设备策略
+$high-end-strategy: (
+  // 完整动画
+  simplify-animations: false,
+  
+  // 完整效果
+  reduce-effect-layers: false,
+  
+  // 使用 Web 字体
+  use-web-fonts: true,
+  
+  // 完整背景
+  disable-background-images: false,
+  
+  // 完整渐变
+  simplify-gradients: false,
+  
+  // 完整阴影
+  simplify-shadows: false,
+);
+
+// ============================================================================
+// 性能监控配置
+// ============================================================================
+
+// 启用性能监控
+$enable-performance-monitoring: false !default;
+
+// 性能监控指标
+$performance-metrics: (
+  // 首次内容绘制（FCP）
+  fcp: true,
+  
+  // 最大内容绘制（LCP）
+  lcp: true,
+  
+  // 首次输入延迟（FID）
+  fid: true,
+  
+  // 累积布局偏移（CLS）
+  cls: true,
+  
+  // 首字节时间（TTFB）
+  ttfb: true,
+);
+
+// ============================================================================
+// 缓存策略
+// ============================================================================
+
+// CSS 缓存策略
+$css-cache-strategy: (
+  // 缓存时长（秒）
+  max-age: 31536000, // 1 年
+  
+  // 是否使用 immutable
+  immutable: true,
+  
+  // 是否使用 stale-while-revalidate
+  stale-while-revalidate: 86400, // 1 天
+);
+
+// 字体缓存策略
+$font-cache-strategy: (
+  // 缓存时长（秒）
+  max-age: 31536000, // 1 年
+  
+  // 是否使用 immutable
+  immutable: true,
+  
+  // 字体显示策略
+  font-display: swap,
+);
+
+// ============================================================================
+// 资源加载优化
+// ============================================================================
+
+// 关键资源
+$critical-resources: (
+  // 关键 CSS（应该内联）
+  critical-css: true,
+  
+  // 关键字体（应该预加载）
+  critical-fonts: ('Rajdhani', 'Inter'),
+  
+  // 关键图片（应该预加载）
+  critical-images: (),
+);
+
+// 延迟加载资源
+$deferred-resources: (
+  // 非关键 CSS
+  non-critical-css: true,
+  
+  // 非关键字体
+  non-critical-fonts: ('Audiowide', 'Orbitron', 'JetBrains Mono'),
+  
+  // 非关键图片
+  non-critical-images: true,
+);
+
+// ============================================================================
+// 代码分割配置
+// ============================================================================
+
+// 组件代码分割
+$component-code-splitting: (
+  // 启用代码分割
+  enabled: true,
+  
+  // 最小分割大小（KB）
+  min-size: 20,
+  
+  // 最大分割大小（KB）
+  max-size: 244,
+  
+  // 最大并行请求数
+  max-parallel-requests: 5,
+);
+
+// ============================================================================
+// 压缩配置
+// ============================================================================
+
+// CSS 压缩配置
+$css-minification: (
+  // 启用压缩
+  enabled: true,
+  
+  // 移除注释
+  remove-comments: true,
+  
+  // 移除空白
+  remove-whitespace: true,
+  
+  // 合并规则
+  merge-rules: true,
+  
+  // 优化选择器
+  optimize-selectors: true,
+);
+
+// ============================================================================
+// 浏览器兼容性配置
+// ============================================================================
+
+// 目标浏览器
+$target-browsers: (
+  'last 2 versions',
+  '> 1%',
+  'not dead',
+  'not ie 11',
+);
+
+// Autoprefixer 配置
+$autoprefixer-config: (
+  // 启用 flexbox 前缀
+  flexbox: true,
+  
+  // 启用 grid 前缀
+  grid: true,
+  
+  // 移除过时前缀
+  remove-outdated: true,
+);
+
+// ============================================================================
+// 实验性功能
+// ============================================================================
+
+// 实验性性能优化
+$experimental-optimizations: (
+  // CSS Containment
+  css-containment: true,
+  
+  // Content Visibility
+  content-visibility: true,
+  
+  // CSS Houdini
+  css-houdini: false,
+  
+  // Variable Fonts
+  variable-fonts: false,
+  
+  // CSS Layers
+  css-layers: false,
+);
+
+// ============================================================================
+// 调试配置
+// ============================================================================
+
+// 性能调试
+$performance-debug: (
+  // 启用调试模式
+  enabled: false,
+  
+  // 显示性能警告
+  show-warnings: true,
+  
+  // 显示性能提示
+  show-hints: true,
+  
+  // 记录性能指标
+  log-metrics: false,
+);

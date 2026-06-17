@@ -1,0 +1,62 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// Timeline 时间轴组件样式
+// ============================================================================
+
+.ex-timeline {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  // 垂直布局
+  &--vertical {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // 水平布局
+  &--horizontal {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    overflow-x: auto;
+    @include custom-scrollbar;
+  }
+
+  // 反转顺序
+  &--reverse {
+    &.ex-timeline--vertical {
+      flex-direction: column-reverse;
+    }
+
+    &.ex-timeline--horizontal {
+      flex-direction: row-reverse;
+    }
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-timeline--horizontal {
+    padding-bottom: var(--ex-spacing-4);
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-timeline {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}

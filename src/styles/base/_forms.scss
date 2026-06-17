@@ -1,0 +1,42 @@
+// ExUI Form Styles
+// 表单基础样式
+
+@use '../mixins' as *;
+
+// 页面级表单样式仅在宿主主动添加 `.ex-app` 时生效，避免污染宿主全局裸元素。
+@mixin base-styles {
+
+// ============================================================================
+// 表单元素基础样式
+// ============================================================================
+
+fieldset {
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-md);
+  padding: var(--ex-spacing-4);
+  margin: var(--ex-spacing-4) 0;
+  background: var(--ex-color-bg-surface);
+}
+
+legend {
+  padding: 0 var(--ex-spacing-2);
+  font-weight: var(--ex-font-semibold);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ex-tracking-wide);
+}
+
+label {
+  @include form-label;
+}
+
+input, textarea, select {
+  @include input-base;
+}
+
+button {
+  @include button-base;
+}
+
+}

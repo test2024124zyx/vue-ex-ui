@@ -1,0 +1,178 @@
+// ExTypography 组件样式
+// Typography Component Styles
+
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use 'sass:map';
+
+.ex-typography {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-family: var(--ex-font-secondary);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-color-text-primary);
+  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+
+  // ============================================================================
+  // 变体样式 (Variant Styles)
+  // ============================================================================
+
+  &--display {
+    font-size: var(--ex-text-4xl);
+    font-weight: var(--ex-font-bold);
+    line-height: var(--ex-leading-tight);
+    letter-spacing: var(--ex-tracking-tight);
+  }
+
+  &--heading {
+    font-size: var(--ex-text-3xl);
+    font-weight: var(--ex-font-semibold);
+    line-height: var(--ex-leading-tight);
+    letter-spacing: var(--ex-tracking-tight);
+  }
+
+  &--title {
+    font-size: var(--ex-text-xl);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-snug);
+    letter-spacing: var(--ex-tracking-normal);
+  }
+
+  &--body {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-relaxed);
+    letter-spacing: var(--ex-tracking-normal);
+  }
+
+  &--caption {
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-normal);
+    letter-spacing: var(--ex-tracking-wide);
+  }
+
+  &--overline {
+    font-size: var(--ex-text-xs);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-normal);
+    letter-spacing: var(--ex-tracking-wider);
+    text-transform: uppercase;
+  }
+
+  // ============================================================================
+  // 尺寸样式 (Size Styles)
+  // ============================================================================
+
+  &--xs { font-size: var(--ex-text-xs); }
+  &--sm { font-size: var(--ex-text-sm); }
+  &--md { font-size: var(--ex-text-base); }
+  &--lg { font-size: var(--ex-text-lg); }
+  &--xl { font-size: var(--ex-text-xl); }
+  &--2xl { font-size: var(--ex-text-2xl); }
+  &--3xl { font-size: var(--ex-text-3xl); }
+  &--4xl { font-size: var(--ex-text-4xl); }
+
+  // ============================================================================
+  // 修饰符样�?(Modifier Styles)
+  // ============================================================================
+
+  &--truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &--gradient {
+    background: var(--ex-gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+
+  &--glow {
+    @include neon-glow(var(--ex-color-primary), 0.8);
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+
+  &--center {
+    text-align: center;
+  }
+
+  &--bold {
+    font-weight: var(--ex-font-bold);
+  }
+
+  &--italic {
+    font-style: italic;
+  }
+
+  &--underline {
+    text-decoration: underline;
+    text-decoration-color: var(--ex-color-primary);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  // ============================================================================
+  // 响应式设�?(Responsive Design)
+  // ============================================================================
+
+  @include respond-to(xs) {
+    &--display {
+      font-size: var(--ex-text-3xl);
+    }
+    
+    &--heading {
+      font-size: var(--ex-text-2xl);
+    }
+    
+    &--title {
+      font-size: var(--ex-text-lg);
+    }
+  }
+
+  // ============================================================================
+  // 无障碍支�?(Accessibility)
+  // ============================================================================
+
+  @media (prefers-reduced-motion: reduce) {
+    &--gradient {
+      animation: none;
+    }
+  }
+
+  // 高对比度模式
+  @media (prefers-contrast: high) {
+    &--gradient {
+      background: none;
+      -webkit-text-fill-color: unset;
+      color: var(--ex-color-text-primary);
+    }
+    
+    &--glow {
+      text-shadow: none;
+      box-shadow: none;
+    }
+  }
+}
+
+// ============================================================================
+// 动画定义 (Animation Definitions)
+// ============================================================================
+
+// 渐变动画
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}

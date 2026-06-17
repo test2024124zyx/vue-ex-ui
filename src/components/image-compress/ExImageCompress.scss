@@ -1,0 +1,249 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-image-compress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-spacing-6);
+  padding: var(--ex-spacing-6);
+  background: var(--ex-color-bg-secondary);
+  border-radius: var(--ex-radius-lg);
+  border: 1px solid var(--ex-color-border-primary);
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-6);
+    padding: var(--ex-spacing-6);
+    background: var(--ex-color-bg-primary);
+    border-radius: var(--ex-radius-lg);
+  }
+
+  &__preview-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-3);
+    max-width: 400px;
+  }
+
+  &__preview-label {
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+  }
+
+  &__preview-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--ex-radius-base);
+    overflow: hidden;
+    background: var(--ex-color-bg-tertiary);
+    border: 2px solid var(--ex-color-border-primary);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  &__preview-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+
+    img {
+      opacity: 0.3;
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
+        hue-rotate(180deg);
+    }
+  }
+
+  &__preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-1);
+    font-size: var(--ex-text-sm);
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+  }
+
+  &__preview-size {
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-primary);
+  }
+
+  &__preview-ratio {
+    color: var(--ex-color-success);
+    font-weight: var(--ex-font-bold);
+  }
+
+  &__preview-arrow {
+    flex-shrink: 0;
+
+    img {
+      filter: brightness(0) saturate(100%) invert(60%) sepia(80%) saturate(2000%)
+        hue-rotate(180deg);
+    }
+  }
+
+  &__controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-4);
+  }
+
+  &__control-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ex-spacing-2);
+  }
+
+  &__control-label {
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-primary);
+  }
+
+  &__control-buttons {
+    display: flex;
+    gap: var(--ex-spacing-2);
+  }
+
+  &__control-btn {
+    flex: 1;
+    padding: var(--ex-spacing-2) var(--ex-spacing-4);
+    border: 1px solid var(--ex-color-border-primary);
+    background: transparent;
+    color: var(--ex-color-text-primary);
+    border-radius: var(--ex-radius-base);
+    font-size: var(--ex-text-sm);
+    cursor: pointer;
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+    &:hover {
+      border-color: var(--ex-color-primary);
+      background: var(--ex-color-primary-alpha-10);
+    }
+
+    &.is-active {
+      border-color: var(--ex-color-primary);
+      background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
+      color: var(--ex-color-white);
+      box-shadow: 0 0 15px var(--ex-color-primary-alpha-30);
+    }
+  }
+
+  &__control-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: var(--ex-radius-full);
+    background: var(--ex-color-bg-tertiary);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
+      transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+      &:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px var(--ex-color-primary-alpha-60);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
+      transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+      &:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px var(--ex-color-primary-alpha-60);
+      }
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: var(--ex-radius-full);
+      background: linear-gradient(
+        to right,
+        var(--ex-color-primary) 0%,
+        var(--ex-color-primary) var(--value, 80%),
+        var(--ex-color-bg-tertiary) var(--value, 80%),
+        var(--ex-color-bg-tertiary) 100%
+      );
+    }
+  }
+
+  &__control-input,
+  &__control-select {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    border: 1px solid var(--ex-color-border-primary);
+    background: var(--ex-color-bg-primary);
+    color: var(--ex-color-text-primary);
+    border-radius: var(--ex-radius-base);
+    font-size: var(--ex-text-sm);
+    outline: none;
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+    &:focus {
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 3px var(--ex-color-primary-alpha-10);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ex-spacing-3);
+    padding-top: var(--ex-spacing-4);
+    border-top: 1px solid var(--ex-color-border-primary);
+  }
+
+  // 响应�?
+  @media (max-width: 768px) {
+    padding: var(--ex-spacing-4);
+
+    &__preview {
+      flex-direction: column;
+      gap: var(--ex-spacing-4);
+    }
+
+    &__preview-arrow {
+      transform: rotate(90deg);
+    }
+
+    &__control-buttons {
+      flex-direction: column;
+    }
+
+    &__actions {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+

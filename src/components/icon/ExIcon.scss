@@ -1,0 +1,165 @@
+// ExIcon 图标组件样式
+// 通用图标组件，支持SVG、字体图标、图片图
+
+.ex-icon {
+  // 基础样式
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+  
+  // 默认大小
+  width: 1em;
+  height: 1em;
+  font-size: var(--ex-text-base, 16px);
+  
+  // 默认颜色
+  color: var(--ex-color-text-primary, #e6f0ff);
+  
+  // 过渡动画
+  transition: all var(--ex-motion-duration-fast, 120ms) var(--ex-motion-ease-in-out, ease);
+  
+  // SVG 样式
+  svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    stroke: currentColor; // 确保描边类图标同样受 color 驱动
+    display: block;
+  }
+
+  // 字体图标样式
+  i {
+    color: currentColor;   // 与容color 保持一
+    font-size: 1em;        // 跟随容器 font-size（size 属性影1em
+    line-height: 1;
+    display: inline-block; // 避免行内元素基线偏移
+    font-style: normal;    // 规避部分 iconfont 默认斜体
+  }
+  
+  // 图片样式
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  // 图片单色着色（mask）模式：SVG/字体图标保持 color 一
+  &__image-mask {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: currentColor; // 着色来currentColor
+    -webkit-mask: var(--ex-icon-src) no-repeat center / contain;
+    mask: var(--ex-icon-src) no-repeat center / contain;
+  }
+  
+  // 可点击状
+  &--clickable {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      color: var(--ex-color-primary, #29ABE2);
+      transform: translateY(-1px);
+      filter: drop-shadow(0 2px 8px var(--ex-color-primary-alpha-30));
+    }
+    
+    &:active {
+      transform: translateY(0);
+      filter: drop-shadow(0 1px 4px var(--ex-color-primary-alpha-20));
+    }
+    
+    // 聚焦样式
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary, #29ABE2);
+      outline-offset: 2px;
+      border-radius: var(--ex-radius-sm, 2px);
+    }
+  }
+  
+  // 禁用状
+  &--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    
+    &:hover {
+      transform: none;
+      filter: none;
+      color: inherit;
+    }
+  }
+  
+  // 旋转动画
+  &--spin {
+    animation: ex-icon-spin 1s linear infinite;
+  }
+}
+
+// 旋转动画关键
+@keyframes ex-icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .ex-icon {
+    // 移动端触摸友
+    &--clickable {
+      min-width: 44px;
+      min-height: 44px;
+      
+      &:hover {
+        // 移动端禁用hover效果
+        transform: none;
+        filter: none;
+        color: inherit;
+      }
+      
+      &:active {
+        color: var(--ex-color-primary, #29ABE2);
+        transform: scale(0.95);
+      }
+    }
+  }
+}
+
+// 无障碍支
+@media (prefers-reduced-motion: reduce) {
+  .ex-icon {
+    transition: none;
+    
+    &--spin {
+      animation: none;
+    }
+    
+    &--clickable {
+      &:hover,
+      &:active {
+        transform: none;
+      }
+    }
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-icon {
+    &--clickable {
+      &:focus-visible {
+        outline-width: 3px;
+        outline-color: currentColor;
+      }
+    }
+  }
+}
+
+

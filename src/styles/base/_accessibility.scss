@@ -1,0 +1,83 @@
+// ExUI Accessibility Styles
+// 无障碍样式
+
+@use '../mixins' as *;
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+// 屏幕阅读器专用内容
+.sr-only {
+  @include sr-only;
+}
+
+// 跳转链接
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--ex-color-bg-primary);
+  color: var(--ex-color-text-primary);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: var(--ex-radius-md);
+  z-index: var(--ex-z-skipLink);
+  @include transition(top);
+  
+  &:focus {
+    top: 6px;
+  }
+}
+
+// 减少动画偏好
+@media (prefers-reduced-motion: reduce) {
+  // 针对所有元素禁用动画和过渡
+  html {
+    scroll-behavior: auto;
+  }
+  
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+  }
+  
+  // 禁用复杂效果（仅针对有这些效果的元素）
+  [class*="neon"],
+  [class*="glow"],
+  [class*="shadow"] {
+    box-shadow: none;
+    text-shadow: none;
+    backdrop-filter: none;
+    filter: none;
+  }
+  
+  // 简化背景
+  body::before {
+    display: none;
+  }
+}
+
+// 高对比度偏好
+@media (prefers-contrast: high) {
+  // 移除装饰性效果
+  [class*="neon"],
+  [class*="glow"],
+  [class*="shadow"] {
+    text-shadow: none;
+    box-shadow: none;
+  }
+  
+  // 增强链接可见性
+  a {
+    text-decoration: underline;
+  }
+  
+  // 增强表单元素边框
+  button, input, select, textarea {
+    border: 2px solid currentColor;
+  }
+}

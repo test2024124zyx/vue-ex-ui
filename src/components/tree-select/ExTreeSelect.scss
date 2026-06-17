@@ -1,0 +1,274 @@
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// TreeSelect 树选择
+// ============================================================================
+.ex-tree-select {
+  display: inline-block;
+  width: 100%;
+  max-width: 280px;
+
+  &__trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    min-height: 36px;
+    padding: 2px var(--ex-spacing-2) 2px var(--ex-spacing-3);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-md);
+    color: var(--ex-color-text-primary);
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: var(--ex-color-primary-alpha-50);
+    }
+    &:focus-visible {
+      outline: none;
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  &__value {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__placeholder {
+    color: var(--ex-color-text-tertiary);
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px;
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    font-size: var(--ex-text-xs);
+    line-height: 18px;
+
+    &--count {
+      color: var(--ex-color-text-secondary);
+    }
+  }
+  &__tag-close {
+    cursor: pointer;
+    color: var(--ex-color-text-tertiary);
+    &:hover {
+      color: var(--ex-color-text-primary);
+    }
+  }
+
+  &__clear {
+    display: inline-flex;
+    color: var(--ex-color-text-tertiary);
+    cursor: pointer;
+    &:hover {
+      color: var(--ex-color-text-secondary);
+    }
+  }
+
+  &__arrow {
+    color: var(--ex-color-text-tertiary);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  &--small &__trigger {
+    min-height: 30px;
+    font-size: var(--ex-text-sm);
+  }
+  &--large &__trigger {
+    min-height: 42px;
+    font-size: var(--ex-text-base);
+  }
+
+  &.is-active {
+    .ex-tree-select__trigger {
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+    .ex-tree-select__arrow {
+      transform: rotate(180deg);
+    }
+  }
+
+  &.is-disabled &__trigger {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: var(--ex-color-bg-tertiary);
+  }
+}
+
+// ============================================================================
+// 下拉面板
+// ============================================================================
+.ex-tree-select__panel {
+  position: absolute;
+  z-index: var(--ex-z-dropdown, 1000);
+  background: var(--ex-color-bg-elevated);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-md);
+  box-shadow: var(--ex-shadow-lg);
+  overflow: hidden;
+
+  .ex-tree-select__search {
+    padding: var(--ex-spacing-2);
+    border-bottom: 1px solid var(--ex-color-border-primary);
+  }
+  .ex-tree-select__search-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 var(--ex-spacing-2);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    &:focus {
+      outline: none;
+      border-color: var(--ex-color-primary);
+    }
+  }
+
+  .ex-tree-select__tree {
+    max-height: 264px;
+    overflow-y: auto;
+    padding: var(--ex-spacing-1) 0;
+    scrollbar-width: thin;
+  }
+
+  .ex-tree-select__node {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    padding-right: var(--ex-spacing-3);
+    color: var(--ex-color-text-primary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--ex-color-bg-hover);
+    }
+    &.is-selected {
+      background: var(--ex-color-primary-alpha-20);
+      color: var(--ex-color-primary);
+    }
+    &.is-disabled {
+      color: var(--ex-color-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  .ex-tree-select__expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--ex-color-text-tertiary);
+    cursor: pointer;
+
+    &.is-leaf {
+      cursor: default;
+    }
+
+    .is-expanded {
+      transform: rotate(90deg);
+    }
+
+    :deep(svg),
+    svg {
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .ex-tree-select__checkbox {
+    position: relative;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    background: var(--ex-color-bg-secondary);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+
+    &.is-checked {
+      background: var(--ex-color-primary);
+      border-color: var(--ex-color-primary);
+      &::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+        border: solid var(--ex-color-white);
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    }
+
+    &.is-indeterminate {
+      background: var(--ex-color-primary);
+      border-color: var(--ex-color-primary);
+      &::after {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 6px;
+        width: 7px;
+        height: 2px;
+        background: var(--ex-color-white);
+      }
+    }
+  }
+
+  .ex-tree-select__node-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--ex-text-sm);
+  }
+
+  .ex-tree-select__empty {
+    padding: var(--ex-spacing-4);
+    text-align: center;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+  }
+}
+
+// 过渡
+.ex-tree-select-dropdown-enter-active,
+.ex-tree-select-dropdown-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ex-tree-select-dropdown-enter-from,
+.ex-tree-select-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}

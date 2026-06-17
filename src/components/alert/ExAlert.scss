@@ -1,0 +1,363 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+@use '../../styles/component-mixins' as *;
+@use '../../styles/performance' as *;
+
+// ============================================================================
+// Alert 组件样式 - 游戏主题风格
+// ============================================================================
+
+.ex-alert {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: var(--ex-spacing-4);
+  // 赛博朋克切角（左上 + 右下斜切）
+  @include chamfer(var(--ex-chamfer-md));
+  border: 2px solid transparent;
+  @include safe-transition(all);
+  @include optimized-text-rendering;
+
+  // ============================================================================
+  // 图标
+  // ============================================================================
+
+  &__icon {
+    flex-shrink: 0;
+    margin-right: var(--ex-spacing-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      display: block;
+    }
+  }
+
+  // ============================================================================
+  // 内容区域
+  // ============================================================================
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: var(--ex-text-base);
+    font-weight: var(--ex-font-semibold);
+    line-height: var(--ex-leading-normal);
+    margin-bottom: var(--ex-spacing-1);
+    @include optimized-text-rendering;
+  }
+
+  &__description {
+    font-size: var(--ex-text-sm);
+    line-height: var(--ex-leading-relaxed);
+    opacity: 0.9;
+  }
+
+  // ============================================================================
+  // 操作区域
+  // ============================================================================
+
+  &__action {
+    flex-shrink: 0;
+    margin-left: var(--ex-spacing-3);
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+  }
+
+  // ============================================================================
+  // 关闭按钮
+  // ============================================================================
+
+  &__close {
+    flex-shrink: 0;
+    margin-left: var(--ex-spacing-3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--ex-spacing-1);
+    border-radius: var(--ex-radius-sm);
+    @include safe-transition(all);
+
+    &:hover {
+      background: rgba(var(--ex-color-white-rgb), 0.1);
+      transform: scale(1.1);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
+    img {
+      display: block;
+    }
+  }
+
+  &__close-text {
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+  }
+
+  // ============================================================================
+  // 尺寸变体
+  // ============================================================================
+
+  &--small {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+
+    .ex-alert__icon {
+      margin-right: var(--ex-spacing-2);
+
+      img {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .ex-alert__title {
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-alert__description {
+      font-size: var(--ex-text-xs);
+    }
+
+    .ex-alert__close img {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &--medium {
+    padding: var(--ex-spacing-4);
+
+    .ex-alert__icon img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .ex-alert__close img {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &--large {
+    padding: var(--ex-spacing-5) var(--ex-spacing-6);
+
+    .ex-alert__icon {
+      margin-right: var(--ex-spacing-4);
+
+      img {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .ex-alert__title {
+      font-size: var(--ex-text-lg);
+    }
+
+    .ex-alert__description {
+      font-size: var(--ex-text-base);
+    }
+
+    .ex-alert__close img {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  // ============================================================================
+  // 类型变体 - 游戏主题增强
+  // ============================================================================
+
+  &--success {
+    &.ex-alert--standard {
+      background: rgba(var(--ex-color-success-rgb), 0.1);
+      border-color: var(--ex-color-success);
+      color: var(--ex-color-success);
+      @include optimized-neon-glow('blue', 'sm');
+    }
+
+    &.ex-alert--filled {
+      background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
+      border-color: var(--ex-color-success);
+      color: var(--ex-color-white);
+      @include optimized-neon-glow('blue', 'md');
+    }
+
+    &.ex-alert--outlined {
+      background: transparent;
+      border-color: var(--ex-color-success);
+      color: var(--ex-color-success);
+    }
+  }
+
+  &--info {
+    &.ex-alert--standard {
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
+      border-color: var(--ex-color-neon-blue-500);
+      color: var(--ex-color-neon-blue-400);
+      @include optimized-neon-glow('blue', 'sm');
+    }
+
+    &.ex-alert--filled {
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      border-color: var(--ex-color-neon-blue-500);
+      color: var(--ex-color-white);
+      @include optimized-neon-glow('blue', 'md');
+    }
+
+    &.ex-alert--outlined {
+      background: transparent;
+      border-color: var(--ex-color-neon-blue-500);
+      color: var(--ex-color-neon-blue-400);
+    }
+  }
+
+  &--warning {
+    &.ex-alert--standard {
+      background: rgba(var(--ex-color-warning-rgb), 0.1);
+      border-color: var(--ex-color-warning);
+      color: var(--ex-color-warning);
+      box-shadow: 0 0 10px rgba(var(--ex-color-warning-rgb), 0.2);
+    }
+
+    &.ex-alert--filled {
+      background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
+      border-color: var(--ex-color-warning);
+      color: var(--ex-color-white);
+      box-shadow: 0 0 15px rgba(var(--ex-color-warning-rgb), 0.3);
+    }
+
+    &.ex-alert--outlined {
+      background: transparent;
+      border-color: var(--ex-color-warning);
+      color: var(--ex-color-warning);
+    }
+  }
+
+  &--error {
+    &.ex-alert--standard {
+      background: rgba(var(--ex-color-neon-pink-500-rgb), 0.1);
+      border-color: var(--ex-color-neon-pink-500);
+      color: var(--ex-color-neon-pink-400);
+      @include optimized-neon-glow('pink', 'sm');
+    }
+
+    &.ex-alert--filled {
+      background: linear-gradient(135deg, var(--ex-color-neon-pink-500), var(--ex-color-neon-pink-600));
+      border-color: var(--ex-color-neon-pink-500);
+      color: var(--ex-color-white);
+      @include optimized-neon-glow('pink', 'md');
+    }
+
+    &.ex-alert--outlined {
+      background: transparent;
+      border-color: var(--ex-color-neon-pink-500);
+      color: var(--ex-color-neon-pink-400);
+    }
+  }
+
+  // ============================================================================
+  // 修饰符
+  // ============================================================================
+
+  &--center {
+    justify-content: center;
+    text-align: center;
+
+    .ex-alert__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  &--borderless {
+    border-color: transparent;
+  }
+
+  // ============================================================================
+  // 过渡动画
+  // ============================================================================
+
+  &-fade-enter-active,
+  &-fade-leave-active {
+    @include safe-transition(all, var(--ex-motion-duration-base));
+  }
+
+  &-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  &-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+// ============================================================================
+// 响应式设计
+// ============================================================================
+
+@include mobile {
+  .ex-alert {
+    padding: var(--ex-spacing-3);
+
+    &__icon {
+      margin-right: var(--ex-spacing-2);
+    }
+
+    &__action,
+    &__close {
+      margin-left: var(--ex-spacing-2);
+    }
+  }
+}
+
+// ============================================================================
+// 减少动画偏好
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-alert {
+    transition: none !important;
+
+    &-fade-enter-active,
+    &-fade-leave-active {
+      transition: none !important;
+    }
+
+    &-fade-enter-from,
+    &-fade-leave-to {
+      transform: none !important;
+    }
+  }
+}
+
+// ============================================================================
+// 主题适配（通过 CSS 变量自动适配所有主题）
+// ============================================================================
+// 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
+
+// ============================================================================
+// 性能优化
+// ============================================================================
+
+.ex-alert {
+  contain: layout style;
+  @include gpu-accelerate;
+}

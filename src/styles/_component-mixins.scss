@@ -1,0 +1,343 @@
+// ExUI Component Mixins - 组件级别的样式混合器
+// 用于减少组件样式代码的重复，提升一致
+
+@use 'sass:map';
+@use 'tokens' as *;
+@use 'mixins' as *;
+@use 'performance' as *;
+
+// ============================================================================
+// 表单控件 Mixins (Form Control Mixins)
+// ============================================================================
+// 注意：这些是游戏主题增强版的表单控件样式
+// 基础版本请使用 _mixins.scss 中的 input-base
+
+// 表单控件基础样式（游戏主题增强版）
+@mixin form-control-base {
+  background: transparent;
+  border: 2px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  color: var(--ex-color-text-primary);
+  font-family: var(--ex-font-secondary);
+  font-weight: var(--ex-font-medium);
+  outline: none;
+  @include safe-transition(all);
+  @include optimized-text-rendering;
+  
+  &::placeholder {
+    color: var(--ex-color-text-tertiary);
+    font-weight: var(--ex-font-normal);
+    opacity: 0.7;
+  }
+  
+  &:focus {
+    border-color: var(--ex-color-neon-pink-500);
+    @include optimized-neon-glow('pink', 'md');
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: var(--ex-color-bg-tertiary);
+    color: var(--ex-color-text-disabled);
+  }
+}
+
+// 表单控件尺寸
+@mixin form-control-size($size) {
+  @if $size == 'small' {
+    height: 32px;
+    padding: 0 var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+  } @else if $size == 'medium' {
+    height: 40px;
+    padding: 0 var(--ex-spacing-4);
+    font-size: var(--ex-text-base);
+  } @else if $size == 'large' {
+    height: 48px;
+    padding: 0 var(--ex-spacing-5);
+    font-size: var(--ex-text-lg);
+  }
+}
+
+// 表单控件状
+@mixin form-control-status($status) {
+  @if $status == 'success' {
+    border-color: var(--ex-color-success);
+    box-shadow: 0 0 5px var(--ex-color-success-alpha-30);
+  } @else if $status == 'warning' {
+    border-color: var(--ex-color-warning);
+    box-shadow: 0 0 5px var(--ex-color-warning-alpha-30);
+  } @else if $status == 'error' {
+    border-color: var(--ex-color-error);
+    box-shadow: 0 0 5px var(--ex-color-error-alpha-30);
+  }
+}
+
+// ============================================================================
+// 组件变体 Mixins (Component Variant Mixins)
+// ============================================================================
+
+// 霓虹变体（默认）
+@mixin component-variant-neon {
+  background: linear-gradient(
+    135deg,
+    var(--ex-color-bg-secondary-alpha-80) 0%,
+    var(--ex-color-bg-primary-alpha-90) 100%
+  );
+  border: 2px solid var(--ex-color-neon-blue-500);
+  @include optimized-backdrop-blur(8px);
+  @include optimized-neon-glow('blue', 'sm');
+  @include safe-transition(all);
+  
+  &:hover {
+    border-color: var(--ex-color-neon-pink-400);
+    @include optimized-neon-glow('pink', 'sm');
+    transform: translateY(-1px);
+  }
+}
+
+// 幽灵变体
+@mixin component-variant-ghost {
+  background: transparent;
+  border: 2px solid var(--ex-color-border-primary);
+  box-shadow: none;
+  @include safe-transition(all);
+  
+  &:hover {
+    border-color: var(--ex-color-neon-blue-400);
+    background: var(--ex-color-bg-secondary-alpha-30);
+  }
+  
+  &:focus,
+  &.is-focused {
+    border-color: var(--ex-color-neon-pink-500);
+    background: var(--ex-color-bg-secondary-alpha-50);
+    @include optimized-neon-glow('pink', 'sm');
+  }
+}
+
+// 填充变体
+@mixin component-variant-filled {
+  background: var(--ex-color-bg-tertiary);
+  border: 2px solid transparent;
+  box-shadow: none;
+  @include safe-transition(all);
+  
+  &:hover {
+    background: var(--ex-color-bg-secondary);
+    border-color: var(--ex-color-neon-blue-400);
+  }
+  
+  &:focus,
+  &.is-focused {
+    background: var(--ex-color-bg-secondary);
+    border-color: var(--ex-color-neon-pink-500);
+    @include optimized-neon-glow('pink', 'sm');
+  }
+}
+
+// ============================================================================
+// 交互元素 Mixins (Interactive Element Mixins)
+// ============================================================================
+
+// 图标按钮基础样式
+@mixin icon-button-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--ex-color-text-secondary);
+  cursor: pointer;
+  @include safe-transition(all);
+  
+  &:hover {
+    background: var(--ex-color-neon-pink-alpha-10);
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// 前缀/后缀容器
+@mixin affix-container {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+  padding: 0 var(--ex-spacing-3);
+  color: var(--ex-color-text-secondary);
+  @include safe-transition(color);
+  
+  .is-focused & {
+    color: var(--ex-color-neon-pink-400);
+  }
+}
+
+// ============================================================================
+// 卡片 Mixins (Card Mixins)
+// ============================================================================
+
+// 卡片基础样式
+@mixin card-base {
+  background: var(--ex-color-bg-surface);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  box-shadow: var(--ex-shadow-md);
+  overflow: hidden;
+}
+
+// 卡片悬停效果
+@mixin card-hover {
+  @include safe-transition(transform, box-shadow);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ex-shadow-lg);
+    @include optimized-neon-glow('blue', 'sm');
+  }
+}
+
+// ============================================================================
+// 遮罩Mixins (Overlay Mixins)
+// ============================================================================
+
+// 遮罩层基础样式
+@mixin overlay-base {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ex-color-black-alpha-60);
+  @include optimized-backdrop-blur(8px);
+  z-index: var(--ex-z-overlay);
+}
+
+// ============================================================================
+// 帮助文本 Mixins (Helper Text Mixins)
+// ============================================================================
+
+// 帮助文本容器
+@mixin helper-text-container {
+  margin-top: var(--ex-spacing-2);
+  min-height: 20px;
+}
+
+// 帮助文本样式
+@mixin helper-text {
+  display: flex;
+  align-items: center;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-text-tertiary);
+  line-height: 1.4;
+}
+
+// 错误文本样式
+@mixin error-text {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-1);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-color-error);
+  line-height: 1.4;
+}
+
+// ============================================================================
+// 标签 Mixins (Label Mixins)
+// ============================================================================
+
+// 增强的表单标签（带聚焦效果）
+@mixin enhanced-form-label {
+  display: block;
+  margin-bottom: var(--ex-spacing-2);
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-medium);
+  color: var(--ex-color-text-secondary);
+  @include safe-transition(color);
+  
+  .is-focused & {
+    color: var(--ex-color-neon-blue-500);
+    text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-30);
+  }
+}
+
+// 必填标记
+@mixin required-indicator {
+  color: var(--ex-color-error);
+  margin-left: 2px;
+}
+
+// ============================================================================
+// 响应Mixins (Responsive Mixins)
+// ============================================================================
+
+// 移动端表单控件尺
+@mixin mobile-form-control-sizes {
+  @include mobile {
+    &--small .control {
+      height: 36px;
+      font-size: var(--ex-text-base);
+    }
+    
+    &--medium .control {
+      height: 44px;
+      font-size: var(--ex-text-lg);
+    }
+    
+    &--large .control {
+      height: 52px;
+      font-size: var(--ex-text-xl);
+    }
+  }
+}
+
+// ============================================================================
+// 禁用状Mixins (Disabled State Mixins)
+// ============================================================================
+
+// 组件禁用状
+@mixin component-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  
+  * {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// ============================================================================
+// 加载状Mixins (Loading State Mixins)
+// ============================================================================
+
+// 组件加载状
+@mixin component-loading {
+  cursor: default;
+  pointer-events: none;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--ex-color-neon-blue-500);
+    border-top-color: transparent;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    animation: ex-spin 1s linear infinite;
+  }
+}
+
+// 注意：关键帧动画统一定义在 animations/keyframes.scss
+// 这里使用 ex-spin 关键帧
+

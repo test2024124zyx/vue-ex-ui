@@ -1,0 +1,137 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+.ex-chart {
+  position: relative;
+  display: block;
+  background: var(--ex-color-bg-surface);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  overflow: visible; // 改为 visible 以避免 tooltip 被裁剪
+  @include transition(all);
+
+  // ECharts 容器
+  &__container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden; // 容器内部使用 hidden 保持圆角效果
+    border-radius: inherit; // 继承父容器的圆角
+  }
+
+  // 霓虹发光效果
+  &--neon {
+    box-shadow: 0 0 20px var(--ex-color-primary-alpha-10);
+
+    &:hover {
+      box-shadow: 0 0 30px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  // 主题样式
+  &--neon-blue {
+    border-color: var(--ex-color-primary-alpha-30);
+
+    &.ex-chart--neon {
+      box-shadow: 0 0 20px var(--ex-color-primary-alpha-20);
+
+      &:hover {
+        box-shadow: 0 0 30px var(--ex-color-primary-alpha-30);
+      }
+    }
+  }
+
+  &--neon-pink {
+    border-color: var(--ex-color-neon-pink-alpha-30);
+
+    &.ex-chart--neon {
+      box-shadow: 0 0 20px var(--ex-color-neon-pink-alpha-20);
+
+      &:hover {
+        box-shadow: 0 0 30px var(--ex-color-neon-pink-alpha-30);
+      }
+    }
+  }
+
+  &--dark {
+    background: var(--ex-color-bg-primary);
+    border-color: var(--ex-color-border-secondary);
+  }
+
+  &--light {
+    background: var(--ex-color-white);
+    border-color: var(--ex-color-border-primary);
+  }
+
+  // 尺寸样式
+  &--small {
+    padding: var(--ex-spacing-2);
+    border-radius: var(--ex-radius-md);
+  }
+
+  &--medium {
+    padding: var(--ex-spacing-4);
+    border-radius: var(--ex-radius-lg);
+  }
+
+  &--large {
+    padding: var(--ex-spacing-6);
+    border-radius: var(--ex-radius-xl);
+  }
+
+  // 加载状态
+  &--loading {
+    pointer-events: none;
+  }
+
+  // 空状态
+  &__empty {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // 响应式设计 - 移动端优先
+  @include respond-to(sm) {
+    &--small {
+      padding: var(--ex-spacing-3);
+    }
+
+    &--medium {
+      padding: var(--ex-spacing-5);
+    }
+
+    &--large {
+      padding: var(--ex-spacing-8);
+    }
+  }
+
+  // 无障碍支持
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    .ex-chart__loading-spinner {
+      animation: none;
+      border-top-color: var(--ex-color-primary);
+    }
+  }
+
+  // 高对比度模式支持
+  @media (prefers-contrast: high) {
+    border-width: 2px;
+
+    &--neon {
+      box-shadow: none;
+
+      &:hover {
+        box-shadow: none;
+      }
+    }
+  }
+}

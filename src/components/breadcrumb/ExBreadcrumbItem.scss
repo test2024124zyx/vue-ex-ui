@@ -1,0 +1,280 @@
+@use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
+
+// ============================================================================
+// ExBreadcrumbItem - 面包屑项
+// ============================================================================
+
+.ex-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  list-style: none !important;
+  list-style-type: none !important;
+  
+  &::before,
+  &::marker {
+    display: none !important;
+    content: none !important;
+  }
+
+  // 共享的基础样式
+  &__link,
+  &__text-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    color: var(--ex-color-text-secondary);
+    font-weight: var(--ex-font-medium);
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: var(--ex-radius-sm);
+    background: transparent;
+    line-height: 1.5;
+    @include transition(all);
+  }
+
+  // 链接样式（可点击项）
+  &__link {
+    position: relative;
+    cursor: pointer;
+
+    // 霓虹发光效果
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: var(--ex-radius-sm);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-primary-alpha-20),
+        var(--ex-color-secondary-alpha-20)
+      );
+      opacity: 0;
+      @include transition(opacity);
+      pointer-events: none;
+    }
+
+    &:hover {
+      color: var(--ex-color-primary);
+      background: var(--ex-color-bg-hover);
+      border-color: var(--ex-color-primary-alpha-30);
+      transform: translateY(-1px);
+
+      &::before {
+        opacity: 1;
+      }
+
+      .ex-breadcrumb-item__icon {
+        transform: scale(1.1);
+      }
+
+      ~ .ex-breadcrumb-item__separator {
+        opacity: 1;
+        color: var(--ex-color-primary);
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+      background: var(--ex-color-bg-active);
+    }
+
+    // 聚焦样式
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  // 文本包装器（不可点击项）
+  &__text-wrapper {
+    cursor: default;
+  }
+
+  // 图标
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    @include transition(transform);
+    
+    img {
+      display: block;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  // 文本
+  &__text {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  // 分隔符
+  &__separator {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    user-select: none;
+    opacity: 0.6;
+    margin: 0 var(--ex-spacing-2);
+    @include transition(opacity);
+    
+    img {
+      display: block;
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  // 最后一项（当前页）
+  &--last {
+    .ex-breadcrumb-item__text-wrapper {
+      color: var(--ex-color-text-primary);
+      font-weight: var(--ex-font-semibold);
+      background: var(--ex-color-bg-secondary);
+      border-color: var(--ex-color-border-primary);
+      @include neon-glow('blue', 'xs');
+    }
+  }
+
+  // 禁用状态
+  &--disabled {
+    .ex-breadcrumb-item__link,
+    .ex-breadcrumb-item__text-wrapper {
+      color: var(--ex-color-text-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+
+  // 尺寸变体
+  &--small {
+    .ex-breadcrumb-item__link,
+    .ex-breadcrumb-item__text-wrapper {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+      font-size: var(--ex-text-sm);
+    }
+
+    .ex-breadcrumb-item__separator {
+      font-size: var(--ex-text-xs);
+      margin: 0 var(--ex-spacing-1);
+    }
+    
+    .ex-breadcrumb-item__icon img {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .ex-breadcrumb-item__separator img {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  &--medium {
+    .ex-breadcrumb-item__link,
+    .ex-breadcrumb-item__text-wrapper {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+      font-size: var(--ex-text-base);
+    }
+
+    .ex-breadcrumb-item__separator {
+      font-size: var(--ex-text-sm);
+      margin: 0 var(--ex-spacing-2);
+    }
+    
+    .ex-breadcrumb-item__icon img {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .ex-breadcrumb-item__separator img {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &--large {
+    .ex-breadcrumb-item__link,
+    .ex-breadcrumb-item__text-wrapper {
+      padding: var(--ex-spacing-2) var(--ex-spacing-3);
+      font-size: var(--ex-text-lg);
+    }
+
+    .ex-breadcrumb-item__separator {
+      font-size: var(--ex-text-base);
+      margin: 0 var(--ex-spacing-2);
+    }
+    
+    .ex-breadcrumb-item__icon img {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .ex-breadcrumb-item__separator img {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// ============================================================================
+// 响应式适配
+// ============================================================================
+
+@include mobile {
+  .ex-breadcrumb-item {
+    &__link,
+    &__text-wrapper {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+      font-size: var(--ex-text-sm);
+    }
+
+    &__separator {
+      font-size: var(--ex-text-xs);
+      margin: 0 var(--ex-spacing-1);
+    }
+  }
+}
+
+// ============================================================================
+// 无障碍支持
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-breadcrumb-item__link,
+  .ex-breadcrumb-item__text-wrapper,
+  .ex-breadcrumb-item__icon,
+  .ex-breadcrumb-item__separator {
+    transition: none;
+  }
+
+  .ex-breadcrumb-item__link:hover {
+    transform: none;
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high) {
+  .ex-breadcrumb-item__link,
+  .ex-breadcrumb-item__text-wrapper {
+    border-width: 2px;
+  }
+
+  .ex-breadcrumb-item--last .ex-breadcrumb-item__text-wrapper {
+    outline: 2px solid var(--ex-color-primary);
+    outline-offset: -2px;
+  }
+
+  .ex-breadcrumb-item__link:focus-visible {
+    outline-width: 3px;
+  }
+}

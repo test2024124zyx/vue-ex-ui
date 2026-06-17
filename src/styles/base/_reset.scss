@@ -1,0 +1,28 @@
+// ExUI CSS Reset & Normalize
+// 基础样式重置
+//
+// 设计原则：组件库不应「接管」宿主页面。这里只保留对组件渲染必要、且业界公认
+// 安全的重置；所有会改变宿主外观的内容（背景、文字颜色、字体、滚动行为、选区配色、
+// 全屏氛围光晕）都移到可选的 `.ex-app` 作用域（见 base.scss），由使用者主动启用。
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// 焦点样式：键盘可达性增强（仅在键盘聚焦时显示轮廓）
+:focus-visible {
+  outline: 2px solid var(--ex-color-border-focus);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
