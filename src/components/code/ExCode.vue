@@ -7,27 +7,15 @@
     :aria-label="rootAriaLabel"
   >
     <!-- 头部：文件名 / 语言标签 / 操作按钮 -->
-    <div
-      v-if="hasHeader"
-      class="ex-code__header"
-    >
+    <div v-if="hasHeader" class="ex-code__header">
       <div class="ex-code__info">
-        <span
-          v-if="filename"
-          class="ex-code__filename"
-        >
-          <span
-            v-if="$slots.icon"
-            class="ex-code__file-icon"
-          >
+        <span v-if="filename" class="ex-code__filename">
+          <span v-if="$slots.icon" class="ex-code__file-icon">
             <slot name="icon" />
           </span>
           {{ filename }}
         </span>
-        <span
-          v-else-if="showLanguage"
-          class="ex-code__language"
-        >
+        <span v-else-if="showLanguage" class="ex-code__language">
           {{ languageLabel }}
         </span>
       </div>
@@ -59,10 +47,7 @@
     </div>
 
     <!-- 内容区：逐行渲染（行号 / 行高亮 / 换行对齐统一在同一栅格内） -->
-    <div
-      class="ex-code__content"
-      :style="contentStyles"
-    >
+    <div class="ex-code__content" :style="contentStyles">
       <div class="ex-code__lines">
         <div
           v-for="(line, index) in renderLines"
@@ -70,17 +55,17 @@
           class="ex-code__line"
           :class="{ 'ex-code__line--highlighted': isLineHighlighted(index) }"
         >
-          <span
-            v-if="lineNumbers"
-            class="ex-code__gutter"
-            aria-hidden="true"
-          >{{ startLine + index }}</span><span class="ex-code__line-content"><template
-            v-for="(token, ti) in line"
-            :key="ti"
-          ><span
-            v-if="token.type !== 'plain'"
-            :class="'ex-token-' + token.type"
-          >{{ token.value }}</span><template v-else>{{ token.value }}</template></template></span>
+          <span v-if="lineNumbers" class="ex-code__gutter" aria-hidden="true">
+            {{ startLine + index }}
+          </span>
+          <span class="ex-code__line-content">
+            <template v-for="(token, ti) in line" :key="ti">
+              <span v-if="token.type !== 'plain'" :class="'ex-token-' + token.type">
+                {{ token.value }}
+              </span>
+              <template v-else>{{ token.value }}</template>
+            </template>
+          </span>
         </div>
 
         <!-- 可编辑：透明 textarea 叠加在高亮层之上，光标可见、文字由下方高亮层呈现 -->
@@ -108,6 +93,7 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { tokenizeToLines } from './highlighter';
@@ -178,11 +164,10 @@ const rootStyleList = computed(() => [
   props.style ?? '',
 ]);
 
-const contentStyles = computed<Record<string, string>>(() => {
+const contentStyles = computed<CSSProperties>(() => {
   if (props.maxHeight === undefined) return {};
   return {
-    maxHeight:
-      typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight,
+    maxHeight: typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight,
   };
 });
 

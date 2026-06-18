@@ -1,19 +1,13 @@
 <template>
   <div :class="rootClasses">
     <!-- 头部：标题 + 操作区 -->
-    <div
-      v-if="title || $slots.title || $slots.extra"
-      class="ex-descriptions__header"
-    >
+    <div v-if="title || $slots.title || $slots.extra" class="ex-descriptions__header">
       <div class="ex-descriptions__title">
         <slot name="title">
           {{ title }}
         </slot>
       </div>
-      <div
-        v-if="$slots.extra"
-        class="ex-descriptions__extra"
-      >
+      <div v-if="$slots.extra" class="ex-descriptions__extra">
         <slot name="extra" />
       </div>
     </div>
@@ -22,15 +16,8 @@
     <div class="ex-descriptions__body">
       <table class="ex-descriptions__table">
         <tbody>
-          <tr
-            v-for="(row, ri) in tableRows"
-            :key="ri"
-            class="ex-descriptions__row"
-          >
-            <template
-              v-for="(cell, ci) in row"
-              :key="ci"
-            >
+          <tr v-for="(row, ri) in tableRows" :key="ri" class="ex-descriptions__row">
+            <template v-for="(cell, ci) in row" :key="ci">
               <th
                 v-if="cell.kind === 'label'"
                 class="ex-descriptions__cell ex-descriptions__label"
@@ -40,10 +27,7 @@
               >
                 <span class="ex-descriptions__label-inner">
                   <Cell :nodes="cell.nodes" />
-                  <span
-                    v-if="showColon"
-                    class="ex-descriptions__colon"
-                  >:</span>
+                  <span v-if="showColon" class="ex-descriptions__colon">:</span>
                 </span>
               </th>
               <td
@@ -65,6 +49,7 @@
 
 <script setup lang="ts">
 import { computed, useSlots, Fragment } from 'vue';
+import type { Slots } from 'vue';
 import type { VNode, VNodeArrayChildren, CSSProperties } from 'vue';
 import type { ExDescriptionsProps, DescriptionsAlign } from './types';
 import { useComponentSize } from '../config-provider/composables';
@@ -111,10 +96,7 @@ interface ParsedItem {
   labelNodes?: VNode[];
 }
 
-const getProp = (
-  vprops: Record<string, unknown> | null,
-  ...names: string[]
-): unknown => {
+const getProp = (vprops: Record<string, unknown> | null, ...names: string[]): unknown => {
   if (!vprops) return undefined;
   for (const n of names) {
     if (vprops[n] !== undefined) return vprops[n];
@@ -124,7 +106,11 @@ const getProp = (
 
 const isItemVNode = (vnode: VNode): boolean => {
   const type = vnode.type as { name?: string; __name?: string } | undefined;
-  return !!type && typeof type === 'object' && (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem');
+  return (
+    !!type &&
+    typeof type === 'object' &&
+    (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem')
+  );
 };
 
 // 递归展开 Fragment（v-for / template 包裹会产生 Fragment）
@@ -144,7 +130,7 @@ const flatten = (children: VNodeArrayChildren | undefined): VNode[] => {
 };
 
 const items = computed<ParsedItem[]>(() => {
-  const raw = (slots.default?.() ?? []) as VNodeArrayChildren;
+  const raw = ((slots as Slots).default?.() ?? []) as VNodeArrayChildren;
   return flatten(raw)
     .filter(isItemVNode)
     .map(vnode => {
@@ -206,8 +192,7 @@ interface RenderCell {
   style?: CSSProperties;
 }
 
-const labelOf = (item: ParsedItem): VNode[] | string =>
-  item.labelNodes ?? item.label ?? '';
+const labelOf = (item: ParsedItem): VNode[] | string => item.labelNodes ?? item.label ?? '';
 const mergedLabelStyle = (item: ParsedItem): CSSProperties => ({
   ...(props.labelStyle || {}),
   ...(item.labelStyle || {}),

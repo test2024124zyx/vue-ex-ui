@@ -1,6 +1,6 @@
 {
   "name": "vue-ex-ui",
-  "version": "0.3.6",
+  "version": "1.0.0",
   "type": "module",
   "description": "Vue 3 cyberpunk-styled UI component library with TypeScript support",
   "files": [

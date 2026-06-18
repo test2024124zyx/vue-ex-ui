@@ -19,41 +19,16 @@
     @drop="handleDrop"
     @dragend="handleDragEnd"
   >
-    <div
-      class="ex-tree-node__content"
-      @click="handleClick"
-      @contextmenu="handleContextmenu"
-    >
+    <div class="ex-tree-node__content" @click="handleClick" @contextmenu="handleContextmenu">
       <!-- 展开/收起图标 -->
-      <span
-        v-if="hasChildren"
-        class="ex-tree-node__expand-icon"
-        @click.stop="handleToggle"
-      >
-        <ExIcon
-          v-if="isExpanded"
-          icon="arrow-down-s-line"
-          :size="16"
-          aria-hidden="true"
-        />
-        <ExIcon
-          v-else
-          icon="arrow-right-s-line"
-          :size="16"
-          aria-hidden="true"
-        />
+      <span v-if="hasChildren" class="ex-tree-node__expand-icon" @click.stop="handleToggle">
+        <ExIcon v-if="isExpanded" icon="arrow-down-s-line" :size="16" aria-hidden="true" />
+        <ExIcon v-else icon="arrow-right-s-line" :size="16" aria-hidden="true" />
       </span>
-      <span
-        v-else
-        class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder"
-      />
+      <span v-else class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder" />
 
       <!-- 复选框 -->
-      <span
-        v-if="checkable && node.checkable !== false"
-        class="ex-tree-node__checkbox"
-        @click.stop
-      >
+      <span v-if="checkable && node.checkable !== false" class="ex-tree-node__checkbox" @click.stop>
         <ExCheckbox
           :model-value="isChecked"
           :indeterminate="isHalfChecked"
@@ -63,30 +38,16 @@
       </span>
 
       <!-- 图标 -->
-      <span
-        v-if="showIcon"
-        class="ex-tree-node__icon"
-      >
+      <span v-if="showIcon" class="ex-tree-node__icon">
         <!-- node.icon 支持内置图标名或图片 URL（内置名优先，未命中时按 URL 渲染） -->
-        <ExIcon
-          v-if="node.icon"
-          :icon="node.icon"
-          :src="node.icon"
-          :size="16"
-          aria-hidden="true"
-        />
+        <ExIcon v-if="node.icon" :icon="node.icon" :src="node.icon" :size="16" aria-hidden="true" />
         <ExIcon
           v-else-if="hasChildren"
           :icon="isExpanded ? 'folder-open-line' : 'folder-line'"
           :size="16"
           aria-hidden="true"
         />
-        <ExIcon
-          v-else
-          icon="file-line"
-          :size="16"
-          aria-hidden="true"
-        />
+        <ExIcon v-else icon="file-line" :size="16" aria-hidden="true" />
       </span>
 
       <!-- 标题 -->
@@ -96,11 +57,7 @@
     </div>
 
     <!-- 子节点（虚拟滚动 flat 模式下由父级统一扁平渲染，这里不再递归） -->
-    <div
-      v-if="hasChildren && isExpanded && !flat"
-      class="ex-tree-node__children"
-      role="group"
-    >
+    <div v-if="hasChildren && isExpanded && !flat" class="ex-tree-node__children" role="group">
       <ExTreeNode
         v-for="child in node.children"
         :key="child.key"
@@ -240,9 +197,9 @@ const handleContextmenu = (event: MouseEvent) => {
   emit('node-contextmenu', props.node, event);
 };
 
-const handleCheckChange = (val: boolean) => {
+const handleCheckChange = (val: string | number | boolean) => {
   if (isDisabled.value) return;
-  emit('check', props.node, val);
+  emit('check', props.node, Boolean(val));
 };
 
 // 键盘导航（WAI-ARIA tree 模式）
