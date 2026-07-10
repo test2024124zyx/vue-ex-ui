@@ -417,15 +417,50 @@ const beforeConfirm = () => {
 - 完整的 ARIA 属性支持
 - 支持屏幕阅读器
 
+## 常见问题
+
+**Q：点击「确认 / 取消」后气泡没有关闭？**
+已修复（早期版本因内部绑定字段错位导致按钮无法关闭气泡）。现在确认/取消会正常触发事件并关闭。
+
+**Q：确认需要等待异步请求？**
+用 `before-confirm` 返回 `Promise<boolean>`：返回 `false` 阻止关闭；配合 `confirm-loading` 显示确认按钮加载态。
+
+```vue
+<ExPopconfirm
+  title="确认删除？"
+  :confirm-loading="loading"
+  :before-confirm="onBeforeConfirm"
+  @confirm="onConfirm"
+>
+  <ExButton type="danger">删除</ExButton>
+</ExPopconfirm>
+```
+
+**Q：怎么自定义图标？**
+`icon` 传图片 URL，或用 `#icon` 插槽完全自定义。
+
+**Q：和 Dialog 的二次确认怎么选？**
+轻量、就地的危险操作确认（如删除某行）用 Popconfirm；需要展示较多信息或表单的确认用 [Dialog](/components/dialog)。
+
+## 最佳实践
+
+- **就地的危险/不可逆操作**（删除、清空）用 Popconfirm 做轻量二次确认。
+- **异步确认**用 `before-confirm` + `confirm-loading`，请求成功后再关闭。
+- `type` 与按钮文案要明确表达后果（如「删除」而非「确定」）。
+- 触发元素保持可聚焦，确认框支持 ESC 关闭与读屏。
+
 ## 主题定制
 
-可以通过 CSS 变量自定义气泡确认框样式：
+Popconfirm 基于 [Popover](/components/popover) 实现，复用同一套全局设计令牌，不单独定义组件级变量。定制方式：
+
+- **单个实例**：用 `popup-class` / `popup-style` 定制浮层。
+- **全局**：覆盖所消费的全局令牌：
 
 ```css
 :root {
-  --ex-popconfirm-bg: var(--ex-color-bg-surface);
-  --ex-popconfirm-border-color: var(--ex-color-border-primary);
-  --ex-popconfirm-shadow: var(--ex-shadow-lg);
+  --ex-color-bg-elevated: #11151c; /* 气泡背景 */
+  --ex-color-border-primary: #1f2a37; /* 边框 */
+  --ex-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.55); /* 投影 */
 }
 ```
 

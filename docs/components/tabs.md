@@ -626,20 +626,7 @@ const handleTabRemove = targetName => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义标签页样式：
-
-```css
-:root {
-  --ex-tabs-nav-bg: transparent;
-  --ex-tabs-tab-color: var(--ex-color-text-secondary);
-  --ex-tabs-tab-active-color: var(--ex-color-neon-blue-500);
-  --ex-tabs-indicator-bg: linear-gradient(
-    90deg,
-    var(--ex-color-neon-blue-500),
-    var(--ex-color-neon-pink-500)
-  );
-}
-```
+标签页跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

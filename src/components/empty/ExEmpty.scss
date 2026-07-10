@@ -6,12 +6,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--ex-space-xl) var(--ex-space-md);
+  padding: var(--ex-spacing-8) var(--ex-spacing-4);
   text-align: center;
   min-height: 200px;
 
   &__image {
-    margin-bottom: var(--ex-space-md);
+    margin-bottom: var(--ex-spacing-4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -61,17 +61,17 @@
     color: var(--ex-color-text-secondary);
     font-size: var(--ex-text-base);
     line-height: 1.6;
-    margin-bottom: var(--ex-space-md);
+    margin-bottom: var(--ex-spacing-4);
   }
 
   &__footer {
-    margin-top: var(--ex-space-md);
+    margin-top: var(--ex-spacing-4);
   }
 
   // 尺寸变体
   &--small {
     min-height: 150px;
-    padding: var(--ex-space-lg) var(--ex-space-md);
+    padding: var(--ex-spacing-6) var(--ex-spacing-4);
 
     .ex-empty__image {
       width: 80px;
@@ -92,7 +92,7 @@
 
   &--large {
     min-height: 300px;
-    padding: var(--ex-space-xxl) var(--ex-space-lg);
+    padding: var(--ex-spacing-12) var(--ex-spacing-6);
 
     .ex-empty__image {
       width: 160px;
@@ -104,7 +104,7 @@
     }
   }
 
-  // 游戏化效�?
+  // 游戏化效�?
   .ex-empty__svg {
     .ex-empty__path-5 {
       fill: var(--ex-color-neon-blue-500);
@@ -112,14 +112,14 @@
     }
 
     .ex-empty__g {
-      fill: var(--ex-color-neon-purple-500);
+      fill: var(--ex-color-secondary);
       opacity: 0.8;
     }
   }
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
-    padding: var(--ex-space-lg) var(--ex-space-sm);
+    padding: var(--ex-spacing-6) var(--ex-spacing-2);
     min-height: 180px;
 
     &--small .ex-empty__image {

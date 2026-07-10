@@ -87,6 +87,10 @@ export interface ExFilePreviewEmits {
  * 文件预览组件暴露的方法
  */
 export interface ExFilePreviewExposed {
+  /** 上一个文件 */
+  prev: () => void;
+  /** 下一个文件 */
+  next: () => void;
   /** 放大 */
   zoomIn: () => void;
   /** 缩小 */

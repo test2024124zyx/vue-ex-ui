@@ -295,9 +295,9 @@ const visible = ref(false);
 <template>
   <ExButton type="primary" @click="visible = true">加载状态</ExButton>
 
-  <ExModal 
-    v-model="visible" 
-    title="提交表单" 
+  <ExModal
+    v-model="visible"
+    title="提交表单"
     :confirm-loading="confirmLoading"
     :before-close="() => !confirmLoading"
     @ok="handleOk"
@@ -318,7 +318,7 @@ const handleOk = () => {
   // 模拟异步操作（如API请求）
   setTimeout(() => {
     confirmLoading.value = false;
-    visible.value = false;  // 操作完成后关闭模态框
+    visible.value = false; // 操作完成后关闭模态框
   }, 2000);
 };
 </script>
@@ -494,16 +494,54 @@ const innerVisible = ref(false);
 - 支持屏幕阅读器
 - 自动锁定焦点在模态框内
 
+## 受控 / 非受控
+
+Modal 通过 `v-model`（`modelValue`）受控：
+
+```vue
+<template>
+  <ExModal v-model="visible" title="标题" @ok="onOk" @cancel="onCancel">内容</ExModal>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const visible = ref(false);
+</script>
+```
+
+- 点击确定先触发 `ok`，再经 `before-close` 校验，通过后自动关闭；点击取消/遮罩/ESC 触发 `cancel`。
+- 异步提交时用 `:confirm-loading="true"` 锁定确定按钮，并用 `before-close` 在校验未过时返回 `false` 阻止关闭。
+
+> Modal 与 [Dialog](/components/dialog) 功能相近：Modal 偏 Ant Design 风格（`ok/cancel`、`mask`、`keyboard`），Dialog 偏 Element 风格（`confirm/cancel`、`modal`、`close-on-press-escape`）。同一项目建议只选其一以保持一致。
+
+## 常见问题
+
+**Q：`ok` 和 `cancel` 与 `before-close` 的执行顺序？**
+先 emit `ok`/`cancel`，再执行 `before-close`；`before-close` 返回 `false` 时不更新 `modelValue`，模态框保持打开。
+
+**Q：如何禁止 ESC / 点击遮罩关闭？**
+设置 `:keyboard="false"` 与 `:mask-closable="false"`。
+
+**Q：多个模态框叠加？**
+支持叠加：滚动锁引用计数、ESC 只关最顶层、关闭后焦点归还触发元素。
+
+## 最佳实践
+
+- **二次确认/表单提交**用 `confirm-loading` + `before-close`，提交成功后关闭。
+- **危险操作**用 `ok-type="danger"` 强化视觉警示。
+- 始终设置 `title` 或 `aria-label` 以满足无障碍。
+
 ## 主题定制
 
-可以通过 CSS 变量自定义模态框样式：
+Modal 不定义独立的组件级变量，而是消费 ExUI 全局设计令牌。定制方式：
+
+- **单个实例**：用 `wrap-class-name` / `body-style` 定制。
+- **全局**：覆盖所消费的全局令牌：
 
 ```css
 :root {
-  --ex-modal-bg: var(--ex-color-bg-surface);
-  --ex-modal-border-color: var(--ex-color-border-primary);
-  --ex-modal-shadow: var(--ex-shadow-2xl);
-  --ex-modal-mask-bg: rgba(0, 0, 0, 0.75);
+  --ex-color-bg-surface: #11151c; /* 模态框背景 */
+  --ex-color-border-primary: #1f2a37; /* 边框 / 分割线 */
 }
 ```
 

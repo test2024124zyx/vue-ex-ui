@@ -85,9 +85,10 @@ const stepRef = ref<HTMLDivElement>();
 // 从父组件注入上下文
 const stepsContext = inject<StepsContext>('exSteps')!;
 
-// 注册步骤
-const uid = Date.now() + Math.random();
-const stepIndex = stepsContext.registerStep(uid);
+// 注册步骤（索引由父组件按文档顺序实时计算，支持动态增删/重排）
+const uid = Symbol('ex-step');
+stepsContext.registerStep(uid);
+const stepIndex = computed(() => stepsContext.getStepIndex(uid));
 
 // 组件卸载时注销
 onBeforeUnmount(() => {
@@ -95,20 +96,20 @@ onBeforeUnmount(() => {
 });
 
 // 计算属性
-const stepNumber = computed(() => stepIndex + 1);
+const stepNumber = computed(() => stepIndex.value + 1);
 
-const isCurrent = computed(() => stepIndex === stepsContext.current.value);
+const isCurrent = computed(() => stepIndex.value === stepsContext.current.value);
 
-const isLastStep = computed(() => stepIndex === stepsContext.stepCount.value - 1);
+const isLastStep = computed(() => stepIndex.value === stepsContext.stepCount.value - 1);
 
 const currentStatus = computed(() => {
   // 优先使用步骤自己的状态
   if (props.status) return props.status;
 
   // 根据当前步骤索引判断状态
-  if (stepIndex < stepsContext.current.value) {
+  if (stepIndex.value < stepsContext.current.value) {
     return 'finish';
-  } else if (stepIndex === stepsContext.current.value) {
+  } else if (stepIndex.value === stepsContext.current.value) {
     return stepsContext.status.value;
   } else {
     return 'wait';
@@ -221,13 +222,13 @@ const statusIcon = computed(() => {
 // 事件处理
 const handleClick = () => {
   if (!props.disabled && isClickable.value) {
-    stepsContext.onStepClick(stepIndex);
+    stepsContext.onStepClick(stepIndex.value);
   }
 };
 
 // 暴露的方法
 const getElement = () => stepRef.value || null;
-const getIndex = () => stepIndex;
+const getIndex = () => stepIndex.value;
 
 defineExpose<ExStepExposed>({
   getElement,

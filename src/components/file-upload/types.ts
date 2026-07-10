@@ -103,8 +103,6 @@ export interface ExFileUploadEmits {
   'update:fileList': [fileList: UploadFile[]];
   /** 文件选择后 */
   change: [file: UploadFile, fileList: UploadFile[]];
-  /** 上传前 */
-  beforeUpload: [file: File];
   /** 上传进度 */
   progress: [percent: number, file: UploadFile];
   /** 上传成功 */

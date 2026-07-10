@@ -1,37 +1,42 @@
 <template>
-  <div ref="codeRef" :class="codeClasses" :style="codeStyles" role="region" :aria-label="ariaLabel">
-    <!-- 头部：文件名和操作按钮 -->
-    <div v-if="filename || showLanguage || copyable" class="ex-code__header">
+  <div
+    ref="rootRef"
+    :class="rootClasses"
+    :style="rootStyleList"
+    role="group"
+    :aria-label="rootAriaLabel"
+  >
+    <!-- 头部：文件名 / 语言标签 / 操作按钮 -->
+    <div v-if="hasHeader" class="ex-code__header">
       <div class="ex-code__info">
-        <!-- 文件名 -->
         <span v-if="filename" class="ex-code__filename">
-          <template v-if="$slots.icon">
-            <span class="ex-code__file-icon">
-              <slot name="icon" />
-            </span>
-          </template>
+          <span v-if="$slots.icon" class="ex-code__file-icon">
+            <slot name="icon" />
+          </span>
           {{ filename }}
         </span>
-        <!-- 语言标签 -->
-        <span v-else-if="showLanguage && language" class="ex-code__language">
+        <span v-else-if="showLanguage" class="ex-code__language">
           {{ languageLabel }}
         </span>
       </div>
 
-      <!-- 操作按钮 -->
       <div class="ex-code__actions">
         <slot name="actions">
-          <!-- 复制按钮 -->
           <button
             v-if="copyable"
+            type="button"
             class="ex-code__copy-btn"
             :class="{ 'ex-code__copy-btn--copied': copied }"
-            :aria-label="copied ? t('code.copied') : t('code.copy')"
+            :aria-label="copyAriaLabel"
+            :title="copyAriaLabel"
             @click="handleCopy"
           >
             <span class="ex-code__copy-icon">
-              <ExIcon v-if="!copied" icon="file-copy-line" :size="16" aria-hidden="true" />
-              <ExIcon v-else icon="check-line" :size="16" aria-hidden="true" />
+              <ExIcon
+                :icon="copied ? 'check-line' : 'file-copy-line'"
+                :size="16"
+                aria-hidden="true"
+              />
             </span>
             <span class="ex-code__copy-text">
               {{ copied ? t('code.copied') : t('code.copy') }}
@@ -41,46 +46,43 @@
       </div>
     </div>
 
-    <!-- 代码内容区域 -->
-    <div class="ex-code__content">
-      <!-- 行号 -->
-      <div v-if="lineNumbers" class="ex-code__line-numbers" aria-hidden="true">
-        <span
-          v-for="line in totalLines"
-          :key="line"
-          class="ex-code__line-number"
-          :class="{ 'ex-code__line-number--highlighted': isLineHighlighted(line) }"
+    <!-- 内容区：逐行渲染（行号 / 行高亮 / 换行对齐统一在同一栅格内） -->
+    <div class="ex-code__content" :style="contentStyles">
+      <div class="ex-code__lines">
+        <div
+          v-for="(line, index) in renderLines"
+          :key="index"
+          class="ex-code__line"
+          :class="{ 'ex-code__line--highlighted': isLineHighlighted(index) }"
         >
-          {{ startLine + line - 1 }}
-        </span>
-      </div>
+          <span v-if="lineNumbers" class="ex-code__gutter" aria-hidden="true">
+            {{ startLine + index }}
+          </span>
+          <span class="ex-code__line-content">
+            <template v-for="(token, ti) in line" :key="ti">
+              <span v-if="token.type !== 'plain'" :class="'ex-token-' + token.type">
+                {{ token.value }}
+              </span>
+              <template v-else>{{ token.value }}</template>
+            </template>
+          </span>
+        </div>
 
-      <!-- 代码块（可编辑时在高亮层上叠加透明 textarea） -->
-      <div class="ex-code__main" :class="{ 'ex-code__main--editable': isEditable }">
-        <!-- 高亮 HTML 已在 highlighter.ts 中通过 sanitizeHtml 统一消毒。 -->
-        <!-- eslint-disable vue/no-v-html -->
-        <pre
-          class="ex-code__pre hljs"
-          :class="{ 'ex-code__pre--wrap': wrap }"
-          :aria-hidden="isEditable ? 'true' : undefined"
-        ><code
-          class="ex-code__code"
-          :class="`language-${language}`"
-          v-html="codeHtml"
-        /></pre>
-        <!-- eslint-enable vue/no-v-html -->
+        <!-- 可编辑：透明 textarea 叠加在高亮层之上，光标可见、文字由下方高亮层呈现 -->
         <textarea
-          v-if="isEditable"
+          v-if="editable"
           ref="textareaRef"
           class="ex-code__textarea"
-          :class="{ 'ex-code__textarea--wrap': wrap }"
-          :value="displayCode"
+          :value="currentCode"
           :readonly="readonly"
+          :aria-label="editorAriaLabel"
+          wrap="soft"
           spellcheck="false"
           autocapitalize="off"
           autocomplete="off"
           autocorrect="off"
           @input="handleInput"
+          @keydown="handleKeydown"
         />
       </div>
     </div>
@@ -90,10 +92,11 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
-import { loadHighlighter, highlightSync } from './highlighter';
+import { tokenizeToLines } from './highlighter';
 
 defineOptions({
   name: 'ExCode',
@@ -110,17 +113,18 @@ const props = withDefaults(defineProps<ExCodeProps>(), {
   wrap: false,
   readonly: false,
   editable: false,
+  tabSize: 2,
 });
 
 const emit = defineEmits<ExCodeEmits>();
 
 const { t } = useI18n();
 
-const codeRef = ref<HTMLDivElement>();
+const rootRef = ref<HTMLDivElement>();
 const textareaRef = ref<HTMLTextAreaElement>();
 const copied = ref(false);
 
-// 可编辑：内部维护当前代码，支持 v-model:code
+// 内部维护当前代码，支持受控（:code）与双向（v-model:code）。
 const currentCode = ref(props.code);
 watch(
   () => props.code,
@@ -128,13 +132,11 @@ watch(
     if (val !== currentCode.value) currentCode.value = val;
   }
 );
-const isEditable = computed(() => props.editable);
 
-// highlight.js 加载就绪标记（加载完成后让 codeHtml 重新计算出真实高亮）
-const hlReady = ref(false);
+// 同步高亮：纯函数、零依赖、无异步加载，逐字符即时高亮，编辑不卡顿。
+const renderLines = computed(() => tokenizeToLines(currentCode.value, props.language));
 
-// 计算属性
-const codeClasses = computed(() => {
+const rootClasses = computed(() => {
   const classes = [
     'ex-code',
     `ex-code--theme-${props.theme}`,
@@ -143,59 +145,30 @@ const codeClasses = computed(() => {
 
   if (props.lineNumbers) classes.push('ex-code--line-numbers');
   if (props.wrap) classes.push('ex-code--wrap');
+  if (props.editable) classes.push('ex-code--editable');
 
   classes.push(...normalizeCustomClass(props.class));
 
   return classes;
 });
 
-const codeStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  if (props.maxHeight) {
-    styles.maxHeight =
-      typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight;
-  }
-
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    } else {
-      Object.assign(styles, props.style);
-    }
-  }
-
-  return styles;
+// 行号栏宽度由「最大行号位数」决定（等宽字体下 1ch 恰为一位数字宽）。
+// 必须落在根元素上：--ex-code-gutter-width 的 calc 在根层求值。
+const gutterChars = computed(() => {
+  const maxLine = props.startLine + renderLines.value.length - 1;
+  return Math.max(2, String(maxLine).length);
 });
 
-const displayCode = computed(() => {
-  return currentCode.value;
-});
+const rootStyleList = computed(() => [
+  { '--ex-code-gutter-chars': String(gutterChars.value) },
+  props.style ?? '',
+]);
 
-// 同步高亮：highlight.js 就绪后逐字符即时高亮，无异步延迟（编辑不卡顿）。
-// hlReady 作为响应式依赖，加载完成后自动从「转义纯文本」切换为真实高亮。
-const codeHtml = computed(() => {
-  void hlReady.value;
-  return highlightSync(displayCode.value, props.language).html;
-});
-
-onMounted(async () => {
-  await loadHighlighter();
-  hlReady.value = true;
-});
-
-// 编辑输入：更新内部代码并派发事件（高亮随 computed 同步刷新）
-const handleInput = (event: Event) => {
-  const val = (event.target as HTMLTextAreaElement).value;
-  currentCode.value = val;
-  emit('update:code', val);
-  emit('change', val);
-};
-
-const totalLines = computed(() => {
-  return displayCode.value.split('\n').length;
+const contentStyles = computed<CSSProperties>(() => {
+  if (props.maxHeight === undefined) return {};
+  return {
+    maxHeight: typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight,
+  };
 });
 
 const highlightedLines = computed(() => {
@@ -205,67 +178,134 @@ const highlightedLines = computed(() => {
     return new Set(props.highlightLines);
   }
 
-  // 解析字符串格式：'1,3-5,7' => [1, 3, 4, 5, 7]
+  // 解析字符串格式：'1,3-5,7' => {1, 3, 4, 5, 7}
   const lines = new Set<number>();
-  const parts = props.highlightLines.split(',');
-
-  parts.forEach(part => {
+  props.highlightLines.split(',').forEach(part => {
     const range = part.trim().split('-');
     if (range.length === 1 && range[0]) {
       lines.add(parseInt(range[0], 10));
     } else if (range.length === 2 && range[0] && range[1]) {
       const start = parseInt(range[0], 10);
       const end = parseInt(range[1], 10);
-      for (let i = start; i <= end; i++) {
-        lines.add(i);
-      }
+      for (let i = start; i <= end; i++) lines.add(i);
     }
   });
 
   return lines;
 });
 
-const languageLabel = computed(() => {
-  const labels: Record<string, string> = {
-    javascript: 'JavaScript',
-    typescript: 'TypeScript',
-    vue: 'Vue',
-    html: 'HTML',
-    css: 'CSS',
-    scss: 'SCSS',
-    json: 'JSON',
-    bash: 'Bash',
-    shell: 'Shell',
-    python: 'Python',
-    java: 'Java',
-    cpp: 'C++',
-    csharp: 'C#',
-    go: 'Go',
-    rust: 'Rust',
-    sql: 'SQL',
-    markdown: 'Markdown',
-    yaml: 'YAML',
-    xml: 'XML',
-    plaintext: 'Plain Text',
-  };
+// index 为 0 基行下标；展示行号与高亮判定都基于 startLine + index。
+const isLineHighlighted = (index: number) => highlightedLines.value.has(props.startLine + index);
 
-  return labels[props.language] || props.language.toUpperCase();
-});
-
-const ariaLabel = computed(() => {
-  return `${languageLabel.value} code block`;
-});
-
-// 判断行是否高亮
-const isLineHighlighted = (line: number) => {
-  const actualLine = props.startLine + line - 1;
-  return highlightedLines.value.has(actualLine);
+const LANGUAGE_LABELS: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  vue: 'Vue',
+  html: 'HTML',
+  css: 'CSS',
+  scss: 'SCSS',
+  json: 'JSON',
+  bash: 'Bash',
+  shell: 'Shell',
+  python: 'Python',
+  java: 'Java',
+  cpp: 'C++',
+  csharp: 'C#',
+  go: 'Go',
+  rust: 'Rust',
+  sql: 'SQL',
+  markdown: 'Markdown',
+  yaml: 'YAML',
+  xml: 'XML',
+  plaintext: 'Plain Text',
 };
 
-// 复制结果提示的定时器（卸载时清理，防止叠加/悬挂）
+const languageLabel = computed(
+  () => LANGUAGE_LABELS[props.language] || props.language.toUpperCase()
+);
+
+const hasHeader = computed(() => Boolean(props.filename) || props.showLanguage || props.copyable);
+
+const rootAriaLabel = computed(() => `${languageLabel.value} ${t('code.codeBlock')}`);
+const editorAriaLabel = computed(() => t('code.editor'));
+const copyAriaLabel = computed(() => (copied.value ? t('code.copied') : t('code.copy')));
+
+// 编辑输入：更新内部代码并派发事件（高亮随 computed 同步刷新）。
+const emitChange = (val: string) => {
+  currentCode.value = val;
+  emit('update:code', val);
+  emit('change', val);
+};
+
+const handleInput = (event: Event) => {
+  emitChange((event.target as HTMLTextAreaElement).value);
+};
+
+// 在受控 textarea 上替换内容并恢复光标 / 选区（需等 DOM 同步后再设置）。
+const applyEditorChange = (next: string, selStart: number, selEnd: number) => {
+  emitChange(next);
+  nextTick(() => {
+    const ta = textareaRef.value;
+    if (!ta) return;
+    ta.selectionStart = selStart;
+    ta.selectionEnd = selEnd;
+  });
+};
+
+// 编辑增强：Tab 缩进 / Shift+Tab 反缩进，支持多行选区按行处理。
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Tab' || props.readonly) return;
+  event.preventDefault();
+
+  const ta = event.target as HTMLTextAreaElement;
+  const value = currentCode.value;
+  const selStart = ta.selectionStart;
+  const selEnd = ta.selectionEnd;
+  const indent = ' '.repeat(Math.max(1, props.tabSize));
+
+  const selection = value.slice(selStart, selEnd);
+  const multiline = selection.includes('\n');
+
+  // 单光标且无跨行：直接在光标处插入缩进。
+  if (!event.shiftKey && !multiline) {
+    const next = value.slice(0, selStart) + indent + value.slice(selEnd);
+    const caret = selStart + indent.length;
+    applyEditorChange(next, caret, caret);
+    return;
+  }
+
+  // 跨行 / Shift+Tab：对选区覆盖的每一行整体缩进或反缩进。
+  const lineStart = value.lastIndexOf('\n', selStart - 1) + 1;
+  const region = value.slice(lineStart, selEnd);
+  const lines = region.split('\n');
+
+  let firstDelta = 0;
+  let totalDelta = 0;
+  const newLines = lines.map(line => {
+    if (event.shiftKey) {
+      const removed = line.match(/^[ \t]{1,2}/);
+      const removeLen = removed
+        ? line.startsWith('\t')
+          ? 1
+          : Math.min(indent.length, line.match(/^ +/)?.[0].length ?? 0)
+        : 0;
+      if (totalDelta === 0 && firstDelta === 0) firstDelta = -removeLen;
+      totalDelta -= removeLen;
+      return line.slice(removeLen);
+    }
+    if (firstDelta === 0 && totalDelta === 0) firstDelta = indent.length;
+    totalDelta += indent.length;
+    return indent + line;
+  });
+
+  const next = value.slice(0, lineStart) + newLines.join('\n') + value.slice(selEnd);
+  applyEditorChange(next, Math.max(lineStart, selStart + firstDelta), selEnd + totalDelta);
+};
+
+// 复制提示定时器（卸载时清理，防止悬挂 / 叠加）。
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
-// 降级复制：navigator.clipboard 不可用（非安全上下文/旧浏览器）时回退到 execCommand
+// 降级复制：navigator.clipboard 不可用（非安全上下文 / 旧浏览器）时回退到 execCommand。
 const fallbackCopy = (text: string) => {
   const textarea = document.createElement('textarea');
   textarea.value = text;
@@ -281,16 +321,15 @@ const fallbackCopy = (text: string) => {
   }
 };
 
-// 事件处理
 const handleCopy = async () => {
   try {
     if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(displayCode.value);
+      await navigator.clipboard.writeText(currentCode.value);
     } else {
-      fallbackCopy(displayCode.value);
+      fallbackCopy(currentCode.value);
     }
     copied.value = true;
-    emit('copy', displayCode.value);
+    emit('copy', currentCode.value);
 
     if (copyTimer) clearTimeout(copyTimer);
     copyTimer = setTimeout(() => {
@@ -309,17 +348,11 @@ onBeforeUnmount(() => {
 });
 
 // 暴露的方法
-const getCode = () => {
-  return displayCode.value;
-};
-
+const getCode = () => currentCode.value;
 const copy = async () => {
   await handleCopy();
 };
-
-const getElement = () => {
-  return codeRef.value || null;
-};
+const getElement = () => rootRef.value || null;
 
 defineExpose<ExCodeExposed>({
   getCode,

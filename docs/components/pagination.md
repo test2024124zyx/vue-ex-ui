@@ -31,16 +31,13 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const current = ref(1)
+const current = ref(1);
 </script>
 
 <template>
-  <ExPagination
-    v-model:current="current"
-    :total="100"
-  />
+  <ExPagination v-model:current="current" :total="100" />
 </template>
 ```
 
@@ -58,11 +55,7 @@ const current = ref(1)
 
 ```vue
 <template>
-  <ExPagination
-    v-model:current="current"
-    :total="500"
-    :page-size="10"
-  />
+  <ExPagination v-model:current="current" :total="500" :page-size="10" />
 </template>
 ```
 
@@ -83,14 +76,14 @@ const current = ref(1)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const current = ref(1)
-const pageSize = ref(10)
+const current = ref(1);
+const pageSize = ref(10);
 
 const handleChange = (page, pageSize) => {
-  console.log('Page changed:', page, pageSize)
-}
+  console.log('Page changed:', page, pageSize);
+};
 </script>
 
 <template>
@@ -119,11 +112,7 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    v-model:current="current"
-    :total="500"
-    show-quick-jumper
-  />
+  <ExPagination v-model:current="current" :total="500" show-quick-jumper />
 </template>
 ```
 
@@ -171,11 +160,7 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    v-model:current="current"
-    :total="100"
-    simple
-  />
+  <ExPagination v-model:current="current" :total="100" simple />
 </template>
 ```
 
@@ -203,23 +188,11 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    :current="1"
-    :total="100"
-    size="small"
-  />
-  
-  <ExPagination
-    :current="1"
-    :total="100"
-    size="medium"
-  />
-  
-  <ExPagination
-    :current="1"
-    :total="100"
-    size="large"
-  />
+  <ExPagination :current="1" :total="100" size="small" />
+
+  <ExPagination :current="1" :total="100" size="medium" />
+
+  <ExPagination :current="1" :total="100" size="large" />
 </template>
 ```
 
@@ -247,23 +220,11 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    :current="1"
-    :total="100"
-    align="left"
-  />
-  
-  <ExPagination
-    :current="1"
-    :total="100"
-    align="center"
-  />
-  
-  <ExPagination
-    :current="1"
-    :total="100"
-    align="right"
-  />
+  <ExPagination :current="1" :total="100" align="left" />
+
+  <ExPagination :current="1" :total="100" align="center" />
+
+  <ExPagination :current="1" :total="100" align="right" />
 </template>
 ```
 
@@ -303,11 +264,7 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    :current="1"
-    :total="100"
-    disabled
-  />
+  <ExPagination :current="1" :total="100" disabled />
 </template>
 ```
 
@@ -338,12 +295,7 @@ const handleChange = (page, pageSize) => {
 
 ```vue
 <template>
-  <ExPagination
-    :current="1"
-    :total="5"
-    :page-size="10"
-    hide-on-single-page
-  />
+  <ExPagination :current="1" :total="5" :page-size="10" hide-on-single-page />
 </template>
 ```
 
@@ -406,40 +358,40 @@ const handleChange = (page, pageSize) => {
 
 ### Pagination Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `current` / `v-model:current` | 当前页码 | `number` | `1` |
-| `page-size` / `v-model:page-size` | 每页条数 | `number` | `10` |
-| `total` | 数据总数 | `number` | — |
-| `page-size-options` | 每页条数选项 | `number[]` | `[10, 20, 30, 50, 100]` |
-| `show-size-changer` | 是否显示每页条数选择器 | `boolean` | `false` |
-| `show-quick-jumper` | 是否显示快速跳转 | `boolean` | `false` |
-| `show-total` | 是否显示总数 | `boolean` | `true` |
-| `total-text` | 总数文本模板函数 | `(total: number, range: [number, number]) => string` | — |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `simple` | 是否简洁模式 | `boolean` | `false` |
-| `size` | 尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `align` | 对齐方式 | `'left' \| 'center' \| 'right'` | `'left'` |
-| `show-pages` | 显示的页码按钮数量（奇数） | `number` | `7` |
-| `hide-on-single-page` | 是否隐藏单页 | `boolean` | `false` |
-| `aria-label` | 无障碍标签 | `string` | — |
+| 属性                              | 说明                       | 类型                                                 | 默认值                  |
+| --------------------------------- | -------------------------- | ---------------------------------------------------- | ----------------------- |
+| `current` / `v-model:current`     | 当前页码                   | `number`                                             | `1`                     |
+| `page-size` / `v-model:page-size` | 每页条数                   | `number`                                             | `10`                    |
+| `total`                           | 数据总数                   | `number`                                             | —                       |
+| `page-size-options`               | 每页条数选项               | `number[]`                                           | `[10, 20, 30, 50, 100]` |
+| `show-size-changer`               | 是否显示每页条数选择器     | `boolean`                                            | `false`                 |
+| `show-quick-jumper`               | 是否显示快速跳转           | `boolean`                                            | `false`                 |
+| `show-total`                      | 是否显示总数               | `boolean`                                            | `true`                  |
+| `total-text`                      | 总数文本模板函数           | `(total: number, range: [number, number]) => string` | —                       |
+| `disabled`                        | 是否禁用                   | `boolean`                                            | `false`                 |
+| `simple`                          | 是否简洁模式               | `boolean`                                            | `false`                 |
+| `size`                            | 尺寸                       | `'small' \| 'medium' \| 'large'`                     | `'medium'`              |
+| `align`                           | 对齐方式                   | `'left' \| 'center' \| 'right'`                      | `'left'`                |
+| `show-pages`                      | 显示的页码按钮数量（奇数） | `number`                                             | `7`                     |
+| `hide-on-single-page`             | 是否隐藏单页               | `boolean`                                            | `false`                 |
+| `aria-label`                      | 无障碍标签                 | `string`                                             | —                       |
 
 ### Pagination Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:current` | 页码改变时触发 | `(current: number) => void` |
-| `update:page-size` | 每页条数改变时触发 | `(pageSize: number) => void` |
-| `change` | 页码或每页条数改变时触发 | `(current: number, pageSize: number) => void` |
+| 事件名             | 说明                     | 类型                                          |
+| ------------------ | ------------------------ | --------------------------------------------- |
+| `update:current`   | 页码改变时触发           | `(current: number) => void`                   |
+| `update:page-size` | 每页条数改变时触发       | `(pageSize: number) => void`                  |
+| `change`           | 页码或每页条数改变时触发 | `(current: number, pageSize: number) => void` |
 
 ### Pagination Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取分页DOM元素 | `() => HTMLDivElement \| null` |
-| `goToPage` | 跳转到指定页 | `(page: number) => void` |
-| `prev` | 上一页 | `() => void` |
-| `next` | 下一页 | `() => void` |
+| `goToPage`   | 跳转到指定页    | `(page: number) => void`       |
+| `prev`       | 上一页          | `() => void`                   |
+| `next`       | 下一页          | `() => void`                   |
 
 ## 无障碍支持
 
@@ -453,18 +405,7 @@ const handleChange = (page, pageSize) => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义分页样式：
-
-```css
-:root {
-  --ex-pagination-item-bg: var(--ex-color-bg-secondary);
-  --ex-pagination-item-border: var(--ex-color-border-primary);
-  --ex-pagination-item-color: var(--ex-color-text-primary);
-  --ex-pagination-item-active-bg: var(--ex-color-neon-blue-500);
-  --ex-pagination-item-active-color: var(--ex-color-white);
-  --ex-pagination-item-hover-border: var(--ex-color-neon-blue-500);
-}
-```
+分页组件直接使用全局主题令牌（如 `--ex-color-bg-secondary`、`--ex-color-border-primary`、`--ex-color-primary` 等），会自动跟随全局主题变化。组件本身**未提供** `--ex-pagination-*` 这类专属 CSS 变量，设置它们不会生效。如需深度定制，请覆盖全局令牌，或通过 `class` / `style` 透传样式。
 
 <style scoped>
 .demo-container {

@@ -1,9 +1,9 @@
-// ExUI useOverlay —— 浮层（Modal / Dialog 等）通用机制
+// ExUI useOverlay —— 浮层（Modal / Dialog / Drawer 等）通用机制
 //
-// 把 Modal 与 Dialog 此前各自重复实现的「打开/关闭副作用」收敛到一处：
-//   - 锁定/解锁页面滚动
+// 把浮层「打开/关闭副作用」收敛到一处：
+//   - 锁定/解锁页面滚动（引用计数，支持叠加）
 //   - 自动聚焦 + Tab 焦点陷阱（trapFocus）
-//   - Esc 键关闭
+//   - Esc 键关闭（通过浮层栈，保证只关闭最顶层浮层）
 //   - 关闭后归还焦点（可选）
 //   - 组件卸载时的兜底清理
 //
@@ -38,25 +38,71 @@ export interface UseOverlayReturn {
   deactivate: () => void;
 }
 
+// ----------------------------------------------------------------------------
+// 浮层栈：保证 Esc 只关闭最顶层浮层，且全局只挂一个 keydown 监听
+// ----------------------------------------------------------------------------
+interface OverlayEntry {
+  canEscape: () => boolean;
+  onEscape: () => void;
+}
+
+const overlayStack: OverlayEntry[] = [];
+let globalKeydownBound = false;
+
+const handleGlobalKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape') return;
+  const top = overlayStack[overlayStack.length - 1];
+  if (top && top.canEscape()) {
+    top.onEscape();
+  }
+};
+
+const pushOverlay = (entry: OverlayEntry) => {
+  overlayStack.push(entry);
+  if (!globalKeydownBound && typeof document !== 'undefined') {
+    document.addEventListener('keydown', handleGlobalKeydown);
+    globalKeydownBound = true;
+  }
+};
+
+const removeOverlay = (entry: OverlayEntry) => {
+  const index = overlayStack.indexOf(entry);
+  if (index > -1) overlayStack.splice(index, 1);
+  if (overlayStack.length === 0 && globalKeydownBound && typeof document !== 'undefined') {
+    document.removeEventListener('keydown', handleGlobalKeydown);
+    globalKeydownBound = false;
+  }
+};
+
 export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   let releaseFocusTrap: (() => void) | null = null;
   let previousActiveElement: HTMLElement | null = null;
+  // 本实例当前是否持有滚动锁，确保解锁次数与加锁次数严格配对
+  let locked = false;
+  let entry: OverlayEntry | null = null;
 
   const shouldLock = () => options.lockScroll?.() !== false;
   const canEscape = () => options.closeOnEscape?.() !== false;
 
-  const handleEscapeKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && canEscape() && options.active()) {
-      options.onEscape?.();
-    }
-  };
-
   const activate = () => {
     // SSR 环境无 document：immediate watch 在 setup 阶段即触发，此处直接跳过
     if (typeof document === 'undefined') return;
+
+    // 入栈，参与 Esc 顶层判定
+    if (!entry) {
+      entry = { canEscape, onEscape: () => options.onEscape?.() };
+      pushOverlay(entry);
+    }
+
     // DOM 就绪后再锁滚动与聚焦
     nextTick(() => {
-      if (shouldLock()) lockScroll();
+      // 若在 nextTick 之前已经关闭，则不再执行打开副作用
+      if (!options.active()) return;
+
+      if (shouldLock() && !locked) {
+        lockScroll();
+        locked = true;
+      }
       if (options.restoreFocus) {
         previousActiveElement = (document.activeElement as HTMLElement | null) ?? null;
       }
@@ -65,17 +111,22 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
         releaseFocusTrap = trapFocus(options.container.value);
       }
     });
-    // Esc 监听同步挂载，保证打开后立即可用
-    document.addEventListener('keydown', handleEscapeKey);
   };
 
   const deactivate = () => {
     // SSR 环境无 document：immediate watch 初始为关闭态时会调用此函数，需跳过
     if (typeof document === 'undefined') return;
-    if (shouldLock()) unlockScroll();
+
+    if (entry) {
+      removeOverlay(entry);
+      entry = null;
+    }
+    if (locked) {
+      unlockScroll();
+      locked = false;
+    }
     releaseFocusTrap?.();
     releaseFocusTrap = null;
-    document.removeEventListener('keydown', handleEscapeKey);
     if (options.restoreFocus) {
       previousActiveElement?.focus?.();
       previousActiveElement = null;
@@ -87,8 +138,14 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   });
 
   onBeforeUnmount(() => {
-    document.removeEventListener('keydown', handleEscapeKey);
-    unlockScroll();
+    if (entry) {
+      removeOverlay(entry);
+      entry = null;
+    }
+    if (locked) {
+      unlockScroll();
+      locked = false;
+    }
     releaseFocusTrap?.();
     releaseFocusTrap = null;
   });

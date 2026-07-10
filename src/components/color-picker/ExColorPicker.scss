@@ -1,0 +1,323 @@
+@use '../../styles/tokens' as *;
+
+// 透明棋盘格背景
+@mixin checkerboard {
+  background-image:
+    linear-gradient(45deg, var(--ex-color-border-primary) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ex-color-border-primary) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ex-color-border-primary) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ex-color-border-primary) 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+}
+
+// ============================================================================
+// ColorPicker 颜色选择器
+// ============================================================================
+.ex-color-picker {
+  display: inline-block;
+
+  // 触发器
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 36px;
+    padding: 0 6px 0 6px;
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-md);
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: var(--ex-color-primary-alpha-50);
+    }
+    &:focus-visible {
+      outline: none;
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  &__swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--ex-radius-sm);
+    overflow: hidden;
+    @include checkerboard;
+  }
+
+  &__swatch-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  &__arrow {
+    color: var(--ex-color-text-tertiary);
+    transition: transform 0.2s ease;
+  }
+
+  &__trigger.is-empty &__swatch-inner {
+    background:
+      linear-gradient(
+        to top right,
+        transparent 0,
+        transparent calc(50% - 1px),
+        var(--ex-color-danger, #ff2d78) 50%,
+        transparent calc(50% + 1px),
+        transparent 100%
+      );
+  }
+
+  // 尺寸
+  &--small &__trigger {
+    height: 30px;
+  }
+  &--small &__swatch {
+    width: 20px;
+    height: 20px;
+  }
+  &--large &__trigger {
+    height: 42px;
+  }
+  &--large &__swatch {
+    width: 28px;
+    height: 28px;
+  }
+
+  &.is-active &__trigger {
+    border-color: var(--ex-color-primary);
+    box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+  }
+  &.is-active &__arrow {
+    transform: rotate(180deg);
+  }
+
+  &.is-disabled &__trigger {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// ============================================================================
+// 面板
+// ============================================================================
+.ex-color-picker__panel {
+  position: absolute;
+  z-index: var(--ex-z-dropdown, 1000);
+  width: 256px;
+  padding: 12px;
+  background: var(--ex-color-bg-elevated);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-md);
+  box-shadow: var(--ex-shadow-lg);
+  user-select: none;
+
+  // 饱和度/明度面板
+  .ex-color-picker__sv {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    border-radius: var(--ex-radius-sm);
+    overflow: hidden;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .ex-color-picker__sv-white {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+  }
+  .ex-color-picker__sv-black {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, #000, rgba(0, 0, 0, 0));
+  }
+  .ex-color-picker__sv-thumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  // 滑块区
+  .ex-color-picker__sliders {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .ex-color-picker__slider-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ex-color-picker__hue,
+  .ex-color-picker__alpha {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .ex-color-picker__hue {
+    background: linear-gradient(
+      to right,
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    );
+  }
+  .ex-color-picker__alpha {
+    @include checkerboard;
+  }
+  .ex-color-picker__alpha-bar {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+  }
+  .ex-color-picker__slider-thumb {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  // 当前色预览
+  .ex-color-picker__current {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--ex-radius-sm);
+    overflow: hidden;
+    @include checkerboard;
+  }
+  .ex-color-picker__current-inner {
+    width: 100%;
+    height: 100%;
+  }
+
+  // HEX 输入
+  .ex-color-picker__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .ex-color-picker__label {
+    font-size: var(--ex-text-xs);
+    color: var(--ex-color-text-tertiary);
+  }
+  .ex-color-picker__input {
+    flex: 1;
+    height: 30px;
+    padding: 0 8px;
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-primary);
+    font-family: var(--ex-font-mono, monospace);
+    font-size: var(--ex-text-sm);
+    text-transform: uppercase;
+
+    &:focus {
+      outline: none;
+      border-color: var(--ex-color-primary);
+    }
+  }
+
+  // 预定义颜色
+  .ex-color-picker__predefine {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .ex-color-picker__predefine-item {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--ex-radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    @include checkerboard;
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.12);
+    }
+  }
+  .ex-color-picker__predefine-inner {
+    width: 100%;
+    height: 100%;
+  }
+
+  // 底部
+  .ex-color-picker__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .ex-color-picker__btn {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--ex-radius-sm);
+    font-size: var(--ex-text-sm);
+    cursor: pointer;
+    border: 1px solid transparent;
+
+    &--text {
+      background: none;
+      border-color: var(--ex-color-border-primary);
+      color: var(--ex-color-text-secondary);
+      &:hover {
+        color: var(--ex-color-text-primary);
+        border-color: var(--ex-color-primary-alpha-50);
+      }
+    }
+    &--primary {
+      background: var(--ex-color-primary);
+      color: var(--ex-color-white);
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
+  }
+}
+
+// 过渡
+.ex-color-picker-dropdown-enter-active,
+.ex-color-picker-dropdown-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ex-color-picker-dropdown-enter-from,
+.ex-color-picker-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}

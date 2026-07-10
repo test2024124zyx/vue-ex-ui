@@ -38,7 +38,13 @@ import ExDateTimePicker from './components/datetime-picker';
 import ExInput from './components/input';
 import ExLink from './components/link';
 import ExList from './components/list';
-import ExLoading from './components/loading';
+import ExLoading, {
+  loadingService,
+  showLoading,
+  hideLoading,
+  destroyLoading,
+} from './components/loading';
+import LoadingPlugin from './components/loading/LoadingService';
 import ExLoadingBar, { loadingBar } from './components/loading-bar';
 import MenuPlugin, { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
 import ExMessage, { message } from './components/message';
@@ -82,6 +88,10 @@ import ExBackTop from './components/back-top';
 import ExPageHeader from './components/page-header';
 import ExChart from './components/chart';
 import ExVerificationCode from './components/verification-code';
+import ExColorPicker from './components/color-picker';
+import ExTimePicker from './components/time-picker';
+import ExTreeSelect from './components/tree-select';
+import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 
 // 导入样式（全局导入时自动引入）
 import './styles/index.scss';
@@ -183,9 +193,18 @@ export {
   ExBackTop,
   ExPageHeader,
   ExVerificationCode,
+  ExColorPicker,
+  ExTimePicker,
+  ExTreeSelect,
+  ExDescriptions,
+  ExDescriptionsItem,
   notification,
   message,
   loadingBar,
+  loadingService,
+  showLoading,
+  hideLoading,
+  destroyLoading,
 };
 
 // 导出类型
@@ -271,6 +290,10 @@ export type * from './components/chart/types';
 export type * from './components/back-top/types';
 export type { PageHeaderProps, PageHeaderEmits } from './components/page-header/types';
 export type * from './components/verification-code/types';
+export type * from './components/color-picker/types';
+export type * from './components/time-picker/types';
+export type * from './components/tree-select/types';
+export type * from './components/descriptions/types';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
 export {
@@ -369,6 +392,10 @@ const components = [
   ExBackTop,
   ExPageHeader,
   ExVerificationCode,
+  ExColorPicker,
+  ExTimePicker,
+  ExTreeSelect,
+  ExDescriptions,
 ];
 
 // 安装函数
@@ -378,13 +405,14 @@ const install: Plugin['install'] = (app: App) => {
       app.use(component as { install: (app: App) => void });
     }
   });
+  // 注册 v-loading 指令与 $loading 全局服务
+  app.use(LoadingPlugin);
 };
 
 // 版本号：优先使用构建期注入的 __EX_UI_VERSION__，在未注入场景下回退为 'dev'
 // 使用 typeof 检测可以在未声明变量时避免运行时错误
 
-const version =
-  typeof (__EX_UI_VERSION__ as any) !== 'undefined' ? (__EX_UI_VERSION__ as string) : 'dev';
+const version = typeof __EX_UI_VERSION__ !== 'undefined' ? __EX_UI_VERSION__ : 'dev';
 
 // 默认导出 - 符合 Vue Plugin 类型
 export default {

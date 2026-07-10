@@ -7,7 +7,7 @@
   gap: var(--ex-spacing-4);
   background: var(--ex-color-bg-secondary);
   border-radius: var(--ex-radius-lg);
-  border: 1px solid var(--ex-color-border);
+  border: 1px solid var(--ex-color-border-primary);
   overflow: hidden;
 
   &__toolbar {
@@ -16,7 +16,7 @@
     justify-content: space-between;
     padding: var(--ex-spacing-4);
     background: var(--ex-color-bg-elevated);
-    border-bottom: 1px solid var(--ex-color-border);
+    border-bottom: 1px solid var(--ex-color-border-primary);
     gap: var(--ex-spacing-4);
   }
 
@@ -42,13 +42,13 @@
 
   &__search-input {
     padding: var(--ex-spacing-2) var(--ex-spacing-3) var(--ex-spacing-2) var(--ex-spacing-8);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: var(--ex-color-bg-primary);
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     outline: none;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     min-width: 200px;
 
     &:focus {
@@ -65,14 +65,14 @@
 
   &__sort-select {
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: var(--ex-color-bg-primary);
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     outline: none;
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:focus {
       border-color: var(--ex-color-primary);
@@ -85,11 +85,11 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: transparent;
     border-radius: var(--ex-radius-base);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     img {
       filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
@@ -125,7 +125,7 @@
     background: transparent;
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     img {
       filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
@@ -152,13 +152,13 @@
 
   &__select-all-btn {
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: transparent;
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       border-color: var(--ex-color-primary);
@@ -220,11 +220,11 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--ex-spacing-3);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-base);
     background: var(--ex-color-bg-primary);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       border-color: var(--ex-color-primary);
@@ -270,7 +270,7 @@
 
   &__list-item-name {
     font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -304,11 +304,11 @@
     flex-direction: column;
     align-items: center;
     padding: var(--ex-spacing-4);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-base);
     background: var(--ex-color-bg-primary);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       border-color: var(--ex-color-primary);
@@ -352,7 +352,7 @@
   &__grid-item-name {
     width: 100%;
     font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-primary);
     text-align: center;
     overflow: hidden;
@@ -374,7 +374,7 @@
     display: flex;
     gap: var(--ex-spacing-2);
     opacity: 0;
-    transition: opacity var(--ex-transition-base);
+    transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
   }
 
   // 树形视图
@@ -403,7 +403,7 @@
     display: flex;
     gap: var(--ex-spacing-1);
     opacity: 0;
-    transition: opacity var(--ex-transition-base);
+    transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     .ex-tree-node:hover & {
       opacity: 1;
@@ -421,7 +421,7 @@
     text-align: left;
     font-size: var(--ex-text-sm);
     color: var(--ex-color-text-primary);
-    border-bottom: 1px solid var(--ex-color-border);
+    border-bottom: 1px solid var(--ex-color-border-primary);
 
     &--checkbox {
       width: 40px;
@@ -433,7 +433,7 @@
     }
 
     thead & {
-      font-weight: var(--ex-font-weight-medium);
+      font-weight: var(--ex-font-medium);
       background: var(--ex-color-bg-elevated);
       color: var(--ex-color-text-secondary);
     }
@@ -441,7 +441,7 @@
 
   &__table-row {
     cursor: pointer;
-    transition: background var(--ex-transition-base);
+    transition: background var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-elevated);
@@ -494,7 +494,7 @@
     background: transparent;
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     img {
       filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
@@ -518,18 +518,18 @@
     justify-content: center;
     gap: var(--ex-spacing-4);
     padding: var(--ex-spacing-4);
-    border-top: 1px solid var(--ex-color-border);
+    border-top: 1px solid var(--ex-color-border-primary);
   }
 
   &__pagination-btn {
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: transparent;
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover:not(:disabled) {
       border-color: var(--ex-color-primary);
@@ -548,7 +548,7 @@
     color: var(--ex-color-text-secondary);
   }
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
     &__toolbar {
       flex-direction: column;

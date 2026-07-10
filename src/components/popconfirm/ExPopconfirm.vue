@@ -1,13 +1,13 @@
 <template>
   <ExPopover
     ref="popoverRef"
-    v-model:visible="popoverVisible"
+    v-model="popoverVisible"
     :placement="placement"
     :trigger="trigger"
     :disabled="disabled"
-    :popup-class="popupClasses"
-    :popup-style="popupStyle"
-    @update:visible="handleVisibleChange"
+    :custom-class="popupClasses"
+    :custom-style="popupStyle"
+    @update:model-value="handleVisibleChange"
   >
     <!-- 触发元素 -->
     <slot />

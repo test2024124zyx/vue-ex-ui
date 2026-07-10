@@ -41,9 +41,9 @@ const handleChange = (fixed) => {
 </template>
 
 <script setup>
-const handleChange = (fixed) => {
-  console.log('固定状态:', fixed)
-}
+const handleChange = fixed => {
+  console.log('固定状态:', fixed);
+};
 </script>
 ```
 
@@ -105,20 +105,18 @@ const handleChange = (fixed) => {
 ```vue
 <template>
   <ExAffix :offset-top="100" @change="handleChange">
-    <ExCard>
-      固定状态: {{ affixed ? '已固定' : '未固定' }}
-    </ExCard>
+    <ExCard>固定状态: {{ affixed ? '已固定' : '未固定' }}</ExCard>
   </ExAffix>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const affixed = ref(false)
+const affixed = ref(false);
 
-const handleChange = (fixed) => {
-  affixed.value = fixed
-}
+const handleChange = fixed => {
+  affixed.value = fixed;
+};
 </script>
 ```
 
@@ -126,24 +124,49 @@ const handleChange = (fixed) => {
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| offset-top | 距离窗口顶部达到指定偏移量后触发 | number | - |
-| offset-bottom | 距离窗口底部达到指定偏移量后触发 | number | - |
-| target | 设置 Affix 需要监听其滚动事件的元素 | () => HTMLElement \| Window | () => window |
-| z-index | 固定时的 z-index | number | 100 |
+| 属性          | 说明                                | 类型                        | 默认值       |
+| ------------- | ----------------------------------- | --------------------------- | ------------ |
+| offset-top    | 距离窗口顶部达到指定偏移量后触发    | number                      | -            |
+| offset-bottom | 距离窗口底部达到指定偏移量后触发    | number                      | -            |
+| target        | 设置 Affix 需要监听其滚动事件的元素 | () => HTMLElement \| Window | () => window |
+| z-index       | 固定时的 z-index                    | number                      | 100          |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
+| 事件名 | 说明               | 类型                     |
+| ------ | ------------------ | ------------------------ |
 | change | 固定状态改变时触发 | (fixed: boolean) => void |
 
 ### Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名         | 说明         | 类型       |
+| -------------- | ------------ | ---------- |
 | updatePosition | 更新固定状态 | () => void |
+
+## 常见问题
+
+**Q：设置了 Affix 却不固定？**
+必须至少设置 `offset-top` 或 `offset-bottom` 其一，否则没有触发阈值，不会固定。
+
+**Q：在自定义滚动容器（非 window）里固定？**
+把 `target` 设为返回该容器元素的函数，如 `:target="() => containerRef"`，组件会监听该容器的滚动。
+
+**Q：固定时页面会跳动吗？**
+不会。固定瞬间会插入一个等宽高的占位元素，保持文档流高度不变，避免内容抖动。
+
+**Q：滚动时性能如何？**
+滚动/缩放回调使用 `requestAnimationFrame` 节流，每帧最多计算一次位置。
+
+## 最佳实践
+
+- 适用于**吸顶导航、工具栏、侧边目录**等需要随滚动固定的场景。
+- 自定义滚动容器务必通过 `target` 指定，否则默认监听 `window`。
+- 固定内容尽量**定高**，避免固定态与正常态之间布局突变。
+- 多个吸顶元素叠加时用 `z-index` 控制层级关系。
+
+## 主题定制
+
+Affix 是**结构性**组件，自身不引入视觉样式，仅在固定时通过 `z-index`（默认 `100`）控制层级。内容的外观完全由你放入的子元素决定，无需主题变量。
 
 <style scoped>
 .demo-container {

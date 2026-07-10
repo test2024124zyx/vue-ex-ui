@@ -54,10 +54,7 @@ import { ref } from 'vue'
 
 ```vue
 <template>
-  <ExPanel 
-    title="玩家信息" 
-    subtitle="Player Information"
-  >
+  <ExPanel title="玩家信息" subtitle="Player Information">
     <div>用户名：Player001</div>
     <div>等级：Lv.50</div>
   </ExPanel>
@@ -94,7 +91,12 @@ import { ref } from 'vue'
 <template>
   <ExPanel title="游戏设置">
     <template #icon>
-      <img src="https://api.iconify.design/ri/settings-3-line.svg" alt="设置" width="24" height="24" />
+      <img
+        src="https://api.iconify.design/ri/settings-3-line.svg"
+        alt="设置"
+        width="24"
+        height="24"
+      />
     </template>
     <div>画质：超高</div>
     <div>帧率：144 FPS</div>
@@ -137,11 +139,11 @@ import { ref } from 'vue'
   <ExPanel title="默认面板" type="default">
     <p>这是一个默认类型的面板。</p>
   </ExPanel>
-  
+
   <ExPanel title="主要面板" type="primary">
     <p>这是一个主要类型的面板。</p>
   </ExPanel>
-  
+
   <ExPanel title="成功面板" type="success">
     <p>这是一个成功类型的面板。</p>
   </ExPanel>
@@ -171,11 +173,11 @@ import { ref } from 'vue'
   <ExPanel title="小尺寸面板" size="small">
     <p>小尺寸面板</p>
   </ExPanel>
-  
+
   <ExPanel title="中等尺寸面板" size="medium">
     <p>中等尺寸面板</p>
   </ExPanel>
-  
+
   <ExPanel title="大尺寸面板" size="large">
     <p>大尺寸面板</p>
   </ExPanel>
@@ -221,7 +223,7 @@ import { ref } from 'vue'
   <ExPanel title="无阴影" shadow="none">
     <p>无阴影效果</p>
   </ExPanel>
-  
+
   <ExPanel title="霓虹阴影" shadow="neon">
     <p>霓虹发光效果</p>
   </ExPanel>
@@ -290,11 +292,7 @@ import { ref } from 'vue'
 
 ```vue
 <template>
-  <ExPanel 
-    title="战绩卡片" 
-    type="primary"
-    hoverable
-  >
+  <ExPanel title="战绩卡片" type="primary" hoverable>
     <template #icon>
       <img src="https://api.iconify.design/ri/trophy-line.svg" alt="奖杯" width="24" height="24" />
     </template>
@@ -394,10 +392,7 @@ import { ref } from 'vue'
 
 ```vue
 <template>
-  <ExPanel 
-    title="无边框面板" 
-    :bordered="false"
-  >
+  <ExPanel title="无边框面板" :bordered="false">
     <p>无边框面板内容</p>
   </ExPanel>
 </template>
@@ -420,13 +415,13 @@ import { ref } from 'vue'
 
 ```vue
 <template>
-  <ExPanel 
+  <ExPanel
     title="自定义样式面板"
-    :header-style="{ 
-      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 0, 127, 0.2))' 
+    :header-style="{
+      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 0, 127, 0.2))',
     }"
-    :body-style="{ 
-      background: 'rgba(0, 0, 0, 0.3)' 
+    :body-style="{
+      background: 'rgba(0, 0, 0, 0.3)',
     }"
   >
     <p>自定义样式内容</p>
@@ -450,10 +445,7 @@ import { ref } from 'vue'
 
 ```vue
 <template>
-  <ExPanel 
-    title="加载中的面板" 
-    :loading="true"
-  >
+  <ExPanel title="加载中的面板" :loading="true">
     <p>加载中...</p>
   </ExPanel>
 </template>
@@ -463,36 +455,36 @@ import { ref } from 'vue'
 
 ### Panel Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `title` | 面板标题 | `string` | `undefined` |
-| `subtitle` | 面板副标题 | `string` | `undefined` |
-| `type` | 面板类型 | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
-| `size` | 面板尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `bordered` | 是否显示边框 | `boolean` | `true` |
-| `hoverable` | 是否可悬停 | `boolean` | `false` |
-| `shadow` | 阴影效果 | `'none' \| 'base' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'neon'` | `'base'` |
-| `loading` | 是否加载中 | `boolean` | `false` |
-| `header-style` | 头部样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `body-style` | 内容样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `footer-style` | 底部样式 | `string \| Record<string, string \| number>` | `undefined` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
+| 属性           | 说明         | 类型                                                                     | 默认值      |
+| -------------- | ------------ | ------------------------------------------------------------------------ | ----------- |
+| `title`        | 面板标题     | `string`                                                                 | `undefined` |
+| `subtitle`     | 面板副标题   | `string`                                                                 | `undefined` |
+| `type`         | 面板类型     | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
+| `size`         | 面板尺寸     | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  |
+| `bordered`     | 是否显示边框 | `boolean`                                                                | `true`      |
+| `hoverable`    | 是否可悬停   | `boolean`                                                                | `false`     |
+| `shadow`       | 阴影效果     | `'none' \| 'base' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'neon'`             | `'base'`    |
+| `loading`      | 是否加载中   | `boolean`                                                                | `false`     |
+| `header-style` | 头部样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `body-style`   | 内容样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `footer-style` | 底部样式     | `string \| Record<string, string \| number>`                             | `undefined` |
+| `aria-label`   | 无障碍标签   | `string`                                                                 | `undefined` |
 
 ### Panel Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 面板内容 |
-| `title` | 自定义标题 |
-| `subtitle` | 自定义副标题 |
-| `icon` | 自定义图标 |
-| `extra` | 头部右侧的额外内容 |
-| `footer` | 底部内容 |
+| 插槽名     | 说明               |
+| ---------- | ------------------ |
+| `default`  | 面板内容           |
+| `title`    | 自定义标题         |
+| `subtitle` | 自定义副标题       |
+| `icon`     | 自定义图标         |
+| `extra`    | 头部右侧的额外内容 |
+| `footer`   | 底部内容           |
 
 ### Panel Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取面板DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
@@ -503,16 +495,7 @@ import { ref } from 'vue'
 
 ## 主题定制
 
-可以通过 CSS 变量自定义面板样式：
-
-```css
-:root {
-  --ex-panel-bg: var(--ex-color-bg-secondary);
-  --ex-panel-header-bg: var(--ex-color-bg-elevated);
-  --ex-panel-border-color: var(--ex-color-border-primary);
-  --ex-panel-shadow: var(--ex-shadow-base);
-}
-```
+面板跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

@@ -291,6 +291,22 @@ export default {
     endTime: '结束时间',
   },
 
+  // 颜色选择器
+  colorPicker: {
+    confirm: '确定',
+    clear: '清空',
+    hex: 'HEX',
+  },
+
+  // 树选择
+  treeSelect: {
+    placeholder: '请选择',
+    noData: '暂无数据',
+    loading: '加载中...',
+    clear: '清空',
+    searchPlaceholder: '搜索...',
+  },
+
   // 日期选择器
   datePicker: {
     startDate: '开始日期',
@@ -466,6 +482,8 @@ export default {
     copied: '已复制',
     edit: '编辑',
     readonly: '只读',
+    codeBlock: '代码块',
+    editor: '代码编辑器',
   },
 
   // 走马灯

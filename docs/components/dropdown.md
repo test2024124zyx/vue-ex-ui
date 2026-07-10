@@ -70,24 +70,29 @@ const handleItemClick = (item) => {
     <ExButton>
       下拉菜单
       <template #suffix>
-        <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
+        <img
+          src="https://api.iconify.design/ri/arrow-down-s-line.svg"
+          alt="arrow"
+          width="16"
+          height="16"
+        />
       </template>
     </ExButton>
   </ExDropdown>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const items = ref([
   { key: '1', label: '选项一' },
   { key: '2', label: '选项二' },
   { key: '3', label: '选项三' },
-])
+]);
 
-const handleItemClick = (item) => {
-  console.log('Item clicked:', item)
-}
+const handleItemClick = item => {
+  console.log('Item clicked:', item);
+};
 </script>
 ```
 
@@ -114,29 +119,29 @@ const handleItemClick = (item) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const items = ref([
-  { 
-    key: '1', 
-    label: '编辑', 
-    icon: 'https://api.iconify.design/ri/edit-line.svg' 
+  {
+    key: '1',
+    label: '编辑',
+    icon: 'https://api.iconify.design/ri/edit-line.svg',
   },
-  { 
-    key: '2', 
-    label: '删除', 
-    icon: 'https://api.iconify.design/ri/delete-bin-line.svg' 
+  {
+    key: '2',
+    label: '删除',
+    icon: 'https://api.iconify.design/ri/delete-bin-line.svg',
   },
-  { 
-    key: '3', 
-    label: '分享', 
-    icon: 'https://api.iconify.design/ri/share-line.svg' 
+  {
+    key: '3',
+    label: '分享',
+    icon: 'https://api.iconify.design/ri/share-line.svg',
   },
-])
+]);
 
-const handleItemClick = (item) => {
-  console.log('Item clicked:', item)
-}
+const handleItemClick = item => {
+  console.log('Item clicked:', item);
+};
 </script>
 ```
 
@@ -163,7 +168,7 @@ const handleItemClick = (item) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const items = ref([
   { key: '1', label: '新建文件' },
@@ -172,7 +177,7 @@ const items = ref([
   { key: '4', label: '保存' },
   { key: '5', label: '另存为', divided: true },
   { key: '6', label: '退出' },
-])
+]);
 </script>
 ```
 
@@ -199,13 +204,13 @@ const items = ref([
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const items = ref([
   { key: '1', label: '可用选项' },
   { key: '2', label: '禁用选项', disabled: true },
   { key: '3', label: '可用选项' },
-])
+]);
 </script>
 ```
 
@@ -218,13 +223,14 @@ const items = ref([
     <ExButton>悬停触发</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" trigger="click" @item-click="handleItemClick">
-    <ExButton>点击触发</ExButton>
-  </ExDropdown>
+<ExDropdown :items="basicItems" trigger="click" @item-click="handleItemClick">
+<ExButton>点击触发</ExButton>
+</ExDropdown>
 
-  <ExDropdown :items="basicItems" trigger="contextmenu" @item-click="handleItemClick">
-    <ExButton>右键触发</ExButton>
-  </ExDropdown>
+<ExDropdown :items="basicItems" trigger="contextmenu" @item-click="handleItemClick">
+<ExButton>右键触发</ExButton>
+</ExDropdown>
+
 </div>
 
 ```vue
@@ -245,13 +251,13 @@ const items = ref([
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const items = ref([
   { key: '1', label: '选项一' },
   { key: '2', label: '选项二' },
   { key: '3', label: '选项三' },
-])
+]);
 </script>
 ```
 
@@ -315,42 +321,42 @@ const items = ref([
 
 ### Dropdown Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| items | 下拉菜单项列表 | `DropdownItemData[]` | `[]` |
-| trigger | 触发方式 | `'hover' \| 'click' \| 'contextmenu'` | `'hover'` |
-| placement | 弹出位置 | `DropdownPlacement` | `'bottom-start'` |
-| disabled | 是否禁用 | `boolean` | `false` |
-| visible | 菜单是否显示 | `boolean` | - |
-| aria-label | 无障碍标签 | `string` | - |
-| class | 自定义CSS类名 | `string \| string[] \| Record<string, boolean>` | - |
-| style | 自定义样式 | `string \| Record<string, string \| number>` | - |
+| 属性       | 说明           | 类型                                            | 默认值           |
+| ---------- | -------------- | ----------------------------------------------- | ---------------- |
+| items      | 下拉菜单项列表 | `DropdownItemData[]`                            | `[]`             |
+| trigger    | 触发方式       | `'hover' \| 'click' \| 'contextmenu'`           | `'hover'`        |
+| placement  | 弹出位置       | `DropdownPlacement`                             | `'bottom-start'` |
+| disabled   | 是否禁用       | `boolean`                                       | `false`          |
+| visible    | 菜单是否显示   | `boolean`                                       | -                |
+| aria-label | 无障碍标签     | `string`                                        | -                |
+| class      | 自定义CSS类名  | `string \| string[] \| Record<string, boolean>` | -                |
+| style      | 自定义样式     | `string \| Record<string, string \| number>`    | -                |
 
 ### Dropdown Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| item-click | 菜单项点击时触发 | `(item: DropdownItemData) => void` |
-| update:visible | 显示状态改变时触发 | `(visible: boolean) => void` |
-| show | 显示时触发 | `() => void` |
-| hide | 隐藏时触发 | `() => void` |
+| 事件名         | 说明               | 类型                               |
+| -------------- | ------------------ | ---------------------------------- |
+| item-click     | 菜单项点击时触发   | `(item: DropdownItemData) => void` |
+| update:visible | 显示状态改变时触发 | `(visible: boolean) => void`       |
+| show           | 显示时触发         | `() => void`                       |
+| hide           | 隐藏时触发         | `() => void`                       |
 
 ### Dropdown Methods
 
-| 方法名 | 说明 | 参数 |
-| --- | --- | --- |
-| show | 显示下拉菜单 | - |
-| hide | 隐藏下拉菜单 | - |
-| getElement | 获取DOM元素 | - |
+| 方法名     | 说明         | 参数 |
+| ---------- | ------------ | ---- |
+| show       | 显示下拉菜单 | -    |
+| hide       | 隐藏下拉菜单 | -    |
+| getElement | 获取DOM元素  | -    |
 
 ### DropdownItem Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| label | 标签文本 | `string` | - |
-| icon | 图标URL | `string` | - |
-| disabled | 是否禁用 | `boolean` | `false` |
-| divided | 是否显示分割线 | `boolean` | `false` |
+| 属性     | 说明           | 类型      | 默认值  |
+| -------- | -------------- | --------- | ------- |
+| label    | 标签文本       | `string`  | -       |
+| icon     | 图标URL        | `string`  | -       |
+| disabled | 是否禁用       | `boolean` | `false` |
+| divided  | 是否显示分割线 | `boolean` | `false` |
 
 ### Types
 
@@ -359,36 +365,44 @@ const items = ref([
 ```typescript
 interface DropdownItemData {
   /** 唯一标识 */
-  key: string | number
+  key: string | number;
   /** 标签文本 */
-  label: string
+  label: string;
   /** 图标URL */
-  icon?: string
+  icon?: string;
   /** 是否禁用 */
-  disabled?: boolean
+  disabled?: boolean;
   /** 是否分割线 */
-  divided?: boolean
+  divided?: boolean;
   /** 子菜单 */
-  children?: DropdownItemData[]
+  children?: DropdownItemData[];
   /** 自定义数据 */
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>;
 }
 ```
 
 #### DropdownPlacement
 
 ```typescript
-type DropdownPlacement = 
-  | 'top' | 'top-start' | 'top-end'
-  | 'bottom' | 'bottom-start' | 'bottom-end'
-  | 'left' | 'left-start' | 'left-end'
-  | 'right' | 'right-start' | 'right-end'
+type DropdownPlacement =
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left'
+  | 'left-start'
+  | 'left-end'
+  | 'right'
+  | 'right-start'
+  | 'right-end';
 ```
 
 #### DropdownTrigger
 
 ```typescript
-type DropdownTrigger = 'hover' | 'click' | 'contextmenu'
+type DropdownTrigger = 'hover' | 'click' | 'contextmenu';
 ```
 
 ## 无障碍支持
@@ -401,15 +415,7 @@ type DropdownTrigger = 'hover' | 'click' | 'contextmenu'
 
 ## 主题定制
 
-下拉菜单组件使用 CSS 变量进行主题定制：
-
-```css
-.ex-dropdown {
-  --ex-dropdown-bg: var(--ex-color-bg-secondary);
-  --ex-dropdown-border: var(--ex-color-border-primary);
-  --ex-dropdown-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-```
+下拉菜单跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

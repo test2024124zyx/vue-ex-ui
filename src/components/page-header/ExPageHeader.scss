@@ -1,19 +1,23 @@
-@use '../../styles/variables' as *;
+// ExPageHeader 页头组件样式
+// 注意：必须使用真实存在的设计令牌（见 styles/_variables.scss / _tokens.scss）。
+// 此前用了一批不存在的变量名（如 --ex-spacing-lg、--ex-border-radius-sm、
+// --ex-transition-base、--ex-z-index-fixed 等），导致组件几乎无样式，已全部改为真实令牌。
+
 @use '../../styles/mixins' as *;
 
 .ex-page-header {
-  background-color: var(--ex-color-bg-container);
-  font-family: var(--ex-font-family);
-  
+  background-color: var(--ex-color-bg-secondary);
+  font-family: var(--ex-font-secondary);
+
   &__container {
-    padding: var(--ex-spacing-lg) var(--ex-spacing-xl);
+    padding: var(--ex-spacing-6) var(--ex-spacing-8);
     max-width: 1200px;
     margin: 0 auto;
   }
-  
+
   &__breadcrumb {
-    margin-bottom: var(--ex-spacing-md);
-    
+    margin-bottom: var(--ex-spacing-4);
+
     &-list {
       @include flex-center;
       justify-content: flex-start;
@@ -21,213 +25,202 @@
       margin: 0;
       padding: 0;
       list-style: none;
-      gap: var(--ex-spacing-xs);
+      gap: var(--ex-spacing-2);
     }
-    
+
     &-item {
       @include flex-center;
       justify-content: flex-start;
     }
-    
+
     &-link {
       background: none;
       border: none;
-      padding: var(--ex-spacing-xs) 0;
+      padding: var(--ex-spacing-1) 0;
       font-family: inherit;
       font-size: var(--ex-text-sm);
       color: var(--ex-color-text-secondary);
       text-decoration: none;
       cursor: default;
-      border-radius: var(--ex-border-radius-sm);
-      transition: var(--ex-transition-base);
-      
+      border-radius: var(--ex-radius-sm);
+      transition: all var(--ex-motion-duration-base, 200ms) var(--ex-motion-ease-out, ease);
+
       &--clickable {
         cursor: pointer;
-        
+
         &:hover {
           color: var(--ex-color-primary);
-          background-color: var(--ex-color-fill-quaternary);
+          background-color: var(--ex-color-bg-tertiary);
         }
-        
+
         &:focus-visible {
           outline: 2px solid var(--ex-color-primary);
           outline-offset: 2px;
         }
       }
-      
+
       &--current {
         color: var(--ex-color-text-primary);
-        font-weight: var(--ex-font-weight-medium);
+        font-weight: var(--ex-font-medium);
       }
     }
-    
+
     &-separator {
-      margin: 0 var(--ex-spacing-xs);
-      color: var(--ex-color-text-quaternary);
+      margin: 0 var(--ex-spacing-2);
+      color: var(--ex-color-text-tertiary);
       user-select: none;
     }
   }
-  
+
   &__main {
     @include flex-center;
     justify-content: flex-start;
-    gap: var(--ex-spacing-md);
-    margin-bottom: var(--ex-spacing-md);
+    gap: var(--ex-spacing-4);
+    margin-bottom: var(--ex-spacing-4);
   }
-  
+
   &__back {
     @include flex-center;
     background: none;
     border: none;
-    padding: var(--ex-spacing-sm);
+    padding: var(--ex-spacing-2);
     color: var(--ex-color-text-secondary);
     cursor: pointer;
-    border-radius: var(--ex-border-radius-base);
-    transition: var(--ex-transition-base);
-    
+    border-radius: var(--ex-radius-base);
+    transition: all var(--ex-motion-duration-base, 200ms) var(--ex-motion-ease-out, ease);
+
     &:hover {
       color: var(--ex-color-primary);
-      background-color: var(--ex-color-fill-quaternary);
+      background-color: var(--ex-color-bg-tertiary);
     }
-    
+
     &:focus-visible {
       outline: 2px solid var(--ex-color-primary);
       outline-offset: 2px;
     }
-    
+
     &-icon {
       font-size: var(--ex-text-lg);
+      display: inline-flex;
     }
-    
+
     &-text {
-      margin-left: var(--ex-spacing-xs);
+      margin-left: var(--ex-spacing-1);
       font-size: var(--ex-text-base);
     }
   }
-  
+
   &__avatar {
     flex-shrink: 0;
   }
-  
+
   &__title-wrapper {
     flex: 1;
     min-width: 0;
   }
-  
+
   &__title {
-    margin: 0 0 var(--ex-spacing-xs) 0;
+    margin: 0 0 var(--ex-spacing-1) 0;
     font-size: var(--ex-text-xl);
-    font-weight: var(--ex-font-weight-semibold);
+    font-weight: var(--ex-font-semibold);
     color: var(--ex-color-text-primary);
     line-height: 1.4;
     word-break: break-word;
   }
-  
+
   &__subtitle {
-    margin: 0 0 var(--ex-spacing-sm) 0;
+    margin: 0 0 var(--ex-spacing-2) 0;
     font-size: var(--ex-text-base);
     color: var(--ex-color-text-secondary);
     line-height: 1.5;
     word-break: break-word;
   }
-  
+
   &__tags {
     @include flex-center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    gap: var(--ex-spacing-xs);
+    gap: var(--ex-spacing-2);
   }
-  
+
   &__tag {
     flex-shrink: 0;
   }
-  
+
   &__extra {
     flex-shrink: 0;
     margin-left: auto;
   }
-  
+
   &__content {
-    margin-bottom: var(--ex-spacing-md);
+    margin-bottom: var(--ex-spacing-4);
   }
-  
+
   &__footer {
     border-top: 1px solid var(--ex-color-border-secondary);
-    padding-top: var(--ex-spacing-md);
+    padding-top: var(--ex-spacing-4);
   }
-  
+
   // 固定定位
   &--fixed {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: var(--ex-z-index-fixed);
+    z-index: var(--ex-z-sticky);
     box-shadow: var(--ex-shadow-base);
   }
-  
-  // 分割�?
+
+  // 底部分割线
   &--with-divider {
     border-bottom: 1px solid var(--ex-color-border-secondary);
   }
-  
-  // 响应式设�?
-  @include respond-to(md) {
+
+  // 响应式：窄屏紧凑 + 堆叠（用 max-width，避免 respond-to(xs) 因 xs=0 而无条件生效）
+  @media (max-width: 768px) {
     &__container {
-      padding: var(--ex-spacing-md) var(--ex-spacing-lg);
+      padding: var(--ex-spacing-4) var(--ex-spacing-6);
     }
-    
+
     &__main {
       flex-wrap: wrap;
-      gap: var(--ex-spacing-sm);
+      gap: var(--ex-spacing-2);
     }
-    
+
     &__title {
       font-size: var(--ex-text-lg);
     }
-    
+
     &__extra {
       margin-left: 0;
       width: 100%;
-      margin-top: var(--ex-spacing-sm);
+      margin-top: var(--ex-spacing-2);
     }
   }
-  
-  @include respond-to(xs) {
-    &__container {
-      padding: var(--ex-spacing-sm) var(--ex-spacing-md);
-    }
-    
+
+  @media (max-width: 575px) {
     &__main {
       flex-direction: column;
       align-items: flex-start;
-      gap: var(--ex-spacing-sm);
+      gap: var(--ex-spacing-2);
     }
-    
+
     &__back {
       align-self: flex-start;
     }
-    
+
     &__title-wrapper {
       width: 100%;
     }
-    
-    &__extra {
-      width: 100%;
-      margin-left: 0;
-      margin-top: 0;
+
+    &__breadcrumb-list {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ex-spacing-1);
     }
-    
-    &__breadcrumb {
-      &-list {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--ex-spacing-xs);
-      }
-      
-      &-item {
-        width: 100%;
-      }
+
+    &__breadcrumb-item {
+      width: 100%;
     }
   }
 }

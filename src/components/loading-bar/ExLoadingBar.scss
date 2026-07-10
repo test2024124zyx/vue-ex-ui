@@ -14,7 +14,7 @@
     height: 3px;
     background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
     box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
-    transition: width var(--ex-transition-base) var(--ex-easing-standard);
+    transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
     overflow: hidden;
 
     // 霓虹发光效果
@@ -27,7 +27,7 @@
       background: linear-gradient(
         90deg,
         transparent 0%,
-        var(--ex-color-white-alpha-40) 50%,
+        var(--ex-color-white-alpha-50) 50%,
         transparent 100%
       );
       animation: ex-loading-bar-glow 1.5s ease-in-out infinite;
@@ -99,7 +99,7 @@
 // 过渡动画
 .ex-loading-bar-fade-enter-active,
 .ex-loading-bar-fade-leave-active {
-  transition: opacity var(--ex-transition-fast) var(--ex-easing-standard);
+  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 }
 
 .ex-loading-bar-fade-enter-from,

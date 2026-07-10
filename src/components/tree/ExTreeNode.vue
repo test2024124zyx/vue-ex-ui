@@ -197,9 +197,9 @@ const handleContextmenu = (event: MouseEvent) => {
   emit('node-contextmenu', props.node, event);
 };
 
-const handleCheckChange = (val: boolean) => {
+const handleCheckChange = (val: string | number | boolean) => {
   if (isDisabled.value) return;
-  emit('check', props.node, val);
+  emit('check', props.node, Boolean(val));
 };
 
 // 键盘导航（WAI-ARIA tree 模式）
@@ -336,7 +336,7 @@ const handleDragEnd = (event: DragEvent) => {
     padding: var(--ex-spacing-1) var(--ex-spacing-2);
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
@@ -396,7 +396,7 @@ const handleDragEnd = (event: DragEvent) => {
     height: 16px;
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform var(--ex-transition-base);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     img {
       filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
@@ -432,7 +432,7 @@ const handleDragEnd = (event: DragEvent) => {
 
   &__label {
     flex: 1;
-    font-size: var(--ex-font-size-sm);
+    font-size: var(--ex-text-sm);
     color: var(--ex-color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;

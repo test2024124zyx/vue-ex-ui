@@ -39,10 +39,10 @@ const handleCompress = (result) => {
 </template>
 
 <script setup>
-const handleCompress = (result) => {
-  console.log('压缩结果:', result)
-  console.log('压缩率:', result.compressionRatio + '%')
-}
+const handleCompress = result => {
+  console.log('压缩结果:', result);
+  console.log('压缩率:', result.compressionRatio + '%');
+};
 </script>
 ```
 
@@ -100,11 +100,12 @@ const handleCompress = (result) => {
 
 ::: tip 数值输入优化
 组件内部使用 `ExNumberInput` 组件，提供以下优势：
+
 - ✅ 自动限制最小值/最大值范围
 - ✅ 支持键盘上下箭头快速调整
 - ✅ 增加/减少按钮便于精确控制
 - ✅ 步长设置（目标大小步长 10KB，尺寸步长 10px）
-:::
+  :::
 
 ## 尺寸压缩
 
@@ -192,13 +193,13 @@ const handleCompress = (result) => {
       output-type="image/jpeg"
       @compress="handleCompress"
     />
-    
+
     <ExImageCompress
       src="https://example.com/image.png"
       output-type="image/png"
       @compress="handleCompress"
     />
-    
+
     <ExImageCompress
       src="https://example.com/image.jpg"
       output-type="image/webp"
@@ -212,34 +213,36 @@ const handleCompress = (result) => {
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| src | 图片源 | string \| File | - |
-| mode | 压缩模式 | 'quality' \| 'size' \| 'dimension' | 'quality' |
-| quality | 压缩质量 (0-1) | number | 0.8 |
-| target-size | 目标大小(KB) | number | 500 |
-| max-width | 最大宽度 | number | 1920 |
-| max-height | 最大高度 | number | 1080 |
-| output-type | 输出格式 | 'image/png' \| 'image/jpeg' \| 'image/webp' | 'image/jpeg' |
-| show-preview | 是否显示预览 | boolean | true |
-| show-comparison | 是否显示对比 | boolean | true |
-| auto-compress | 是否自动压缩 | boolean | false |
+| 属性            | 说明           | 类型                                        | 默认值       |
+| --------------- | -------------- | ------------------------------------------- | ------------ |
+| src             | 图片源         | string \| File                              | -            |
+| mode            | 压缩模式       | 'quality' \| 'size' \| 'dimension'          | 'quality'    |
+| quality         | 压缩质量 (0-1) | number                                      | 0.8          |
+| target-size     | 目标大小(KB)   | number                                      | 500          |
+| max-width       | 最大宽度       | number                                      | 1920         |
+| max-height      | 最大高度       | number                                      | 1080         |
+| output-type     | 输出格式       | 'image/png' \| 'image/jpeg' \| 'image/webp' | 'image/jpeg' |
+| show-preview    | 是否显示预览   | boolean                                     | true         |
+| show-comparison | 是否显示对比   | boolean                                     | true         |
+| auto-compress   | 是否自动压缩   | boolean                                     | false        |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| compress | 压缩完成时触发 | (result: CompressResult) => void |
-| progress | 压缩进度更新时触发 | (percent: number) => void |
-| error | 压缩失败时触发 | (error: Error) => void |
+| 事件名   | 说明               | 类型                                              |
+| -------- | ------------------ | ------------------------------------------------- |
+| start    | 开始压缩时触发     | () => void                                        |
+| progress | 压缩进度更新时触发 | (percent: number) => void                         |
+| compress | 压缩完成时触发     | (result: CompressResult) => void                  |
+| load     | 原图加载完成时触发 | (size: { width: number; height: number }) => void |
+| error    | 压缩失败时触发     | (error: Error) => void                            |
 
 ### Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| compress | 执行压缩 | () => Promise\<CompressResult\> |
-| reset | 重置 | () => void |
-| download | 下载压缩后的图片 | (filename?: string) => void |
+| 方法名   | 说明             | 类型                            |
+| -------- | ---------------- | ------------------------------- |
+| compress | 执行压缩         | () => Promise\<CompressResult\> |
+| reset    | 重置             | () => void                      |
+| download | 下载压缩后的图片 | (filename?: string) => void     |
 
 ## 工具函数
 
@@ -250,16 +253,16 @@ const handleCompress = (result) => {
 压缩单张图片。
 
 ```typescript
-import { compressImage } from 'exui'
+import { compressImage } from 'exui';
 
 // 压缩图片
 const result = await compressImage(file, {
   mode: 'quality',
   quality: 0.8,
-  outputType: 'image/jpeg'
-})
+  outputType: 'image/jpeg',
+});
 
-console.log('压缩完成:', result)
+console.log('压缩完成:', result);
 ```
 
 ### compressImages
@@ -267,18 +270,18 @@ console.log('压缩完成:', result)
 批量压缩多张图片。
 
 ```typescript
-import { compressImages } from 'exui'
+import { compressImages } from 'exui';
 
 // 批量压缩
 const results = await compressImages([file1, file2, file3], {
   mode: 'size',
   targetSize: 500, // 500KB
-  outputType: 'image/jpeg'
-})
+  outputType: 'image/jpeg',
+});
 
 results.forEach((result, index) => {
-  console.log(`图片 ${index + 1} 压缩完成:`, result)
-})
+  console.log(`图片 ${index + 1} 压缩完成:`, result);
+});
 ```
 
 ### formatBytes
@@ -286,10 +289,10 @@ results.forEach((result, index) => {
 格式化字节大小为可读字符串。
 
 ```typescript
-import { formatBytes } from 'exui'
+import { formatBytes } from 'exui';
 
-console.log(formatBytes(1024)) // "1.00 KB"
-console.log(formatBytes(1048576)) // "1.00 MB"
+console.log(formatBytes(1024)); // "1.00 KB"
+console.log(formatBytes(1048576)); // "1.00 MB"
 ```
 
 ### downloadCompressedImage
@@ -297,23 +300,23 @@ console.log(formatBytes(1048576)) // "1.00 MB"
 下载压缩后的图片。
 
 ```typescript
-import { downloadCompressedImage } from 'exui'
+import { downloadCompressedImage } from 'exui';
 
 // 下载图片
-downloadCompressedImage(blob, 'my-image.jpg', 'image/jpeg')
+downloadCompressedImage(blob, 'my-image.jpg', 'image/jpeg');
 ```
 
 ### 工具函数选项
 
 ```typescript
 interface CompressOptions {
-  mode?: 'quality' | 'size' | 'dimension'
-  quality?: number // 0-1
-  targetSize?: number // KB
-  maxWidth?: number
-  maxHeight?: number
-  outputType?: 'image/png' | 'image/jpeg' | 'image/webp'
-  keepAspectRatio?: boolean
+  mode?: 'quality' | 'size' | 'dimension';
+  quality?: number; // 0-1
+  targetSize?: number; // KB
+  maxWidth?: number;
+  maxHeight?: number;
+  outputType?: 'image/png' | 'image/jpeg' | 'image/webp';
+  keepAspectRatio?: boolean;
 }
 ```
 
@@ -334,39 +337,35 @@ interface CompressOptions {
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { compressImage, formatBytes, downloadCompressedImage } from 'exui'
+import { ref } from 'vue';
+import { compressImage, formatBytes, downloadCompressedImage } from 'exui';
 
-const compressing = ref(false)
-const result = ref(null)
+const compressing = ref(false);
+const result = ref(null);
 
-const handleFileChange = async (e) => {
-  const file = e.target.files[0]
-  if (!file) return
+const handleFileChange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-  compressing.value = true
+  compressing.value = true;
   try {
     result.value = await compressImage(file, {
       mode: 'quality',
       quality: 0.8,
-      outputType: 'image/jpeg'
-    })
+      outputType: 'image/jpeg',
+    });
   } catch (error) {
-    console.error('压缩失败:', error)
+    console.error('压缩失败:', error);
   } finally {
-    compressing.value = false
+    compressing.value = false;
   }
-}
+};
 
 const download = () => {
   if (result.value) {
-    downloadCompressedImage(
-      result.value.blob,
-      'compressed-image.jpg',
-      'image/jpeg'
-    )
+    downloadCompressedImage(result.value.blob, 'compressed-image.jpg', 'image/jpeg');
   }
-}
+};
 </script>
 ```
 
@@ -374,14 +373,14 @@ const download = () => {
 
 ```typescript
 interface CompressResult {
-  blob: Blob
-  dataUrl: string
-  originalSize: number
-  compressedSize: number
-  compressionRatio: number
-  width: number
-  height: number
-  type: string
+  blob: Blob;
+  dataUrl: string;
+  originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
+  width: number;
+  height: number;
+  type: string;
 }
 ```
 
@@ -393,13 +392,7 @@ interface CompressResult {
 
 ## 主题定制
 
-```css
-:root {
-  --ex-compress-preview-bg: var(--ex-color-bg-secondary);
-  --ex-compress-border-color: var(--ex-color-border-primary);
-  --ex-compress-info-color: var(--ex-color-text-secondary);
-}
-```
+图片压缩跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

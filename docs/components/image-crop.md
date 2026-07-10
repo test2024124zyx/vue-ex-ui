@@ -49,7 +49,7 @@ const handleCrop = (result) => {
 </template>
 
 <script setup>
-const handleCrop = (result) => {
+const handleCrop = result => {
   console.log('裁剪结果:', result);
 };
 </script>
@@ -188,12 +188,15 @@ const handleCrop = (result) => {
 
 ### Events
 
-| 事件名 | 说明               | 类型                         |
-| ------ | ------------------ | ---------------------------- |
-| crop   | 裁剪完成时触发     | (result: CropResult) => void |
-| change | 裁剪区域改变时触发 | (area: CropArea) => void     |
-| zoom   | 缩放时触发         | (scale: number) => void      |
-| rotate | 旋转时触发         | (angle: number) => void      |
+| 事件名 | 说明               | 类型                                              |
+| ------ | ------------------ | ------------------------------------------------- |
+| crop   | 裁剪完成时触发     | (result: CropResult) => void                      |
+| change | 裁剪区域改变时触发 | (area: CropArea) => void                          |
+| zoom   | 缩放时触发         | (scale: number) => void                           |
+| rotate | 旋转时触发         | (angle: number) => void                           |
+| cancel | 取消裁剪时触发     | () => void                                        |
+| load   | 图片加载完成时触发 | (size: { width: number; height: number }) => void |
+| error  | 图片加载失败时触发 | (error: Error) => void                            |
 
 ### Methods
 
@@ -235,13 +238,7 @@ interface CropResult {
 
 ## 主题定制
 
-```css
-:root {
-  --ex-crop-border-color: var(--ex-color-neon-blue-500);
-  --ex-crop-grid-color: rgba(255, 255, 255, 0.3);
-  --ex-crop-mask-color: rgba(0, 0, 0, 0.5);
-}
-```
+图片裁剪跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

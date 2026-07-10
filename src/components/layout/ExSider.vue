@@ -61,7 +61,8 @@ const props = withDefaults(defineProps<ExSiderProps>(), {
   collapsible: false,
   trigger: 'bottom',
   position: 'left',
-  neonBorder: false,
+  // 默认 undefined，使未显式设置时回退到 ConfigProvider 的全局 neon-effect
+  neonBorder: undefined,
   blur: false,
   transitionDuration: 300,
 });

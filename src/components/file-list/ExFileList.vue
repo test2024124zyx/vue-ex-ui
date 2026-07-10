@@ -451,7 +451,6 @@ const props = withDefaults(defineProps<ExFileListProps>(), {
   previewable: true,
   downloadable: true,
   deletable: true,
-  renamable: false,
   loading: false,
   pageSize: 20,
   showPagination: false,
@@ -470,13 +469,13 @@ const internalSelectedIds = ref<string[]>([...props.selectedIds]);
 const currentPage = ref(1);
 const expandedFolderKeys = ref<string[]>([]);
 
-// 排序选项
-const sortOptions: SelectOption[] = [
+// 排序选项（用 computed 保证切换语言时 label 实时更新）
+const sortOptions = computed<SelectOption[]>(() => [
   { value: 'name', label: t('fileList.name') },
   { value: 'size', label: t('fileList.size') },
   { value: 'type', label: t('fileList.type') },
   { value: 'modifiedTime', label: t('fileList.modifiedTime') },
-];
+]);
 
 // 过滤和排序后的文件列表
 const displayFiles = computed(() => {

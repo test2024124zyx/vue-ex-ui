@@ -2,11 +2,17 @@
  * VitePress 文档主题 —— ExUI 赛博朋克风格深度定制
  *
  * 设计目标：
- *   1) 文档界面与组件库（霓虹蓝/紫/粉 + 深色氛围）视觉统一；
- *   2) 现代化的导航 / 侧边栏 / 演示卡片 / 首页 Hero，提高屏幕利用率；
- *   3) 绝不污染 `.demo-container` 内的真实组件样式：
- *      所有定制都走 VitePress 的结构类与 `--vp-*` 设计令牌，
- *      少数裸元素规则（表格/标题）用 `:not(.demo-container …)` 显式排除演示区。
+ *   1) 文档界面与组件库（霓虹蓝/紫/粉 + 深色氛围）视觉统一、现代化；
+ *   2) 现代化的导航 / 侧边栏 / 演示面板 / 首页 Hero，提高屏幕利用率；
+ *   3) 绝不污染 `.demo-container` 内的真实组件样式。
+ *
+ * 演示隔离（关键）：
+ *   文档整页挂了 `.ex-app`，组件演示与正文共用一片样式空间，VitePress 的
+ *   `.vp-doc <裸元素>`（ul/li/p/a/table/th/td/img/h*…）排版规则会渗进组件
+ *   （例如 ExTable 用 <table> 会被 `.vp-doc table{display:block}` 冲垮）。
+ *   §9「演示隔离层」用 :where() 把 `.vp-doc .demo-container` 内的裸元素压回中性：
+ *   其特异性 (0,2,0) 压得过 VitePress 的 (0,1,1)，又压不过组件自身的 class 样式
+ *   （custom.scss 先于 ExUI 引入，组件样式在后，平手时组件胜），故能修复渗透又不伤组件。
  */
 
 // ==================== 导入组件库样式（含主题变量、字体、基础样式） ====================
@@ -23,9 +29,8 @@
   --vp-c-bg-elv: var(--ex-color-bg-tertiary);
   --vp-c-bg-mute: var(--ex-color-bg-tertiary);
 
-  // 导航 / 侧边栏专用底色（带玻璃质感，见下方 .VPNav 规则）
   --vp-nav-bg-color: var(--ex-color-bg-primary-alpha-80);
-  --vp-sidebar-bg-color: var(--ex-color-bg-secondary);
+  --vp-sidebar-bg-color: transparent;
 
   // ---------- 文本 ----------
   --vp-c-text-1: var(--ex-color-text-primary);
@@ -45,7 +50,7 @@
   --vp-c-divider: var(--ex-color-border-primary);
   --vp-c-gutter: var(--ex-color-border-primary);
 
-  // ---------- 状态色（自定义容器块 / 徽章）----------
+  // ---------- 状态色 ----------
   --vp-c-default-1: var(--ex-color-text-secondary);
   --vp-c-default-soft: var(--ex-color-bg-tertiary);
   --vp-c-tip-1: var(--ex-color-primary);
@@ -74,15 +79,16 @@
   // ---------- 代码块 ----------
   --vp-code-color: var(--ex-color-text-secondary);
   --vp-code-bg: var(--ex-color-primary-alpha-10);
-  --vp-code-block-bg: #0a0e17;
+  --vp-code-block-bg: #070b12;
   --vp-code-block-divider-color: var(--ex-color-border-primary);
   --vp-code-line-number-color: var(--ex-color-text-tertiary);
+  --vp-code-line-highlight-color: var(--ex-color-primary-alpha-10);
   --vp-code-lang-color: var(--ex-color-text-tertiary);
   --vp-code-copy-code-bg: var(--ex-color-bg-tertiary);
   --vp-code-copy-code-hover-bg: var(--ex-color-bg-active);
   --vp-code-copy-code-border-color: var(--ex-color-border-primary);
 
-  // ---------- 自定义容器块（tip/warning/danger）----------
+  // ---------- 自定义容器块 ----------
   --vp-custom-block-tip-border: transparent;
   --vp-custom-block-tip-text: var(--ex-color-text-primary);
   --vp-custom-block-tip-bg: var(--ex-color-primary-alpha-10);
@@ -94,10 +100,10 @@
   --vp-custom-block-danger-text: var(--ex-color-text-primary);
   --vp-custom-block-danger-bg: var(--ex-color-error-alpha-10);
 
-  // ---------- 布局尺寸（提高屏幕利用率）----------
+  // ---------- 布局尺寸 ----------
   --vp-layout-max-width: 1680px;
-  --vp-sidebar-width: 280px;
-  --vp-nav-logo-height: 28px;
+  --vp-sidebar-width: 286px;
+  --vp-nav-logo-height: 30px;
 
   // ---------- 首页 Hero ----------
   --vp-home-hero-name-color: transparent;
@@ -112,10 +118,10 @@
     var(--ex-color-primary-alpha-50) 10%,
     var(--ex-color-neon-pink-alpha-40) 90%
   );
-  --vp-home-hero-image-filter: blur(64px);
+  --vp-home-hero-image-filter: blur(72px);
 }
 
-// VitePress 的暗色 class 也复用同一套深色变量（保持任何状态下都一致）
+// VitePress 的暗色 class 复用同一套深色变量（任何状态下保持一致）
 .dark {
   --vp-c-bg: var(--ex-color-bg-primary);
   --vp-c-bg-alt: var(--ex-color-bg-secondary);
@@ -123,7 +129,73 @@
 }
 
 // ============================================================================
-// 2. 顶部导航栏 —— 玻璃质感 + 品牌渐变
+// 2. 全局基底 —— 滚动条 / 选区 / 焦点环
+//    作用域限定在文档骨架，避免触碰演示区组件内部
+// ============================================================================
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ex-color-border-secondary) transparent;
+}
+
+.VPSidebar,
+.VPDocOutlineItem,
+.vp-doc div[class*='language-'] pre {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--ex-color-border-secondary);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+
+    &:hover {
+      background: var(--ex-color-primary-alpha-50);
+      background-clip: content-box;
+    }
+  }
+}
+
+// 全局选区高亮（霓虹蓝薄底）
+::selection {
+  background: var(--ex-color-primary-alpha-30);
+  color: var(--ex-color-text-primary);
+}
+
+// 文档可聚焦元素的统一焦点环（不影响演示区组件，组件自管焦点态）
+.VPNavBar a:focus-visible,
+.VPSidebarItem .link:focus-visible,
+.VPDocAsideOutline a:focus-visible,
+.vp-doc .pager-link:focus-visible,
+.DocSearch-Button:focus-visible {
+  outline: 2px solid var(--ex-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--ex-radius-sm);
+}
+
+// 整页氛围：固定的霓虹光晕背景（位于所有内容之下）
+.Layout {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 12% -5%, var(--ex-color-primary-alpha-10), transparent 35%),
+      radial-gradient(circle at 100% 0%, var(--ex-color-neon-pink-alpha-10), transparent 38%);
+    opacity: 0.9;
+  }
+}
+
+// ============================================================================
+// 3. 顶部导航栏 —— 玻璃质感 + 品牌渐变
 // ============================================================================
 .VPNav {
   background: transparent;
@@ -131,24 +203,21 @@
 
 .VPNavBar {
   background: var(--ex-color-bg-primary-alpha-80);
-  backdrop-filter: saturate(140%) blur(14px);
-  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  backdrop-filter: saturate(150%) blur(16px);
+  -webkit-backdrop-filter: saturate(150%) blur(16px);
 
   &.has-sidebar .content {
     background: transparent;
   }
 
-  // 底部分割线换成霓虹渐变细线
-  .divider {
-    .divider-line {
-      background: linear-gradient(
-        90deg,
-        transparent,
-        var(--ex-color-primary-alpha-30) 30%,
-        var(--ex-color-neon-pink-alpha-30) 70%,
-        transparent
-      );
-    }
+  .divider .divider-line {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--ex-color-primary-alpha-30) 30%,
+      var(--ex-color-neon-pink-alpha-30) 70%,
+      transparent
+    );
   }
 }
 
@@ -163,9 +232,29 @@
   -webkit-text-fill-color: transparent;
 }
 
-// 导航菜单项：激活态霓虹下划线
+// 导航菜单项：激活态霓虹下划线（滑入动画）
 .VPNavBarMenuLink {
+  position: relative;
   font-weight: var(--ex-font-medium);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--ex-gradient-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.22s ease;
+  }
+
+  &:hover::after,
+  &.active::after {
+    transform: scaleX(1);
+  }
 
   &.active {
     color: var(--ex-color-primary);
@@ -173,10 +262,13 @@
 }
 
 // ============================================================================
-// 3. 侧边栏 —— 分组标题展示字体 + 激活项霓虹高亮
+// 4. 侧边栏 —— 分组标题展示字体 + 激活项霓虹高亮
 // ============================================================================
 .VPSidebar {
   border-right: 1px solid var(--ex-color-border-primary);
+  background: var(--ex-color-bg-primary-alpha-80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   // 一级分组标题
   .VPSidebarItem.level-0 > .item > .text {
@@ -197,22 +289,22 @@
       box-shadow 0.18s ease;
 
     .text {
-      padding-inline: 8px;
+      padding-inline: 10px;
       transition: color 0.18s ease;
     }
 
-    &:hover .text {
-      color: var(--ex-color-primary);
+    &:hover {
+      background: var(--ex-color-bg-tertiary);
+
+      .text {
+        color: var(--ex-color-primary);
+      }
     }
   }
 
   // 激活项：左侧霓虹竖条 + 浅色底 + 发光
   .VPSidebarItem.is-active.is-link > .item .link {
-    background: linear-gradient(
-      90deg,
-      var(--ex-color-primary-alpha-20),
-      transparent 85%
-    );
+    background: linear-gradient(90deg, var(--ex-color-primary-alpha-20), transparent 85%);
     box-shadow: inset 2px 0 0 var(--ex-color-primary);
 
     .text {
@@ -224,12 +316,11 @@
 }
 
 // ============================================================================
-// 4. 文档正文区域 —— 加宽 + 标题层级强化
+// 5. 文档正文区域 —— 加宽 + 标题层级强化
+//    所有裸元素装饰规则都用 :not(.demo-container …) 守卫，避免污染演示区
 // ============================================================================
-
-// 加宽内容区（组件演示更宽敞）。VitePress 在多个断点重复声明宽度，故用 !important 统一。
 .VPDoc.has-aside .content-container {
-  max-width: 1104px !important;
+  max-width: 1120px !important;
 }
 .VPDoc:not(.has-sidebar) .content {
   max-width: 1040px !important;
@@ -238,8 +329,8 @@
 .vp-doc {
   color: var(--ex-color-text-primary);
 
-  // 一级标题：品牌渐变文字（页面顶部唯一，不会出现在演示内）
-  h1 {
+  // 一级标题：品牌渐变文字（排除演示区内组件的 <h1>，如 PageHeader 标题）
+  h1:not(.demo-container h1) {
     font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-bold);
     letter-spacing: 0.01em;
@@ -255,13 +346,15 @@
     -webkit-text-fill-color: transparent;
   }
 
-  // 二级标题：左侧霓虹强调条（排除演示区内的标题，避免污染卡片类组件）
+  // 二级标题：顶部分隔线 + 左侧霓虹强调条
   h2:not(.demo-container h2) {
-    margin-top: 40px;
+    margin-top: 44px;
     padding-top: 24px;
     padding-left: 14px;
     border-top: 1px solid var(--ex-color-border-primary);
     position: relative;
+    font-family: var(--ex-font-primary);
+    letter-spacing: 0.01em;
 
     &::before {
       content: '';
@@ -293,7 +386,7 @@
     }
   }
 
-  // 锚点图标（标题悬停出现的 #）用品牌色
+  // 锚点图标
   .header-anchor {
     color: var(--ex-color-primary);
   }
@@ -316,10 +409,24 @@
     border: 1px solid var(--ex-color-primary-alpha-20);
     border-radius: var(--ex-radius-base);
     font-family: var(--ex-font-mono);
+    font-size: 0.85em;
+    padding: 2px 6px;
+  }
+
+  // 键盘按键
+  kbd:not(.demo-container kbd) {
+    background: var(--ex-color-bg-tertiary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-bottom-width: 2px;
+    border-radius: var(--ex-radius-base);
+    padding: 2px 7px;
+    font-family: var(--ex-font-mono);
+    font-size: 0.8em;
+    color: var(--ex-color-text-primary);
   }
 
   // 引用块
-  blockquote {
+  blockquote:not(.demo-container blockquote) {
     border-left: 3px solid var(--ex-color-primary);
     background: var(--ex-color-bg-secondary);
     border-radius: 0 var(--ex-radius-md) var(--ex-radius-md) 0;
@@ -330,24 +437,38 @@
     }
   }
 
-  // 分割线
-  hr {
+  hr:not(.demo-container hr) {
     border-top: 1px solid var(--ex-color-border-primary);
   }
 }
 
 // ============================================================================
-// 5. 代码块 —— 圆角 + 边框 + 语言标签
+// 6. 代码块 —— 圆角 + 边框 + 顶部霓虹细线 + 语言标签
 // ============================================================================
 .vp-doc {
   div[class*='language-'] {
+    position: relative;
     margin: 18px 0;
     border-radius: var(--ex-radius-lg);
     border: 1px solid var(--ex-color-border-primary);
     background: var(--vp-code-block-bg);
-    box-shadow: 0 8px 24px var(--ex-color-black-alpha-30);
+    box-shadow: 0 10px 30px var(--ex-color-black-alpha-30);
 
-    // 语言标签
+    // 顶部一道霓虹高光
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      border-radius: var(--ex-radius-lg) var(--ex-radius-lg) 0 0;
+      background: linear-gradient(
+        90deg,
+        var(--ex-color-primary-alpha-50),
+        var(--ex-color-neon-pink-alpha-40)
+      );
+      opacity: 0.7;
+    }
+
     .lang {
       font-family: var(--ex-font-mono);
       color: var(--ex-color-text-tertiary);
@@ -355,16 +476,19 @@
       letter-spacing: 0.08em;
       font-size: 11px;
     }
+
+    .copy {
+      border-radius: var(--ex-radius-md);
+    }
   }
 
-  // 行号列分隔
   .line-numbers-wrapper {
     border-right: 1px solid var(--ex-color-border-primary);
   }
 }
 
 // ============================================================================
-// 6. 自定义容器块（tip / warning / danger / info / details）
+// 7. 自定义容器块（tip / warning / danger / info / details）
 // ============================================================================
 .vp-doc {
   .custom-block {
@@ -394,7 +518,7 @@
 }
 
 // ============================================================================
-// 7. 表格 —— 霓虹表头（排除演示区内组件的表格）
+// 8. 表格 —— 霓虹表头（排除演示区内组件的表格）
 // ============================================================================
 .vp-doc table:not(.demo-container table) {
   display: table;
@@ -435,33 +559,108 @@
 }
 
 // ============================================================================
-// 8. 右侧大纲（本页目录）
+// 9. ⚠ 演示隔离层 —— 阻断 VitePress 正文排版渗入组件演示（关键修复）
+//    :where() 让内层特异性为 0，整体 = `.vp-doc .demo-container` (0,2,0)：
+//    压得过 VitePress 的 `.vp-doc <el>` (0,1,1)，压不过组件自身的 class 样式。
+//    只中性化「会被 VitePress 装饰的裸排版元素」，绝不写组件内部类。
 // ============================================================================
-.VPDocAsideOutline {
-  .outline-marker {
-    background: var(--ex-gradient-primary) !important;
-    box-shadow: 0 0 8px var(--ex-color-primary-alpha-50);
-  }
+.vp-doc .demo-container {
+  // ⚠ 隔离层只中性化「VitePress 装饰、且与组件意图一致」的属性。
+  // 像字体/颜色/圆角这类「组件各有取值」的属性绝不在此重置——因为构建后隔离层
+  // 排在组件样式之后，同特异性 (0,2,0) 平手时隔离层会胜，重置成中性值反而冲垮组件
+  // （如把 PageHeader 的 <h1> 标题字号打回继承、把面包屑链接色清成 inherit）。
 
-  .outline-link {
-    transition: color 0.18s ease;
+  // 标题：只清 VitePress 给的间距 / 边框 / 强调条，不碰字体与颜色（交给组件）
+  :where(h1, h2, h3, h4, h5, h6) {
+    margin: 0;
+    padding: 0;
+    border: 0;
 
-    &:hover,
-    &.active {
-      color: var(--ex-color-primary);
+    &::before {
+      content: none;
     }
   }
 
-  .outline-title {
-    font-family: var(--ex-font-primary);
-    letter-spacing: 0.05em;
-    color: var(--ex-color-text-secondary);
+  // 段落
+  :where(p) {
+    margin: 0;
+    line-height: inherit;
+  }
+
+  // 列表（菜单 / 树 / 下拉等的 ul/li 不应有 marker、缩进、行距；与组件意图一致）
+  :where(ul, ol) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :where(li) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :where(li)::marker {
+    content: '';
+  }
+  :where(li)::before {
+    content: none;
+  }
+
+  // 分割线 / 引用
+  :where(hr) {
+    margin: 0;
+    border: 0;
+  }
+  :where(blockquote) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 0;
+  }
+
+  // 表格（ExTable 用 <table>，必须挡住 VitePress 的 display:block / 边框 / 内边距）
+  :where(table) {
+    display: table;
+    width: auto;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    border-collapse: collapse;
+    overflow: visible;
+    box-shadow: none;
+  }
+  :where(thead, tbody, tfoot, tr) {
+    background: none;
+    border: 0;
+  }
+  :where(th, td) {
+    border: 0;
+    padding: revert;
+    background: none;
+    color: inherit;
+  }
+
+  // 行内代码（组件内的内联 code 不该套文档的霓虹胶囊样式）
+  :where(code):not(:where(pre code)) {
+    margin: 0;
+    padding: revert;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  // 描述列表 / figure
+  :where(dl, dt, dd, figure, figcaption) {
+    margin: 0;
   }
 }
 
 // ============================================================================
-// 9. 组件演示容器 —— 现代化「预览面板」
-//    注意：仅装饰外壳（边框/底色/标题），不触碰内部任何 [class*="ex-"] 组件
+// 10. 组件演示容器 —— 现代化「预览面板」
+//     仅装饰外壳（边框 / 底纹 / 高光），不触碰内部任何组件
 // ============================================================================
 .demo-container {
   position: relative;
@@ -469,29 +668,21 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-
-  // 纵向排布的演示（内联 flex-direction:column）：子项应占满整行，
-  // 否则全局 align-items:center 会让包装 div 收缩成内容宽，压扁内部的块级组件（如进度条）
-  &[style*='column'] {
-    align-items: stretch;
-  }
-
-  // 纵向演示里常见的「标签 + 组件」分组 div：占满整行
-  &[style*='column'] > div {
-    width: 100%;
-  }
-  padding: 28px 24px;
-  margin: 20px 0;
+  padding: 32px 28px;
+  margin: 22px 0;
+  // 角落霓虹光晕（作为背景层，始终位于演示内容之下）
   background:
-    radial-gradient(circle at 100% 0%, var(--ex-color-primary-alpha-05), transparent 38%),
+    radial-gradient(circle at 100% 0%, var(--ex-color-primary-alpha-05), transparent 42%),
+    radial-gradient(circle at 0% 100%, var(--ex-color-neon-pink-alpha-10), transparent 40%),
     var(--ex-color-bg-secondary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-xl);
+  box-shadow: 0 1px 0 var(--ex-color-white-alpha-05) inset;
   transition:
     border-color 0.25s ease,
     box-shadow 0.25s ease;
 
-  // 顶部一道极细的霓虹高光
+  // 顶部霓虹高光细线（绝对定位的 1px 发丝线，落在顶部内边距区，不压住内容）
   &::before {
     content: '';
     position: absolute;
@@ -505,17 +696,25 @@
       var(--ex-color-neon-pink-alpha-40) 80%,
       transparent
     );
-    opacity: 0.7;
+    opacity: 0.75;
   }
 
   &:hover {
     border-color: var(--ex-color-primary-alpha-30);
     box-shadow:
       0 0 0 1px var(--ex-color-primary-alpha-20),
-      0 10px 30px var(--ex-color-black-alpha-30);
+      0 14px 40px var(--ex-color-black-alpha-40);
   }
 
-  // 让演示项保持纵向排布场景的兼容（部分演示使用 .demo-item 分行）
+  // 纵向排布的演示：子项占满整行
+  &[style*='column'] {
+    align-items: stretch;
+  }
+  &[style*='column'] > div {
+    width: 100%;
+  }
+
+  // 「标签 + 组件」分组
   .demo-item {
     flex: 1 1 100%;
     margin-bottom: 16px;
@@ -527,13 +726,23 @@
 
   // 紧跟其后的代码块与演示区无缝衔接
   & + div[class*='language-'] {
-    margin-top: -8px;
+    margin-top: -10px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
+
+    &::after {
+      display: none;
+    }
   }
 
-  // 块级组件（应占满整行）在 flex 演示容器中需显式占满宽度，
-  // 否则会被收缩成内容宽（进度条变短）、甚至塌陷成 0 宽（虚拟列表空白）、按内容宽内联（空状态不居中）
+  // 块级 / 布局类组件需占满整行，否则会被 flex 演示容器收缩成内容宽 / 塌陷成 0 宽
+  // （栅格、弹性、布局等内部本身是 flex/grid，被外层 flex 收缩后列分配会错乱）
+  > .ex-grid,
+  > .ex-flex,
+  > .ex-layout,
+  > .ex-container,
+  > .ex-row,
+  > .ex-col,
   > .ex-progress,
   > .ex-virtual-list,
   > .ex-empty,
@@ -554,10 +763,10 @@
   > .ex-pagination,
   > .ex-form,
   > .ex-tabs,
-  > .ex-menu,
   > .ex-breadcrumb,
   > .ex-page-header,
   > .ex-descriptions,
+  > .ex-table-wrapper,
   > .ex-anchor {
     flex: 1 1 100%;
     width: 100%;
@@ -565,7 +774,8 @@
   }
 }
 
-// 演示小标题 / 描述（部分页面使用）
+// 演示小标题 / 描述（在 .demo-container 内提权，避免被 §9 的 :where(p) 中性化覆盖）
+.vp-doc .demo-container .demo-title,
 .demo-title {
   flex: 1 1 100%;
   font-size: 15px;
@@ -574,16 +784,17 @@
   margin-bottom: 4px;
 }
 
+.vp-doc .demo-container .demo-description,
 .demo-description {
   flex: 1 1 100%;
   font-size: 14px;
   color: var(--ex-color-text-secondary);
   line-height: 1.6;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
 }
 
 // ============================================================================
-// 10. 首页 Hero / 特性卡片
+// 11. 首页 Hero / 特性卡片
 // ============================================================================
 .VPHome {
   position: relative;
@@ -612,7 +823,7 @@
   .name {
     font-family: var(--ex-font-primary);
     letter-spacing: 0.02em;
-    filter: drop-shadow(0 0 24px var(--ex-color-primary-alpha-30));
+    filter: drop-shadow(0 0 28px var(--ex-color-primary-alpha-30));
   }
 
   .text {
@@ -640,20 +851,37 @@
 
 // 特性卡片
 .VPFeature {
+  position: relative;
   background: var(--ex-color-bg-secondary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-xl);
+  overflow: hidden;
   transition:
     border-color 0.25s ease,
     transform 0.25s ease,
     box-shadow 0.25s ease;
+
+  // 顶部霓虹高光（hover 显现）
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: var(--ex-gradient-primary);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
 
   &:hover {
     border-color: var(--ex-color-primary-alpha-30);
     transform: translateY(-4px);
     box-shadow:
       0 0 0 1px var(--ex-color-primary-alpha-20),
-      0 16px 40px var(--ex-color-black-alpha-40);
+      0 18px 44px var(--ex-color-black-alpha-40);
+
+    &::before {
+      opacity: 1;
+    }
   }
 
   .icon {
@@ -673,19 +901,43 @@
 }
 
 // ============================================================================
-// 11. 其它细节：上一页/下一页、徽章、搜索框
+// 12. 右侧大纲 / 翻页 / 徽章 / 搜索框
 // ============================================================================
+.VPDocAsideOutline {
+  .outline-marker {
+    background: var(--ex-gradient-primary) !important;
+    box-shadow: 0 0 8px var(--ex-color-primary-alpha-50);
+  }
+
+  .outline-link {
+    transition: color 0.18s ease;
+
+    &:hover,
+    &.active {
+      color: var(--ex-color-primary);
+    }
+  }
+
+  .outline-title {
+    font-family: var(--ex-font-primary);
+    letter-spacing: 0.05em;
+    color: var(--ex-color-text-secondary);
+  }
+}
+
 .vp-doc .pager-link {
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
   background: var(--ex-color-bg-secondary);
   transition:
     border-color 0.22s ease,
-    transform 0.22s ease;
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
 
   &:hover {
     border-color: var(--ex-color-primary-alpha-40);
     transform: translateY(-2px);
+    box-shadow: 0 10px 26px var(--ex-color-black-alpha-30);
   }
 
   .title {
@@ -699,19 +951,22 @@
   border-color: var(--ex-color-primary-alpha-30);
 }
 
-// 本地搜索框
 .DocSearch-Button {
   border: 1px solid var(--ex-color-border-primary) !important;
   background: var(--ex-color-bg-secondary) !important;
   border-radius: var(--ex-radius-lg) !important;
+
+  &:hover {
+    border-color: var(--ex-color-primary-alpha-40) !important;
+  }
 }
 
 // ============================================================================
-// 12. 响应式 & 无障碍
+// 13. 响应式 & 无障碍
 // ============================================================================
 @media (max-width: 768px) {
   .demo-container {
-    padding: 20px 16px;
+    padding: 22px 16px;
     gap: 10px;
   }
 
@@ -724,12 +979,20 @@
   .demo-container,
   .VPFeature,
   .VPButton.brand,
+  .VPNavBarMenuLink::after,
   .vp-doc .pager-link {
     transition: none;
   }
 }
 
 @media print {
+  .Layout::before,
+  .VPHome::before,
+  .demo-container::after,
+  .demo-container::before {
+    display: none;
+  }
+
   .demo-container {
     border: 1px solid #ddd;
     box-shadow: none;

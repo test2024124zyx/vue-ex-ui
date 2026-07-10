@@ -97,6 +97,8 @@ export interface ExPopoverProps {
   closeDelay?: number;
   /** 自定义类名 */
   customClass?: string;
+  /** 自定义浮层样式 */
+  customStyle?: Record<string, string | number> | string;
   /** 层级 */
   zIndex?: number;
   /** 手动控制显示（v-model） */

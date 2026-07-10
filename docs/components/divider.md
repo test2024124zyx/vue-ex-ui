@@ -91,11 +91,14 @@
 ## 垂直分割线
 
 使用 `type="vertical"` 设置为行内的垂直分割线。
-Text
-<ExDivider type="vertical" />
-<a href="#">Link</a>
-<ExDivider type="vertical" />
-<a href="#">Link</a>
+
+<div class="demo-container">
+  <span>Text</span>
+  <ExDivider type="vertical" />
+  <a href="#">Link</a>
+  <ExDivider type="vertical" />
+  <a href="#">Link</a>
+</div>
 
 ```vue
 <template>

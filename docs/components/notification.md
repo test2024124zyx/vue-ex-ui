@@ -115,14 +115,14 @@ const closeAll = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showInfo = () => {
   notification.info({
     title: '信息提示',
     content: '这是一条信息通知',
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -146,35 +146,35 @@ const showInfo = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showInfo = () => {
   notification.info({
     title: '信息提示',
     content: '这是一条信息通知',
-  })
-}
+  });
+};
 
 const showSuccess = () => {
   notification.success({
     title: '操作成功',
     content: '您的操作已成功完成',
-  })
-}
+  });
+};
 
 const showWarning = () => {
   notification.warning({
     title: '警告',
     content: '请注意，此操作可能有风险',
-  })
-}
+  });
+};
 
 const showError = () => {
   notification.error({
     title: '错误',
     content: '操作失败，请稍后重试',
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -198,23 +198,23 @@ const showError = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showTopLeft = () => {
   notification.info({
     title: '左上角通知',
     content: '这条通知显示在左上角',
     position: 'top-left',
-  })
-}
+  });
+};
 
 const showBottomRight = () => {
   notification.info({
     title: '右下角通知',
     content: '这条通知显示在右下角',
     position: 'bottom-right',
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -234,15 +234,15 @@ const showBottomRight = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showCustomDuration = () => {
   notification.info({
     title: '自定义时长',
     content: '这条通知将在 10 秒后关闭',
     duration: 10000,
-  })
-}
+  });
+};
 
 const showNonClosable = () => {
   notification.info({
@@ -250,8 +250,8 @@ const showNonClosable = () => {
     content: '这条通知不会自动关闭',
     duration: 0,
     closable: false,
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -269,15 +269,15 @@ const showNonClosable = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showHtml = () => {
   notification.info({
     title: 'HTML 内容',
     content: '<strong>加粗文本</strong> 和 <em>斜体文本</em>',
     dangerouslyUseHTMLString: true,
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -299,20 +299,20 @@ const showHtml = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showWithCallback = () => {
   notification.success({
     title: '带回调的通知',
     content: '点击通知或关闭按钮会触发回调',
     onClick: () => {
-      console.log('通知被点击')
+      console.log('通知被点击');
     },
     onClose: () => {
-      console.log('通知已关闭')
+      console.log('通知已关闭');
     },
-  })
-}
+  });
+};
 </script>
 ```
 
@@ -334,18 +334,18 @@ const showWithCallback = () => {
 </template>
 
 <script setup>
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 const showInfo = () => {
   notification.info({
     title: '信息提示',
     content: '这是一条信息通知',
-  })
-}
+  });
+};
 
 const closeAll = () => {
-  notification.closeAll()
-}
+  notification.closeAll();
+};
 </script>
 ```
 
@@ -354,81 +354,81 @@ const closeAll = () => {
 可以通过 `notification.config` 方法配置全局默认选项。
 
 ```typescript
-import { notification } from 'vue-ex-ui'
+import { notification } from 'vue-ex-ui';
 
 // 配置全局默认选项
 notification.config({
-  duration: 5000,           // 默认显示时长
-  offset: 20,               // 距离边缘的偏移量
-  maxCount: 3,              // 最大显示数量
-  showIcon: true,           // 是否显示图标
-  closable: true,           // 是否可关闭
-  position: 'top-right',    // 默认位置
-})
+  duration: 5000, // 默认显示时长
+  offset: 20, // 距离边缘的偏移量
+  maxCount: 3, // 最大显示数量
+  showIcon: true, // 是否显示图标
+  closable: true, // 是否可关闭
+  position: 'top-right', // 默认位置
+});
 ```
 
 ## API
 
 ### 方法
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| notification(options) | 显示通知 | `NotificationOptions` | `NotificationInstance` |
-| notification.info(options) | 显示信息通知 | `NotificationOptions` | `NotificationInstance` |
-| notification.success(options) | 显示成功通知 | `NotificationOptions` | `NotificationInstance` |
-| notification.warning(options) | 显示警告通知 | `NotificationOptions` | `NotificationInstance` |
-| notification.error(options) | 显示错误通知 | `NotificationOptions` | `NotificationInstance` |
-| notification.close(id) | 关闭指定通知 | `string` | — |
-| notification.closeAll() | 关闭所有通知 | — | — |
-| notification.config(options) | 配置全局选项 | `NotificationGlobalConfig` | — |
+| 方法名                        | 说明         | 参数                       | 返回值                 |
+| ----------------------------- | ------------ | -------------------------- | ---------------------- |
+| notification(options)         | 显示通知     | `NotificationOptions`      | `NotificationInstance` |
+| notification.info(options)    | 显示信息通知 | `NotificationOptions`      | `NotificationInstance` |
+| notification.success(options) | 显示成功通知 | `NotificationOptions`      | `NotificationInstance` |
+| notification.warning(options) | 显示警告通知 | `NotificationOptions`      | `NotificationInstance` |
+| notification.error(options)   | 显示错误通知 | `NotificationOptions`      | `NotificationInstance` |
+| notification.close(id)        | 关闭指定通知 | `string`                   | —                      |
+| notification.closeAll()       | 关闭所有通知 | —                          | —                      |
+| notification.config(options)  | 配置全局选项 | `NotificationGlobalConfig` | —                      |
 
 ### NotificationOptions
 
-| 参数 | 说明 | 类型 | 可选值 | 默认值 |
-| --- | --- | --- | --- | --- |
-| id | 通知唯一标识 | string | — | 自动生成 |
-| type | 通知类型 | string | info / success / warning / error | info |
-| title | 通知标题 | string | — | — |
-| content | 通知内容 | string | — | — |
-| showIcon | 是否显示图标 | boolean | — | true |
-| closable | 是否可关闭 | boolean | — | true |
-| duration | 显示时长（毫秒），设为 0 则不自动关闭 | number | — | 4500 |
-| position | 显示位置 | string | top-right / top-left / bottom-right / bottom-left | top-right |
-| customClass | 自定义 CSS 类名 | string | — | — |
-| customStyle | 自定义样式 | object | — | — |
-| zIndex | 层级 | number | — | 2000 |
-| offset | 距离边缘的偏移量 | number | — | 16 |
-| dangerouslyUseHTMLString | 是否将内容作为 HTML 处理 | boolean | — | false |
-| onClose | 关闭时的回调 | () => void | — | — |
-| onClick | 点击时的回调 | () => void | — | — |
+| 参数                     | 说明                                  | 类型       | 可选值                                            | 默认值    |
+| ------------------------ | ------------------------------------- | ---------- | ------------------------------------------------- | --------- |
+| id                       | 通知唯一标识                          | string     | —                                                 | 自动生成  |
+| type                     | 通知类型                              | string     | info / success / warning / error                  | info      |
+| title                    | 通知标题                              | string     | —                                                 | —         |
+| content                  | 通知内容                              | string     | —                                                 | —         |
+| showIcon                 | 是否显示图标                          | boolean    | —                                                 | true      |
+| closable                 | 是否可关闭                            | boolean    | —                                                 | true      |
+| duration                 | 显示时长（毫秒），设为 0 则不自动关闭 | number     | —                                                 | 4500      |
+| position                 | 显示位置                              | string     | top-right / top-left / bottom-right / bottom-left | top-right |
+| customClass              | 自定义 CSS 类名                       | string     | —                                                 | —         |
+| customStyle              | 自定义样式                            | object     | —                                                 | —         |
+| zIndex                   | 层级                                  | number     | —                                                 | 2000      |
+| offset                   | 距离边缘的偏移量                      | number     | —                                                 | 16        |
+| dangerouslyUseHTMLString | 是否将内容作为 HTML 处理              | boolean    | —                                                 | false     |
+| onClose                  | 关闭时的回调                          | () => void | —                                                 | —         |
+| onClick                  | 点击时的回调                          | () => void | —                                                 | —         |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| default | 通知内容 |
-| title | 自定义标题 |
-| icon | 自定义图标 |
-| close | 自定义关闭按钮 |
+| 插槽名  | 说明           |
+| ------- | -------------- |
+| default | 通知内容       |
+| title   | 自定义标题     |
+| icon    | 自定义图标     |
+| close   | 自定义关闭按钮 |
 
 ### NotificationInstance
 
-| 属性/方法 | 说明 | 类型 |
-| --- | --- | --- |
-| id | 通知唯一标识 | string |
-| close | 关闭通知 | () => void |
+| 属性/方法 | 说明         | 类型       |
+| --------- | ------------ | ---------- |
+| id        | 通知唯一标识 | string     |
+| close     | 关闭通知     | () => void |
 
 ### NotificationGlobalConfig
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| duration | 默认显示时长 | number | 4500 |
-| offset | 默认偏移量 | number | 16 |
-| zIndex | 默认层级 | number | 2000 |
-| maxCount | 最大显示数量 | number | 5 |
-| showIcon | 是否显示图标 | boolean | true |
-| closable | 是否可关闭 | boolean | true |
-| position | 默认位置 | string | top-right |
+| 参数     | 说明         | 类型    | 默认值    |
+| -------- | ------------ | ------- | --------- |
+| duration | 默认显示时长 | number  | 4500      |
+| offset   | 默认偏移量   | number  | 16        |
+| zIndex   | 默认层级     | number  | 2000      |
+| maxCount | 最大显示数量 | number  | 5         |
+| showIcon | 是否显示图标 | boolean | true      |
+| closable | 是否可关闭   | boolean | true      |
+| position | 默认位置     | string  | top-right |
 
 ## 最佳实践
 
@@ -441,12 +441,12 @@ notification.config({
 
 ### 与 Message 的区别
 
-| 特性 | Message | Notification |
-| --- | --- | --- |
-| 显示位置 | 页面顶部居中 | 页面四个角落 |
-| 内容复杂度 | 简单文本 | 标题 + 描述 |
-| 使用场景 | 轻量级反馈 | 详细通知 |
-| 默认时长 | 3 秒 | 4.5 秒 |
+| 特性       | Message      | Notification |
+| ---------- | ------------ | ------------ |
+| 显示位置   | 页面顶部居中 | 页面四个角落 |
+| 内容复杂度 | 简单文本     | 标题 + 描述  |
+| 使用场景   | 轻量级反馈   | 详细通知     |
+| 默认时长   | 3 秒         | 4.5 秒       |
 
 ### 无障碍
 
@@ -454,6 +454,36 @@ notification.config({
 - 错误通知使用 `aria-live="assertive"`，会立即打断当前朗读
 - 其他类型通知使用 `aria-live="polite"`，会等待当前朗读完成
 - 关闭按钮支持键盘操作（Enter 和 Space 键）
+
+## 常见问题
+
+**Q：通知会在我阅读时消失吗？**
+不会。鼠标移入通知时暂停倒计时，移出后按剩余时长继续，避免读到一半被关闭。
+
+**Q：不同位置的通知会互相挤压吗？**
+不会。四个角落各自维护独立队列与容器，互不影响；`maxCount` 超限时自动移除最早的一条。
+
+**Q：如何让通知常驻、由用户手动关闭？**
+设置 `duration: 0`，通知不会自动关闭，由用户点击关闭按钮或调用 `instance.close()`。
+
+**Q：和 Message 怎么选？**
+轻量、无标题的瞬时反馈用 [Message](/components/message)；带标题+描述、信息量更大的通知用 Notification。
+
+## 主题定制
+
+Notification 由服务创建并定位在页面角落，不定义独立的组件级变量。定制方式：
+
+- **单条**：通过 `customClass` / `customStyle` 选项定制。
+- **全局**：覆盖各类型所消费的全局色彩令牌：
+
+```css
+:root {
+  --ex-color-success: #00d68f; /* success */
+  --ex-color-warning: #ffaa00; /* warning */
+  --ex-color-neon-blue-500: #29abe2; /* info */
+  --ex-color-neon-pink-500: #ff2d78; /* error */
+}
+```
 
 <style scoped>
 .demo-container {

@@ -1,6 +1,6 @@
 # Code 代码
 
-用于展示代码片段的组件，支持语法高亮、行号、行高亮、复制等功能。语法高亮基于可选依赖 `highlight.js`（按需动态加载，未安装时自动降级为纯文本）。
+用于展示代码片段的组件，支持语法高亮、行号、行高亮、复制、原位编辑等功能。语法高亮由**内置的零依赖高亮引擎**实现，无需安装任何第三方库，开箱即用、同步渲染、无异步加载闪烁。
 
 <script setup>
 import { ref } from 'vue'
@@ -85,7 +85,7 @@ class UserService {
 
 ## 语法高亮
 
-基于 `highlight.js` 自动着色：关键字、字符串、数字、注释、函数等不同 token 使用不同颜色，配色已对接主题变量。指定受支持的 `language` 可获得稳定高亮，省略时按 `plaintext` 纯文本展示。
+内置高亮引擎对关键字、字符串、数字、注释、函数等不同 token 着色，配色已对接主题变量。指定受支持的 `language` 即可获得稳定高亮，省略时按 `plaintext` 纯文本展示。高亮为**同步渲染**，不会出现「先纯文本后高亮」的闪烁。
 
 <div class="demo-container">
   <ExCode :code="highlightDemo" language="javascript" line-numbers />
@@ -97,9 +97,11 @@ class UserService {
 </template>
 ```
 
-::: tip
-语法高亮依赖可选依赖 `highlight.js`。请确保已安装：`npm i highlight.js`；未安装时组件会自动降级为纯文本展示（不报错）。
+::: tip 安全性
+高亮通过「分词 + 文本节点渲染」实现，代码内容始终被转义后输出，**绝不会把用户代码当作真实 HTML 执行**，从根上杜绝 XSS。组件不使用 `v-html`，也无需任何消毒库。
 :::
+
+支持的语言：`javascript`、`typescript`、`vue`、`html`、`xml`、`css`、`scss`、`json`、`bash`、`shell`、`python`、`java`、`cpp`、`csharp`、`go`、`rust`、`sql`、`markdown`、`yaml`、`plaintext`，并可识别 `js`/`ts`/`py`/`yml`/`md`/`c++`/`c#` 等常见别名。
 
 ## 显示行号
 
@@ -185,25 +187,26 @@ class UserService {
 
 ## 自动换行
 
-默认超长行横向滚动，设置 `wrap` 可自动换行。
+默认超长行横向滚动（行号横向滚动时吸附在左侧）；设置 `wrap` 可自动换行。换行后**行号仍与代码逐行对齐**——每一行的行号与代码同处一行栅格，整行随内容增高。
 
 <div class="demo-container">
   <ExCode
     code="const veryLongLine = 'this is a very long single line of code that would normally overflow horizontally and require scrolling to read'"
     language="javascript"
+    line-numbers
     wrap
   />
 </div>
 
 ```vue
 <template>
-  <ExCode :code="longLine" language="javascript" wrap />
+  <ExCode :code="longLine" language="javascript" line-numbers wrap />
 </template>
 ```
 
 ## 可编辑
 
-设置 `editable` 开启原位编辑，支持 `v-model:code`。编辑时下方高亮层会实时跟随更新（透明 textarea 叠加在语法高亮之上，兼得「可编辑」与「高亮」）。
+设置 `editable` 开启原位编辑，支持 `v-model:code`。编辑时下方高亮层会实时跟随更新（透明 textarea 叠加在语法高亮之上，兼得「可编辑」与「高亮」）。按 <kbd>Tab</kbd> 缩进、<kbd>Shift</kbd>+<kbd>Tab</kbd> 反缩进，多行选区可整体增减缩进，缩进宽度由 `tab-size` 控制。
 
 <div class="demo-container">
   <ExCode v-model:code="editableCode" language="javascript" line-numbers editable />
@@ -230,6 +233,7 @@ const editableCode = ref(`function sum(a, b) {
 ::: tip
 
 - 编辑区是叠加在语法高亮层之上的透明 `textarea`，因此**边输入边高亮**。
+- 编辑态恒为软换行（不横向滚动），即使开启 `line-numbers` 也能保持行号与代码对齐。
 - 只读展示但仍想用编辑器外观时，可同时设置 `editable` 与 `readonly`。
   :::
 
@@ -266,6 +270,7 @@ const editableCode = ref(`function sum(a, b) {
 | `wrap`            | 是否自动换行                        | `boolean`                     | `false`       |
 | `editable`        | 是否可编辑（支持 `v-model:code`）   | `boolean`                     | `false`       |
 | `readonly`        | 是否只读（`editable` 时仍禁止修改） | `boolean`                     | `false`       |
+| `tab-size`        | 编辑模式下 Tab 键插入的空格数       | `number`                      | `2`           |
 
 ### Code Events
 
@@ -318,15 +323,14 @@ type CodeLanguage =
 
 ## 无障碍支持
 
-- 使用语义化的 HTML 标签
-- 完整的 ARIA 属性支持
-- 支持屏幕阅读器
-- 支持键盘导航
-- 支持减少动画偏好设置
+- 根节点为 `role="group"`，并带有随当前语言变化的本地化 `aria-label`（跟随 `ConfigProvider` 语言）
+- 复制按钮、编辑区均有本地化 `aria-label`；行号节点 `aria-hidden`，不干扰朗读
+- 复制按钮、编辑区支持键盘聚焦与 `:focus-visible` 焦点环
+- 遵循 `prefers-reduced-motion`（减少动画）与 `prefers-contrast: high`（高对比度）偏好
 
 ## 主题定制
 
-代码组件跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配。语法高亮基于可选依赖 `highlight.js`（按需动态加载，未安装时降级为纯文本展示），token 配色已对接主题变量。
+代码组件跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，内置 `neon` / `dark` / `light` 三套代码主题。语法高亮由零依赖内置引擎实现，token 配色全部对接主题变量，无需任何第三方高亮库。
 
 <style scoped>
 .demo-container {

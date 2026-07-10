@@ -116,8 +116,10 @@ const handleKeydown = (event: KeyboardEvent) => {
   const menuList = currentElement.parentElement;
   if (!menuList) return;
 
+  // 只在同级直接子项之间导航：用 :scope > 限定为当前 <ul> 的直接子菜单项，
+  // 避免 querySelectorAll 把嵌套（含已折叠/隐藏）子菜单里的后代项也选进来导致方向键卡住。
   const items = Array.from(
-    menuList.querySelectorAll('.ex-menu-item:not(.ex-menu-item--disabled)')
+    menuList.querySelectorAll(':scope > .ex-menu-item:not(.ex-menu-item--disabled)')
   ) as HTMLElement[];
   const currentIndex = items.indexOf(currentElement);
   if (currentIndex < 0) return;

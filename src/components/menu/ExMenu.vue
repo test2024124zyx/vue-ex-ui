@@ -27,8 +27,8 @@
       :aria-orientation="mode === 'horizontal' ? 'horizontal' : 'vertical'"
     >
       <slot v-if="$slots.default" />
-      <template v-else-if="items && items.length > 0">
-        <template v-for="item in items" :key="item.key">
+      <template v-else-if="displayItems && displayItems.length > 0">
+        <template v-for="item in displayItems" :key="item.key">
           <ExSubMenu
             v-if="item.children && item.children.length > 0"
             :item-key="item.key"
@@ -178,7 +178,29 @@ const handleOpenChange = (key: string, open: boolean) => {
   emit('openChange', newOpenKeys);
 };
 
-// 搜索功能
+// 搜索功能：对 items 模式做真实过滤（保留命中项及其祖先链），并同时 emit 供自定义处理。
+// 插槽（default slot）模式下组件无法感知子项文本，仍只 emit，由使用方自行过滤。
+const filterMenuItems = (list: MenuItem[], query: string): MenuItem[] =>
+  list
+    .map(item => {
+      const selfMatch = (item.label || '').toLowerCase().includes(query);
+      const matchedChildren = item.children ? filterMenuItems(item.children, query) : undefined;
+      if (selfMatch) return { ...item };
+      if (matchedChildren && matchedChildren.length > 0) {
+        return { ...item, children: matchedChildren };
+      }
+      return null;
+    })
+    .filter((item): item is MenuItem => item !== null);
+
+const displayItems = computed(() => {
+  const list = props.items;
+  if (!list || !props.searchable) return list;
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return list;
+  return filterMenuItems(list, query);
+});
+
 const handleSearch = () => {
   emit('search', searchQuery.value);
 };

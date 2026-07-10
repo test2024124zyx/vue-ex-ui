@@ -1,0 +1,149 @@
+@use '../../styles/tokens' as *;
+
+// ============================================================================
+// Descriptions 描述列表
+// ============================================================================
+
+.ex-descriptions {
+  width: 100%;
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-sm);
+
+  // 头部
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ex-spacing-3);
+    margin-bottom: var(--ex-spacing-4);
+  }
+
+  &__title {
+    font-size: var(--ex-text-lg);
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+  }
+
+  &__extra {
+    flex-shrink: 0;
+  }
+
+  &__body {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  &__cell {
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    text-align: left;
+    vertical-align: top;
+    line-height: var(--ex-leading-normal);
+    word-break: break-word;
+
+    &--center {
+      text-align: center;
+    }
+    &--right {
+      text-align: right;
+    }
+    &--left {
+      text-align: left;
+    }
+  }
+
+  &__label {
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-text-secondary);
+    white-space: nowrap;
+  }
+
+  &__label-inner {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &__colon {
+    margin-left: 2px;
+    color: var(--ex-color-text-tertiary);
+  }
+
+  &__content {
+    color: var(--ex-color-text-primary);
+  }
+
+  // 无边框：标签与内容仅靠间距区分
+  &:not(.ex-descriptions--border) {
+    .ex-descriptions__row + .ex-descriptions__row .ex-descriptions__cell {
+      padding-top: var(--ex-spacing-3);
+    }
+  }
+
+  // ============================================================================
+  // 带边框
+  // ============================================================================
+  &--border {
+    .ex-descriptions__table {
+      border: 1px solid var(--ex-color-border-primary);
+      // 赛博朋克切角
+      clip-path: polygon(
+        0 0,
+        calc(100% - 10px) 0,
+        100% 10px,
+        100% 100%,
+        10px 100%,
+        0 calc(100% - 10px)
+      );
+    }
+
+    .ex-descriptions__cell {
+      border: 1px solid var(--ex-color-border-primary);
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    }
+
+    .ex-descriptions__label {
+      background: var(--ex-color-bg-secondary);
+    }
+
+    .ex-descriptions__content {
+      background: var(--ex-color-bg-elevated);
+    }
+  }
+
+  // ============================================================================
+  // 尺寸
+  // ============================================================================
+  &--small {
+    font-size: var(--ex-text-xs);
+
+    .ex-descriptions__cell {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    }
+    &.ex-descriptions--border .ex-descriptions__cell {
+      padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    }
+  }
+
+  &--large {
+    font-size: var(--ex-text-base);
+
+    .ex-descriptions__cell {
+      padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    }
+    &.ex-descriptions--border .ex-descriptions__cell {
+      padding: var(--ex-spacing-4) var(--ex-spacing-5);
+    }
+  }
+
+  // 垂直方向：标签行底色稍弱
+  &--vertical {
+    .ex-descriptions__label {
+      white-space: normal;
+    }
+  }
+}

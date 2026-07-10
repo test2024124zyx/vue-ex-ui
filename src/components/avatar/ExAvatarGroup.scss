@@ -11,7 +11,7 @@
     margin-left: calc(-1 * var(--ex-avatar-overlap, 8px));
     border: var(--ex-avatar-border-width) solid var(--ex-color-bg-primary);
     z-index: var(--ex-avatar-z-index, 10);
-    transition: all var(--ex-transition-base) var(--ex-easing-standard);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
     &:first-child {
       margin-left: 0;
@@ -34,9 +34,9 @@
     background: var(--ex-color-bg-secondary);
     color: var(--ex-color-text-secondary);
     font-size: 0.8em;
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     cursor: pointer;
-    transition: all var(--ex-transition-base) var(--ex-easing-standard);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-tertiary);

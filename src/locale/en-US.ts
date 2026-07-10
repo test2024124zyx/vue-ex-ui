@@ -291,6 +291,22 @@ export default {
     endTime: 'End time',
   },
 
+  // Color Picker
+  colorPicker: {
+    confirm: 'Confirm',
+    clear: 'Clear',
+    hex: 'HEX',
+  },
+
+  // Tree Select
+  treeSelect: {
+    placeholder: 'Please select',
+    noData: 'No data',
+    loading: 'Loading...',
+    clear: 'Clear',
+    searchPlaceholder: 'Search...',
+  },
+
   // Date Picker
   datePicker: {
     startDate: 'Start date',
@@ -466,6 +482,8 @@ export default {
     copied: 'Copied',
     edit: 'Edit',
     readonly: 'Read Only',
+    codeBlock: 'code block',
+    editor: 'Code editor',
   },
 
   // Carousel

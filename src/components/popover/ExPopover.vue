@@ -2,10 +2,13 @@
   <div
     ref="popoverRef"
     class="ex-popover"
+    :aria-haspopup="true"
+    :aria-expanded="visible"
+    :aria-controls="visible ? popperId : undefined"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
-    @focus="handleFocus"
-    @blur="handleBlur"
+    @focusin="handleFocus"
+    @focusout="handleBlur"
     @click="handleClick"
   >
     <!-- 触发元素 -->
@@ -16,6 +19,7 @@
       <Transition :name="transition">
         <div
           v-if="visible"
+          :id="popperId"
           ref="popperRef"
           :class="popoverClasses"
           :style="popoverStyles"
@@ -29,10 +33,7 @@
           <div class="ex-popover__border" />
 
           <!-- 标题 -->
-          <div
-            v-if="title || $slots.title"
-            class="ex-popover__title"
-          >
+          <div v-if="title || $slots.title" class="ex-popover__title">
             <slot name="title">
               {{ title }}
             </slot>
@@ -46,10 +47,7 @@
           </div>
 
           <!-- 箭头 -->
-          <div
-            v-if="showArrow"
-            class="ex-popover__arrow"
-          />
+          <div v-if="showArrow" class="ex-popover__arrow" />
         </div>
       </Transition>
     </Teleport>
@@ -59,6 +57,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
+import { calcPopperPosition } from '../../utils/popper';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExPopover',
@@ -83,13 +83,13 @@ const popperRef = ref<HTMLDivElement>();
 const visible = ref(false);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
+const popperId = `ex-popover-${generateId()}`;
+// flip 后最终生效的位置（用于同步箭头方向的类名）
+const resolvedPlacement = ref(props.placement);
 
 // 计算属性
 const popoverClasses = computed(() => {
-  const classes = [
-    'ex-popover__popper',
-    `ex-popover__popper--${props.placement}`,
-  ];
+  const classes = ['ex-popover__popper', `ex-popover__popper--${resolvedPlacement.value}`];
 
   if (props.customClass) {
     classes.push(props.customClass);
@@ -99,7 +99,7 @@ const popoverClasses = computed(() => {
 });
 
 const popoverStyles = computed(() => {
-  const styles: Record<string, string> = {
+  const styles: Record<string, string | number> = {
     zIndex: 'calc(var(--ex-z-popover) - 1000 + var(--ex-z-index-base, 1000))',
   };
 
@@ -109,6 +109,15 @@ const popoverStyles = computed(() => {
 
   if (props.width) {
     styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
+  }
+
+  // 合并自定义浮层样式
+  if (props.customStyle) {
+    if (typeof props.customStyle === 'string') {
+      // 字符串样式无法与对象样式合并，交由 Vue 处理（对象优先）
+      return [styles, props.customStyle];
+    }
+    Object.assign(styles, props.customStyle);
   }
 
   return styles;
@@ -131,75 +140,15 @@ const updatePosition = () => {
 
   const triggerRect = popoverRef.value.getBoundingClientRect();
   const popperRect = popperRef.value.getBoundingClientRect();
-  const offset = props.offset;
 
-  let top = 0;
-  let left = 0;
+  const { top, left, placement } = calcPopperPosition(
+    triggerRect,
+    { width: popperRect.width, height: popperRect.height },
+    props.placement,
+    props.offset
+  );
 
-  switch (props.placement) {
-  case 'top':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-    break;
-  case 'top-start':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.left;
-    break;
-  case 'top-end':
-    top = triggerRect.top - popperRect.height - offset;
-    left = triggerRect.right - popperRect.width;
-    break;
-  case 'bottom':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-    break;
-  case 'bottom-start':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.left;
-    break;
-  case 'bottom-end':
-    top = triggerRect.bottom + offset;
-    left = triggerRect.right - popperRect.width;
-    break;
-  case 'left':
-    top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'left-start':
-    top = triggerRect.top;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'left-end':
-    top = triggerRect.bottom - popperRect.height;
-    left = triggerRect.left - popperRect.width - offset;
-    break;
-  case 'right':
-    top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-    left = triggerRect.right + offset;
-    break;
-  case 'right-start':
-    top = triggerRect.top;
-    left = triggerRect.right + offset;
-    break;
-  case 'right-end':
-    top = triggerRect.bottom - popperRect.height;
-    left = triggerRect.right + offset;
-    break;
-  }
-
-  // 边界检测
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  if (left < 0) left = 8;
-  if (left + popperRect.width > viewportWidth) {
-    left = viewportWidth - popperRect.width - 8;
-  }
-  if (top < 0) top = 8;
-  if (top + popperRect.height > viewportHeight) {
-    top = viewportHeight - popperRect.height - 8;
-  }
-
+  resolvedPlacement.value = placement as typeof resolvedPlacement.value;
   popperRef.value.style.top = `${top}px`;
   popperRef.value.style.left = `${left}px`;
 };
@@ -292,12 +241,9 @@ const handleClick = () => {
 
 const handleClickOutside = (event: MouseEvent) => {
   if (!popoverRef.value || !popperRef.value) return;
-  
+
   const target = event.target as Node;
-  if (
-    !popoverRef.value.contains(target) &&
-    !popperRef.value.contains(target)
-  ) {
+  if (!popoverRef.value.contains(target) && !popperRef.value.contains(target)) {
     hide();
   }
 };
@@ -318,7 +264,7 @@ const handleScroll = () => {
 onMounted(() => {
   window.addEventListener('resize', handleResize);
   window.addEventListener('scroll', handleScroll, true);
-  
+
   if (props.trigger === 'click') {
     document.addEventListener('click', handleClickOutside);
   }
@@ -332,15 +278,18 @@ onUnmounted(() => {
 });
 
 // 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== undefined) {
-    if (newVal) {
-      show();
-    } else {
-      hide();
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (newVal !== undefined) {
+      if (newVal) {
+        show();
+      } else {
+        hide();
+      }
     }
   }
-});
+);
 
 defineExpose<ExPopoverExposed>({
   show,

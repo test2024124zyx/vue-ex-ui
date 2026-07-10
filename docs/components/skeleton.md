@@ -521,6 +521,27 @@ const loading = ref(true);
 
 骨架屏跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
+## 常见问题
+
+**Q：`loading` 和 `active` 有什么区别？**
+`loading` 控制显示骨架屏还是真实内容（`true` 显示骨架、`false` 显示 `#content` 插槽或默认插槽）；`active` 控制骨架块是否播放动画。
+
+**Q：骨架结构怎么和真实内容对齐？**
+用 `variant="custom"` + 默认插槽自由拼装骨架块，使其布局贴近真实内容，切换时不跳动。
+
+**Q：列表场景如何渲染多块骨架？**
+用 `count` 指定重复块数量，或在 `v-for` 中渲染多个骨架屏。
+
+**Q：会影响无障碍吗？**
+不会。骨架屏带 `role="status"`、`aria-busy="true"` 与 `aria-live="polite"`，并支持 `prefers-reduced-motion` 自动减弱动画。
+
+## 最佳实践
+
+- **骨架结构贴近真实布局**（行数、头像、标题宽度），让加载到内容的过渡更平滑、减少跳动。
+- **用 `loading` 直接包裹内容**：`<ExSkeleton :loading="loading"><RealContent/></ExSkeleton>`，数据就绪后自动切换。
+- **首屏 / 慢接口**才用骨架屏；极快的请求直接显示内容，避免骨架一闪而过。
+- 列表用 `count` 控制占位条数，与预计返回条数大致一致。
+
 <style scoped>
 .demo-container {
   padding: 24px;

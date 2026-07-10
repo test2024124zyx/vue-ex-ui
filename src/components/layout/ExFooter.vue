@@ -38,7 +38,8 @@ defineOptions({
 const props = withDefaults(defineProps<ExFooterProps>(), {
   height: 64,
   fixed: false,
-  neonBorder: false,
+  // 默认 undefined，使未显式设置时回退到 ConfigProvider 的全局 neon-effect
+  neonBorder: undefined,
   blur: false,
 });
 

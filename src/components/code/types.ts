@@ -58,6 +58,8 @@ export interface ExCodeProps {
   editable?: boolean;
   /** 是否只读（editable 时仍禁止修改） */
   readonly?: boolean;
+  /** 编辑模式下 Tab 键插入的空格数 */
+  tabSize?: number;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */

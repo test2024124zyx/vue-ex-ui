@@ -1,13 +1,7 @@
 <template>
-  <div
-    ref="anchorRef"
-    class="ex-anchor"
-  >
+  <div ref="anchorRef" class="ex-anchor">
     <div class="ex-anchor__ink">
-      <span
-        class="ex-anchor__ink-ball"
-        :style="{ top: `${inkTop}px` }"
-      />
+      <span class="ex-anchor__ink-ball" :style="{ top: `${inkTop}px` }" />
     </div>
     <div class="ex-anchor__list">
       <slot />
@@ -28,7 +22,6 @@ const props = withDefaults(defineProps<ExAnchorProps>(), {
   bounds: 5,
   targetOffset: undefined,
   container: () => window,
-  affix: true,
 });
 
 const emit = defineEmits<ExAnchorEmits>();
@@ -47,7 +40,7 @@ provide('anchor', {
     links.value.push({ href, title, element });
   },
   unregisterLink: (href: string) => {
-    const index = links.value.findIndex((link) => link.href === href);
+    const index = links.value.findIndex(link => link.href === href);
     if (index > -1) {
       links.value.splice(index, 1);
     }
@@ -121,7 +114,7 @@ const getCurrentAnchor = (): string => {
     const link = links.value[i];
     // 检查 link 是否存在
     if (!link) continue;
-    
+
     const target = document.querySelector(link.href) as HTMLElement;
     if (!target) continue;
 
@@ -147,7 +140,7 @@ const handleScroll = () => {
 
 const updateInkPosition = async () => {
   await nextTick();
-  
+
   if (!anchorRef.value || !activeLink.value) {
     inkTop.value = 0;
     return;

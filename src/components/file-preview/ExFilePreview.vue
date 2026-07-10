@@ -1,12 +1,21 @@
 <template>
   <Teleport to="body">
     <Transition name="ex-preview-fade">
-      <div v-if="visible" ref="previewRef" class="ex-file-preview" @click="handleMaskClick">
+      <div
+        v-if="visible"
+        ref="previewRef"
+        class="ex-file-preview"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="currentFile.name || t('filePreview.preview')"
+        tabindex="-1"
+        @click="handleMaskClick"
+      >
         <!-- 遮罩层 -->
         <div class="ex-file-preview__mask" :style="{ background: maskBackground }" />
 
         <!-- 工具栏 -->
-        <div v-if="showToolbar" class="ex-file-preview__toolbar">
+        <div v-if="showToolbar" class="ex-file-preview__toolbar" @click.stop>
           <div class="ex-file-preview__toolbar-left">
             <span class="ex-file-preview__filename">
               {{ currentFile.name || t('filePreview.preview') }}
@@ -35,6 +44,8 @@
                 <ExIcon icon="clockwise-line" :size="20" aria-hidden="true" />
               </button>
             </template>
+            <!-- 追加自定义工具栏操作（内置缩放/旋转/下载/关闭仍保留） -->
+            <slot name="toolbar" :file="currentFile" :index="currentIndex" />
             <button
               v-if="showDownload"
               class="ex-file-preview__toolbar-btn"
@@ -134,6 +145,11 @@
             </ExButton>
           </div>
         </div>
+
+        <!-- 自定义底部内容 -->
+        <div v-if="$slots.footer" class="ex-file-preview__footer" @click.stop>
+          <slot name="footer" :file="currentFile" :index="currentIndex" />
+        </div>
       </div>
     </Transition>
   </Teleport>
@@ -151,6 +167,7 @@ import type {
 } from './types';
 import ExButton from '../button/ExButton.vue';
 import { useI18n } from '../../locale';
+import { useOverlay } from '../../composables/useOverlay';
 
 defineOptions({
   name: 'ExFilePreview',
@@ -238,23 +255,16 @@ const imageStyle = computed(() => ({
   transition: 'transform 0.3s ease',
 }));
 
-// 监听可见性
-watch(
-  () => props.visible,
-  newVal => {
-    if (newVal) {
-      document.body.style.overflow = 'hidden';
-      if (currentType.value === 'text' || currentType.value === 'code') {
-        loadTextContent();
-      }
-    } else {
-      document.body.style.overflow = '';
-    }
-  }
-);
+// 将索引夹在有效范围内
+const clampIndex = (index: number): number => {
+  if (fileList.value.length === 0) return 0;
+  return Math.min(Math.max(index, 0), fileList.value.length - 1);
+};
 
 // 加载文本内容
 const loadTextContent = async () => {
+  textContent.value = '';
+  if (typeof window === 'undefined') return;
   try {
     const response = await fetch(currentFile.value.url);
     textContent.value = await response.text();
@@ -262,6 +272,53 @@ const loadTextContent = async () => {
     handleError(error as Error);
   }
 };
+
+// 重置缩放与旋转（翻页 / 重新打开时调用）
+const resetTransform = () => {
+  resetZoom();
+  resetRotate();
+};
+
+// 滚动锁定 + 焦点陷阱 + Esc 关闭 + 关闭后归还焦点（多实例安全，引用计数）
+useOverlay({
+  active: () => props.visible,
+  container: previewRef,
+  closeOnEscape: () => props.maskClosable,
+  onEscape: () => handleClose(),
+  restoreFocus: true,
+});
+
+// 打开时按 initialIndex 定位并重置缩放/旋转
+watch(
+  () => props.visible,
+  newVal => {
+    if (newVal) {
+      currentIndex.value = clampIndex(props.initialIndex);
+      resetTransform();
+    }
+  }
+);
+
+// 同步受控的缩放/旋转
+watch(
+  () => props.scale,
+  v => (currentScale.value = v)
+);
+watch(
+  () => props.rotate,
+  v => (currentRotate.value = v)
+);
+
+// 文本/代码内容：打开或切换文件时按当前 url + 类型重新加载，避免翻页后内容滞留
+watch(
+  () => (props.visible ? `${currentType.value}::${currentFile.value.url}` : ''),
+  () => {
+    if (props.visible && (currentType.value === 'text' || currentType.value === 'code')) {
+      loadTextContent();
+    }
+  },
+  { immediate: true }
+);
 
 // 缩放
 const zoomIn = () => {
@@ -298,16 +355,14 @@ const rotateLeft = () => {
 const handlePrev = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--;
-    resetZoom();
-    resetRotate();
+    resetTransform();
   }
 };
 
 const handleNext = () => {
   if (currentIndex.value < fileList.value.length - 1) {
     currentIndex.value++;
-    resetZoom();
-    resetRotate();
+    resetTransform();
   }
 };
 
@@ -359,13 +414,16 @@ const handleError = (error: Event | Error) => {
   emit('error', err);
 };
 
-// 键盘事件
+// 键盘事件（Esc 由 useOverlay 统一处理：仅关闭最顶层浮层）
 const handleKeydown = (e: KeyboardEvent) => {
   if (!props.visible) return;
 
   switch (e.key) {
-    case 'Escape':
-      if (props.maskClosable) handleClose();
+    case 'ArrowLeft':
+      handlePrev();
+      break;
+    case 'ArrowRight':
+      handleNext();
       break;
     case '+':
     case '=':
@@ -386,12 +444,13 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown);
-  document.body.style.overflow = '';
 });
 
 const getElement = () => previewRef.value || null;
 
 defineExpose<ExFilePreviewExposed>({
+  prev: handlePrev,
+  next: handleNext,
   zoomIn,
   zoomOut,
   resetZoom,

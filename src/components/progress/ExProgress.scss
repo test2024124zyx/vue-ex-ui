@@ -5,7 +5,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--ex-spacing-sm);
+  gap: var(--ex-spacing-2);
 
   // 线性进度条
   &--line {
@@ -23,7 +23,7 @@
       height: 8px;
       background: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
       border-radius: var(--ex-radius-full);
-      transition: width var(--ex-transition-base) var(--ex-easing-standard);
+      transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
       overflow: hidden;
       box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
     }
@@ -72,7 +72,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: var(--ex-text-xs);
-      font-weight: var(--ex-font-weight-semibold);
+      font-weight: var(--ex-font-semibold);
       color: var(--ex-color-white);
       white-space: nowrap;
       text-shadow: 0 1px 2px var(--ex-color-black-alpha-50);
@@ -83,7 +83,7 @@
       flex-shrink: 0;
       min-width: 50px;
       font-size: var(--ex-text-sm);
-      font-weight: var(--ex-font-weight-semibold);
+      font-weight: var(--ex-font-semibold);
       color: var(--ex-color-text-primary);
       text-align: right;
     }
@@ -195,7 +195,7 @@
 
   .ex-progress__circle-percentage {
     font-size: var(--ex-text-2xl);
-    font-weight: var(--ex-font-weight-bold);
+    font-weight: var(--ex-font-bold);
     color: var(--ex-color-text-primary);
     line-height: 1;
   }
@@ -251,7 +251,7 @@
     justify-content: center;
     height: 100%;
     font-size: var(--ex-text-lg);
-    font-weight: var(--ex-font-weight-bold);
+    font-weight: var(--ex-font-bold);
     color: var(--ex-color-text-primary);
     z-index: 1;
     text-shadow: 0 2px 4px var(--ex-color-black-alpha-50);
@@ -290,7 +290,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: var(--ex-text-2xl);
-    font-weight: var(--ex-font-weight-bold);
+    font-weight: var(--ex-font-bold);
     color: var(--ex-color-text-primary);
     z-index: 1;
     text-shadow: 0 2px 4px var(--ex-color-black-alpha-50);

@@ -3,9 +3,11 @@
 
 .ex-grid-item {
   position: relative;
+  // 列宽为百分比，padding（间距）须计入宽度，否则会撑破整行
+  box-sizing: border-box;
   max-width: 100%;
   min-height: 1px;
-  
+
   // 使用 CSS 变量动态设置宽度和偏移
   // 这样可以大幅减少生成的 CSS 体积
   flex: 0 0 var(--ex-grid-item-width, 100%);

@@ -29,6 +29,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-primary
 --ex-color-primary-hover
@@ -44,6 +45,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-bg-primary      /* 主背景 */
 --ex-color-bg-secondary    /* 次级背景 */
@@ -60,6 +62,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-text-primary    /* 主文本 */
 --ex-color-text-secondary  /* 次要文本 */
@@ -74,6 +77,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-border-primary
 --ex-color-border-secondary
@@ -88,6 +92,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-success
 --ex-color-success-hover
@@ -106,6 +111,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-primary-alpha-05   /* 5% 不透明度 */
 --ex-color-primary-alpha-10   /* 10% 不透明度 */
@@ -127,6 +133,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-bg-primary-rgb: 11, 15, 20;
 --ex-color-neon-blue-500-rgb: 41, 171, 226;
@@ -146,6 +153,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-color-success-mid
 --ex-color-success-dark
@@ -154,17 +162,26 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 
 ## 间距变量
 
+间距采用 **数字刻度**（基于 4px 栅格），而非 t-shirt 尺寸：
+
 ```css
---ex-spacing-{size}
+--ex-spacing-{step}
 ```
 
 **示例**:
+
 ```css
---ex-spacing-xs    /* 4px */
---ex-spacing-sm    /* 8px */
---ex-spacing-md    /* 16px */
---ex-spacing-lg    /* 24px */
---ex-spacing-xl    /* 32px */
+--ex-spacing-1     /* 4px */
+--ex-spacing-2     /* 8px */
+--ex-spacing-3     /* 12px */
+--ex-spacing-4     /* 16px */
+--ex-spacing-5     /* 20px */
+--ex-spacing-6     /* 24px */
+--ex-spacing-8     /* 32px */
+--ex-spacing-10    /* 40px */
+--ex-spacing-12    /* 48px */
+--ex-spacing-16    /* 64px */
+/* 继续到 --ex-spacing-64（256px） */
 ```
 
 ## 字体变量
@@ -176,39 +193,48 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-text-xs      /* 12px */
 --ex-text-sm      /* 14px */
 --ex-text-base    /* 16px */
 --ex-text-lg      /* 18px */
 --ex-text-xl      /* 20px */
+--ex-text-2xl     /* 24px */
+/* 继续到 --ex-text-6xl（60px） */
 ```
 
 ### 字体粗细
 
 ```css
---ex-font-weight-{level}
+--ex-font-{level}
 ```
 
 **示例**:
+
 ```css
---ex-font-weight-normal    /* 400 */
---ex-font-weight-medium    /* 500 */
---ex-font-weight-semibold  /* 600 */
---ex-font-weight-bold      /* 700 */
+--ex-font-light       /* 300 */
+--ex-font-normal      /* 400 */
+--ex-font-medium      /* 500 */
+--ex-font-semibold    /* 600 */
+--ex-font-bold        /* 700 */
+--ex-font-extrabold   /* 800 */
 ```
 
 ### 行高
 
 ```css
---ex-line-height-{level}
+--ex-leading-{level}
 ```
 
 **示例**:
+
 ```css
---ex-line-height-tight    /* 1.25 */
---ex-line-height-normal   /* 1.5 */
---ex-line-height-relaxed  /* 1.75 */
+--ex-leading-tight    /* 1.25 */
+--ex-leading-snug     /* 1.375 */
+--ex-leading-normal   /* 1.5 */
+--ex-leading-relaxed  /* 1.625 */
+--ex-leading-loose    /* 2 */
 ```
 
 ## 阴影变量
@@ -220,6 +246,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-shadow-sm
 --ex-shadow-md
@@ -234,6 +261,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-shadow-neon-sm
 --ex-shadow-neon-md
@@ -247,6 +275,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-gradient-primary
 --ex-gradient-secondary
@@ -260,45 +289,57 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
---ex-radius-sm    /* 4px */
---ex-radius-base  /* 8px */
---ex-radius-lg    /* 12px */
---ex-radius-xl    /* 16px */
+--ex-radius-none  /* 0 */
+--ex-radius-sm    /* 2px */
+--ex-radius-base  /* 4px */
+--ex-radius-md    /* 6px */
+--ex-radius-lg    /* 8px */
+--ex-radius-xl    /* 12px */
+--ex-radius-2xl   /* 16px */
 --ex-radius-full  /* 9999px */
 ```
 
 ## 过渡动画变量
 
+动画时长与缓动均归在 `--ex-motion-*` 命名空间下：
+
 ```css
---ex-transition-{speed}
---ex-easing-{type}
+--ex-motion-duration-{speed}
+--ex-motion-ease-{type}
 ```
 
 **示例**:
-```css
---ex-transition-fast    /* 150ms */
---ex-transition-base    /* 300ms */
---ex-transition-slow    /* 500ms */
 
---ex-easing-standard    /* cubic-bezier(0.4, 0, 0.2, 1) */
---ex-easing-in          /* cubic-bezier(0.4, 0, 1, 1) */
---ex-easing-out         /* cubic-bezier(0, 0, 0.2, 1) */
+```css
+--ex-motion-duration-fast    /* 120ms */
+--ex-motion-duration-base    /* 200ms */
+--ex-motion-duration-medium  /* 320ms */
+--ex-motion-duration-slow    /* 480ms */
+
+--ex-motion-ease-in-out      /* cubic-bezier(0.4, 0, 0.2, 1) */
+--ex-motion-ease-in          /* cubic-bezier(0.4, 0, 1, 1) */
+--ex-motion-ease-out         /* cubic-bezier(0, 0, 0.2, 1) */
 ```
 
 ## Z-index 变量
 
 ```css
---ex-z-index-{level}
+--ex-z-{level}
 ```
 
 **示例**:
+
 ```css
---ex-z-index-base       /* 1000 */
---ex-z-index-dropdown   /* 1050 */
---ex-z-index-modal      /* 1100 */
---ex-z-index-popover    /* 1150 */
---ex-z-index-tooltip    /* 1200 */
+--ex-z-dropdown   /* 1000 */
+--ex-z-sticky     /* 1020 */
+--ex-z-overlay    /* 1040 */
+--ex-z-modal      /* 1050 */
+--ex-z-popover    /* 1060 */
+--ex-z-toast      /* 1080 */
+--ex-z-tooltip    /* 1090 */
+--ex-z-loading    /* 1100 */
 ```
 
 ## 特殊颜色
@@ -310,6 +351,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-color-neon-blue-400
 --ex-color-neon-blue-500
@@ -336,8 +378,8 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
   color: var(--ex-color-text-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-base);
-  padding: var(--ex-spacing-md);
-  transition: all var(--ex-transition-base) var(--ex-easing-standard);
+  padding: var(--ex-spacing-4);
+  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 }
 ```
 
@@ -359,8 +401,8 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 
 ```scss
 .dynamic-opacity {
-  /* 可以动态调整透明度 */
-  background: rgba(var(--ex-color-primary-rgb), 0.15);
+  /* 可以动态调整透明度（注意：仅部分颜色提供 -rgb 变量，如 bg-primary、success、warning 等） */
+  background: rgba(var(--ex-color-bg-primary-rgb), 0.15);
 }
 ```
 

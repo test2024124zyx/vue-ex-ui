@@ -18,7 +18,7 @@
   color: var(--ex-color-text-primary, #e6f0ff);
   
   // 过渡动画
-  transition: all var(--ex-motion-duration-fast, 120ms) var(--ex-ease-standard, ease);
+  transition: all var(--ex-motion-duration-fast, 120ms) var(--ex-motion-ease-in-out, ease);
   
   // SVG 样式
   svg {
@@ -76,7 +76,7 @@
     &:focus-visible {
       outline: 2px solid var(--ex-color-primary, #29ABE2);
       outline-offset: 2px;
-      border-radius: var(--ex-radius-xs, 2px);
+      border-radius: var(--ex-radius-sm, 2px);
     }
   }
   

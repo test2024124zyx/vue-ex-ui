@@ -74,6 +74,7 @@ const percent = ref(0);
 const loaded = ref(0);
 const total = ref(0);
 const xhr = ref<XMLHttpRequest>();
+const fetchController = ref<AbortController>();
 
 // 自动下载
 onMounted(() => {
@@ -82,11 +83,10 @@ onMounted(() => {
   }
 });
 
-// 清理
+// 清理：卸载时中止进行中的 XHR / fetch，避免回调落在已销毁实例上
 onBeforeUnmount(() => {
-  if (xhr.value) {
-    xhr.value.abort();
-  }
+  xhr.value?.abort();
+  fetchController.value?.abort();
 });
 
 // 获取按钮文本
@@ -148,6 +148,8 @@ const downloadByLink = () => {
 
 // 通过Fetch下载
 const downloadByFetch = async () => {
+  const controller = new AbortController();
+  fetchController.value = controller;
   try {
     status.value = 'downloading';
     percent.value = 0;
@@ -156,6 +158,7 @@ const downloadByFetch = async () => {
     const response = await fetch(props.url, {
       headers: props.headers,
       credentials: props.withCredentials ? 'include' : 'same-origin',
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -194,8 +197,12 @@ const downloadByFetch = async () => {
     status.value = 'success';
     emit('success', blob);
   } catch (error) {
+    // 主动中止（暂停 / 取消）不视为下载错误
+    if ((error as Error)?.name === 'AbortError') return;
     status.value = 'error';
     emit('error', error as Error);
+  } finally {
+    if (fetchController.value === controller) fetchController.value = undefined;
   }
 };
 
@@ -261,16 +268,22 @@ const downloadBlob = (blob: Blob) => {
   URL.revokeObjectURL(url);
 };
 
-// 暂停下载
+// 暂停下载（xhr / fetch 均支持中止；注意 resume 为重新下载，非断点续传）
 const pause = () => {
-  if (xhr.value && status.value === 'downloading') {
+  if (status.value !== 'downloading') return;
+  if (xhr.value) {
     xhr.value.abort();
-    status.value = 'paused';
-    emit('pause');
+  } else if (fetchController.value) {
+    fetchController.value.abort();
+  } else {
+    // link 方式无中止能力
+    return;
   }
+  status.value = 'paused';
+  emit('pause');
 };
 
-// 恢复下载
+// 恢复下载（从头重新下载，非断点续传）
 const resume = () => {
   if (status.value === 'paused') {
     handleDownload();
@@ -280,14 +293,13 @@ const resume = () => {
 
 // 取消下载
 const cancel = () => {
-  if (xhr.value) {
-    xhr.value.abort();
-    status.value = 'idle';
-    percent.value = 0;
-    loaded.value = 0;
-    total.value = 0;
-    emit('cancel');
-  }
+  xhr.value?.abort();
+  fetchController.value?.abort();
+  status.value = 'idle';
+  percent.value = 0;
+  loaded.value = 0;
+  total.value = 0;
+  emit('cancel');
 };
 
 const getElement = () => downloadRef.value || null;

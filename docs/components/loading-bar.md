@@ -94,19 +94,19 @@ const gradientColor = () => {
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { loadingBar } from 'vue-ex-ui';
 
 const startLoading = () => {
-  loadingBar.start()
-}
+  loadingBar.start();
+};
 
 const finishLoading = () => {
-  loadingBar.finish()
-}
+  loadingBar.finish();
+};
 
 const errorLoading = () => {
-  loadingBar.error()
-}
+  loadingBar.error();
+};
 </script>
 
 <template>
@@ -130,11 +130,11 @@ const errorLoading = () => {
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { loadingBar } from 'vue-ex-ui';
 
-const updateLoading = (value) => {
-  loadingBar.update(value)
-}
+const updateLoading = value => {
+  loadingBar.update(value);
+};
 </script>
 
 <template>
@@ -155,39 +155,39 @@ const updateLoading = (value) => {
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { loadingBar } from 'vue-ex-ui';
 
 const simulateLoading = () => {
-  loadingBar.start()
-  
+  loadingBar.start();
+
   setTimeout(() => {
-    loadingBar.update(30)
-  }, 500)
-  
+    loadingBar.update(30);
+  }, 500);
+
   setTimeout(() => {
-    loadingBar.update(60)
-  }, 1000)
-  
+    loadingBar.update(60);
+  }, 1000);
+
   setTimeout(() => {
-    loadingBar.update(90)
-  }, 1500)
-  
+    loadingBar.update(90);
+  }, 1500);
+
   setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
+    loadingBar.finish();
+  }, 2000);
+};
 
 const simulateError = () => {
-  loadingBar.start()
-  
+  loadingBar.start();
+
   setTimeout(() => {
-    loadingBar.update(50)
-  }, 500)
-  
+    loadingBar.update(50);
+  }, 500);
+
   setTimeout(() => {
-    loadingBar.error()
-  }, 1000)
-}
+    loadingBar.error();
+  }, 1000);
+};
 </script>
 
 <template>
@@ -207,35 +207,35 @@ const simulateError = () => {
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { loadingBar } from 'vue-ex-ui';
 
 const customColor = () => {
   loadingBar.config({
     color: '#ff007f',
-    height: 4
-  })
-  loadingBar.start()
-  
+    height: 4,
+  });
+  loadingBar.start();
+
   setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
+    loadingBar.finish();
+  }, 2000);
+};
 
 const gradientColor = () => {
   loadingBar.config({
-    color: (percentage) => {
-      if (percentage < 30) return '#ef4444'
-      if (percentage < 70) return '#f59e0b'
-      return '#10b981'
+    color: percentage => {
+      if (percentage < 30) return '#ef4444';
+      if (percentage < 70) return '#f59e0b';
+      return '#10b981';
     },
-    height: 5
-  })
-  loadingBar.start()
-  
+    height: 5,
+  });
+  loadingBar.start();
+
   setTimeout(() => {
-    loadingBar.finish()
-  }, 3000)
-}
+    loadingBar.finish();
+  }, 3000);
+};
 </script>
 
 <template>
@@ -249,27 +249,27 @@ const gradientColor = () => {
 可以与 Vue Router 集成，在路由切换时显示加载条。
 
 ```typescript
-import { createRouter } from 'vue-router'
-import { loadingBar } from 'vue-ex-ui'
+import { createRouter } from 'vue-router';
+import { loadingBar } from 'vue-ex-ui';
 
 const router = createRouter({
   // ...
-})
+});
 
 router.beforeEach((to, from, next) => {
-  loadingBar.start()
-  next()
-})
+  loadingBar.start();
+  next();
+});
 
 router.afterEach(() => {
-  loadingBar.finish()
-})
+  loadingBar.finish();
+});
 
 router.onError(() => {
-  loadingBar.error()
-})
+  loadingBar.error();
+});
 
-export default router
+export default router;
 ```
 
 ## API 请求集成
@@ -277,92 +277,92 @@ export default router
 可以与 Axios 等 HTTP 库集成，在请求时显示加载条。
 
 ```typescript
-import axios from 'axios'
-import { loadingBar } from 'vue-ex-ui'
+import axios from 'axios';
+import { loadingBar } from 'vue-ex-ui';
 
 // 请求拦截器
 axios.interceptors.request.use(
-  (config) => {
-    loadingBar.start()
-    return config
+  config => {
+    loadingBar.start();
+    return config;
   },
-  (error) => {
-    loadingBar.error()
-    return Promise.reject(error)
+  error => {
+    loadingBar.error();
+    return Promise.reject(error);
   }
-)
+);
 
 // 响应拦截器
 axios.interceptors.response.use(
-  (response) => {
-    loadingBar.finish()
-    return response
+  response => {
+    loadingBar.finish();
+    return response;
   },
-  (error) => {
-    loadingBar.error()
-    return Promise.reject(error)
+  error => {
+    loadingBar.error();
+    return Promise.reject(error);
   }
-)
+);
 ```
 
 ## API
 
 ### LoadingBar 方法
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `loadingBar.start` | 开始加载 | `() => void` |
-| `loadingBar.finish` | 完成加载 | `() => void` |
-| `loadingBar.error` | 加载失败 | `() => void` |
-| `loadingBar.update` | 更新进度 | `(percentage: number) => void` |
+| 方法名              | 说明       | 类型                                   |
+| ------------------- | ---------- | -------------------------------------- |
+| `loadingBar.start`  | 开始加载   | `() => void`                           |
+| `loadingBar.finish` | 完成加载   | `() => void`                           |
+| `loadingBar.error`  | 加载失败   | `() => void`                           |
+| `loadingBar.update` | 更新进度   | `(percentage: number) => void`         |
 | `loadingBar.config` | 配置加载条 | `(options: LoadingBarOptions) => void` |
 
 ### LoadingBarOptions
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `color` | 进度条颜色 | `string \| ((percentage: number) => string)` | — |
-| `height` | 进度条高度（像素） | `number` | `3` |
-| `duration` | 动画持续时间（毫秒） | `number` | `3000` |
-| `zIndex` | 层级 | `number` | `9999` |
+| 参数       | 说明                 | 类型                                         | 默认值 |
+| ---------- | -------------------- | -------------------------------------------- | ------ |
+| `color`    | 进度条颜色           | `string \| ((percentage: number) => string)` | —      |
+| `height`   | 进度条高度（像素）   | `number`                                     | `3`    |
+| `duration` | 动画持续时间（毫秒） | `number`                                     | `3000` |
+| `zIndex`   | 层级                 | `number`                                     | `9999` |
 
 ## 全局配置
 
 可以在 Vue 应用中全局使用：
 
 ```typescript
-import { createApp } from 'vue'
-import { loadingBar } from 'vue-ex-ui'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
+import App from './App.vue';
 
-const app = createApp(App)
+const app = createApp(App);
 
 // 挂载到全局属性
-app.config.globalProperties.$loadingBar = loadingBar
+app.config.globalProperties.$loadingBar = loadingBar;
 
 // 全局配置
 loadingBar.config({
   color: '#00f0ff',
   height: 3,
   duration: 3000,
-  zIndex: 9999
-})
+  zIndex: 9999,
+});
 
-app.mount('#app')
+app.mount('#app');
 ```
 
 然后在组件中使用：
 
 ```vue
 <script setup>
-import { getCurrentInstance } from 'vue'
+import { getCurrentInstance } from 'vue';
 
-const instance = getCurrentInstance()
-const loadingBar = instance?.appContext.config.globalProperties.$loadingBar
+const instance = getCurrentInstance();
+const loadingBar = instance?.appContext.config.globalProperties.$loadingBar;
 
 const startLoading = () => {
-  loadingBar.start()
-}
+  loadingBar.start();
+};
 </script>
 ```
 
@@ -378,15 +378,7 @@ const startLoading = () => {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义加载条样式：
-
-```css
-:root {
-  --ex-loading-bar-color: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
-  --ex-loading-bar-shadow: 0 0 10px rgba(41, 171, 226, 0.6);
-  --ex-loading-bar-height: 3px;
-}
-```
+加载条跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，颜色与高度可通过组件 `color` / `height` 属性调整。
 
 <style scoped>
 .demo-container {

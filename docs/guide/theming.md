@@ -71,16 +71,16 @@ const switchTheme = newTheme => {
 ```css
 :root {
   /* 主色调 */
-  --ex-primary: #ff6b35;
-  --ex-secondary: #f7931e;
+  --ex-color-primary: #ff6b35;
+  --ex-color-secondary: #f7931e;
 
   /* 背景色 */
-  --ex-bg-primary: #1a1a2e;
-  --ex-bg-secondary: #16213e;
+  --ex-color-bg-primary: #1a1a2e;
+  --ex-color-bg-secondary: #16213e;
 
   /* 文本色 */
-  --ex-text-primary: #ffffff;
-  --ex-text-secondary: #b8b8b8;
+  --ex-color-text-primary: #ffffff;
+  --ex-color-text-secondary: #b8b8b8;
 }
 ```
 
@@ -91,23 +91,22 @@ const switchTheme = newTheme => {
 ```scss
 // themes/custom.scss
 :root[data-theme='custom'] {
-  --ex-primary: #ff6b35;
-  --ex-primary-hover: #ff5722;
-  --ex-primary-active: #e64a19;
+  --ex-color-primary: #ff6b35;
+  --ex-color-primary-hover: #ff5722;
+  --ex-color-primary-active: #e64a19;
 
-  --ex-secondary: #f7931e;
-  --ex-accent: #4caf50;
+  --ex-color-secondary: #f7931e;
+  --ex-color-accent: #4caf50;
 
-  --ex-bg-primary: #1a1a2e;
-  --ex-bg-secondary: #16213e;
-  --ex-bg-elevated: #0f3460;
+  --ex-color-bg-primary: #1a1a2e;
+  --ex-color-bg-secondary: #16213e;
+  --ex-color-bg-elevated: #0f3460;
 
-  --ex-text-primary: #ffffff;
-  --ex-text-secondary: #b8b8b8;
-  --ex-text-disabled: #666666;
+  --ex-color-text-primary: #ffffff;
+  --ex-color-text-secondary: #b8b8b8;
+  --ex-color-text-disabled: #666666;
 
-  --ex-border: #333333;
-  --ex-shadow: rgba(255, 107, 53, 0.2);
+  --ex-color-border: #333333;
 }
 ```
 
@@ -126,62 +125,68 @@ setTheme('custom');
 
 ```scss
 // 主色调
---ex-primary: #29abe2;
---ex-primary-hover: #1e8bb8;
---ex-primary-active: #1a7ba3;
+--ex-color-primary: #29abe2;
+--ex-color-primary-hover: #1e8bb8;
+--ex-color-primary-active: #1a7ba3;
 
---ex-secondary: #a86bff;
---ex-accent: #ff3bd1;
+--ex-color-secondary: #a86bff;
+--ex-color-accent: #ff3bd1;
 
 // 背景色
---ex-bg-primary: #0b0f14;
---ex-bg-secondary: #0f1720;
---ex-bg-elevated: #1a2332;
+--ex-color-bg-primary: #0b0f14;
+--ex-color-bg-secondary: #0f1720;
+--ex-color-bg-elevated: #1a2332;
 
 // 文本色
---ex-text-primary: #e6f0ff;
---ex-text-secondary: #8fa3b8;
---ex-text-disabled: #4a5568;
+--ex-color-text-primary: #e6f0ff;
+--ex-color-text-secondary: #8fa3b8;
+--ex-color-text-disabled: #4a5568;
 
-// 边框和阴影
---ex-border: #2d3748;
---ex-shadow: rgba(41, 171, 226, 0.15);
+// 边框
+--ex-color-border: #2d3748;
 ```
 
 ### 间距变量
 
+间距使用基于 4px 栅格的数字刻度：
+
 ```scss
---ex-space-xs: 4px;
---ex-space-sm: 8px;
---ex-space-md: 16px;
---ex-space-lg: 24px;
---ex-space-xl: 32px;
---ex-space-xxl: 48px;
+--ex-spacing-1: 4px;
+--ex-spacing-2: 8px;
+--ex-spacing-3: 12px;
+--ex-spacing-4: 16px;
+--ex-spacing-5: 20px;
+--ex-spacing-6: 24px;
+--ex-spacing-8: 32px;
+--ex-spacing-12: 48px;
+/* 继续到 --ex-spacing-64（256px） */
 ```
 
 ### 字体变量
 
 ```scss
---ex-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
---ex-font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+--ex-font-primary: 'Audiowide', 'Orbitron', 'Rajdhani', sans-serif;
+--ex-font-secondary: 'Rajdhani', 'Inter', sans-serif;
+--ex-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
---ex-font-size-xs: 12px;
---ex-font-size-sm: 14px;
---ex-font-size-md: 16px;
---ex-font-size-lg: 18px;
---ex-font-size-xl: 20px;
+--ex-text-xs: 12px;
+--ex-text-sm: 14px;
+--ex-text-base: 16px;
+--ex-text-lg: 18px;
+--ex-text-xl: 20px;
 ```
 
 ### 动画变量
 
 ```scss
---ex-duration-fast: 150ms;
---ex-duration-normal: 300ms;
---ex-duration-slow: 500ms;
+--ex-motion-duration-fast: 120ms;
+--ex-motion-duration-base: 200ms;
+--ex-motion-duration-medium: 320ms;
+--ex-motion-duration-slow: 480ms;
 
---ex-ease-in: cubic-bezier(0.4, 0, 1, 1);
---ex-ease-out: cubic-bezier(0, 0, 0.2, 1);
---ex-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+--ex-motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+--ex-motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+--ex-motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 ```
 
 ## 响应式主题
@@ -192,16 +197,16 @@ ExUI 支持基于屏幕尺寸的响应式主题：
 // 移动端主题调整
 @media (max-width: 768px) {
   :root {
-    --ex-font-size-md: 14px;
-    --ex-space-md: 12px;
+    --ex-text-base: 14px;
+    --ex-spacing-4: 12px;
   }
 }
 
 // 大屏幕主题调整
 @media (min-width: 1200px) {
   :root {
-    --ex-font-size-md: 18px;
-    --ex-space-md: 20px;
+    --ex-text-base: 18px;
+    --ex-spacing-4: 20px;
   }
 }
 ```
@@ -213,8 +218,8 @@ ExUI 自动支持系统暗色模式：
 ```scss
 @media (prefers-color-scheme: dark) {
   :root {
-    --ex-bg-primary: #000000;
-    --ex-text-primary: #ffffff;
+    --ex-color-bg-primary: #000000;
+    --ex-color-text-primary: #ffffff;
   }
 }
 ```

@@ -1,13 +1,6 @@
 <template>
-  <div
-    ref="affixRef"
-    :class="affixClasses"
-    :style="wrapperStyle"
-  >
-    <div
-      :class="['ex-affix__content', { 'is-fixed': isFixed }]"
-      :style="contentStyle"
-    >
+  <div ref="affixRef" :class="affixClasses" :style="wrapperStyle">
+    <div :class="['ex-affix__content', { 'is-fixed': isFixed }]" :style="contentStyle">
       <slot />
     </div>
   </div>
@@ -87,10 +80,8 @@ const updatePosition = () => {
 
   const offset = getOffset(affixRef.value, scrollContainer);
 
-  const shouldFixTop =
-    props.offsetTop !== undefined && offset.top <= props.offsetTop;
-  const shouldFixBottom =
-    props.offsetBottom !== undefined && offset.bottom <= props.offsetBottom;
+  const shouldFixTop = props.offsetTop !== undefined && offset.top <= props.offsetTop;
+  const shouldFixBottom = props.offsetBottom !== undefined && offset.bottom <= props.offsetBottom;
 
   const shouldFix = shouldFixTop || shouldFixBottom;
 
@@ -127,12 +118,23 @@ const updatePosition = () => {
   }
 };
 
+// 使用 requestAnimationFrame 节流，避免每个 scroll 事件都触发同步布局读取
+let ticking = false;
+const scheduleUpdate = () => {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => {
+    ticking = false;
+    updatePosition();
+  });
+};
+
 const handleScroll = () => {
-  updatePosition();
+  scheduleUpdate();
 };
 
 const handleResize = () => {
-  updatePosition();
+  scheduleUpdate();
 };
 
 const addListeners = () => {
@@ -149,11 +151,14 @@ const removeListeners = () => {
   window.removeEventListener('resize', handleResize);
 };
 
-watch(() => props.target, () => {
-  removeListeners();
-  addListeners();
-  updatePosition();
-});
+watch(
+  () => props.target,
+  () => {
+    removeListeners();
+    addListeners();
+    updatePosition();
+  }
+);
 
 watch([() => props.offsetTop, () => props.offsetBottom], () => {
   updatePosition();

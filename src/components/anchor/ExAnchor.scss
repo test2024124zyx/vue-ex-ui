@@ -11,7 +11,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: var(--ex-color-border);
+    background: var(--ex-color-border-primary);
   }
 
   &__ink-ball {
@@ -23,7 +23,7 @@
     border-radius: 50%;
     background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
     box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.5);
-    transition: top var(--ex-transition-base);
+    transition: top var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
   }
 
   &__list {
@@ -42,7 +42,7 @@
     color: var(--ex-color-text-secondary);
     font-size: var(--ex-text-sm);
     text-decoration: none;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -54,7 +54,7 @@
 
     &.is-active {
       color: var(--ex-color-primary);
-      font-weight: var(--ex-font-weight-medium);
+      font-weight: var(--ex-font-medium);
     }
   }
 

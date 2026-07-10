@@ -31,16 +31,7 @@ export default defineConfig({
     },
     cssCodeSplit: false,
     rollupOptions: {
-      external: [
-        'vue',
-        'vue-i18n',
-        'echarts',
-        'qrcode',
-        'jsbarcode',
-        'lunar-javascript',
-        'highlight.js',
-        'highlight.js/lib/common',
-      ],
+      external: ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-javascript'],
       output: {
         exports: 'named',
         globals: {

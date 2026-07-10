@@ -209,12 +209,13 @@ describe('ExTooltip', () => {
         attachTo: document.body,
       });
 
-      await wrapper.trigger('focus');
+      // focusin/focusout 会冒泡，聚焦内部触发元素也能正确触发（focus/blur 不冒泡）
+      await wrapper.trigger('focusin');
       await nextTick();
 
       expect(document.querySelector('.ex-tooltip__popper')).toBeTruthy();
 
-      await wrapper.trigger('blur');
+      await wrapper.trigger('focusout');
       vi.advanceTimersByTime(200);
       await nextTick();
 

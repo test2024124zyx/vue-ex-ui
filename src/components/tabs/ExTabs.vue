@@ -3,19 +3,27 @@
     <!-- 标签页导航 -->
     <div :class="`ex-tabs__nav-wrap ex-tabs__nav-wrap--${position}`">
       <div class="ex-tabs__nav-scroll">
-        <div ref="navRef" class="ex-tabs__nav" role="tablist">
+        <div
+          ref="navRef"
+          class="ex-tabs__nav"
+          role="tablist"
+          :aria-orientation="
+            position === 'left' || position === 'right' ? 'vertical' : 'horizontal'
+          "
+        >
           <!-- 标签页项 -->
           <div
             v-for="pane in panes"
+            :id="`${tabsUid}-tab-${pane.name}`"
             :key="pane.name"
             :class="getTabClasses(pane)"
             :aria-selected="activeTab === pane.name"
             :aria-disabled="pane.disabled"
+            :aria-controls="`${tabsUid}-panel-${pane.name}`"
             role="tab"
-            :tabindex="pane.disabled ? -1 : 0"
+            :tabindex="getTabTabindex(pane)"
             @click="handleTabClick(pane, $event)"
-            @keydown.enter="handleTabClick(pane, $event)"
-            @keydown.space.prevent="handleTabClick(pane, $event)"
+            @keydown="handleTabKeydown(pane, $event)"
           >
             <!-- 标签页图标插槽 -->
             <div v-if="$slots[`icon-${pane.name}`]" class="ex-tabs__tab-icon">
@@ -69,8 +77,9 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, provide, watch, nextTick, onMounted } from 'vue';
+import { computed, ref, provide, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExTabs',
@@ -100,8 +109,11 @@ const navRef = ref<HTMLDivElement>();
 const indicatorRef = ref<HTMLDivElement>();
 const panes = ref<PaneInfo[]>([]);
 const activeTab = ref(props.modelValue);
+// 每个 Tabs 实例唯一前缀，避免多实例间 tab/panel 的 id 冲突
+const tabsUid = generateId('ex-tabs');
 
 // 提供给子组件
+provide('exTabsUid', tabsUid);
 provide('activeTab', activeTab);
 provide('registerPane', (pane: PaneInfo) => {
   panes.value.push(pane);
@@ -147,6 +159,12 @@ const getTabClasses = (pane: PaneInfo) => {
   return classes;
 };
 
+// 漫游式 tabindex：仅激活项可被 Tab 键聚焦，其余项用方向键在 tablist 内移动（WAI-ARIA tabs 规范）
+const getTabTabindex = (pane: PaneInfo) => {
+  if (pane.disabled) return -1;
+  return activeTab.value === pane.name ? 0 : -1;
+};
+
 const indicatorStyle = ref({});
 
 // 更新指示器位置
@@ -189,6 +207,50 @@ const handleTabClick = (pane: PaneInfo, event: MouseEvent | KeyboardEvent) => {
   updateIndicator();
 };
 
+// 将焦点移动到指定标签的 DOM 元素
+const focusTab = (pane: PaneInfo) => {
+  nextTick(() => {
+    if (typeof document === 'undefined') return;
+    document.getElementById(`${tabsUid}-tab-${pane.name}`)?.focus();
+  });
+};
+
+// 键盘导航：Enter/Space 激活；方向键在标签间移动（依据 position 决定横/纵向）；Home/End 跳首尾
+const handleTabKeydown = (pane: PaneInfo, event: KeyboardEvent) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleTabClick(pane, event);
+    return;
+  }
+
+  const isVertical = props.position === 'left' || props.position === 'right';
+  const nextKeys = isVertical ? ['ArrowDown', 'Down'] : ['ArrowRight', 'Right'];
+  const prevKeys = isVertical ? ['ArrowUp', 'Up'] : ['ArrowLeft', 'Left'];
+
+  const enabled = panes.value.filter(p => !p.disabled);
+  if (enabled.length === 0) return;
+  const idx = enabled.findIndex(p => p.name === pane.name);
+
+  let target: PaneInfo | undefined;
+  if (nextKeys.includes(event.key)) {
+    target = enabled[(idx + 1) % enabled.length];
+  } else if (prevKeys.includes(event.key)) {
+    target = enabled[(idx - 1 + enabled.length) % enabled.length];
+  } else if (event.key === 'Home') {
+    target = enabled[0];
+  } else if (event.key === 'End') {
+    target = enabled[enabled.length - 1];
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  if (target) {
+    handleTabClick(target, event);
+    focusTab(target);
+  }
+};
+
 const handleTabRemove = (name: string | number) => {
   emit('tab-remove', name);
 
@@ -222,8 +284,20 @@ watch(activeTab, () => {
 });
 
 // 生命周期
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   updateIndicator();
+  // 容器/标签尺寸变化（窗口缩放、字体加载、标签增删）时同步指示条位置
+  if (typeof ResizeObserver !== 'undefined' && navRef.value) {
+    resizeObserver = new ResizeObserver(() => updateIndicator());
+    resizeObserver.observe(navRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
 });
 
 // 暴露的方法

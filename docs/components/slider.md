@@ -35,8 +35,8 @@ const formatPrice = (value) => `$${value}`
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(30)
+import { ref } from 'vue';
+const value = ref(30);
 </script>
 ```
 
@@ -55,8 +55,8 @@ const value = ref(30)
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(50)
+import { ref } from 'vue';
+const value = ref(50);
 </script>
 ```
 
@@ -76,8 +76,8 @@ const value = ref(50)
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref([20, 60])
+import { ref } from 'vue';
+const value = ref([20, 60]);
 </script>
 ```
 
@@ -95,8 +95,8 @@ const value = ref([20, 60])
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(40)
+import { ref } from 'vue';
+const value = ref(40);
 </script>
 ```
 
@@ -142,9 +142,9 @@ const value = ref(40)
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(60)
-const formatTooltip = (value) => `${value}%`
+import { ref } from 'vue';
+const value = ref(60);
+const formatTooltip = value => `${value}%`;
 </script>
 ```
 
@@ -168,22 +168,22 @@ const formatTooltip = (value) => `${value}%`
 
 ```vue
 <template>
-  <ExSlider 
-    v-model="value" 
+  <ExSlider
+    v-model="value"
     range
     :marks="{
       0: '0°C',
       25: '25°C',
       50: '50°C',
       75: '75°C',
-      100: '100°C'
+      100: '100°C',
     }"
   />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref([30, 70])
+import { ref } from 'vue';
+const value = ref([30, 70]);
 </script>
 ```
 
@@ -239,49 +239,49 @@ const value = ref([30, 70])
 
 ### Slider Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model-value` / `v-model` | 绑定值 | `number \| [number, number]` | `0` |
-| `min` | 最小值 | `number` | `0` |
-| `max` | 最大值 | `number` | `100` |
-| `step` | 步长 | `number` | `1` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `range` | 是否为范围选择 | `boolean` | `false` |
-| `show-input` | 是否显示输入框 | `boolean` | `false` |
-| `show-stops` | 是否显示步进点 | `boolean` | `false` |
-| `show-tooltip` | 是否显示提示信息 | `boolean` | `true` |
-| `tooltip-placement` | 提示信息显示位置 | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` |
-| `format-tooltip` | 格式化提示信息 | `(value: number) => string` | `undefined` |
-| `marks` | 标记 | `Record<number, string \| SliderMark>` | `undefined` |
-| `size` | 尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `direction` | 方向 | `'horizontal' \| 'vertical'` | `'horizontal'` |
-| `height` | 高度（垂直模式） | `string` | `'200px'` |
-| `reverse` | 是否反向 | `boolean` | `false` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
-| `aria-description` | 无障碍描述 | `string` | `undefined` |
+| 属性                      | 说明             | 类型                                     | 默认值         |
+| ------------------------- | ---------------- | ---------------------------------------- | -------------- |
+| `model-value` / `v-model` | 绑定值           | `number \| [number, number]`             | `0`            |
+| `min`                     | 最小值           | `number`                                 | `0`            |
+| `max`                     | 最大值           | `number`                                 | `100`          |
+| `step`                    | 步长             | `number`                                 | `1`            |
+| `disabled`                | 是否禁用         | `boolean`                                | `false`        |
+| `range`                   | 是否为范围选择   | `boolean`                                | `false`        |
+| `show-input`              | 是否显示输入框   | `boolean`                                | `false`        |
+| `show-stops`              | 是否显示步进点   | `boolean`                                | `false`        |
+| `show-tooltip`            | 是否显示提示信息 | `boolean`                                | `true`         |
+| `tooltip-placement`       | 提示信息显示位置 | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'`        |
+| `format-tooltip`          | 格式化提示信息   | `(value: number) => string`              | `undefined`    |
+| `marks`                   | 标记             | `Record<number, string \| SliderMark>`   | `undefined`    |
+| `size`                    | 尺寸             | `'small' \| 'medium' \| 'large'`         | `'medium'`     |
+| `direction`               | 方向             | `'horizontal' \| 'vertical'`             | `'horizontal'` |
+| `height`                  | 高度（垂直模式） | `string`                                 | `'200px'`      |
+| `reverse`                 | 是否反向         | `boolean`                                | `false`        |
+| `aria-label`              | 无障碍标签       | `string`                                 | `undefined`    |
+| `aria-description`        | 无障碍描述       | `string`                                 | `undefined`    |
 
 ### Slider Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:model-value` | 值改变时触发 | `(value: number \| [number, number]) => void` |
-| `change` | 值改变时触发（拖动过程中） | `(value: number \| [number, number]) => void` |
-| `input` | 输入事件（拖动过程中） | `(value: number \| [number, number]) => void` |
+| 事件名               | 说明                       | 类型                                          |
+| -------------------- | -------------------------- | --------------------------------------------- |
+| `update:model-value` | 值改变时触发               | `(value: number \| [number, number]) => void` |
+| `change`             | 值改变时触发（拖动过程中） | `(value: number \| [number, number]) => void` |
+| `input`              | 输入事件（拖动过程中）     | `(value: number \| [number, number]) => void` |
 
 ### Slider Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取滑块DOM元素 | `() => HTMLDivElement \| null` |
-| `reset` | 重置滑块 | `() => void` |
+| `reset`      | 重置滑块        | `() => void`                   |
 
 ### SliderMark 类型
 
 ```typescript
 interface SliderMark {
-  value: number
-  label?: string
-  style?: Record<string, string>
+  value: number;
+  label?: string;
+  style?: Record<string, string>;
 }
 ```
 
@@ -299,16 +299,7 @@ interface SliderMark {
 
 ## 主题定制
 
-可以通过 CSS 变量自定义滑块样式：
-
-```css
-:root {
-  --ex-slider-track-bg: var(--ex-color-bg-tertiary);
-  --ex-slider-bar-bg: var(--ex-gradient-primary);
-  --ex-slider-thumb-bg: var(--ex-color-white);
-  --ex-slider-thumb-border: var(--ex-color-neon-blue-500);
-}
-```
+滑块跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

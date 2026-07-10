@@ -13,7 +13,8 @@
     <!-- 插槽内容优先级最高 (SVG) -->
     <slot v-if="hasSlotContent" />
 
-    <!-- 内置 SVG 图标 -->
+    <!-- 内置 SVG 图标：内容来自静态内置注册表（getBuiltinIcon），无用户输入，可信。 -->
+    <!-- eslint-disable vue/no-v-html -->
     <svg
       v-else-if="builtinIconBody"
       viewBox="0 0 24 24"
@@ -21,6 +22,7 @@
       xmlns="http://www.w3.org/2000/svg"
       v-html="builtinIconBody"
     />
+    <!-- eslint-enable vue/no-v-html -->
 
     <!-- 图片单色着色（mask） -->
     <span

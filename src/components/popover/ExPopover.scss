@@ -8,7 +8,7 @@
 .ex-popover__popper {
   position: fixed;
   max-width: 400px;
-  padding: var(--ex-spacing-md);
+  padding: var(--ex-spacing-4);
   background: var(--ex-color-bg-elevated);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
@@ -33,11 +33,11 @@
   // 标题
   .ex-popover__title {
     position: relative;
-    margin-bottom: var(--ex-spacing-sm);
+    margin-bottom: var(--ex-spacing-2);
     font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-weight-semibold);
+    font-weight: var(--ex-font-semibold);
     color: var(--ex-color-text-primary);
-    line-height: var(--ex-line-height-tight);
+    line-height: var(--ex-leading-tight);
     text-shadow: 0 0 8px var(--ex-color-primary-alpha-30);
     z-index: 1;
   }
@@ -47,7 +47,7 @@
     position: relative;
     font-size: var(--ex-text-sm);
     color: var(--ex-color-text-secondary);
-    line-height: var(--ex-line-height-normal);
+    line-height: var(--ex-leading-normal);
     z-index: 1;
   }
 
@@ -160,8 +160,8 @@
 // 过渡动画
 .ex-popover-fade-enter-active,
 .ex-popover-fade-leave-active {
-  transition: opacity var(--ex-transition-fast) var(--ex-easing-standard),
-    transform var(--ex-transition-fast) var(--ex-easing-standard);
+  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 }
 
 .ex-popover-fade-enter-from,
@@ -174,7 +174,7 @@
 @media (max-width: 768px) {
   .ex-popover__popper {
     max-width: calc(100vw - 32px);
-    padding: var(--ex-spacing-sm);
+    padding: var(--ex-spacing-2);
   }
 }
 
@@ -182,7 +182,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ex-popover-fade-enter-active,
   .ex-popover-fade-leave-active {
-    transition: opacity var(--ex-transition-fast);
+    transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
   }
 
   .ex-popover-fade-enter-from,

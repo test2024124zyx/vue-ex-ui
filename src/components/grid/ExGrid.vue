@@ -1,8 +1,5 @@
 <template>
-  <div
-    :class="gridClasses"
-    :style="gridStyles"
-  >
+  <div :class="gridClasses" :style="gridStyles">
     <slot />
   </div>
 </template>
@@ -43,22 +40,19 @@ const gridStyles = computed(() => {
   const styles: Record<string, string> = {};
   if (props.gutter) {
     let gutterValue = props.gutter;
-    
+
     // 处理预设值
     if (typeof gutterValue === 'string') {
       gutterValue = gutterPresets[gutterValue] || 0;
     }
-    
+
     if (Array.isArray(gutterValue)) {
       // 数组格式：[水平间隔, 垂直间隔]
-      // CSS gap 语法：gap: row-gap column-gap (垂直 水平)
+      // 间距通过 .ex-grid 负 margin + 子项 padding 实现，避免与百分比列宽（flex-basis）叠加导致整行溢出换行
       const [horizontal = 0, vertical = 0] = gutterValue;
-      styles.gap = `${vertical}px ${horizontal}px`;
-      // 为不支持 gap 的旧浏览器提供降级方案
       styles['--ex-grid-gutter-x'] = `${horizontal}px`;
       styles['--ex-grid-gutter-y'] = `${vertical}px`;
     } else {
-      styles.gap = `${gutterValue}px`;
       styles['--ex-grid-gutter-x'] = `${gutterValue}px`;
       styles['--ex-grid-gutter-y'] = `${gutterValue}px`;
     }

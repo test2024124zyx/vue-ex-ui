@@ -43,13 +43,13 @@
   }
 
   &--neon-pink {
-    border-color: var(--ex-color-accent-alpha-30);
+    border-color: var(--ex-color-neon-pink-alpha-30);
 
     &.ex-chart--neon {
-      box-shadow: 0 0 20px var(--ex-color-accent-alpha-20);
+      box-shadow: 0 0 20px var(--ex-color-neon-pink-alpha-20);
 
       &:hover {
-        box-shadow: 0 0 30px var(--ex-color-accent-alpha-30);
+        box-shadow: 0 0 30px var(--ex-color-neon-pink-alpha-30);
       }
     }
   }

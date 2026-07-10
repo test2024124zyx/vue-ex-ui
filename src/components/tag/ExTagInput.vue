@@ -161,9 +161,9 @@ const handleBlur = () => {
     border: 1px dashed var(--ex-color-border-primary);
     border-radius: var(--ex-radius-md);
     color: var(--ex-color-text-secondary);
-    font-size: var(--ex-font-size-sm);
+    font-size: var(--ex-text-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     user-select: none;
 
     &:hover {
@@ -179,17 +179,17 @@ const handleBlur = () => {
 
     &--large {
       padding: 6px 16px;
-      font-size: var(--ex-font-size-base);
+      font-size: var(--ex-text-base);
     }
 
     &--medium {
       padding: 4px 12px;
-      font-size: var(--ex-font-size-sm);
+      font-size: var(--ex-text-sm);
     }
 
     &--small {
       padding: 2px 8px;
-      font-size: var(--ex-font-size-xs);
+      font-size: var(--ex-text-xs);
     }
   }
 
@@ -212,30 +212,30 @@ const handleBlur = () => {
     background: transparent;
     border: none;
     color: var(--ex-color-text-primary);
-    font-size: var(--ex-font-size-sm);
+    font-size: var(--ex-text-sm);
     outline: none;
     min-width: 100px;
     flex: 1;
 
     &::placeholder {
-      color: var(--ex-color-text-placeholder);
+      color: var(--ex-color-text-disabled);
     }
 
     &--large {
       padding: 6px 12px;
-      font-size: var(--ex-font-size-base);
+      font-size: var(--ex-text-base);
       min-width: 120px;
     }
 
     &--medium {
       padding: 4px 8px;
-      font-size: var(--ex-font-size-sm);
+      font-size: var(--ex-text-sm);
       min-width: 100px;
     }
 
     &--small {
       padding: 2px 6px;
-      font-size: var(--ex-font-size-xs);
+      font-size: var(--ex-text-xs);
       min-width: 80px;
     }
   }
@@ -248,7 +248,7 @@ const handleBlur = () => {
     height: 22px;
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     flex-shrink: 0;
 
     &:hover {
@@ -260,7 +260,7 @@ const handleBlur = () => {
     }
 
     &--confirm {
-      color: var(--ex-color-success-500);
+      color: var(--ex-color-success);
       background: rgba(var(--ex-color-success-rgb), 0.1);
 
       &:hover {
@@ -274,7 +274,7 @@ const handleBlur = () => {
       background: rgba(var(--ex-color-white-rgb), 0.05);
 
       &:hover {
-        color: var(--ex-color-danger-500);
+        color: var(--ex-color-error);
         background: rgba(var(--ex-color-error-rgb), 0.1);
         box-shadow: 0 0 8px rgba(var(--ex-color-error-rgb), 0.4);
       }

@@ -57,9 +57,9 @@ const handleClick = (href) => {
 </template>
 
 <script setup>
-const handleChange = (href) => {
-  console.log('锚点变化:', href)
-}
+const handleChange = href => {
+  console.log('锚点变化:', href);
+};
 </script>
 ```
 
@@ -121,39 +121,38 @@ const handleChange = (href) => {
 
 ### Anchor Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| offset-top | 距离窗口顶部达到指定偏移量后触发 | number | 0 |
-| bounds | 锚点区域边界 | number | 5 |
-| target-offset | 设置锚点滚动偏移量 | number | - |
-| container | 指定滚动的容器 | () => HTMLElement \| Window | () => window |
-| affix | 固定模式 | boolean | true |
+| 属性          | 说明                             | 类型                        | 默认值       |
+| ------------- | -------------------------------- | --------------------------- | ------------ |
+| offset-top    | 距离窗口顶部达到指定偏移量后触发 | number                      | 0            |
+| bounds        | 锚点区域边界                     | number                      | 5            |
+| target-offset | 设置锚点滚动偏移量               | number                      | -            |
+| container     | 指定滚动的容器                   | () => HTMLElement \| Window | () => window |
 
 ### Anchor Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| click | 点击锚点时触发 | (href: string, item: AnchorItem) => void |
-| change | 锚点改变时触发 | (href: string) => void |
+| 事件名 | 说明           | 类型                                     |
+| ------ | -------------- | ---------------------------------------- |
+| click  | 点击锚点时触发 | (href: string, item: AnchorItem) => void |
+| change | 锚点改变时触发 | (href: string) => void                   |
 
 ### Anchor Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名         | 说明           | 类型                   |
+| -------------- | -------------- | ---------------------- |
 | scrollToAnchor | 滚动到指定锚点 | (href: string) => void |
 
 ### AnchorLink Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| href | 锚点链接 | string | - |
-| title | 锚点标题 | string | - |
+| 属性  | 说明     | 类型   | 默认值 |
+| ----- | -------- | ------ | ------ |
+| href  | 锚点链接 | string | -      |
+| title | 锚点标题 | string | -      |
 
 ### AnchorLink Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| click | 点击锚点时触发 | (href: string) => void |
+| 事件名 | 说明           | 类型                   |
+| ------ | -------------- | ---------------------- |
+| click  | 点击锚点时触发 | (href: string) => void |
 
 <style scoped>
 .demo-container {

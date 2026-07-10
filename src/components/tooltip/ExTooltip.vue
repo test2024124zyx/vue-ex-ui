@@ -2,10 +2,11 @@
   <div
     ref="tooltipRef"
     class="ex-tooltip"
+    :aria-describedby="visible ? popperId : undefined"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
-    @focus="handleFocus"
-    @blur="handleBlur"
+    @focusin="handleFocus"
+    @focusout="handleBlur"
     @click="handleClick"
   >
     <!-- 触发元素 -->
@@ -16,6 +17,7 @@
       <Transition :name="transition">
         <div
           v-if="visible"
+          :id="popperId"
           ref="popperRef"
           :class="tooltipClasses"
           :style="tooltipStyles"
@@ -45,6 +47,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
+import { calcPopperPosition } from '../../utils/popper';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExTooltip',
@@ -69,12 +73,15 @@ const popperRef = ref<HTMLDivElement>();
 const visible = ref(false);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
+const popperId = `ex-tooltip-${generateId()}`;
+// flip 后最终生效的位置（用于同步箭头方向的类名）
+const resolvedPlacement = ref(props.placement);
 
 // 计算属性
 const tooltipClasses = computed(() => {
   const classes = [
     'ex-tooltip__popper',
-    `ex-tooltip__popper--${props.placement}`,
+    `ex-tooltip__popper--${resolvedPlacement.value}`,
     `ex-tooltip__popper--${props.effect}`,
   ];
 
@@ -119,75 +126,15 @@ const updatePosition = () => {
 
   const triggerRect = tooltipRef.value.getBoundingClientRect();
   const popperRect = popperRef.value.getBoundingClientRect();
-  const offset = props.offset;
 
-  let top = 0;
-  let left = 0;
+  const { top, left, placement } = calcPopperPosition(
+    triggerRect,
+    { width: popperRect.width, height: popperRect.height },
+    props.placement,
+    props.offset
+  );
 
-  switch (props.placement) {
-    case 'top':
-      top = triggerRect.top - popperRect.height - offset;
-      left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-      break;
-    case 'top-start':
-      top = triggerRect.top - popperRect.height - offset;
-      left = triggerRect.left;
-      break;
-    case 'top-end':
-      top = triggerRect.top - popperRect.height - offset;
-      left = triggerRect.right - popperRect.width;
-      break;
-    case 'bottom':
-      top = triggerRect.bottom + offset;
-      left = triggerRect.left + (triggerRect.width - popperRect.width) / 2;
-      break;
-    case 'bottom-start':
-      top = triggerRect.bottom + offset;
-      left = triggerRect.left;
-      break;
-    case 'bottom-end':
-      top = triggerRect.bottom + offset;
-      left = triggerRect.right - popperRect.width;
-      break;
-    case 'left':
-      top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-      left = triggerRect.left - popperRect.width - offset;
-      break;
-    case 'left-start':
-      top = triggerRect.top;
-      left = triggerRect.left - popperRect.width - offset;
-      break;
-    case 'left-end':
-      top = triggerRect.bottom - popperRect.height;
-      left = triggerRect.left - popperRect.width - offset;
-      break;
-    case 'right':
-      top = triggerRect.top + (triggerRect.height - popperRect.height) / 2;
-      left = triggerRect.right + offset;
-      break;
-    case 'right-start':
-      top = triggerRect.top;
-      left = triggerRect.right + offset;
-      break;
-    case 'right-end':
-      top = triggerRect.bottom - popperRect.height;
-      left = triggerRect.right + offset;
-      break;
-  }
-
-  // 边界检测
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  if (left < 0) left = 8;
-  if (left + popperRect.width > viewportWidth) {
-    left = viewportWidth - popperRect.width - 8;
-  }
-  if (top < 0) top = 8;
-  if (top + popperRect.height > viewportHeight) {
-    top = viewportHeight - popperRect.height - 8;
-  }
-
+  resolvedPlacement.value = placement as typeof resolvedPlacement.value;
   popperRef.value.style.top = `${top}px`;
   popperRef.value.style.left = `${left}px`;
 };

@@ -86,12 +86,7 @@ const collapsed = ref(false);
 ```vue
 <template>
   <ex-layout has-sider>
-    <ex-sider
-      v-model:collapsed="collapsed"
-      :width="256"
-      :collapsed-width="80"
-      collapsible
-    >
+    <ex-sider v-model:collapsed="collapsed" :width="256" :collapsed-width="80" collapsible>
       <div v-if="!collapsed">完整菜单</div>
       <div v-else>图标</div>
     </ex-sider>
@@ -202,7 +197,7 @@ Header 支持左中右三栏布局。
         <img src="/logo.png" alt="Logo" />
         <span>ExUI</span>
       </template>
-      
+
       <template #center>
         <nav>
           <a href="#">首页</a>
@@ -210,7 +205,7 @@ Header 支持左中右三栏布局。
           <a href="#">文档</a>
         </nav>
       </template>
-      
+
       <template #right>
         <ex-button type="primary">登录</ex-button>
       </template>
@@ -240,7 +235,7 @@ Sider 组件支持响应式断点，当屏幕宽度小于指定断点时自动�
     <ex-layout>
       <ex-content style="background: var(--ex-color-bg-primary); display: flex; align-items: center; justify-content: center;">
         <div style="text-align: center;">
-          <p>当屏幕宽度小于 992px 时</p>
+          <p>当屏幕宽度小于 1024px 时</p>
           <p>侧边栏会自动收起并显示遮罩层</p>
         </div>
       </ex-content>
@@ -278,14 +273,14 @@ const handleBreakpoint = (broken: boolean) => {
 
 ### 断点说明
 
-| 断点 | 说明 | 触发条件 |
-| --- | --- | --- |
-| xs | 超小屏幕 | 屏幕宽度 < 480px |
-| sm | 小屏幕 | 屏幕宽度 < 768px |
-| md | 中等屏幕 | 屏幕宽度 < 1024px |
-| lg | 大屏幕 | 屏幕宽度 < 1280px |
-| xl | 超大屏幕 | 屏幕宽度 < 1536px |
-| 2xl | 极大屏幕 | 屏幕宽度 < 1920px |
+| 断点 | 说明     | 触发条件          |
+| ---- | -------- | ----------------- |
+| xs   | 超小屏幕 | 屏幕宽度 < 480px  |
+| sm   | 小屏幕   | 屏幕宽度 < 768px  |
+| md   | 中等屏幕 | 屏幕宽度 < 1024px |
+| lg   | 大屏幕   | 屏幕宽度 < 1280px |
+| xl   | 超大屏幕 | 屏幕宽度 < 1536px |
+| 2xl  | 极大屏幕 | 屏幕宽度 < 1920px |
 
 ## Container 容器
 
@@ -361,13 +356,13 @@ Container 组件用于限制内容宽度，提供响应式的容器布局。
 
 ### Container 尺寸对照表
 
-| 尺寸 | 最大宽度 | 适用场景 |
-| --- | --- | --- |
-| sm | 448px | 窄内容，如登录表单 |
-| md | 720px | 中等内容，如文章阅读 |
-| lg | 960px | 标准内容，如后台管理 |
-| xl | 1216px | 宽内容，如数据展示 |
-| 2xl | 1472px | 超宽内容，如大屏应用 |
+| 尺寸 | 最大宽度 | 适用场景             |
+| ---- | -------- | -------------------- |
+| sm   | 448px    | 窄内容，如登录表单   |
+| md   | 720px    | 中等内容，如文章阅读 |
+| lg   | 960px    | 标准内容，如后台管理 |
+| xl   | 1216px   | 宽内容，如数据展示   |
+| 2xl  | 1472px   | 超宽内容，如大屏应用 |
 
 ## 动画配置
 
@@ -401,24 +396,16 @@ Sider 组件支持自定义动画过渡时长。
 <template>
   <ex-layout has-sider>
     <!-- 快速动画 (200ms) -->
-    <ex-sider :transition-duration="200" collapsible>
-      Menu
-    </ex-sider>
+    <ex-sider :transition-duration="200" collapsible>Menu</ex-sider>
 
     <!-- 默认动画 (300ms) -->
-    <ex-sider collapsible>
-      Menu
-    </ex-sider>
+    <ex-sider collapsible>Menu</ex-sider>
 
     <!-- 慢速动画 (500ms) -->
-    <ex-sider :transition-duration="500" collapsible>
-      Menu
-    </ex-sider>
+    <ex-sider :transition-duration="500" collapsible>Menu</ex-sider>
 
     <!-- 无动画 -->
-    <ex-sider :transition-duration="0" collapsible>
-      Menu
-    </ex-sider>
+    <ex-sider :transition-duration="0" collapsible>Menu</ex-sider>
   </ex-layout>
 </template>
 ```
@@ -455,9 +442,9 @@ Sider 组件的触发器支持完整的键盘导航。
 
 ### 键盘快捷键
 
-| 按键 | 功能 |
-| --- | --- |
-| Tab | 聚焦到触发器按钮 |
+| 按键  | 功能               |
+| ----- | ------------------ |
+| Tab   | 聚焦到触发器按钮   |
 | Enter | 切换侧边栏收起状态 |
 | Space | 切换侧边栏收起状态 |
 
@@ -475,139 +462,139 @@ Layout 组件完全支持无障碍访问（WCAG 2.1 AA 标准）：
 
 ### Layout Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| has-sider | 是否包含侧边栏 | boolean | false |
-| direction | 布局方向 | 'horizontal' / 'vertical' | 'vertical' |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数      | 说明           | 类型                       | 默认值     |
+| --------- | -------------- | -------------------------- | ---------- |
+| has-sider | 是否包含侧边栏 | boolean                    | false      |
+| direction | 布局方向       | 'horizontal' / 'vertical'  | 'vertical' |
+| class     | 自定义类名     | string / string[] / object | —          |
+| style     | 自定义样式     | CSSProperties / string     | —          |
 
 ### Layout Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ### Header Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| height | 高度 | string / number | 64 |
-| fixed | 是否固定定位 | boolean | false |
-| neon-border | 是否显示霓虹边框（未设置时使用全局配置） | boolean | undefined |
-| blur | 是否显示背景模糊 | boolean | false |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数        | 说明                                     | 类型                       | 默认值    |
+| ----------- | ---------------------------------------- | -------------------------- | --------- |
+| height      | 高度                                     | string / number            | 64        |
+| fixed       | 是否固定定位                             | boolean                    | false     |
+| neon-border | 是否显示霓虹边框（未设置时使用全局配置） | boolean                    | undefined |
+| blur        | 是否显示背景模糊                         | boolean                    | false     |
+| class       | 自定义类名                               | string / string[] / object | —         |
+| style       | 自定义样式                               | CSSProperties / string     | —         |
 
 ### Header Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名  | 说明                                 |
+| ------- | ------------------------------------ |
 | default | 头部内容（当没有使用具名插槽时显示） |
-| left | 左侧内容 |
-| center | 中间内容 |
-| right | 右侧内容 |
+| left    | 左侧内容                             |
+| center  | 中间内容                             |
+| right   | 右侧内容                             |
 
 ### Header Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ### Sider Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| width | 宽度 | string / number | 256 |
-| collapsed-width | 收起时的宽度 | string / number | 80 |
-| collapsed / v-model:collapsed | 是否收起 | boolean | false |
-| collapsible | 是否可收起 | boolean | false |
-| trigger | 触发器位置 | 'top' / 'bottom' / null | 'bottom' |
-| position | 侧边栏位置 | 'left' / 'right' | 'left' |
-| neon-border | 是否显示霓虹边框（未设置时使用全局配置） | boolean | undefined |
-| blur | 是否显示背景模糊 | boolean | false |
-| breakpoint | 响应式断点 | 'xs' / 'sm' / 'md' / 'lg' / 'xl' / '2xl' | — |
-| transition-duration | 动画过渡时长（毫秒） | number | 300 |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数                          | 说明                                     | 类型                                     | 默认值    |
+| ----------------------------- | ---------------------------------------- | ---------------------------------------- | --------- |
+| width                         | 宽度                                     | string / number                          | 256       |
+| collapsed-width               | 收起时的宽度                             | string / number                          | 80        |
+| collapsed / v-model:collapsed | 是否收起                                 | boolean                                  | false     |
+| collapsible                   | 是否可收起                               | boolean                                  | false     |
+| trigger                       | 触发器位置                               | 'top' / 'bottom' / null                  | 'bottom'  |
+| position                      | 侧边栏位置                               | 'left' / 'right'                         | 'left'    |
+| neon-border                   | 是否显示霓虹边框（未设置时使用全局配置） | boolean                                  | undefined |
+| blur                          | 是否显示背景模糊                         | boolean                                  | false     |
+| breakpoint                    | 响应式断点                               | 'xs' / 'sm' / 'md' / 'lg' / 'xl' / '2xl' | —         |
+| transition-duration           | 动画过渡时长（毫秒）                     | number                                   | 300       |
+| class                         | 自定义类名                               | string / string[] / object               | —         |
+| style                         | 自定义样式                               | CSSProperties / string                   | —         |
 
 ### Sider Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| update:collapsed | 收起状态变化 | (value: boolean) |
-| collapse | 收起状态变化（兼容） | (collapsed: boolean, type: 'clickTrigger' / 'responsive') |
-| breakpoint | 断点触发 | (broken: boolean) |
+| 事件名           | 说明                 | 回调参数                                                  |
+| ---------------- | -------------------- | --------------------------------------------------------- |
+| update:collapsed | 收起状态变化         | (value: boolean)                                          |
+| collapse         | 收起状态变化（兼容） | (collapsed: boolean, type: 'clickTrigger' / 'responsive') |
+| breakpoint       | 断点触发             | (broken: boolean)                                         |
 
 ### Sider Slots
 
-| 插槽名 | 说明 | 参数 |
-| --- | --- | --- |
-| default | 侧边栏内容 | — |
+| 插槽名  | 说明         | 参数                   |
+| ------- | ------------ | ---------------------- |
+| default | 侧边栏内容   | —                      |
 | trigger | 自定义触发器 | { collapsed: boolean } |
 
 ### Sider Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| toggle | 切换收起状态 | — | void |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| toggle     | 切换收起状态  | —    | void                |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ### Content Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| grid | 是否显示背景网格 | boolean | false |
-| scanline | 是否显示扫描线效果 | boolean | false |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数     | 说明               | 类型                       | 默认值 |
+| -------- | ------------------ | -------------------------- | ------ |
+| grid     | 是否显示背景网格   | boolean                    | false  |
+| scanline | 是否显示扫描线效果 | boolean                    | false  |
+| class    | 自定义类名         | string / string[] / object | —      |
+| style    | 自定义样式         | CSSProperties / string     | —      |
 
 ### Content Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ### Footer Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| height | 高度 | string / number | 64 |
-| fixed | 是否固定定位 | boolean | false |
-| neon-border | 是否显示霓虹边框（未设置时使用全局配置） | boolean | undefined |
-| blur | 是否显示背景模糊 | boolean | false |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数        | 说明                                     | 类型                       | 默认值    |
+| ----------- | ---------------------------------------- | -------------------------- | --------- |
+| height      | 高度                                     | string / number            | 64        |
+| fixed       | 是否固定定位                             | boolean                    | false     |
+| neon-border | 是否显示霓虹边框（未设置时使用全局配置） | boolean                    | undefined |
+| blur        | 是否显示背景模糊                         | boolean                    | false     |
+| class       | 自定义类名                               | string / string[] / object | —         |
+| style       | 自定义样式                               | CSSProperties / string     | —         |
 
 ### Footer Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名  | 说明                                 |
+| ------- | ------------------------------------ |
 | default | 底部内容（当没有使用具名插槽时显示） |
-| left | 左侧内容 |
-| center | 中间内容 |
-| right | 右侧内容 |
+| left    | 左侧内容                             |
+| center  | 中间内容                             |
+| right   | 右侧内容                             |
 
 ### Footer Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ### Container Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| fluid | 是否为流式容器（100%宽度） | boolean | false |
-| size | 固定尺寸 | 'sm' / 'md' / 'lg' / 'xl' / '2xl' | — |
-| class | 自定义类名 | string / string[] / object | — |
-| style | 自定义样式 | CSSProperties / string | — |
+| 参数  | 说明                       | 类型                              | 默认值 |
+| ----- | -------------------------- | --------------------------------- | ------ |
+| fluid | 是否为流式容器（100%宽度） | boolean                           | false  |
+| size  | 固定尺寸                   | 'sm' / 'md' / 'lg' / 'xl' / '2xl' | —      |
+| class | 自定义类名                 | string / string[] / object        | —      |
+| style | 自定义样式                 | CSSProperties / string            | —      |
 
 ### Container Methods
 
-| 方法名 | 说明 | 参数 | 返回值 |
-| --- | --- | --- | --- |
-| getElement | 获取 DOM 元素 | — | HTMLElement \| null |
+| 方法名     | 说明          | 参数 | 返回值              |
+| ---------- | ------------- | ---- | ------------------- |
+| getElement | 获取 DOM 元素 | —    | HTMLElement \| null |
 
 ## 性能优化
 

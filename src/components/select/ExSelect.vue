@@ -120,21 +120,21 @@
             :threshold="0"
             :buffer="6"
           >
-            <template #default="{ item: option }">
+            <template #default="{ item }">
               <div
-                :id="getOptionId(getOptionIndex(option))"
+                :id="getOptionId(getOptionIndex(item as SelectOption))"
                 class="ex-select__option"
                 :class="{
-                  'is-selected': isSelected(option),
-                  'is-disabled': option.disabled,
-                  'is-hover': hoverIndex === getOptionIndex(option),
+                  'is-selected': isSelected(item as SelectOption),
+                  'is-disabled': (item as SelectOption).disabled,
+                  'is-hover': hoverIndex === getOptionIndex(item as SelectOption),
                 }"
                 role="option"
-                :aria-selected="isSelected(option)"
-                @click="handleSelect(option)"
-                @mouseenter="hoverIndex = getOptionIndex(option)"
+                :aria-selected="isSelected(item as SelectOption)"
+                @click="handleSelect(item as SelectOption)"
+                @mouseenter="hoverIndex = getOptionIndex(item as SelectOption)"
               >
-                {{ option.label }}
+                {{ (item as SelectOption).label }}
               </div>
             </template>
           </ExVirtualList>

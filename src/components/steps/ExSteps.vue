@@ -31,8 +31,9 @@ const props = withDefaults(defineProps<ExStepsProps>(), {
 const emit = defineEmits<ExStepsEmits>();
 
 const stepsRef = ref<HTMLDivElement>();
-const steps = ref<Map<number, number>>(new Map());
-let stepCounter = 0;
+// 按注册顺序保存各步骤的唯一标识；索引通过 indexOf 实时计算，
+// 这样动态增删/重排步骤后 isLast、状态判断等都会自动更新（避免自增计数器永久漂移）。
+const stepUids = ref<symbol[]>([]);
 
 // 计算属性
 const stepsClasses = computed(() => {
@@ -60,17 +61,23 @@ const stepsStyles = computed(() => {
   return props.style;
 });
 
-// 注册步骤
-const registerStep = (uid: number): number => {
-  const index = stepCounter++;
-  steps.value.set(uid, index);
-  return index;
+// 注册步骤（按文档顺序追加）
+const registerStep = (uid: symbol) => {
+  if (!stepUids.value.includes(uid)) {
+    stepUids.value.push(uid);
+  }
 };
 
 // 注销步骤
-const unregisterStep = (uid: number) => {
-  steps.value.delete(uid);
+const unregisterStep = (uid: symbol) => {
+  const index = stepUids.value.indexOf(uid);
+  if (index > -1) {
+    stepUids.value.splice(index, 1);
+  }
 };
+
+// 获取步骤当前索引（响应式）
+const getStepIndex = (uid: symbol) => stepUids.value.indexOf(uid);
 
 // 步骤点击事件
 const onStepClick = (index: number) => {
@@ -87,9 +94,10 @@ const stepsContext: StepsContext = {
   size: computed(() => props.size),
   progressDot: computed(() => props.progressDot),
   clickable: computed(() => props.clickable),
-  stepCount: computed(() => steps.value.size),
+  stepCount: computed(() => stepUids.value.length),
   registerStep,
   unregisterStep,
+  getStepIndex,
   onStepClick,
 };
 
@@ -99,13 +107,13 @@ provide('exSteps', stepsContext);
 const getElement = () => stepsRef.value || null;
 
 const goTo = (index: number) => {
-  if (index >= 0 && index < steps.value.size) {
+  if (index >= 0 && index < stepUids.value.length) {
     emit('change', index);
   }
 };
 
 const next = () => {
-  if (props.current < steps.value.size - 1) {
+  if (props.current < stepUids.value.length - 1) {
     emit('change', props.current + 1);
   }
 };

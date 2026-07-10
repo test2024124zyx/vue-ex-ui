@@ -171,6 +171,7 @@ useOverlay({
   container: modalRef,
   closeOnEscape: () => props.keyboard,
   onEscape: () => handleCancel(),
+  restoreFocus: true,
 });
 
 // 点击遮罩层
@@ -201,11 +202,10 @@ const handleCancel = async () => {
 };
 
 // 关闭后的回调
+// 说明：模态框根节点使用 v-if（visible）渲染，关闭后内容即从 DOM 卸载，
+// 因此插槽内容默认在每次关闭时销毁、下次打开重建。destroyOnClose 保留用于语义表达。
 const handleAfterClose = () => {
   emit('afterClose');
-  if (props.destroyOnClose) {
-    // 销毁内容的逻辑可以在这里实现
-  }
 };
 
 // 暴露的方法

@@ -9,10 +9,10 @@
   margin: 0;
   padding: 0;
   border: none;
-  font-family: var(--ex-font-family-base);
-  line-height: var(--ex-line-height-base);
+  font-family: var(--ex-font-secondary);
+  line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
-  transition: color var(--ex-transition-fast) var(--ex-easing-standard);
+  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
   // ============================================================================
   // 变体样式 (Variant Styles)
@@ -20,44 +20,44 @@
 
   &--display {
     font-size: var(--ex-text-4xl);
-    font-weight: var(--ex-font-weight-bold);
-    line-height: var(--ex-line-height-tight);
-    letter-spacing: var(--ex-letter-spacing-tight);
+    font-weight: var(--ex-font-bold);
+    line-height: var(--ex-leading-tight);
+    letter-spacing: var(--ex-tracking-tight);
   }
 
   &--heading {
     font-size: var(--ex-text-3xl);
-    font-weight: var(--ex-font-weight-semibold);
-    line-height: var(--ex-line-height-tight);
-    letter-spacing: var(--ex-letter-spacing-tight);
+    font-weight: var(--ex-font-semibold);
+    line-height: var(--ex-leading-tight);
+    letter-spacing: var(--ex-tracking-tight);
   }
 
   &--title {
     font-size: var(--ex-text-xl);
-    font-weight: var(--ex-font-weight-medium);
-    line-height: var(--ex-line-height-snug);
-    letter-spacing: var(--ex-letter-spacing-normal);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-snug);
+    letter-spacing: var(--ex-tracking-normal);
   }
 
   &--body {
     font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-weight-normal);
-    line-height: var(--ex-line-height-relaxed);
-    letter-spacing: var(--ex-letter-spacing-normal);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-relaxed);
+    letter-spacing: var(--ex-tracking-normal);
   }
 
   &--caption {
     font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-weight-normal);
-    line-height: var(--ex-line-height-normal);
-    letter-spacing: var(--ex-letter-spacing-wide);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-normal);
+    letter-spacing: var(--ex-tracking-wide);
   }
 
   &--overline {
     font-size: var(--ex-text-xs);
-    font-weight: var(--ex-font-weight-medium);
-    line-height: var(--ex-line-height-normal);
-    letter-spacing: var(--ex-letter-spacing-wider);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-normal);
+    letter-spacing: var(--ex-tracking-wider);
     text-transform: uppercase;
   }
 
@@ -75,7 +75,7 @@
   &--4xl { font-size: var(--ex-text-4xl); }
 
   // ============================================================================
-  // 修饰符样�?(Modifier Styles)
+  // 修饰符样�?(Modifier Styles)
   // ============================================================================
 
   &--truncate {
@@ -106,7 +106,7 @@
   }
 
   &--bold {
-    font-weight: var(--ex-font-weight-bold);
+    font-weight: var(--ex-font-bold);
   }
 
   &--italic {
@@ -121,7 +121,7 @@
   }
 
   // ============================================================================
-  // 响应式设�?(Responsive Design)
+  // 响应式设�?(Responsive Design)
   // ============================================================================
 
   @include respond-to(xs) {
@@ -139,7 +139,7 @@
   }
 
   // ============================================================================
-  // 无障碍支�?(Accessibility)
+  // 无障碍支�?(Accessibility)
   // ============================================================================
 
   @media (prefers-reduced-motion: reduce) {

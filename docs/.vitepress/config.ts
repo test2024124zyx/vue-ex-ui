@@ -120,6 +120,9 @@ export default defineConfig({
             { text: 'Switch 开关', link: '/components/switch' },
             { text: 'Slider 滑块', link: '/components/slider' },
             { text: 'DateTimePicker 日期时间选择器', link: '/components/datetime-picker' },
+            { text: 'TimePicker 时间选择器', link: '/components/time-picker' },
+            { text: 'ColorPicker 颜色选择器', link: '/components/color-picker' },
+            { text: 'TreeSelect 树选择', link: '/components/tree-select' },
             { text: 'Form 表单容器', link: '/components/form' },
             { text: 'Form 表单示例', link: '/components/form-examples' },
             { text: '验证码输入', link: '/components/verification-code' },
@@ -129,6 +132,7 @@ export default defineConfig({
           text: '数据展示组件',
           items: [
             { text: 'Tag 标签', link: '/components/tag' },
+            { text: 'Descriptions 描述列表', link: '/components/descriptions' },
             { text: 'calendar 日历', link: '/components/calendar' },
             { text: 'timeline 时间轴', link: '/components/timeline' },
             { text: 'Tree 树形控件', link: '/components/tree' },
@@ -163,7 +167,6 @@ export default defineConfig({
             { text: 'Pagination 分页器', link: '/components/pagination' },
             { text: 'BackTop 回到顶部', link: '/components/back-top' },
             { text: 'PageHeader 页头', link: '/components/page-header' },
-            { text: 'Calendar 日历', link: '/components/calendar' },
           ],
         },
         {

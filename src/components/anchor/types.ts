@@ -22,8 +22,6 @@ export interface ExAnchorProps {
   targetOffset?: number;
   /** 指定滚动的容器 */
   container?: () => HTMLElement | Window;
-  /** 固定模式 */
-  affix?: boolean;
 }
 
 /**

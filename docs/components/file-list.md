@@ -637,14 +637,28 @@ setTimeout(() => {
 
 ```typescript
 interface FileItem {
+  /** 文件 ID */
   id: string;
+  /** 文件名 */
   name: string;
+  /** 文件大小（字节） */
   size: number;
+  /** 文件 MIME 类型 */
   type: string;
-  modifiedTime?: Date;
+  /** 文件 URL */
+  url?: string;
+  /** 缩略图 URL */
   thumbUrl?: string;
-  isDirectory: boolean;
+  /** 修改时间 */
+  modifiedTime?: Date;
+  /** 创建时间 */
+  createdTime?: Date;
+  /** 是否为文件夹 */
+  isDirectory?: boolean;
+  /** 子文件（文件夹时） */
   children?: FileItem[];
+  /** 自定义数据 */
+  meta?: Record<string, unknown>;
 }
 ```
 

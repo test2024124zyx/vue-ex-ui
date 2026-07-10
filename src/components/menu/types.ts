@@ -1,6 +1,8 @@
 // ExUI Menu Component Types
 // 菜单组件类型定义
 
+import type { DropdownPlacement } from '../dropdown/types';
+
 export type MenuMode = 'horizontal' | 'vertical' | 'inline';
 
 // 菜单项数据接口
@@ -98,7 +100,7 @@ export interface ExSubMenuProps {
   // 是否禁用
   disabled?: boolean;
   // 弹出位置（horizontal 模式下有效）
-  popupPlacement?: 'top' | 'bottom' | 'left' | 'right';
+  popupPlacement?: DropdownPlacement;
   // 自定义类名
   class?: string | string[] | Record<string, boolean>;
   // 自定义样式

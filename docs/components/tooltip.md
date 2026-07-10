@@ -84,15 +84,15 @@ const visible = ref(false)
   <ExTooltip content="Top" placement="top">
     <ExButton>上边</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="Bottom" placement="bottom">
     <ExButton>下边</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="Left" placement="left">
     <ExButton>左边</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="Right" placement="right">
     <ExButton>右边</ExButton>
   </ExTooltip>
@@ -117,7 +117,7 @@ const visible = ref(false)
   <ExTooltip content="深色主题提示" effect="dark">
     <ExButton>深色主题</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="浅色主题提示" effect="light">
     <ExButton>浅色主题</ExButton>
   </ExTooltip>
@@ -145,11 +145,11 @@ const visible = ref(false)
   <ExTooltip content="鼠标悬停触发" trigger="hover">
     <ExButton>悬停触发</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="点击触发" trigger="click">
     <ExButton>点击触发</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="聚焦触发" trigger="focus">
     <ExButton>聚焦触发</ExButton>
   </ExTooltip>
@@ -174,7 +174,7 @@ const visible = ref(false)
   <ExTooltip content="延迟 500ms 显示" :open-delay="500">
     <ExButton>延迟显示</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="延迟 500ms 隐藏" :close-delay="500">
     <ExButton>延迟隐藏</ExButton>
   </ExTooltip>
@@ -199,7 +199,7 @@ const visible = ref(false)
   <ExTooltip content="这是一条提示" :disabled="false">
     <ExButton>启用提示</ExButton>
   </ExTooltip>
-  
+
   <ExTooltip content="这是一条提示" :disabled="true">
     <ExButton>禁用提示</ExButton>
   </ExTooltip>
@@ -222,15 +222,15 @@ const visible = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
   <ExButton @click="visible = true">显示</ExButton>
   <ExButton @click="visible = false">隐藏</ExButton>
-  
+
   <ExTooltip content="手动控制的提示" v-model="visible">
     <ExButton>目标元素</ExButton>
   </ExTooltip>
@@ -359,43 +359,43 @@ const visible = ref(false)
 
 ### Tooltip Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `content` | 显示的内容 | `string` | — |
-| `placement` | 出现位置 | `'top' \| 'top-start' \| 'top-end' \| 'bottom' \| 'bottom-start' \| 'bottom-end' \| 'left' \| 'left-start' \| 'left-end' \| 'right' \| 'right-start' \| 'right-end'` | `'top'` |
-| `trigger` | 触发方式 | `'hover' \| 'click' \| 'focus' \| 'hover-focus'` | `'hover'` |
-| `effect` | 主题 | `'dark' \| 'light'` | `'dark'` |
-| `show-arrow` | 是否显示箭头 | `boolean` | `true` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `offset` | 偏移量（像素） | `number` | `12` |
-| `transition` | 过渡动画名称 | `string` | `'ex-tooltip-fade'` |
-| `open-delay` | 延迟显示（毫秒） | `number` | `0` |
-| `close-delay` | 延迟隐藏（毫秒） | `number` | `200` |
-| `custom-class` | 自定义类名 | `string` | — |
-| `z-index` | 层级 | `number` | `2000` |
-| `v-model` | 手动控制显示 | `boolean` | — |
-| `aria-label` | 无障碍标签 | `string` | — |
+| 参数           | 说明             | 类型                                                                                                                                                                 | 默认值              |
+| -------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `content`      | 显示的内容       | `string`                                                                                                                                                             | —                   |
+| `placement`    | 出现位置         | `'top' \| 'top-start' \| 'top-end' \| 'bottom' \| 'bottom-start' \| 'bottom-end' \| 'left' \| 'left-start' \| 'left-end' \| 'right' \| 'right-start' \| 'right-end'` | `'top'`             |
+| `trigger`      | 触发方式         | `'hover' \| 'click' \| 'focus' \| 'hover-focus'`                                                                                                                     | `'hover'`           |
+| `effect`       | 主题             | `'dark' \| 'light'`                                                                                                                                                  | `'dark'`            |
+| `show-arrow`   | 是否显示箭头     | `boolean`                                                                                                                                                            | `true`              |
+| `disabled`     | 是否禁用         | `boolean`                                                                                                                                                            | `false`             |
+| `offset`       | 偏移量（像素）   | `number`                                                                                                                                                             | `12`                |
+| `transition`   | 过渡动画名称     | `string`                                                                                                                                                             | `'ex-tooltip-fade'` |
+| `open-delay`   | 延迟显示（毫秒） | `number`                                                                                                                                                             | `0`                 |
+| `close-delay`  | 延迟隐藏（毫秒） | `number`                                                                                                                                                             | `200`               |
+| `custom-class` | 自定义类名       | `string`                                                                                                                                                             | —                   |
+| `z-index`      | 层级             | `number`                                                                                                                                                             | `2000`              |
+| `v-model`      | 手动控制显示     | `boolean`                                                                                                                                                            | —                   |
+| `aria-label`   | 无障碍标签       | `string`                                                                                                                                                             | —                   |
 
 ### Tooltip Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
+| 事件名 | 说明       | 类型         |
+| ------ | ---------- | ------------ |
 | `show` | 显示时触发 | `() => void` |
 | `hide` | 隐藏时触发 | `() => void` |
 
 ### Tooltip Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 触发元素 |
+| 插槽名    | 说明           |
+| --------- | -------------- |
+| `default` | 触发元素       |
 | `content` | 自定义提示内容 |
 
 ### Tooltip Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `show` | 显示提示 | `() => void` |
-| `hide` | 隐藏提示 | `() => void` |
+| 方法名           | 说明     | 类型         |
+| ---------------- | -------- | ------------ |
+| `show`           | 显示提示 | `() => void` |
+| `hide`           | 隐藏提示 | `() => void` |
 | `updatePosition` | 更新位置 | `() => void` |
 
 ## 无障碍支持
@@ -405,16 +405,57 @@ const visible = ref(false)
 - 支持键盘导航（focus 触发）
 - 支持屏幕阅读器
 
+## 受控 / 非受控
+
+默认由 `trigger`（hover / click / focus / hover-focus）非受控地控制显隐。也可用 `v-model` 手动控制：
+
+```vue
+<template>
+  <ExTooltip v-model="show" content="手动控制的提示">
+    <ExButton>目标元素</ExButton>
+  </ExTooltip>
+  <ExButton @click="show = !show">切换</ExButton>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const show = ref(false);
+</script>
+```
+
+## 常见问题
+
+**Q：`trigger="focus"` 不生效？**
+已修复。组件监听 `focusin/focusout`（会冒泡），聚焦插槽内的可聚焦元素（如 `<button>`、`<input>`）即可触发。请确保触发元素本身可获得焦点。
+
+**Q：提示被遮挡或超出屏幕边缘？**
+内置主轴翻转（flip）与视口夹取：当前方向空间不足时自动翻到对侧，并在边缘处收拢，无需手动处理。
+
+**Q：移动端没有 hover 怎么办？**
+触屏设备没有 hover，请改用 `trigger="click"`。
+
+**Q：需要在提示里放按钮 / 表单？**
+Tooltip 仅用于简短文字。承载可交互的复杂内容请用 [Popover](/components/popover)。
+
+## 最佳实践
+
+- **只放简短说明文字**；复杂或可交互内容用 Popover。
+- **触发元素应可聚焦**（`<button>`、`<a>` 或加 `tabindex`），以同时支持鼠标、键盘与读屏。
+- **触屏/移动端**改用 `click` 触发。
+- 用 `open-delay` / `close-delay` 避免快速划过时提示闪烁。
+
 ## 主题定制
 
-可以通过 CSS 变量自定义提示样式：
+Tooltip 不定义独立的组件级变量，深浅样式由 `effect="dark" | "light"` 切换。定制方式：
+
+- **单个实例**：用 `custom-class` 添加类名后覆盖 `.ex-tooltip__popper` 的背景与文字色。
+- **全局**：覆盖其消费的全局令牌：
 
 ```css
 :root {
-  --ex-tooltip-bg-dark: rgba(0, 0, 0, 0.9);
-  --ex-tooltip-bg-light: var(--ex-color-white);
-  --ex-tooltip-border: var(--ex-color-primary);
-  --ex-tooltip-shadow: 0 0 15px rgba(41, 171, 226, 0.3);
+  --ex-color-text-primary: #e6f1ff; /* 文字色 */
+  --ex-color-border-primary: #1f2a37; /* 边框 */
+  --ex-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5); /* 投影 */
 }
 ```
 

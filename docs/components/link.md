@@ -12,7 +12,6 @@
     <ex-link>默认链接</ex-link>
 </div>
 
-
 ```vue
 <template>
   <div>
@@ -35,7 +34,6 @@
     <ex-link type="danger">危险链接</ex-link>
     <ex-link type="info">信息链接</ex-link>
 </div>
-
 
 ```vue
 <template>
@@ -60,7 +58,6 @@
     <ex-link size="large" type="primary">大型链接</ex-link>
 </div>
 
-
 ```vue
 <template>
   <div>
@@ -81,7 +78,6 @@
     <ex-link disabled href="https://github.com">禁用外部链接</ex-link>
 </div>
 
-
 ```vue
 <template>
   <div>
@@ -100,7 +96,6 @@
     <ex-link :underline="true" type="primary">显示下划线</ex-link>
     <ex-link :underline="false" type="primary">隐藏下划线</ex-link>
 </div>
-
 
 ```vue
 <template>
@@ -135,7 +130,6 @@
       文档
     </ex-link>
 </div>
-
 
 ```vue
 <template>
@@ -174,7 +168,6 @@
       Vite (无图标)
     </ex-link>
 </div>
-
 
 ```vue
 <template>
@@ -286,21 +279,21 @@
   --ex-color-text-disabled: #666;
 
   /* 间距 */
-  --ex-spacing-xs: 4px;
-  --ex-spacing-sm: 8px;
+  --ex-spacing-1: 4px;
+  --ex-spacing-2: 8px;
 
   /* 字体 */
-  --ex-font-size-sm: 14px;
-  --ex-font-size-base: 16px;
-  --ex-font-size-lg: 18px;
-  --ex-font-weight-medium: 500;
+  --ex-text-sm: 14px;
+  --ex-text-base: 16px;
+  --ex-text-lg: 18px;
+  --ex-font-medium: 500;
 
   /* 圆角 */
-  --ex-radius-sm: 4px;
+  --ex-radius-base: 4px;
 
   /* 动画 */
-  --ex-transition-base: 0.2s;
-  --ex-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ex-motion-duration-base: 200ms;
+  --ex-motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 ```
 

@@ -99,7 +99,12 @@ const handleSearch = (query) => {
     </ExMenuItem>
     <ExMenuItem item-key="2">
       <template #icon>
-        <img src="https://api.iconify.design/ri/gamepad-line.svg" alt="游戏" width="20" height="20" />
+        <img
+          src="https://api.iconify.design/ri/gamepad-line.svg"
+          alt="游戏"
+          width="20"
+          height="20"
+        />
       </template>
       游戏中心
     </ExMenuItem>
@@ -111,7 +116,12 @@ const handleSearch = (query) => {
     </ExMenuItem>
     <ExMenuItem item-key="4">
       <template #icon>
-        <img src="https://api.iconify.design/ri/shopping-cart-line.svg" alt="商城" width="20" height="20" />
+        <img
+          src="https://api.iconify.design/ri/shopping-cart-line.svg"
+          alt="商城"
+          width="20"
+          height="20"
+        />
       </template>
       商城
     </ExMenuItem>
@@ -119,13 +129,13 @@ const handleSearch = (query) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const activeKey = ref('1')
+const activeKey = ref('1');
 
 const handleSelect = (key, item) => {
-  console.log('Selected:', key, item)
-}
+  console.log('Selected:', key, item);
+};
 </script>
 ```
 
@@ -201,7 +211,12 @@ const handleSelect = (key, item) => {
     </ExMenuItem>
     <ExSubMenu item-key="sub1" title="游戏中心">
       <template #icon>
-        <img src="https://api.iconify.design/ri/gamepad-line.svg" alt="游戏" width="20" height="20" />
+        <img
+          src="https://api.iconify.design/ri/gamepad-line.svg"
+          alt="游戏"
+          width="20"
+          height="20"
+        />
       </template>
       <ExMenuItem item-key="2">战术射击</ExMenuItem>
       <ExMenuItem item-key="3">赛车竞速</ExMenuItem>
@@ -334,8 +349,8 @@ const handleSelect = (key, item) => {
 
 ```vue
 <template>
-  <ExMenu 
-    v-model:active-key="activeKey" 
+  <ExMenu
+    v-model:active-key="activeKey"
     v-model:open-keys="openKeys"
     :items="menuItems"
     @select="handleSelect"
@@ -343,10 +358,10 @@ const handleSelect = (key, item) => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const activeKey = ref('1')
-const openKeys = ref(['sub1'])
+const activeKey = ref('1');
+const openKeys = ref(['sub1']);
 
 const menuItems = [
   {
@@ -369,11 +384,11 @@ const menuItems = [
     label: '商城',
     icon: 'https://api.iconify.design/ri/shopping-cart-line.svg',
   },
-]
+];
 
 const handleSelect = (key, item) => {
-  console.log('Selected:', key, item)
-}
+  console.log('Selected:', key, item);
+};
 </script>
 ```
 
@@ -437,7 +452,7 @@ const handleSelect = (key, item) => {
       首页
     </ExMenuItem>
   </ExMenu>
-  
+
   <!-- 折叠状态 -->
   <ExMenu mode="inline" collapsed v-model:active-key="activeKey">
     <ExMenuItem item-key="1">
@@ -512,28 +527,23 @@ const handleSelect = (key, item) => {
 
 ```vue
 <template>
-  <ExMenu 
-    searchable
-    v-model:active-key="activeKey"
-    :items="menuItems"
-    @search="handleSearch"
-  />
+  <ExMenu searchable v-model:active-key="activeKey" :items="menuItems" @search="handleSearch" />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const activeKey = ref('1')
+const activeKey = ref('1');
 const menuItems = [
   { key: '1', label: '首页', icon: 'https://api.iconify.design/ri/home-line.svg' },
   { key: '2', label: '游戏中心', icon: 'https://api.iconify.design/ri/gamepad-line.svg' },
   { key: '3', label: '社区', icon: 'https://api.iconify.design/ri/team-line.svg' },
-]
+];
 
-const handleSearch = (query) => {
-  console.log('Search:', query)
+const handleSearch = query => {
+  console.log('Search:', query);
   // 可以在这里实现自定义搜索逻辑
-}
+};
 </script>
 ```
 
@@ -570,16 +580,16 @@ const handleSearch = (query) => {
     <!-- 内部路由 -->
     <ExMenuItem item-key="1" path="/home">首页</ExMenuItem>
     <ExMenuItem item-key="2" path="/games">游戏中心</ExMenuItem>
-    
+
     <!-- 外部链接（自动在新窗口打开） -->
     <ExMenuItem item-key="3" path="https://github.com">GitHub</ExMenuItem>
   </ExMenu>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const activeKey = ref('1')
+const activeKey = ref('1');
 </script>
 ```
 
@@ -600,29 +610,33 @@ const activeKey = ref('1')
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
-const router = useRouter()
-const route = useRoute()
-const activeKey = ref('home')
+const router = useRouter();
+const route = useRoute();
+const activeKey = ref('home');
 
 // 根据当前路由设置激活项
-watch(() => route.path, (path) => {
-  // 根据路径匹配对应的 key
-  if (path === '/home') activeKey.value = 'home'
-  else if (path === '/about') activeKey.value = 'about'
-  else if (path.startsWith('/products/')) {
-    activeKey.value = path === '/products/1' ? 'product-1' : 'product-2'
-  }
-}, { immediate: true })
+watch(
+  () => route.path,
+  path => {
+    // 根据路径匹配对应的 key
+    if (path === '/home') activeKey.value = 'home';
+    else if (path === '/about') activeKey.value = 'about';
+    else if (path.startsWith('/products/')) {
+      activeKey.value = path === '/products/1' ? 'product-1' : 'product-2';
+    }
+  },
+  { immediate: true }
+);
 
 const handleSelect = (key, item) => {
   // 使用 router.push 进行路由跳转
   if (item.path && !item.path.startsWith('http')) {
-    router.push(item.path)
+    router.push(item.path);
   }
-}
+};
 </script>
 ```
 
@@ -660,12 +674,7 @@ const handleSelect = (key, item) => {
 
 ```vue
 <template>
-  <ExMenu 
-    mode="vertical" 
-    responsive 
-    :breakpoint="768"
-    v-model:active-key="activeKey"
-  >
+  <ExMenu mode="vertical" responsive :breakpoint="768" v-model:active-key="activeKey">
     <ExMenuItem item-key="1">首页</ExMenuItem>
     <ExMenuItem item-key="2">游戏中心</ExMenuItem>
     <ExMenuItem item-key="3">社区</ExMenuItem>
@@ -677,91 +686,91 @@ const handleSelect = (key, item) => {
 
 ### Menu Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `mode` | 菜单模式 | `'horizontal' \| 'vertical' \| 'inline'` | `'vertical'` |
-| `active-key` | 当前激活的菜单项 key (v-model) | `string` | `undefined` |
-| `default-active-key` | 默认激活的菜单项 key | `string` | `undefined` |
-| `open-keys` | 当前展开的子菜单 key 数组 (v-model) | `string[]` | `[]` |
-| `default-open-keys` | 默认展开的子菜单 key 数组 | `string[]` | `[]` |
-| `collapsed` | 是否折叠（仅 inline 模式有效） | `boolean` | `false` |
-| `selectable` | 是否可选择 | `boolean` | `true` |
-| `responsive` | 是否响应式（移动端自动适配） | `boolean` | `false` |
-| `breakpoint` | 响应式断点（像素） | `number` | `768` |
-| `searchable` | 是否显示搜索框 | `boolean` | `false` |
-| `items` | 菜单数据 | `MenuItem[]` | `undefined` |
+| 属性                 | 说明                                | 类型                                     | 默认值       |
+| -------------------- | ----------------------------------- | ---------------------------------------- | ------------ |
+| `mode`               | 菜单模式                            | `'horizontal' \| 'vertical' \| 'inline'` | `'vertical'` |
+| `active-key`         | 当前激活的菜单项 key (v-model)      | `string`                                 | `undefined`  |
+| `default-active-key` | 默认激活的菜单项 key                | `string`                                 | `undefined`  |
+| `open-keys`          | 当前展开的子菜单 key 数组 (v-model) | `string[]`                               | `[]`         |
+| `default-open-keys`  | 默认展开的子菜单 key 数组           | `string[]`                               | `[]`         |
+| `collapsed`          | 是否折叠（仅 inline 模式有效）      | `boolean`                                | `false`      |
+| `selectable`         | 是否可选择                          | `boolean`                                | `true`       |
+| `responsive`         | 是否响应式（移动端自动适配）        | `boolean`                                | `false`      |
+| `breakpoint`         | 响应式断点（像素）                  | `number`                                 | `768`        |
+| `searchable`         | 是否显示搜索框                      | `boolean`                                | `false`      |
+| `items`              | 菜单数据                            | `MenuItem[]`                             | `undefined`  |
 
 ### Menu Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:activeKey` | 激活菜单项变化时触发 | `(key: string) => void` |
-| `update:openKeys` | 展开的子菜单变化时触发 | `(keys: string[]) => void` |
-| `select` | 选择菜单项时触发 | `(key: string, item: MenuItem) => void` |
-| `click` | 点击菜单项时触发 | `(key: string, item: MenuItem) => void` |
-| `openChange` | 子菜单展开/收起时触发 | `(openKeys: string[]) => void` |
-| `search` | 搜索框输入时触发 | `(query: string) => void` |
+| 事件名             | 说明                   | 类型                                    |
+| ------------------ | ---------------------- | --------------------------------------- |
+| `update:activeKey` | 激活菜单项变化时触发   | `(key: string) => void`                 |
+| `update:openKeys`  | 展开的子菜单变化时触发 | `(keys: string[]) => void`              |
+| `select`           | 选择菜单项时触发       | `(key: string, item: MenuItem) => void` |
+| `click`            | 点击菜单项时触发       | `(key: string, item: MenuItem) => void` |
+| `openChange`       | 子菜单展开/收起时触发  | `(openKeys: string[]) => void`          |
+| `search`           | 搜索框输入时触发       | `(query: string) => void`               |
 
 ### Menu Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getActiveKey` | 获取当前激活的菜单项 key | `() => string \| undefined` |
-| `getOpenKeys` | 获取当前展开的子菜单 key 数组 | `() => string[]` |
-| `setActiveKey` | 设置激活的菜单项 key | `(key: string) => void` |
-| `setOpenKeys` | 设置展开的子菜单 key 数组 | `(keys: string[]) => void` |
-| `getElement` | 获取菜单 DOM 元素 | `() => HTMLElement \| null` |
+| 方法名         | 说明                          | 类型                        |
+| -------------- | ----------------------------- | --------------------------- |
+| `getActiveKey` | 获取当前激活的菜单项 key      | `() => string \| undefined` |
+| `getOpenKeys`  | 获取当前展开的子菜单 key 数组 | `() => string[]`            |
+| `setActiveKey` | 设置激活的菜单项 key          | `(key: string) => void`     |
+| `setOpenKeys`  | 设置展开的子菜单 key 数组     | `(keys: string[]) => void`  |
+| `getElement`   | 获取菜单 DOM 元素             | `() => HTMLElement \| null` |
 
 ### Menu Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名    | 说明     |
+| --------- | -------- |
 | `default` | 菜单内容 |
 
 ### MenuItem Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `item-key` | 菜单项唯一标识 | `string` | - |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `path` | 路径（用于路由） | `string` | `undefined` |
+| 属性       | 说明             | 类型      | 默认值      |
+| ---------- | ---------------- | --------- | ----------- |
+| `item-key` | 菜单项唯一标识   | `string`  | -           |
+| `disabled` | 是否禁用         | `boolean` | `false`     |
+| `path`     | 路径（用于路由） | `string`  | `undefined` |
 
 ### MenuItem Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
+| 事件名  | 说明             | 类型                    |
+| ------- | ---------------- | ----------------------- |
 | `click` | 点击菜单项时触发 | `(key: string) => void` |
 
 ### MenuItem Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名    | 说明       |
+| --------- | ---------- |
 | `default` | 菜单项内容 |
-| `icon` | 菜单项图标 |
+| `icon`    | 菜单项图标 |
 
 ### SubMenu Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `item-key` | 子菜单唯一标识 | `string` | - |
-| `title` | 子菜单标题 | `string` | - |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `popup-placement` | 弹出位置（horizontal 模式下有效） | `'top' \| 'bottom' \| 'left' \| 'right'` | `'bottom'` |
+| 属性              | 说明                              | 类型                                                              | 默认值           |
+| ----------------- | --------------------------------- | ----------------------------------------------------------------- | ---------------- |
+| `item-key`        | 子菜单唯一标识                    | `string`                                                          | -                |
+| `title`           | 子菜单标题                        | `string`                                                          | -                |
+| `disabled`        | 是否禁用                          | `boolean`                                                         | `false`          |
+| `popup-placement` | 弹出位置（horizontal 模式下有效） | `DropdownPlacement`（`'bottom-start'`、`'right-start'` 等 12 种） | `'bottom-start'` |
 
 ### SubMenu Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `titleClick` | 点击子菜单标题时触发 | `(key: string) => void` |
-| `openChange` | 展开/收起时触发 | `(open: boolean) => void` |
+| 事件名       | 说明                 | 类型                      |
+| ------------ | -------------------- | ------------------------- |
+| `titleClick` | 点击子菜单标题时触发 | `(key: string) => void`   |
+| `openChange` | 展开/收起时触发      | `(open: boolean) => void` |
 
 ### SubMenu Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名    | 说明       |
+| --------- | ---------- |
 | `default` | 子菜单内容 |
-| `title` | 子菜单标题 |
-| `icon` | 子菜单图标 |
+| `title`   | 子菜单标题 |
+| `icon`    | 子菜单图标 |
 
 ### MenuItem 数据类型
 
@@ -817,6 +826,7 @@ MenuItem 支持 `path` 属性，自动处理路由跳转：
 ```
 
 **路由跳转逻辑：**
+
 1. 检测到 `http://` 或 `https://` 开头的链接，使用 `window.open()` 在新窗口打开
 2. 其他路径使用 `window.location.hash` 进行 hash 导航
 3. 可以监听 `select` 事件自定义路由跳转逻辑（如使用 Vue Router）
@@ -839,11 +849,11 @@ MenuItem 支持 `path` 属性，自动处理路由跳转：
   /* 菜单背景和边框 */
   --ex-color-bg-primary: #0b0f14;
   --ex-color-neon-blue-alpha-30: rgba(41, 171, 226, 0.3);
-  
+
   /* 菜单项颜色 */
   --ex-color-white-alpha-70: rgba(255, 255, 255, 0.7);
   --ex-color-neon-blue-500: #29abe2;
-  
+
   /* 悬停和激活效果 */
   --ex-color-neon-blue-alpha-15: rgba(41, 171, 226, 0.15);
   --ex-color-neon-pink-alpha-10: rgba(255, 59, 209, 0.1);

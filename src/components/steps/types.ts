@@ -110,7 +110,10 @@ export interface StepsContext {
   progressDot: ComputedRef<boolean>;
   clickable: ComputedRef<boolean>;
   stepCount: ComputedRef<number>;
-  registerStep: (uid: number) => number;
-  unregisterStep: (uid: number) => void;
+  /** 按文档顺序登记步骤，返回值无意义；索引通过 getStepIndex 响应式获取 */
+  registerStep: (uid: symbol) => void;
+  unregisterStep: (uid: symbol) => void;
+  /** 获取某步骤当前的索引（随增删/重排实时变化，-1 表示未注册） */
+  getStepIndex: (uid: symbol) => number;
   onStepClick: (index: number) => void;
 }

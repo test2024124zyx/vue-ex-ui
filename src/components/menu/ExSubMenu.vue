@@ -61,7 +61,7 @@
       </ExDropdown>
     </template>
     <template v-else>
-      <div
+      <button
         ref="titleButtonRef"
         type="button"
         class="ex-submenu__title"
@@ -96,7 +96,7 @@
             />
           </svg>
         </span>
-      </div>
+      </button>
       <transition
         name="ex-submenu-slide"
         @enter="onEnter"
@@ -126,6 +126,7 @@ import { computed, inject, ref, watch, nextTick } from 'vue';
 import ExDropdown from '../dropdown/ExDropdown.vue';
 import type { DropdownPlacement } from '../dropdown/types';
 import type { ExSubMenuEmits, ExSubMenuExposed } from './types';
+import { generateId } from '../../utils/id';
 
 interface Props {
   itemKey: string;
@@ -160,7 +161,8 @@ const subMenuRef = ref<HTMLLIElement>();
 const titleButtonRef = ref<HTMLButtonElement>();
 const submenuListRef = ref<HTMLUListElement>();
 const dropdownRef = ref<InstanceType<typeof ExDropdown>>();
-const submenuId = `ex-submenu-${props.itemKey}`;
+// 用全局唯一 id，避免同一页面多个 Menu 含相同 itemKey 的子菜单时 DOM id / aria-controls 冲突
+const submenuId = generateId('ex-submenu');
 const menuContext = inject<MenuContext | null>('exMenu', null);
 const internalOpen = ref(false);
 

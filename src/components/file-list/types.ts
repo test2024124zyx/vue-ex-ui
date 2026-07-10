@@ -34,7 +34,7 @@ export type ViewMode = 'list' | 'grid' | 'table' | 'tree';
 /**
  * 排序字段
  */
-export type SortField = 'name' | 'size' | 'type' | 'modifiedTime' | 'createdTime';
+export type SortField = 'name' | 'size' | 'type' | 'modifiedTime';
 
 /**
  * 排序方向
@@ -81,8 +81,6 @@ export interface ExFileListProps {
   downloadable?: boolean;
   /** 是否可删除 */
   deletable?: boolean;
-  /** 是否可重命名 */
-  renamable?: boolean;
   /** 空状态文本 */
   emptyText?: string;
   /** 加载状态 */
@@ -111,8 +109,6 @@ export interface ExFileListEmits {
   download: [file: FileItem];
   /** 文件删除 */
   delete: [file: FileItem];
-  /** 文件重命名 */
-  rename: [file: FileItem, newName: string];
   /** 排序变化 */
   sort: [field: SortField, order: SortOrder];
   /** 搜索 */

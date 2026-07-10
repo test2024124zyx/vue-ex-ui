@@ -228,9 +228,13 @@ const updateMenuPosition = () => {
   menuStyles.value = styles;
 };
 
+// 受控模式（传入 visible prop）下，isVisible 只由 props.visible 的 watch 驱动，
+// 内部不直接改写，避免与父级状态脱节。
+const isControlled = computed(() => props.visible !== undefined);
+
 const show = () => {
   if (props.disabled) return;
-  isVisible.value = true;
+  if (!isControlled.value) isVisible.value = true;
   emit('update:visible', true);
   emit('show');
   nextTick(() => {
@@ -239,7 +243,7 @@ const show = () => {
 };
 
 const hide = () => {
-  isVisible.value = false;
+  if (!isControlled.value) isVisible.value = false;
   activeIndex.value = -1;
   emit('update:visible', false);
   emit('hide');

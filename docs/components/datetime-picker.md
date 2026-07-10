@@ -124,7 +124,7 @@ import { ref } from 'vue';
 
 const date = ref(null);
 
-const disabledDate = (date) => {
+const disabledDate = date => {
   // 禁用今天之前的日期
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -246,7 +246,7 @@ import { ref } from 'vue';
 
 const date = ref(null);
 
-const handleChange = (value) => {
+const handleChange = value => {
   console.log('Date changed:', value);
 };
 </script>
@@ -341,7 +341,7 @@ import { ref } from 'vue';
 
 const dateRange = ref(null);
 
-const disabledDate = (date) => {
+const disabledDate = date => {
   // 禁用今天之前的日期
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -581,21 +581,7 @@ const datetimeRange = ref(null);
 
 ## 主题定制
 
-可以通过 CSS 变量自定义日期选择器样式：
-
-```css
-:root {
-  --ex-datetime-picker-bg: var(--ex-color-bg-secondary);
-  --ex-datetime-picker-border: var(--ex-color-border-primary);
-  --ex-datetime-picker-color: var(--ex-color-text-primary);
-  --ex-datetime-picker-hover-bg: rgba(0, 240, 255, 0.1);
-  --ex-datetime-picker-selected-bg: linear-gradient(
-    135deg,
-    var(--ex-color-neon-blue-500),
-    var(--ex-color-neon-pink-500)
-  );
-}
-```
+日期时间选择器跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

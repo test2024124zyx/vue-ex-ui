@@ -28,9 +28,7 @@
 
 ```vue
 <template>
-  <ex-ellipsis :lines="2">
-    多行省略示例...
-  </ex-ellipsis>
+  <ex-ellipsis :lines="2">多行省略示例...</ex-ellipsis>
 </template>
 ```
 
@@ -44,9 +42,7 @@
 
 ```vue
 <template>
-  <ex-ellipsis :lines="2" expandable>
-    可展开/收起的省略文本...
-  </ex-ellipsis>
+  <ex-ellipsis :lines="2" expandable>可展开/收起的省略文本...</ex-ellipsis>
 </template>
 ```
 
@@ -68,32 +64,28 @@
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| lines | 省略的行数 | `number` | `1` |
-| expandable | 是否可展开/收起 | `boolean` | `false` |
-| tooltip | hover 显示原生提示 | `boolean` | `true` |
-| ariaLabel | 无障碍标签 | `string` | `''` |
+| 参数       | 说明               | 类型      | 默认值  |
+| ---------- | ------------------ | --------- | ------- |
+| lines      | 省略的行数         | `number`  | `1`     |
+| expandable | 是否可展开/收起    | `boolean` | `false` |
+| tooltip    | hover 显示原生提示 | `boolean` | `true`  |
+| ariaLabel  | 无障碍标签         | `string`  | `''`    |
 
 ### Slots
 
-| 名称 | 说明 |
-| --- | --- |
+| 名称    | 说明     |
+| ------- | -------- |
 | default | 文本内容 |
 
 ### Exposes
 
-| 方法名 | 说明 |
-| --- | --- |
+| 方法名     | 说明       |
+| ---------- | ---------- |
 | getElement | 获取根元素 |
 
 ## 主题定制
 
-```css
-:root {
-  --ex-ellipsis-gradient: linear-gradient(90deg, transparent, var(--ex-color-bg));
-}
-```
+Ellipsis 跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 ## 无障碍与国际化
 

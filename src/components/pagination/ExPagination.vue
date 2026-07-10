@@ -367,7 +367,13 @@ const handleSizeChange = () => {
 
 // 快速跳转
 const handleJump = () => {
-  const page = Math.max(1, Math.min(totalPages.value, Math.floor(jumpValue.value)));
+  // 输入被清空时 v-model.number 会得到 NaN，需先拦截，否则会越过 handlePageChange 的边界守卫
+  const raw = Number(jumpValue.value);
+  if (!Number.isFinite(raw)) {
+    jumpValue.value = currentPage.value;
+    return;
+  }
+  const page = Math.max(1, Math.min(totalPages.value, Math.floor(raw)));
   if (page !== currentPage.value) {
     handlePageChange(page);
   } else {

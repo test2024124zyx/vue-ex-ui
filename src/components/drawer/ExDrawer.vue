@@ -13,13 +13,18 @@
       </Transition>
 
       <!-- 抽屉容器 -->
-      <Transition :name="`ex-drawer-slide-${placement}`" @after-leave="handleAfterLeave">
+      <Transition
+        :name="`ex-drawer-slide-${placement}`"
+        @after-enter="handleAfterEnter"
+        @after-leave="handleAfterLeave"
+      >
         <div
           v-if="visible"
+          ref="panelRef"
           :class="drawerClasses"
           :style="drawerStyles"
           role="dialog"
-          :aria-modal="true"
+          :aria-modal="mask"
           :aria-label="ariaLabel || title"
           @click.stop
         >
@@ -77,9 +82,10 @@
 
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { ExDrawerProps, ExDrawerEmits, ExDrawerExposed } from './types';
 import { useLocale } from '../../locale';
+import { useOverlay } from '../../composables/useOverlay';
 import ExButton from '../button/ExButton.vue';
 
 defineOptions({
@@ -108,9 +114,9 @@ const emit = defineEmits<ExDrawerEmits>();
 
 const { t } = useLocale('drawer');
 const drawerRef = ref<HTMLDivElement>();
+const panelRef = ref<HTMLDivElement>();
 const visible = ref(props.modelValue);
 const wrapperVisible = ref(props.modelValue);
-const originalOverflow = ref('');
 
 // 计算属性
 const drawerClasses = computed(() => {
@@ -176,50 +182,59 @@ const drawerStyles = computed(() => {
   return styles;
 });
 
-// 方法
-const lockBodyScroll = () => {
-  if (!props.lockScroll) return;
-  originalOverflow.value = document.body.style.overflow;
-  document.body.style.overflow = 'hidden';
-};
+// 浮层通用机制：滚动锁定（带滚动条补偿与引用计数）、自动聚焦、焦点陷阱、
+// Esc 关闭（只关最顶层）、关闭后归还焦点、卸载清理
+// （与 ExModal / ExDialog 共用同一套 useOverlay 实现）
+useOverlay({
+  active: () => visible.value,
+  container: panelRef,
+  lockScroll: () => props.lockScroll,
+  closeOnEscape: () => props.closable,
+  onEscape: () => requestClose(),
+  restoreFocus: true,
+});
 
-const unlockBodyScroll = () => {
-  if (!props.lockScroll) return;
-  document.body.style.overflow = originalOverflow.value;
-};
-
-const handleOpen = async () => {
+// 执行打开（beforeOpen 守卫通过后置 visible，副作用由 useOverlay 处理）
+const openDrawer = async () => {
   if (props.beforeOpen) {
     const result = await props.beforeOpen();
-    if (!result) return;
+    if (result === false) {
+      // 拒绝打开时回写 modelValue，保持与父级同步
+      emit('update:modelValue', false);
+      return;
+    }
   }
 
   wrapperVisible.value = true;
-  await nextTick();
   visible.value = true;
-  emit('update:modelValue', true);
   emit('open');
-
-  await nextTick();
-  lockBodyScroll();
-  emit('opened');
 };
 
-const handleClose = async () => {
+// 执行关闭（守卫已在 requestClose 中执行；副作用由 useOverlay 处理）
+const closeDrawer = () => {
+  if (!visible.value) return;
+  visible.value = false;
+  emit('close');
+};
+
+// 请求关闭抽屉（关闭按钮 / 遮罩 / Esc / 取消按钮统一入口）
+// beforeClose 守卫只在「请求关闭」时执行，避免 modelValue 与内部 visible 脱钩
+const requestClose = async () => {
   if (props.beforeClose) {
     const result = await props.beforeClose();
-    if (!result) return;
+    if (result === false) return;
   }
-
-  visible.value = false;
   emit('update:modelValue', false);
-  emit('close');
 };
 
 const handleMaskClick = () => {
   if (props.maskClosable) {
-    handleClose();
+    requestClose();
   }
+};
+
+const handleClose = () => {
+  requestClose();
 };
 
 const handleOk = () => {
@@ -228,59 +243,42 @@ const handleOk = () => {
 
 const handleCancel = () => {
   emit('cancel');
-  handleClose();
+  requestClose();
+};
+
+const handleAfterEnter = () => {
+  emit('opened');
 };
 
 const handleAfterLeave = () => {
   // 动画结束后移除 wrapper
   wrapperVisible.value = false;
-  unlockBodyScroll();
   emit('closed');
 };
 
-const open = () => {
-  handleOpen();
-};
-
-const close = () => {
-  handleClose();
-};
-
-const getElement = () => drawerRef.value || null;
-
-// 监听 modelValue 变化
+// 监听 modelValue 变化：父级状态是唯一事实来源
 watch(
   () => props.modelValue,
   newVal => {
-    if (newVal !== visible.value) {
-      if (newVal) {
-        handleOpen();
-      } else {
-        handleClose();
-      }
+    if (newVal) {
+      void openDrawer();
+    } else {
+      closeDrawer();
     }
-  }
+  },
+  { immediate: true }
 );
 
-// ESC 键关闭
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && visible.value && props.closable) {
-    handleClose();
-  }
+// 暴露的方法
+const open = () => {
+  emit('update:modelValue', true);
 };
 
-// 生命周期
-onMounted(() => {
-  if (props.modelValue) {
-    handleOpen();
-  }
-  document.addEventListener('keydown', handleKeydown);
-});
+const close = () => {
+  requestClose();
+};
 
-onUnmounted(() => {
-  unlockBodyScroll();
-  document.removeEventListener('keydown', handleKeydown);
-});
+const getElement = () => drawerRef.value || null;
 
 defineExpose<ExDrawerExposed>({
   open,

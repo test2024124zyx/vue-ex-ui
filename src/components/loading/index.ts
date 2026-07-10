@@ -7,4 +7,12 @@ ExLoading.install = (app: App) => {
 
 export default ExLoading;
 export { ExLoading };
+export {
+  loadingService,
+  createLoadingService,
+  createLoadingManager,
+  showLoading,
+  hideLoading,
+  destroyLoading,
+} from './LoadingService';
 export * from './types';

@@ -79,9 +79,9 @@ const handleChange = (value, selectedOptions) => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const value = ref([])
+const value = ref([]);
 
 const options = [
   {
@@ -91,21 +91,15 @@ const options = [
       {
         value: 'hangzhou',
         label: '杭州',
-        children: [
-          { value: 'xihu', label: '西湖' },
-        ],
+        children: [{ value: 'xihu', label: '西湖' }],
       },
     ],
   },
-]
+];
 </script>
 
 <template>
-  <ExCascader
-    v-model="value"
-    :options="options"
-    placeholder="请选择地区"
-  />
+  <ExCascader v-model="value" :options="options" placeholder="请选择地区" />
 </template>
 ```
 
@@ -122,9 +116,9 @@ const options = [
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const value = ref(['zhejiang', 'hangzhou', 'xihu'])
+const value = ref(['zhejiang', 'hangzhou', 'xihu']);
 </script>
 
 <template>
@@ -136,30 +130,31 @@ const value = ref(['zhejiang', 'hangzhou', 'xihu'])
 
 ### Cascader Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model-value / v-model` | 选中值 | `(string \| number)[]` | `[]` |
-| `options` | 选项数据 | `CascaderOption[]` | `[]` |
-| `placeholder` | 占位文本 | `string` | `'请选择'` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `clearable` | 是否可清空 | `boolean` | `true` |
-| `size` | 尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `separator` | 分隔符 | `string` | `' / '` |
+| 属性                    | 说明       | 类型                             | 默认值     |
+| ----------------------- | ---------- | -------------------------------- | ---------- |
+| `model-value / v-model` | 选中值     | `(string \| number)[]`           | `[]`       |
+| `options`               | 选项数据   | `CascaderOption[]`               | `[]`       |
+| `placeholder`           | 占位文本   | `string`                         | `'请选择'` |
+| `disabled`              | 是否禁用   | `boolean`                        | `false`    |
+| `clearable`             | 是否可清空 | `boolean`                        | `true`     |
+| `size`                  | 尺寸       | `'small' \| 'medium' \| 'large'` | `'medium'` |
+| `separator`             | 分隔符     | `string`                         | `' / '`    |
 
 ### Cascader Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:model-value` | 值变化时触发 | `(value: (string \| number)[]) => void` |
-| `change` | 选择变化时触发 | `(value, selectedOptions) => void` |
-| `clear` | 清空时触发 | `() => void` |
+| 事件名               | 说明                    | 类型                                    |
+| -------------------- | ----------------------- | --------------------------------------- |
+| `update:model-value` | 值变化时触发            | `(value: (string \| number)[]) => void` |
+| `change`             | 选择变化时触发          | `(value, selectedOptions) => void`      |
+| `visible-change`     | 下拉面板显示/隐藏时触发 | `(visible: boolean) => void`            |
+| `clear`              | 清空时触发              | `() => void`                            |
 
 ### Cascader Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getCheckedNodes` | 获取选中的选项 | `() => CascaderOption[]` |
-| `getElement` | 获取组件DOM元素 | `() => HTMLDivElement \| null` |
+| 方法名            | 说明            | 类型                           |
+| ----------------- | --------------- | ------------------------------ |
+| `getCheckedNodes` | 获取选中的选项  | `() => CascaderOption[]`       |
+| `getElement`      | 获取组件DOM元素 | `() => HTMLDivElement \| null` |
 
 <style scoped>
 .demo-container {

@@ -8,6 +8,8 @@
       role="alert"
       :aria-live="type === 'error' ? 'assertive' : 'polite'"
       @click="handleClick"
+      @mouseenter="pauseTimer"
+      @mouseleave="resumeTimer"
     >
       <!-- 图标 -->
       <div v-if="showIcon" class="ex-notification__icon" :class="iconClasses">
@@ -28,8 +30,10 @@
         <!-- 描述内容 -->
         <div v-if="content" class="ex-notification__description">
           <slot>
-            <!-- 使用 sanitizeHtml 消毒后的内容，已防止 XSS 攻击 -->
+            <!-- dangerouslyUseHTMLString 由用户显式开启；内容已经 sanitizeHtml 消毒，防止 XSS。 -->
+            <!-- eslint-disable vue/no-v-html -->
             <span v-if="dangerouslyUseHTMLString" v-html="sanitizedContent" />
+            <!-- eslint-enable vue/no-v-html -->
             <span v-else>{{ content }}</span>
           </slot>
         </div>
@@ -90,8 +94,10 @@ const { t } = useI18n();
 const notificationRef = ref<HTMLElement>();
 // 可见状态
 const visible = ref(false);
-// 定时器
+// 定时器 + 剩余时长跟踪（用于悬停暂停 / 移出恢复）
 let timer: number | undefined;
+let startedAt = 0;
+let remaining = props.duration;
 
 // 默认图标映射（内置 SVG 图标名）
 const defaultIconMap: Record<string, string> = {
@@ -150,10 +156,11 @@ const notificationStyles = computed(() => {
 
 // 开始计时器
 const startTimer = () => {
-  if (props.duration > 0) {
+  if (props.duration > 0 && remaining > 0) {
+    startedAt = Date.now();
     timer = window.setTimeout(() => {
       close();
-    }, props.duration);
+    }, remaining);
   }
 };
 
@@ -162,6 +169,21 @@ const clearTimer = () => {
   if (timer) {
     clearTimeout(timer);
     timer = undefined;
+  }
+};
+
+// 悬停暂停：记录已消耗时间，移出后按剩余时长继续
+const pauseTimer = () => {
+  if (timer) {
+    clearTimeout(timer);
+    timer = undefined;
+    remaining -= Date.now() - startedAt;
+  }
+};
+
+const resumeTimer = () => {
+  if (typeof window !== 'undefined') {
+    startTimer();
   }
 };
 

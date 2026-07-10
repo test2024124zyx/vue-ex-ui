@@ -578,8 +578,9 @@ setLocale('en-US'); // 英文
 
 <style scoped>
 .custom-button {
-  --ex-button-height: 56px;
-  --ex-button-font-size: 18px;
+  /* 覆盖对应尺寸（默认 medium）的高度与内边距令牌 */
+  --ex-button-height-md: 56px;
+  --ex-button-padding-x-md: 24px;
 }
 </style>
 ```

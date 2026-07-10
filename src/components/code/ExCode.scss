@@ -8,69 +8,96 @@
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
   overflow: hidden;
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-sm);
-  transition: all var(--ex-transition-base);
 
-  // 霓虹主题
+  // 统一字体度量令牌：行号 / 高亮层 / 编辑层共用，保证三层像素级对齐。
+  --ex-code-font-size: var(--ex-text-sm);
+  --ex-code-line-height: 1.6;
+  --ex-code-padding-y: var(--ex-spacing-3);
+  --ex-code-padding-x: var(--ex-spacing-4);
+  --ex-code-gutter-chars: 2;
+  --ex-code-gutter-pad-x: var(--ex-spacing-3);
+  // 行号栏宽度：位数 × 1ch（等宽字体精确）+ 两侧内边距。
+  --ex-code-gutter-width: calc(
+    var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x)
+  );
+
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-code-font-size);
+  line-height: var(--ex-code-line-height);
+  transition:
+    border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+  // 无行号时不预留行号栏。
+  &:not(.ex-code--line-numbers) {
+    --ex-code-gutter-width: 0px;
+  }
+
+  // ── 主题 ──────────────────────────────────────────────────────────
   &--theme-neon {
     border-color: var(--ex-color-neon-blue-500);
     box-shadow: 0 0 20px var(--ex-color-primary-alpha-20);
 
     .ex-code__header {
-      background: linear-gradient(135deg, var(--ex-color-primary-alpha-10), var(--ex-color-secondary-alpha-10));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-primary-alpha-10),
+        var(--ex-color-secondary-alpha-10)
+      );
       border-bottom-color: var(--ex-color-neon-blue-500);
-    }
-
-    .ex-code__line-number--highlighted {
-      background: var(--ex-color-primary-alpha-20);
-      border-left-color: var(--ex-color-neon-blue-500);
     }
   }
 
-  // 深色主题
   &--theme-dark {
     background: var(--ex-code-dark-bg);
     border-color: var(--ex-code-dark-border);
 
-    .ex-code__header {
+    .ex-code__header,
+    .ex-code__gutter {
       background: var(--ex-code-dark-header);
+    }
+
+    .ex-code__header {
       border-bottom-color: var(--ex-code-dark-border);
     }
 
-    .ex-code__code {
+    .ex-code__line-content {
       color: var(--ex-code-dark-text);
     }
   }
 
-  // 浅色主题
   &--theme-light {
     background: var(--ex-code-light-bg);
     border-color: var(--ex-code-light-border);
 
-    .ex-code__header {
+    .ex-code__header,
+    .ex-code__gutter {
       background: var(--ex-code-light-header);
+    }
+
+    .ex-code__header {
       border-bottom-color: var(--ex-code-light-border);
     }
 
-    .ex-code__code {
+    .ex-code__line-content {
       color: var(--ex-code-light-text);
     }
 
-    .ex-code__line-number {
+    .ex-code__gutter {
       color: var(--ex-code-light-line-number);
     }
   }
 
-  // 头部
+  // ── 头部 ──────────────────────────────────────────────────────────
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--ex-spacing-2);
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
     background: var(--ex-color-bg-tertiary);
     border-bottom: 1px solid var(--ex-color-border-primary);
-    gap: var(--ex-spacing-2);
+    font-family: var(--ex-font-secondary);
   }
 
   &__info {
@@ -86,7 +113,7 @@
     align-items: center;
     gap: var(--ex-spacing-1);
     font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -107,7 +134,7 @@
     border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-sm);
     font-size: var(--ex-text-xs);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-neon-blue-500);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -117,6 +144,7 @@
     display: flex;
     align-items: center;
     gap: var(--ex-spacing-2);
+    flex-shrink: 0;
   }
 
   &__copy-btn {
@@ -131,13 +159,18 @@
     font-size: var(--ex-text-xs);
     font-family: var(--ex-font-secondary);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
       border-color: var(--ex-color-neon-blue-500);
       color: var(--ex-color-neon-blue-500);
       box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
     }
 
     &:active {
@@ -167,16 +200,14 @@
     }
   }
 
-  // 内容区域
+  // ── 内容滚动容器 ──────────────────────────────────────────────────
   &__content {
-    display: flex;
+    position: relative;
     overflow: auto;
-    max-height: inherit;
 
-    // 自定义滚动条
     &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
     }
 
     &::-webkit-scrollbar-track {
@@ -185,7 +216,7 @@
 
     &::-webkit-scrollbar-thumb {
       background: var(--ex-color-border-primary);
-      border-radius: 4px;
+      border-radius: 5px;
 
       &:hover {
         background: var(--ex-color-neon-blue-500);
@@ -193,244 +224,211 @@
     }
   }
 
-  // 行号
-  &__line-numbers {
-    display: flex;
-    flex-direction: column;
-    padding: var(--ex-spacing-3) var(--ex-spacing-2);
-    background: var(--ex-color-bg-tertiary);
-    border-right: 1px solid var(--ex-color-border-primary);
-    user-select: none;
-    flex-shrink: 0;
+  // ── 逐行栅格（行号 + 代码同处一行，换行/高亮天然对齐）──────────────
+  &__lines {
+    position: relative;
+    min-width: 100%;
+    width: max-content; // 不换行时撑开到最长行宽度，由 __content 横向滚动
+    padding: var(--ex-code-padding-y) 0;
+    box-sizing: border-box;
   }
 
-  &__line-number {
-    display: block;
-    min-height: 1.5em;
-    line-height: 1.5;
-    text-align: right;
-    color: var(--ex-color-text-tertiary);
-    font-size: var(--ex-text-xs);
-    padding: 0 var(--ex-spacing-2);
-    transition: all var(--ex-transition-fast);
+  &__line {
+    display: flex;
+    align-items: flex-start;
+    min-height: calc(1em * var(--ex-code-line-height));
 
     &--highlighted {
       background: var(--ex-color-primary-alpha-10);
-      border-left: 2px solid var(--ex-color-neon-blue-500);
-      color: var(--ex-color-neon-blue-500);
-      font-weight: var(--ex-font-weight-semibold);
-    }
-  }
 
-  // 代码块容器（可编辑时作为高亮层 + textarea 的叠加定位上下文）
-  &__main {
-    position: relative;
-    flex: 1;
-    min-width: 0;
+      .ex-code__gutter {
+        color: var(--ex-color-neon-blue-500);
+        font-weight: var(--ex-font-semibold);
+        border-right-color: var(--ex-color-neon-blue-500);
+      }
 
-    // 可编辑：两层统一自动换行，避免横向滚动导致高亮层与输入层错位
-    &--editable {
-      .ex-code__pre,
-      .ex-code__textarea {
-        white-space: pre-wrap;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        overflow-x: hidden;
+      .ex-code__line-content {
+        box-shadow: inset 2px 0 0 var(--ex-color-neon-blue-500);
       }
     }
   }
 
-  // 代码预览层
-  &__pre {
-    flex: 1;
-    margin: 0;
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
-    overflow-x: auto;
-    background: transparent;
-    border: none;
-    // 显式继承等宽字体/行高，避免 <pre> 退回 UA 默认 monospace 与 textarea 错位
-    font-family: inherit;
-    font-size: inherit;
-    line-height: 1.5;
-    tab-size: 4;
+  // 行号栏：横向滚动时吸附在左侧，不随代码移动。
+  &__gutter {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    width: var(--ex-code-gutter-width);
+    flex: 0 0 var(--ex-code-gutter-width);
+    padding: 0 var(--ex-code-gutter-pad-x);
+    background: var(--ex-color-bg-tertiary);
+    border-right: 1px solid var(--ex-color-border-primary);
+    color: var(--ex-color-text-tertiary);
+    text-align: right;
+    user-select: none;
+    white-space: nowrap;
+  }
 
-    &--wrap {
-      white-space: pre-wrap;
-      word-wrap: break-word;
+  &__line-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 var(--ex-code-padding-x);
+    white-space: pre;
+    color: var(--ex-color-text-primary);
+    letter-spacing: 0;
+    tab-size: 4;
+    // 关闭连字，保证字符宽度稳定（编辑层叠加时尤为关键）。
+    font-variant-ligatures: none;
+    font-feature-settings:
+      'liga' 0,
+      'calt' 0;
+  }
+
+  // ── 自动换行 ──────────────────────────────────────────────────────
+  &--wrap {
+    .ex-code__lines {
+      width: auto;
     }
 
-    // 可编辑时高亮层仅作展示，不拦截鼠标，交互全部交给上层 textarea
-    &[aria-hidden='true'] {
-      pointer-events: none;
+    .ex-code__line-content {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
   }
 
-  // 可编辑：透明文字的 textarea 叠加在高亮层之上，光标可见、文字由下方高亮层呈现
-  // 字体 / 行高 / padding 必须与 &__pre / &__code 完全一致，保证光标对齐
+  // ── 可编辑：透明 textarea 叠加在高亮层上，恒为软换行以保证两层对齐 ──
+  &--editable {
+    .ex-code__lines {
+      width: auto;
+    }
+
+    .ex-code__line-content {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    // 编辑态由透明 textarea 决定光标位置，高亮 token 不得改变字符宽度或字形。
+    .ex-code__line-content [class^='ex-token-'] {
+      font-weight: inherit;
+      font-style: normal;
+      text-decoration: none;
+    }
+  }
+
   &__textarea {
     position: absolute;
-    inset: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
+    top: 0;
+    bottom: 0;
+    left: var(--ex-code-gutter-width);
+    right: 0;
+    z-index: 2;
     margin: 0;
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
+    padding: var(--ex-code-padding-y) var(--ex-code-padding-x);
     border: none;
     outline: none;
     resize: none;
     background: transparent;
+    box-sizing: border-box;
     color: transparent;
     caret-color: var(--ex-color-neon-blue-500, #29abe2);
     font-family: inherit;
-    font-size: inherit;
-    line-height: 1.5;
-    white-space: pre;
-    word-spacing: normal;
+    font-size: var(--ex-code-font-size);
+    line-height: var(--ex-code-line-height);
+    letter-spacing: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
     tab-size: 4;
-    overflow: auto;
-
-    &--wrap {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
+    overflow: hidden;
+    font-variant-ligatures: none;
+    font-feature-settings:
+      'liga' 0,
+      'calt' 0;
 
     &::selection {
       background: var(--ex-color-primary-alpha-30, rgba(41, 171, 226, 0.3));
     }
 
-    &::placeholder {
-      color: var(--ex-color-text-tertiary);
+    &:focus-visible {
+      outline: none;
     }
   }
 
-  &__code {
-    display: block;
-    font-family: inherit;
-    font-size: inherit;
-    line-height: 1.5;
-    color: var(--ex-color-text-primary);
-    background: transparent;
-    border: none;
-    outline: none;
-    white-space: pre;
-    word-spacing: normal;
-    word-break: normal;
-    tab-size: 4;
-
-    // 基础语法高亮（简化版）
-    .keyword {
-      color: var(--ex-color-neon-pink-500);
-      font-weight: var(--ex-font-weight-medium);
-    }
-
-    .string {
-      color: var(--ex-color-success);
-    }
-
-    .number {
-      color: var(--ex-color-warning);
-    }
-
-    .comment {
-      color: var(--ex-color-text-tertiary);
-      font-style: italic;
-    }
-
-    .function {
-      color: var(--ex-color-neon-blue-500);
-    }
-
-    .operator {
-      color: var(--ex-color-text-secondary);
-    }
-
-    // highlight.js token 配色（v-html 注入的 .hljs-* 子元素需用 :deep 命中）
-    :deep(.hljs-keyword),
-    :deep(.hljs-built_in),
-    :deep(.hljs-literal),
-    :deep(.hljs-type) {
-      color: var(--ex-color-neon-pink-500);
-      font-weight: var(--ex-font-weight-medium);
-    }
-
-    :deep(.hljs-string),
-    :deep(.hljs-regexp),
-    :deep(.hljs-symbol),
-    :deep(.hljs-meta .hljs-string) {
-      color: var(--ex-color-success);
-    }
-
-    :deep(.hljs-number) {
-      color: var(--ex-color-warning);
-    }
-
-    :deep(.hljs-comment),
-    :deep(.hljs-quote) {
-      color: var(--ex-color-text-tertiary);
-      font-style: italic;
-    }
-
-    :deep(.hljs-title),
-    :deep(.hljs-title.function_),
-    :deep(.hljs-section) {
-      color: var(--ex-color-neon-blue-500);
-    }
-
-    :deep(.hljs-attr),
-    :deep(.hljs-attribute),
-    :deep(.hljs-property),
-    :deep(.hljs-selector-attr),
-    :deep(.hljs-selector-class) {
-      color: var(--ex-color-neon-blue-500);
-    }
-
-    :deep(.hljs-tag),
-    :deep(.hljs-name),
-    :deep(.hljs-selector-tag) {
-      color: var(--ex-color-neon-pink-500);
-    }
-
-    :deep(.hljs-operator),
-    :deep(.hljs-punctuation) {
-      color: var(--ex-color-text-secondary);
-    }
-
-    :deep(.hljs-variable),
-    :deep(.hljs-params),
-    :deep(.hljs-template-variable) {
-      color: var(--ex-color-text-primary);
-    }
-
-    :deep(.hljs-meta),
-    :deep(.hljs-deletion) {
-      color: var(--ex-color-text-tertiary);
-    }
-
-    :deep(.hljs-addition) {
-      color: var(--ex-color-success);
-    }
+  // ── 语法高亮 token 配色 ───────────────────────────────────────────
+  .ex-token-comment {
+    color: var(--ex-color-text-tertiary);
+    font-style: italic;
   }
 
+  .ex-token-keyword {
+    color: var(--ex-color-neon-pink-500);
+    font-weight: var(--ex-font-medium);
+  }
 
+  .ex-token-string {
+    color: var(--ex-color-success);
+  }
 
-  // 响应式适配
+  .ex-token-number,
+  .ex-token-boolean {
+    color: var(--ex-color-warning);
+  }
+
+  .ex-token-function {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  .ex-token-class {
+    color: var(--ex-color-warning);
+  }
+
+  .ex-token-tag {
+    color: var(--ex-color-neon-pink-500);
+  }
+
+  .ex-token-attr,
+  .ex-token-property {
+    color: var(--ex-color-neon-blue-500);
+  }
+
+  .ex-token-variable {
+    color: var(--ex-color-warning);
+  }
+
+  .ex-token-regexp {
+    color: var(--ex-color-success);
+  }
+
+  .ex-token-meta {
+    color: var(--ex-color-text-tertiary);
+  }
+
+  .ex-token-operator,
+  .ex-token-punctuation {
+    color: var(--ex-color-text-secondary);
+  }
+
+  .ex-token-important {
+    color: var(--ex-color-neon-pink-500);
+    font-weight: var(--ex-font-semibold);
+  }
+
+  // ── 响应式 ────────────────────────────────────────────────────────
   @media (max-width: 768px) {
-    font-size: var(--ex-text-xs);
+    --ex-code-font-size: var(--ex-text-xs);
+    --ex-code-padding-y: var(--ex-spacing-2);
+    --ex-code-padding-x: var(--ex-spacing-3);
+    --ex-code-gutter-pad-x: var(--ex-spacing-2);
 
-    &__header {
+    .ex-code__header {
       padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    }
-
-    &__pre {
-      padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    }
-
-    &__line-numbers {
-      padding: var(--ex-spacing-2) var(--ex-spacing-1);
     }
   }
 
-  // 无障碍支持
+  // ── 无障碍 ────────────────────────────────────────────────────────
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 
@@ -439,7 +437,6 @@
     }
   }
 
-  // 高对比度模式
   @media (prefers-contrast: high) {
     border-width: 2px;
 
@@ -448,4 +445,3 @@
     }
   }
 }
-

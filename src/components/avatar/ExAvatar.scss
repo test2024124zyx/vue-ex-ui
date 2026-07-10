@@ -9,14 +9,14 @@
   width: var(--ex-avatar-size-medium);
   height: var(--ex-avatar-size-medium);
   font-size: var(--ex-avatar-font-size-medium);
-  font-weight: var(--ex-font-weight-medium);
+  font-weight: var(--ex-font-medium);
   color: var(--ex-avatar-text-color);
   background-color: var(--ex-avatar-bg-default);
   border: var(--ex-avatar-border-width) solid var(--ex-avatar-border-color);
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  transition: all var(--ex-transition-base) var(--ex-easing-standard);
+  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
   // 基础悬停效果
   &:hover {
@@ -73,7 +73,7 @@
 
     &:hover {
       background: var(--ex-avatar-bg-icon-hover);
-      color: var(--ex-color-primary-light);
+      color: var(--ex-color-neon-blue-300);
     }
   }
 
@@ -96,7 +96,7 @@
     background: var(--ex-color-error-alpha-10);
     color: var(--ex-color-error);
     cursor: pointer;
-    transition: all var(--ex-transition-base) var(--ex-easing-standard);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-error-alpha-20);
@@ -115,7 +115,7 @@
     height: 100%;
     object-fit: cover;
     border-radius: inherit;
-    transition: transform var(--ex-transition-base) var(--ex-easing-standard);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
     &:hover {
       transform: scale(1.1);
@@ -125,7 +125,7 @@
   // 图标样式
   &__icon {
     font-size: 60%;
-    transition: all var(--ex-transition-base) var(--ex-easing-standard);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 
     .ex-avatar--small & {
       font-size: 50%;
@@ -143,7 +143,7 @@
     text-align: center;
     white-space: nowrap;
     transform-origin: center;
-    transition: transform var(--ex-transition-base) var(--ex-easing-standard);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
   }
 
 
@@ -164,7 +164,7 @@
     border-radius: inherit;
     opacity: 0;
     z-index: -1;
-    transition: opacity var(--ex-transition-base) var(--ex-easing-standard);
+    transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
   }
 
   &:hover::before {

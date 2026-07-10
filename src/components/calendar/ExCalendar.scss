@@ -77,11 +77,11 @@
   }
 
   &__day {
-    color: var(--ex-color-neon-purple-500);
+    color: var(--ex-color-secondary);
   }
 
   &__week {
-    color: var(--ex-color-neon-green-500);
+    color: var(--ex-color-success);
     font-size: var(--ex-text-sm);
   }
 
@@ -372,7 +372,7 @@
     // 节气
     &--solar-term {
       .ex-calendar__solar-term {
-        color: var(--ex-color-neon-green-500);
+        color: var(--ex-color-success);
       }
     }
   }
@@ -405,7 +405,7 @@
 
   &__solar-term {
     font-size: 10px;
-    color: var(--ex-color-neon-green-500);
+    color: var(--ex-color-success);
     line-height: 1;
     font-weight: var(--ex-font-semibold);
   }
@@ -419,7 +419,7 @@
 
   &__day-solar-term {
     font-size: var(--ex-text-sm);
-    color: var(--ex-color-neon-green-500);
+    color: var(--ex-color-success);
     font-weight: var(--ex-font-semibold);
   }
 

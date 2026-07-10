@@ -116,12 +116,8 @@ import { ref } from 'vue'
 ```vue
 <template>
   <!-- Link 方式 -->
-  <ExFileDownload
-    url="https://example.com/file.pdf"
-    filename="document.pdf"
-    method="link"
-  />
-  
+  <ExFileDownload url="https://example.com/file.pdf" filename="document.pdf" method="link" />
+
   <!-- Fetch 方式 -->
   <ExFileDownload
     url="https://example.com/file.zip"
@@ -129,7 +125,7 @@ import { ref } from 'vue'
     method="fetch"
     :show-progress="true"
   />
-  
+
   <!-- XHR 方式 -->
   <ExFileDownload
     url="https://example.com/file.zip"
@@ -143,6 +139,8 @@ import { ref } from 'vue'
 ## 自动下载
 
 设置 `auto-download` 为 `true` 可以在组件挂载时自动开始下载。
+
+> 下方演示为避免打开页面即触发下载，特意设置了 `:auto-download="false"`，请点击按钮体验；实际使用时按需改为 `true`。
 
 <div class="demo-container">
   <ExFileDownload
@@ -289,7 +287,7 @@ import { ref } from 'vue'
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const resourcePacks = ref([
   {
@@ -301,7 +299,7 @@ const resourcePacks = ref([
     filename: 'characters.zip',
   },
   // ...
-])
+]);
 </script>
 ```
 
@@ -309,49 +307,73 @@ const resourcePacks = ref([
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| url | 下载URL | string | - |
-| filename | 文件名 | string | - |
-| method | 下载方式 | 'link' \| 'fetch' \| 'xhr' | 'link' |
-| show-progress | 是否显示进度 | boolean | true |
-| auto-download | 是否自动下载 | boolean | false |
-| button-text | 按钮文本 | string | '下载' |
-| button-type | 按钮类型 | ButtonType | 'primary' |
-| button-size | 按钮尺寸 | ButtonSize | 'medium' |
-| headers | 请求头 | Record<string, string> | - |
-| with-credentials | 是否携带cookie | boolean | false |
+| 属性             | 说明           | 类型                       | 默认值    |
+| ---------------- | -------------- | -------------------------- | --------- |
+| url              | 下载URL        | string                     | -         |
+| filename         | 文件名         | string                     | -         |
+| method           | 下载方式       | 'link' \| 'fetch' \| 'xhr' | 'link'    |
+| show-progress    | 是否显示进度   | boolean                    | true      |
+| auto-download    | 是否自动下载   | boolean                    | false     |
+| button-text      | 按钮文本       | string                     | '下载'    |
+| button-type      | 按钮类型       | ButtonType                 | 'primary' |
+| button-size      | 按钮尺寸       | ButtonSize                 | 'medium'  |
+| headers          | 请求头         | Record<string, string>     | -         |
+| with-credentials | 是否携带cookie | boolean                    | false     |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| start | 开始下载时触发 | () => void |
-| progress | 下载进度更新时触发 | (percent: number) => void |
-| success | 下载成功时触发 | (blob: Blob) => void |
-| error | 下载失败时触发 | (error: Error) => void |
+| 事件名   | 说明                                              | 类型                                                       |
+| -------- | ------------------------------------------------- | ---------------------------------------------------------- |
+| start    | 开始下载时触发                                    | `() => void`                                               |
+| progress | 下载进度更新时触发（仅 `fetch` / `xhr` 方式）     | `(percent: number, loaded: number, total: number) => void` |
+| success  | 下载成功时触发（`link` 方式会立即以空 Blob 触发） | `(blob: Blob) => void`                                     |
+| error    | 下载失败时触发                                    | `(error: Error) => void`                                   |
+| pause    | 暂停下载时触发                                    | `() => void`                                               |
+| resume   | 恢复下载时触发                                    | `() => void`                                               |
+| cancel   | 取消下载时触发                                    | `() => void`                                               |
+
+### Slots
+
+| 插槽名  | 说明                                 | 作用域参数                                                          |
+| ------- | ------------------------------------ | ------------------------------------------------------------------- |
+| default | 自定义触发器（替换默认按钮与进度条） | `{ download: () => void, status: DownloadStatus, percent: number }` |
+
+使用默认插槽完全自定义触发器：
+
+```vue
+<ExFileDownload url="https://example.com/file.zip" filename="file.zip" method="xhr">
+  <template #default="{ download, status, percent }">
+    <button :disabled="status === 'downloading'" @click="download">
+      {{ status === 'downloading' ? `下载中 ${percent}%` : '下载' }}
+    </button>
+  </template>
+</ExFileDownload>
+```
 
 ### Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| download | 手动触发下载 | () => void |
-| abort | 取消下载 | () => void |
+通过模板 ref 调用：
+
+| 方法名     | 说明                                 | 类型                           |
+| ---------- | ------------------------------------ | ------------------------------ |
+| download   | 手动触发下载                         | `() => void`                   |
+| pause      | 暂停下载（`fetch` / `xhr` 方式）     | `() => void`                   |
+| resume     | 恢复下载（从头重新下载，非断点续传） | `() => void`                   |
+| cancel     | 取消下载                             | `() => void`                   |
+| getElement | 获取组件根 DOM 元素                  | `() => HTMLDivElement \| null` |
+
+::: warning 关于暂停 / 恢复
+组件不支持 HTTP Range 断点续传，`resume()` 会从头重新发起下载。`pause` / `cancel` 仅对 `fetch`、`xhr` 方式有效，`link` 方式由浏览器接管，无法中止。
+:::
 
 ## 无障碍支持
 
-- 完整的键盘导航支持
-- ARIA 属性标注
-- 屏幕阅读器友好
+- 默认触发器使用 `ExButton`，原生支持键盘聚焦与 Enter / Space 触发。
+- 下载过程中按钮进入 `loading` 与 `disabled` 状态，避免重复触发。
 
 ## 主题定制
 
-```css
-:root {
-  --ex-download-button-bg: var(--ex-color-primary);
-  --ex-download-progress-color: var(--ex-color-neon-blue-500);
-}
-```
+文件下载跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，按钮样式可通过 `button-type` / `button-size` 调整，或使用默认插槽完全自定义。
 
 <style scoped>
 .demo-container {

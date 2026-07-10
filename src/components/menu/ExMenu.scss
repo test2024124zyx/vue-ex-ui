@@ -67,7 +67,7 @@
 
     &:focus {
       border-color: var(--ex-color-neon-blue-500);
-      background: var(--ex-color-bg-secondary-alpha-70);
+      background: var(--ex-color-bg-secondary-alpha-80);
       @include neon-glow('blue', 'sm');
     }
   }

@@ -119,7 +119,7 @@
     border-radius: 50%;
     color: var(--ex-color-text-primary);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     outline: none;
 
     &:hover:not(&--disabled) {
@@ -208,7 +208,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     outline: none;
 
     &:focus-visible {
@@ -239,7 +239,7 @@
     height: 8px;
     background: rgba(var(--ex-color-white-rgb), 0.3);
     border-radius: 50%;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
   }
 
   // 响应式

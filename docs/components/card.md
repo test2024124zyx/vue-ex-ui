@@ -633,17 +633,7 @@ const loading = ref(false);
 
 ## 主题定制
 
-可以通过 CSS 变量自定义卡片样式：
-
-```css
-:root {
-  --ex-card-bg: var(--ex-color-bg-secondary);
-  --ex-card-header-bg: var(--ex-color-bg-elevated);
-  --ex-card-border-color: var(--ex-color-border-primary);
-  --ex-card-shadow: var(--ex-shadow-base);
-  --ex-card-radius: var(--ex-radius-lg);
-}
-```
+卡片跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
 .demo-container {

@@ -110,7 +110,7 @@ const dialogVisible = ref(false);
 
   <ExDialog v-model="dialogVisible">
     <template #title>
-      <span style="color: var(--ex-color-neon-blue-500);"> 🎮 游戏设置 </span>
+      <span style="color: var(--ex-color-neon-blue-500);">🎮 游戏设置</span>
     </template>
     <template #icon>
       <img
@@ -434,7 +434,7 @@ const innerVisible = ref(false);
     :before-close="handleBeforeClose"
   >
     <p>尝试点击关闭按钮或遮罩层关闭对话框。</p>
-    <p style="color: var(--ex-color-warning-500);">
+    <p style="color: var(--ex-color-warning);">
       当有未保存内容时，关闭操作会被阻止（控制台会输出提示）。
     </p>
     <p>点击上方按钮切换状态来测试关闭行为。</p>
@@ -538,17 +538,66 @@ const handleBeforeClose = async () => {
 - 支持屏幕阅读器
 - 自动锁定焦点在对话框内
 
+## 受控 / 非受控
+
+Dialog 通过 `v-model`（`modelValue`）受控，父级是唯一事实来源：
+
+```vue
+<template>
+  <ExButton @click="visible = true">打开</ExButton>
+  <ExDialog v-model="visible" title="标题">内容</ExDialog>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const visible = ref(false);
+</script>
+```
+
+- **确认不自动关闭**：`confirm` 事件触发后对话框保持打开，便于做异步校验或显示 `confirm-loading`；校验通过后由你设置 `v-model = false` 关闭。
+- **拦截关闭**：`before-close` 返回 `false` 可阻止关闭（点击遮罩、ESC、关闭按钮都会经过它）。
+
+```vue
+<ExDialog
+  v-model="visible"
+  :confirm-loading="loading"
+  :before-close="onBeforeClose"
+  @confirm="submit"
+/>
+```
+
+## 常见问题
+
+**Q：点了确认按钮对话框没关闭？**
+这是预期行为——`confirm` 不会自动关闭，方便异步提交。在 `@confirm` 回调里 `visible.value = false`，或在提交成功后关闭。
+
+**Q：如何禁止点击遮罩 / ESC 关闭？**
+设置 `:close-on-click-modal="false"` 和 `:close-on-press-escape="false"`，或用 `before-close` 统一拦截。
+
+**Q：多个对话框叠加时滚动条乱跳 / 关不干净？**
+已内置引用计数的滚动锁与浮层栈：叠加时滚动只锁一次，ESC 只关闭最顶层，全部关闭后才恢复滚动。
+
+**Q：对话框里的表单每次打开都被重置？**
+对话框内容随关闭从 DOM 卸载（每次打开重新渲染）。需要跨开关保留状态时，把状态提升到父组件维护。
+
+## 最佳实践
+
+- **危险/不可逆操作**配合 `type="danger"` + `before-close` 做二次确认，或直接使用 [Popconfirm](/components/popconfirm)。
+- **表单提交**用 `confirm-loading` 表达加载态，提交成功后再关闭，失败则保持打开并提示。
+- **内容较多**时用 `size="large"` 或 `fullscreen`，避免内部出现双滚动条。
+- 始终提供 `title` 或 `aria-label`，保证屏幕阅读器可识别对话框用途。
+
 ## 主题定制
 
-可以通过 CSS 变量自定义对话框样式：
+Dialog 不定义独立的组件级变量，而是消费 ExUI 全局设计令牌。定制方式：
+
+- **单个实例**：用 `custom-class` / `modal-class` 添加类名后覆盖样式。
+- **全局**：覆盖对话框所消费的全局令牌：
 
 ```css
 :root {
-  --ex-dialog-bg: var(--ex-color-bg-surface);
-  --ex-dialog-border-color: var(--ex-color-border-primary);
-  --ex-dialog-shadow: var(--ex-shadow-2xl);
-  --ex-dialog-header-border: var(--ex-color-border-primary);
-  --ex-dialog-footer-border: var(--ex-color-border-primary);
+  --ex-color-bg-surface: #11151c; /* 对话框背景 */
+  --ex-color-border-primary: #1f2a37; /* 边框 / 分割线 */
 }
 ```
 

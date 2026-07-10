@@ -129,12 +129,7 @@
 
 ## 主题定制
 
-```css
-:root {
-  --ex-image-radius: 8px;
-  --ex-image-border: 1px solid var(--ex-color-border);
-}
-```
+图片跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 ## 无障碍与国际化
 

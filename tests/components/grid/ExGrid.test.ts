@@ -28,7 +28,9 @@ describe('ExGrid and ExGridItem', () => {
         gutter: 20,
       },
     });
-    expect(wrapper.attributes('style')).toContain('gap: 20px;');
+    // 间距通过 CSS 变量 + 负 margin 实现（不用 flex gap，避免与百分比列宽叠加溢出）
+    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-x: 20px');
+    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-y: 20px');
   });
 
   it('renders grid with horizontal and vertical gutter', () => {
@@ -37,7 +39,9 @@ describe('ExGrid and ExGridItem', () => {
         gutter: [20, 30],
       },
     });
-    expect(wrapper.attributes('style')).toContain('gap: 30px 20px;');
+    // gutter [水平, 垂直] -> x=20, y=30
+    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-x: 20px');
+    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-y: 30px');
   });
 
   it('renders grid item with default props', () => {
@@ -82,7 +86,7 @@ describe('ExGrid and ExGridItem', () => {
       components: { ExGrid, ExGridItem },
     });
     expect(wrapper.findAll('.ex-grid-item').length).toBe(3);
-    expect(wrapper.find('.ex-grid').attributes('style')).toContain('gap: 20px;');
+    expect(wrapper.find('.ex-grid').attributes('style')).toContain('--ex-grid-gutter-x: 20px');
   });
 
   it('renders grid with nowrap', () => {
@@ -135,8 +139,15 @@ describe('ExGrid and ExGridItem', () => {
   });
 
   it('renders grid with all justify options', () => {
-    const justifyOptions = ['start', 'end', 'center', 'space-around', 'space-between', 'space-evenly'] as const;
-    justifyOptions.forEach((justify) => {
+    const justifyOptions = [
+      'start',
+      'end',
+      'center',
+      'space-around',
+      'space-between',
+      'space-evenly',
+    ] as const;
+    justifyOptions.forEach(justify => {
       const wrapper = mount(ExGrid, {
         props: { justify },
       });
@@ -146,7 +157,7 @@ describe('ExGrid and ExGridItem', () => {
 
   it('renders grid with all align options', () => {
     const alignOptions = ['top', 'middle', 'bottom', 'stretch'] as const;
-    alignOptions.forEach((align) => {
+    alignOptions.forEach(align => {
       const wrapper = mount(ExGrid, {
         props: { align },
       });
@@ -185,7 +196,7 @@ describe('ExGrid and ExGridItem', () => {
     expect(wrapper.classes()).toContain('ex-grid-item--md-pull-2');
   });
 
-  it('applies fallback styles for browsers without gap support', () => {
+  it('exposes gutter CSS variables for the negative-margin spacing', () => {
     const wrapper = mount(ExGrid, {
       props: {
         gutter: 20,
@@ -196,7 +207,7 @@ describe('ExGrid and ExGridItem', () => {
     expect(style).toContain('--ex-grid-gutter-y: 20px');
   });
 
-  it('applies fallback styles for array gutter', () => {
+  it('exposes gutter CSS variables for array gutter', () => {
     const wrapper = mount(ExGrid, {
       props: {
         gutter: [16, 24],

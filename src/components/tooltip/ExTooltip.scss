@@ -8,9 +8,9 @@
 .ex-tooltip__popper {
   position: fixed;
   max-width: 300px;
-  padding: var(--ex-spacing-xs) var(--ex-spacing-sm);
+  padding: var(--ex-spacing-1) var(--ex-spacing-2);
   font-size: var(--ex-text-sm);
-  line-height: var(--ex-line-height-normal);
+  line-height: var(--ex-leading-normal);
   border-radius: var(--ex-radius-base);
   word-wrap: break-word;
   z-index: var(--ex-z-tooltip, 1090);
@@ -177,7 +177,7 @@
 // 过渡动画
 .ex-tooltip-fade-enter-active,
 .ex-tooltip-fade-leave-active {
-  transition: opacity var(--ex-transition-fast) var(--ex-easing-standard);
+  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
 }
 
 .ex-tooltip-fade-enter-from,

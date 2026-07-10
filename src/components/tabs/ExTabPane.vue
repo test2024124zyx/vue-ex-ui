@@ -2,12 +2,14 @@
   <div
     v-if="shouldRender"
     v-show="isActive"
+    :id="`${tabsUid}-panel-${name}`"
     ref="paneRef"
     :class="paneClasses"
     :style="paneStyles"
     role="tabpanel"
     :aria-hidden="!isActive"
-    :aria-labelledby="`tab-${name}`"
+    :aria-labelledby="`${tabsUid}-tab-${name}`"
+    :tabindex="isActive ? 0 : undefined"
   >
     <slot />
   </div>
@@ -31,6 +33,7 @@ const props = withDefaults(defineProps<ExTabPaneProps>(), {
 const paneRef = ref<HTMLDivElement>();
 
 // 从父组件注入
+const tabsUid = inject<string>('exTabsUid', '');
 const activeTab = inject<{ value: string | number }>('activeTab', { value: '' });
 const registerPane = inject<(pane: Record<string, unknown>) => void>('registerPane', () => {});
 const unregisterPane = inject<(name: string | number) => void>('unregisterPane', () => {});

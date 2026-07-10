@@ -47,9 +47,9 @@ const handleCancel = () => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
@@ -86,12 +86,12 @@ const visible = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visibleLeft = ref(false)
-const visibleRight = ref(false)
-const visibleTop = ref(false)
-const visibleBottom = ref(false)
+const visibleLeft = ref(false);
+const visibleRight = ref(false);
+const visibleTop = ref(false);
+const visibleBottom = ref(false);
 </script>
 
 <template>
@@ -143,12 +143,12 @@ const visibleBottom = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visibleSmall = ref(false)
-const visibleMedium = ref(false)
-const visibleLarge = ref(false)
-const visibleCustom = ref(false)
+const visibleSmall = ref(false);
+const visibleMedium = ref(false);
+const visibleLarge = ref(false);
+const visibleCustom = ref(false);
 </script>
 
 <template>
@@ -195,24 +195,24 @@ const visibleCustom = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 
 const handleOk = () => {
-  console.log('确认')
-  visible.value = false
-}
+  console.log('确认');
+  visible.value = false;
+};
 
 const handleCancel = () => {
-  console.log('取消')
-}
+  console.log('取消');
+};
 </script>
 
 <template>
   <ExButton type="primary" @click="visible = true">打开抽屉</ExButton>
-  <ExDrawer 
-    v-model="visible" 
+  <ExDrawer
+    v-model="visible"
     title="带底部操作栏的抽屉"
     show-footer
     @ok="handleOk"
@@ -236,9 +236,9 @@ const handleCancel = () => {
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
@@ -263,9 +263,9 @@ const visible = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
@@ -290,9 +290,9 @@ const visible = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
@@ -398,20 +398,15 @@ const visible = ref(false)
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
   <ExButton type="primary" @click="visible = true">角色设置</ExButton>
 
-  <ExDrawer 
-    v-model="visible" 
-    title="🎮 角色设置"
-    size="large"
-    show-footer
-  >
+  <ExDrawer v-model="visible" title="🎮 角色设置" size="large" show-footer>
     <!-- 角色设置内容 -->
   </ExDrawer>
 </template>
@@ -421,57 +416,58 @@ const visible = ref(false)
 
 ### Drawer Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `v-model` | 是否显示抽屉 | `boolean` | `false` |
-| `title` | 抽屉标题 | `string` | — |
-| `placement` | 抽屉位置 | `'left' \| 'right' \| 'top' \| 'bottom'` | `'right'` |
-| `size` | 抽屉尺寸 | `'small' \| 'medium' \| 'large' \| string \| number` | `'medium'` |
-| `closable` | 是否显示关闭按钮 | `boolean` | `true` |
-| `mask` | 是否显示遮罩层 | `boolean` | `true` |
-| `mask-closable` | 点击遮罩层是否关闭 | `boolean` | `true` |
-| `destroy-on-close` | 是否在关闭时销毁子元素 | `boolean` | `false` |
-| `show-footer` | 是否显示底部操作栏 | `boolean` | `false` |
-| `ok-text` | 确认按钮文字 | `string` | `'确定'` |
-| `cancel-text` | 取消按钮文字 | `string` | `'取消'` |
-| `ok-type` | 确认按钮类型 | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'primary'` |
-| `ok-loading` | 确认按钮是否加载中 | `boolean` | `false` |
-| `ok-disabled` | 是否禁用确认按钮 | `boolean` | `false` |
-| `cancel-disabled` | 是否禁用取消按钮 | `boolean` | `false` |
-| `custom-class` | 自定义类名 | `string` | — |
-| `custom-style` | 自定义样式 | `string \| Record<string, string \| number>` | — |
-| `z-index` | 层级 | `number` | `1000` |
-| `lock-scroll` | 是否锁定滚动 | `boolean` | `true` |
-| `before-open` | 打开前的回调 | `() => boolean \| Promise<boolean>` | — |
-| `before-close` | 关闭前的回调 | `() => boolean \| Promise<boolean>` | — |
-| `aria-label` | 无障碍标签 | `string` | — |
+| 参数               | 说明                   | 类型                                                        | 默认值      |
+| ------------------ | ---------------------- | ----------------------------------------------------------- | ----------- |
+| `v-model`          | 是否显示抽屉           | `boolean`                                                   | `false`     |
+| `title`            | 抽屉标题               | `string`                                                    | —           |
+| `placement`        | 抽屉位置               | `'left' \| 'right' \| 'top' \| 'bottom'`                    | `'right'`   |
+| `size`             | 抽屉尺寸               | `'small' \| 'medium' \| 'large' \| string \| number`        | `'medium'`  |
+| `closable`         | 是否显示关闭按钮       | `boolean`                                                   | `true`      |
+| `mask`             | 是否显示遮罩层         | `boolean`                                                   | `true`      |
+| `mask-closable`    | 点击遮罩层是否关闭     | `boolean`                                                   | `true`      |
+| `destroy-on-close` | 是否在关闭时销毁子元素 | `boolean`                                                   | `false`     |
+| `show-footer`      | 是否显示底部操作栏     | `boolean`                                                   | `false`     |
+| `ok-text`          | 确认按钮文字           | `string`                                                    | `'确定'`    |
+| `cancel-text`      | 取消按钮文字           | `string`                                                    | `'取消'`    |
+| `ok-type`          | 确认按钮类型           | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'primary'` |
+| `ok-loading`       | 确认按钮是否加载中     | `boolean`                                                   | `false`     |
+| `ok-disabled`      | 是否禁用确认按钮       | `boolean`                                                   | `false`     |
+| `cancel-disabled`  | 是否禁用取消按钮       | `boolean`                                                   | `false`     |
+| `custom-class`     | 自定义类名             | `string`                                                    | —           |
+| `custom-style`     | 自定义样式             | `string \| Record<string, string \| number>`                | —           |
+| `z-index`          | 层级                   | `number`                                                    | `1000`      |
+| `lock-scroll`      | 是否锁定滚动           | `boolean`                                                   | `true`      |
+| `before-open`      | 打开前的回调           | `() => boolean \| Promise<boolean>`                         | —           |
+| `before-close`     | 关闭前的回调           | `() => boolean \| Promise<boolean>`                         | —           |
+| `aria-label`       | 无障碍标签             | `string`                                                    | —           |
 
 ### Drawer Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `open` | 打开时触发 | `() => void` |
-| `opened` | 打开动画结束后触发 | `() => void` |
-| `close` | 关闭时触发 | `() => void` |
-| `closed` | 关闭动画结束后触发 | `() => void` |
-| `ok` | 点击确认按钮时触发 | `() => void` |
-| `cancel` | 点击取消按钮时触发 | `() => void` |
+| 事件名               | 说明                                 | 类型                       |
+| -------------------- | ------------------------------------ | -------------------------- |
+| `update:model-value` | 显示状态变化时触发（配合 `v-model`） | `(value: boolean) => void` |
+| `open`               | 打开时触发                           | `() => void`               |
+| `opened`             | 打开动画结束后触发                   | `() => void`               |
+| `close`              | 关闭时触发                           | `() => void`               |
+| `closed`             | 关闭动画结束后触发                   | `() => void`               |
+| `ok`                 | 点击确认按钮时触发                   | `() => void`               |
+| `cancel`             | 点击取消按钮时触发                   | `() => void`               |
 
 ### Drawer Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 抽屉内容 |
-| `title` | 自定义标题 |
-| `header` | 自定义头部 |
-| `footer` | 自定义底部 |
+| 插槽名    | 说明       |
+| --------- | ---------- |
+| `default` | 抽屉内容   |
+| `title`   | 自定义标题 |
+| `header`  | 自定义头部 |
+| `footer`  | 自定义底部 |
 
 ### Drawer Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `open` | 打开抽屉 | `() => void` |
-| `close` | 关闭抽屉 | `() => void` |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
+| `open`       | 打开抽屉        | `() => void`                   |
+| `close`      | 关闭抽屉        | `() => void`                   |
 | `getElement` | 获取抽屉DOM元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
@@ -482,16 +478,58 @@ const visible = ref(false)
 - 支持屏幕阅读器
 - 自动锁定和恢复页面滚动
 
+## 受控 / 非受控
+
+Drawer 通过 `v-model`（`modelValue`）受控：
+
+```vue
+<template>
+  <ExButton @click="open = true">打开抽屉</ExButton>
+  <ExDrawer v-model="open" title="详情" placement="right">内容</ExDrawer>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const open = ref(false);
+</script>
+```
+
+- **拦截关闭**：`before-close` 返回 `false` 阻止关闭，且不会造成 `modelValue` 与内部状态脱钩（关闭请求统一经守卫处理）。
+- **拦截打开**：`before-open` 返回 `false` 阻止打开并回写 `modelValue`，适合打开前做权限/数据校验。
+
+## 常见问题
+
+**Q：打开后键盘 Tab 会跑到背景内容吗？**
+不会。抽屉打开后自动聚焦首个可聚焦元素，Tab/Shift+Tab 锁定在抽屉内，关闭后焦点归还触发元素。
+
+**Q：`before-close` 返回 false 后抽屉再也关不掉？**
+不会（这是早期版本的缺陷，现已修复）。守卫仅在「请求关闭」时执行，`modelValue` 始终是唯一事实来源。
+
+**Q：移动端抽屉怎么做？**
+窄屏建议 `placement="bottom"` 并用百分比尺寸，如 `size="60%"`，更贴合移动端交互习惯。
+
+**Q：如何做无遮罩的常驻侧栏？**
+设置 `:mask="false"`；此时 `aria-modal` 也会相应变为非模态。
+
+## 最佳实践
+
+- **详情查看 / 侧边表单**优先用 Drawer，主区域上下文不被完全遮挡。
+- **尺寸**用预设（`small/medium/large`）或百分比/像素自定义，避免在小屏溢出。
+- **底部操作栏**用 `show-footer` + `ok-loading` 表达提交加载态。
+- 始终提供 `title` 或 `aria-label` 以满足无障碍。
+
 ## 主题定制
 
-可以通过 CSS 变量自定义抽屉样式：
+Drawer 不定义独立的组件级变量，而是消费 ExUI 全局设计令牌。定制方式：
+
+- **单个实例**：用 `custom-class` / `custom-style` 定制。
+- **全局**：覆盖所消费的全局令牌：
 
 ```css
 :root {
-  --ex-drawer-bg: var(--ex-color-bg-elevated);
-  --ex-drawer-border: var(--ex-color-border-primary);
-  --ex-drawer-shadow: var(--ex-shadow-2xl);
-  --ex-drawer-mask-bg: rgba(0, 0, 0, 0.7);
+  --ex-color-bg-elevated: #11151c; /* 抽屉背景 */
+  --ex-color-border-primary: #1f2a37; /* 边框 */
+  --ex-shadow-2xl: 0 20px 60px rgba(0, 0, 0, 0.6); /* 抽屉投影 */
 }
 ```
 

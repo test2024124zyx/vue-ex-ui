@@ -8,7 +8,7 @@
   padding: var(--ex-spacing-6);
   background: var(--ex-color-bg-secondary);
   border-radius: var(--ex-radius-lg);
-  border: 1px solid var(--ex-color-border);
+  border: 1px solid var(--ex-color-border-primary);
 
   &__preview {
     display: flex;
@@ -30,7 +30,7 @@
 
   &__preview-label {
     font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-secondary);
     text-align: center;
   }
@@ -42,7 +42,7 @@
     border-radius: var(--ex-radius-base);
     overflow: hidden;
     background: var(--ex-color-bg-tertiary);
-    border: 2px solid var(--ex-color-border);
+    border: 2px solid var(--ex-color-border-primary);
 
     img {
       width: 100%;
@@ -75,13 +75,13 @@
   }
 
   &__preview-size {
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-primary);
   }
 
   &__preview-ratio {
     color: var(--ex-color-success);
-    font-weight: var(--ex-font-weight-bold);
+    font-weight: var(--ex-font-bold);
   }
 
   &__preview-arrow {
@@ -107,7 +107,7 @@
 
   &__control-label {
     font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-weight-medium);
+    font-weight: var(--ex-font-medium);
     color: var(--ex-color-text-primary);
   }
 
@@ -119,13 +119,13 @@
   &__control-btn {
     flex: 1;
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: transparent;
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     cursor: pointer;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       border-color: var(--ex-color-primary);
@@ -157,11 +157,11 @@
       background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
       cursor: pointer;
       box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
-      transition: all var(--ex-transition-base);
+      transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
       &:hover {
         transform: scale(1.2);
-        box-shadow: 0 0 15px var(--ex-color-primary-alpha-80);
+        box-shadow: 0 0 15px var(--ex-color-primary-alpha-60);
       }
     }
 
@@ -173,11 +173,11 @@
       background: linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary));
       cursor: pointer;
       box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
-      transition: all var(--ex-transition-base);
+      transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
       &:hover {
         transform: scale(1.2);
-        box-shadow: 0 0 15px var(--ex-color-primary-alpha-80);
+        box-shadow: 0 0 15px var(--ex-color-primary-alpha-60);
       }
     }
 
@@ -197,13 +197,13 @@
   &__control-input,
   &__control-select {
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    border: 1px solid var(--ex-color-border);
+    border: 1px solid var(--ex-color-border-primary);
     background: var(--ex-color-bg-primary);
     color: var(--ex-color-text-primary);
     border-radius: var(--ex-radius-base);
     font-size: var(--ex-text-sm);
     outline: none;
-    transition: all var(--ex-transition-base);
+    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:focus {
       border-color: var(--ex-color-primary);
@@ -216,10 +216,10 @@
     justify-content: flex-end;
     gap: var(--ex-spacing-3);
     padding-top: var(--ex-spacing-4);
-    border-top: 1px solid var(--ex-color-border);
+    border-top: 1px solid var(--ex-color-border-primary);
   }
 
-  // 响应�?
+  // 响应�?
   @media (max-width: 768px) {
     padding: var(--ex-spacing-4);
 

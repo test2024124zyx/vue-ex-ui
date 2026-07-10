@@ -6,18 +6,18 @@
   
   &__title {
     display: block;
-    padding: var(--ex-spacing-xs) var(--ex-spacing-sm);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
     color: var(--ex-color-text-secondary);
     text-decoration: none;
     font-size: var(--ex-text-sm);
     line-height: 1.5;
-    border-radius: var(--ex-border-radius-sm);
-    transition: var(--ex-transition-base);
+    border-radius: var(--ex-radius-sm);
+    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
     word-break: break-all;
     
     &:hover {
       color: var(--ex-color-primary);
-      background-color: var(--ex-color-fill-quaternary);
+      background-color: var(--ex-color-bg-tertiary);
     }
     
     &:focus-visible {
@@ -27,16 +27,16 @@
   }
   
   &__children {
-    margin-left: var(--ex-spacing-md);
+    margin-left: var(--ex-spacing-4);
     border-left: 1px solid var(--ex-color-border-secondary);
   }
   
-  // 激活状�?
+  // 激活状�?
   &--active {
     > .ex-anchor-link__title {
       color: var(--ex-color-primary);
-      background-color: var(--ex-color-primary-bg);
-      font-weight: var(--ex-font-weight-medium);
+      background-color: var(--ex-color-primary-alpha-10);
+      font-weight: var(--ex-font-medium);
     }
   }
   
@@ -44,42 +44,42 @@
   &--level-1 {
     .ex-anchor-link__title {
       font-size: var(--ex-text-base);
-      font-weight: var(--ex-font-weight-medium);
+      font-weight: var(--ex-font-medium);
     }
   }
   
   &--level-2 {
     .ex-anchor-link__title {
       font-size: var(--ex-text-sm);
-      padding-left: var(--ex-spacing-md);
+      padding-left: var(--ex-spacing-4);
     }
   }
   
   &--level-3 {
     .ex-anchor-link__title {
       font-size: var(--ex-text-xs);
-      padding-left: var(--ex-spacing-lg);
+      padding-left: var(--ex-spacing-6);
       color: var(--ex-color-text-tertiary);
     }
   }
   
-  // 响应式设�?
+  // 响应式设�?
   @media (max-width: 575px) {
     .ex-anchor-link__title {
-      padding: var(--ex-spacing-xs);
+      padding: var(--ex-spacing-1);
       font-size: var(--ex-text-sm);
     }
     
     .ex-anchor-link__children {
-      margin-left: var(--ex-spacing-sm);
+      margin-left: var(--ex-spacing-2);
     }
     
     &--level-2 .ex-anchor-link__title {
-      padding-left: var(--ex-spacing-sm);
+      padding-left: var(--ex-spacing-2);
     }
     
     &--level-3 .ex-anchor-link__title {
-      padding-left: var(--ex-spacing-md);
+      padding-left: var(--ex-spacing-4);
     }
   }
 }
