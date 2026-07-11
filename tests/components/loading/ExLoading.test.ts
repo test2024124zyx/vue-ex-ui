@@ -134,8 +134,10 @@ describe('ExLoading', () => {
         minDuration: 100,
         'max-duration': 1000,
         showPercentage: true,
+        'show-percentage': true,
         percentage: 50,
         autoHide: true,
+        'auto-hide-delay': 300,
         draggable: true,
         ariaLabel: '旧标签',
       },
@@ -149,8 +151,10 @@ describe('ExLoading', () => {
     expect(attributes).not.toHaveProperty('minduration');
     expect(attributes).not.toHaveProperty('max-duration');
     expect(attributes).not.toHaveProperty('showpercentage');
+    expect(attributes).not.toHaveProperty('show-percentage');
     expect(attributes).not.toHaveProperty('percentage');
     expect(attributes).not.toHaveProperty('autohide');
+    expect(attributes).not.toHaveProperty('auto-hide-delay');
     expect(attributes).not.toHaveProperty('draggable');
     expect(attributes).not.toHaveProperty('arialabel');
   });

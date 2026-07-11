@@ -1,496 +1,194 @@
 # List 列表
 
-通用的列表组件，用于展示玩家列表、装备列表、任务列表等数据。
-
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
-// 玩家列表数据
-const players = ref([
-  {
-    key: 1,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player1',
-    title: 'Player001',
-    description: '等级 50 · 战力 9850',
-    extra: '在线',
-  },
-  {
-    key: 2,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player2',
-    title: 'Player002',
-    description: '等级 48 · 战力 9520',
-    extra: '在线',
-  },
-  {
-    key: 3,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player3',
-    title: 'Player003',
-    description: '等级 45 · 战力 9180',
-    extra: '离线',
-  },
-  {
-    key: 4,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player4',
-    title: 'Player004',
-    description: '等级 42 · 战力 8950',
-    extra: '离线',
-  },
-])
-
-// 装备列表数据
-const equipment = ref([
-  {
-    key: 1,
-    icon: 'https://api.iconify.design/ri/sword-line.svg',
-    title: '烈焰之剑',
-    description: '传说级武器 · 攻击力 +850',
-    extra: '已装备',
-  },
-  {
-    key: 2,
-    icon: 'https://api.iconify.design/ri/shield-line.svg',
-    title: '龙鳞护甲',
-    description: '史诗级护甲 · 防御力 +920',
-    extra: '已装备',
-  },
-  {
-    key: 3,
-    icon: 'https://api.iconify.design/ri/footprint-line.svg',
-    title: '疾风之靴',
-    description: '稀有级鞋子 · 速度 +120',
-    extra: '未装备',
-  },
-])
-
-// 任务列表数据
-const tasks = ref([
-  {
-    key: 1,
-    title: '击败终极Boss',
-    description: '在地下城深处击败终极Boss',
-    extra: '进行中',
-  },
-  {
-    key: 2,
-    title: '收集10个宝石',
-    description: '在各个关卡中收集稀有宝石',
-    extra: '已完成',
-  },
-  {
-    key: 3,
-    title: '达到50级',
-    description: '将角色等级提升至50级',
-    extra: '已完成',
-  },
-])
-
+const selected = ref('')
 const loading = ref(false)
+const records = [
+  { key: 1, title: '任务中心', description: '查看当前任务', extra: '3 项' },
+  { key: 2, title: '角色仓库', description: '管理角色与装备', extra: '12 件' },
+  { key: 3, title: '赛季奖励', description: '完成排位后领取', disabled: true },
+]
 
-const handleItemClick = (item, index) => {
-  console.log('点击了列表项:', item, index)
+const selectRecord = (item: { title?: string }) => {
+  selected.value = item.title ?? ''
 }
 </script>
 
 ## 基础用法
 
-最基础的列表用法。
-
-<div class="demo-container">
-  <ExList :data="tasks" @item-click="handleItemClick" />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue'
-
-const tasks = ref([
-  {
-    key: 1,
-    title: '击败终极Boss',
-    description: '在地下城深处击败终极Boss',
-    extra: '进行中',
-  },
-  {
-    key: 2,
-    title: '收集10个宝石',
-    description: '在各个关卡中收集稀有宝石',
-    extra: '已完成',
-  },
-])
-
-const handleItemClick = (item, index) => {
-  console.log('点击了列表项:', item, index)
-}
-</script>
-
-<template>
-  <ExList :data="tasks" @item-click="handleItemClick" />
-</template>
-```
-
-## 带图标
-
-通过 `icon` 字段可以为列表项添加图标。
-
-<div class="demo-container">
-  <ExList :data="equipment" />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue'
-
-const equipment = ref([
-  {
-    key: 1,
-    icon: 'https://api.iconify.design/ri/sword-line.svg',
-    title: '烈焰之剑',
-    description: '传说级武器 · 攻击力 +850',
-    extra: '已装备',
-  },
-  {
-    key: 2,
-    icon: 'https://api.iconify.design/ri/shield-line.svg',
-    title: '龙鳞护甲',
-    description: '史诗级护甲 · 防御力 +920',
-    extra: '已装备',
-  },
-])
-</script>
-
-<template>
-  <ExList :data="equipment" />
-</template>
-```
-
-## 带头像
-
-通过 `avatar` 字段可以为列表项添加头像，适合展示玩家列表。
-
-<div class="demo-container">
-  <ExList :data="players" />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue'
-
-const players = ref([
-  {
-    key: 1,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player1',
-    title: 'Player001',
-    description: '等级 50 · 战力 9850',
-    extra: '在线',
-  },
-  {
-    key: 2,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=player2',
-    title: 'Player002',
-    description: '等级 48 · 战力 9520',
-    extra: '在线',
-  },
-])
-</script>
-
-<template>
-  <ExList :data="players" />
-</template>
-```
-
-## 不同尺寸
-
-通过 `size` 属性可以设置列表的尺寸。
-
-<div class="demo-container" style="display: flex; flex-direction: column; gap: 16px;">
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-primary);">Small</h4>
-    <ExList :data="tasks.slice(0, 2)" size="small" bordered />
-  </div>
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-primary);">Medium</h4>
-    <ExList :data="tasks.slice(0, 2)" size="medium" bordered />
-  </div>
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-primary);">Large</h4>
-    <ExList :data="tasks.slice(0, 2)" size="large" bordered />
-  </div>
-</div>
+<ExList :data="records" bordered />
 
 ```vue
 <template>
-  <ExList :data="tasks" size="small" />
-  <ExList :data="tasks" size="medium" />
-  <ExList :data="tasks" size="large" />
-</template>
-```
-
-## 带边框
-
-通过 `bordered` 属性可以显示列表边框。
-
-<div class="demo-container">
-  <ExList :data="equipment" bordered />
-</div>
-
-```vue
-<template>
-  <ExList :data="equipment" bordered />
-</template>
-```
-
-## 无分割线
-
-设置 `split` 为 `false` 可以移除列表项之间的分割线。
-
-<div class="demo-container">
-  <ExList :data="tasks" :split="false" bordered />
-</div>
-
-```vue
-<template>
-  <ExList :data="tasks" :split="false" bordered />
-</template>
-```
-
-## 禁用悬停效果
-
-设置 `hoverable` 为 `false` 可以禁用悬停效果。
-
-<div class="demo-container">
-  <ExList :data="tasks" :hoverable="false" bordered />
-</div>
-
-```vue
-<template>
-  <ExList :data="tasks" :hoverable="false" bordered />
-</template>
-```
-
-## 禁用状态
-
-通过设置列表项的 `disabled` 属性可以禁用该项。
-
-<div class="demo-container">
-  <ExList 
-    :data="[
-      { key: 1, title: '正常项', description: '可以点击' },
-      { key: 2, title: '禁用项', description: '无法点击', disabled: true },
-      { key: 3, title: '正常项', description: '可以点击' },
-    ]" 
-    bordered 
-  />
-</div>
-
-```vue
-<template>
-  <ExList 
-    :data="[
-      { key: 1, title: '正常项', description: '可以点击' },
-      { key: 2, title: '禁用项', description: '无法点击', disabled: true },
-    ]" 
-    bordered 
+  <ExList
+    :data="records"
+    bordered
   />
 </template>
-```
 
-## 自定义插槽
-
-可以通过插槽自定义列表项的各个部分。
-
-<div class="demo-container">
-  <ExList :data="players" bordered>
-    <template #icon="{ item }">
-      <img :src="item.avatar" alt="" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--ex-color-neon-blue-500);" />
-    </template>
-    <template #title="{ item }">
-      <span style="color: var(--ex-color-neon-blue-500); font-weight: bold;">{{ item.title }}</span>
-    </template>
-    <template #extra="{ item }">
-      <ExBadge 
-        :count="item.extra" 
-        :type="item.extra === '在线' ? 'success' : 'default'" 
-      />
-    </template>
-  </ExList>
-</div>
-
-```vue
-<template>
-  <ExList :data="players" bordered>
-    <template #icon="{ item }">
-      <img :src="item.avatar" alt="" style="width: 48px; height: 48px; border-radius: 50%;" />
-    </template>
-    <template #title="{ item }">
-      <span style="color: var(--ex-color-neon-blue-500);">{{ item.title }}</span>
-    </template>
-    <template #extra="{ item }">
-      <ExBadge :count="item.extra" :type="item.extra === '在线' ? 'success' : 'default'" />
-    </template>
-  </ExList>
-</template>
-```
-
-## 空数据
-
-当列表数据为空时，会显示空状态。
-
-<div class="demo-container">
-  <ExList :data="[]" bordered />
-</div>
-
-```vue
-<template>
-  <ExList :data="[]" bordered />
-</template>
-```
-
-## 自定义空状态
-
-可以通过 `empty` 插槽自定义空状态。
-
-<div class="demo-container">
-  <ExList :data="[]" bordered>
-    <template #empty>
-      <div style="text-align: center; padding: 40px;">
-        <img 
-          src="https://api.iconify.design/ri/ghost-line.svg" 
-          alt="空" 
-          width="64" 
-          height="64"
-          style="opacity: 0.3; margin-bottom: 16px;"
-        />
-        <p style="margin: 0; color: var(--ex-color-text-tertiary);">没有找到任何数据</p>
-      </div>
-    </template>
-  </ExList>
-</div>
-
-```vue
-<template>
-  <ExList :data="[]" bordered>
-    <template #empty>
-      <div style="text-align: center; padding: 40px;">
-        <img src="..." alt="空" width="64" height="64" />
-        <p>没有找到任何数据</p>
-      </div>
-    </template>
-  </ExList>
-</template>
-```
-
-## 加载状态
-
-通过 `loading` 属性可以显示加载状态。
-
-<div class="demo-container">
-  <ExList :data="tasks" :loading="loading" bordered />
-  <div style="margin-top: 16px;">
-    <ExButton type="primary" @click="loading = !loading">
-      {{ loading ? '停止加载' : '开始加载' }}
-    </ExButton>
-  </div>
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue'
-
-const loading = ref(false)
-const tasks = ref([...])
+<script setup lang="ts">
+const records = [
+  { key: 1, title: '任务中心', description: '查看当前任务', extra: '3 项' },
+  { key: 2, title: '角色仓库', description: '管理角色与装备', extra: '12 件' },
+];
 </script>
-
-<template>
-  <ExList :data="tasks" :loading="loading" bordered />
-  <ExButton type="primary" @click="loading = !loading">
-    {{ loading ? '停止加载' : '开始加载' }}
-  </ExButton>
-</template>
 ```
 
-## 响应式设计
+## 可点击列表
 
-List 组件完全支持响应式设计，在移动端会自动调整间距和字体大小。
+`clickable` 开启后，每项使用原生 `button type="button"`。禁用项不会发送事件。
 
-<div class="demo-container">
-  <ExList :data="players" bordered />
-</div>
+<ExList
+:data="records"
+clickable
+hoverable
+bordered
+@item-click="selectRecord"
+/>
 
-::: tip 提示
-- 在移动端，列表项的内边距和字体会自动缩小
-- 头像大小会根据屏幕尺寸自动调整
-- 建议在移动端使用 `small` 或 `medium` 尺寸
-:::
+<p v-if="selected">当前选择：{{ selected }}</p>
+
+```vue
+<ExList :data="records" clickable hoverable @item-click="handleItemClick" />
+```
+
+可点击项的内容不应包含嵌套按钮或链接；需要独立操作控件时保持 `clickable="false"` 并使用 `item` 插槽。
+
+## 尺寸与外观
+
+```vue
+<ExList :data="records" size="small" />
+<ExList :data="records" size="medium" bordered />
+<ExList :data="records" size="large" :split="false" />
+```
+
+## 响应式网格
+
+<ExList
+  :data="records"
+  :grid="{ gutter: 12, column: 3, xs: 1, sm: 2, lg: 3 }"
+  bordered
+/>
+
+```vue
+<ExList
+  :data="records"
+  :grid="{
+    gutter: 16,
+    column: 4,
+    xs: 1,
+    sm: 2,
+    md: 3,
+    lg: 4,
+  }"
+/>
+```
+
+## 自定义内容
+
+```vue
+<ExList :data="records">
+  <template #icon="{ item }">
+    <ExAvatar :text="item.title?.slice(0, 1)" />
+  </template>
+  <template #title="{ item }">
+    <strong>{{ item.title }}</strong>
+  </template>
+  <template #extra="{ item, index }">
+    {{ index + 1 }} · {{ item.extra }}
+  </template>
+</ExList>
+```
+
+`item` 插槽会完整替换单项的内置内容。
+
+```vue
+<ExList :data="records">
+  <template #item="{ item }">
+    <article>{{ item.title }}</article>
+  </template>
+</ExList>
+```
+
+## 空态与加载态
+
+```vue
+<ExList :data="[]" empty-text="没有匹配记录" />
+
+<ExList :data="records" :loading="loading" loading-text="刷新列表" />
+
+<ExList :data="[]">
+  <template #empty>
+    <ExEmpty description="当前分类为空" />
+  </template>
+</ExList>
+```
+
+大数据窗口化使用独立的 `ExVirtualList`。
 
 ## API
 
-### List Props
+### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `data` | 列表数据 | `ListItem[]` | `[]` |
-| `size` | 列表尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `bordered` | 是否显示边框 | `boolean` | `false` |
-| `split` | 是否显示分割线 | `boolean` | `true` |
-| `hoverable` | 是否可悬停 | `boolean` | `true` |
-| `loading` | 是否加载中 | `boolean` | `false` |
-| `empty-text` | 空数据文本 | `string` | `'暂无数据'` |
-| `item-key` | 列表项的 key 字段名 | `string` | `'key'` |
+| 参数         | 类型                                               | 默认值     |
+| ------------ | -------------------------------------------------- | ---------- |
+| data         | `readonly ListItem[]`                              | `[]`       |
+| size         | `'small' \| 'medium' \| 'large'`                   | 全局尺寸   |
+| bordered     | `boolean`                                          | `false`    |
+| split        | `boolean`                                          | `true`     |
+| hoverable    | `boolean`                                          | `false`    |
+| loading      | `boolean`                                          | `false`    |
+| loading-text | `string`                                           | 本地化文案 |
+| empty-text   | `string`                                           | 本地化文案 |
+| item-key     | `string \| ((item, index) => PropertyKey \| null)` | `'key'`    |
+| grid         | `ListGrid`                                         | —          |
+| clickable    | `boolean`                                          | `false`    |
 
-### ListItem 数据结构
+原生 `class`、`style`、`aria-*` 与 `data-*` 属性会透传到根元素。
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `key` | 唯一标识 | `string \| number` | - |
-| `title` | 标题 | `string` | - |
-| `description` | 描述 | `string` | - |
-| `icon` | 图标 URL | `string` | - |
-| `avatar` | 头像 URL | `string` | - |
-| `extra` | 额外内容 | `string` | - |
-| `disabled` | 是否禁用 | `boolean` | `false` |
+### ListGrid
 
-### List Events
+| 字段                         | 类型     | 默认值       |
+| ---------------------------- | -------- | ------------ |
+| gutter                       | `number` | `0`          |
+| column                       | `number` | `4`          |
+| xs / sm / md / lg / xl / xxl | `number` | 继承较小断点 |
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `item-click` | 列表项点击事件 | `(item: ListItem, index: number, event: MouseEvent) => void` |
+列数规范为 1 至 24 的整数；非法断点继承最近有效列数。
 
-### List Slots
+### ListItem
 
-| 插槽名 | 说明 | 参数 |
-| --- | --- | --- |
-| `icon` | 自定义图标/头像 | `{ item: ListItem, index: number }` |
-| `title` | 自定义标题 | `{ item: ListItem, index: number }` |
-| `description` | 自定义描述 | `{ item: ListItem, index: number }` |
-| `extra` | 自定义额外内容 | `{ item: ListItem, index: number }` |
-| `empty` | 自定义空状态 | - |
+| 字段        | 类型          |
+| ----------- | ------------- |
+| key         | `PropertyKey` |
+| title       | `string`      |
+| description | `string`      |
+| icon        | `string`      |
+| avatar      | `string`      |
+| extra       | `string`      |
+| disabled    | `boolean`     |
 
-### List Methods
+### Events
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `getElement` | 获取列表DOM元素 | `() => HTMLDivElement \| null` |
+| 事件名     | 参数                                                         |
+| ---------- | ------------------------------------------------------------ |
+| item-click | `(item: ListItem, index: number, event: MouseEvent) => void` |
 
-## 无障碍支持
+### Slots
 
-- 支持键盘导航
-- 支持屏幕阅读器
-- 支持 `prefers-reduced-motion` 减少动画
-- 支持高对比度模式
+| 插槽名      | 参数                                |
+| ----------- | ----------------------------------- |
+| item        | `{ item: ListItem, index: number }` |
+| icon        | `{ item: ListItem, index: number }` |
+| title       | `{ item: ListItem, index: number }` |
+| description | `{ item: ListItem, index: number }` |
+| extra       | `{ item: ListItem, index: number }` |
+| empty       | —                                   |
 
-## 使用场景
+### Exposes
 
-- **玩家列表**：展示在线玩家、好友列表、排行榜等
-- **装备列表**：展示背包物品、装备清单等
-- **任务列表**：展示任务进度、成就列表等
-- **消息列表**：展示聊天记录、系统通知等
-
-<style scoped>
-.demo-container {
-  padding: 24px;
-  background: var(--ex-color-bg-primary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
-}
-</style>
+| 方法名     | 返回值                   |
+| ---------- | ------------------------ |
+| getElement | `HTMLDivElement \| null` |

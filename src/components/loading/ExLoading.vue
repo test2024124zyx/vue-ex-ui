@@ -153,7 +153,8 @@ const rootAttrs = computed(() =>
   Object.fromEntries(
     Object.entries(attrs).filter(([key]) => {
       if (key === 'aria-label') return true;
-      return !OBSOLETE_ATTRS.has(key.replaceAll('-', '').toLowerCase());
+      // 使用正则兼容组件库当前的 ES 构建目标，同时识别 kebab-case 旧属性。
+      return !OBSOLETE_ATTRS.has(key.replace(/-/g, '').toLowerCase());
     })
   )
 );
