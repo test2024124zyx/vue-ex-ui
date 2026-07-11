@@ -1,28 +1,46 @@
 <template>
-  <div ref="rootRef" role="group" :aria-label="computedAria" :class="ellipsisClasses">
+  <div
+    ref="rootRef"
+    :class="ellipsisClasses"
+    :role="groupRole"
+    :aria-label="accessibleLabel"
+  >
     <div
+      :id="contentId"
       ref="contentRef"
       :class="contentClasses"
       :style="contentStyle"
-      :title="tooltip && !expanded ? fullText : undefined"
+      :title="tooltipText"
     >
       <slot />
     </div>
 
-    <!-- 展开/收起按钮：仅在内容确实溢出（或已展开）时显示 -->
-    <div v-if="expandable && (isOverflowing || expanded)" class="ex-ellipsis__actions">
+    <div
+      v-if="showActions"
+      class="ex-ellipsis__actions"
+    >
       <button
         class="ex-ellipsis__btn"
         type="button"
-        :aria-expanded="expanded ? 'true' : 'false'"
-        :aria-label="expanded ? t('ellipsis.collapse') : t('ellipsis.expand')"
+        :aria-controls="contentId"
+        :aria-expanded="isExpanded"
+        :aria-label="isExpanded ? t('ellipsis.collapse') : t('ellipsis.expand')"
         @click="toggle"
       >
         <span class="ex-ellipsis__btn-text">
-          {{ expanded ? t('ellipsis.collapse') : t('ellipsis.expand') }}
+          {{ isExpanded ? t('ellipsis.collapse') : t('ellipsis.expand') }}
         </span>
-        <span class="ex-ellipsis__btn-icon" :class="{ 'is-expanded': expanded }">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <span
+          class="ex-ellipsis__btn-icon"
+          :class="{ 'is-expanded': isExpanded }"
+          aria-hidden="true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            focusable="false"
+          >
             <path
               d="M7 10l5 5 5-5"
               stroke="currentColor"
@@ -37,95 +55,142 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
-import { ellipsisPropDefs } from './types';
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import { useI18n } from '../../locale';
+import type { ExEllipsisEmits, ExEllipsisExposed, ExEllipsisProps } from './types';
 
-defineOptions({
-  name: 'ExEllipsis',
+defineOptions({ name: 'ExEllipsis' });
+
+const props = withDefaults(defineProps<ExEllipsisProps>(), {
+  lines: 1,
+  expandable: false,
+  tooltip: true,
+  ariaLabel: undefined,
+  expanded: undefined,
+  defaultExpanded: false,
 });
-
-const props = defineProps(ellipsisPropDefs);
+const emit = defineEmits<ExEllipsisEmits>();
 const { t } = useI18n();
-
-// 溢出检测：内容实际高度超出折叠高度时才需要"展开"按钮
-// 默认 true（未测量前假定溢出），在能拿到布局信息的环境中测量后修正
-const isOverflowing = ref(true);
-let resizeObserver: ResizeObserver | null = null;
-
-const checkOverflow = () => {
-  const el = contentRef.value;
-  if (!el) return;
-  if (expanded.value) return; // 展开状态下不重新判定
-  // 无法测量（如 jsdom/未渲染）时保持当前判定
-  if (el.scrollHeight === 0 && el.clientHeight === 0) return;
-  isOverflowing.value = el.scrollHeight > el.clientHeight + 1;
-};
-
-onMounted(() => {
-  nextTick(checkOverflow);
-  if (typeof ResizeObserver !== 'undefined' && contentRef.value) {
-    resizeObserver = new ResizeObserver(() => checkOverflow());
-    resizeObserver.observe(contentRef.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  resizeObserver = null;
-});
-
-watch(
-  () => props.lines,
-  () => nextTick(checkOverflow)
-);
-
 const rootRef = ref<HTMLElement>();
 const contentRef = ref<HTMLElement>();
-const expanded = ref(false);
+const contentId = `ex-ellipsis-content-${useId()}`;
+const internalExpanded = ref(props.defaultExpanded);
+const isOverflowing = ref(false);
+const fullText = ref('');
+let resizeObserver: ResizeObserver | null = null;
+let measureFrame: number | undefined;
 
-const getElement = () => rootRef.value || null;
-defineExpose({ getElement });
-
-const toggle = () => {
-  expanded.value = !expanded.value;
-};
+const normalizedLines = computed(() => {
+  if (!Number.isFinite(props.lines) || props.lines <= 0) return 1;
+  return Math.max(1, Math.trunc(props.lines));
+});
+const isControlled = computed(() => props.expanded !== undefined);
+const requestedExpanded = computed(() => props.expanded ?? internalExpanded.value);
+const isExpanded = computed(() => props.expandable && requestedExpanded.value);
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
+const groupRole = computed(() =>
+  props.expandable || accessibleLabel.value ? ('group' as const) : undefined
+);
+const showActions = computed(() => props.expandable && (isOverflowing.value || isExpanded.value));
+const tooltipText = computed(() =>
+  props.tooltip && isOverflowing.value && !isExpanded.value && fullText.value
+    ? fullText.value
+    : undefined
+);
 
 const ellipsisClasses = computed(() => [
   'ex-ellipsis',
   {
-    'ex-ellipsis--expanded': expanded.value,
+    'ex-ellipsis--expanded': isExpanded.value,
     'ex-ellipsis--expandable': props.expandable,
   },
 ]);
-
 const contentClasses = computed(() => [
   'ex-ellipsis__content',
-  {
-    'is-expanded': expanded.value,
-    'is-ellipsis': !expanded.value,
-  },
+  isExpanded.value ? 'is-expanded' : 'is-ellipsis',
 ]);
+const contentStyle = computed<CSSProperties>(() => ({
+  '--ex-ellipsis-lines': normalizedLines.value,
+}));
 
-const contentStyle = computed(() => {
-  if (expanded.value) {
-    return {};
+/** 同时检测多行高度溢出与单行水平溢出，并同步真实可见文本。 */
+const checkOverflow = () => {
+  const element = contentRef.value;
+  if (!element) return;
+  fullText.value = element.textContent?.trim() || '';
+  if (isExpanded.value) return;
+
+  const measurable =
+    element.scrollHeight > 0 ||
+    element.clientHeight > 0 ||
+    element.scrollWidth > 0 ||
+    element.clientWidth > 0;
+  isOverflowing.value =
+    measurable &&
+    (element.scrollHeight > element.clientHeight + 1 ||
+      element.scrollWidth > element.clientWidth + 1);
+};
+
+const queueMeasurement = () => {
+  if (typeof requestAnimationFrame === 'undefined') {
+    nextTick(checkOverflow);
+    return;
   }
+  if (measureFrame !== undefined) cancelAnimationFrame(measureFrame);
+  measureFrame = requestAnimationFrame(() => {
+    measureFrame = undefined;
+    checkOverflow();
+  });
+};
 
-  return {
-    WebkitLineClamp: String(props.lines),
-    display: '-webkit-box',
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  } as Record<string, string>;
+const requestExpanded = (expanded: boolean) => {
+  if (!props.expandable || isExpanded.value === expanded) return;
+  emit('update:expanded', expanded);
+  if (!isControlled.value) internalExpanded.value = expanded;
+};
+
+const expand = () => requestExpanded(true);
+const collapse = () => requestExpanded(false);
+const toggle = () => requestExpanded(!isExpanded.value);
+const getElement = () => rootRef.value ?? null;
+
+watch(
+  isExpanded,
+  expanded => {
+    emit(expanded ? 'expand' : 'collapse');
+    if (!expanded) nextTick(checkOverflow);
+  },
+  { flush: 'sync' }
+);
+watch(normalizedLines, queueMeasurement);
+
+onMounted(() => {
+  queueMeasurement();
+  if (typeof ResizeObserver === 'undefined') return;
+  resizeObserver = new ResizeObserver(queueMeasurement);
+  if (rootRef.value) resizeObserver.observe(rootRef.value);
+  if (contentRef.value) resizeObserver.observe(contentRef.value);
 });
 
-const fullText = computed(() => {
-  return props.ariaLabel || contentRef.value?.textContent || '';
+onUpdated(queueMeasurement);
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  if (measureFrame !== undefined) cancelAnimationFrame(measureFrame);
+  measureFrame = undefined;
 });
 
-const computedAria = computed(() => props.ariaLabel || undefined);
+defineExpose<ExEllipsisExposed>({
+  getElement,
+  checkOverflow,
+  expand,
+  collapse,
+  toggle,
+  isExpanded: () => isExpanded.value,
+});
 </script>
-<style lang="scss" scoped src="./ExEllipsis.scss"></style>
+
+<style scoped lang="scss" src="./ExEllipsis.scss"></style>

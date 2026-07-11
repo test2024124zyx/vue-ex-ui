@@ -1,6 +1,6 @@
 # Ellipsis 省略
 
-用于单行或多行文本的截断显示，支持展开/收起与原生 tooltip。
+用于单行或多行文本的截断显示，支持受控展开与仅在真实溢出时出现的原生 tooltip。
 
 ## 基础用法
 
@@ -42,7 +42,12 @@
 
 ```vue
 <template>
-  <ex-ellipsis :lines="2" expandable>可展开/收起的省略文本...</ex-ellipsis>
+  <ex-ellipsis
+    :lines="2"
+    expandable
+  >
+    可展开/收起的省略文本...
+  </ex-ellipsis>
 </template>
 ```
 
@@ -64,12 +69,22 @@
 
 ### Props
 
-| 参数       | 说明               | 类型      | 默认值  |
-| ---------- | ------------------ | --------- | ------- |
-| lines      | 省略的行数         | `number`  | `1`     |
-| expandable | 是否可展开/收起    | `boolean` | `false` |
-| tooltip    | hover 显示原生提示 | `boolean` | `true`  |
-| ariaLabel  | 无障碍标签         | `string`  | `''`    |
+| 参数             | 说明                         | 类型      | 默认值  |
+| ---------------- | ---------------------------- | --------- | ------- |
+| lines            | 折叠状态最多显示的正整数行数 | `number`  | `1`     |
+| expandable       | 是否可展开/收起              | `boolean` | `false` |
+| tooltip          | 真实溢出时是否显示原生 title | `boolean` | `true`  |
+| aria-label       | 根分组的无障碍名称           | `string`  | -       |
+| expanded         | 受控展开状态                 | `boolean` | -       |
+| default-expanded | 非受控初始展开状态           | `boolean` | `false` |
+
+### Events
+
+| 事件名          | 说明                     | 类型                          |
+| --------------- | ------------------------ | ----------------------------- |
+| update:expanded | 请求父级更新受控展开状态 | `(expanded: boolean) => void` |
+| expand          | 内容真实展开时触发       | `() => void`                  |
+| collapse        | 内容真实收起时触发       | `() => void`                  |
 
 ### Slots
 
@@ -79,9 +94,14 @@
 
 ### Exposes
 
-| 方法名     | 说明       |
-| ---------- | ---------- |
-| getElement | 获取根元素 |
+| 方法名        | 说明             |
+| ------------- | ---------------- |
+| getElement    | 获取根元素       |
+| checkOverflow | 立即重新测量溢出 |
+| expand        | 请求展开         |
+| collapse      | 请求收起         |
+| toggle        | 请求切换状态     |
+| isExpanded    | 获取真实展开状态 |
 
 ## 主题定制
 

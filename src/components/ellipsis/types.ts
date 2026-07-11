@@ -1,25 +1,38 @@
+/** 文本省略属性。 */
 export interface ExEllipsisProps {
-  /**
-   * 省略的行数（支持多行省略）
-   */
+  /** 折叠状态最多显示的正整数行数。 */
   lines?: number;
-  /**
-   * 是否允许展开/收起
-   */
+  /** 是否允许展开和收起。 */
   expandable?: boolean;
-  /**
-   * 是否在 hover 时显示完整文本的 title（浏览器原生 tooltip）
-   */
+  /** 真实溢出时是否用原生 title 展示完整文本。 */
   tooltip?: boolean;
-  /**
-   * a11y 标签（无文本或需覆盖时使用）
-   */
+  /** 根分组的无障碍名称。 */
   ariaLabel?: string;
+  /** 受控展开状态。 */
+  expanded?: boolean;
+  /** 非受控初始展开状态。 */
+  defaultExpanded?: boolean;
 }
 
-export const ellipsisPropDefs = {
-  lines: { type: Number, default: 1 },
-  expandable: { type: Boolean, default: false },
-  tooltip: { type: Boolean, default: true },
-  ariaLabel: { type: String, default: '' },
-};
+/** 文本省略事件。 */
+export interface ExEllipsisEmits {
+  'update:expanded': [expanded: boolean];
+  expand: [];
+  collapse: [];
+}
+
+/** 文本省略公开方法。 */
+export interface ExEllipsisExposed {
+  /** 获取根元素。 */
+  getElement: () => HTMLElement | null;
+  /** 立即重新测量溢出状态。 */
+  checkOverflow: () => void;
+  /** 请求展开。 */
+  expand: () => void;
+  /** 请求收起。 */
+  collapse: () => void;
+  /** 请求切换展开状态。 */
+  toggle: () => void;
+  /** 获取真实展开状态。 */
+  isExpanded: () => boolean;
+}

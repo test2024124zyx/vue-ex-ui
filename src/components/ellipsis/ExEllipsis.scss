@@ -1,47 +1,35 @@
-// ExEllipsis 文本省略组件样式
-// 游戏主题风格 - ClutchZone
-
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/performance' as *;
-@use '../../styles/component-mixins' as *;
 
 .ex-ellipsis {
   position: relative;
   width: 100%;
+  min-width: 0;
   font-family: var(--ex-font-secondary);
   color: var(--ex-color-text-primary);
 
-  // ============================================================================
-  // 内容区域
-  // ============================================================================
-  
   &__content {
     line-height: var(--ex-leading-relaxed);
-    word-break: break-word;
-    @include safe-transition(all);
+    overflow-wrap: anywhere;
 
     &.is-ellipsis {
       display: -webkit-box;
-      -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--ex-ellipsis-lines, 1);
     }
 
     &.is-expanded {
       display: block;
+      overflow: visible;
       -webkit-line-clamp: unset;
     }
   }
 
-  // ============================================================================
-  // 操作按钮区域
-  // ============================================================================
-  
   &__actions {
-    margin-top: var(--ex-spacing-2);
     display: flex;
     justify-content: flex-start;
+    margin-top: var(--ex-spacing-2);
   }
 
   &__btn {
@@ -49,27 +37,30 @@
     align-items: center;
     gap: var(--ex-spacing-1);
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-neon-blue-500);
+    cursor: pointer;
     background: transparent;
     border: 1px solid var(--ex-color-neon-blue-500);
     border-radius: var(--ex-radius-base);
-    color: var(--ex-color-neon-blue-500);
-    font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-medium);
-    cursor: pointer;
     outline: none;
-    @include safe-transition(all);
-    @include optimized-neon-glow('blue', 'sm');
+    box-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-20);
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
 
     &:hover {
-      border-color: var(--ex-color-neon-pink-500);
       color: var(--ex-color-neon-pink-500);
-      @include optimized-neon-glow('pink', 'md');
+      border-color: var(--ex-color-neon-pink-500);
+      box-shadow: 0 0 12px var(--ex-color-neon-pink-alpha-30);
       transform: translateY(-1px);
     }
 
     &:active {
       transform: translateY(0);
-      @include optimized-neon-glow('pink', 'sm');
     }
 
     &:focus-visible {
@@ -90,12 +81,12 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    @include safe-transition(transform);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
 
     svg {
+      display: block;
       width: 100%;
       height: 100%;
-      display: block;
     }
 
     &.is-expanded {
@@ -103,26 +94,6 @@
     }
   }
 
-  // ============================================================================
-  // 状态样�?
-  // ============================================================================
-  
-  &--expanded {
-    .ex-ellipsis__content {
-      animation: expand-in 0.3s var(--ex-motion-ease-out);
-    }
-  }
-
-  &--expandable {
-    .ex-ellipsis__content {
-      cursor: default;
-    }
-  }
-
-  // ============================================================================
-  // 响应式设�?
-  // ============================================================================
-  
   @include mobile {
     &__btn {
       min-height: 36px;
@@ -135,48 +106,21 @@
       height: 18px;
     }
   }
+}
 
-  // ============================================================================
-  // 无障碍支�?
-  // ============================================================================
-  
-  @media (prefers-reduced-motion: reduce) {
-    &__content,
-    &__btn,
-    &__btn-icon {
-      transition: none;
-      animation: none;
-    }
-
-    &__btn:hover {
-      transform: none;
-    }
+@media (prefers-reduced-motion: reduce) {
+  .ex-ellipsis__btn,
+  .ex-ellipsis__btn-icon {
+    transition: none;
   }
 
-  // 高对比度模式
-  @media (prefers-contrast: high) {
-    &__btn {
-      border-width: 2px;
-
-      &:focus-visible {
-        outline-width: 3px;
-      }
-    }
+  .ex-ellipsis__btn:hover {
+    transform: none;
   }
 }
 
-// ============================================================================
-// 动画定义
-// ============================================================================
-
-@keyframes expand-in {
-  from {
-    opacity: 0.8;
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 1000px;
+@media (prefers-contrast: high) {
+  .ex-ellipsis__btn {
+    border-width: 2px;
   }
 }
-
