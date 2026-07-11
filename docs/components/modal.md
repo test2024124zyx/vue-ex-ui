@@ -53,9 +53,17 @@ const handleOk = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">打开模态框</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    打开模态框
+  </ExButton>
 
-  <ExModal v-model="visible" title="基础模态框">
+  <ExModal
+    v-model="visible"
+    title="基础模态框"
+  >
     <p>这是模态框的内容</p>
   </ExModal>
 </template>
@@ -104,9 +112,19 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">主要模态框</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    主要模态框
+  </ExButton>
 
-  <ExModal v-model="visible" title="主要模态框" type="primary" size="medium">
+  <ExModal
+    v-model="visible"
+    title="主要模态框"
+    type="primary"
+    size="medium"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/information-line.svg"
@@ -143,7 +161,11 @@ const visible = ref(false);
 <template>
   <ExButton @click="visible = true">小尺寸</ExButton>
 
-  <ExModal v-model="visible" title="小尺寸模态框" size="small">
+  <ExModal
+    v-model="visible"
+    title="小尺寸模态框"
+    size="small"
+  >
     <p>这是一个小尺寸的模态框。</p>
   </ExModal>
 </template>
@@ -163,9 +185,18 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">自定义宽度</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    自定义宽度
+  </ExButton>
 
-  <ExModal v-model="visibleWidth" title="自定义宽度" :width="800">
+  <ExModal
+    v-model="visibleWidth"
+    title="自定义宽度"
+    :width="800"
+  >
     <p>这个模态框的宽度是 800px。</p>
   </ExModal>
 </template>
@@ -195,9 +226,19 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">居中模态框</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    居中模态框
+  </ExButton>
 
-  <ExModal v-model="visibleCenter" title="居中显示" size="medium" centered>
+  <ExModal
+    v-model="visibleCenter"
+    title="居中显示"
+    size="medium"
+    centered
+  >
     <div style="text-align: center;">
       <div style="font-size: 48px;">🏆</div>
       <div>恭喜获胜！</div>
@@ -231,7 +272,12 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">自定义按钮</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    自定义按钮
+  </ExButton>
 
   <ExModal
     v-model="visible"
@@ -261,12 +307,26 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">自定义底部</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    自定义底部
+  </ExButton>
 
-  <ExModal v-model="visibleCustomFooter" title="自定义底部" size="medium">
+  <ExModal
+    v-model="visibleCustomFooter"
+    title="自定义底部"
+    size="medium"
+  >
     <p>这是一个自定义底部的模态框。</p>
     <template #footer>
-      <ExButton type="default" @click="visibleCustomFooter = false">知道了</ExButton>
+      <ExButton
+        type="default"
+        @click="visibleCustomFooter = false"
+      >
+        知道了
+      </ExButton>
     </template>
   </ExModal>
 </template>
@@ -293,7 +353,12 @@ const visible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">加载状态</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    加载状态
+  </ExButton>
 
   <ExModal
     v-model="visible"
@@ -347,9 +412,18 @@ const handleOk = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">不可点击遮罩关闭</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    不可点击遮罩关闭
+  </ExButton>
 
-  <ExModal v-model="visible" title="重要提示" :mask-closable="false">
+  <ExModal
+    v-model="visible"
+    title="重要提示"
+    :mask-closable="false"
+  >
     <p>这个模态框不能通过点击遮罩层关闭。</p>
   </ExModal>
 </template>
@@ -381,7 +455,12 @@ const handleOk = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="visible = true">自定义样式</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    自定义样式
+  </ExButton>
 
   <ExModal
     v-model="visible"
@@ -413,13 +492,30 @@ const handleOk = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="outerVisible = true">打开外层模态框</ExButton>
+  <ExButton
+    type="primary"
+    @click="outerVisible = true"
+  >
+    打开外层模态框
+  </ExButton>
 
-  <ExModal v-model="outerVisible" title="外层模态框">
+  <ExModal
+    v-model="outerVisible"
+    title="外层模态框"
+  >
     <p>这是外层模态框的内容。</p>
-    <ExButton type="primary" @click="innerVisible = true">打开内层模态框</ExButton>
+    <ExButton
+      type="primary"
+      @click="innerVisible = true"
+    >
+      打开内层模态框
+    </ExButton>
 
-    <ExModal v-model="innerVisible" title="内层模态框" :z-index="1010">
+    <ExModal
+      v-model="innerVisible"
+      title="内层模态框"
+      :z-index="1010"
+    >
       <p>这是内层模态框的内容。</p>
     </ExModal>
   </ExModal>
@@ -440,7 +536,7 @@ const innerVisible = ref(false);
 | 属性                    | 说明                        | 类型                                                                     | 默认值      |
 | ----------------------- | --------------------------- | ------------------------------------------------------------------------ | ----------- |
 | `model-value / v-model` | 是否显示模态框              | `boolean`                                                                | `false`     |
-| `title`                 | 模态框标题                  | `string`                                                                 | `''`        |
+| `title`                 | 模态框标题                  | `string`                                                                 | —           |
 | `size`                  | 模态框尺寸                  | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  |
 | `type`                  | 模态框类型                  | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
 | `show-close`            | 是否显示关闭按钮            | `boolean`                                                                | `true`      |
@@ -453,22 +549,28 @@ const innerVisible = ref(false);
 | `confirm-loading`       | 确认按钮加载状态            | `boolean`                                                                | `false`     |
 | `centered`              | 是否居中显示                | `boolean`                                                                | `false`     |
 | `width`                 | 宽度                        | `string \| number`                                                       | `undefined` |
-| `z-index`               | 层级                        | `number`                                                                 | `1000`      |
+| `z-index`               | 层级                        | `number`                                                                 | 全局层级    |
 | `append-to-body`        | 是否追加到 body             | `boolean`                                                                | `true`      |
-| `destroy-on-close`      | 是否在关闭时销毁内容        | `boolean`                                                                | `false`     |
+| `destroy-on-close`      | 关闭动画结束后是否销毁内容  | `boolean`                                                                | `false`     |
+| `show-footer`           | 是否显示默认底部按钮区      | `boolean`                                                                | `true`      |
 | `wrap-class-name`       | 包装器自定义类名            | `string`                                                                 | `''`        |
-| `body-style`            | 内容区域自定义样式          | `Record<string, string \| number>`                                       | `undefined` |
+| `body-style`            | 内容区域自定义样式          | `CSSProperties`                                                          | `undefined` |
+| `lock-scroll`           | 模态状态下是否锁定页面滚动  | `boolean`                                                                | `true`      |
+| `before-open`           | 模态框打开前的守卫          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
 | `before-close`          | 模态框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
 | `aria-label`            | 无障碍标签                  | `string`                                                                 | `undefined` |
 
 ### Modal Events
 
-| 事件名               | 说明                     | 类型                       |
-| -------------------- | ------------------------ | -------------------------- |
-| `update:model-value` | 更新 modelValue          | `(value: boolean) => void` |
-| `ok`                 | 点击确定按钮时触发       | `() => void`               |
-| `cancel`             | 点击取消按钮时触发       | `() => void`               |
-| `after-close`        | 模态框关闭动画结束后触发 | `() => void`               |
+| 事件名               | 说明                     | 类型                                                 |
+| -------------------- | ------------------------ | ---------------------------------------------------- |
+| `update:model-value` | 更新 modelValue          | `(value: boolean) => void`                           |
+| `open`               | 打开守卫通过后触发       | `() => void`                                         |
+| `close`              | 外部状态真正关闭时触发   | `() => void`                                         |
+| `ok`                 | 点击确定按钮时触发       | `() => void`                                         |
+| `cancel`             | 点击取消按钮时触发       | `() => void`                                         |
+| `after-close`        | 模态框关闭动画结束后触发 | `() => void`                                         |
+| `guard-error`        | 打开或关闭守卫发生异常   | `(error: unknown, phase: 'open' \| 'close') => void` |
 
 ### Modal Slots
 
@@ -484,11 +586,13 @@ const innerVisible = ref(false);
 
 | 方法名       | 说明                | 类型                           |
 | ------------ | ------------------- | ------------------------------ |
+| `open`       | 请求父级打开        | `() => void`                   |
+| `close`      | 经关闭守卫请求关闭  | `() => Promise<boolean>`       |
 | `getElement` | 获取模态框 DOM 元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
 
-- 使用 `role="dialog"` 和 `aria-modal` 属性
+- 使用 `role="dialog"`；仅有遮罩时声明 `aria-modal="true"`
 - 支持 ESC 键关闭
 - 完整的 ARIA 标签支持
 - 支持屏幕阅读器
@@ -500,7 +604,14 @@ Modal 通过 `v-model`（`modelValue`）受控：
 
 ```vue
 <template>
-  <ExModal v-model="visible" title="标题" @ok="onOk" @cancel="onCancel">内容</ExModal>
+  <ExModal
+    v-model="visible"
+    title="标题"
+    @ok="onOk"
+    @cancel="onCancel"
+  >
+    内容
+  </ExModal>
 </template>
 
 <script setup>

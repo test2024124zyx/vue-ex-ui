@@ -1,100 +1,78 @@
-/**
- * 模态框尺寸
- */
+import type { CSSProperties } from 'vue';
+
 export type ModalSize = 'small' | 'medium' | 'large';
-
-/**
- * 模态框类型
- */
 export type ModalType = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+export type ModalGuard = () => boolean | Promise<boolean>;
 
-/**
- * 模态框位置
- */
-export type ModalPlacement =
-  | 'center'
-  | 'top'
-  | 'bottom'
-  | 'left'
-  | 'right'
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right';
-
-/**
- * 模态框过渡动画
- */
-export type ModalTransition = 'fade' | 'zoom' | 'slide-down' | 'slide-up';
-
-/**
- * 模态框组件属性
- */
+/** 模态框属性。 */
 export interface ExModalProps {
-  /** 是否显示模态框 */
+  /** 受控显示状态。 */
   modelValue?: boolean;
-  /** 模态框标题 */
+  /** 模态框标题。 */
   title?: string;
-  /** 模态框尺寸 */
+  /** 模态框尺寸。 */
   size?: ModalSize;
-  /** 模态框类型 */
+  /** 语义色类型。 */
   type?: ModalType;
-  /** 是否显示关闭按钮 */
+  /** 是否显示关闭按钮。 */
   showClose?: boolean;
-  /** 是否显示遮罩层 */
+  /** 是否显示遮罩并启用模态焦点圈闭。 */
   mask?: boolean;
-  /** 是否在点击遮罩层时关闭 */
+  /** 点击遮罩或遮罩空白区是否请求关闭。 */
   maskClosable?: boolean;
-  /** 是否在按下 ESC 键时关闭 */
+  /** Escape 是否请求关闭。 */
   keyboard?: boolean;
-  /** 确认按钮文本 */
+  /** 确认按钮文本。 */
   okText?: string;
-  /** 取消按钮文本 */
+  /** 取消按钮文本。 */
   cancelText?: string;
-  /** 确认按钮类型 */
+  /** 确认按钮类型。 */
   okType?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
-  /** 确认按钮加载状态 */
+  /** 确认按钮加载状态。 */
   confirmLoading?: boolean;
-  /** 是否居中显示 */
+  /** 是否在视口中垂直居中。 */
   centered?: boolean;
-  /** 宽度 */
+  /** 自定义宽度或正数像素值。 */
   width?: string | number;
-  /** 层级 */
+  /** 自定义层级；未设置时跟随全局层级。 */
   zIndex?: number;
-  /** 是否追加到 body */
+  /** 是否传送到 body。 */
   appendToBody?: boolean;
-  /** 是否销毁关闭时的内容 */
+  /** 关闭动画结束后是否销毁插槽内容。 */
   destroyOnClose?: boolean;
-  /** 是否显示默认底部按钮区（传入 footer 插槽时以插槽为准） */
+  /** 是否显示默认底部按钮区。 */
   showFooter?: boolean;
-  /** 自定义类名 */
+  /** 包装器自定义类名。 */
   wrapClassName?: string;
-  /** 自定义样式 */
-  bodyStyle?: Record<string, string | number>;
-  /** 模态框关闭前的回调 */
-  beforeClose?: () => boolean | Promise<boolean>;
-  /** 无障碍标签 */
+  /** 正文区域自定义样式。 */
+  bodyStyle?: CSSProperties;
+  /** 模态状态下是否锁定页面滚动。 */
+  lockScroll?: boolean;
+  /** 打开前异步守卫，返回 false 时拒绝打开。 */
+  beforeOpen?: ModalGuard;
+  /** 关闭前异步守卫，返回 false 时拒绝关闭请求。 */
+  beforeClose?: ModalGuard;
+  /** 无标题时的无障碍名称。 */
   ariaLabel?: string;
 }
 
-/**
- * 模态框组件事件
- */
+/** 模态框事件。 */
 export interface ExModalEmits {
-  /** 更新 modelValue */
   'update:modelValue': [value: boolean];
-  /** 确认事件 */
+  open: [];
+  close: [];
   ok: [];
-  /** 取消事件 */
   cancel: [];
-  /** 关闭后的回调 */
   afterClose: [];
+  guardError: [error: unknown, phase: 'open' | 'close'];
 }
 
-/**
- * 模态框组件暴露的方法
- */
+/** 模态框公开方法。 */
 export interface ExModalExposed {
-  /** 获取模态框 DOM 元素 */
+  /** 请求父级打开。 */
+  open: () => void;
+  /** 经 beforeClose 守卫请求父级关闭。 */
+  close: () => Promise<boolean>;
+  /** 获取模态框面板元素。 */
   getElement: () => HTMLDivElement | null;
 }

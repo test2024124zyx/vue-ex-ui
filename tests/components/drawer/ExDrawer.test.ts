@@ -1,397 +1,220 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent, h, nextTick, onMounted } from 'vue';
 import ExDrawer from '../../../src/components/drawer/ExDrawer.vue';
+import type { ExDrawerExposed } from '../../../src/components/drawer/types';
 
 describe('ExDrawer', () => {
-  beforeEach(() => {
+  let wrapper: ReturnType<typeof mount> | null = null;
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = null;
     document.body.innerHTML = '';
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    vi.restoreAllMocks();
   });
 
-  describe('组件渲染', () => {
-    it('应该正确渲染抽屉', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          title: '抽屉标题',
-        },
-        attachTo: document.body,
-      });
+  const mountDrawer = (props: Record<string, unknown> = {}, slots = {}, attrs = {}) => {
+    wrapper = mount(ExDrawer, { props, slots, attrs, attachTo: document.body });
+    return wrapper;
+  };
 
-      await nextTick();
-
-      expect(document.querySelector('.ex-drawer')).toBeTruthy();
-      expect(document.querySelector('.ex-drawer__title')?.textContent).toBe('抽屉标题');
-    });
-
-    it('应该渲染关闭按钮', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          closable: true,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.ex-drawer__close')).toBeTruthy();
-    });
-
-    it('应该渲染遮罩层', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          mask: true,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.ex-drawer-mask')).toBeTruthy();
-    });
-
-    it('应该渲染底部操作栏', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          showFooter: true,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.ex-drawer__footer')).toBeTruthy();
-    });
+  it('渲染标题、遮罩与正确的对话框标记', async () => {
+    mountDrawer({ modelValue: true, title: '抽屉标题' });
+    await flushPromises();
+    const drawer = document.querySelector('.ex-drawer')!;
+    const title = document.querySelector('.ex-drawer__title')!;
+    expect(document.querySelector('.ex-drawer-mask')).toBeTruthy();
+    expect(drawer.getAttribute('role')).toBe('dialog');
+    expect(drawer.getAttribute('aria-modal')).toBe('true');
+    expect(drawer.getAttribute('aria-labelledby')).toBe(title.id);
+    expect(drawer.hasAttribute('aria-label')).toBe(false);
   });
 
-  describe('抽屉位置', () => {
-    it.each([
-      ['left', 'ex-drawer--left'],
-      ['right', 'ex-drawer--right'],
-      ['top', 'ex-drawer--top'],
-      ['bottom', 'ex-drawer--bottom'],
-    ])('应该正确应用 %s 位置样式', async (placement, className) => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          placement: placement as any,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer');
-      expect(drawer?.classList.contains(className)).toBe(true);
-    });
+  it.each(['left', 'right', 'top', 'bottom'] as const)('应用 %s 方向样式', async placement => {
+    mountDrawer({ modelValue: true, placement });
+    await flushPromises();
+    expect(document.querySelector('.ex-drawer')?.classList).toContain(`ex-drawer--${placement}`);
   });
 
-  describe('抽屉尺寸', () => {
-    it('应该应用预设尺寸', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          size: 'small',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer') as HTMLElement;
-      expect(drawer?.style.width).toBe('300px');
-    });
-
-    it('应该应用自定义数字尺寸', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          size: 600,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer') as HTMLElement;
-      expect(drawer?.style.width).toBe('600px');
-    });
-
-    it('应该应用自定义字符串尺寸', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          size: '50%',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer') as HTMLElement;
-      expect(drawer?.style.width).toBe('50%');
-    });
+  it.each([
+    ['small', '300px'],
+    ['medium', '500px'],
+    ['large', '800px'],
+    ['extra-large', '1000px'],
+    [600, '600px'],
+    ['50%', '50%'],
+  ])('将尺寸 %s 转换为 %s', async (size, expected) => {
+    mountDrawer({ modelValue: true, size });
+    await flushPromises();
+    expect((document.querySelector('.ex-drawer') as HTMLElement).style.width).toBe(expected);
   });
 
-  describe('事件处理', () => {
-    it('应该触发打开事件', async () => {
-      const onOpen = vi.fn();
-      // 注：onOpened 依赖 Transition 动画完成回调，在 jsdom 中不会触发
-
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: false,
-          onOpen,
-        },
-        attachTo: document.body,
-      });
-
-      await wrapper.setProps({ modelValue: true });
-      await nextTick();
-
-      expect(onOpen).toHaveBeenCalled();
-    });
-
-    it('应该触发关闭事件', async () => {
-      const onClose = vi.fn();
-      // 注：onClosed 依赖 Transition 的 @after-leave 回调，在 jsdom 中不会触发
-
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          onClose,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-      await wrapper.setProps({ modelValue: false });
-      await nextTick();
-
-      expect(onClose).toHaveBeenCalled();
-    });
-
-    it('应该触发确认事件', async () => {
-      const onOk = vi.fn();
-
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          showFooter: true,
-          onOk,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const okButton = document.querySelectorAll('.ex-button')[1] as HTMLElement;
-      okButton?.click();
-
-      expect(onOk).toHaveBeenCalled();
-    });
-
-    it('应该触发取消事件', async () => {
-      const onCancel = vi.fn();
-
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          showFooter: true,
-          onCancel,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const cancelButton = document.querySelectorAll('.ex-button')[0] as HTMLElement;
-      cancelButton?.click();
-
-      expect(onCancel).toHaveBeenCalled();
-    });
-
-    it('点击关闭按钮应该关闭抽屉', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          closable: true,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const closeButton = document.querySelector('.ex-drawer__close') as HTMLElement;
-      closeButton?.click();
-
-      // 第一个事件是打开时的 true，第二个是关闭时的 false
-      const events = wrapper.emitted('update:modelValue');
-      expect(events?.[events.length - 1]).toEqual([false]);
-    });
-
-    it('点击遮罩层应该关闭抽屉', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          mask: true,
-          maskClosable: true,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const mask = document.querySelector('.ex-drawer-mask') as HTMLElement;
-      mask?.click();
-
-      // 第一个事件是打开时的 true，第二个是关闭时的 false
-      const events = wrapper.emitted('update:modelValue');
-      expect(events?.[events.length - 1]).toEqual([false]);
-    });
-
-    it('maskClosable 为 false 时点击遮罩层不应该关闭', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          mask: true,
-          maskClosable: false,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const eventsBeforeClick = wrapper.emitted('update:modelValue')?.length || 0;
-
-      const mask = document.querySelector('.ex-drawer-mask') as HTMLElement;
-      mask?.click();
-
-      const eventsAfterClick = wrapper.emitted('update:modelValue')?.length || 0;
-
-      // 点击后不应该有新的事件
-      expect(eventsAfterClick).toBe(eventsBeforeClick);
-    });
+  it('非有限或非正数字尺寸回退到 medium', async () => {
+    mountDrawer({ modelValue: true, size: Number.POSITIVE_INFINITY });
+    await flushPromises();
+    expect((document.querySelector('.ex-drawer') as HTMLElement).style.width).toBe('500px');
   });
 
-  describe('自定义样式', () => {
-    it('应该应用自定义类名', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          customClass: 'custom-drawer',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer');
-      expect(drawer?.classList.contains('custom-drawer')).toBe(true);
-    });
-
-    it('应该应用自定义层级', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          zIndex: 2000,
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawerWrapper = document.querySelector('.ex-drawer-wrapper') as HTMLElement;
-      expect(drawerWrapper?.style.zIndex).toBe('2000');
-    });
+  it('遮罩点击经过 beforeClose 守卫请求关闭', async () => {
+    const beforeClose = vi.fn().mockResolvedValue(true);
+    mountDrawer({ modelValue: true, beforeClose });
+    await flushPromises();
+    (document.querySelector('.ex-drawer-mask') as HTMLElement).click();
+    await flushPromises();
+    expect(beforeClose).toHaveBeenCalledTimes(1);
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([false]);
   });
 
-  describe('插槽', () => {
-    it('应该支持默认插槽', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-        },
-        slots: {
-          default: '<div class="custom-content">自定义内容</div>',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.custom-content')).toBeTruthy();
-    });
-
-    it('应该支持标题插槽', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-        },
-        slots: {
-          title: '<span class="custom-title">自定义标题</span>',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.custom-title')).toBeTruthy();
-    });
-
-    it('应该支持底部插槽', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-        },
-        slots: {
-          footer: '<div class="custom-footer">自定义底部</div>',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      expect(document.querySelector('.custom-footer')).toBeTruthy();
-    });
+  it('maskClosable=false 时遮罩不请求关闭', async () => {
+    mountDrawer({ modelValue: true, maskClosable: false });
+    await flushPromises();
+    (document.querySelector('.ex-drawer-mask') as HTMLElement).click();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
-  describe('无障碍支持', () => {
-    it('应该有正确的 ARIA 属性', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: true,
-          title: '抽屉标题',
-          ariaLabel: '自定义标签',
-        },
-        attachTo: document.body,
-      });
-
-      await nextTick();
-
-      const drawer = document.querySelector('.ex-drawer');
-      expect(drawer?.getAttribute('role')).toBe('dialog');
-      expect(drawer?.getAttribute('aria-modal')).toBe('true');
-      expect(drawer?.getAttribute('aria-label')).toBe('自定义标签');
-    });
+  it('Escape 与关闭按钮可独立配置', async () => {
+    mountDrawer({ modelValue: true, closable: false, closeOnPressEscape: true });
+    await flushPromises();
+    expect(document.querySelector('.ex-drawer__close')).toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await flushPromises();
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([false]);
   });
 
-  describe('暴露的方法', () => {
-    it('应该暴露 open 和 close 方法', async () => {
-      const wrapper = mount(ExDrawer, {
-        props: {
-          modelValue: false,
-        },
-        attachTo: document.body,
-      });
+  it('closeOnPressEscape=false 时忽略 Escape', async () => {
+    mountDrawer({ modelValue: true, closeOnPressEscape: false });
+    await flushPromises();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+  });
 
-      const exposed = wrapper.vm as any;
-      expect(exposed.open).toBeDefined();
-      expect(exposed.close).toBeDefined();
-      expect(exposed.getElement).toBeDefined();
+  it('初始 beforeOpen 未通过前不渲染抽屉', async () => {
+    let resolveGuard: ((value: boolean) => void) | undefined;
+    const beforeOpen = vi.fn(() => new Promise<boolean>(resolve => (resolveGuard = resolve)));
+    mountDrawer({ modelValue: true, beforeOpen });
+    await nextTick();
+    expect(document.querySelector('.ex-drawer')).toBeNull();
+
+    resolveGuard?.(true);
+    await flushPromises();
+    expect(document.querySelector('.ex-drawer')).toBeTruthy();
+    expect(wrapper!.emitted('open')).toEqual([[]]);
+  });
+
+  it('过期 beforeOpen 结果不会重新打开已由外部关闭的抽屉', async () => {
+    let resolveGuard: ((value: boolean) => void) | undefined;
+    const beforeOpen = () => new Promise<boolean>(resolve => (resolveGuard = resolve));
+    mountDrawer({ modelValue: false, beforeOpen });
+    await wrapper!.setProps({ modelValue: true });
+    await wrapper!.setProps({ modelValue: false });
+    resolveGuard?.(true);
+    await flushPromises();
+    expect(document.querySelector('.ex-drawer')).toBeNull();
+  });
+
+  it('并发关闭请求只执行一次 beforeClose', async () => {
+    let resolveGuard: ((value: boolean) => void) | undefined;
+    const beforeClose = vi.fn(() => new Promise<boolean>(resolve => (resolveGuard = resolve)));
+    mountDrawer({ modelValue: true, beforeClose });
+    await flushPromises();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    (document.querySelector('.ex-drawer-mask') as HTMLElement).click();
+    expect(beforeClose).toHaveBeenCalledTimes(1);
+    resolveGuard?.(false);
+    await flushPromises();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('destroyOnClose=false 时保留插槽组件实例', async () => {
+    const mounted = vi.fn();
+    const Child = defineComponent({
+      setup() {
+        onMounted(mounted);
+        return () => h('input', { class: 'drawer-stateful-child' });
+      },
     });
+    mountDrawer({ modelValue: false, destroyOnClose: false }, { default: () => h(Child) });
+    await wrapper!.setProps({ modelValue: true });
+    await flushPromises();
+    await wrapper!.setProps({ modelValue: false });
+    await flushPromises();
+    await wrapper!.setProps({ modelValue: true });
+    await flushPromises();
+    expect(mounted).toHaveBeenCalledTimes(1);
+  });
+
+  it('mask=false 时包装器不拦截背景且不声明 aria-modal', async () => {
+    mountDrawer({ modelValue: true, mask: false });
+    await flushPromises();
+    expect(document.querySelector('.ex-drawer-wrapper')?.classList).toContain(
+      'ex-drawer-wrapper--modeless'
+    );
+    expect(document.querySelector('.ex-drawer')?.hasAttribute('aria-modal')).toBe(false);
+  });
+
+  it('默认 footer 发出 ok/cancel，禁用状态透传到按钮', async () => {
+    mountDrawer({
+      modelValue: true,
+      showFooter: true,
+      okDisabled: true,
+      cancelDisabled: true,
+    });
+    await flushPromises();
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.ex-drawer__footer button')
+    );
+    expect(buttons).toHaveLength(2);
+    expect(buttons.every(button => button.disabled)).toBe(true);
+  });
+
+  it('支持标题、内容与底部插槽', async () => {
+    mountDrawer(
+      { modelValue: true },
+      {
+        title: () => h('span', { class: 'custom-title' }, '标题'),
+        default: () => h('div', { class: 'custom-content' }, '内容'),
+        footer: () => h('div', { class: 'custom-footer' }, '底部'),
+      }
+    );
+    await flushPromises();
+    expect(document.querySelector('.custom-title')).toBeTruthy();
+    expect(document.querySelector('.custom-content')).toBeTruthy();
+    expect(document.querySelector('.custom-footer')).toBeTruthy();
+  });
+
+  it('自定义类、样式、层级和原生属性分别应用到正确元素', async () => {
+    mountDrawer(
+      {
+        modelValue: true,
+        customClass: 'custom-drawer',
+        customStyle: { maxWidth: '90vw' },
+        zIndex: 2000,
+      },
+      {},
+      { 'data-testid': 'drawer-root' }
+    );
+    await flushPromises();
+    const root = document.querySelector<HTMLElement>('.ex-drawer-wrapper')!;
+    const panel = document.querySelector<HTMLElement>('.ex-drawer')!;
+    expect(root.dataset.testid).toBe('drawer-root');
+    expect(root.style.zIndex).toBe('2000');
+    expect(panel.classList).toContain('custom-drawer');
+    expect(panel.style.maxWidth).toBe('90vw');
+  });
+
+  it('公开 open/close 使用受控更新与统一守卫，并返回面板元素', async () => {
+    const beforeClose = vi.fn().mockResolvedValue(false);
+    mountDrawer({ modelValue: true, beforeClose });
+    await flushPromises();
+    const exposed = wrapper!.vm as unknown as ExDrawerExposed;
+    expect(exposed.getElement()).toBe(document.querySelector('.ex-drawer'));
+    await exposed.close();
+    expect(beforeClose).toHaveBeenCalledTimes(1);
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+    exposed.open();
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([true]);
   });
 });

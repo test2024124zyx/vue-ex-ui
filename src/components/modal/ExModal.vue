@@ -1,83 +1,127 @@
 <template>
-  <Teleport to="body" :disabled="!appendToBody">
-    <div v-if="visible" class="ex-modal-root" :style="rootStyles" v-bind="$attrs">
-      <!-- 遮罩层 -->
-      <Transition name="ex-modal-mask-fade">
-        <div v-if="mask && visible" class="ex-modal-mask" @click="handleMaskClick" />
-      </Transition>
-
-      <!-- 模态框包装器 -->
-      <div ref="wrapRef" class="ex-modal-wrap" :class="wrapClasses" @click.self="handleMaskClick">
-        <Transition name="ex-modal-zoom" @after-leave="handleAfterClose">
+  <Teleport
+    to="body"
+    :disabled="!appendToBody"
+  >
+    <Transition
+      name="ex-modal-root-fade"
+      @after-leave="handleAfterClose"
+    >
+      <div
+        v-if="shouldRender"
+        v-show="visible"
+        class="ex-modal-root"
+        :class="rootClasses"
+        :style="rootStyles"
+        v-bind="$attrs"
+      >
+        <Transition name="ex-modal-mask-fade">
           <div
-            v-if="visible"
-            ref="modalRef"
-            class="ex-modal"
-            :class="modalClasses"
-            :style="modalStyles"
-            role="dialog"
-            :aria-modal="mask"
-            :aria-label="ariaLabel || title"
-            :aria-labelledby="title ? titleId : undefined"
-          >
-            <div class="ex-modal-content">
-              <!-- 关闭按钮 -->
-              <button
-                v-if="showClose"
-                type="button"
-                class="ex-modal-close"
-                :aria-label="t('close')"
-                @click="handleCancel"
-              >
-                <slot name="closeIcon">
-                  <ExIcon icon="close-line" :size="20" aria-hidden="true" />
-                </slot>
-              </button>
+            v-if="mask && shouldRender"
+            v-show="visible"
+            class="ex-modal-mask"
+            @click="handleMaskClick"
+          />
+        </Transition>
 
-              <!-- 头部 -->
-              <div v-if="hasHeader" class="ex-modal-header">
-                <div v-if="$slots.icon" class="ex-modal-header__icon">
-                  <slot name="icon" />
+        <div
+          class="ex-modal-wrap"
+          :class="wrapClasses"
+          @click.self="handleMaskClick"
+        >
+          <Transition name="ex-modal-zoom">
+            <div
+              v-if="shouldRender"
+              v-show="visible"
+              ref="modalRef"
+              :class="modalClasses"
+              :style="modalStyles"
+              role="dialog"
+              :aria-modal="mask ? 'true' : undefined"
+              :aria-label="ariaLabel || undefined"
+              :aria-labelledby="!ariaLabel && hasTitle ? titleId : undefined"
+            >
+              <div class="ex-modal-content">
+                <button
+                  v-if="showClose"
+                  type="button"
+                  class="ex-modal-close"
+                  :aria-label="t('close')"
+                  @click="handleCancel"
+                >
+                  <slot name="closeIcon">
+                    <ExIcon
+                      icon="close-line"
+                      :size="20"
+                      aria-hidden="true"
+                    />
+                  </slot>
+                </button>
+
+                <div
+                  v-if="hasHeader"
+                  class="ex-modal-header"
+                >
+                  <div
+                    v-if="$slots.icon"
+                    class="ex-modal-header__icon"
+                  >
+                    <slot name="icon" />
+                  </div>
+                  <h2
+                    v-if="hasTitle"
+                    :id="titleId"
+                    class="ex-modal-title"
+                  >
+                    <slot name="title">
+                      {{ title }}
+                    </slot>
+                  </h2>
                 </div>
-                <div :id="titleId" class="ex-modal-title">
-                  <slot name="title">
-                    {{ title }}
+
+                <div
+                  class="ex-modal-body"
+                  :style="bodyStyle"
+                >
+                  <slot />
+                </div>
+
+                <div
+                  v-if="hasFooter"
+                  class="ex-modal-footer"
+                >
+                  <slot name="footer">
+                    <ExButton @click="handleCancel">
+                      {{ cancelText || t('cancel') }}
+                    </ExButton>
+                    <ExButton
+                      :type="okType"
+                      :loading="confirmLoading"
+                      @click="handleOk"
+                    >
+                      {{ okText || t('ok') }}
+                    </ExButton>
                   </slot>
                 </div>
               </div>
-
-              <!-- 内容 -->
-              <div class="ex-modal-body" :style="bodyStyle">
-                <slot />
-              </div>
-
-              <!-- 底部 -->
-              <div v-if="hasFooter" class="ex-modal-footer">
-                <slot name="footer">
-                  <ExButton @click="handleCancel">
-                    {{ cancelText || t('cancel') }}
-                  </ExButton>
-                  <ExButton :type="okType" :loading="confirmLoading" @click="handleOk">
-                    {{ okText || t('ok') }}
-                  </ExButton>
-                </slot>
-              </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
+        </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, useSlots } from 'vue';
-import type { ExModalProps, ExModalEmits, ExModalExposed } from './types';
-import { useLocale } from '../../locale';
-import { generateId } from '../../utils/id';
+import { computed, ref, useId, useSlots } from 'vue';
+import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
+import ExIcon from '../icon/ExIcon.vue';
+import { useZIndex } from '../config-provider/composables';
+import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
+import { useLocale } from '../../locale';
+import type { ExModalEmits, ExModalExposed, ExModalProps } from './types';
 
 defineOptions({
   name: 'ExModal',
@@ -95,125 +139,99 @@ const props = withDefaults(defineProps<ExModalProps>(), {
   okType: 'primary',
   confirmLoading: false,
   centered: false,
-  zIndex: 1000,
+  zIndex: undefined,
   appendToBody: true,
   destroyOnClose: false,
   showFooter: true,
+  lockScroll: true,
 });
 
 const emit = defineEmits<ExModalEmits>();
-
-const { t } = useLocale('dialog');
-
-const wrapRef = ref<HTMLDivElement>();
-const modalRef = ref<HTMLDivElement>();
-const visible = ref(props.modelValue);
-const titleId = `ex-modal-title-${generateId()}`;
-
-// 获取 slots
 const slots = useSlots();
+const { t } = useLocale('dialog');
+const baseZIndex = useZIndex(50);
+const modalRef = ref<HTMLDivElement>();
+const titleId = `ex-modal-title-${useId()}`;
 
-// 计算属性
-const hasHeader = computed((): boolean => {
-  return !!(props.title || slots.title || slots.icon);
+const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
+  modelValue: () => props.modelValue,
+  beforeOpen: () => props.beforeOpen,
+  beforeClose: () => props.beforeClose,
+  requestModelValue: value => emit('update:modelValue', value),
+  onOpen: () => emit('open'),
+  onClose: () => emit('close'),
+  onGuardError: (error, phase) => emit('guardError', error, phase),
 });
 
-const hasFooter = computed((): boolean => {
-  // 传入 footer 插槽时始终渲染；否则由 showFooter 控制默认按钮区
-  return slots.footer !== undefined || props.showFooter;
-});
+const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
+const hasTitle = computed(() => Boolean(props.title || slots.title));
+const hasHeader = computed(() => Boolean(hasTitle.value || slots.icon));
+const hasFooter = computed(() => Boolean(slots.footer || props.showFooter));
 
-const wrapClasses = computed(() => {
-  const classes = ['ex-modal-wrap'];
-  if (props.centered) classes.push('ex-modal-wrap--centered');
-  if (props.wrapClassName) classes.push(props.wrapClassName);
-  return classes;
-});
+const rootClasses = computed(() => ({
+  'ex-modal-root--modeless': !props.mask,
+}));
+const rootStyles = computed<CSSProperties>(() => ({
+  zIndex: props.zIndex ?? baseZIndex.value,
+}));
+const wrapClasses = computed(() => [
+  {
+    'ex-modal-wrap--centered': props.centered,
+  },
+  props.wrapClassName,
+]);
+const modalClasses = computed(() => [
+  'ex-modal',
+  `ex-modal--${props.size}`,
+  `ex-modal--${props.type}`,
+]);
 
-const modalClasses = computed(() => {
-  const classes = ['ex-modal'];
-  if (props.size) classes.push(`ex-modal--${props.size}`);
-  if (props.type) classes.push(`ex-modal--${props.type}`);
-  return classes;
-});
-
-const modalStyles = computed(() => {
-  const styles: Record<string, string> = {};
-  if (props.width) {
-    styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
+/** 仅接受正的有限像素数值；字符串交由浏览器按 CSS 长度规则校验。 */
+const normalizedWidth = computed(() => {
+  if (typeof props.width === 'number') {
+    return Number.isFinite(props.width) && props.width > 0 ? `${props.width}px` : undefined;
   }
-  return styles;
+  const width = props.width?.trim();
+  return width || undefined;
 });
-
-// 根容器样式：以 CSS 变量统一 z-index，可由 prop 覆盖
-const rootStyles = computed(() => {
-  const styles: Record<string, string> = {
-    zIndex: 'calc(var(--ex-z-modal) - 1000 + var(--ex-z-index-base, 1000))',
-  };
-  if (props.zIndex !== undefined) {
-    styles['--ex-z-modal'] = String(props.zIndex);
-  }
-  return styles;
-});
-
-// 同步父级 modelValue 到内部 visible
-watch(
-  () => props.modelValue,
-  newVal => {
-    visible.value = newVal;
-  }
+const modalStyles = computed<CSSProperties>(() =>
+  normalizedWidth.value ? { width: normalizedWidth.value } : {}
 );
 
-// 浮层通用机制：滚动锁定、自动聚焦、焦点陷阱、Esc 关闭、卸载清理
-// （与 ExDialog 共用同一套 useOverlay 实现，消除重复逻辑）
 useOverlay({
   active: () => visible.value,
   container: modalRef,
+  lockScroll: () => props.mask && props.lockScroll,
   closeOnEscape: () => props.keyboard,
-  onEscape: () => handleCancel(),
+  onEscape: async () => {
+    emit('cancel');
+    await requestClose();
+  },
+  trapFocus: () => props.mask,
+  autoFocus: () => props.mask,
   restoreFocus: true,
 });
 
-// 点击遮罩层
 const handleMaskClick = () => {
-  if (props.maskClosable) {
-    handleCancel();
-  }
-};
-
-// 确认
-const handleOk = async () => {
-  emit('ok');
-  if (props.beforeClose) {
-    const result = await props.beforeClose();
-    if (result === false) return;
-  }
-  emit('update:modelValue', false);
-};
-
-// 取消
-const handleCancel = async () => {
+  if (!props.mask || !props.maskClosable) return;
   emit('cancel');
-  if (props.beforeClose) {
-    const result = await props.beforeClose();
-    if (result === false) return;
-  }
-  emit('update:modelValue', false);
+  void requestClose();
 };
-
-// 关闭后的回调
-// 说明：模态框根节点使用 v-if（visible）渲染，关闭后内容即从 DOM 卸载，
-// 因此插槽内容默认在每次关闭时销毁、下次打开重建。destroyOnClose 保留用于语义表达。
-const handleAfterClose = () => {
-  emit('afterClose');
+const handleOk = () => {
+  emit('ok');
+  void requestClose();
 };
+const handleCancel = () => {
+  emit('cancel');
+  void requestClose();
+};
+const handleAfterClose = () => emit('afterClose');
 
-// 暴露的方法
-const getElement = () => modalRef.value || null;
+const open = () => requestOpen();
+const close = () => requestClose();
+const getElement = () => modalRef.value ?? null;
 
-defineExpose<ExModalExposed>({
-  getElement,
-});
+defineExpose<ExModalExposed>({ open, close, getElement });
 </script>
 
 <style scoped lang="scss" src="./ExModal.scss"></style>

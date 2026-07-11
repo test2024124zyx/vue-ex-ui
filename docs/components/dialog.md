@@ -56,9 +56,17 @@ Dialog 弹出一个对话框，适合需要定制性更大的场景。
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">打开对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    打开对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="提示">
+  <ExDialog
+    v-model="dialogVisible"
+    title="提示"
+  >
     <p>这是一段信息</p>
     <p>这是另一段信息</p>
   </ExDialog>
@@ -106,7 +114,12 @@ const dialogVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">自定义标题</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    自定义标题
+  </ExButton>
 
   <ExDialog v-model="dialogVisible">
     <template #title>
@@ -163,9 +176,18 @@ const dialogVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">主要对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    主要对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="主要对话框" type="primary">
+  <ExDialog
+    v-model="dialogVisible"
+    title="主要对话框"
+    type="primary"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/information-line.svg"
@@ -202,7 +224,11 @@ const dialogVisible = ref(false);
 <template>
   <ExButton @click="dialogVisible = true">小尺寸</ExButton>
 
-  <ExDialog v-model="dialogVisible" title="小尺寸对话框" size="small">
+  <ExDialog
+    v-model="dialogVisible"
+    title="小尺寸对话框"
+    size="small"
+  >
     <p>这是一个小尺寸的对话框。</p>
   </ExDialog>
 </template>
@@ -231,7 +257,12 @@ const dialogVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">自定义底部</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    自定义底部
+  </ExButton>
 
   <ExDialog
     v-model="dialogVisible"
@@ -283,9 +314,18 @@ const handleConfirm = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">居中对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    居中对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="居中显示" center>
+  <ExDialog
+    v-model="dialogVisible"
+    title="居中显示"
+    center
+  >
     <div style="text-align: center;">
       <div style="font-size: 48px;">🏆</div>
       <div>恭喜获胜！</div>
@@ -312,9 +352,18 @@ const handleConfirm = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">全屏对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    全屏对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="全屏对话框" fullscreen>
+  <ExDialog
+    v-model="dialogVisible"
+    title="全屏对话框"
+    fullscreen
+  >
     <div>全屏内容</div>
   </ExDialog>
 </template>
@@ -337,13 +386,30 @@ const handleConfirm = () => {
 
 ```vue
 <template>
-  <ExButton type="primary" @click="outerVisible = true">打开外层对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="outerVisible = true"
+  >
+    打开外层对话框
+  </ExButton>
 
-  <ExDialog v-model="outerVisible" title="外层对话框">
+  <ExDialog
+    v-model="outerVisible"
+    title="外层对话框"
+  >
     <p>这是外层对话框的内容。</p>
-    <ExButton type="primary" @click="innerVisible = true">打开内层对话框</ExButton>
+    <ExButton
+      type="primary"
+      @click="innerVisible = true"
+    >
+      打开内层对话框
+    </ExButton>
 
-    <ExDialog v-model="innerVisible" title="内层对话框" :z-index="1060">
+    <ExDialog
+      v-model="innerVisible"
+      title="内层对话框"
+      :z-index="1060"
+    >
       <p>这是内层对话框的内容。</p>
     </ExDialog>
   </ExDialog>
@@ -373,9 +439,17 @@ const innerVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">自定义关闭按钮</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    自定义关闭按钮
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="自定义关闭">
+  <ExDialog
+    v-model="dialogVisible"
+    title="自定义关闭"
+  >
     <template #close>
       <img
         src="https://api.iconify.design/ri/close-circle-line.svg"
@@ -406,9 +480,18 @@ const innerVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">无底部对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    无底部对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="纯内容展示" :show-footer="false">
+  <ExDialog
+    v-model="dialogVisible"
+    title="纯内容展示"
+    :show-footer="false"
+  >
     <p>这是一个纯内容展示的对话框。</p>
   </ExDialog>
 </template>
@@ -443,9 +526,18 @@ const innerVisible = ref(false);
 
 ```vue
 <template>
-  <ExButton type="primary" @click="dialogVisible = true">打开对话框</ExButton>
+  <ExButton
+    type="primary"
+    @click="dialogVisible = true"
+  >
+    打开对话框
+  </ExButton>
 
-  <ExDialog v-model="dialogVisible" title="编辑内容" :before-close="handleBeforeClose">
+  <ExDialog
+    v-model="dialogVisible"
+    title="编辑内容"
+    :before-close="handleBeforeClose"
+  >
     <p>尝试关闭对话框，如果有未保存内容会被阻止。</p>
   </ExDialog>
 </template>
@@ -471,46 +563,47 @@ const handleBeforeClose = async () => {
 
 ### Dialog Props
 
-| 属性                    | 说明                        | 类型                                                                     | 默认值      |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------------ | ----------- |
-| `model-value / v-model` | 是否显示对话框              | `boolean`                                                                | `false`     |
-| `title`                 | 对话框标题                  | `string`                                                                 | `''`        |
-| `size`                  | 对话框尺寸                  | `'small' \| 'medium' \| 'large' \| 'full'`                               | `'medium'`  |
-| `type`                  | 对话框类型                  | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
-| `show-close`            | 是否显示关闭按钮            | `boolean`                                                                | `true`      |
-| `modal`                 | 是否显示遮罩层              | `boolean`                                                                | `true`      |
-| `close-on-click-modal`  | 是否可以通过点击遮罩层关闭  | `boolean`                                                                | `true`      |
-| `close-on-press-escape` | 是否可以通过按下 ESC 键关闭 | `boolean`                                                                | `true`      |
-| `show-footer`           | 是否显示底部操作栏          | `boolean`                                                                | `true`      |
-| `confirm-text`          | 确认按钮文本                | `string`                                                                 | `'确认'`    |
-| `cancel-text`           | 取消按钮文本                | `string`                                                                 | `'取消'`    |
-| `show-confirm`          | 是否显示确认按钮            | `boolean`                                                                | `true`      |
-| `show-cancel`           | 是否显示取消按钮            | `boolean`                                                                | `true`      |
-| `confirm-loading`       | 确认按钮加载状态            | `boolean`                                                                | `false`     |
-| `confirm-disabled`      | 确认按钮禁用状态            | `boolean`                                                                | `false`     |
-| `center`                | 是否居中显示                | `boolean`                                                                | `false`     |
-| `fullscreen`            | 是否全屏显示                | `boolean`                                                                | `false`     |
-| `lock-scroll`           | 是否锁定滚动                | `boolean`                                                                | `true`      |
-| `custom-class`          | 自定义类名                  | `string`                                                                 | `''`        |
-| `modal-class`           | 遮罩层自定义类名            | `string`                                                                 | `''`        |
-| `before-open`           | 对话框打开前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
-| `before-close`          | 对话框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
-| `z-index`               | 层级                        | `number`                                                                 | `1050`      |
-| `append-to-body`        | 是否追加到 body             | `boolean`                                                                | `true`      |
-| `destroy-on-close`      | 是否在关闭时销毁内容        | `boolean`                                                                | `false`     |
-| `aria-label`            | 无障碍标签                  | `string`                                                                 | `undefined` |
+| 属性                    | 说明                        | 类型                                                                     | 默认值        |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------ | ------------- |
+| `model-value / v-model` | 是否显示对话框              | `boolean`                                                                | `false`       |
+| `title`                 | 对话框标题                  | `string`                                                                 | `''`          |
+| `size`                  | 对话框尺寸                  | `'small' \| 'medium' \| 'large' \| 'full'`                               | `'medium'`    |
+| `type`                  | 对话框类型                  | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'`   |
+| `show-close`            | 是否显示关闭按钮            | `boolean`                                                                | `true`        |
+| `modal`                 | 是否显示遮罩层              | `boolean`                                                                | `true`        |
+| `close-on-click-modal`  | 是否可以通过点击遮罩层关闭  | `boolean`                                                                | `true`        |
+| `close-on-press-escape` | 是否可以通过按下 ESC 键关闭 | `boolean`                                                                | `true`        |
+| `show-footer`           | 是否显示底部操作栏          | `boolean`                                                                | `true`        |
+| `confirm-text`          | 确认按钮文本                | `string`                                                                 | `'确认'`      |
+| `cancel-text`           | 取消按钮文本                | `string`                                                                 | `'取消'`      |
+| `show-confirm`          | 是否显示确认按钮            | `boolean`                                                                | `true`        |
+| `show-cancel`           | 是否显示取消按钮            | `boolean`                                                                | `true`        |
+| `confirm-loading`       | 确认按钮加载状态            | `boolean`                                                                | `false`       |
+| `confirm-disabled`      | 确认按钮禁用状态            | `boolean`                                                                | `false`       |
+| `center`                | 是否居中显示                | `boolean`                                                                | `false`       |
+| `fullscreen`            | 是否全屏显示                | `boolean`                                                                | `false`       |
+| `lock-scroll`           | 是否锁定滚动                | `boolean`                                                                | `true`        |
+| `custom-class`          | 自定义类名                  | `string`                                                                 | `''`          |
+| `modal-class`           | 遮罩层自定义类名            | `string`                                                                 | `''`          |
+| `before-open`           | 对话框打开前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
+| `before-close`          | 对话框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
+| `z-index`               | 层级                        | `number`                                                                 | 全局层级 + 50 |
+| `append-to-body`        | 是否追加到 body             | `boolean`                                                                | `true`        |
+| `destroy-on-close`      | 关闭动画结束后是否销毁内容  | `boolean`                                                                | `false`       |
+| `aria-label`            | 无障碍标签                  | `string`                                                                 | `undefined`   |
 
 ### Dialog Events
 
-| 事件名               | 说明                     | 类型                       |
-| -------------------- | ------------------------ | -------------------------- |
-| `update:model-value` | 更新 modelValue          | `(value: boolean) => void` |
-| `open`               | 对话框打开时触发         | `() => void`               |
-| `opened`             | 对话框打开动画结束时触发 | `() => void`               |
-| `close`              | 对话框关闭时触发         | `() => void`               |
-| `closed`             | 对话框关闭动画结束时触发 | `() => void`               |
-| `confirm`            | 点击确认按钮时触发       | `() => void`               |
-| `cancel`             | 点击取消按钮时触发       | `() => void`               |
+| 事件名               | 说明                     | 类型                                                 |
+| -------------------- | ------------------------ | ---------------------------------------------------- |
+| `update:model-value` | 更新 modelValue          | `(value: boolean) => void`                           |
+| `open`               | 对话框打开时触发         | `() => void`                                         |
+| `opened`             | 对话框打开动画结束时触发 | `() => void`                                         |
+| `close`              | 对话框关闭时触发         | `() => void`                                         |
+| `closed`             | 对话框关闭动画结束时触发 | `() => void`                                         |
+| `guard-error`        | 打开或关闭守卫发生异常   | `(error: unknown, phase: 'open' \| 'close') => void` |
+| `confirm`            | 点击确认按钮时触发       | `() => void`                                         |
+| `cancel`             | 点击取消按钮时触发       | `() => void`                                         |
 
 ### Dialog Slots
 
@@ -527,12 +620,12 @@ const handleBeforeClose = async () => {
 | 方法名       | 说明                | 类型                           |
 | ------------ | ------------------- | ------------------------------ |
 | `open`       | 打开对话框          | `() => void`                   |
-| `close`      | 关闭对话框          | `() => void`                   |
+| `close`      | 经关闭守卫请求关闭  | `() => Promise<boolean>`       |
 | `getElement` | 获取对话框 DOM 元素 | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
 
-- 使用 `role="dialog"` 和 `aria-modal` 属性
+- 使用 `role="dialog"`；仅模态状态声明 `aria-modal="true"`
 - 支持 ESC 键关闭
 - 完整的 ARIA 标签支持
 - 支持屏幕阅读器
@@ -545,7 +638,12 @@ Dialog 通过 `v-model`（`modelValue`）受控，父级是唯一事实来源：
 ```vue
 <template>
   <ExButton @click="visible = true">打开</ExButton>
-  <ExDialog v-model="visible" title="标题">内容</ExDialog>
+  <ExDialog
+    v-model="visible"
+    title="标题"
+  >
+    内容
+  </ExDialog>
 </template>
 
 <script setup>

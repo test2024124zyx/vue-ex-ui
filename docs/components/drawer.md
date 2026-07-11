@@ -53,8 +53,16 @@ const visible = ref(false);
 </script>
 
 <template>
-  <ExButton type="primary" @click="visible = true">打开抽屉</ExButton>
-  <ExDrawer v-model="visible" title="基础抽屉">
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    打开抽屉
+  </ExButton>
+  <ExDrawer
+    v-model="visible"
+    title="基础抽屉"
+  >
     <p>这是抽屉的内容</p>
     <p>可以放置任何内容</p>
   </ExDrawer>
@@ -100,19 +108,35 @@ const visibleBottom = ref(false);
   <ExButton @click="visibleTop = true">从顶部打开</ExButton>
   <ExButton @click="visibleBottom = true">从底部打开</ExButton>
 
-  <ExDrawer v-model="visibleLeft" title="左侧抽屉" placement="left">
+  <ExDrawer
+    v-model="visibleLeft"
+    title="左侧抽屉"
+    placement="left"
+  >
     <p>从左侧滑出的抽屉</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleRight" title="右侧抽屉" placement="right">
+  <ExDrawer
+    v-model="visibleRight"
+    title="右侧抽屉"
+    placement="right"
+  >
     <p>从右侧滑出的抽屉</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleTop" title="顶部抽屉" placement="top">
+  <ExDrawer
+    v-model="visibleTop"
+    title="顶部抽屉"
+    placement="top"
+  >
     <p>从顶部滑出的抽屉</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleBottom" title="底部抽屉" placement="bottom">
+  <ExDrawer
+    v-model="visibleBottom"
+    title="底部抽屉"
+    placement="bottom"
+  >
     <p>从底部滑出的抽屉</p>
   </ExDrawer>
 </template>
@@ -157,19 +181,35 @@ const visibleCustom = ref(false);
   <ExButton @click="visibleLarge = true">大尺寸</ExButton>
   <ExButton @click="visibleCustom = true">自定义尺寸</ExButton>
 
-  <ExDrawer v-model="visibleSmall" title="小尺寸抽屉" size="small">
+  <ExDrawer
+    v-model="visibleSmall"
+    title="小尺寸抽屉"
+    size="small"
+  >
     <p>宽度 300px</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleMedium" title="中等尺寸抽屉" size="medium">
+  <ExDrawer
+    v-model="visibleMedium"
+    title="中等尺寸抽屉"
+    size="medium"
+  >
     <p>宽度 500px（默认）</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleLarge" title="大尺寸抽屉" size="large">
+  <ExDrawer
+    v-model="visibleLarge"
+    title="大尺寸抽屉"
+    size="large"
+  >
     <p>宽度 800px</p>
   </ExDrawer>
 
-  <ExDrawer v-model="visibleCustom" title="自定义尺寸抽屉" :size="600">
+  <ExDrawer
+    v-model="visibleCustom"
+    title="自定义尺寸抽屉"
+    :size="600"
+  >
     <p>自定义宽度 600px</p>
   </ExDrawer>
 </template>
@@ -210,7 +250,12 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <ExButton type="primary" @click="visible = true">打开抽屉</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    打开抽屉
+  </ExButton>
   <ExDrawer
     v-model="visible"
     title="带底部操作栏的抽屉"
@@ -243,7 +288,11 @@ const visible = ref(false);
 
 <template>
   <ExButton @click="visible = true">打开无遮罩抽屉</ExButton>
-  <ExDrawer v-model="visible" title="无遮罩层抽屉" :mask="false">
+  <ExDrawer
+    v-model="visible"
+    title="无遮罩层抽屉"
+    :mask="false"
+  >
     <p>没有遮罩层的抽屉</p>
   </ExDrawer>
 </template>
@@ -270,7 +319,11 @@ const visible = ref(false);
 
 <template>
   <ExButton @click="visible = true">打开抽屉</ExButton>
-  <ExDrawer v-model="visible" title="禁止点击遮罩关闭" :mask-closable="false">
+  <ExDrawer
+    v-model="visible"
+    title="禁止点击遮罩关闭"
+    :mask-closable="false"
+  >
     <p>点击遮罩层不会关闭抽屉</p>
   </ExDrawer>
 </template>
@@ -297,7 +350,11 @@ const visible = ref(false);
 
 <template>
   <ExButton @click="visible = true">打开抽屉</ExButton>
-  <ExDrawer v-model="visible" title="销毁子元素" destroy-on-close>
+  <ExDrawer
+    v-model="visible"
+    title="销毁子元素"
+    destroy-on-close
+  >
     <p>关闭时会销毁这些内容</p>
     <p>{{ new Date().toLocaleTimeString() }}</p>
   </ExDrawer>
@@ -404,9 +461,19 @@ const visible = ref(false);
 </script>
 
 <template>
-  <ExButton type="primary" @click="visible = true">角色设置</ExButton>
+  <ExButton
+    type="primary"
+    @click="visible = true"
+  >
+    角色设置
+  </ExButton>
 
-  <ExDrawer v-model="visible" title="🎮 角色设置" size="large" show-footer>
+  <ExDrawer
+    v-model="visible"
+    title="🎮 角色设置"
+    size="large"
+    show-footer
+  >
     <!-- 角色设置内容 -->
   </ExDrawer>
 </template>
@@ -416,42 +483,44 @@ const visible = ref(false);
 
 ### Drawer Props
 
-| 参数               | 说明                   | 类型                                                        | 默认值      |
-| ------------------ | ---------------------- | ----------------------------------------------------------- | ----------- |
-| `v-model`          | 是否显示抽屉           | `boolean`                                                   | `false`     |
-| `title`            | 抽屉标题               | `string`                                                    | —           |
-| `placement`        | 抽屉位置               | `'left' \| 'right' \| 'top' \| 'bottom'`                    | `'right'`   |
-| `size`             | 抽屉尺寸               | `'small' \| 'medium' \| 'large' \| string \| number`        | `'medium'`  |
-| `closable`         | 是否显示关闭按钮       | `boolean`                                                   | `true`      |
-| `mask`             | 是否显示遮罩层         | `boolean`                                                   | `true`      |
-| `mask-closable`    | 点击遮罩层是否关闭     | `boolean`                                                   | `true`      |
-| `destroy-on-close` | 是否在关闭时销毁子元素 | `boolean`                                                   | `false`     |
-| `show-footer`      | 是否显示底部操作栏     | `boolean`                                                   | `false`     |
-| `ok-text`          | 确认按钮文字           | `string`                                                    | `'确定'`    |
-| `cancel-text`      | 取消按钮文字           | `string`                                                    | `'取消'`    |
-| `ok-type`          | 确认按钮类型           | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'primary'` |
-| `ok-loading`       | 确认按钮是否加载中     | `boolean`                                                   | `false`     |
-| `ok-disabled`      | 是否禁用确认按钮       | `boolean`                                                   | `false`     |
-| `cancel-disabled`  | 是否禁用取消按钮       | `boolean`                                                   | `false`     |
-| `custom-class`     | 自定义类名             | `string`                                                    | —           |
-| `custom-style`     | 自定义样式             | `string \| Record<string, string \| number>`                | —           |
-| `z-index`          | 层级                   | `number`                                                    | `1000`      |
-| `lock-scroll`      | 是否锁定滚动           | `boolean`                                                   | `true`      |
-| `before-open`      | 打开前的回调           | `() => boolean \| Promise<boolean>`                         | —           |
-| `before-close`     | 关闭前的回调           | `() => boolean \| Promise<boolean>`                         | —           |
-| `aria-label`       | 无障碍标签             | `string`                                                    | —           |
+| 参数                    | 说明                     | 类型                                                                  | 默认值      |
+| ----------------------- | ------------------------ | --------------------------------------------------------------------- | ----------- |
+| `v-model`               | 是否显示抽屉             | `boolean`                                                             | `false`     |
+| `title`                 | 抽屉标题                 | `string`                                                              | —           |
+| `placement`             | 抽屉位置                 | `'left' \| 'right' \| 'top' \| 'bottom'`                              | `'right'`   |
+| `size`                  | 抽屉尺寸                 | `'small' \| 'medium' \| 'large' \| 'extra-large' \| string \| number` | `'medium'`  |
+| `closable`              | 是否显示关闭按钮         | `boolean`                                                             | `true`      |
+| `mask`                  | 是否显示遮罩层           | `boolean`                                                             | `true`      |
+| `mask-closable`         | 点击遮罩层是否关闭       | `boolean`                                                             | `true`      |
+| `close-on-press-escape` | 按下 Escape 是否请求关闭 | `boolean`                                                             | `true`      |
+| `destroy-on-close`      | 是否在关闭时销毁子元素   | `boolean`                                                             | `false`     |
+| `show-footer`           | 是否显示底部操作栏       | `boolean`                                                             | `false`     |
+| `ok-text`               | 确认按钮文字             | `string`                                                              | `'确定'`    |
+| `cancel-text`           | 取消按钮文字             | `string`                                                              | `'取消'`    |
+| `ok-type`               | 确认按钮类型             | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'`           | `'primary'` |
+| `ok-loading`            | 确认按钮是否加载中       | `boolean`                                                             | `false`     |
+| `ok-disabled`           | 是否禁用确认按钮         | `boolean`                                                             | `false`     |
+| `cancel-disabled`       | 是否禁用取消按钮         | `boolean`                                                             | `false`     |
+| `custom-class`          | 自定义类名               | `string`                                                              | —           |
+| `custom-style`          | 自定义样式               | `string \| Record<string, string \| number>`                          | —           |
+| `z-index`               | 层级                     | `number`                                                              | 全局层级    |
+| `lock-scroll`           | 模态状态下是否锁定滚动   | `boolean`                                                             | `true`      |
+| `before-open`           | 打开前的回调             | `() => boolean \| Promise<boolean>`                                   | —           |
+| `before-close`          | 关闭前的回调             | `() => boolean \| Promise<boolean>`                                   | —           |
+| `aria-label`            | 无障碍标签               | `string`                                                              | —           |
 
 ### Drawer Events
 
-| 事件名               | 说明                                 | 类型                       |
-| -------------------- | ------------------------------------ | -------------------------- |
-| `update:model-value` | 显示状态变化时触发（配合 `v-model`） | `(value: boolean) => void` |
-| `open`               | 打开时触发                           | `() => void`               |
-| `opened`             | 打开动画结束后触发                   | `() => void`               |
-| `close`              | 关闭时触发                           | `() => void`               |
-| `closed`             | 关闭动画结束后触发                   | `() => void`               |
-| `ok`                 | 点击确认按钮时触发                   | `() => void`               |
-| `cancel`             | 点击取消按钮时触发                   | `() => void`               |
+| 事件名               | 说明                                 | 类型                                                 |
+| -------------------- | ------------------------------------ | ---------------------------------------------------- |
+| `update:model-value` | 显示状态变化时触发（配合 `v-model`） | `(value: boolean) => void`                           |
+| `open`               | 打开时触发                           | `() => void`                                         |
+| `opened`             | 打开动画结束后触发                   | `() => void`                                         |
+| `close`              | 关闭时触发                           | `() => void`                                         |
+| `closed`             | 关闭动画结束后触发                   | `() => void`                                         |
+| `guard-error`        | 打开或关闭守卫发生异常               | `(error: unknown, phase: 'open' \| 'close') => void` |
+| `ok`                 | 点击确认按钮时触发                   | `() => void`                                         |
+| `cancel`             | 点击取消按钮时触发                   | `() => void`                                         |
 
 ### Drawer Slots
 
@@ -464,16 +533,16 @@ const visible = ref(false);
 
 ### Drawer Methods
 
-| 方法名       | 说明            | 类型                           |
-| ------------ | --------------- | ------------------------------ |
-| `open`       | 打开抽屉        | `() => void`                   |
-| `close`      | 关闭抽屉        | `() => void`                   |
-| `getElement` | 获取抽屉DOM元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明                   | 类型                           |
+| ------------ | ---------------------- | ------------------------------ |
+| `open`       | 打开抽屉               | `() => void`                   |
+| `close`      | 经关闭守卫请求关闭抽屉 | `() => Promise<boolean>`       |
+| `getElement` | 获取抽屉DOM元素        | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
 
-- 使用 `role="dialog"` 和 `aria-modal="true"` 标记抽屉
-- 支持 ESC 键关闭
+- 使用 `role="dialog"`；仅有遮罩时声明 `aria-modal="true"`
+- 支持通过 `close-on-press-escape` 独立配置 Escape 关闭
 - 完整的 ARIA 属性支持
 - 支持屏幕阅读器
 - 自动锁定和恢复页面滚动
@@ -485,7 +554,13 @@ Drawer 通过 `v-model`（`modelValue`）受控：
 ```vue
 <template>
   <ExButton @click="open = true">打开抽屉</ExButton>
-  <ExDrawer v-model="open" title="详情" placement="right">内容</ExDrawer>
+  <ExDrawer
+    v-model="open"
+    title="详情"
+    placement="right"
+  >
+    内容
+  </ExDrawer>
 </template>
 
 <script setup>
