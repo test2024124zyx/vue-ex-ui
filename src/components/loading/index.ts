@@ -1,18 +1,34 @@
-import type { App } from 'vue';
-import ExLoading from './ExLoading.vue';
+import ExLoadingComponent from './ExLoading.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExLoading.install = (app: App) => {
-  app.component(ExLoading.name as string, ExLoading);
-};
+export type {
+  ExLoadingEmits,
+  ExLoadingExposed,
+  ExLoadingProps,
+  ExLoadingSlots,
+  LoadingDirectiveBinding,
+  LoadingDirectiveValue,
+  LoadingPluginOptions,
+  LoadingService,
+  LoadingServiceConfig,
+  LoadingServiceDefaults,
+  LoadingServiceInstance,
+  LoadingSize,
+  LoadingTarget,
+  LoadingType,
+} from './types';
+
+export {
+  createLoadingService,
+  destroyLoading,
+  hideLoading,
+  loadingService,
+  LOADING_SERVICE_KEY,
+  showLoading,
+  useLoadingService,
+} from './LoadingService';
+
+export const ExLoading: InstallableComponent<typeof ExLoadingComponent> =
+  withInstall(ExLoadingComponent);
 
 export default ExLoading;
-export { ExLoading };
-export {
-  loadingService,
-  createLoadingService,
-  createLoadingManager,
-  showLoading,
-  hideLoading,
-  destroyLoading,
-} from './LoadingService';
-export * from './types';

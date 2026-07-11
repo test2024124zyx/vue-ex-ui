@@ -1,25 +1,38 @@
 <template>
-  <Teleport :to="teleportTarget" :disabled="!shouldTeleport">
-    <transition name="ex-loading-fade">
+  <Teleport
+    :to="teleportTarget"
+    :disabled="!shouldTeleport"
+  >
+    <Transition name="ex-loading-fade">
       <div
         v-if="visible"
         ref="loadingRef"
+        v-bind="rootAttrs"
         :class="loadingClasses"
         :style="loadingStyles"
-        role="alert"
+        role="status"
         aria-live="polite"
-        :aria-label="ariaLabel || text || t('loading.loading')"
+        aria-atomic="true"
+        aria-busy="true"
+        :aria-label="accessibleLabel"
       >
-        <!-- 遮罩层 -->
-        <div v-if="mask" class="ex-loading__mask" @click="handleMaskClick" />
+        <div
+          v-if="mask"
+          class="ex-loading__mask"
+          aria-hidden="true"
+          @click="handleMaskClick"
+        ></div>
 
-        <!-- 加载内容 -->
-        <div class="ex-loading__spinner-wrapper">
-          <!-- 加载动画 -->
-          <div class="ex-loading__spinner">
+        <div class="ex-loading__content">
+          <div
+            class="ex-loading__spinner"
+            aria-hidden="true"
+          >
             <slot name="spinner">
-              <!-- 默认旋转圆环 -->
-              <div v-if="type === 'spinner'" class="ex-loading__spinner-circle">
+              <div
+                v-if="normalizedType === 'spinner'"
+                class="ex-loading__spinner-circle"
+              >
                 <svg viewBox="0 0 50 50">
                   <circle
                     cx="25"
@@ -34,53 +47,72 @@
                 </svg>
               </div>
 
-              <!-- 点状加载 -->
-              <div v-else-if="type === 'dots'" class="ex-loading__dots">
-                <span class="ex-loading__dot" />
-                <span class="ex-loading__dot" />
-                <span class="ex-loading__dot" />
+              <div
+                v-else-if="normalizedType === 'dots'"
+                class="ex-loading__dots"
+              >
+                <span class="ex-loading__dot"></span>
+                <span class="ex-loading__dot"></span>
+                <span class="ex-loading__dot"></span>
               </div>
 
-              <!-- 脉冲加载 -->
-              <div v-else-if="type === 'pulse'" class="ex-loading__pulse">
-                <div class="ex-loading__pulse-ring" />
-                <div class="ex-loading__pulse-ring" />
-                <div class="ex-loading__pulse-ring" />
+              <div
+                v-else-if="normalizedType === 'pulse'"
+                class="ex-loading__pulse"
+              >
+                <span class="ex-loading__pulse-ring"></span>
+                <span class="ex-loading__pulse-ring"></span>
+                <span class="ex-loading__pulse-ring"></span>
               </div>
 
-              <!-- 条形加载 -->
-              <div v-else-if="type === 'bars'" class="ex-loading__bars">
-                <span class="ex-loading__bar" />
-                <span class="ex-loading__bar" />
-                <span class="ex-loading__bar" />
-                <span class="ex-loading__bar" />
+              <div
+                v-else-if="normalizedType === 'bars'"
+                class="ex-loading__bars"
+              >
+                <span class="ex-loading__bar"></span>
+                <span class="ex-loading__bar"></span>
+                <span class="ex-loading__bar"></span>
+                <span class="ex-loading__bar"></span>
               </div>
 
-              <!-- 霓虹环 -->
-              <div v-else-if="type === 'neon'" class="ex-loading__neon">
-                <div class="ex-loading__neon-ring" />
+              <div
+                v-else
+                class="ex-loading__neon"
+              >
+                <span class="ex-loading__neon-ring"></span>
               </div>
             </slot>
           </div>
 
-          <!-- 加载文本 -->
-          <div v-if="text || $slots.default" class="ex-loading__text">
+          <div
+            v-if="text || slots.default"
+            class="ex-loading__text"
+          >
             <slot>{{ text }}</slot>
           </div>
         </div>
       </div>
-    </transition>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, onMounted, watch } from 'vue';
-import type { ExLoadingProps, ExLoadingEmits, ExLoadingExposed } from './types';
+import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useSlots, watch } from 'vue';
+import { lockDocumentScroll, unlockDocumentScroll } from '../../composables/overlay-manager';
 import { useI18n } from '../../locale';
+import {
+  acquireLoadingTargetPosition,
+  normalizeLoadingColor,
+  normalizeLoadingSize,
+  normalizeLoadingType,
+  normalizeLoadingZIndex,
+  resolveLoadingTarget,
+} from './loading-utils';
+import type { ExLoadingEmits, ExLoadingExposed, ExLoadingProps } from './types';
 
 defineOptions({
   name: 'ExLoading',
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<ExLoadingProps>(), {
@@ -90,100 +122,149 @@ const props = withDefaults(defineProps<ExLoadingProps>(), {
   fullscreen: false,
   mask: true,
   maskClosable: false,
+  lockScroll: true,
 });
-
 const emit = defineEmits<ExLoadingEmits>();
+const attrs = useAttrs();
+const slots = useSlots();
 const { t } = useI18n();
 
-// Refs
-const loadingRef = ref<HTMLDivElement>();
-const targetElement = ref<HTMLElement | null>(null);
+const OBSOLETE_ATTRS = new Set([
+  'loading',
+  'theme',
+  'position',
+  'animation',
+  'minduration',
+  'maxduration',
+  'disableanimation',
+  'showpercentage',
+  'percentage',
+  'showtime',
+  'cancelable',
+  'showdetails',
+  'autohide',
+  'autohidedelay',
+  'closable',
+  'draggable',
+  'arialabel',
+]);
 
-// Teleport 目标
-const teleportTarget = computed(() => {
-  if (props.fullscreen) {
-    return 'body';
-  }
-  return targetElement.value || 'body';
-});
-
-const shouldTeleport = computed(() => {
-  return props.fullscreen || !!targetElement.value;
-});
-
-// 处理目标元素
-onMounted(() => {
-  if (!props.fullscreen && props.target) {
-    if (typeof props.target === 'string') {
-      targetElement.value = document.querySelector(props.target);
-    } else {
-      targetElement.value = props.target;
-    }
-
-    // 确保目标元素有 position: relative
-    if (targetElement.value && getComputedStyle(targetElement.value).position === 'static') {
-      targetElement.value.style.position = 'relative';
-    }
-  }
-});
-
-watch(
-  () => props.target,
-  newTarget => {
-    if (!props.fullscreen && newTarget) {
-      if (typeof newTarget === 'string') {
-        targetElement.value = document.querySelector(newTarget);
-      } else {
-        targetElement.value = newTarget;
-      }
-
-      // 确保目标元素有 position: relative
-      if (targetElement.value && getComputedStyle(targetElement.value).position === 'static') {
-        targetElement.value.style.position = 'relative';
-      }
-    }
-  }
+const rootAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => {
+      if (key === 'aria-label') return true;
+      return !OBSOLETE_ATTRS.has(key.replaceAll('-', '').toLowerCase());
+    })
+  )
 );
 
-// 计算属性
-const loadingClasses = computed(() => {
-  const classes = ['ex-loading'];
+const loadingRef = shallowRef<HTMLDivElement | null>(null);
+const resolvedTarget = shallowRef<HTMLElement | null>(null);
+const isMounted = shallowRef(false);
+const normalizedType = computed(() => normalizeLoadingType(props.type));
+const normalizedSize = computed(() => normalizeLoadingSize(props.size));
 
-  if (props.type) classes.push(`ex-loading--${props.type}`);
-  if (props.size) classes.push(`ex-loading--${props.size}`);
-  if (props.fullscreen) classes.push('ex-loading--fullscreen');
-  if (!props.mask) classes.push('ex-loading--no-mask');
+const loadingClasses = computed(() => [
+  'ex-loading',
+  `ex-loading--${normalizedType.value}`,
+  `ex-loading--${normalizedSize.value}`,
+  {
+    'ex-loading--fullscreen': props.fullscreen,
+    'ex-loading--no-mask': !props.mask,
+  },
+]);
 
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
+const loadingStyles = computed<Record<string, string>>(() => {
+  const styles: Record<string, string> = {};
+  const color = normalizeLoadingColor(props.color);
+  const zIndex = normalizeLoadingZIndex(props.zIndex);
+  if (color) styles['--ex-loading-color'] = color;
+  if (zIndex !== undefined) styles['--ex-loading-z-index'] = String(zIndex);
+  return styles;
 });
 
-const loadingStyles = computed(() => {
-  if (!props.style) return undefined;
-  if (typeof props.style === 'string') return props.style;
-  return props.style;
+const accessibleLabel = computed(() => {
+  const nativeLabel = attrs['aria-label'];
+  if (typeof nativeLabel === 'string' && nativeLabel.trim()) return nativeLabel.trim();
+  return props.text?.trim() || t('loading.loading');
 });
 
-// 方法
-const handleMaskClick = () => {
-  if (props.maskClosable) {
-    emit('update:visible', false);
-    emit('close');
+const canUseDom = (): boolean => typeof document !== 'undefined';
+const shouldTeleport = computed(
+  () => isMounted.value && canUseDom() && (props.fullscreen || resolvedTarget.value !== null)
+);
+const teleportTarget = computed<string | HTMLElement>(() =>
+  props.fullscreen ? 'body' : (resolvedTarget.value ?? 'body')
+);
+
+let releaseTargetPosition: (() => void) | null = null;
+const syncTarget = (): void => {
+  releaseTargetPosition?.();
+  releaseTargetPosition = null;
+  if (!isMounted.value) {
+    resolvedTarget.value = null;
+    return;
+  }
+  resolvedTarget.value = props.fullscreen ? null : resolveLoadingTarget(props.target);
+  if (props.visible && resolvedTarget.value) {
+    releaseTargetPosition = acquireLoadingTargetPosition(resolvedTarget.value);
   }
 };
 
-const close = () => {
+let holdsScrollLock = false;
+const syncScrollLock = (): void => {
+  const shouldLock =
+    isMounted.value && props.visible && props.fullscreen && props.mask && props.lockScroll;
+  if (shouldLock && !holdsScrollLock) {
+    lockDocumentScroll();
+    holdsScrollLock = true;
+  } else if (!shouldLock && holdsScrollLock) {
+    unlockDocumentScroll();
+    holdsScrollLock = false;
+  }
+};
+
+watch([() => props.target, () => props.fullscreen, () => props.visible], syncTarget, {
+  immediate: true,
+});
+watch(
+  [() => props.visible, () => props.fullscreen, () => props.mask, () => props.lockScroll],
+  syncScrollLock,
+  { immediate: true }
+);
+
+onMounted(() => {
+  // 服务端与客户端首屏都先原位渲染，挂载后再迁移，避免 hydration 分支不一致。
+  isMounted.value = true;
+  syncTarget();
+  syncScrollLock();
+});
+
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  releaseTargetPosition?.();
+  releaseTargetPosition = null;
+  if (holdsScrollLock) {
+    unlockDocumentScroll();
+    holdsScrollLock = false;
+  }
+});
+
+const requestClose = (): void => {
+  if (!props.visible) return;
   emit('update:visible', false);
   emit('close');
 };
 
-// 暴露的方法
-const getElement = () => loadingRef.value || null;
+const handleMaskClick = (): void => {
+  if (props.maskClosable) requestClose();
+};
+
+const getElement = (): HTMLDivElement | null => loadingRef.value;
 
 defineExpose<ExLoadingExposed>({
   getElement,
-  close,
+  close: requestClose,
 });
 </script>
 
