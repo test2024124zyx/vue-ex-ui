@@ -1,6 +1,4 @@
 <template>
-  <!-- 占位组件：实际渲染由父级 ExDescriptions 收集 vnode 后统一完成。
-       直接使用时回退渲染默认插槽，避免内容丢失。 -->
   <slot />
 </template>
 
@@ -11,7 +9,8 @@ defineOptions({
   name: 'ExDescriptionsItem',
 });
 
-withDefaults(defineProps<ExDescriptionsItemProps>(), {
-  span: 1,
-});
+defineProps<ExDescriptionsItemProps>();
+
+// 父组件直接解析该配置节点，不会挂载此组件；真正挂载说明使用位置无效。
+throw new Error('ExDescriptionsItem 必须作为 ExDescriptions 的直接子项使用');
 </script>

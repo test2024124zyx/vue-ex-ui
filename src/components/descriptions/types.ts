@@ -1,80 +1,68 @@
 import type { CSSProperties, VNode } from 'vue';
 
-/** 描述列表尺寸 */
 export type DescriptionsSize = 'small' | 'medium' | 'large';
-
-/** 排列方向 */
 export type DescriptionsDirection = 'horizontal' | 'vertical';
-
-/** 对齐方式 */
 export type DescriptionsAlign = 'left' | 'center' | 'right';
+export type DescriptionsClass = string | string[] | Record<string, boolean>;
 
-/**
- * Descriptions 组件属性
- */
+/** 描述列表属性。 */
 export interface ExDescriptionsProps {
-  /** 标题 */
+  /** 可选标题。 */
   title?: string;
-  /** 一行的列数 */
+  /** 每行逻辑列数，运行时规范到 1～1000 的整数。 */
   column?: number;
-  /** 是否带边框 */
+  /** 是否显示单元格边框。 */
   border?: boolean;
-  /** 尺寸 */
+  /** 组件尺寸。 */
   size?: DescriptionsSize;
-  /** 排列方向 */
+  /** 标签与内容的排列方向。 */
   direction?: DescriptionsDirection;
-  /** 标签对齐方式 */
+  /** 全局标签对齐方式。 */
   labelAlign?: DescriptionsAlign;
-  /** 内容对齐方式 */
+  /** 全局内容对齐方式。 */
   contentAlign?: DescriptionsAlign;
-  /** 是否在标签后显示冒号（仅无边框时生效） */
+  /** 无边框模式是否在非空标签后显示冒号。 */
   colon?: boolean;
-  /** 统一的标签自定义样式 */
+  /** 全局标签样式。 */
   labelStyle?: CSSProperties;
-  /** 统一的内容自定义样式 */
+  /** 全局内容样式。 */
   contentStyle?: CSSProperties;
 }
 
-/**
- * DescriptionsItem 组件属性
- */
+/** 描述项配置属性。 */
 export interface ExDescriptionsItemProps {
-  /** 标签文本 */
+  /** 标签文本。 */
   label?: string;
-  /** 列的数量（占据的列数） */
+  /** 占据的逻辑列数，规范后不会超过父组件 column。 */
   span?: number;
-  /** 标签对齐方式（覆盖父级） */
+  /** 当前标签对齐方式。 */
   labelAlign?: DescriptionsAlign;
-  /** 内容对齐方式（覆盖父级） */
+  /** 当前内容对齐方式。 */
   contentAlign?: DescriptionsAlign;
-  /** 标签自定义类名 */
-  labelClass?: string;
-  /** 内容自定义类名 */
-  contentClass?: string;
-  /** 标签自定义样式 */
+  /** 当前标签类名。 */
+  labelClass?: DescriptionsClass;
+  /** 当前内容类名。 */
+  contentClass?: DescriptionsClass;
+  /** 当前标签样式。 */
   labelStyle?: CSSProperties;
-  /** 内容自定义样式 */
+  /** 当前内容样式。 */
   contentStyle?: CSSProperties;
 }
 
-/**
- * Descriptions 插槽
- */
+/** 描述列表插槽。 */
 export interface ExDescriptionsSlots {
-  /** 默认插槽：放置 ExDescriptionsItem */
+  /** 仅放置 ExDescriptionsItem 配置节点。 */
   default?: () => VNode[];
-  /** 标题插槽 */
+  /** 自定义标题。 */
   title?: () => VNode[];
-  /** 右上角操作区插槽 */
+  /** 标题行右侧操作区。 */
   extra?: () => VNode[];
 }
 
-/**
- * DescriptionsItem 插槽
- */
+/** 描述项插槽。 */
 export interface ExDescriptionsItemSlots {
-  /** 内容插槽 */
+  /** 字段内容。 */
   default?: () => VNode[];
-  /** 标签插槽 */
+  /** 自定义标签。 */
   label?: () => VNode[];
 }

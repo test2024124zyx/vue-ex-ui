@@ -1,8 +1,7 @@
 <template>
   <div :class="rootClasses">
-    <!-- 头部：标题 + 操作区 -->
-    <div v-if="title || $slots.title || $slots.extra" class="ex-descriptions__header">
-      <div class="ex-descriptions__title">
+    <div v-if="hasHeader" class="ex-descriptions__header" :class="{ 'has-title': hasTitle }">
+      <div v-if="hasTitle" :id="titleId" class="ex-descriptions__title">
         <slot name="title">
           {{ title }}
         </slot>
@@ -12,14 +11,14 @@
       </div>
     </div>
 
-    <!-- 主体表格 -->
     <div class="ex-descriptions__body">
-      <table class="ex-descriptions__table">
+      <table class="ex-descriptions__table" :aria-labelledby="hasTitle ? titleId : undefined">
         <tbody>
-          <tr v-for="(row, ri) in tableRows" :key="ri" class="ex-descriptions__row">
-            <template v-for="(cell, ci) in row" :key="ci">
+          <tr v-for="(row, rowIndex) in tableRows" :key="rowIndex" class="ex-descriptions__row">
+            <template v-for="cell in row" :key="cell.key">
               <th
                 v-if="cell.kind === 'label'"
+                :id="cell.id"
                 class="ex-descriptions__cell ex-descriptions__label"
                 :class="[cell.className, alignClass(cell.align)]"
                 :style="cell.style"
@@ -27,7 +26,7 @@
               >
                 <span class="ex-descriptions__label-inner">
                   <Cell :nodes="cell.nodes" />
-                  <span v-if="showColon" class="ex-descriptions__colon">:</span>
+                  <span v-if="showColon && cell.hasLabel" class="ex-descriptions__colon">:</span>
                 </span>
               </th>
               <td
@@ -36,6 +35,7 @@
                 :class="[cell.className, alignClass(cell.align)]"
                 :style="cell.style"
                 :colspan="cell.colspan"
+                :headers="cell.headers"
               >
                 <Cell :nodes="cell.nodes" />
               </td>
@@ -48,11 +48,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, Fragment } from 'vue';
-import type { Slots } from 'vue';
-import type { VNode, VNodeArrayChildren, CSSProperties } from 'vue';
-import type { ExDescriptionsProps, DescriptionsAlign } from './types';
+import { computed, Fragment, useId, useSlots } from 'vue';
+import type { CSSProperties, Slots, VNode, VNodeArrayChildren } from 'vue';
 import { useComponentSize } from '../config-provider/composables';
+import type { DescriptionsAlign, DescriptionsClass, ExDescriptionsProps } from './types';
 
 defineOptions({
   name: 'ExDescriptions',
@@ -70,7 +69,10 @@ const props = withDefaults(defineProps<ExDescriptionsProps>(), {
 
 const slots = useSlots();
 const componentSize = useComponentSize(computed(() => props.size));
-
+const instanceId = useId();
+const titleId = `ex-descriptions-title-${instanceId}`;
+const hasTitle = computed(() => Boolean(props.title || slots.title));
+const hasHeader = computed(() => hasTitle.value || Boolean(slots.extra));
 const showColon = computed(() => !props.border && props.colon);
 
 const rootClasses = computed(() => [
@@ -80,51 +82,78 @@ const rootClasses = computed(() => [
   { 'ex-descriptions--border': props.border },
 ]);
 
-// 函数式组件：渲染收集到的 vnode 数组或纯文本
-const Cell = (p: { nodes: VNode[] | string | undefined }) => p.nodes ?? '';
+/** 渲染已收集的插槽节点，内容始终由 Vue 进行安全转义。 */
+const Cell = (cellProps: { nodes: VNode[] | string | undefined }) => cellProps.nodes ?? '';
 
 interface ParsedItem {
+  id: string;
   label?: string;
+  labelNodes?: VNode[];
   contentNodes: VNode[] | string;
+  hasLabel: boolean;
   span: number;
   labelAlign?: DescriptionsAlign;
   contentAlign?: DescriptionsAlign;
-  labelClass?: string;
-  contentClass?: string;
+  labelClass?: DescriptionsClass;
+  contentClass?: DescriptionsClass;
   labelStyle?: CSSProperties;
   contentStyle?: CSSProperties;
-  labelNodes?: VNode[];
 }
 
-const getProp = (vprops: Record<string, unknown> | null, ...names: string[]): unknown => {
-  if (!vprops) return undefined;
-  for (const n of names) {
-    if (vprops[n] !== undefined) return vprops[n];
+const MAX_TABLE_COLUMNS = 1000;
+const VALID_ALIGNMENTS: readonly DescriptionsAlign[] = ['left', 'center', 'right'];
+
+const normalizePositiveInteger = (value: unknown, fallback: number, maximum: number): number => {
+  let numericValue: number;
+  try {
+    numericValue = typeof value === 'number' ? value : Number(value);
+  } catch {
+    return fallback;
+  }
+  if (!Number.isFinite(numericValue)) return fallback;
+  const integer = Math.trunc(numericValue);
+  return integer > 0 ? Math.min(integer, maximum) : fallback;
+};
+
+const normalizedColumn = computed(() =>
+  normalizePositiveInteger(props.column, 3, MAX_TABLE_COLUMNS)
+);
+
+const normalizeAlign = (
+  value: DescriptionsAlign | undefined,
+  fallback: DescriptionsAlign
+): DescriptionsAlign => (value && VALID_ALIGNMENTS.includes(value) ? value : fallback);
+
+const getProp = (vnodeProps: Record<string, unknown> | null, ...names: string[]): unknown => {
+  if (!vnodeProps) return undefined;
+  for (const name of names) {
+    if (vnodeProps[name] !== undefined) return vnodeProps[name];
   }
   return undefined;
 };
 
 const isItemVNode = (vnode: VNode): boolean => {
   const type = vnode.type as { name?: string; __name?: string } | undefined;
-  return (
-    !!type &&
-    typeof type === 'object' &&
-    (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem')
+  return Boolean(
+    type &&
+      typeof type === 'object' &&
+      (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem')
   );
 };
 
-// 递归展开 Fragment（v-for / template 包裹会产生 Fragment）
+/** 递归展开 Fragment 与嵌套数组，兼容 template、v-for 和条件插槽。 */
 const flatten = (children: VNodeArrayChildren | undefined): VNode[] => {
   const result: VNode[] = [];
   if (!children) return result;
   for (const child of children) {
+    if (Array.isArray(child)) {
+      result.push(...flatten(child));
+      continue;
+    }
     if (child == null || typeof child !== 'object') continue;
     const vnode = child as VNode;
-    if (vnode.type === Fragment) {
-      result.push(...flatten(vnode.children as VNodeArrayChildren));
-    } else {
-      result.push(vnode);
-    }
+    if (vnode.type === Fragment) result.push(...flatten(vnode.children as VNodeArrayChildren));
+    else result.push(vnode);
   }
   return result;
 };
@@ -133,62 +162,74 @@ const items = computed<ParsedItem[]>(() => {
   const raw = ((slots as Slots).default?.() ?? []) as VNodeArrayChildren;
   return flatten(raw)
     .filter(isItemVNode)
-    .map(vnode => {
-      const vp = (vnode.props ?? {}) as Record<string, unknown>;
+    .map((vnode, index) => {
+      const vnodeProps = (vnode.props ?? {}) as Record<string, unknown>;
       const children = (vnode.children ?? {}) as Record<string, (() => VNode[]) | undefined>;
-      const span = Number(getProp(vp, 'span') ?? 1) || 1;
+      const label = getProp(vnodeProps, 'label') as string | undefined;
+      const labelNodes = typeof children.label === 'function' ? children.label() : undefined;
       return {
-        label: getProp(vp, 'label') as string | undefined,
-        labelNodes: typeof children.label === 'function' ? children.label() : undefined,
+        id: `ex-descriptions-label-${instanceId}-${index}`,
+        label,
+        labelNodes,
         contentNodes: typeof children.default === 'function' ? children.default() : '',
-        span,
-        labelAlign: getProp(vp, 'labelAlign', 'label-align') as DescriptionsAlign | undefined,
-        contentAlign: getProp(vp, 'contentAlign', 'content-align') as DescriptionsAlign | undefined,
-        labelClass: getProp(vp, 'labelClass', 'label-class') as string | undefined,
-        contentClass: getProp(vp, 'contentClass', 'content-class') as string | undefined,
-        labelStyle: getProp(vp, 'labelStyle', 'label-style') as CSSProperties | undefined,
-        contentStyle: getProp(vp, 'contentStyle', 'content-style') as CSSProperties | undefined,
+        hasLabel: Boolean(label || labelNodes?.length),
+        span: normalizePositiveInteger(getProp(vnodeProps, 'span') ?? 1, 1, normalizedColumn.value),
+        labelAlign: getProp(vnodeProps, 'labelAlign', 'label-align') as
+          | DescriptionsAlign
+          | undefined,
+        contentAlign: getProp(vnodeProps, 'contentAlign', 'content-align') as
+          | DescriptionsAlign
+          | undefined,
+        labelClass: getProp(vnodeProps, 'labelClass', 'label-class') as
+          | DescriptionsClass
+          | undefined,
+        contentClass: getProp(vnodeProps, 'contentClass', 'content-class') as
+          | DescriptionsClass
+          | undefined,
+        labelStyle: getProp(vnodeProps, 'labelStyle', 'label-style') as CSSProperties | undefined,
+        contentStyle: getProp(vnodeProps, 'contentStyle', 'content-style') as
+          | CSSProperties
+          | undefined,
       };
     });
 });
 
-// 按 column 分行，每行最后一项扩展填满剩余列
+/** 按列数分行，并让每行最后一项填充剩余列。 */
 const rowGroups = computed<ParsedItem[][]>(() => {
-  const col = Math.max(1, props.column);
+  const column = normalizedColumn.value;
   const rows: ParsedItem[][] = [];
   let current: ParsedItem[] = [];
-  let used = 0;
+  let usedColumns = 0;
 
-  for (const item of items.value) {
-    const span = Math.min(item.span, col);
-    if (used + span > col) {
-      if (current.length) {
-        const last = current[current.length - 1]!;
-        last.span += col - used;
-        rows.push(current);
-      }
+  for (const sourceItem of items.value) {
+    const item = { ...sourceItem, span: Math.min(sourceItem.span, column) };
+    if (usedColumns + item.span > column && current.length) {
+      current[current.length - 1]!.span += column - usedColumns;
+      rows.push(current);
       current = [];
-      used = 0;
+      usedColumns = 0;
     }
-    current.push({ ...item, span });
-    used += span;
+    current.push(item);
+    usedColumns += item.span;
   }
 
   if (current.length) {
-    const last = current[current.length - 1]!;
-    last.span += col - used;
+    current[current.length - 1]!.span += column - usedColumns;
     rows.push(current);
   }
-
   return rows;
 });
 
 interface RenderCell {
+  key: string;
   kind: 'label' | 'content';
   nodes: VNode[] | string | undefined;
   colspan: number;
-  align?: DescriptionsAlign;
-  className?: string;
+  hasLabel?: boolean;
+  id?: string;
+  headers?: string;
+  align: DescriptionsAlign;
+  className?: DescriptionsClass;
   style?: CSSProperties;
 }
 
@@ -202,60 +243,43 @@ const mergedContentStyle = (item: ParsedItem): CSSProperties => ({
   ...(item.contentStyle || {}),
 });
 
-const tableRows = computed<RenderCell[][]>(() => {
-  const out: RenderCell[][] = [];
-
-  for (const group of rowGroups.value) {
-    if (props.direction === 'vertical') {
-      out.push(
-        group.map(item => ({
-          kind: 'label' as const,
-          nodes: labelOf(item),
-          colspan: item.span,
-          align: item.labelAlign ?? props.labelAlign,
-          className: item.labelClass,
-          style: mergedLabelStyle(item),
-        }))
-      );
-      out.push(
-        group.map(item => ({
-          kind: 'content' as const,
-          nodes: item.contentNodes,
-          colspan: item.span,
-          align: item.contentAlign ?? props.contentAlign,
-          className: item.contentClass,
-          style: mergedContentStyle(item),
-        }))
-      );
-    } else {
-      const cells: RenderCell[] = [];
-      for (const item of group) {
-        cells.push({
-          kind: 'label',
-          nodes: labelOf(item),
-          colspan: 1,
-          align: item.labelAlign ?? props.labelAlign,
-          className: item.labelClass,
-          style: mergedLabelStyle(item),
-        });
-        cells.push({
-          kind: 'content',
-          nodes: item.contentNodes,
-          colspan: item.span * 2 - 1,
-          align: item.contentAlign ?? props.contentAlign,
-          className: item.contentClass,
-          style: mergedContentStyle(item),
-        });
-      }
-      out.push(cells);
-    }
-  }
-
-  return out;
+const createLabelCell = (item: ParsedItem): RenderCell => ({
+  key: `${item.id}-label`,
+  kind: 'label',
+  id: item.hasLabel ? item.id : undefined,
+  nodes: labelOf(item),
+  colspan: props.direction === 'vertical' ? item.span : 1,
+  hasLabel: item.hasLabel,
+  align: normalizeAlign(item.labelAlign, props.labelAlign),
+  className: item.labelClass,
+  style: mergedLabelStyle(item),
 });
 
-const alignClass = (align?: DescriptionsAlign): string =>
-  align ? `ex-descriptions__cell--${align}` : '';
+const createContentCell = (item: ParsedItem): RenderCell => ({
+  key: `${item.id}-content`,
+  kind: 'content',
+  headers: item.hasLabel ? item.id : undefined,
+  nodes: item.contentNodes,
+  colspan: props.direction === 'vertical' ? item.span : item.span * 2 - 1,
+  align: normalizeAlign(item.contentAlign, props.contentAlign),
+  className: item.contentClass,
+  style: mergedContentStyle(item),
+});
+
+const tableRows = computed<RenderCell[][]>(() => {
+  const rows: RenderCell[][] = [];
+  for (const group of rowGroups.value) {
+    if (props.direction === 'vertical') {
+      rows.push(group.map(createLabelCell));
+      rows.push(group.map(createContentCell));
+    } else {
+      rows.push(group.flatMap(item => [createLabelCell(item), createContentCell(item)]));
+    }
+  }
+  return rows;
+});
+
+const alignClass = (align: DescriptionsAlign): string => `ex-descriptions__cell--${align}`;
 </script>
 
 <style scoped lang="scss" src="./ExDescriptions.scss"></style>
