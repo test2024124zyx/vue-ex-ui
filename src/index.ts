@@ -398,6 +398,7 @@ export type {
 export type { PreviewScaleConfig } from './components/file-preview/preview-utils';
 export type * from './components/image-crop/types';
 export type * from './components/image-compress/types';
+export type { ImageCompressErrorCode } from './components/image-compress/errors';
 export type * from './components/file-list/types';
 export type * from './components/calendar/types';
 export type * from './components/timeline/types';
@@ -442,6 +443,13 @@ export {
 } from './components/file-upload/upload-utils';
 export { ExFileDownloadError } from './components/file-download/errors';
 export { ExFilePreviewError } from './components/file-preview/errors';
+export { ExImageCompressError } from './components/image-compress/errors';
+export {
+  compressImage,
+  compressImages,
+  downloadCompressedImage,
+  formatBytes,
+} from './components/image-compress/utils';
 export {
   clampPreviewIndex,
   clampPreviewScale,

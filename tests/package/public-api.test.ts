@@ -57,5 +57,10 @@ describe('v2 公共组件契约', () => {
     expect(Object.isFrozen(publicApi.ICONS)).toBe(true);
     expect(publicApi.isBuiltinIcon('search-line')).toBe(true);
     expect(publicApi.getBuiltinIcon('missing-icon')).toBe('');
+    expect(publicApi.ExImageCompressError).toBeInstanceOf(Function);
+    expect(publicApi.compressImage).toBeInstanceOf(Function);
+    expect(publicApi.compressImages).toBeInstanceOf(Function);
+    expect(publicApi.downloadCompressedImage).toBeInstanceOf(Function);
+    expect(publicApi.formatBytes(1024)).toBe('1.00 KB');
   });
 });
