@@ -7,6 +7,7 @@ export const ExGridItem: InstallableComponent<typeof ExGridItemComponent> =
 export const ExGrid: InstallableComponent<typeof ExGridComponent> = withInstall(ExGridComponent, {
   ExGridItem,
 });
+export * from './grid-utils';
 export * from './types';
 
 export default ExGrid;

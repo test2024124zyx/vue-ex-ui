@@ -1,220 +1,150 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExGrid from '../../../src/components/grid/ExGrid.vue';
 import ExGridItem from '../../../src/components/grid/ExGridItem.vue';
 
-describe('ExGrid and ExGridItem', () => {
-  it('renders grid with default props', () => {
+const cssVariable = (element: Element, name: string): string =>
+  (element as HTMLElement).style.getPropertyValue(name);
+
+describe('ExGrid', () => {
+  it('默认容器显式重置 gutter，防止嵌套继承', () => {
     const wrapper = mount(ExGrid);
-    expect(wrapper.classes()).toContain('ex-grid');
-    expect(wrapper.classes()).toContain('ex-grid--justify-start');
-    expect(wrapper.classes()).toContain('ex-grid--align-top');
+    expect(wrapper.classes()).toEqual(
+      expect.arrayContaining(['ex-grid', 'ex-grid--justify-start', 'ex-grid--align-top'])
+    );
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-x')).toBe('0px');
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-y')).toBe('0px');
   });
 
-  it('renders grid with specified justify and align', () => {
+  it('规范单值、双向和预设 gutter', async () => {
+    const wrapper = mount(ExGrid, { props: { gutter: 20 } });
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-x')).toBe('20px');
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-y')).toBe('20px');
+
+    await wrapper.setProps({ gutter: [16, 24] });
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-x')).toBe('16px');
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-y')).toBe('24px');
+
+    await wrapper.setProps({ gutter: 'lg' });
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-x')).toBe('24px');
+  });
+
+  it('非法或负 gutter 收敛到 0', () => {
     const wrapper = mount(ExGrid, {
-      props: {
-        justify: 'center',
-        align: 'middle',
-      },
+      props: { gutter: [-10, Number.NaN] },
     });
-    expect(wrapper.classes()).toContain('ex-grid--justify-center');
-    expect(wrapper.classes()).toContain('ex-grid--align-middle');
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-x')).toBe('0px');
+    expect(cssVariable(wrapper.element, '--ex-grid-gutter-y')).toBe('0px');
   });
 
-  it('renders grid with gutter', () => {
+  it('对齐与 nowrap 类均映射到真实 CSS 类', () => {
     const wrapper = mount(ExGrid, {
-      props: {
-        gutter: 20,
-      },
+      props: { justify: 'space-evenly', align: 'stretch', wrap: false },
     });
-    // 间距通过 CSS 变量 + 负 margin 实现（不用 flex gap，避免与百分比列宽叠加溢出）
-    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-x: 20px');
-    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-y: 20px');
+    expect(wrapper.classes()).toEqual(
+      expect.arrayContaining([
+        'ex-grid--justify-space-evenly',
+        'ex-grid--align-stretch',
+        'ex-grid--nowrap',
+      ])
+    );
   });
 
-  it('renders grid with horizontal and vertical gutter', () => {
-    const wrapper = mount(ExGrid, {
-      props: {
-        gutter: [20, 30],
-      },
-    });
-    // gutter [水平, 垂直] -> x=20, y=30
-    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-x: 20px');
-    expect(wrapper.attributes('style')).toContain('--ex-grid-gutter-y: 30px');
-  });
-
-  it('renders grid item with default props', () => {
-    const wrapper = mount(ExGridItem);
-    expect(wrapper.classes()).toContain('ex-grid-item');
-    // span=24 is the default, so the class is not added for optimization
-    expect(wrapper.classes()).not.toContain('ex-grid-item--span-24');
-  });
-
-  it('renders grid item with specified span and offset', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        span: 12,
-        offset: 4,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--span-12');
-    expect(wrapper.classes()).toContain('ex-grid-item--offset-4');
-  });
-
-  it('renders grid item with responsive props', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        xs: { span: 8, offset: 2 },
-        sm: 12,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--xs-8');
-    expect(wrapper.classes()).toContain('ex-grid-item--xs-offset-2');
-    expect(wrapper.classes()).toContain('ex-grid-item--sm-12');
-  });
-
-  it('renders grid and grid items together', () => {
+  it('渲染栅格项插槽', () => {
     const wrapper = mount({
-      template: `
-        <ExGrid :gutter="20">
-          <ExGridItem :span="8">1</ExGridItem>
-          <ExGridItem :span="8">2</ExGridItem>
-          <ExGridItem :span="8">3</ExGridItem>
-        </ExGrid>
-      `,
       components: { ExGrid, ExGridItem },
+      template:
+        '<ExGrid :gutter="16"><ExGridItem :span="8">A</ExGridItem><ExGridItem :span="16">B</ExGridItem></ExGrid>',
     });
-    expect(wrapper.findAll('.ex-grid-item').length).toBe(3);
-    expect(wrapper.find('.ex-grid').attributes('style')).toContain('--ex-grid-gutter-x: 20px');
+    expect(wrapper.findAll('.ex-grid-item')).toHaveLength(2);
+    expect(wrapper.text()).toBe('AB');
+  });
+});
+
+describe('ExGridItem', () => {
+  it('默认项为满行，并显式写入所有断点变量', () => {
+    const wrapper = mount(ExGridItem);
+    expect(wrapper.classes()).toEqual(['ex-grid-item']);
+    for (const breakpoint of ['xs', 'sm', 'md', 'lg', 'xl', 'xxl']) {
+      expect(cssVariable(wrapper.element, `--ex-grid-${breakpoint}-flex`)).toBe('0 0 100%');
+      expect(cssVariable(wrapper.element, `--ex-grid-${breakpoint}-offset`)).toBe('0%');
+    }
   });
 
-  it('renders grid with nowrap', () => {
-    const wrapper = mount(ExGrid, {
-      props: {
-        wrap: false,
-      },
+  it('基础 span、offset、push、pull、order 全部通过有效变量生效', () => {
+    const wrapper = mount(ExGridItem, {
+      props: { span: 7, offset: 3, push: 5, pull: 1, order: 9 },
     });
-    expect(wrapper.classes()).toContain('ex-grid--nowrap');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-flex')).toBe('0 0 29.16666667%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-offset')).toBe('12.5%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-push')).toBe('20.83333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-pull')).toBe('4.16666667%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-order')).toBe('9');
+    expect(wrapper.classes()).not.toContain('ex-grid-item--span-7');
   });
 
-  it('renders grid item with order', () => {
+  it('任意响应式值都生成真实变量，不再依赖不存在的动态类', () => {
     const wrapper = mount(ExGridItem, {
       props: {
-        order: 2,
+        sm: 5,
+        md: { span: 7, offset: 3, push: 5, pull: 2, order: -8 },
       },
     });
-    expect(wrapper.classes()).toContain('ex-grid-item--order-2');
+    expect(cssVariable(wrapper.element, '--ex-grid-sm-flex')).toBe('0 0 20.83333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-flex')).toBe('0 0 29.16666667%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-offset')).toBe('12.5%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-push')).toBe('20.83333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-pull')).toBe('8.33333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-order')).toBe('-8');
+    expect(cssVariable(wrapper.element, '--ex-grid-lg-flex')).toBe('0 0 29.16666667%');
   });
 
-  it('renders grid item with span 0 (hidden)', () => {
+  it('响应式对象只覆盖声明字段，其余字段沿较小断点继承', () => {
+    const wrapper = mount(ExGridItem, {
+      props: { span: 12, offset: 2, sm: { span: 8 }, md: { order: 4 } },
+    });
+    expect(cssVariable(wrapper.element, '--ex-grid-sm-flex')).toBe('0 0 33.33333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-sm-offset')).toBe('8.33333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-flex')).toBe('0 0 33.33333333%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-order')).toBe('4');
+  });
+
+  it('span 0 与 auto 在后续断点可以互相覆盖', () => {
+    const wrapper = mount(ExGridItem, {
+      props: { span: 0, sm: 'auto', md: 12 },
+    });
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-display')).toBe('none');
+    expect(cssVariable(wrapper.element, '--ex-grid-sm-display')).toBe('block');
+    expect(cssVariable(wrapper.element, '--ex-grid-sm-flex')).toBe('1 0 0%');
+    expect(cssVariable(wrapper.element, '--ex-grid-md-flex')).toBe('0 0 50%');
+  });
+
+  it('越界和非有限值不会产生无效 CSS', () => {
     const wrapper = mount(ExGridItem, {
       props: {
-        span: 0,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--span-0');
-  });
-
-  it('renders grid item with non-common span value using CSS variables', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        span: 7,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--span-7');
-    // 非常用值应该使用内联样式
-    expect(wrapper.attributes('style')).toContain('--ex-grid-item-width');
-  });
-
-  it('renders grid item with responsive object config', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        md: { span: 12, offset: 6, order: 1 },
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--md-12');
-    expect(wrapper.classes()).toContain('ex-grid-item--md-offset-6');
-    expect(wrapper.classes()).toContain('ex-grid-item--md-order-1');
-  });
-
-  it('renders grid with all justify options', () => {
-    const justifyOptions = [
-      'start',
-      'end',
-      'center',
-      'space-around',
-      'space-between',
-      'space-evenly',
-    ] as const;
-    justifyOptions.forEach(justify => {
-      const wrapper = mount(ExGrid, {
-        props: { justify },
-      });
-      expect(wrapper.classes()).toContain(`ex-grid--justify-${justify}`);
-    });
-  });
-
-  it('renders grid with all align options', () => {
-    const alignOptions = ['top', 'middle', 'bottom', 'stretch'] as const;
-    alignOptions.forEach(align => {
-      const wrapper = mount(ExGrid, {
-        props: { align },
-      });
-      expect(wrapper.classes()).toContain(`ex-grid--align-${align}`);
-    });
-  });
-
-  it('renders grid item with push', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        span: 8,
-        push: 4,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--push-4');
-  });
-
-  it('renders grid item with pull', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        span: 8,
-        pull: 4,
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--pull-4');
-  });
-
-  it('renders grid item with responsive push and pull', () => {
-    const wrapper = mount(ExGridItem, {
-      props: {
-        md: { span: 12, push: 4, pull: 2 },
-      },
-    });
-    expect(wrapper.classes()).toContain('ex-grid-item--md-12');
-    expect(wrapper.classes()).toContain('ex-grid-item--md-push-4');
-    expect(wrapper.classes()).toContain('ex-grid-item--md-pull-2');
-  });
-
-  it('exposes gutter CSS variables for the negative-margin spacing', () => {
-    const wrapper = mount(ExGrid, {
-      props: {
-        gutter: 20,
+        span: 99,
+        offset: -2,
+        push: Number.NaN,
+        pull: Number.POSITIVE_INFINITY,
+        order: Number.NaN,
       },
     });
     const style = wrapper.attributes('style');
-    expect(style).toContain('--ex-grid-gutter-x: 20px');
-    expect(style).toContain('--ex-grid-gutter-y: 20px');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-flex')).toBe('0 0 100%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-offset')).toBe('0%');
+    expect(cssVariable(wrapper.element, '--ex-grid-xs-order')).toBe('0');
+    expect(style).not.toContain('NaN');
+    expect(style).not.toContain('Infinity');
   });
 
-  it('exposes gutter CSS variables for array gutter', () => {
-    const wrapper = mount(ExGrid, {
-      props: {
-        gutter: [16, 24],
-      },
+  it('嵌套默认项拥有自己的完整变量，不依赖父项', () => {
+    const wrapper = mount({
+      components: { ExGrid, ExGridItem },
+      template:
+        '<ExGrid><ExGridItem :span="7"><ExGrid><ExGridItem class="inner">inner</ExGridItem></ExGrid></ExGridItem></ExGrid>',
     });
-    const style = wrapper.attributes('style');
-    expect(style).toContain('--ex-grid-gutter-x: 16px');
-    expect(style).toContain('--ex-grid-gutter-y: 24px');
+    const inner = wrapper.find('.inner').element;
+    expect(cssVariable(inner, '--ex-grid-xs-flex')).toBe('0 0 100%');
+    expect(cssVariable(inner, '--ex-grid-md-flex')).toBe('0 0 100%');
   });
 });

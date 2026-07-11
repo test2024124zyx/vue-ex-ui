@@ -1,7 +1,5 @@
-@use '../../styles/mixins' as *;
-
 .ex-flex-item {
-  // 防止 flex 项目溢出
-  min-width: 0;  // 水平方向
-  min-height: 0; // 垂直方向
+  // 两个方向都允许内容收缩，避免长文本撑破 Flex 容器。
+  min-width: 0;
+  min-height: 0;
 }

@@ -328,8 +328,10 @@ export type * from './components/dropdown/types';
 export type * from './components/ellipsis/types';
 export type * from './components/empty/types';
 export type * from './components/flex/types';
+export type { FlexGapPreset, FlexLength } from './components/flex/flex-utils';
 export type * from './components/form/types';
 export type * from './components/grid/types';
+export type { GridBreakpoint, NormalizedGridGutter } from './components/grid/grid-utils';
 export type * from './components/heatmap/types';
 export type * from './components/icon/types';
 export type * from './components/layout/types';
@@ -408,6 +410,23 @@ export type * from './components/color-picker/types';
 export type * from './components/time-picker/types';
 export type * from './components/tree-select/types';
 export type * from './components/descriptions/types';
+export {
+  FLEX_GAP_PRESETS,
+  normalizeFlexFactor,
+  normalizeFlexOrder,
+  resolveFlexBasis,
+  resolveFlexGap,
+  resolveFlexShorthand,
+} from './components/flex/flex-utils';
+export {
+  createGridItemStyles,
+  GRID_BREAKPOINTS,
+  GRID_GUTTER_PRESETS,
+  normalizeGridGutter,
+  normalizeGridLine,
+  normalizeGridOrder,
+  normalizeGridSpan,
+} from './components/grid/grid-utils';
 export { ExFileUploadError } from './components/file-upload/errors';
 export {
   cloneUploadFileList,
