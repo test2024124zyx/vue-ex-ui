@@ -39,11 +39,24 @@ describe('v2 公共组件契约', () => {
 
   it('全量插件注册全部公共组件', () => {
     const app = createApp(defineComponent(() => () => h('div')));
-    app.use(ExUI);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      app.use(ExUI);
+
+      const duplicateWarnings = warn.mock.calls
+        .map(args => args.map(String).join(' '))
+        .filter(value => value.includes('already been registered'));
+      expect(duplicateWarnings).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
 
     for (const [name, component] of componentEntries) {
       expect(app.component(name), `${name} 未被全量插件注册`).toBe(component);
     }
+    expect(app.config.globalProperties.$message).toBe(publicApi.message);
+    expect(app.config.globalProperties.$notification).toBe(publicApi.notification);
   });
 
   it.each(Object.entries(componentModules))('%s 默认导出为可安装组件', (_path, module) => {

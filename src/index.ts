@@ -197,6 +197,18 @@ for (const component of publicComponents) {
   withInstall(component);
 }
 
+// 主组件的 install 已负责注册附属组件；全量插件只安装组根，避免重复注册与重复副作用。
+const publicComponentSet = new Set<unknown>(publicComponents);
+const attachedPublicComponents = new Set<unknown>();
+for (const component of publicComponents) {
+  for (const value of Object.values(component)) {
+    if (publicComponentSet.has(value)) attachedPublicComponents.add(value);
+  }
+}
+const publicComponentPlugins = publicComponents.filter(
+  component => !attachedPublicComponents.has(component)
+);
+
 // 导出所有组
 export {
   ExAffix,
@@ -353,7 +365,7 @@ export type {
   LoadingBarStatus,
 } from './components/loading-bar/types';
 export type * from './components/menu/types';
-export type { MessageOptions, MessageInstance, MessageType } from './components/message/types';
+export type * from './components/message/types';
 export type * from './components/modal/types';
 export type {
   NotificationOptions,
@@ -479,7 +491,7 @@ export {
 
 // 安装函数
 const install: Plugin['install'] = (app: App) => {
-  for (const component of publicComponents) {
+  for (const component of publicComponentPlugins) {
     app.use(component as Plugin);
   }
 

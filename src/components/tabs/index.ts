@@ -1,17 +1,22 @@
-import type { App } from 'vue';
-import ExTabs from './ExTabs.vue';
-import ExTabPane from './ExTabPane.vue';
+import ExTabPaneComponent from './ExTabPane.vue';
+import ExTabsComponent from './ExTabs.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件类型
-export type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
-export type { ExTabPaneProps, ExTabPaneExposed } from './types';
-export type { TabsPosition, TabsType, TabsSize } from './types';
+export type {
+  ExTabPaneExposed,
+  ExTabPaneProps,
+  ExTabsEmits,
+  ExTabsExposed,
+  ExTabsProps,
+  TabsPosition,
+  TabsSize,
+  TabsType,
+} from './types';
 
-// 为组件添加 install 方法
-ExTabs.install = (app: App) => {
-  app.component(ExTabs.name as string, ExTabs);
-  app.component(ExTabPane.name as string, ExTabPane);
-};
+export const ExTabPane: InstallableComponent<typeof ExTabPaneComponent> =
+  withInstall(ExTabPaneComponent);
+export const ExTabs: InstallableComponent<typeof ExTabsComponent> = withInstall(ExTabsComponent, {
+  ExTabPane,
+});
 
-export { ExTabs, ExTabPane };
 export default ExTabs;

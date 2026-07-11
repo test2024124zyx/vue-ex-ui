@@ -13,8 +13,12 @@ import type {
   MessageInstance,
   MessageService,
   MessageGlobalConfig,
+  MessageInput,
+  MessageTypedInput,
+  MessageTypedOptions,
   MessageType,
-  MessagePosition,
+  ExMessageExposed,
+  ExMessageSlots,
 } from './types';
 
 export const ExMessage: InstallableComponent<typeof ExMessageComponent> =
@@ -35,8 +39,12 @@ export type {
   MessageInstance,
   MessageService,
   MessageGlobalConfig,
+  MessageInput,
+  MessageTypedInput,
+  MessageTypedOptions,
   MessageType,
-  MessagePosition,
+  ExMessageExposed,
+  ExMessageSlots,
 };
 
 export default ExMessage;

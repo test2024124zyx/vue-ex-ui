@@ -25,4 +25,21 @@ describe('withInstall', () => {
 
     expect(() => app.use(Installable)).toThrow('全局安装的组件必须声明稳定的组件名称');
   });
+
+  it('重复包装时保留组件已经扩展的安装生命周期', () => {
+    const Main = { name: 'ExCustomInstall', render: () => h('div') };
+    const Installable = withInstall(Main);
+    const installComponent = Installable.install;
+    Installable.install = app => {
+      installComponent(app);
+      app.config.globalProperties.$customInstall = true;
+    };
+
+    const Reused = withInstall(Installable);
+    const app = createApp(TestRoot);
+    app.use(Reused);
+
+    expect(app.component('ExCustomInstall')).toBe(Main);
+    expect(app.config.globalProperties.$customInstall).toBe(true);
+  });
 });

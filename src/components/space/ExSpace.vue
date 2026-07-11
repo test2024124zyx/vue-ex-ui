@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineOptions, ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { ExSpaceProps } from './types';
 
 defineOptions({ name: 'ExSpace' });
@@ -77,6 +77,6 @@ const alignItems = computed(() => {
       alignItems: alignItems,
     }"
   >
-    <slot />
+    <slot></slot>
   </div>
 </template>

@@ -1,200 +1,173 @@
-/**
- * Message 组件单元测试
- */
-
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExMessage from '../../../src/components/message/ExMessage.vue';
-import type { MessageType } from '../../../src/components/message/types';
+import type { ExMessageExposed, ExMessageProps } from '../../../src/components/message/types';
 
-describe('ExMessage 组件', () => {
-  describe('组件渲染', () => {
-    it('正确渲染默认状态', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '测试消息',
-          duration: 0,
-        },
-      });
+let wrapper: VueWrapper | null = null;
 
-      expect(wrapper.find('.ex-message').exists()).toBe(true);
-      expect(wrapper.find('.ex-message__content').text()).toBe('测试消息');
-      expect(wrapper.find('.ex-message').classes()).toContain('ex-message--info');
-    });
+const mountMessage = (
+  props: Partial<ExMessageProps> = {},
+  slots: Record<string, unknown> = {},
+  attrs: Record<string, unknown> = {}
+): VueWrapper => {
+  wrapper = mount(ExMessage, {
+    props: { content: '操作完成', duration: 0, ...props },
+    slots,
+    attrs,
+  });
+  return wrapper;
+};
 
-    it('渲染不同类型的消息', () => {
-      const types: MessageType[] = ['info', 'success', 'warning', 'error', 'loading'];
+const exposed = (): ExMessageExposed => wrapper!.vm as unknown as ExMessageExposed;
 
-      types.forEach((type) => {
-        const wrapper = mount(ExMessage, {
-          props: {
-            type,
-            content: `${type} 消息`,
-            duration: 0,
-          },
-        });
-        expect(wrapper.find('.ex-message').classes()).toContain(`ex-message--${type}`);
-      });
-    });
-
-    it('显示图标', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '带图标的消息',
-          showIcon: true,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__icon').exists()).toBe(true);
-    });
-
-    it('隐藏图标', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '不带图标的消息',
-          showIcon: false,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__icon').exists()).toBe(false);
-    });
-
-    it('显示关闭按钮', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '可关闭的消息',
-          closable: true,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__close').exists()).toBe(true);
-      expect(wrapper.find('.ex-message').classes()).toContain('ex-message--closable');
-    });
-
-    it('隐藏关闭按钮', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '不可关闭的消息',
-          closable: false,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__close').exists()).toBe(false);
-    });
-
-    it('应用自定义类名', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '自定义类名',
-          customClass: 'my-custom-class',
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message').classes()).toContain('my-custom-class');
-    });
-
-    it('渲染 HTML 内容', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '<strong>加粗文本</strong>',
-          dangerouslyUseHTMLString: true,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__content strong').exists()).toBe(true);
-    });
+describe('ExMessage', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
   });
 
-  describe('暴露方法', () => {
-    it('暴露 close 方法', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '测试消息',
-          duration: 0,
-        },
-      });
-
-      const vm = wrapper.vm as { close: () => void };
-      expect(typeof vm.close).toBe('function');
-    });
-
-    it('暴露 visible 属性', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '测试消息',
-          duration: 0,
-        },
-      });
-
-      const vm = wrapper.vm as { visible: boolean };
-      expect(typeof vm.visible).toBe('boolean');
-    });
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = null;
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
   });
 
-  describe('无障碍支持', () => {
-    it('设置正确的 role 属性', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '测试消息',
-          duration: 0,
-        },
-      });
+  it('普通消息使用非打断式状态语义，错误消息使用警报语义', async () => {
+    mountMessage();
+    const root = wrapper!.get('.ex-message');
+    expect(root.attributes('role')).toBe('status');
+    expect(root.attributes('aria-live')).toBe('polite');
+    expect(root.attributes('aria-atomic')).toBe('true');
+    expect(root.classes()).toContain('ex-message--info');
 
-      expect(wrapper.find('.ex-message').attributes('role')).toBe('alert');
+    await wrapper!.setProps({ type: 'error' });
+    expect(root.attributes('role')).toBe('alert');
+    expect(root.attributes('aria-live')).toBe('assertive');
+    expect(root.classes()).toContain('ex-message--error');
+  });
+
+  it('五种状态使用稳定样式与装饰性图标，loading 图标才旋转', async () => {
+    mountMessage({ type: 'info' });
+    for (const type of ['info', 'success', 'warning', 'error', 'loading'] as const) {
+      await wrapper!.setProps({ type });
+      expect(wrapper!.get('.ex-message').classes()).toContain(`ex-message--${type}`);
+      const icon = wrapper!.get('.ex-message__icon');
+      expect(icon.attributes('aria-hidden')).toBe('true');
+      expect(icon.classes().includes('ex-message__icon-loading')).toBe(type === 'loading');
+    }
+
+    await wrapper!.setProps({ showIcon: false });
+    expect(wrapper!.find('.ex-message__icon').exists()).toBe(false);
+  });
+
+  it('关闭控件使用原生按钮并保证关闭事件幂等', async () => {
+    mountMessage({ closable: true });
+    const button = wrapper!.get<HTMLButtonElement>('.ex-message__close');
+    expect(button.element.tagName).toBe('BUTTON');
+    expect(button.attributes('type')).toBe('button');
+    expect(button.attributes('aria-label')).toBeTruthy();
+
+    await button.trigger('click');
+    await button.trigger('click');
+    expect(wrapper!.emitted('close')).toEqual([[]]);
+    expect(exposed().isVisible()).toBe(false);
+  });
+
+  it('自动关闭可在悬停时暂停，并按精确剩余时长恢复', async () => {
+    mountMessage({ duration: 1000 });
+    vi.advanceTimersByTime(400);
+    await wrapper!.get('.ex-message').trigger('mouseenter');
+    vi.advanceTimersByTime(2000);
+    expect(wrapper!.emitted('close')).toBeUndefined();
+
+    await wrapper!.get('.ex-message').trigger('mouseleave');
+    vi.advanceTimersByTime(599);
+    expect(wrapper!.emitted('close')).toBeUndefined();
+    vi.advanceTimersByTime(1);
+    expect(wrapper!.emitted('close')).toEqual([[]]);
+  });
+
+  it('运行期间修改 duration 会从新时长重新计时', async () => {
+    mountMessage({ duration: 1000 });
+    vi.advanceTimersByTime(500);
+    await wrapper!.setProps({ duration: 2000 });
+
+    vi.advanceTimersByTime(1999);
+    expect(wrapper!.emitted('close')).toBeUndefined();
+    vi.advanceTimersByTime(1);
+    expect(wrapper!.emitted('close')).toEqual([[]]);
+  });
+
+  it('HTML 内容经过消毒且纯文本模式不会解释标签', async () => {
+    mountMessage({
+      content:
+        '<strong onclick="alert(1)">完成</strong><script>bad()</script><a href="javascript:bad()">链接</a>',
+      dangerouslyUseHTMLString: true,
     });
+    const content = wrapper!.get('.ex-message__content');
+    expect(content.find('strong').exists()).toBe(true);
+    expect(content.html()).not.toContain('onclick');
+    expect(content.html()).not.toContain('<script');
+    expect(content.html()).not.toContain('javascript:');
 
-    it('info 类型使用 polite aria-live', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          type: 'info',
-          content: '信息消息',
-          duration: 0,
-        },
-      });
+    await wrapper!.setProps({ content: '<strong>文本</strong>', dangerouslyUseHTMLString: false });
+    expect(content.find('strong').exists()).toBe(false);
+    expect(content.text()).toBe('<strong>文本</strong>');
+  });
 
-      expect(wrapper.find('.ex-message').attributes('aria-live')).toBe('polite');
-    });
+  it('内容、图标与关闭插槽真实覆盖默认渲染', () => {
+    mountMessage(
+      { closable: true },
+      {
+        default: '<span class="custom-content">插槽内容</span>',
+        icon: '<span class="custom-icon">I</span>',
+        close: '<span class="custom-close">X</span>',
+      }
+    );
+    expect(wrapper!.get('.custom-content').text()).toBe('插槽内容');
+    expect(wrapper!.get('.custom-icon').text()).toBe('I');
+    expect(wrapper!.get('.custom-close').text()).toBe('X');
+  });
 
-    it('error 类型使用 assertive aria-live', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          type: 'error',
-          content: '错误消息',
-          duration: 0,
-        },
-      });
+  it('原生 class、style 与 data 属性落到根元素，旧伪属性不会泄漏', () => {
+    mountMessage(
+      {},
+      {},
+      {
+        class: 'custom-message',
+        style: { opacity: '0.9' },
+        'data-testid': 'message',
+        customClass: 'legacy-class',
+        customStyle: 'color:red',
+        offset: 40,
+        zIndex: 9999,
+        closeOnRouteChange: true,
+      }
+    );
+    const root = wrapper!.get('.ex-message');
+    expect(root.classes()).toContain('custom-message');
+    expect(root.attributes('style')).toContain('opacity: 0.9');
+    expect(root.attributes('data-testid')).toBe('message');
+    expect(root.attributes('customclass')).toBeUndefined();
+    expect(root.attributes('customstyle')).toBeUndefined();
+    expect(root.attributes('offset')).toBeUndefined();
+    expect(root.attributes('zindex')).toBeUndefined();
+    expect(root.attributes('closeonroutechange')).toBeUndefined();
+  });
 
-      expect(wrapper.find('.ex-message').attributes('aria-live')).toBe('assertive');
-    });
+  it('暴露方法返回真实状态与根元素，卸载会清理计时器', async () => {
+    mountMessage({ duration: 1000 });
+    expect(exposed().getElement()).toBe(wrapper!.get('.ex-message').element);
+    expect(exposed().isVisible()).toBe(true);
+    expect(vi.getTimerCount()).toBe(1);
 
-    it('关闭按钮有 aria-label', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '可关闭的消息',
-          closable: true,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__close').attributes('aria-label')).toBeTruthy();
-    });
-
-    it('关闭按钮可通过键盘聚焦', () => {
-      const wrapper = mount(ExMessage, {
-        props: {
-          content: '可关闭的消息',
-          closable: true,
-          duration: 0,
-        },
-      });
-
-      expect(wrapper.find('.ex-message__close').attributes('tabindex')).toBe('0');
-    });
+    exposed().close();
+    await flushPromises();
+    expect(exposed().isVisible()).toBe(false);
+    wrapper!.unmount();
+    wrapper = null;
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
