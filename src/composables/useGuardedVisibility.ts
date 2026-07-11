@@ -19,6 +19,8 @@ export interface UseGuardedVisibilityOptions {
   onClose?: () => void;
   /** 守卫抛出异常或 Promise 拒绝时的回调。 */
   onGuardError?: (error: unknown, phase: VisibilityGuardPhase) => void;
+  /** 是否跳过与当前受控值相同的更新请求；旧组件默认保留原行为。 */
+  skipRedundantRequests?: boolean;
 }
 
 export interface UseGuardedVisibilityReturn {
@@ -26,11 +28,16 @@ export interface UseGuardedVisibilityReturn {
   visible: Ref<boolean>;
   /** 是否至少成功打开过一次，用于保留未销毁内容。 */
   hasOpened: Ref<boolean>;
-  /** 请求父级打开。 */
+  /** 请求父级打开，并撤销尚未完成的关闭任务。 */
   requestOpen: () => void;
   /** 经关闭守卫请求父级关闭；并发请求共享同一个结果。 */
   requestClose: () => Promise<boolean>;
 }
+
+const isPromiseLike = (value: unknown): value is PromiseLike<boolean> =>
+  (typeof value === 'object' || typeof value === 'function') &&
+  value !== null &&
+  typeof (value as PromiseLike<boolean>).then === 'function';
 
 /**
  * 管理带异步守卫的受控可见状态。
@@ -42,24 +49,39 @@ export function useGuardedVisibility(
   const visible = ref(false);
   const hasOpened = ref(false);
   let openRevision = 0;
+  let closeRevision = 0;
   let pendingClose: Promise<boolean> | null = null;
 
   /** 守卫异常等同于拒绝本次状态变化，并交由组件事件显式暴露。 */
-  const runGuard = async (
+  const runGuard = (
     getGuard: (() => VisibilityGuard | undefined) | undefined,
     phase: VisibilityGuardPhase
-  ): Promise<boolean> => {
+  ): boolean | Promise<boolean> => {
     try {
       const guard = getGuard?.();
-      return guard ? (await guard()) !== false : true;
+      if (!guard) return true;
+
+      const result = guard();
+      if (!isPromiseLike(result)) return result !== false;
+      // Promise.resolve 同时兼容跨 realm Promise 与标准 thenable。
+      return Promise.resolve(result).then(
+        value => value !== false,
+        error => {
+          options.onGuardError?.(error, phase);
+          return false;
+        }
+      );
     } catch (error) {
       options.onGuardError?.(error, phase);
       return false;
     }
   };
 
-  const applyModelValue = async (nextValue: boolean) => {
+  const applyModelValue = (nextValue: boolean) => {
     const revision = ++openRevision;
+    closeRevision += 1;
+    pendingClose = null;
+
     if (!nextValue) {
       if (visible.value) {
         visible.value = false;
@@ -69,28 +91,53 @@ export function useGuardedVisibility(
     }
     if (visible.value) return;
 
-    const allowed = await runGuard(options.beforeOpen, 'open');
-    if (revision !== openRevision || !options.modelValue()) return;
-    if (allowed === false) {
-      options.requestModelValue(false);
-      return;
-    }
+    const applyGuardResult = (allowed: boolean): void => {
+      if (revision !== openRevision || !options.modelValue()) return;
+      if (!allowed) {
+        options.requestModelValue(false);
+        return;
+      }
 
-    hasOpened.value = true;
-    visible.value = true;
-    options.onOpen?.();
+      hasOpened.value = true;
+      visible.value = true;
+      options.onOpen?.();
+    };
+
+    const guardResult = runGuard(options.beforeOpen, 'open');
+    if (typeof guardResult === 'boolean') applyGuardResult(guardResult);
+    else void guardResult.then(applyGuardResult);
   };
 
-  watch(options.modelValue, value => void applyModelValue(value), { immediate: true });
+  watch(options.modelValue, applyModelValue, { immediate: true });
 
-  const requestOpen = () => options.requestModelValue(true);
+  const requestOpen = (): void => {
+    if (options.modelValue()) {
+      // 打开意图只撤销关闭任务，不使仍在执行的 beforeOpen 失效。
+      closeRevision += 1;
+      pendingClose = null;
+      if (options.skipRedundantRequests) return;
+    }
+    options.requestModelValue(true);
+  };
 
   const requestClose = (): Promise<boolean> => {
+    if (options.skipRedundantRequests && !options.modelValue()) return Promise.resolve(false);
     if (pendingClose) return pendingClose;
 
+    const modelRevision = openRevision;
+    const operationRevision = closeRevision;
     const operation = (async () => {
-      const allowed = await runGuard(options.beforeClose, 'close');
-      if (allowed === false) return false;
+      const guardResult = runGuard(options.beforeClose, 'close');
+      const allowed =
+        typeof guardResult === 'boolean' ? guardResult : await Promise.resolve(guardResult);
+      if (!allowed) return false;
+      if (
+        modelRevision !== openRevision ||
+        operationRevision !== closeRevision ||
+        (options.skipRedundantRequests && !options.modelValue())
+      ) {
+        return false;
+      }
       options.requestModelValue(false);
       return true;
     })();

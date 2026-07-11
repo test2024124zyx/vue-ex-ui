@@ -320,11 +320,15 @@ $components: (
   
   // 模态框
   modal: (
-    backdrop-blur: 8px,
-    max-width-sm: 400px,
-    max-width-md: 500px,
-    max-width-lg: 600px,
-    max-width-xl: 800px,
+    width-small: 400px,
+    width-medium: 520px,
+    width-large: 720px,
+    padding: map.get($spacing, 6),
+    radius: map.get($radius, xl),
+    background: var(--ex-color-bg-elevated),
+    border-color: var(--ex-color-border-primary),
+    mask-background: var(--ex-color-black-alpha-70),
+    shadow: var(--ex-shadow-2xl),
   ),
   
   // 头像

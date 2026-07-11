@@ -77,7 +77,7 @@ const visible = ref(false);
 
 ## 不同类型
 
-通过 `type` 属性可以设置不同类型的模态框，不同类型会有不同的边框颜色和发光效果。
+通过 `type` 属性设置模态框的语义类型。
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExButton type="primary" @click="visibleType1 = true">主要模态框</ExButton>
@@ -88,7 +88,7 @@ const visible = ref(false);
     <template #icon>
       <img src="https://api.iconify.design/ri/information-line.svg" alt="信息" width="24" height="24" />
     </template>
-    <p>这是一个主要类型的模态框，带有霓虹蓝色边框和发光效果。</p>
+    <p>这是一个主要类型的模态框。</p>
   </ExModal>
   <ExModal v-model="visibleType2" title="操作成功" type="success" size="medium">
     <template #icon>
@@ -133,7 +133,7 @@ const visible = ref(false);
         height="24"
       />
     </template>
-    <p>这是一个主要类型的模态框，带有霓虹蓝色边框和发光效果。</p>
+    <p>这是一个主要类型的模态框。</p>
   </ExModal>
 </template>
 ```
@@ -440,12 +440,12 @@ const handleOk = () => {
     title="自定义样式"
     size="medium"
     :body-style="{ 
-      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 0, 127, 0.1))',
+      background: 'var(--ex-color-primary-alpha-10)',
       minHeight: '200px'
     }"
   >
     <div style="text-align: center; padding: 40px 0;">
-      <h3 style="color: var(--ex-color-neon-blue-500); margin-bottom: 16px;">
+      <h3 style="color: var(--ex-color-primary); margin-bottom: 16px;">
         自定义内容样式
       </h3>
       <p>这个模态框的内容区域使用了自定义样式。</p>
@@ -466,7 +466,7 @@ const handleOk = () => {
     v-model="visible"
     title="自定义样式"
     :body-style="{
-      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 0, 127, 0.1))',
+      background: 'var(--ex-color-primary-alpha-10)',
       minHeight: '200px',
     }"
   >
@@ -558,7 +558,6 @@ const innerVisible = ref(false);
 | `lock-scroll`           | 模态状态下是否锁定页面滚动  | `boolean`                                                                | `true`      |
 | `before-open`           | 模态框打开前的守卫          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
 | `before-close`          | 模态框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
-| `aria-label`            | 无障碍标签                  | `string`                                                                 | `undefined` |
 
 ### Modal Events
 
@@ -584,17 +583,17 @@ const innerVisible = ref(false);
 
 ### Modal Methods
 
-| 方法名       | 说明                | 类型                           |
-| ------------ | ------------------- | ------------------------------ |
-| `open`       | 请求父级打开        | `() => void`                   |
-| `close`      | 经关闭守卫请求关闭  | `() => Promise<boolean>`       |
-| `getElement` | 获取模态框 DOM 元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明                                     | 类型                           |
+| ------------ | ---------------------------------------- | ------------------------------ |
+| `open`       | 请求父级打开                             | `() => void`                   |
+| `close`      | 经关闭守卫请求关闭；无效任务返回 `false` | `() => Promise<boolean>`       |
+| `getElement` | 获取模态框 DOM 元素                      | `() => HTMLDivElement \| null` |
 
 ## 无障碍支持
 
 - 使用 `role="dialog"`；仅有遮罩时声明 `aria-modal="true"`
 - 支持 ESC 键关闭
-- 完整的 ARIA 标签支持
+- 原生 `aria-label` 与 `aria-labelledby` 会应用到对话框面板
 - 支持屏幕阅读器
 - 自动锁定焦点在模态框内
 
@@ -640,21 +639,7 @@ const visible = ref(false);
 
 - **二次确认/表单提交**用 `confirm-loading` + `before-close`，提交成功后关闭。
 - **危险操作**用 `ok-type="danger"` 强化视觉警示。
-- 始终设置 `title` 或 `aria-label` 以满足无障碍。
-
-## 主题定制
-
-Modal 不定义独立的组件级变量，而是消费 ExUI 全局设计令牌。定制方式：
-
-- **单个实例**：用 `wrap-class-name` / `body-style` 定制。
-- **全局**：覆盖所消费的全局令牌：
-
-```css
-:root {
-  --ex-color-bg-surface: #11151c; /* 模态框背景 */
-  --ex-color-border-primary: #1f2a37; /* 边框 / 分割线 */
-}
-```
+- 需要业务名称时设置 `title`、原生 `aria-label` 或 `aria-labelledby`。
 
 <style scoped>
 .demo-container {

@@ -178,13 +178,15 @@
   --ex-card-shadow: var(--ex-shadow-md);
   
   // 模态框组件
-  --ex-modal-backdrop-blur: 8px;
-  --ex-modal-max-width-sm: 400px;
-  --ex-modal-max-width-md: 500px;
-  --ex-modal-max-width-lg: 600px;
-  --ex-modal-max-width-xl: 800px;
-  --ex-modal-padding: var(--ex-spacing-6);
-  --ex-modal-radius: var(--ex-radius-xl);
+  --ex-modal-width-small: #{map.get($components, modal, width-small)};
+  --ex-modal-width-medium: #{map.get($components, modal, width-medium)};
+  --ex-modal-width-large: #{map.get($components, modal, width-large)};
+  --ex-modal-padding: #{map.get($components, modal, padding)};
+  --ex-modal-radius: #{map.get($components, modal, radius)};
+  --ex-modal-background: #{map.get($components, modal, background)};
+  --ex-modal-border-color: #{map.get($components, modal, border-color)};
+  --ex-modal-mask-background: #{map.get($components, modal, mask-background)};
+  --ex-modal-shadow: #{map.get($components, modal, shadow)};
 
   // 头像组件
   --ex-avatar-size-small: 32px;

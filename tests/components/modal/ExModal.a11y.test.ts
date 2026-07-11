@@ -1,11 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h, onMounted } from 'vue';
 import ExModal from '../../../src/components/modal/ExModal.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { ExModalExposed } from '../../../src/components/modal/types';
+import { setLocale } from '../../../src/locale';
 
 describe('ExModal', () => {
   let wrapper: ReturnType<typeof mount> | null = null;
+
+  beforeEach(() => {
+    setLocale('zh-CN');
+  });
 
   afterEach(() => {
     wrapper?.unmount();
@@ -13,6 +19,7 @@ describe('ExModal', () => {
     document.body.innerHTML = '';
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
+    setLocale('en-US');
     vi.restoreAllMocks();
   });
 
@@ -41,12 +48,56 @@ describe('ExModal', () => {
     );
   });
 
-  it('显式 ariaLabel 覆盖标题关联且不重复命名', async () => {
-    mountModal({ modelValue: true, title: '标题', ariaLabel: '自定义名称' });
+  it('原生 aria-label 覆盖标题关联且透传到语义面板', async () => {
+    mountModal(
+      { modelValue: true, title: '标题' },
+      {},
+      {
+        id: 'confirm-modal',
+        class: 'product-modal',
+        style: { maxHeight: '80vh' },
+        'aria-label': '自定义名称',
+        'aria-describedby': 'confirm-description',
+        'data-track-id': 'confirm',
+      }
+    );
     await flushPromises();
-    const modal = document.querySelector('.ex-modal')!;
+    const modal = document.querySelector<HTMLElement>('.ex-modal')!;
+    const root = document.querySelector<HTMLElement>('.ex-modal-root')!;
+
+    expect(modal.id).toBe('confirm-modal');
+    expect(modal.classList).toContain('product-modal');
+    expect(modal.style.maxHeight).toBe('80vh');
     expect(modal.getAttribute('aria-label')).toBe('自定义名称');
     expect(modal.hasAttribute('aria-labelledby')).toBe(false);
+    expect(modal.getAttribute('aria-describedby')).toBe('confirm-description');
+    expect(modal.dataset.trackId).toBe('confirm');
+    expect(root.id).toBe('');
+    expect(root.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('过滤已删除 ariaLabel 伪属性并为无标题面板提供本地化名称', async () => {
+    mountModal({ modelValue: true }, {}, { ariaLabel: '旧标签' });
+    await flushPromises();
+    const modal = document.querySelector('.ex-modal')!;
+
+    expect(modal.getAttribute('aria-label')).toBe('对话框');
+    expect(modal.hasAttribute('arialabel')).toBe(false);
+    expect(document.querySelector('.ex-modal-root')?.hasAttribute('arialabel')).toBe(false);
+  });
+
+  it('尊重外部 aria-labelledby 并规范 alertdialog 角色', async () => {
+    mountModal(
+      { modelValue: true, title: '内部标题' },
+      {},
+      { role: 'alertdialog', 'aria-labelledby': 'external-title' }
+    );
+    await flushPromises();
+    const modal = document.querySelector('.ex-modal')!;
+
+    expect(modal.getAttribute('role')).toBe('alertdialog');
+    expect(modal.getAttribute('aria-labelledby')).toBe('external-title');
+    expect(modal.hasAttribute('aria-label')).toBe(false);
   });
 
   it('只有图标时不渲染空标题', async () => {
@@ -56,6 +107,30 @@ describe('ExModal', () => {
     expect(document.querySelector('.ex-modal-title')).toBeNull();
   });
 
+  it('空白标题、图标与 footer 插槽不产生伪布局结构', async () => {
+    mountModal(
+      { modelValue: true, showClose: false },
+      {
+        title: () => '   ',
+        icon: () => null,
+        footer: () => '  ',
+      }
+    );
+    await flushPromises();
+
+    expect(document.querySelector('.ex-modal-header')).toBeNull();
+    expect(document.querySelector('.ex-modal-title')).toBeNull();
+    expect(document.querySelector('.ex-modal-footer')).toBeNull();
+    expect(document.querySelector('.ex-modal')?.getAttribute('aria-label')).toBe('对话框');
+  });
+
+  it('无标题时仍为关闭按钮保留结构化头部', async () => {
+    mountModal({ modelValue: true });
+    await flushPromises();
+
+    expect(document.querySelector('.ex-modal-header .ex-modal-close')).toBeTruthy();
+  });
+
   it('无遮罩时不声明模态语义、不锁定滚动且不拦截背景', async () => {
     mountModal({ modelValue: true, mask: false });
     await flushPromises();
@@ -63,6 +138,7 @@ describe('ExModal', () => {
       'ex-modal-root--modeless'
     );
     expect(document.querySelector('.ex-modal')?.hasAttribute('aria-modal')).toBe(false);
+    expect(document.querySelector('.ex-modal-mask')).toBeNull();
     expect(document.body.style.overflow).toBe('');
   });
 
@@ -111,6 +187,7 @@ describe('ExModal', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     (document.querySelector('.ex-modal-mask') as HTMLElement).click();
     expect(beforeClose).toHaveBeenCalledTimes(1);
+    expect(wrapper!.emitted('cancel')).toEqual([[]]);
     resolveGuard?.(false);
     await flushPromises();
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
@@ -166,8 +243,20 @@ describe('ExModal', () => {
     const buttons = document.querySelectorAll<HTMLButtonElement>('.ex-modal-footer button');
     buttons[1]?.click();
     await flushPromises();
+    expect(buttons[0]?.classList).toContain('ex-button--default');
     expect(wrapper!.emitted('ok')).toEqual([[]]);
     expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+  });
+
+  it('确认加载期间禁用确认入口且不发出虚假 ok', async () => {
+    mountModal({ modelValue: true, confirmLoading: true });
+    await flushPromises();
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.ex-modal-footer button');
+
+    expect(buttons[1]?.disabled).toBe(true);
+    buttons[1]?.click();
+    expect(wrapper!.emitted('ok')).toBeUndefined();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('destroyOnClose=false 时保留插槽组件实例', async () => {
@@ -225,6 +314,48 @@ describe('ExModal', () => {
     expect(document.querySelector('.ex-modal')?.classList).toContain(`ex-modal--${size}`);
   });
 
+  it('通过注入配置控制传送后仍生效的霓虹与动画表现', async () => {
+    wrapper = mount(ExConfigProvider, {
+      props: { neonEffect: false, animation: false },
+      slots: { default: () => h(ExModal, { modelValue: true, title: '配置继承' }) },
+      attachTo: document.body,
+    });
+    await flushPromises();
+
+    expect(document.querySelector('.ex-modal')?.classList).not.toContain('ex-modal--neon');
+    expect(document.querySelector('.ex-modal-root')?.classList).toContain(
+      'ex-modal-root--no-motion'
+    );
+
+    await wrapper.setProps({ neonEffect: true, animation: true });
+    expect(document.querySelector('.ex-modal')?.classList).toContain('ex-modal--neon');
+    expect(document.querySelector('.ex-modal-root')?.classList).not.toContain(
+      'ex-modal-root--no-motion'
+    );
+  });
+
+  it('运行时非法尺寸、类型与按钮类型安全回退', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mountModal({
+      modelValue: true,
+      size: 'oversized',
+      type: 'unknown',
+      okType: 'invalid',
+      width: {} as never,
+    });
+    await flushPromises();
+    const modal = document.querySelector('.ex-modal')!;
+    const okButton = document.querySelectorAll('.ex-modal-footer button')[1]!;
+
+    expect(modal.classList).toContain('ex-modal--medium');
+    expect(modal.classList).toContain('ex-modal--default');
+    expect(modal.classList).not.toContain('ex-modal--oversized');
+    expect(modal.classList).not.toContain('ex-modal--unknown');
+    expect(okButton.classList).toContain('ex-button--primary');
+    expect((modal as HTMLElement).style.width).toBe('');
+    expect(warning.mock.calls.flat().join(' ')).toContain('width');
+  });
+
   it.each([
     [680, '680px'],
     ['60%', '60%'],
@@ -241,7 +372,7 @@ describe('ExModal', () => {
     expect(document.querySelector('.ex-modal')?.classList).toContain('ex-modal--medium');
   });
 
-  it('自定义包装类、正文样式、层级和原生属性应用到正确元素', async () => {
+  it('自定义包装类、正文样式与有效层级应用到正确元素', async () => {
     mountModal(
       {
         modelValue: true,
@@ -249,15 +380,25 @@ describe('ExModal', () => {
         bodyStyle: { maxHeight: '300px' },
         zIndex: 2100,
       },
-      {},
-      { 'data-testid': 'modal-root' }
+      {}
     );
     await flushPromises();
     const root = document.querySelector<HTMLElement>('.ex-modal-root')!;
-    expect(root.dataset.testid).toBe('modal-root');
     expect(root.style.zIndex).toBe('2100');
     expect(document.querySelector('.ex-modal-wrap')?.classList).toContain('custom-wrap');
     expect((document.querySelector('.ex-modal-body') as HTMLElement).style.maxHeight).toBe('300px');
+  });
+
+  it('非法层级回退全局值，有限小数规范为非负整数', async () => {
+    mountModal({ modelValue: true, zIndex: Number.NaN });
+    await flushPromises();
+    expect((document.querySelector('.ex-modal-root') as HTMLElement).style.zIndex).toBe('1050');
+
+    await wrapper!.setProps({ zIndex: -10 });
+    expect((document.querySelector('.ex-modal-root') as HTMLElement).style.zIndex).toBe('1050');
+
+    await wrapper!.setProps({ zIndex: 2100.9 });
+    expect((document.querySelector('.ex-modal-root') as HTMLElement).style.zIndex).toBe('2100');
   });
 
   it('appendToBody=false 时保留在组件挂载位置', async () => {
@@ -266,7 +407,7 @@ describe('ExModal', () => {
     expect(wrapper!.find('.ex-modal-root').exists()).toBe(true);
   });
 
-  it('公开 open/close 使用受控更新与统一守卫，并返回面板元素', async () => {
+  it('公开 open/close 保持幂等受控契约并返回面板元素', async () => {
     const beforeClose = vi.fn().mockResolvedValue(false);
     mountModal({ modelValue: true, beforeClose });
     await flushPromises();
@@ -275,8 +416,23 @@ describe('ExModal', () => {
     await exposed.close();
     expect(beforeClose).toHaveBeenCalledTimes(1);
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+
+    exposed.open();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+
+    await wrapper!.setProps({ modelValue: false });
     exposed.open();
     expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([true]);
+  });
+
+  it('关闭状态调用 close 不执行守卫也不发出虚假更新', async () => {
+    const beforeClose = vi.fn().mockReturnValue(true);
+    mountModal({ modelValue: false, beforeClose });
+    const exposed = wrapper!.vm as unknown as ExModalExposed;
+
+    await expect(exposed.close()).resolves.toBe(false);
+    expect(beforeClose).not.toHaveBeenCalled();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('外部关闭后发出 close 与 afterClose，保留受控单一事实来源', async () => {

@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'vue';
+import type { CSSProperties, VNodeChild } from 'vue';
 
 export type ModalSize = 'small' | 'medium' | 'large';
 export type ModalType = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+export type ModalOkType = 'default' | 'primary' | 'success' | 'warning' | 'danger';
 export type ModalGuard = () => boolean | Promise<boolean>;
 
 /** 模态框属性。 */
@@ -27,7 +28,7 @@ export interface ExModalProps {
   /** 取消按钮文本。 */
   cancelText?: string;
   /** 确认按钮类型。 */
-  okType?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
+  okType?: ModalOkType;
   /** 确认按钮加载状态。 */
   confirmLoading?: boolean;
   /** 是否在视口中垂直居中。 */
@@ -52,8 +53,6 @@ export interface ExModalProps {
   beforeOpen?: ModalGuard;
   /** 关闭前异步守卫，返回 false 时拒绝关闭请求。 */
   beforeClose?: ModalGuard;
-  /** 无标题时的无障碍名称。 */
-  ariaLabel?: string;
 }
 
 /** 模态框事件。 */
@@ -67,11 +66,20 @@ export interface ExModalEmits {
   guardError: [error: unknown, phase: 'open' | 'close'];
 }
 
+/** 模态框插槽。 */
+export interface ExModalSlots {
+  default?: () => VNodeChild;
+  title?: () => VNodeChild;
+  icon?: () => VNodeChild;
+  footer?: () => VNodeChild;
+  closeIcon?: () => VNodeChild;
+}
+
 /** 模态框公开方法。 */
 export interface ExModalExposed {
-  /** 请求父级打开。 */
+  /** 请求父级打开；已经打开时不重复发出更新。 */
   open: () => void;
-  /** 经 beforeClose 守卫请求父级关闭。 */
+  /** 经 beforeClose 守卫请求父级关闭；未打开或任务失效时返回 false。 */
   close: () => Promise<boolean>;
   /** 获取模态框面板元素。 */
   getElement: () => HTMLDivElement | null;

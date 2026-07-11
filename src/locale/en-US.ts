@@ -270,6 +270,7 @@ export default {
 
   // Dialog
   dialog: {
+    label: 'Dialog',
     close: 'Close',
     confirm: 'Confirm',
     cancel: 'Cancel',

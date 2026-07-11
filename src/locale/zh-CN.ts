@@ -270,6 +270,7 @@ export default {
 
   // 对话框
   dialog: {
+    label: '对话框',
     close: '关闭',
     confirm: '确认',
     cancel: '取消',
