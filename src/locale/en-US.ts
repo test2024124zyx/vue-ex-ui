@@ -72,6 +72,9 @@ export default {
     empty: 'No Data',
     less: 'Less',
     more: 'More',
+    ariaLabel: 'Data heatmap',
+    legend: 'Color scale from less to more',
+    invalidRange: 'The date range must be valid and no longer than 366 days',
   },
 
   // List

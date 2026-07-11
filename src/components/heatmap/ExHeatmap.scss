@@ -1,144 +1,189 @@
 @use '../../styles/mixins' as *;
-@use '../../styles/tokens' as *;
-
-// ============================================================================
-// Heatmap 热力图组件样�?- 游戏主题
-// ============================================================================
 
 .ex-heatmap {
+  --ex-heatmap-level-0: var(--ex-color-bg-tertiary);
+  --ex-heatmap-level-1: var(--ex-color-gray-alpha-30);
+  --ex-heatmap-level-2: var(--ex-color-gray-alpha-50);
+  --ex-heatmap-level-3: var(--ex-color-gray-alpha-70);
+  --ex-heatmap-level-4: var(--ex-color-white-alpha-90);
+  --ex-heatmap-accent: var(--ex-color-border-focus);
+
   position: relative;
+  box-sizing: border-box;
   width: 100%;
   padding: var(--ex-spacing-4);
+  color: var(--ex-color-text-primary);
   background: var(--ex-color-bg-secondary);
   border-radius: var(--ex-radius-lg);
+}
+
+.ex-heatmap__viewport {
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   @include custom-scrollbar();
 }
 
-// 月份标签
-.ex-heatmap__months {
-  position: relative;
-  height: 20px;
-  margin-bottom: var(--ex-spacing-2);
-  margin-left: 30px; // 为星期标签留空间
+.ex-heatmap__calendar {
+  width: max-content;
+  min-width: 100%;
 }
 
-.ex-heatmap__month-label {
-  position: absolute;
-  top: 0;
-  font-size: var(--ex-text-xs);
+.ex-heatmap__months,
+.ex-heatmap__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ex-heatmap-gap);
+}
+
+.ex-heatmap__months {
+  min-height: 20px;
+  margin-bottom: var(--ex-spacing-2);
+}
+
+.ex-heatmap__month-spacer,
+.ex-heatmap__weeks {
+  flex: 0 0 24px;
+  width: 24px;
+}
+
+.ex-heatmap__month-grid,
+.ex-heatmap__row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--ex-heatmap-cell-size);
+  gap: var(--ex-heatmap-gap);
+  width: max-content;
+}
+
+.ex-heatmap__month-slot {
+  min-width: 0;
   color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-xs);
+  line-height: 20px;
   white-space: nowrap;
 }
 
-// 热力图主�?
-.ex-heatmap__body {
-  display: flex;
-  gap: var(--ex-spacing-2);
-}
-
-// 星期标签
-.ex-heatmap__weeks {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  width: 24px;
-  padding-right: var(--ex-spacing-2);
+.ex-heatmap__weeks,
+.ex-heatmap__grid {
+  display: grid;
+  grid-template-rows: repeat(7, var(--ex-heatmap-cell-size));
+  gap: var(--ex-heatmap-gap);
 }
 
 .ex-heatmap__week-label {
-  font-size: var(--ex-text-xs);
+  overflow: hidden;
   color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-heatmap-cell-size);
   text-align: right;
-  line-height: 1;
+  white-space: nowrap;
 }
 
-// 热力图网�?
-.ex-heatmap__grid {
-  display: flex;
-  gap: var(--ex-spacing-1);
-  flex: 1;
+.ex-heatmap__cell,
+.ex-heatmap__placeholder {
+  box-sizing: border-box;
+  width: var(--ex-heatmap-cell-size);
+  height: var(--ex-heatmap-cell-size);
+  border-radius: var(--ex-heatmap-radius);
 }
 
-.ex-heatmap__column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ex-spacing-1);
-}
-
-// 单元�?
 .ex-heatmap__cell {
   position: relative;
-  background: var(--ex-color-bg-tertiary);
+  z-index: 0;
+  display: block;
+  flex: none;
+  padding: 0;
+  appearance: none;
+  border: 0;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  touch-action: manipulation;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+  @include focus-ring(var(--ex-heatmap-accent));
 
   &:hover {
-    transform: scale(1.2);
-    z-index: 10;
+    z-index: 1;
+    transform: scale(1.18);
   }
 
-  // 颜色等级 - 默认主题
   &--level-0 {
-    background: var(--ex-color-bg-tertiary);
+    background: var(--ex-heatmap-level-0);
   }
 
   &--level-1 {
-    background: var(--ex-color-gray-alpha-30);
+    background: var(--ex-heatmap-level-1);
   }
 
   &--level-2 {
-    background: var(--ex-color-gray-alpha-50);
+    background: var(--ex-heatmap-level-2);
   }
 
   &--level-3 {
-    background: var(--ex-color-gray-alpha-70);
+    background: var(--ex-heatmap-level-3);
   }
 
   &--level-4 {
-    background: var(--ex-color-white-alpha-90);
+    background: var(--ex-heatmap-level-4);
   }
 }
 
-// 工具提示
-.ex-heatmap__tooltip {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
-  padding: var(--ex-spacing-2) var(--ex-spacing-3);
-  background: var(--ex-color-black-alpha-90);
-  border: 1px solid var(--ex-color-neon-blue-500);
-  border-radius: var(--ex-radius-base);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 100;
-  @include neon-glow('blue', 'sm');
+.ex-heatmap__placeholder {
+  display: block;
+  visibility: hidden;
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: var(--ex-color-neon-blue-500);
-  }
+.ex-heatmap__tooltip {
+  --ex-heatmap-tooltip-accent: var(--ex-color-neon-blue-500);
+
+  box-sizing: border-box;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: var(--ex-spacing-2) var(--ex-spacing-3);
+  color: var(--ex-color-text-primary);
+  background: var(--ex-color-black-alpha-90);
+  border: 1px solid var(--ex-heatmap-tooltip-accent);
+  border-radius: var(--ex-radius-base);
+  box-shadow: var(--ex-shadow-lg);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: var(--ex-z-tooltip, 1090);
 }
 
 .ex-heatmap__tooltip-date {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-color-text-secondary);
   margin-bottom: var(--ex-spacing-1);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-xs);
 }
 
 .ex-heatmap__tooltip-value {
+  color: var(--ex-heatmap-tooltip-accent);
   font-size: var(--ex-text-sm);
   font-weight: var(--ex-font-semibold);
-  color: var(--ex-color-neon-blue-500);
 }
 
-// 图例
+.ex-heatmap__tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+}
+
+.ex-heatmap__tooltip[data-placement^='top'] .ex-heatmap__tooltip-arrow {
+  top: 100%;
+  left: 50%;
+  border-top-color: var(--ex-heatmap-tooltip-accent);
+  transform: translateX(-50%);
+}
+
+.ex-heatmap__tooltip[data-placement^='bottom'] .ex-heatmap__tooltip-arrow {
+  bottom: 100%;
+  left: 50%;
+  border-bottom-color: var(--ex-heatmap-tooltip-accent);
+  transform: translateX(-50%);
+}
+
 .ex-heatmap__legend {
   display: flex;
   align-items: center;
@@ -150,44 +195,43 @@
 }
 
 .ex-heatmap__legend-label {
-  font-size: var(--ex-text-xs);
   color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-xs);
 }
 
 .ex-heatmap__legend-item {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: var(--ex-color-bg-tertiary);
+  width: var(--ex-heatmap-cell-size);
+  height: var(--ex-heatmap-cell-size);
+  border-radius: var(--ex-heatmap-radius);
 
-  &[data-level="0"] {
-    background: var(--ex-color-bg-tertiary);
+  &[data-level='0'] {
+    background: var(--ex-heatmap-level-0);
   }
 
-  &[data-level="1"] {
-    background: var(--ex-color-gray-alpha-30);
+  &[data-level='1'] {
+    background: var(--ex-heatmap-level-1);
   }
 
-  &[data-level="2"] {
-    background: var(--ex-color-gray-alpha-50);
+  &[data-level='2'] {
+    background: var(--ex-heatmap-level-2);
   }
 
-  &[data-level="3"] {
-    background: var(--ex-color-gray-alpha-70);
+  &[data-level='3'] {
+    background: var(--ex-heatmap-level-3);
   }
 
-  &[data-level="4"] {
-    background: var(--ex-color-white-alpha-90);
+  &[data-level='4'] {
+    background: var(--ex-heatmap-level-4);
   }
 }
 
-// 空数�?
 .ex-heatmap__empty {
   display: flex;
+  min-height: 120px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--ex-spacing-8) var(--ex-spacing-4);
+  padding: var(--ex-spacing-6) var(--ex-spacing-4);
   color: var(--ex-color-text-tertiary);
   font-size: var(--ex-text-base);
   text-align: center;
@@ -197,296 +241,106 @@
   }
 }
 
-// ============================================================================
-// 主题变体
-// ============================================================================
+.ex-heatmap__empty-icon {
+  margin-bottom: var(--ex-spacing-3);
+  opacity: 0.3;
+}
 
-// 霓虹蓝主�?
+.ex-heatmap__empty--error {
+  color: var(--ex-color-error);
+}
+
 .ex-heatmap--neon {
-  .ex-heatmap__cell {
-    &--level-1 {
-      background: var(--ex-color-neon-blue-alpha-20);
-    }
+  --ex-heatmap-level-1: var(--ex-color-neon-blue-alpha-20);
+  --ex-heatmap-level-2: var(--ex-color-neon-blue-alpha-40);
+  --ex-heatmap-level-3: var(--ex-color-neon-blue-alpha-60);
+  --ex-heatmap-level-4: var(--ex-color-neon-blue-alpha-80);
+  --ex-heatmap-accent: var(--ex-color-neon-blue-500);
 
-    &--level-2 {
-      background: var(--ex-color-neon-blue-alpha-40);
-    }
-
-    &--level-3 {
-      background: var(--ex-color-neon-blue-alpha-60);
-    }
-
-    &--level-4 {
-      background: var(--ex-color-neon-blue-alpha-80);
-      @include neon-glow('blue', 'sm');
-    }
-
-    &:hover {
-      @include neon-glow('blue', 'md');
-    }
+  .ex-heatmap__cell--level-4 {
+    @include neon-glow('blue', 'sm');
   }
 
-  .ex-heatmap__legend-item {
-    &[data-level="1"] {
-      background: var(--ex-color-neon-blue-alpha-20);
-    }
-
-    &[data-level="2"] {
-      background: var(--ex-color-neon-blue-alpha-40);
-    }
-
-    &[data-level="3"] {
-      background: var(--ex-color-neon-blue-alpha-60);
-    }
-
-    &[data-level="4"] {
-      background: var(--ex-color-neon-blue-alpha-80);
-    }
+  .ex-heatmap__cell:hover {
+    @include neon-glow('blue', 'md');
   }
 }
 
-// 蓝色主题
 .ex-heatmap--blue {
-  .ex-heatmap__cell {
-    &--level-1 {
-      background: var(--ex-color-info-alpha-20);
-    }
-
-    &--level-2 {
-      background: var(--ex-color-info-alpha-40);
-    }
-
-    &--level-3 {
-      background: var(--ex-color-info-alpha-60);
-    }
-
-    &--level-4 {
-      background: var(--ex-color-info-alpha-80);
-    }
-  }
-
-  .ex-heatmap__legend-item {
-    &[data-level="1"] {
-      background: var(--ex-color-info-alpha-20);
-    }
-
-    &[data-level="2"] {
-      background: var(--ex-color-info-alpha-40);
-    }
-
-    &[data-level="3"] {
-      background: var(--ex-color-info-alpha-60);
-    }
-
-    &[data-level="4"] {
-      background: var(--ex-color-info-alpha-80);
-    }
-  }
+  --ex-heatmap-level-1: var(--ex-color-info-alpha-20);
+  --ex-heatmap-level-2: var(--ex-color-info-alpha-40);
+  --ex-heatmap-level-3: var(--ex-color-info-alpha-60);
+  --ex-heatmap-level-4: var(--ex-color-info-alpha-80);
+  --ex-heatmap-accent: var(--ex-color-info);
 }
 
-// 绿色主题
 .ex-heatmap--green {
-  .ex-heatmap__cell {
-    &--level-1 {
-      background: var(--ex-color-success-alpha-20);
-    }
-
-    &--level-2 {
-      background: var(--ex-color-success-alpha-40);
-    }
-
-    &--level-3 {
-      background: var(--ex-color-success-alpha-60);
-    }
-
-    &--level-4 {
-      background: var(--ex-color-success-alpha-80);
-    }
-  }
-
-  .ex-heatmap__legend-item {
-    &[data-level="1"] {
-      background: var(--ex-color-success-alpha-20);
-    }
-
-    &[data-level="2"] {
-      background: var(--ex-color-success-alpha-40);
-    }
-
-    &[data-level="3"] {
-      background: var(--ex-color-success-alpha-60);
-    }
-
-    &[data-level="4"] {
-      background: var(--ex-color-success-alpha-80);
-    }
-  }
+  --ex-heatmap-level-1: var(--ex-color-success-alpha-20);
+  --ex-heatmap-level-2: var(--ex-color-success-alpha-40);
+  --ex-heatmap-level-3: var(--ex-color-success-alpha-60);
+  --ex-heatmap-level-4: var(--ex-color-success-alpha-80);
+  --ex-heatmap-accent: var(--ex-color-success);
 }
 
-// 紫色主题
 .ex-heatmap--purple {
-  .ex-heatmap__cell {
-    &--level-1 {
-      background: var(--ex-color-secondary-alpha-20);
-    }
-
-    &--level-2 {
-      background: var(--ex-color-secondary-alpha-40);
-    }
-
-    &--level-3 {
-      background: var(--ex-color-secondary-alpha-60);
-    }
-
-    &--level-4 {
-      background: var(--ex-color-secondary-alpha-80);
-    }
-  }
-
-  .ex-heatmap__legend-item {
-    &[data-level="1"] {
-      background: var(--ex-color-secondary-alpha-20);
-    }
-
-    &[data-level="2"] {
-      background: var(--ex-color-secondary-alpha-40);
-    }
-
-    &[data-level="3"] {
-      background: var(--ex-color-secondary-alpha-60);
-    }
-
-    &[data-level="4"] {
-      background: var(--ex-color-secondary-alpha-80);
-    }
-  }
+  --ex-heatmap-level-1: var(--ex-color-secondary-alpha-20);
+  --ex-heatmap-level-2: var(--ex-color-secondary-alpha-40);
+  --ex-heatmap-level-3: var(--ex-color-secondary-alpha-60);
+  --ex-heatmap-level-4: var(--ex-color-secondary-alpha-80);
+  --ex-heatmap-accent: var(--ex-color-secondary);
 }
 
-// 红色主题
 .ex-heatmap--red {
-  .ex-heatmap__cell {
-    &--level-1 {
-      background: var(--ex-color-error-alpha-20);
-    }
-
-    &--level-2 {
-      background: var(--ex-color-error-alpha-40);
-    }
-
-    &--level-3 {
-      background: var(--ex-color-error-alpha-60);
-    }
-
-    &--level-4 {
-      background: var(--ex-color-error-alpha-80);
-    }
-  }
-
-  .ex-heatmap__legend-item {
-    &[data-level="1"] {
-      background: var(--ex-color-error-alpha-20);
-    }
-
-    &[data-level="2"] {
-      background: var(--ex-color-error-alpha-40);
-    }
-
-    &[data-level="3"] {
-      background: var(--ex-color-error-alpha-60);
-    }
-
-    &[data-level="4"] {
-      background: var(--ex-color-error-alpha-80);
-    }
-  }
+  --ex-heatmap-level-1: var(--ex-color-error-alpha-20);
+  --ex-heatmap-level-2: var(--ex-color-error-alpha-40);
+  --ex-heatmap-level-3: var(--ex-color-error-alpha-60);
+  --ex-heatmap-level-4: var(--ex-color-error-alpha-80);
+  --ex-heatmap-accent: var(--ex-color-error);
 }
 
-// ============================================================================
-// 尺寸变体
-// ============================================================================
+.ex-heatmap__tooltip--blue {
+  --ex-heatmap-tooltip-accent: var(--ex-color-info);
+}
+
+.ex-heatmap__tooltip--green {
+  --ex-heatmap-tooltip-accent: var(--ex-color-success);
+}
+
+.ex-heatmap__tooltip--purple {
+  --ex-heatmap-tooltip-accent: var(--ex-color-secondary);
+}
+
+.ex-heatmap__tooltip--red {
+  --ex-heatmap-tooltip-accent: var(--ex-color-error);
+}
 
 .ex-heatmap--small {
-  .ex-heatmap__month-label,
+  .ex-heatmap__month-slot,
   .ex-heatmap__week-label,
   .ex-heatmap__legend-label {
     font-size: 10px;
   }
-
-  .ex-heatmap__legend-item {
-    width: 10px;
-    height: 10px;
-  }
-}
-
-.ex-heatmap--medium {
-  .ex-heatmap__month-label,
-  .ex-heatmap__week-label,
-  .ex-heatmap__legend-label {
-    font-size: var(--ex-text-xs);
-  }
-
-  .ex-heatmap__legend-item {
-    width: 12px;
-    height: 12px;
-  }
 }
 
 .ex-heatmap--large {
-  .ex-heatmap__month-label,
+  .ex-heatmap__month-slot,
   .ex-heatmap__week-label,
   .ex-heatmap__legend-label {
     font-size: var(--ex-text-sm);
   }
-
-  .ex-heatmap__legend-item {
-    width: 14px;
-    height: 14px;
-  }
 }
-
-// ============================================================================
-// 响应式适配 - 移动端优�?
-// ============================================================================
 
 @include mobile {
   .ex-heatmap {
     padding: var(--ex-spacing-3);
   }
 
-  .ex-heatmap__months {
-    margin-left: 20px;
-  }
-
+  .ex-heatmap__month-spacer,
   .ex-heatmap__weeks {
-    width: 16px;
-  }
-
-  .ex-heatmap__month-label,
-  .ex-heatmap__week-label {
-    font-size: 10px;
-  }
-
-  .ex-heatmap__tooltip {
-    font-size: 10px;
-  }
-
-  .ex-heatmap__legend {
-    margin-top: var(--ex-spacing-3);
-  }
-
-  .ex-heatmap__legend-label {
-    font-size: 10px;
-  }
-
-  .ex-heatmap__legend-item {
-    width: 10px;
-    height: 10px;
+    flex-basis: 20px;
+    width: 20px;
   }
 }
-
-// ============================================================================
-// 无障碍支�?
-// ============================================================================
 
 @media (prefers-reduced-motion: reduce) {
   .ex-heatmap__cell {
@@ -498,9 +352,9 @@
   }
 }
 
-// 高对比度模式
-@media (prefers-contrast: high) {
-  .ex-heatmap__cell {
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-heatmap__cell,
+  .ex-heatmap__legend-item {
     border: 1px solid var(--ex-color-border-primary);
   }
 
@@ -508,5 +362,3 @@
     border-width: 2px;
   }
 }
-
-

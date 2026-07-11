@@ -72,6 +72,9 @@ export default {
     empty: '暂无数据',
     less: '少',
     more: '多',
+    ariaLabel: '数据热力图',
+    legend: '由少到多的颜色等级',
+    invalidRange: '日期范围必须有效且不能超过 366 天',
   },
 
   // 列表
