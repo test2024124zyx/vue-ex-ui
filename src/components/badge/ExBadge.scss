@@ -16,25 +16,37 @@
       &--top-right {
         top: 0;
         right: 0;
-        transform: translate(50%, -50%);
+        transform: translate(
+          calc(50% + var(--ex-badge-offset-x, 0px)),
+          calc(-50% + var(--ex-badge-offset-y, 0px))
+        );
       }
       
       &--top-left {
         top: 0;
         left: 0;
-        transform: translate(-50%, -50%);
+        transform: translate(
+          calc(-50% + var(--ex-badge-offset-x, 0px)),
+          calc(-50% + var(--ex-badge-offset-y, 0px))
+        );
       }
       
       &--bottom-right {
         bottom: 0;
         right: 0;
-        transform: translate(50%, 50%);
+        transform: translate(
+          calc(50% + var(--ex-badge-offset-x, 0px)),
+          calc(50% + var(--ex-badge-offset-y, 0px))
+        );
       }
       
       &--bottom-left {
         bottom: 0;
         left: 0;
-        transform: translate(-50%, 50%);
+        transform: translate(
+          calc(-50% + var(--ex-badge-offset-x, 0px)),
+          calc(50% + var(--ex-badge-offset-y, 0px))
+        );
       }
     }
   }

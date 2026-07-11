@@ -1,5 +1,6 @@
-import type { App } from 'vue';
-import ExBackTop from './ExBackTop.vue';
+import ExBackTopComponent from './ExBackTop.vue';
+import { withInstall } from '../../utils/install';
+import type { InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type {
@@ -17,10 +18,7 @@ export type {
   BackTopScrollInfo,
 } from './types';
 
-// 组件安装函数
-ExBackTop.install = (app: App): void => {
-  app.component('ExBackTop', ExBackTop);
-};
+export const ExBackTop: InstallableComponent<typeof ExBackTopComponent> =
+  withInstall(ExBackTopComponent);
 
-export { ExBackTop };
 export default ExBackTop;

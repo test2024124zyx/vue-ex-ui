@@ -64,4 +64,12 @@ describe('v2 样式系统边界', () => {
     expect(fontCss).toContain('@font-face');
     expect(fontCss).toContain('font-family: "Audiowide"');
   });
+
+  it('Button 声明的每一种类型都生成实际样式选择器', () => {
+    const css = compile("@use 'src/components/button/ExButton';");
+
+    for (const type of ['default', 'error', 'ghost']) {
+      expect(css).toContain(`.ex-button--${type}`);
+    }
+  });
 });

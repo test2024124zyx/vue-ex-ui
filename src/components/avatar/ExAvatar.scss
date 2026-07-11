@@ -16,7 +16,7 @@
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  @include transition((background-color, border-color, color, transform, box-shadow));
 
   // 基础悬停效果
   &:hover {
@@ -88,6 +88,9 @@
 
   // 错误状态样式
   &__error {
+    padding: 0;
+    font: inherit;
+    border: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -96,7 +99,7 @@
     background: var(--ex-color-error-alpha-10);
     color: var(--ex-color-error);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition(background-color);
 
     &:hover {
       background: var(--ex-color-error-alpha-20);
@@ -115,7 +118,7 @@
     height: 100%;
     object-fit: cover;
     border-radius: inherit;
-    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition(transform);
 
     &:hover {
       transform: scale(1.1);
@@ -125,7 +128,7 @@
   // 图标样式
   &__icon {
     font-size: 60%;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition((color, transform));
 
     .ex-avatar--small & {
       font-size: 50%;
@@ -143,7 +146,7 @@
     text-align: center;
     white-space: nowrap;
     transform-origin: center;
-    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition(transform);
   }
 
 
@@ -164,7 +167,7 @@
     border-radius: inherit;
     opacity: 0;
     z-index: -1;
-    transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition(opacity);
   }
 
   &:hover::before {

@@ -11,7 +11,7 @@
     margin-left: calc(-1 * var(--ex-avatar-overlap, 8px));
     border: var(--ex-avatar-border-width) solid var(--ex-color-bg-primary);
     z-index: var(--ex-avatar-z-index, 10);
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition((transform, box-shadow));
 
     &:first-child {
       margin-left: 0;
@@ -31,20 +31,33 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--ex-color-bg-secondary);
-    color: var(--ex-color-text-secondary);
-    font-size: 0.8em;
-    font-weight: var(--ex-font-medium);
+    margin-left: calc(-1 * var(--ex-avatar-overlap, 8px));
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 0;
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    @include transition((transform, box-shadow));
+
+    .ex-avatar {
+      margin-left: 0;
+      background: var(--ex-color-bg-secondary);
+      color: var(--ex-color-text-secondary);
+      font-size: 0.8em;
+      font-weight: var(--ex-font-medium);
+    }
 
     &:hover {
-      background: var(--ex-color-bg-tertiary);
-      color: var(--ex-color-text-primary);
       transform: translateY(-2px) scale(1.05);
       box-shadow: 
         0 8px 25px rgba(var(--ex-color-neon-pink-500-rgb), 0.2),
         0 0 20px rgba(var(--ex-color-neon-pink-500-rgb), 0.3);
+
+      .ex-avatar {
+        background: var(--ex-color-bg-tertiary);
+        color: var(--ex-color-text-primary);
+      }
     }
   }
 

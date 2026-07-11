@@ -130,7 +130,7 @@
           :class="getCellClasses(cell)"
           role="button"
           :tabindex="cell.disabled ? -1 : 0"
-          :aria-selected="cell.isSelected"
+          :aria-selected="isDateSelected(cell.date)"
           :aria-disabled="cell.disabled"
           @click="handleDateClick(cell)"
           @keydown="handleCellKeydown(cell, $event)"
@@ -185,7 +185,7 @@
           :class="getCellClasses(cell)"
           role="button"
           :tabindex="cell.disabled ? -1 : 0"
-          :aria-selected="cell.isSelected"
+          :aria-selected="isDateSelected(cell.date)"
           :aria-disabled="cell.disabled"
           @click="handleDateClick(cell)"
           @keydown="handleCellKeydown(cell, $event)"
@@ -266,6 +266,7 @@ import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
+import { parseCalendarDate, setCalendarMonth, setCalendarYear } from './date-utils';
 import type {
   ExCalendarProps,
   ExCalendarEmits,
@@ -316,7 +317,18 @@ watch(() => [props.showLunar, props.showSolarTerm], ensureLunarLib);
 
 const calendarRef = ref<HTMLDivElement>();
 const currentDate = ref(new Date());
-const selectedDate = ref<Date | null>(null);
+const internalSelectedDate = ref<Date | null>(null);
+
+// undefined 表示非受控；null 是受控的明确清空值。单元格计算直接读取数据源，
+// 避免通过额外版本号驱动视图，确保受控值变化能可靠触发模板更新。
+const getSelectedTimestamp = (): number | null => {
+  const selected = props.modelValue === undefined ? internalSelectedDate.value : props.modelValue;
+  if (!selected) return null;
+
+  const normalized = new Date(selected);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized.getTime();
+};
 // 内部视图模式：初始化自 props.mode，支持 v-model:mode；外部不接管时按钮也能切换
 const activeMode = ref<CalendarMode>(props.mode);
 watch(
@@ -397,14 +409,19 @@ const currentHoliday = computed(() => {
   return getHoliday(currentDate.value);
 });
 
+const getDayTimestamp = (value: Date | string): number | null => {
+  const date = parseCalendarDate(value);
+  if (!date) return null;
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
 // 日视图的事件
 const dayEvents = computed(() => {
   const date = new Date(currentDate.value);
   date.setHours(0, 0, 0, 0);
   return props.events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate.getTime() === date.getTime();
+    return getDayTimestamp(event.date) === date.getTime();
   });
 });
 
@@ -544,22 +561,14 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
   const dateTime = cellDate.getTime();
 
   const isToday = dateTime === today.getTime();
-  const isSelected = selectedDate.value
-    ? dateTime === new Date(selectedDate.value).setHours(0, 0, 0, 0)
-    : false;
-
   // 获取该日期的事件
   const dateEvents = props.events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate.getTime() === dateTime;
+    return getDayTimestamp(event.date) === dateTime;
   });
 
   // 检查是否签到
   const checkedIn = props.checkedInDates.some(checkedDate => {
-    const checkDate = new Date(checkedDate);
-    checkDate.setHours(0, 0, 0, 0);
-    return checkDate.getTime() === dateTime;
+    return getDayTimestamp(checkedDate) === dateTime;
   });
 
   // 获取节假日
@@ -576,7 +585,6 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
     day,
     isCurrentMonth,
     isToday,
-    isSelected,
     disabled: props.disabledDate ? props.disabledDate(date) : false,
     events: dateEvents,
     checkedIn,
@@ -614,12 +622,20 @@ const getMonthDays = (month: number) => {
 };
 
 // 获取单元格样式类
+const isDateSelected = (date: Date): boolean => {
+  const selectedTime = getSelectedTimestamp();
+  if (selectedTime === null) return false;
+
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized.getTime() === selectedTime;
+};
+
 const getCellClasses = (cell: CalendarDateCell) => {
   const classes = ['ex-calendar__cell'];
 
   if (!cell.isCurrentMonth) classes.push('ex-calendar__cell--other-month');
   if (cell.isToday) classes.push('ex-calendar__cell--today');
-  if (cell.isSelected) classes.push('ex-calendar__cell--selected');
   if (cell.disabled) classes.push('ex-calendar__cell--disabled');
   if (cell.checkedIn) classes.push('ex-calendar__cell--checked-in');
   if (cell.events.length > 0) classes.push('ex-calendar__cell--has-events');
@@ -633,7 +649,7 @@ const getCellClasses = (cell: CalendarDateCell) => {
 const handleDateClick = (cell: CalendarDateCell) => {
   if (cell.disabled) return;
 
-  selectedDate.value = cell.date;
+  internalSelectedDate.value = new Date(cell.date);
   currentDate.value = new Date(cell.date);
   emit('update:modelValue', cell.date);
   emit('select', cell.date, cell);
@@ -654,7 +670,7 @@ const handleCellKeydown = (cell: CalendarDateCell, event: KeyboardEvent) => {
 };
 
 const selectDate = (date: Date) => {
-  selectedDate.value = date;
+  internalSelectedDate.value = new Date(date);
   currentDate.value = new Date(date);
   emit('update:modelValue', date);
 };
@@ -662,7 +678,7 @@ const selectDate = (date: Date) => {
 const goToday = () => {
   const today = new Date();
   currentDate.value = today;
-  selectedDate.value = today;
+  internalSelectedDate.value = today;
   emit('update:modelValue', today);
 };
 
@@ -683,13 +699,13 @@ const prevPeriod = () => {
       newDate.setDate(newDate.getDate() - 7);
       break;
     case 'month':
-      newDate.setMonth(newDate.getMonth() - 1);
-      emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
-      break;
+      currentDate.value = setCalendarMonth(newDate, newDate.getMonth() - 1);
+      emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
+      return;
     case 'year':
-      newDate.setFullYear(newDate.getFullYear() - 1);
-      emit('year-change', newDate.getFullYear());
-      break;
+      currentDate.value = setCalendarYear(newDate, newDate.getFullYear() - 1);
+      emit('year-change', currentDate.value.getFullYear());
+      return;
   }
 
   currentDate.value = newDate;
@@ -706,51 +722,41 @@ const nextPeriod = () => {
       newDate.setDate(newDate.getDate() + 7);
       break;
     case 'month':
-      newDate.setMonth(newDate.getMonth() + 1);
-      emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
-      break;
+      currentDate.value = setCalendarMonth(newDate, newDate.getMonth() + 1);
+      emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
+      return;
     case 'year':
-      newDate.setFullYear(newDate.getFullYear() + 1);
-      emit('year-change', newDate.getFullYear());
-      break;
+      currentDate.value = setCalendarYear(newDate, newDate.getFullYear() + 1);
+      emit('year-change', currentDate.value.getFullYear());
+      return;
   }
 
   currentDate.value = newDate;
 };
 
 const selectMonth = (month: number) => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(month - 1);
-  currentDate.value = newDate;
+  currentDate.value = setCalendarMonth(currentDate.value, month - 1);
   changeMode('month');
 };
 
 const prevMonth = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(newDate.getMonth() - 1);
-  currentDate.value = newDate;
-  emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
+  currentDate.value = setCalendarMonth(currentDate.value, currentDate.value.getMonth() - 1);
+  emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const nextMonth = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(newDate.getMonth() + 1);
-  currentDate.value = newDate;
-  emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
+  currentDate.value = setCalendarMonth(currentDate.value, currentDate.value.getMonth() + 1);
+  emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const prevYear = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setFullYear(newDate.getFullYear() - 1);
-  currentDate.value = newDate;
-  emit('year-change', newDate.getFullYear());
+  currentDate.value = setCalendarYear(currentDate.value, currentDate.value.getFullYear() - 1);
+  emit('year-change', currentDate.value.getFullYear());
 };
 
 const nextYear = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setFullYear(newDate.getFullYear() + 1);
-  currentDate.value = newDate;
-  emit('year-change', newDate.getFullYear());
+  currentDate.value = setCalendarYear(currentDate.value, currentDate.value.getFullYear() + 1);
+  emit('year-change', currentDate.value.getFullYear());
 };
 
 const getElement = () => {
@@ -762,7 +768,6 @@ watch(
   () => props.modelValue,
   newValue => {
     if (newValue instanceof Date) {
-      selectedDate.value = newValue;
       currentDate.value = new Date(newValue);
     }
   },

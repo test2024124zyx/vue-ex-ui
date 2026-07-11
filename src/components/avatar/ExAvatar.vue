@@ -21,21 +21,18 @@
     />
 
     <!-- 图片加载失败提示 -->
-    <div
+    <button
       v-else-if="props.src && imageError"
+      type="button"
       class="ex-avatar__error"
       :title="t('avatar.clickToReload')"
       :aria-label="t('avatar.retryLoad')"
-      role="button"
-      tabindex="0"
-      @click="reload"
-      @keydown.enter="reload"
-      @keydown.space.prevent="reload"
+      @click.stop="reload"
     >
       <slot name="error">
         <span class="ex-avatar__error-text">{{ t('avatar.loadError') }}</span>
       </slot>
-    </div>
+    </button>
 
     <!-- 图标头像插槽 -->
     <div v-else-if="$slots.icon" class="ex-avatar__icon">
@@ -54,7 +51,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, nextTick, watch, useSlots } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue';
 import type { ExAvatarProps, ExAvatarEmits, ExAvatarExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -83,6 +80,7 @@ const avatarRef = ref<HTMLElement>();
 const textRef = ref<HTMLElement>();
 const imageError = ref(false);
 const textScale = ref(1);
+let resizeObserver: ResizeObserver | null = null;
 
 // 计算属性
 const showImage = computed(() => {
@@ -188,12 +186,9 @@ const textStyles = computed(() => {
 
 // 计算文字缩放
 const calculateTextScale = async () => {
-  if (!displayText.value || !textRef.value || !avatarRef.value) {
-    return;
-  }
-
   await nextTick();
 
+  if (!displayText.value) return;
   const textElement = textRef.value;
   const avatarElement = avatarRef.value;
 
@@ -201,10 +196,10 @@ const calculateTextScale = async () => {
 
   const textWidth = textElement.scrollWidth;
   const avatarWidth = avatarElement.offsetWidth;
-  const maxWidth = avatarWidth - props.gap * 2;
+  const maxWidth = Math.max(0, avatarWidth - props.gap * 2);
 
   if (textWidth > maxWidth) {
-    textScale.value = maxWidth / textWidth;
+    textScale.value = Math.max(0, Math.min(1, maxWidth / textWidth));
   } else {
     textScale.value = 1;
   }
@@ -231,17 +226,16 @@ const getElement = () => {
 };
 
 const reload = () => {
-  if (props.src) {
-    imageError.value = false;
-    // 强制重新加载图片
-    const img = avatarRef.value?.querySelector('img');
-    if (img) {
-      const src = img.src;
-      img.src = '';
-      img.src = src;
-    }
-  }
+  if (props.src) imageError.value = false;
 };
+
+watch(
+  () => props.src,
+  () => {
+    // 新图片地址必须获得独立加载机会，不能继承上一地址的失败状态。
+    imageError.value = false;
+  }
+);
 
 // 监听文字变化，重新计算缩放
 watch(
@@ -251,6 +245,19 @@ watch(
   },
   { flush: 'post' }
 );
+
+onMounted(() => {
+  void calculateTextScale();
+  if (typeof ResizeObserver !== 'undefined' && avatarRef.value) {
+    resizeObserver = new ResizeObserver(() => void calculateTextScale());
+    resizeObserver.observe(avatarRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+});
 
 defineExpose<ExAvatarExposed>({
   getElement,

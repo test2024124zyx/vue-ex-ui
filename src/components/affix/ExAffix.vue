@@ -48,7 +48,7 @@ const contentStyle = computed(() => {
 });
 
 // 滚动容器元素
-let scrollContainer: HTMLElement | Window;
+let scrollContainer: HTMLElement | Window | null = null;
 
 const getTargetRect = (target: HTMLElement | Window) => {
   if (target === window) {
@@ -76,7 +76,7 @@ const getOffset = (element: HTMLElement, container: HTMLElement | Window) => {
 };
 
 const updatePosition = () => {
-  if (!affixRef.value) return;
+  if (!affixRef.value || !scrollContainer) return;
 
   const offset = getOffset(affixRef.value, scrollContainer);
 
@@ -92,6 +92,7 @@ const updatePosition = () => {
 
   if (shouldFix) {
     const rect = affixRef.value.getBoundingClientRect();
+    const containerRect = getTargetRect(scrollContainer);
 
     placeholderStyle.value = {
       width: `${rect.width}px`,
@@ -106,9 +107,10 @@ const updatePosition = () => {
     };
 
     if (shouldFixTop) {
-      styles.top = `${props.offsetTop}px`;
+      // fixed 使用视口坐标，自定义容器的边界必须换算到视口。
+      styles.top = `${containerRect.top + (props.offsetTop ?? 0)}px`;
     } else if (shouldFixBottom) {
-      styles.bottom = `${props.offsetBottom}px`;
+      styles.bottom = `${window.innerHeight - containerRect.bottom + (props.offsetBottom ?? 0)}px`;
     }
 
     affixStyle.value = styles;
@@ -120,11 +122,13 @@ const updatePosition = () => {
 
 // 使用 requestAnimationFrame 节流，避免每个 scroll 事件都触发同步布局读取
 let ticking = false;
+let animationFrameId: number | null = null;
 const scheduleUpdate = () => {
   if (ticking) return;
   ticking = true;
-  requestAnimationFrame(() => {
+  animationFrameId = requestAnimationFrame(() => {
     ticking = false;
+    animationFrameId = null;
     updatePosition();
   });
 };
@@ -140,13 +144,14 @@ const handleResize = () => {
 const addListeners = () => {
   scrollContainer = props.target();
 
-  scrollContainer.addEventListener('scroll', handleScroll);
+  scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
   window.addEventListener('resize', handleResize);
 };
 
 const removeListeners = () => {
   if (scrollContainer) {
     scrollContainer.removeEventListener('scroll', handleScroll);
+    scrollContainer = null;
   }
   window.removeEventListener('resize', handleResize);
 };
@@ -160,7 +165,7 @@ watch(
   }
 );
 
-watch([() => props.offsetTop, () => props.offsetBottom], () => {
+watch([() => props.offsetTop, () => props.offsetBottom, () => props.zIndex], () => {
   updatePosition();
 });
 
@@ -171,6 +176,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   removeListeners();
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    ticking = false;
+  }
 });
 
 const getElement = () => affixRef.value || null;

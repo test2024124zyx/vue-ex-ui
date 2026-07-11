@@ -1,12 +1,12 @@
-import type { App } from 'vue';
-import ExAnchor from './ExAnchor.vue';
+import ExAnchorComponent from './ExAnchor.vue';
 import ExAnchorLink from './ExAnchorLink.vue';
+import { withInstall } from '../../utils/install';
+import type { InstallableComponent } from '../../utils/install';
 
-ExAnchor.install = (app: App) => {
-  app.component('ExAnchor', ExAnchor);
-  app.component('ExAnchorLink', ExAnchorLink);
-};
+export const ExAnchor: InstallableComponent<typeof ExAnchorComponent> & {
+  Link: typeof ExAnchorLink;
+} = withInstall(ExAnchorComponent, { Link: ExAnchorLink });
 
 export default ExAnchor;
-export { ExAnchor, ExAnchorLink };
+export { ExAnchorLink };
 export * from './types';

@@ -92,7 +92,7 @@ export interface ExBarcodeExposed {
   /** 获取条码数据URL（异步：等待 SVG 转 canvas 绘制完成后返回） */
   toDataURL: (type?: 'image/png' | 'image/jpeg') => Promise<string>;
   /** 刷新条码 */
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }
 
 /**

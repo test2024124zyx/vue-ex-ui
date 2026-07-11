@@ -74,6 +74,10 @@
   // ============================================================================
 
   &__close {
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 0;
     flex-shrink: 0;
     margin-left: var(--ex-spacing-3);
     cursor: pointer;

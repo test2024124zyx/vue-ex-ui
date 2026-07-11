@@ -91,3 +91,8 @@ export interface ExAvatarGroupProps {
   /** 自定义样式 */
   style?: string | Record<string, string | number>;
 }
+
+export interface ExAvatarGroupEmits {
+  /** 点击溢出计数头像时返回隐藏数量。 */
+  overflowClick: [count: number];
+}

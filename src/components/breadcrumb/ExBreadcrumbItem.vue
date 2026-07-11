@@ -1,27 +1,24 @@
 <template>
-  <li class="ex-breadcrumb-item">
+  <li
+    class="ex-breadcrumb-item"
+    :class="[
+      `ex-breadcrumb-item--${size}`,
+      {
+        'ex-breadcrumb-item--clickable': isClickable,
+        'ex-breadcrumb-item--last': isLast,
+        'ex-breadcrumb-item--disabled': item.disabled,
+      },
+    ]"
+    :aria-disabled="item.disabled || undefined"
+  >
     <a
       v-if="isClickable"
-      href="javascript:void(0)"
+      :href="item.path"
       class="ex-breadcrumb-item__link"
-      :class="[
-        `ex-breadcrumb-item--${size}`,
-        {
-          'ex-breadcrumb-item--clickable': true,
-          'ex-breadcrumb-item--disabled': item.disabled,
-        },
-      ]"
       @click.prevent="handleClick"
     >
-      <span
-        v-if="$slots.icon"
-        class="ex-breadcrumb-item__icon"
-      >
-        <slot
-          name="icon"
-          :item="item"
-          :index="index"
-        />
+      <span v-if="$slots.icon" class="ex-breadcrumb-item__icon">
+        <slot name="icon" :item="item" :index="index" />
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </a>
@@ -29,24 +26,10 @@
     <span
       v-else
       class="ex-breadcrumb-item__text-wrapper"
-      :class="[
-        `ex-breadcrumb-item--${size}`,
-        {
-          'ex-breadcrumb-item--last': isLast,
-          'ex-breadcrumb-item--disabled': item.disabled,
-        },
-      ]"
       :aria-current="isLast ? 'page' : undefined"
     >
-      <span
-        v-if="$slots.icon"
-        class="ex-breadcrumb-item__icon"
-      >
-        <slot
-          name="icon"
-          :item="item"
-          :index="index"
-        />
+      <span v-if="$slots.icon" class="ex-breadcrumb-item__icon">
+        <slot name="icon" :item="item" :index="index" />
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </span>
@@ -57,10 +40,7 @@
       class="ex-breadcrumb-item__separator"
       aria-hidden="true"
     >
-      <slot
-        v-if="$slots.separator"
-        name="separator"
-      />
+      <slot v-if="$slots.separator" name="separator" />
       <span v-else>{{ separator || '/' }}</span>
     </span>
   </li>
@@ -86,7 +66,7 @@ const emit = defineEmits<BreadcrumbItemEmits>();
 
 // 是否可点击
 const isClickable = computed(() => {
-  return props.clickable && !props.isLast && !props.item.disabled && props.item.path;
+  return Boolean(props.clickable && !props.isLast && !props.item.disabled && props.item.path);
 });
 
 // 处理点击

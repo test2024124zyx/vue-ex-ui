@@ -17,7 +17,7 @@
   <ExButton type="warning">警告按钮</ExButton>
   <ExButton type="danger">危险按钮</ExButton>
   <ExButton type="info">信息按钮</ExButton>
-  <ExButton circle>用户</ExButton>
+  <ExButton shape="circle">用户</ExButton>
 </div>
 
 ```vue
@@ -59,76 +59,74 @@
 ## 圆角按钮
 
 <div class="demo-container">
-  <ExButton round>圆角按钮</ExButton>
-  <ExButton type="primary" round>主要按钮</ExButton>
-  <ExButton type="success" round>成功按钮</ExButton>
-  <ExButton type="warning" round>警告按钮</ExButton>
-  <ExButton type="danger" round>危险按钮</ExButton>
-  <ExButton type="info" round>信息按钮</ExButton>
+  <ExButton shape="round">圆角按钮</ExButton>
+  <ExButton type="primary" shape="round">主要按钮</ExButton>
+  <ExButton type="success" shape="round">成功按钮</ExButton>
+  <ExButton type="warning" shape="round">警告按钮</ExButton>
+  <ExButton type="danger" shape="round">危险按钮</ExButton>
+  <ExButton type="info" shape="round">信息按钮</ExButton>
 </div>
 
 ```vue
 <template>
-  <ExButton round>圆角按钮</ExButton>
-  <ExButton type="primary" round>主要按钮</ExButton>
-  <ExButton type="success" round>成功按钮</ExButton>
-  <ExButton type="warning" round>警告按钮</ExButton>
-  <ExButton type="danger" round>危险按钮</ExButton>
-  <ExButton type="info" round>信息按钮</ExButton>
+  <ExButton shape="round">圆角按钮</ExButton>
+  <ExButton type="primary" shape="round">主要按钮</ExButton>
+  <ExButton type="success" shape="round">成功按钮</ExButton>
+  <ExButton type="warning" shape="round">警告按钮</ExButton>
+  <ExButton type="danger" shape="round">危险按钮</ExButton>
+  <ExButton type="info" shape="round">信息按钮</ExButton>
 </template>
 ```
 
 ## 圆形按钮
 
-圆形按钮优先显示图标，如果没有图标则显示文字的第一个字符（大写）。
-
 <div class="demo-container">
-  <!-- 圆形按钮 - 图标优先显示 -->
-  <ExButton circle type="primary">
+  <!-- 圆形图标按钮 -->
+  <ExButton shape="circle" type="primary">
     <template #prefix>
       <ex-icon icon="star-line" />
     </template>
   </ExButton>
-  <ExButton circle type="success">
+  <ExButton shape="circle" type="success">
     <template #prefix>
       <ex-icon icon="star-line" />
     </template>
   </ExButton>
-  <ExButton circle type="warning">
+  <ExButton shape="circle" type="warning">
     <template #prefix>
       <ex-icon icon="star-line" />
     </template>
   </ExButton>
-  <ExButton circle type="danger">
+  <ExButton shape="circle" type="danger">
     <template #prefix>
       <ex-icon icon="delete-bin-line" />
     </template>
   </ExButton>
   
-  <!-- 圆形按钮 - 文字显示第一个字符 -->
-  <ExButton circle type="primary">用户</ExButton>
-  <ExButton circle type="success">管理员</ExButton>
-  <ExButton circle type="warning">游客</ExButton>
-  <ExButton circle type="danger">删除</ExButton>
+  <!-- 圆形文字按钮 -->
+  <ExButton shape="circle" type="primary">用户</ExButton>
+  <ExButton shape="circle" type="success">管理员</ExButton>
+  <ExButton shape="circle" type="warning">游客</ExButton>
+  <ExButton shape="circle" type="danger">删除</ExButton>
 </div>
 
 ```vue
 <template>
-  <!-- 圆形按钮 - 图标优先显示 -->
-  <ExButton circle type="primary">
+  <!-- 圆形图标按钮 -->
+  <ExButton shape="circle" type="primary">
     <template #prefix>
       <ex-icon icon="star-line" />
     </template>
   </ExButton>
-  <ExButton circle type="success">
+  <ExButton shape="circle" type="success">
     <template #prefix>
       <ex-icon icon="star-line" />
     </template>
   </ExButton>
 
-  <!-- 圆形按钮 - 文字显示第一个字符 -->
-  <ExButton circle type="primary">用户</ExButton>
-  <ExButton circle type="success">管理员</ExButton>
+  <!-- 圆形文字按钮 -->
+  <ExButton shape="circle" type="primary">用户</ExButton>
+  <ExButton shape="circle" type="success">管理员</ExButton>
 </template>
 ```
 
@@ -322,20 +320,18 @@ Button 组件提供除了默认值以外的三种尺寸，可以在不同场景�
 
 ### Props
 
-| 参数        | 说明                                                                           | 类型    | 可选值                                                                | 默认值  |
-| ----------- | ------------------------------------------------------------------------------ | ------- | --------------------------------------------------------------------- | ------- |
-| type        | 类型                                                                           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
-| size        | 尺寸                                                                           | string  | large / medium / small                                                | medium  |
-| shape       | 形状（与下方 `round`/`circle` 布尔等价，三者任一生效即可；同时设置时圆形优先） | string  | default / round / circle                                              | default |
-| plain       | 是否朴素按钮                                                                   | boolean | —                                                                     | false   |
-| round       | 是否圆角按钮                                                                   | boolean | —                                                                     | false   |
-| circle      | 是否圆形按钮                                                                   | boolean | —                                                                     | false   |
-| loading     | 是否加载中状态                                                                 | boolean | —                                                                     | false   |
-| disabled    | 是否禁用状态                                                                   | boolean | —                                                                     | false   |
-| autofocus   | 是否默认聚焦                                                                   | boolean | —                                                                     | false   |
-| native-type | 原生 type 属性                                                                 | string  | button / submit / reset                                               | button  |
-| block       | 是否为块级按钮                                                                 | boolean | —                                                                     | false   |
-| aria-label  | 无障碍标签                                                                     | string  | —                                                                     | —       |
+| 参数        | 说明           | 类型    | 可选值                                                                | 默认值  |
+| ----------- | -------------- | ------- | --------------------------------------------------------------------- | ------- |
+| type        | 类型           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
+| size        | 尺寸           | string  | large / medium / small                                                | medium  |
+| shape       | 形状           | string  | default / round / circle                                              | default |
+| plain       | 是否朴素按钮   | boolean | —                                                                     | false   |
+| loading     | 是否加载中状态 | boolean | —                                                                     | false   |
+| disabled    | 是否禁用状态   | boolean | —                                                                     | false   |
+| autofocus   | 是否默认聚焦   | boolean | —                                                                     | false   |
+| native-type | 原生 type 属性 | string  | button / submit / reset                                               | button  |
+| block       | 是否为块级按钮 | boolean | —                                                                     | false   |
+| aria-label  | 无障碍标签     | string  | —                                                                     | —       |
 
 ### Events
 

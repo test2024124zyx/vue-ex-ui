@@ -1,253 +1,287 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import ExButton from '../../../src/components/button/ExButton.vue'
-import type { ExButtonProps } from '../../../src/components/button/types'
+import { describe, it, expect, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+import ExButton from '../../../src/components/button/ExButton.vue';
+import type { ExButtonProps } from '../../../src/components/button/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
   default: {
     name: 'ExIcon',
     props: ['name', 'spin'],
-    template: '<span class="ex-icon" :class="{ spin }">{{ name }}</span>'
-  }
-}))
+    template: '<span class="ex-icon" :class="{ spin }">{{ name }}</span>',
+  },
+}));
 
 describe('ExButton', () => {
   it('renders correctly with default props', () => {
     const wrapper = mount(ExButton, {
       slots: {
-        default: 'Click me'
-      }
-    })
+        default: 'Click me',
+      },
+    });
 
-    expect(wrapper.find('button').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Click me')
-    expect(wrapper.classes()).toContain('ex-button')
-    expect(wrapper.classes()).toContain('ex-button--primary')
-    expect(wrapper.classes()).toContain('ex-button--medium')
-  })
+    expect(wrapper.find('button').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Click me');
+    expect(wrapper.classes()).toContain('ex-button');
+    expect(wrapper.classes()).toContain('ex-button--primary');
+    expect(wrapper.classes()).toContain('ex-button--medium');
+  });
 
   it('renders different button types', () => {
-    const types: ExButtonProps['type'][] = ['primary', 'secondary', 'success', 'warning', 'danger', 'info', 'text', 'link']
-    
+    const types: ExButtonProps['type'][] = [
+      'default',
+      'primary',
+      'secondary',
+      'success',
+      'warning',
+      'danger',
+      'error',
+      'info',
+      'text',
+      'link',
+      'ghost',
+    ];
+
     types.forEach(type => {
       const wrapper = mount(ExButton, {
         props: { type },
-        slots: { default: 'Button' }
-      })
-      expect(wrapper.classes()).toContain(`ex-button--${type}`)
-    })
-  })
+        slots: { default: 'Button' },
+      });
+      expect(wrapper.classes()).toContain(`ex-button--${type}`);
+    });
+  });
 
   it('renders different button sizes', () => {
-    const sizes: ExButtonProps['size'][] = ['small', 'medium', 'large']
-    
+    const sizes: ExButtonProps['size'][] = ['small', 'medium', 'large'];
+
     sizes.forEach(size => {
       const wrapper = mount(ExButton, {
         props: { size },
-        slots: { default: 'Button' }
-      })
-      expect(wrapper.classes()).toContain(`ex-button--${size}`)
-    })
-  })
+        slots: { default: 'Button' },
+      });
+      expect(wrapper.classes()).toContain(`ex-button--${size}`);
+    });
+  });
 
   it('handles disabled state correctly', () => {
     const wrapper = mount(ExButton, {
       props: { disabled: true },
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    const button = wrapper.find('button')
-    expect(button.attributes('disabled')).toBeDefined()
-    expect(wrapper.classes()).toContain('ex-button--disabled')
-  })
+    const button = wrapper.find('button');
+    expect(button.attributes('disabled')).toBeDefined();
+    expect(wrapper.classes()).toContain('ex-button--disabled');
+  });
 
   it('handles loading state correctly', () => {
     const wrapper = mount(ExButton, {
       props: { loading: true },
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    const button = wrapper.find('button')
-    expect(button.attributes('disabled')).toBeDefined()
-    expect(wrapper.classes()).toContain('ex-button--loading')
-    // 在新约定下不强依赖图标组件，仅校验样式与禁用
-  })
+    const button = wrapper.find('button');
+    expect(button.attributes('disabled')).toBeDefined();
+    expect(wrapper.classes()).toContain('ex-button--loading');
+    expect(button.attributes('aria-busy')).toBe('true');
+    expect(wrapper.find('.ex-button__loading-spinner').exists()).toBe(true);
+  });
 
   it('renders with icon (slot + Iconify, prefix)', () => {
     const wrapper = mount(ExButton, {
-      slots: { 
+      slots: {
         default: 'Search',
-        prefix: '<ex-icon src="https://api.iconify.design/ri/search-line.svg"></ex-icon>'
+        prefix: '<ex-icon src="https://api.iconify.design/ri/search-line.svg"></ex-icon>',
       },
       global: {
         components: {
           'ex-icon': {
             name: 'ex-icon',
             props: ['src'],
-            template: '<i class="ex-icon" :src="src"></i>'
-          }
-        }
-      }
-    })
+            template: '<i class="ex-icon" :src="src"></i>',
+          },
+        },
+      },
+    });
 
-    expect(wrapper.find('.ex-button__icon--left').exists()).toBe(true)
-    expect(wrapper.find('.ex-icon').exists()).toBe(true)
-  })
+    expect(wrapper.find('.ex-button__icon--left').exists()).toBe(true);
+    expect(wrapper.find('.ex-icon').exists()).toBe(true);
+  });
 
   it('renders icon on the right (slot + Iconify, suffix)', () => {
     const wrapper = mount(ExButton, {
-      slots: { 
+      slots: {
         default: 'Next',
-        suffix: '<ex-icon src="https://api.iconify.design/ri/arrow-right-line.svg"></ex-icon>'
+        suffix: '<ex-icon src="https://api.iconify.design/ri/arrow-right-line.svg"></ex-icon>',
       },
       global: {
         components: {
           'ex-icon': {
             name: 'ex-icon',
             props: ['src'],
-            template: '<i class="ex-icon" :src="src"></i>'
-          }
-        }
-      }
-    })
+            template: '<i class="ex-icon" :src="src"></i>',
+          },
+        },
+      },
+    });
 
-    expect(wrapper.find('.ex-button__icon--right').exists()).toBe(true)
-    expect(wrapper.find('.ex-icon').exists()).toBe(true)
-  })
+    expect(wrapper.find('.ex-button__icon--right').exists()).toBe(true);
+    expect(wrapper.find('.ex-icon').exists()).toBe(true);
+  });
 
   it('handles click events', async () => {
-    const onClick = vi.fn()
+    const onClick = vi.fn();
     const wrapper = mount(ExButton, {
       props: { onClick },
-      slots: { default: 'Click me' }
-    })
+      slots: { default: 'Click me' },
+    });
 
-    await wrapper.find('button').trigger('click')
-    expect(onClick).toHaveBeenCalledTimes(1)
-  })
+    await wrapper.find('button').trigger('click');
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
 
   it('does not emit click when disabled', async () => {
-    const onClick = vi.fn()
+    const onClick = vi.fn();
     const wrapper = mount(ExButton, {
-      props: { 
+      props: {
         disabled: true,
-        onClick
+        onClick,
       },
-      slots: { default: 'Click me' }
-    })
+      slots: { default: 'Click me' },
+    });
 
-    await wrapper.find('button').trigger('click')
-    expect(onClick).not.toHaveBeenCalled()
-  })
+    await wrapper.find('button').trigger('click');
+    expect(onClick).not.toHaveBeenCalled();
+  });
 
   it('does not emit click when loading', async () => {
-    const onClick = vi.fn()
+    const onClick = vi.fn();
     const wrapper = mount(ExButton, {
-      props: { 
+      props: {
         loading: true,
-        onClick
+        onClick,
       },
-      slots: { default: 'Click me' }
-    })
+      slots: { default: 'Click me' },
+    });
 
-    await wrapper.find('button').trigger('click')
-    expect(onClick).not.toHaveBeenCalled()
-  })
+    await wrapper.find('button').trigger('click');
+    expect(onClick).not.toHaveBeenCalled();
+  });
 
   it('renders as block button', () => {
     const wrapper = mount(ExButton, {
       props: { block: true },
-      slots: { default: 'Block Button' }
-    })
+      slots: { default: 'Block Button' },
+    });
 
-    expect(wrapper.classes()).toContain('ex-button--block')
-  })
+    expect(wrapper.classes()).toContain('ex-button--block');
+  });
 
   it('renders with custom class', () => {
     const wrapper = mount(ExButton, {
       props: { class: 'custom-class' },
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    expect(wrapper.classes()).toContain('custom-class')
-  })
+    expect(wrapper.classes()).toContain('custom-class');
+  });
 
   it('renders with custom style', () => {
-    const customStyle = { color: 'red', fontSize: '18px' }
+    const customStyle = { color: 'red', fontSize: '18px' };
     const wrapper = mount(ExButton, {
       props: { style: customStyle },
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    const button = wrapper.find('button')
-    expect(button.element.style.color).toBe('red')
-    expect(button.element.style.fontSize).toBe('18px')
-  })
+    const button = wrapper.find('button');
+    expect(button.element.style.color).toBe('red');
+    expect(button.element.style.fontSize).toBe('18px');
+  });
 
   it('handles focus and blur events', async () => {
-    const onFocus = vi.fn()
-    const onBlur = vi.fn()
+    const onFocus = vi.fn();
+    const onBlur = vi.fn();
     const wrapper = mount(ExButton, {
       props: { onFocus, onBlur },
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    const button = wrapper.find('button')
-    await button.trigger('focus')
-    expect(onFocus).toHaveBeenCalledTimes(1)
+    const button = wrapper.find('button');
+    await button.trigger('focus');
+    expect(onFocus).toHaveBeenCalledTimes(1);
 
-    await button.trigger('blur')
-    expect(onBlur).toHaveBeenCalledTimes(1)
-  })
+    await button.trigger('blur');
+    expect(onBlur).toHaveBeenCalledTimes(1);
+  });
 
   it('exposes focus and blur methods', () => {
     const wrapper = mount(ExButton, {
-      slots: { default: 'Button' }
-    })
+      slots: { default: 'Button' },
+    });
 
-    const vm = wrapper.vm as any
-    expect(typeof vm.focus).toBe('function')
-    expect(typeof vm.blur).toBe('function')
-    expect(typeof vm.getElement).toBe('function')
-  })
+    const vm = wrapper.vm as any;
+    expect(typeof vm.focus).toBe('function');
+    expect(typeof vm.blur).toBe('function');
+    expect(typeof vm.getElement).toBe('function');
+  });
 
   it('renders with different shapes', () => {
-    const shapes: ExButtonProps['shape'][] = ['default', 'round', 'circle']
-    
+    const shapes: ExButtonProps['shape'][] = ['default', 'round', 'circle'];
+
     shapes.forEach(shape => {
       const wrapper = mount(ExButton, {
         props: { shape },
-        slots: { default: 'Button' }
-      })
-      expect(wrapper.classes()).toContain(`ex-button--${shape}`)
-    })
-  })
+        slots: { default: 'Button' },
+      });
+      expect(wrapper.classes()).toContain(`ex-button--${shape}`);
+    });
+  });
+
+  it('circle shape preserves complete slot content instead of silently truncating it', () => {
+    const wrapper = mount(ExButton, {
+      props: { shape: 'circle', ariaLabel: 'User profile' },
+      slots: { default: '用户' },
+    });
+
+    expect(wrapper.text()).toContain('用户');
+    expect(wrapper.find('.ex-button__content').exists()).toBe(true);
+  });
+
+  it('circle loading state keeps an accessible name and visible content', () => {
+    const wrapper = mount(ExButton, {
+      props: { shape: 'circle', loading: true, ariaLabel: 'Loading user' },
+      slots: { default: '用户' },
+    });
+
+    expect(wrapper.text()).toContain('用户');
+    expect(wrapper.attributes('aria-label')).toBe('Loading user');
+    expect(wrapper.attributes('aria-busy')).toBe('true');
+  });
 
   it('renders as plain button', () => {
     const wrapper = mount(ExButton, {
       props: { plain: true },
-      slots: { default: 'Plain Button' }
-    })
+      slots: { default: 'Plain Button' },
+    });
 
-    expect(wrapper.classes()).toContain('ex-button--plain')
-  })
+    expect(wrapper.classes()).toContain('ex-button--plain');
+  });
 
   it('renders with correct native type', () => {
     const wrapper = mount(ExButton, {
       props: { nativeType: 'submit' },
-      slots: { default: 'Submit' }
-    })
+      slots: { default: 'Submit' },
+    });
 
-    expect(wrapper.find('button').attributes('type')).toBe('submit')
-  })
+    expect(wrapper.find('button').attributes('type')).toBe('submit');
+  });
 
   it('renders with aria-label', () => {
     const wrapper = mount(ExButton, {
       props: { ariaLabel: 'Close dialog' },
-      slots: { default: 'X' }
-    })
+      slots: { default: 'X' },
+    });
 
-    expect(wrapper.find('button').attributes('aria-label')).toBe('Close dialog')
-  })
-})
+    expect(wrapper.find('button').attributes('aria-label')).toBe('Close dialog');
+  });
+});

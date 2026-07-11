@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ExBarcodeProps, ExBarcodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { generateBarcode } from './barcode-generator';
@@ -79,6 +79,8 @@ const svgRef = ref<SVGSVGElement>();
 const loading = ref(false);
 const error = ref(false);
 const errorMessage = ref('');
+let generationId = 0;
+let disposed = false;
 
 // 计算属性
 const barcodeClasses = computed(() => {
@@ -114,8 +116,10 @@ const barcodeStyles = computed(() => {
 });
 
 // 生成条码
-const generate = async () => {
+const generate = async (): Promise<void> => {
+  const requestId = ++generationId;
   if (!props.value || !svgRef.value) {
+    loading.value = false;
     error.value = true;
     errorMessage.value = 'Invalid value';
     return;
@@ -149,21 +153,18 @@ const generate = async () => {
       marginRight: props.marginRight,
       flat: props.flat,
       valid: (valid: boolean) => {
-        if (!valid) {
+        if (!valid && requestId === generationId && !disposed) {
           error.value = true;
           errorMessage.value = 'Invalid barcode value for format';
         }
       },
     });
-
-    loading.value = false;
   } catch (err) {
+    if (requestId !== generationId || disposed) return;
     error.value = true;
     errorMessage.value = err instanceof Error ? err.message : 'Generation failed';
-    loading.value = false;
-    if (import.meta.env.DEV) {
-      console.error('Barcode generation error:', err);
-    }
+  } finally {
+    if (requestId === generationId && !disposed) loading.value = false;
   }
 };
 
@@ -183,11 +184,12 @@ const download = (filename?: string) => {
     const url = URL.createObjectURL(svgBlob);
 
     const img = new Image();
+    const releaseSvgUrl = () => URL.revokeObjectURL(url);
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
+      releaseSvgUrl();
 
       // 下载
       canvas.toBlob(blob => {
@@ -195,15 +197,17 @@ const download = (filename?: string) => {
         const link = document.createElement('a');
         link.download = filename || `barcode-${Date.now()}.png`;
         link.href = URL.createObjectURL(blob);
-        link.click();
-        URL.revokeObjectURL(link.href);
+        try {
+          link.click();
+        } finally {
+          URL.revokeObjectURL(link.href);
+        }
       });
     };
+    img.onerror = releaseSvgUrl;
     img.src = url;
-  } catch (err) {
-    if (import.meta.env.DEV) {
-      console.error('Download error:', err);
-    }
+  } catch {
+    // 下载能力不可用时保持组件可用，不向宿主控制台写入噪声。
   }
 };
 
@@ -215,6 +219,7 @@ const toDataURL = (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<stri
       return;
     }
 
+    let url: string | null = null;
     try {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -226,25 +231,27 @@ const toDataURL = (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<stri
       const svgEl = svgRef.value;
       const svgData = new XMLSerializer().serializeToString(svgEl);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
+      url = URL.createObjectURL(svgBlob);
+      const release = () => {
+        if (url) URL.revokeObjectURL(url);
+        url = null;
+      };
 
       const img = new Image();
       img.onload = () => {
         canvas.width = img.width || svgEl.clientWidth || 300;
         canvas.height = img.height || svgEl.clientHeight || 150;
         ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
+        release();
         resolve(canvas.toDataURL(type));
       };
       img.onerror = () => {
-        URL.revokeObjectURL(url);
+        release();
         resolve('');
       };
       img.src = url;
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        console.error('toDataURL error:', err);
-      }
+    } catch {
+      if (url) URL.revokeObjectURL(url);
       resolve('');
     }
   });
@@ -273,13 +280,18 @@ watch(
     props.flat,
   ],
   () => {
-    generate();
+    void generate();
   }
 );
 
 // 挂载时生成
 onMounted(() => {
-  generate();
+  void generate();
+});
+
+onBeforeUnmount(() => {
+  disposed = true;
+  generationId += 1;
 });
 
 // 暴露的方法

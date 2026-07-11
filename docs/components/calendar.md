@@ -478,7 +478,6 @@ interface CalendarDateCell {
   /** 是否今天 */
   isToday: boolean;
   /** 是否选中 */
-  isSelected: boolean;
   /** 是否禁用 */
   disabled: boolean;
   /** 该日期的事件列表 */

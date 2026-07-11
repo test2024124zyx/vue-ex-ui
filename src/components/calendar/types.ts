@@ -33,8 +33,6 @@ export interface CalendarDateCell {
   isCurrentMonth: boolean;
   /** 是否今天 */
   isToday: boolean;
-  /** 是否选中 */
-  isSelected: boolean;
   /** 是否禁用 */
   disabled: boolean;
   /** 该日期的事件列表 */
@@ -68,7 +66,7 @@ export interface Holiday {
  */
 export interface ExCalendarProps {
   /** 当前选中日期 */
-  modelValue?: Date;
+  modelValue?: Date | null;
   /** 日历模式 */
   mode?: CalendarMode;
   /** 事件列表 */

@@ -322,7 +322,7 @@
     }
 
     // 选中
-    &--selected {
+    &[aria-selected='true'] {
       border-color: var(--ex-color-secondary);
       background: linear-gradient(135deg, var(--ex-color-primary-alpha-20), var(--ex-color-secondary-alpha-20));
       @include neon-glow('pink', 'sm');

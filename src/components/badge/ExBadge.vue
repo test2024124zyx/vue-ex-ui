@@ -165,7 +165,9 @@ const badgeSupStyles = computed(() => {
   // 偏移量
   if (props.offset && hasSlotContent.value) {
     const [x, y] = props.offset;
-    styles.transform = `translate(${typeof x === 'number' ? x + 'px' : x}, ${typeof y === 'number' ? y + 'px' : y})`;
+    // 偏移作为定位变换的增量，避免覆盖角落锚定所需的 50% translate。
+    styles['--ex-badge-offset-x'] = typeof x === 'number' ? `${x}px` : x;
+    styles['--ex-badge-offset-y'] = typeof y === 'number' ? `${y}px` : y;
   }
 
   // 自定义徽章样式

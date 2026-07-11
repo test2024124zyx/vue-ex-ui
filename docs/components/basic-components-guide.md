@@ -149,7 +149,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-button>
 
   <!-- 圆形按钮 -->
-  <ex-button :circle="true" type="primary">
+  <ex-button shape="circle" type="primary">
     <template #prefix>
       <ex-icon name="ri:add-line" />
     </template>
@@ -166,9 +166,8 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 | -------- | ---------------------------------------------------------------------------------------------- | ----------- | -------- |
 | type     | `'primary' \| 'secondary' \| 'success' \| 'warning' \| 'danger' \| 'info' \| 'text' \| 'link'` | `'primary'` | 按钮类型 |
 | size     | `'small' \| 'medium' \| 'large'`                                                               | `'medium'`  | 按钮大小 |
+| shape    | `'default' \| 'round' \| 'circle'`                                                             | `'default'` | 按钮形状 |
 | plain    | `boolean`                                                                                      | `false`     | 朴素按钮 |
-| round    | `boolean`                                                                                      | `false`     | 圆角按钮 |
-| circle   | `boolean`                                                                                      | `false`     | 圆形按钮 |
 | disabled | `boolean`                                                                                      | `false`     | 禁用状态 |
 | loading  | `boolean`                                                                                      | `false`     | 加载状态 |
 | block    | `boolean`                                                                                      | `false`     | 块级按钮 |

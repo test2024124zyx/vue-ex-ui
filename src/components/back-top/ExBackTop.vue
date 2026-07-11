@@ -65,17 +65,10 @@
 
 <script setup lang="ts">
 import { computed, isVNode, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import type { CSSProperties } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import type { ExBackTopProps, ExBackTopEmits, ExBackTopExposed, BackTopScrollInfo } from './types';
-import {
-  resolveTarget,
-  getScrollInfo,
-  scrollToPosition,
-  getPositionStyle,
-  isMobile,
-} from './utils';
+import { resolveTarget, getScrollInfo, scrollToPosition, getPositionStyle } from './utils';
 
 defineOptions({
   name: 'ExBackTop',
@@ -121,11 +114,18 @@ const scrollInfo = reactive<BackTopScrollInfo>({
 
 let scrollTarget: HTMLElement | Window | null = null;
 let rafId: number | null = null;
+let scrollAbortController: AbortController | null = null;
+let mounted = false;
+const viewportWidth = ref(
+  typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerWidth
+);
 
 // ---------------------------------------------------------------------------
 // 派生状态
 // ---------------------------------------------------------------------------
-const deviceAllowed = computed(() => props.showOnMobile || !isMobile(props.mobileBreakpoint));
+const deviceAllowed = computed(
+  () => props.showOnMobile || viewportWidth.value > props.mobileBreakpoint
+);
 
 const iconIsComponent = computed(() => {
   const ic = props.icon;
@@ -154,13 +154,12 @@ const rootClasses = computed(() => [
   ...normalizeCustomClass(props.class),
 ]);
 
-const rootStyle = computed<CSSProperties>(() => {
+const rootStyle = computed(() => {
   const base = getPositionStyle(props.position, props.offset);
   if (props.zIndex !== undefined) base.zIndex = props.zIndex;
   if (!props.style) return base;
-  return typeof props.style === 'string'
-    ? ({ ...base, cssText: props.style } as unknown as CSSProperties)
-    : { ...base, ...props.style };
+  // Vue 会规范化样式数组，字符串样式只覆盖同名属性而不会清空固定定位。
+  return typeof props.style === 'string' ? [base, props.style] : { ...base, ...props.style };
 });
 
 // ---------------------------------------------------------------------------
@@ -189,16 +188,21 @@ const onScroll = () => {
   });
 };
 
+const onResize = () => {
+  viewportWidth.value = window.innerWidth;
+  onScroll();
+};
+
 const bind = () => {
   scrollTarget = resolveTarget(props.target);
   scrollTarget.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
   update();
 };
 
 const unbind = () => {
   scrollTarget?.removeEventListener('scroll', onScroll);
-  window.removeEventListener('resize', onScroll);
+  window.removeEventListener('resize', onResize);
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -212,17 +216,21 @@ const unbind = () => {
 const scrollToTop = async (): Promise<void> => {
   if (scrolling.value || !scrollTarget) return;
   scrolling.value = true;
+  const controller = new AbortController();
+  scrollAbortController = controller;
   emit('scroll-start');
   try {
-    await scrollToPosition(
+    const completed = await scrollToPosition(
       scrollTarget,
       props.scrollTo,
       props.scrollBehavior,
-      props.scrollDuration
+      props.scrollDuration,
+      controller.signal
     );
+    if (completed && mounted) emit('scroll-end');
   } finally {
     scrolling.value = false;
-    emit('scroll-end');
+    if (scrollAbortController === controller) scrollAbortController = null;
   }
 };
 
@@ -251,13 +259,24 @@ const hide = () => {
 watch(
   () => props.target,
   () => {
+    if (!mounted) return;
+    scrollAbortController?.abort();
     unbind();
     bind();
   }
 );
 
-onMounted(bind);
-onBeforeUnmount(unbind);
+onMounted(() => {
+  mounted = true;
+  viewportWidth.value = window.innerWidth;
+  bind();
+});
+onBeforeUnmount(() => {
+  mounted = false;
+  scrollAbortController?.abort();
+  scrollAbortController = null;
+  unbind();
+});
 
 defineExpose<ExBackTopExposed>({
   scrollToTop,

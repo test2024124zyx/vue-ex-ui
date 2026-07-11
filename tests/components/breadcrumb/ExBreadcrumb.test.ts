@@ -44,4 +44,38 @@ describe('ExBreadcrumb', () => {
     expect((clicks!.at(-1)![0] as BreadcrumbItem).label).toBe('首页');
     expect(clicks!.at(-1)![1]).toBe(0);
   });
+
+  it('places state and size modifiers on the item root where component styles apply', () => {
+    const wrapper = mount(ExBreadcrumb, { props: { items, size: 'large' } });
+    const rendered = wrapper.findAll('.ex-breadcrumb-item');
+
+    expect(rendered[0]?.classes()).toContain('ex-breadcrumb-item--large');
+    expect(rendered[0]?.classes()).toContain('ex-breadcrumb-item--clickable');
+    expect(rendered.at(-1)?.classes()).toContain('ex-breadcrumb-item--last');
+  });
+
+  it('uses the declared path instead of a javascript pseudo URL', () => {
+    const wrapper = mount(ExBreadcrumb, { props: { items } });
+
+    expect(wrapper.find('.ex-breadcrumb-item__link').attributes('href')).toBe('/');
+  });
+
+  it('normalizes maxItems below two and keeps distinct first and last items', () => {
+    const wrapper = mount(ExBreadcrumb, { props: { items, maxItems: 1 } });
+
+    expect(wrapper.findAll('.ex-breadcrumb-item')).toHaveLength(2);
+    expect(wrapper.text()).toContain('首页');
+    expect(wrapper.text()).toContain('面包屑');
+    expect(wrapper.find('.ex-breadcrumb__ellipsis').exists()).toBe(true);
+  });
+
+  it('renders disabled entries as non-interactive content with aria-disabled', () => {
+    const wrapper = mount(ExBreadcrumb, {
+      props: { items: [{ label: '禁用', path: '/disabled', disabled: true }, items[2]!] },
+    });
+    const disabled = wrapper.find('.ex-breadcrumb-item--disabled');
+
+    expect(disabled.find('a').exists()).toBe(false);
+    expect(disabled.attributes('aria-disabled')).toBe('true');
+  });
 });

@@ -38,15 +38,12 @@
       </div>
 
       <!-- 关闭按钮 -->
-      <div
+      <button
         v-if="closable"
+        type="button"
         class="ex-alert__close"
-        role="button"
-        tabindex="0"
         :aria-label="t('alert.close')"
         @click="handleClose"
-        @keydown.enter="handleClose"
-        @keydown.space.prevent="handleClose"
       >
         <slot name="close">
           <span v-if="closeText" class="ex-alert__close-text">
@@ -60,7 +57,7 @@
             aria-hidden="true"
           />
         </slot>
-      </div>
+      </button>
     </div>
   </transition>
 </template>
@@ -132,9 +129,9 @@ const alertStyles = computed(() => {
 });
 
 // 事件处理
-const handleClose = (event: MouseEvent | KeyboardEvent) => {
+const handleClose = (event: MouseEvent) => {
   visible.value = false;
-  emit('close', event as MouseEvent);
+  emit('close', event);
 };
 
 const handleAfterLeave = () => {

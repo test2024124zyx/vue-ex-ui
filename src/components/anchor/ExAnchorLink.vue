@@ -13,7 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, computed, onMounted, onBeforeUnmount } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { ANCHOR_INJECTION_KEY } from './context';
 import type { ExAnchorLinkProps, ExAnchorLinkEmits } from './types';
 
 defineOptions({
@@ -25,31 +26,32 @@ const emit = defineEmits<ExAnchorLinkEmits>();
 
 const linkRef = ref<HTMLDivElement>();
 
-const anchor = inject<{
-  registerLink: (href: string, title: string, element: HTMLElement) => void;
-  unregisterLink: (href: string) => void;
-  activeLink: { value: string };
-  handleClick: (href: string, element: HTMLElement) => void;
-}>('anchor');
+const anchor = inject(ANCHOR_INJECTION_KEY, null);
 
 const isActive = computed(() => anchor?.activeLink.value === props.href);
 
 const handleClick = () => {
   if (linkRef.value && anchor) {
-    anchor.handleClick(props.href, linkRef.value);
+    anchor.handleClick({ href: props.href, title: props.title, element: linkRef.value });
   }
   emit('click', props.href);
 };
 
 onMounted(() => {
   if (linkRef.value && anchor) {
-    anchor.registerLink(props.href, props.title, linkRef.value);
+    anchor.registerLink({ href: props.href, title: props.title, element: linkRef.value });
+  }
+});
+
+watch([() => props.href, () => props.title], ([href, title]) => {
+  if (linkRef.value && anchor) {
+    anchor.updateLink(linkRef.value, href, title);
   }
 });
 
 onBeforeUnmount(() => {
   if (anchor) {
-    anchor.unregisterLink(props.href);
+    if (linkRef.value) anchor.unregisterLink(linkRef.value);
   }
 });
 </script>
