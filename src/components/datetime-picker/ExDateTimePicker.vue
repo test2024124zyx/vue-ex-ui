@@ -1,224 +1,297 @@
 <template>
-  <div ref="pickerRef" :class="pickerClasses" :style="pickerStyles" @click="handleClick">
-    <!-- 输入框 -->
+  <div ref="pickerRef" :class="pickerClasses" :style="pickerStyles">
     <div class="ex-datetime-picker__input-wrapper">
       <input
         ref="inputRef"
+        class="ex-datetime-picker__input"
         :value="displayValue"
         :placeholder="currentPlaceholder"
         :disabled="disabled"
         readonly
-        :aria-label="ariaLabel"
-        class="ex-datetime-picker__input"
+        role="combobox"
+        aria-haspopup="dialog"
+        :aria-controls="panelId"
+        :aria-expanded="isOpen"
+        aria-readonly="true"
+        :aria-disabled="disabled || readonly"
+        :aria-label="inputAriaLabel"
+        @click="togglePanel"
+        @keydown="handleInputKeydown"
         @focus="handleFocus"
         @blur="handleBlur"
       />
 
-      <!-- 图标 -->
       <div class="ex-datetime-picker__icons">
-        <!-- 清除按钮 -->
         <button
-          v-if="clearable && modelValue && !disabled"
-          class="ex-datetime-picker__clear"
+          v-if="clearable && hasValue && !disabled && !readonly"
           type="button"
-          :aria-label="t('common.clear')"
-          @click.stop="handleClear"
+          class="ex-datetime-picker__clear"
+          :aria-label="tCommon('clear')"
+          @click="handleClear"
         >
           <ExIcon icon="close-circle-line" :size="16" aria-hidden="true" />
         </button>
-
-        <!-- 日历图标 -->
-        <div class="ex-datetime-picker__icon">
-          <ExIcon icon="calendar-line" :size="16" aria-hidden="true" />
-        </div>
+        <span class="ex-datetime-picker__icon" aria-hidden="true">
+          <ExIcon icon="calendar-line" :size="16" />
+        </span>
       </div>
     </div>
 
-    <!-- 下拉面板 -->
-    <transition name="ex-datetime-picker-dropdown">
-      <div v-if="isOpen" class="ex-datetime-picker__dropdown" @click.stop>
-        <!-- 日期选择面板 -->
+    <Transition name="ex-datetime-picker-dropdown">
+      <div
+        v-if="isOpen"
+        :id="panelId"
+        ref="panelRef"
+        class="ex-datetime-picker__dropdown"
+        role="dialog"
+        :aria-label="tDatePicker('panel')"
+        @keydown="handlePanelKeydown"
+      >
         <div class="ex-datetime-picker__panel">
-          <!-- 头部 -->
           <div class="ex-datetime-picker__header">
             <button
-              class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('common.prevYear')"
+              class="ex-datetime-picker__nav-btn"
+              data-action="previous-year"
+              :aria-label="tCommon('prevYear')"
               @click="changeYear(-1)"
             >
               <ExIcon icon="arrow-left-double-line" :size="16" aria-hidden="true" />
             </button>
             <button
-              class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('common.prevMonth')"
+              class="ex-datetime-picker__nav-btn"
+              data-action="previous-month"
+              :aria-label="tCommon('prevMonth')"
               @click="changeMonth(-1)"
             >
               <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
             </button>
 
-            <div class="ex-datetime-picker__current">
+            <div class="ex-datetime-picker__current" aria-live="polite">
               {{ currentYearMonth }}
             </div>
 
             <button
-              class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('common.nextMonth')"
+              class="ex-datetime-picker__nav-btn"
+              data-action="next-month"
+              :aria-label="tCommon('nextMonth')"
               @click="changeMonth(1)"
             >
               <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
             </button>
             <button
-              class="ex-datetime-picker__nav-btn"
               type="button"
-              :aria-label="t('common.nextYear')"
+              class="ex-datetime-picker__nav-btn"
+              data-action="next-year"
+              :aria-label="tCommon('nextYear')"
               @click="changeYear(1)"
             >
               <ExIcon icon="arrow-right-double-line" :size="16" aria-hidden="true" />
             </button>
           </div>
 
-          <!-- 星期标题 -->
-          <div class="ex-datetime-picker__weekdays">
-            <div v-for="day in weekdays" :key="day" class="ex-datetime-picker__weekday">
-              {{ day }}
+          <div class="ex-datetime-picker__calendar-grid" role="grid" :aria-label="currentYearMonth">
+            <div class="ex-datetime-picker__weekdays" role="row">
+              <span
+                v-for="weekday in weekdays"
+                :key="weekday"
+                class="ex-datetime-picker__weekday"
+                role="columnheader"
+              >
+                {{ weekday }}
+              </span>
+            </div>
+
+            <div
+              v-for="(week, weekIndex) in calendarWeeks"
+              :key="weekIndex"
+              class="ex-datetime-picker__week"
+              role="row"
+            >
+              <div
+                v-for="day in week"
+                :key="day.key"
+                class="ex-datetime-picker__day-cell"
+                role="gridcell"
+              >
+                <button
+                  type="button"
+                  :class="getDayClasses(day)"
+                  :data-date="day.key"
+                  :disabled="day.disabled"
+                  :tabindex="isSameDay(day.date, focusedDate) ? 0 : -1"
+                  :aria-label="formatDate(day.date, 'YYYY-MM-DD')"
+                  :aria-selected="day.isSelected"
+                  :aria-current="day.isToday ? 'date' : undefined"
+                  @click="selectDate(day.date)"
+                  @focus="focusedDate = new Date(day.date)"
+                  @keydown="handleDayKeydown($event, day.date)"
+                  @pointerenter="previewRange(day.date)"
+                  @pointerleave="hoverDate = null"
+                >
+                  {{ day.day }}
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- 日期网格 -->
-          <div class="ex-datetime-picker__days">
-            <button
-              v-for="day in calendarDays"
-              :key="day.key"
-              :class="getDayClasses(day)"
-              :disabled="day.disabled"
-              type="button"
-              @click="selectDate(day.date)"
-              @mouseenter="isRangeMode && rangeStart && !rangeEnd ? (hoverDate = day.date) : null"
-              @mouseleave="hoverDate = null"
-            >
-              {{ day.day }}
-            </button>
-          </div>
-
-          <!-- 时间选择面板 -->
-          <div
-            v-if="showTime || type === 'datetime' || type === 'datetimerange'"
-            class="ex-datetime-picker__time-panel"
-          >
+          <div v-if="hasTime" class="ex-datetime-picker__time-panel">
             <div class="ex-datetime-picker__time-header">
-              {{ t('timePicker.selectTime') }}
+              {{ tTimePicker('selectTime') }}
             </div>
             <div class="ex-datetime-picker__time-inputs">
-              <div v-if="!isRangeMode || rangeStart" class="ex-datetime-picker__time-input-group">
-                <label v-if="isRangeMode">{{ t('timePicker.startTime') }}</label>
+              <fieldset v-if="!isRangeMode || rangeStart" class="ex-datetime-picker__time-group">
+                <legend v-if="isRangeMode">
+                  {{ tTimePicker('startTime') }}
+                </legend>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
                     v-model.number="hours"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="hour"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="23"
-                    :placeholder="t('timePicker.hour')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateTime"
-                    @blur="updateTime"
+                    step="1"
+                    :aria-label="tTimePicker('hour')"
+                    @change="updateStartTime"
+                    @blur="updateStartTime"
                   />
-                  <span>:</span>
+                  <span aria-hidden="true">:</span>
                   <input
                     v-model.number="minutes"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="minute"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="59"
-                    :placeholder="t('timePicker.minute')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateTime"
-                    @blur="updateTime"
+                    :step="minuteStep"
+                    :aria-label="tTimePicker('minute')"
+                    @change="updateStartTime"
+                    @blur="updateStartTime"
                   />
-                  <span>:</span>
+                  <span aria-hidden="true">:</span>
                   <input
                     v-model.number="seconds"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="second"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="59"
-                    :placeholder="t('timePicker.second')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateTime"
-                    @blur="updateTime"
+                    step="1"
+                    :aria-label="tTimePicker('second')"
+                    @change="updateStartTime"
+                    @blur="updateStartTime"
                   />
                 </div>
-              </div>
-              <div v-if="isRangeMode && rangeEnd" class="ex-datetime-picker__time-input-group">
-                <label>{{ t('timePicker.endTime') }}</label>
+              </fieldset>
+
+              <fieldset v-if="isRangeMode && rangeEnd" class="ex-datetime-picker__time-group">
+                <legend>{{ tTimePicker('endTime') }}</legend>
                 <div class="ex-datetime-picker__time-selectors">
                   <input
                     v-model.number="endHours"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="end-hour"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="23"
-                    :placeholder="t('timePicker.hour')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateEndTime"
+                    step="1"
+                    :aria-label="tTimePicker('hour')"
+                    @change="updateEndTime"
                     @blur="updateEndTime"
                   />
-                  <span>:</span>
+                  <span aria-hidden="true">:</span>
                   <input
                     v-model.number="endMinutes"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="end-minute"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="59"
-                    :placeholder="t('timePicker.minute')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateEndTime"
+                    :step="minuteStep"
+                    :aria-label="tTimePicker('minute')"
+                    @change="updateEndTime"
                     @blur="updateEndTime"
                   />
-                  <span>:</span>
+                  <span aria-hidden="true">:</span>
                   <input
                     v-model.number="endSeconds"
+                    class="ex-datetime-picker__time-input"
+                    data-time-part="end-second"
                     type="number"
+                    inputmode="numeric"
                     min="0"
                     max="59"
-                    :placeholder="t('timePicker.second')"
-                    class="ex-datetime-picker__time-input"
-                    @input="updateEndTime"
+                    step="1"
+                    :aria-label="tTimePicker('second')"
+                    @change="updateEndTime"
                     @blur="updateEndTime"
                   />
                 </div>
-              </div>
+              </fieldset>
             </div>
           </div>
 
-          <!-- 底部操作 -->
           <div class="ex-datetime-picker__footer">
             <button
               v-if="showToday"
-              class="ex-datetime-picker__today-btn"
               type="button"
+              class="ex-datetime-picker__today-btn"
+              :disabled="isTodayDisabled"
               @click="selectToday"
             >
-              {{ t('common.today') }}
+              {{ tCommon('today') }}
             </button>
-            <button class="ex-datetime-picker__confirm-btn" type="button" @click="handleConfirm">
-              {{ t('common.confirm') }}
+            <button
+              type="button"
+              class="ex-datetime-picker__confirm-btn"
+              :disabled="!canConfirm"
+              @click="handleConfirm"
+            >
+              {{ tCommon('confirm') }}
             </button>
           </div>
         </div>
       </div>
-    </transition>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useLocale } from '../../locale';
+import {
+  addDays,
+  cloneDate,
+  formatDate,
+  isSameDay,
+  normalizeMinuteStep,
+  normalizeMinuteStepSize,
+  normalizeTimeUnit,
+  setMonthClamped,
+  setYearClamped,
+  startOfDay,
+  toDateKey,
+} from '../../utils/date';
+import { useComponentSize } from '../config-provider/composables';
+import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type {
-  ExDateTimePickerProps,
+  DateTimePickerValue,
   ExDateTimePickerEmits,
   ExDateTimePickerExposed,
+  ExDateTimePickerProps,
 } from './types';
-import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExDateTimePicker',
@@ -226,31 +299,38 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExDateTimePickerProps>(), {
   type: 'date',
-  size: 'medium',
+  size: undefined,
   placeholder: '',
-  format: 'YYYY-MM-DD',
+  format: '',
   disabled: false,
   readonly: false,
   clearable: true,
   showTime: false,
   timeStep: 1,
   showToday: true,
-  showClear: true,
 });
 
 const emit = defineEmits<ExDateTimePickerEmits>();
+const { t: tCommon } = useLocale('common');
+const { t: tDatePicker } = useLocale('datePicker');
+const { t: tCalendar } = useLocale('calendar');
+const { t: tTimePicker } = useLocale('timePicker');
+const componentSize = useComponentSize(computed(() => props.size));
+const formItem = useFormItem();
+const instanceId = useId();
+const panelId = `ex-datetime-picker-panel-${instanceId}`;
 
-const { t } = useI18n();
 const pickerRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
+const panelRef = ref<HTMLElement>();
 const isOpen = ref(false);
 const currentDate = ref(new Date());
+const focusedDate = ref(startOfDay(new Date()));
 const selectedDate = ref<Date | null>(null);
 const rangeStart = ref<Date | null>(null);
 const rangeEnd = ref<Date | null>(null);
 const hoverDate = ref<Date | null>(null);
 
-// 时间选择
 const hours = ref(0);
 const minutes = ref(0);
 const seconds = ref(0);
@@ -258,462 +338,483 @@ const endHours = ref(0);
 const endMinutes = ref(0);
 const endSeconds = ref(0);
 
-// 是否为范围选择模式
-const isRangeMode = computed(() => {
-  return props.type === 'daterange' || props.type === 'datetimerange';
-});
-
-// 星期标题
-const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
-
-// 计算属性
-const pickerClasses = computed(() => {
-  const classes = ['ex-datetime-picker', `ex-datetime-picker--${props.size}`];
-
-  if (props.disabled) classes.push('ex-datetime-picker--disabled');
-  if (isOpen.value) classes.push('ex-datetime-picker--open');
-
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
-});
-
-const pickerStyles = computed(() => {
-  if (!props.style) return undefined;
-  if (typeof props.style === 'string') return props.style;
-  return props.style;
-});
-
-const currentPlaceholder = computed(() => {
-  if (props.placeholder) return props.placeholder;
-  if (isRangeMode.value) {
-    return `${props.startPlaceholder || t('datePicker.startDate')} ~ ${props.endPlaceholder || t('datePicker.endDate')}`;
-  }
-  return t('input.placeholder');
-});
-
-const displayValue = computed(() => {
-  const format =
-    props.type === 'datetime' || props.type === 'datetimerange'
-      ? 'YYYY-MM-DD HH:mm:ss'
-      : props.format;
-
-  if (isRangeMode.value) {
-    if (!rangeStart.value && !rangeEnd.value) return '';
-    const start = rangeStart.value ? formatDate(rangeStart.value, format) : '';
-    const end = rangeEnd.value ? formatDate(rangeEnd.value, format) : '';
-    return start && end ? `${start} ~ ${end}` : start || end;
-  }
-  if (!selectedDate.value) return '';
-  return formatDate(selectedDate.value, format);
-});
-
-const currentYearMonth = computed(() => {
-  const year = currentDate.value.getFullYear();
-  const month = currentDate.value.getMonth() + 1;
-  return `${year}年 ${month}月`;
-});
-
-// 日历天数
-const calendarDays = computed(() => {
-  const year = currentDate.value.getFullYear();
-  const month = currentDate.value.getMonth();
-
-  // 当月第一天
-  const firstDay = new Date(year, month, 1);
-  const firstDayWeek = firstDay.getDay();
-
-  // 当月最后一天
-  const lastDay = new Date(year, month + 1, 0);
-  const lastDayDate = lastDay.getDate();
-
-  // 上月最后几天
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-  const days: Array<{
-    date: Date;
-    day: number;
-    isCurrentMonth: boolean;
-    isToday: boolean;
-    isSelected: boolean;
-    disabled: boolean;
-    key: string;
-  }> = [];
-
-  // 上月日期
-  for (let i = firstDayWeek - 1; i >= 0; i--) {
-    const day = prevMonthLastDay - i;
-    const date = new Date(year, month - 1, day);
-    days.push({
-      date,
-      day,
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: false,
-      disabled: props.disabledDate ? props.disabledDate(date) : false,
-      key: `prev-${day}`,
-    });
-  }
-
-  // 当月日期
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (let day = 1; day <= lastDayDate; day++) {
-    const date = new Date(year, month, day);
-    const isToday = date.getTime() === today.getTime();
-
-    let isSelected = false;
-    if (isRangeMode.value) {
-      const dateTime = date.getTime();
-      const startTime = rangeStart.value ? new Date(rangeStart.value).setHours(0, 0, 0, 0) : null;
-      const endTime = rangeEnd.value ? new Date(rangeEnd.value).setHours(0, 0, 0, 0) : null;
-
-      if (startTime && endTime) {
-        isSelected = dateTime >= startTime && dateTime <= endTime;
-      } else if (startTime) {
-        isSelected = dateTime === startTime;
-      }
-    } else {
-      isSelected = selectedDate.value
-        ? date.getTime() === new Date(selectedDate.value).setHours(0, 0, 0, 0)
-        : false;
-    }
-
-    days.push({
-      date,
-      day,
-      isCurrentMonth: true,
-      isToday,
-      isSelected,
-      disabled: props.disabledDate ? props.disabledDate(date) : false,
-      key: `current-${day}`,
-    });
-  }
-
-  // 下月日期
-  const remainingDays = 42 - days.length; // 6行 x 7列
-  for (let day = 1; day <= remainingDays; day++) {
-    const date = new Date(year, month + 1, day);
-    days.push({
-      date,
-      day,
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: false,
-      disabled: props.disabledDate ? props.disabledDate(date) : false,
-      key: `next-${day}`,
-    });
-  }
-
-  return days;
-});
-
-// 方法
-const formatDate = (date: Date, format: string): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return format
-    .replace('YYYY', String(year))
-    .replace('MM', month)
-    .replace('DD', day)
-    .replace('HH', hours)
-    .replace('mm', minutes)
-    .replace('ss', seconds);
-};
-
 interface CalendarDay {
   date: Date;
   day: number;
+  key: string;
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
   disabled: boolean;
-  key: string;
 }
+
+const isRangeMode = computed(() => props.type === 'daterange' || props.type === 'datetimerange');
+const hasTime = computed(
+  () => props.showTime || props.type === 'datetime' || props.type === 'datetimerange'
+);
+const minuteStep = computed(() => normalizeMinuteStepSize(props.timeStep));
+const effectiveFormat = computed(
+  () => props.format || (hasTime.value ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD')
+);
+const hasValue = computed(() =>
+  isRangeMode.value ? Boolean(rangeStart.value || rangeEnd.value) : Boolean(selectedDate.value)
+);
+const canConfirm = computed(() =>
+  isRangeMode.value ? Boolean(rangeStart.value && rangeEnd.value) : Boolean(selectedDate.value)
+);
+
+const pickerClasses = computed(() => [
+  'ex-datetime-picker',
+  `ex-datetime-picker--${componentSize.value}`,
+  {
+    'ex-datetime-picker--range': isRangeMode.value,
+    'ex-datetime-picker--disabled': props.disabled,
+    'ex-datetime-picker--readonly': props.readonly,
+    'ex-datetime-picker--open': isOpen.value,
+  },
+  ...normalizeCustomClass(props.class),
+]);
+const pickerStyles = computed<string | CSSProperties | undefined>(() => props.style || undefined);
+
+const currentPlaceholder = computed(() => {
+  if (props.placeholder) return props.placeholder;
+  if (!isRangeMode.value) return tDatePicker('placeholder');
+  const start = props.startPlaceholder || tDatePicker('startDate');
+  const end = props.endPlaceholder || tDatePicker('endDate');
+  return `${start} ${tDatePicker('rangeSeparator')} ${end}`;
+});
+const inputAriaLabel = computed(() => props.ariaLabel || currentPlaceholder.value);
+
+const displayValue = computed(() => {
+  if (!isRangeMode.value) {
+    return selectedDate.value ? formatDate(selectedDate.value, effectiveFormat.value) : '';
+  }
+  const start = rangeStart.value ? formatDate(rangeStart.value, effectiveFormat.value) : '';
+  const end = rangeEnd.value ? formatDate(rangeEnd.value, effectiveFormat.value) : '';
+  if (start && end) return `${start} ${tDatePicker('rangeSeparator')} ${end}`;
+  return start || end;
+});
+
+const weekdays = computed(() => tCalendar('weekdaysShort').split(','));
+const currentYearMonth = computed(() => {
+  const year = tCalendar('yearFormat', { year: currentDate.value.getFullYear() });
+  const month = tCalendar('monthFormat', { month: currentDate.value.getMonth() + 1 });
+  return `${year} ${month}`;
+});
+
+const isDateDisabled = (date: Date): boolean =>
+  props.disabledDate ? Boolean(props.disabledDate(new Date(date.getTime()))) : false;
+
+const getActualRangeBounds = (): [number, number] | null => {
+  if (!rangeStart.value) return null;
+  const start = startOfDay(rangeStart.value).getTime();
+  if (!rangeEnd.value) return [start, start];
+  const end = startOfDay(rangeEnd.value).getTime();
+  return start <= end ? [start, end] : [end, start];
+};
+
+const getPreviewRangeBounds = (): [number, number] | null => {
+  if (!rangeStart.value) return null;
+  const candidate = rangeEnd.value || hoverDate.value || rangeStart.value;
+  const start = startOfDay(rangeStart.value).getTime();
+  const end = startOfDay(candidate).getTime();
+  return start <= end ? [start, end] : [end, start];
+};
+
+const calendarDays = computed<CalendarDay[]>(() => {
+  const year = currentDate.value.getFullYear();
+  const month = currentDate.value.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const gridStart = new Date(year, month, 1 - firstOfMonth.getDay());
+  const today = startOfDay(new Date());
+  const actualRange = getActualRangeBounds();
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = addDays(gridStart, index);
+    const timestamp = startOfDay(date).getTime();
+    const isSelected = isRangeMode.value
+      ? actualRange !== null && timestamp >= actualRange[0] && timestamp <= actualRange[1]
+      : isSameDay(date, selectedDate.value);
+    return {
+      date,
+      day: date.getDate(),
+      key: toDateKey(date),
+      isCurrentMonth: date.getFullYear() === year && date.getMonth() === month,
+      isToday: isSameDay(date, today),
+      isSelected,
+      disabled: isDateDisabled(date),
+    };
+  });
+});
+
+const calendarWeeks = computed(() =>
+  Array.from({ length: 6 }, (_, index) => calendarDays.value.slice(index * 7, index * 7 + 7))
+);
 
 const getDayClasses = (day: CalendarDay) => {
   const classes = ['ex-datetime-picker__day'];
-
   if (!day.isCurrentMonth) classes.push('ex-datetime-picker__day--other-month');
   if (day.isToday) classes.push('ex-datetime-picker__day--today');
   if (day.isSelected) classes.push('ex-datetime-picker__day--selected');
   if (day.disabled) classes.push('ex-datetime-picker__day--disabled');
 
-  // 范围选择模式的额外样式
   if (isRangeMode.value && rangeStart.value) {
-    const dateTime = day.date.getTime();
-    const startTime = new Date(rangeStart.value).setHours(0, 0, 0, 0);
-    const endTime = rangeEnd.value ? new Date(rangeEnd.value).setHours(0, 0, 0, 0) : null;
-    const hoverTime = hoverDate.value ? new Date(hoverDate.value).setHours(0, 0, 0, 0) : null;
-
-    // 范围起始
-    if (dateTime === startTime) {
-      classes.push('ex-datetime-picker__day--range-start');
-    }
-
-    // 范围结束
-    if (endTime && dateTime === endTime) {
-      classes.push('ex-datetime-picker__day--range-end');
-    }
-
-    // 范围中间（包括悬停预览）
-    const effectiveEndTime = endTime || hoverTime;
-    if (effectiveEndTime && dateTime > startTime && dateTime < effectiveEndTime) {
-      classes.push('ex-datetime-picker__day--in-range');
+    const bounds = getPreviewRangeBounds();
+    const timestamp = startOfDay(day.date).getTime();
+    if (bounds) {
+      if (timestamp === bounds[0]) classes.push('ex-datetime-picker__day--range-start');
+      if (timestamp === bounds[1]) classes.push('ex-datetime-picker__day--range-end');
+      if (timestamp > bounds[0] && timestamp < bounds[1]) {
+        classes.push('ex-datetime-picker__day--in-range');
+      }
     }
   }
-
   return classes;
 };
 
-const changeYear = (offset: number) => {
-  const newDate = new Date(currentDate.value);
-  newDate.setFullYear(newDate.getFullYear() + offset);
-  currentDate.value = newDate;
+const isTodayDisabled = computed(() => isDateDisabled(startOfDay(new Date())));
+
+const syncStartTime = (date: Date | null) => {
+  hours.value = date?.getHours() ?? 0;
+  minutes.value = date?.getMinutes() ?? 0;
+  seconds.value = date?.getSeconds() ?? 0;
+};
+
+const syncEndTime = (date: Date | null) => {
+  endHours.value = date?.getHours() ?? 0;
+  endMinutes.value = date?.getMinutes() ?? 0;
+  endSeconds.value = date?.getSeconds() ?? 0;
+};
+
+/** 从受控值重建独立草稿，取消面板时不会把未确认状态泄漏到下一次打开。 */
+const syncFromModel = () => {
+  selectedDate.value = null;
+  rangeStart.value = null;
+  rangeEnd.value = null;
+  hoverDate.value = null;
+
+  if (isRangeMode.value) {
+    if (Array.isArray(props.modelValue) && props.modelValue.length === 2) {
+      const first = cloneDate(props.modelValue[0]);
+      const second = cloneDate(props.modelValue[1]);
+      if (first && second) {
+        [rangeStart.value, rangeEnd.value] =
+          first.getTime() <= second.getTime() ? [first, second] : [second, first];
+      }
+    }
+    syncStartTime(rangeStart.value);
+    syncEndTime(rangeEnd.value);
+    const anchor = rangeStart.value || startOfDay(new Date());
+    currentDate.value = new Date(anchor);
+    focusedDate.value = startOfDay(anchor);
+    return;
+  }
+
+  selectedDate.value = cloneDate(props.modelValue);
+  syncStartTime(selectedDate.value);
+  syncEndTime(null);
+  const anchor = selectedDate.value || startOfDay(new Date());
+  currentDate.value = new Date(anchor);
+  focusedDate.value = startOfDay(anchor);
+};
+
+const clonePickerValue = (value: DateTimePickerValue): DateTimePickerValue => {
+  if (Array.isArray(value)) return [new Date(value[0]), new Date(value[1])];
+  return value instanceof Date ? new Date(value) : null;
+};
+
+const emitCommittedValue = (value: DateTimePickerValue) => {
+  emit('update:modelValue', clonePickerValue(value));
+  emit('change', clonePickerValue(value));
+  formItem?.onFieldChange();
+};
+
+const commitSingle = (date: Date) => {
+  const value = new Date(date.getTime());
+  selectedDate.value = new Date(value);
+  emitCommittedValue(value);
+};
+
+const commitRange = (start: Date, end: Date) => {
+  const value: [Date, Date] = [new Date(start.getTime()), new Date(end.getTime())];
+  rangeStart.value = new Date(value[0]);
+  rangeEnd.value = new Date(value[1]);
+  emitCommittedValue(value);
+};
+
+interface ClosePanelOptions {
+  restoreFocus?: boolean;
+  discardDraft?: boolean;
+}
+
+const closePanel = ({ restoreFocus = false, discardDraft = false }: ClosePanelOptions = {}) => {
+  if (!isOpen.value) return;
+  isOpen.value = false;
+  if (discardDraft) syncFromModel();
+  emit('visible-change', false);
+  if (restoreFocus) nextTick(() => inputRef.value?.focus());
+};
+
+const focusCurrentDay = () => {
+  nextTick(() => {
+    const key = toDateKey(focusedDate.value);
+    pickerRef.value?.querySelector<HTMLButtonElement>(`[data-date="${key}"]`)?.focus();
+  });
+};
+
+const openPanel = (focusCalendar = false) => {
+  if (props.disabled || props.readonly || isOpen.value) return;
+  syncFromModel();
+  isOpen.value = true;
+  emit('visible-change', true);
+  if (focusCalendar) focusCurrentDay();
+};
+
+const togglePanel = () => {
+  if (props.disabled || props.readonly) return;
+  if (isOpen.value) closePanel({ discardDraft: true });
+  else openPanel();
+};
+
+const handleInputKeydown = (event: KeyboardEvent) => {
+  if (props.disabled || props.readonly) return;
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (!isOpen.value) openPanel(true);
+    else focusCurrentDay();
+  } else if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    togglePanel();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closePanel({ discardDraft: true });
+  }
+};
+
+const handleEscape = () => closePanel({ restoreFocus: true, discardDraft: true });
+
+const handlePanelKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  event.stopPropagation();
+  handleEscape();
 };
 
 const changeMonth = (offset: number) => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(newDate.getMonth() + offset);
-  currentDate.value = newDate;
+  const next = setMonthClamped(currentDate.value, currentDate.value.getMonth() + offset);
+  currentDate.value = next;
+  focusedDate.value = startOfDay(next);
 };
 
-// 校验并限制时间输入
-const validateHours = (value: number) => {
-  if (isNaN(value) || value < 0) return 0;
-  if (value > 23) return 23;
-  return Math.floor(value);
+const changeYear = (offset: number) => {
+  const next = setYearClamped(currentDate.value, currentDate.value.getFullYear() + offset);
+  currentDate.value = next;
+  focusedDate.value = startOfDay(next);
 };
 
-const validateMinutes = (value: number) => {
-  if (isNaN(value) || value < 0) return 0;
-  if (value > 59) return 59;
-  return Math.floor(value);
-};
-
-const validateSeconds = (value: number) => {
-  if (isNaN(value) || value < 0) return 0;
-  if (value > 59) return 59;
-  return Math.floor(value);
-};
-
-const updateTime = () => {
-  // 校验并限制输入值
-  hours.value = validateHours(hours.value);
-  minutes.value = validateMinutes(minutes.value);
-  seconds.value = validateSeconds(seconds.value);
-
-  if (selectedDate.value) {
-    const newDate = new Date(selectedDate.value);
-    newDate.setHours(hours.value);
-    newDate.setMinutes(minutes.value);
-    newDate.setSeconds(seconds.value);
-    selectedDate.value = newDate;
-  }
-  if (isRangeMode.value && rangeStart.value) {
-    const newDate = new Date(rangeStart.value);
-    newDate.setHours(hours.value);
-    newDate.setMinutes(minutes.value);
-    newDate.setSeconds(seconds.value);
-    rangeStart.value = newDate;
-  }
-};
-
-const updateEndTime = () => {
-  // 校验并限制输入值
-  endHours.value = validateHours(endHours.value);
-  endMinutes.value = validateMinutes(endMinutes.value);
-  endSeconds.value = validateSeconds(endSeconds.value);
-
-  if (isRangeMode.value && rangeEnd.value) {
-    const newDate = new Date(rangeEnd.value);
-    newDate.setHours(endHours.value);
-    newDate.setMinutes(endMinutes.value);
-    newDate.setSeconds(endSeconds.value);
-    rangeEnd.value = newDate;
-  }
+const withTime = (date: Date, h: number, m: number, s: number): Date => {
+  const result = startOfDay(date);
+  if (hasTime.value) result.setHours(h, m, s, 0);
+  return result;
 };
 
 const selectDate = (date: Date) => {
-  if (props.disabledDate && props.disabledDate(date)) return;
+  if (isDateDisabled(date)) return;
+  focusedDate.value = startOfDay(date);
+  currentDate.value = new Date(date);
 
-  if (isRangeMode.value) {
-    // 范围选择模式
-    if (!rangeStart.value || (rangeStart.value && rangeEnd.value)) {
-      // 开始新的范围选择
-      const newDate = new Date(date);
-      newDate.setHours(hours.value || 0);
-      newDate.setMinutes(minutes.value || 0);
-      newDate.setSeconds(seconds.value || 0);
-      rangeStart.value = newDate;
-      rangeEnd.value = null;
-      hoverDate.value = null;
-
-      // 不自动关闭，等待选择结束日期
-    } else {
-      // 选择结束日期
-      let startDate = rangeStart.value;
-      let endDate = new Date(date);
-      endDate.setHours(endHours.value || 23);
-      endDate.setMinutes(endMinutes.value || 59);
-      endDate.setSeconds(endSeconds.value || 59);
-
-      if (endDate < startDate) {
-        // 如果选择的日期早于开始日期，交换它们
-        [startDate, endDate] = [endDate, startDate];
-        rangeStart.value = startDate;
-        rangeEnd.value = endDate;
-      } else {
-        rangeEnd.value = endDate;
-      }
-
-      // 只有在不显示时间选择器或用户点击确认时才发送值
-      if (!props.showTime && props.type !== 'datetimerange') {
-        emit('update:modelValue', [rangeStart.value, rangeEnd.value]);
-        emit('change', [rangeStart.value, rangeEnd.value]);
-        isOpen.value = false;
-      }
+  if (!isRangeMode.value) {
+    const next = withTime(date, hours.value, minutes.value, seconds.value);
+    selectedDate.value = next;
+    if (!hasTime.value) {
+      commitSingle(next);
+      closePanel({ restoreFocus: true });
     }
-  } else {
-    // 单日期选择模式
-    const newDate = new Date(date);
-    newDate.setHours(hours.value || 0);
-    newDate.setMinutes(minutes.value || 0);
-    newDate.setSeconds(seconds.value || 0);
-    selectedDate.value = newDate;
-
-    if (!props.showTime && props.type !== 'datetime') {
-      emit('update:modelValue', newDate);
-      emit('change', newDate);
-      isOpen.value = false;
-    }
+    return;
   }
-};
 
-const selectToday = () => {
-  const today = new Date();
-  selectDate(today);
-  currentDate.value = today;
-};
-
-const handleClick = () => {
-  if (props.disabled || props.readonly) return;
-  isOpen.value = !isOpen.value;
-};
-
-const handleFocus = (event: FocusEvent) => {
-  emit('focus', event);
-};
-
-const handleBlur = (event: FocusEvent) => {
-  emit('blur', event);
-};
-
-const handleClear = () => {
-  if (isRangeMode.value) {
-    rangeStart.value = null;
+  if (!rangeStart.value || rangeEnd.value) {
+    rangeStart.value = withTime(date, hours.value, minutes.value, seconds.value);
     rangeEnd.value = null;
     hoverDate.value = null;
-  } else {
-    selectedDate.value = null;
+    return;
   }
-  emit('update:modelValue', null);
-  emit('change', null);
-  emit('clear');
+
+  const candidate = withTime(date, endHours.value, endMinutes.value, endSeconds.value);
+  const first = rangeStart.value;
+  [rangeStart.value, rangeEnd.value] =
+    first.getTime() <= candidate.getTime() ? [first, candidate] : [candidate, first];
+  if (hasTime.value) {
+    syncStartTime(rangeStart.value);
+    syncEndTime(rangeEnd.value);
+  }
+  hoverDate.value = null;
+
+  if (!hasTime.value) {
+    commitRange(rangeStart.value, rangeEnd.value);
+    closePanel({ restoreFocus: true });
+  }
+};
+
+const previewRange = (date: Date) => {
+  if (isRangeMode.value && rangeStart.value && !rangeEnd.value && !isDateDisabled(date)) {
+    hoverDate.value = new Date(date);
+  }
+};
+
+const updateStartTime = () => {
+  hours.value = normalizeTimeUnit(hours.value, 23);
+  minutes.value = normalizeMinuteStep(minutes.value, minuteStep.value);
+  seconds.value = normalizeTimeUnit(seconds.value, 59);
+  const target = isRangeMode.value ? rangeStart.value : selectedDate.value;
+  if (!target) return;
+  const updated = new Date(target);
+  updated.setHours(hours.value, minutes.value, seconds.value, 0);
+  if (isRangeMode.value) rangeStart.value = updated;
+  else selectedDate.value = updated;
+};
+
+const updateEndTime = () => {
+  endHours.value = normalizeTimeUnit(endHours.value, 23);
+  endMinutes.value = normalizeMinuteStep(endMinutes.value, minuteStep.value);
+  endSeconds.value = normalizeTimeUnit(endSeconds.value, 59);
+  if (!rangeEnd.value) return;
+  const updated = new Date(rangeEnd.value);
+  updated.setHours(endHours.value, endMinutes.value, endSeconds.value, 0);
+  rangeEnd.value = updated;
+  if (rangeStart.value && rangeEnd.value < rangeStart.value) {
+    [rangeStart.value, rangeEnd.value] = [rangeEnd.value, rangeStart.value];
+    syncStartTime(rangeStart.value);
+    syncEndTime(rangeEnd.value);
+  }
 };
 
 const handleConfirm = () => {
+  if (!canConfirm.value) return;
+  updateStartTime();
   if (isRangeMode.value) {
-    if (rangeStart.value && rangeEnd.value) {
-      emit('update:modelValue', [rangeStart.value, rangeEnd.value]);
-      emit('change', [rangeStart.value, rangeEnd.value]);
-    }
-  } else {
-    if (selectedDate.value) {
-      emit('update:modelValue', selectedDate.value);
-      emit('change', selectedDate.value);
-    }
+    updateEndTime();
+    if (rangeStart.value && rangeEnd.value) commitRange(rangeStart.value, rangeEnd.value);
+  } else if (selectedDate.value) {
+    commitSingle(selectedDate.value);
   }
-  isOpen.value = false;
+  closePanel({ restoreFocus: true });
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-  if (pickerRef.value && !pickerRef.value.contains(event.target as Node)) {
-    isOpen.value = false;
+const selectToday = () => {
+  const today = startOfDay(new Date());
+  if (isDateDisabled(today)) return;
+  currentDate.value = new Date(today);
+  focusedDate.value = new Date(today);
+  selectDate(today);
+};
+
+const focusDate = (date: Date) => {
+  const next = startOfDay(date);
+  focusedDate.value = next;
+  if (
+    next.getFullYear() !== currentDate.value.getFullYear() ||
+    next.getMonth() !== currentDate.value.getMonth()
+  ) {
+    currentDate.value = new Date(next);
+  }
+  focusCurrentDay();
+};
+
+const findEnabledDate = (initial: Date, direction: number): Date => {
+  let candidate = new Date(initial);
+  for (let attempts = 0; attempts < 366 && isDateDisabled(candidate); attempts += 1) {
+    candidate = addDays(candidate, direction);
+  }
+  return candidate;
+};
+
+const handleDayKeydown = (event: KeyboardEvent, date: Date) => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    handleEscape();
+    return;
+  }
+
+  let target: Date | null = null;
+  let direction = 1;
+  if (event.key === 'ArrowLeft') {
+    target = addDays(date, -1);
+    direction = -1;
+  } else if (event.key === 'ArrowRight') target = addDays(date, 1);
+  else if (event.key === 'ArrowUp') {
+    target = addDays(date, -7);
+    direction = -1;
+  } else if (event.key === 'ArrowDown') target = addDays(date, 7);
+  else if (event.key === 'Home') {
+    target = addDays(date, -date.getDay());
+    direction = -1;
+  } else if (event.key === 'End') target = addDays(date, 6 - date.getDay());
+  else if (event.key === 'PageUp') {
+    target = setMonthClamped(date, date.getMonth() - 1);
+    direction = -1;
+  } else if (event.key === 'PageDown') target = setMonthClamped(date, date.getMonth() + 1);
+  else return;
+
+  event.preventDefault();
+  focusDate(findEnabledDate(target, direction));
+};
+
+const handleFocus = (event: FocusEvent) => emit('focus', event);
+const handleBlur = (event: FocusEvent) => {
+  emit('blur', event);
+  formItem?.onFieldBlur();
+};
+
+const handleClear = () => {
+  if (props.disabled || props.readonly) return;
+  selectedDate.value = null;
+  rangeStart.value = null;
+  rangeEnd.value = null;
+  hoverDate.value = null;
+  emitCommittedValue(null);
+  emit('clear');
+  closePanel();
+};
+
+const handleClickOutside = (event: PointerEvent) => {
+  if (!(event.target instanceof Node)) return;
+  if (pickerRef.value && !pickerRef.value.contains(event.target)) {
+    closePanel({ discardDraft: true });
   }
 };
 
-// 监听 modelValue 变化
+watch([() => props.modelValue, () => props.type], () => syncFromModel(), { immediate: true });
+
+watch([() => props.disabled, () => props.readonly], ([disabled, readonly]) => {
+  if (disabled || readonly) closePanel({ discardDraft: true });
+});
+
 watch(
-  () => props.modelValue,
-  newValue => {
-    if (isRangeMode.value) {
-      if (Array.isArray(newValue) && newValue.length === 2) {
-        rangeStart.value = newValue[0];
-        rangeEnd.value = newValue[1];
-        if (newValue[0]) {
-          currentDate.value = new Date(newValue[0]);
-          hours.value = newValue[0].getHours();
-          minutes.value = newValue[0].getMinutes();
-          seconds.value = newValue[0].getSeconds();
-        }
-        if (newValue[1]) {
-          endHours.value = newValue[1].getHours();
-          endMinutes.value = newValue[1].getMinutes();
-          endSeconds.value = newValue[1].getSeconds();
-        }
-      } else {
-        rangeStart.value = null;
-        rangeEnd.value = null;
-      }
-    } else {
-      if (newValue instanceof Date) {
-        selectedDate.value = newValue;
-        currentDate.value = new Date(newValue);
-        hours.value = newValue.getHours();
-        minutes.value = newValue.getMinutes();
-        seconds.value = newValue.getSeconds();
-      } else {
-        selectedDate.value = null;
-      }
+  () => props.timeStep,
+  () => {
+    if (hasTime.value) {
+      updateStartTime();
+      updateEndTime();
     }
-  },
-  { immediate: true }
+  }
 );
 
-// 生命周期
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
+watch(isOpen, open => {
+  if (open) document.addEventListener('pointerdown', handleClickOutside);
+  else document.removeEventListener('pointerdown', handleClickOutside);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('pointerdown', handleClickOutside);
 });
 
-// 暴露的方法
-const focus = () => {
-  inputRef.value?.focus();
-};
+const focus = () => inputRef.value?.focus();
+const blur = () => inputRef.value?.blur();
+const getElement = () => pickerRef.value ?? null;
 
-const blur = () => {
-  inputRef.value?.blur();
-};
-
-const getElement = () => {
-  return pickerRef.value || null;
-};
-
-defineExpose<ExDateTimePickerExposed>({
-  focus,
-  blur,
-  getElement,
-});
+defineExpose<ExDateTimePickerExposed>({ focus, blur, getElement });
 </script>
 
 <style scoped lang="scss" src="./ExDateTimePicker.scss"></style>

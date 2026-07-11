@@ -266,7 +266,7 @@ import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
-import { parseCalendarDate, setCalendarMonth, setCalendarYear } from './date-utils';
+import { parseLocalDate, setMonthClamped, setYearClamped } from '../../utils/date';
 import type {
   ExCalendarProps,
   ExCalendarEmits,
@@ -410,7 +410,7 @@ const currentHoliday = computed(() => {
 });
 
 const getDayTimestamp = (value: Date | string): number | null => {
-  const date = parseCalendarDate(value);
+  const date = parseLocalDate(value);
   if (!date) return null;
   date.setHours(0, 0, 0, 0);
   return date.getTime();
@@ -699,11 +699,11 @@ const prevPeriod = () => {
       newDate.setDate(newDate.getDate() - 7);
       break;
     case 'month':
-      currentDate.value = setCalendarMonth(newDate, newDate.getMonth() - 1);
+      currentDate.value = setMonthClamped(newDate, newDate.getMonth() - 1);
       emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
       return;
     case 'year':
-      currentDate.value = setCalendarYear(newDate, newDate.getFullYear() - 1);
+      currentDate.value = setYearClamped(newDate, newDate.getFullYear() - 1);
       emit('year-change', currentDate.value.getFullYear());
       return;
   }
@@ -722,11 +722,11 @@ const nextPeriod = () => {
       newDate.setDate(newDate.getDate() + 7);
       break;
     case 'month':
-      currentDate.value = setCalendarMonth(newDate, newDate.getMonth() + 1);
+      currentDate.value = setMonthClamped(newDate, newDate.getMonth() + 1);
       emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
       return;
     case 'year':
-      currentDate.value = setCalendarYear(newDate, newDate.getFullYear() + 1);
+      currentDate.value = setYearClamped(newDate, newDate.getFullYear() + 1);
       emit('year-change', currentDate.value.getFullYear());
       return;
   }
@@ -735,27 +735,27 @@ const nextPeriod = () => {
 };
 
 const selectMonth = (month: number) => {
-  currentDate.value = setCalendarMonth(currentDate.value, month - 1);
+  currentDate.value = setMonthClamped(currentDate.value, month - 1);
   changeMode('month');
 };
 
 const prevMonth = () => {
-  currentDate.value = setCalendarMonth(currentDate.value, currentDate.value.getMonth() - 1);
+  currentDate.value = setMonthClamped(currentDate.value, currentDate.value.getMonth() - 1);
   emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const nextMonth = () => {
-  currentDate.value = setCalendarMonth(currentDate.value, currentDate.value.getMonth() + 1);
+  currentDate.value = setMonthClamped(currentDate.value, currentDate.value.getMonth() + 1);
   emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const prevYear = () => {
-  currentDate.value = setCalendarYear(currentDate.value, currentDate.value.getFullYear() - 1);
+  currentDate.value = setYearClamped(currentDate.value, currentDate.value.getFullYear() - 1);
   emit('year-change', currentDate.value.getFullYear());
 };
 
 const nextYear = () => {
-  currentDate.value = setCalendarYear(currentDate.value, currentDate.value.getFullYear() + 1);
+  currentDate.value = setYearClamped(currentDate.value, currentDate.value.getFullYear() + 1);
   emit('year-change', currentDate.value.getFullYear());
 };
 

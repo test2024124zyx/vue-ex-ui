@@ -315,8 +315,11 @@ export default {
 
   // Date Picker
   datePicker: {
+    placeholder: 'Select date',
+    panel: 'Date picker panel',
     startDate: 'Start date',
     endDate: 'End date',
+    rangeSeparator: 'to',
     weekdaysShort: 'Su,Mo,Tu,We,Th,Fr,Sa',
     monthsShort: 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
   },
