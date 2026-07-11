@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -33,7 +34,10 @@ const isRenderableComponent = value => {
 };
 
 const verifyRuntimeExports = (module, format) => {
-  const componentEntries = Object.entries(module).filter(([name]) => /^Ex[A-Z]/.test(name));
+  // 错误类等运行时 API 也可能使用 Ex 前缀，组件必须按可渲染能力识别。
+  const componentEntries = Object.entries(module).filter(([, value]) =>
+    isRenderableComponent(value)
+  );
 
   if (componentEntries.length === 0) {
     throw new Error(`${format} 产物没有导出任何公共组件`);
@@ -47,8 +51,9 @@ const verifyRuntimeExports = (module, format) => {
 };
 
 const publicComponentNames = module =>
-  Object.keys(module)
-    .filter(name => /^Ex[A-Z]/.test(name))
+  Object.entries(module)
+    .filter(([, value]) => isRenderableComponent(value))
+    .map(([name]) => name)
     .sort();
 
 try {
@@ -109,10 +114,14 @@ try {
     'utf8'
   );
 
-  const result = spawnSync(process.execPath, [join(projectRoot, 'node_modules/typescript/bin/tsc'), '-p', tsconfigPath], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
+  const result = spawnSync(
+    process.execPath,
+    [join(projectRoot, 'node_modules/typescript/bin/tsc'), '-p', tsconfigPath],
+    {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    }
+  );
 
   if (result.status !== 0) {
     throw new Error(`发布声明消费验证失败：\n${result.stdout}${result.stderr}`);

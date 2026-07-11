@@ -1,7 +1,17 @@
 <template>
-  <nav ref="anchorRef" class="ex-anchor" aria-label="页面锚点">
-    <div class="ex-anchor__ink" aria-hidden="true">
-      <span class="ex-anchor__ink-ball" :style="{ top: `${inkTop}px` }" />
+  <nav
+    ref="anchorRef"
+    class="ex-anchor"
+    aria-label="页面锚点"
+  >
+    <div
+      class="ex-anchor__ink"
+      aria-hidden="true"
+    >
+      <span
+        class="ex-anchor__ink-ball"
+        :style="{ top: `${inkTop}px` }"
+      />
     </div>
     <div class="ex-anchor__list">
       <slot />
@@ -53,16 +63,22 @@ const resolveTarget = (href: string): HTMLElement | null => {
   }
 };
 
+/** 显式类型守卫兼容声明生成器对 Window/HTMLElement 联合类型的严格收窄。 */
+const isWindowContainer = (container: HTMLElement | Window): container is Window =>
+  container === window;
+
 const getOffsetTop = (element: HTMLElement, container: HTMLElement | Window): number => {
   const rect = element.getBoundingClientRect();
-  if (container === window) return rect.top + window.scrollY;
+  if (isWindowContainer(container)) return rect.top + window.scrollY;
 
   const containerRect = container.getBoundingClientRect();
   return rect.top - containerRect.top + container.scrollTop;
 };
 
 const getScrollTop = (container: HTMLElement | Window): number =>
-  container === window ? window.scrollY || document.documentElement.scrollTop : container.scrollTop;
+  isWindowContainer(container)
+    ? window.scrollY || document.documentElement.scrollTop
+    : container.scrollTop;
 
 const clearAnimationTimer = (): void => {
   if (animationTimer !== null) clearTimeout(animationTimer);

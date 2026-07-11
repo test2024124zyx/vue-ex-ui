@@ -377,6 +377,10 @@ export type * from './components/watermark/types';
 export type * from './components/tag/types';
 export type * from './components/file-upload/types';
 export type * from './components/file-download/types';
+export type {
+  ExFileDownloadErrorCode,
+  ExFileDownloadErrorOptions,
+} from './components/file-download/errors';
 export type * from './components/file-preview/types';
 export type * from './components/image-crop/types';
 export type * from './components/image-compress/types';
@@ -395,6 +399,7 @@ export type * from './components/color-picker/types';
 export type * from './components/time-picker/types';
 export type * from './components/tree-select/types';
 export type * from './components/descriptions/types';
+export { ExFileDownloadError } from './components/file-download/errors';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
 export {

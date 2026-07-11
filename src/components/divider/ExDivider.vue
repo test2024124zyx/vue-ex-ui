@@ -45,7 +45,7 @@ const normalizedSize = computed<DividerPresetSize | number>(() => {
 });
 const isVertical = computed(() => normalizedType.value === 'vertical');
 const hasTitle = computed(() =>
-  isVertical.value ? false : hasRenderableContent(slots.default?.())
+  isVertical.value ? false : hasRenderableContent(slots.default?.({}))
 );
 
 const classes = computed(() => [

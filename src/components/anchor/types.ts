@@ -41,7 +41,7 @@ export interface ExAnchorExposed {
   /** 滚动到指定锚点 */
   scrollToAnchor: (href: string) => void;
   /** 获取组件DOM元素 */
-  getElement: () => HTMLDivElement | null;
+  getElement: () => HTMLElement | null;
 }
 
 /**

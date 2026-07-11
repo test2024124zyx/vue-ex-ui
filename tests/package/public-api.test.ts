@@ -21,7 +21,10 @@ const isRenderableComponent = (value: unknown): value is InstallableComponent =>
 };
 
 describe('v2 公共组件契约', () => {
-  const componentEntries = Object.entries(publicApi).filter(([name]) => /^Ex[A-Z]/.test(name));
+  // 运行时 API 可能包含 Ex 前缀的错误类，组件应按可渲染能力识别。
+  const componentEntries = Object.entries(publicApi).filter(([, value]) =>
+    isRenderableComponent(value)
+  );
 
   it.each(componentEntries)('%s 同时支持按需渲染和 app.use 安装', (name, component) => {
     expect(isRenderableComponent(component)).toBe(true);
@@ -46,5 +49,10 @@ describe('v2 公共组件契约', () => {
   it.each(Object.entries(componentModules))('%s 默认导出为可安装组件', (_path, module) => {
     expect(isRenderableComponent(module.default)).toBe(true);
     expect(module.default).toHaveProperty('install');
+  });
+
+  it('辅助运行时 API 不会被误判为组件', () => {
+    expect(publicApi.ExFileDownloadError).toBeInstanceOf(Function);
+    expect(isRenderableComponent(publicApi.ExFileDownloadError)).toBe(false);
   });
 });

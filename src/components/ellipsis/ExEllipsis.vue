@@ -159,7 +159,8 @@ const getElement = () => rootRef.value ?? null;
 watch(
   isExpanded,
   expanded => {
-    emit(expanded ? 'expand' : 'collapse');
+    if (expanded) emit('expand');
+    else emit('collapse');
     if (!expanded) nextTick(checkOverflow);
   },
   { flush: 'sync' }

@@ -1,61 +1,55 @@
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
-
 .ex-file-download {
-  display: inline-block;
+  display: inline-flex;
+  max-inline-size: 100%;
+  flex-direction: column;
+  align-items: stretch;
 
   &__progress {
-    margin-top: var(--ex-spacing-3);
+    min-inline-size: min(240px, 100%);
+    margin-block-start: var(--ex-spacing-3);
   }
 
   &__progress-bar {
-    height: 8px;
-    background: var(--ex-color-bg-tertiary);
-    border-radius: var(--ex-radius-full);
-    overflow: hidden;
     position: relative;
+    overflow: hidden;
+    block-size: 8px;
+    border-radius: var(--ex-radius-full);
+    background: var(--ex-color-bg-tertiary);
   }
 
   &__progress-bar-inner {
-    height: 100%;
-    background: linear-gradient(90deg, var(--ex-color-primary), var(--ex-color-secondary));
-    border-radius: var(--ex-radius-full);
-    transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
-    box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
-    position: relative;
+    block-size: 100%;
+    inline-size: var(--ex-file-download-progress);
+    border-radius: inherit;
+    background: var(--ex-color-primary);
+    transition-property: inline-size;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-out);
 
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        var(--ex-color-white-alpha-30),
-        transparent
+    // 未知总量只显示不确定状态，不伪造 aria-valuenow。
+    &.is-indeterminate {
+      background: repeating-linear-gradient(
+        135deg,
+        var(--ex-color-primary),
+        var(--ex-color-primary) 8px,
+        var(--ex-color-primary-hover) 8px,
+        var(--ex-color-primary-hover) 16px
       );
-      animation: shimmer 2s infinite;
     }
   }
 
   &__progress-text {
-    margin-top: var(--ex-spacing-2);
-    font-size: var(--ex-text-sm);
+    margin-block-start: var(--ex-spacing-2);
     color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+    line-height: var(--ex-leading-normal);
     text-align: center;
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+    overflow-wrap: anywhere;
   }
 }
 
-
+@media (prefers-reduced-motion: reduce) {
+  .ex-file-download__progress-bar-inner {
+    transition-duration: 0s;
+  }
+}

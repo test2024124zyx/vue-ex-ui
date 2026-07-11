@@ -166,7 +166,10 @@ const applyVisibility = (nextVisible: boolean, emitLifecycle = true) => {
   if (isVisible.value === nextVisible) return false;
   isVisible.value = nextVisible;
   if (!nextVisible) activeItemId.value = null;
-  if (emitLifecycle) emit(nextVisible ? 'show' : 'hide');
+  if (emitLifecycle) {
+    if (nextVisible) emit('show');
+    else emit('hide');
+  }
   return true;
 };
 

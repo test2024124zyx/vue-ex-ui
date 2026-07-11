@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { h, nextTick, ref } from 'vue';
 import ExAnchor from '../../../src/components/anchor/ExAnchor.vue';
 import ExAnchorLink from '../../../src/components/anchor/ExAnchorLink.vue';
+import type { ExAnchorExposed } from '../../../src/components/anchor/types';
 
 const rect = (values: Partial<DOMRect>): DOMRect =>
   ({
@@ -90,6 +91,30 @@ describe('ExAnchor', () => {
 
     expect(firstRemove).toHaveBeenCalledWith('scroll', expect.any(Function));
     expect(secondAdd).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true });
+  });
+
+  it('自定义滚动容器使用容器矩形与 scrollTop 计算目标位置', async () => {
+    const container = document.createElement('div');
+    const target = document.createElement('section');
+    target.id = 'inside-container';
+    document.body.append(container, target);
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 20 });
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue(rect({ top: 50 }));
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 150 }));
+    const scrollTo = vi.fn();
+    container.scrollTo = scrollTo;
+    const wrapper = mount(ExAnchor, {
+      props: { container: () => container },
+      slots: {
+        default: () => h(ExAnchorLink, { href: '#inside-container', title: 'Inside container' }),
+      },
+    });
+
+    await wrapper.find('a').trigger('click');
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 120, behavior: 'smooth' });
+    expect((wrapper.vm as unknown as ExAnchorExposed).getElement()).toBe(wrapper.element);
+    expect(wrapper.element.tagName).toBe('NAV');
   });
 
   it('无效选择器不会抛错或创建无意义的动画计时器', async () => {

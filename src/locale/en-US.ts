@@ -531,11 +531,10 @@ export default {
   fileDownload: {
     download: 'Download',
     downloading: 'Downloading...',
-    downloadSuccess: 'Download Success',
+    downloadRequested: 'Download requested',
+    downloadReady: 'Download ready',
     downloadError: 'Download Failed',
-    pause: 'Pause',
-    resume: 'Resume',
-    cancel: 'Cancel',
+    progressLabel: 'Download progress',
   },
 
   filePreview: {

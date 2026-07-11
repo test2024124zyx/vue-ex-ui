@@ -92,4 +92,14 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('animation:');
     expect(css).not.toContain('@keyframes');
   });
+
+  it('FileDownload 只过渡确定进度且未知总量不依赖循环动画', () => {
+    const css = compile("@use 'src/components/file-download/ExFileDownload';");
+
+    expect(css).toContain('inline-size: var(--ex-file-download-progress)');
+    expect(css).toContain('transition-property: inline-size');
+    expect(css).toContain('.is-indeterminate');
+    expect(css).not.toContain('animation:');
+    expect(css).not.toContain('@keyframes');
+  });
 });

@@ -23,13 +23,15 @@ const getComponentName = (component: NamedComponent): string => {
  * 为单文件组件补充统一的 Vue 插件安装能力。
  * 附属组件会一并注册，并挂载到主组件上供按需使用。
  */
-export const withInstall = <
-  T extends Component,
-  E extends Record<string, Component> = Record<never, Component>,
->(
+export function withInstall<T extends Component>(component: T): InstallableComponent<T>;
+export function withInstall<T extends Component, E extends Record<string, Component>>(
+  component: T,
+  extras: E
+): InstallableComponent<T> & E;
+export function withInstall<T extends Component, E extends Record<string, Component>>(
   component: T,
   extras?: E
-): InstallableComponent<T> & E => {
+): InstallableComponent<T> & E {
   const installable = component as InstallableComponent<T> & E;
 
   installable.install = (app: App): void => {
@@ -47,4 +49,4 @@ export const withInstall = <
   }
 
   return installable;
-};
+}

@@ -922,232 +922,64 @@ describe('Property 14: Custom Cell Styling', () => {
   });
 });
 
-/**
- * Property 15: Separator Rendering
- * *For any* separatorPositions configuration, separator elements SHALL be rendered exactly at the specified positions between cells.
- * **Validates: Requirements 7.4**
- */
-describe('Property 15: Separator Rendering', () => {
-  it('should render separators at specified positions', () => {
+/** 属性 15—18：分隔符、无障碍、公开控制与移动端输入契约。 */
+describe('Properties 15-18: rendering and public contracts', () => {
+  it('renders every configured separator with the requested content', () => {
     fc.assert(
-      fc.property(
-        fc.array(fc.integer({ min: 1, max: 5 }), { minLength: 0, maxLength: 3 }),
-        (positions) => {
-          // 去重并排序
-          const uniquePositions = [...new Set(positions)].sort((a, b) => a - b);
-          
-          const wrapper = mount(ExVerificationCode, {
-            props: { 
-              length: 6,
-              separatorPositions: uniquePositions,
-              separator: '-',
-            },
-          });
-
-          const vm = wrapper.vm as any;
-          
-          // 验证每个位置的分隔符
-          for (let i = 0; i < 6; i++) {
-            const shouldShow = vm.shouldShowSeparator(i);
-            const expectedShow = uniquePositions.includes(i + 1) && i < 5;
-            expect(shouldShow).toBe(expectedShow);
-          }
-          
-          wrapper.unmount();
-        }
-      ),
+      fc.property(fc.uniqueArray(fc.integer({ min: 1, max: 5 }), { maxLength: 5 }), positions => {
+        const wrapper = mount(ExVerificationCode, {
+          props: { length: 6, separatorPositions: positions, separator: '•' },
+        });
+        const separators = wrapper.findAll('.ex-verification-code__separator');
+        expect(separators).toHaveLength(positions.length);
+        separators.forEach(separator => expect(separator.text()).toBe('•'));
+        wrapper.unmount();
+      }),
       { numRuns: 100 }
     );
   });
 
-  it('should render custom separator character', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { 
-        length: 6,
-        separatorPositions: [3],
-        separator: '•',
-      },
-    });
-
-    const separators = wrapper.findAll('.ex-verification-code__separator');
-    expect(separators.length).toBe(1);
-    expect(separators[0].text()).toBe('•');
-    
-    wrapper.unmount();
-  });
-});
-
-
-/**
- * Property 16: ARIA Accessibility
- * *For any* cell element, it SHALL have aria-label containing the cell position (1-indexed) and total count.
- * **Validates: Requirements 8.1, 8.2**
- */
-describe('Property 16: ARIA Accessibility', () => {
-  it('should have correct aria-label for each cell', () => {
+  it('exposes group, textbox and positional ARIA semantics for every valid length', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 12 }),
-        (length) => {
-          const wrapper = mount(ExVerificationCode, {
-            props: { length },
-          });
-
-          const vm = wrapper.vm as any;
-          
-          // 验证每个格子的 ARIA 标签
-          for (let i = 0; i < length; i++) {
-            const ariaLabel = vm.getCellAriaLabel(i);
-            // 验证包含位置信息
-            expect(ariaLabel).toContain((i + 1).toString());
-            expect(ariaLabel).toContain(length.toString());
-          }
-          
-          wrapper.unmount();
-        }
-      ),
+      fc.property(fc.integer({ min: 1, max: 12 }), length => {
+        const wrapper = mount(ExVerificationCode, { props: { length } });
+        expect(wrapper.get('.ex-verification-code__cells').attributes('role')).toBe('group');
+        wrapper.findAll('.ex-verification-code__cell').forEach((cell, index) => {
+          expect(cell.attributes('role')).toBe('textbox');
+          expect(cell.attributes('aria-label')).toContain(String(index + 1));
+          expect(cell.attributes('aria-label')).toContain(String(length));
+        });
+        wrapper.unmount();
+      }),
       { numRuns: 100 }
     );
   });
 
-  it('should have role="group" on cells container', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { length: 6 },
-    });
-
-    const cellsContainer = wrapper.find('.ex-verification-code__cells');
-    expect(cellsContainer.attributes('role')).toBe('group');
-    
-    wrapper.unmount();
-  });
-
-  it('should have role="textbox" on each cell', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { length: 6 },
-    });
-
-    const cells = wrapper.findAll('.ex-verification-code__cell');
-    cells.forEach(cell => {
-      expect(cell.attributes('role')).toBe('textbox');
-    });
-    
-    wrapper.unmount();
-  });
-});
-
-/**
- * Property 17: Programmatic Control
- * *For any* call to setValue(code), the cells SHALL contain the characters of the code string (truncated to length), 
- * and getValue() SHALL return the same value.
- * **Validates: Requirements 9.2, 9.3, 9.4**
- */
-describe('Property 17: Programmatic Control', () => {
-  it('should set and get value correctly', () => {
+  it('setValue/getValue/clear preserve the public programmatic contract', () => {
     fc.assert(
-      fc.property(
-        fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 0, maxLength: 10 }).map(arr => arr.join('')),
-        (code) => {
-          const wrapper = mount(ExVerificationCode, {
-            props: { length: 6 },
-          });
-
-          const vm = wrapper.vm as any;
-          
-          // 设置值
-          vm.setValue(code);
-          
-          // 获取值
-          const value = vm.getValue();
-          
-          // 验证值被正确截断
-          const expectedValue = code.slice(0, 6);
-          expect(value).toBe(expectedValue);
-          
-          wrapper.unmount();
-        }
-      ),
+      fc.property(fc.stringMatching(/^\d{0,10}$/), code => {
+        const wrapper = mount(ExVerificationCode, { props: { length: 6 } });
+        const vm = wrapper.vm as any;
+        vm.setValue(code);
+        expect(vm.getValue()).toBe(code.slice(0, 6));
+        vm.clear();
+        expect(vm.getValue()).toBe('');
+        expect(vm.focusedIndex).toBe(0);
+        wrapper.unmount();
+      }),
       { numRuns: 100 }
     );
   });
 
-  it('should clear all cells when clear() is called', () => {
-    fc.assert(
-      fc.property(
-        fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 6, maxLength: 6 }),
-        (digits) => {
-          const wrapper = mount(ExVerificationCode, {
-            props: { length: 6 },
-          });
-
-          const vm = wrapper.vm as any;
-          
-          // 填充格子
-          digits.forEach((digit, index) => {
-            vm.cells[index] = digit.toString();
-          });
-          
-          // 清空
-          vm.clear();
-          
-          // 验证所有格子为空
-          vm.cells.forEach((cell: string) => {
-            expect(cell).toBe('');
-          });
-          
-          // 验证焦点回到第一个格子
-          expect(vm.focusedIndex).toBe(0);
-          
-          wrapper.unmount();
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-});
-
-/**
- * Property 18: Mobile Numeric Keyboard
- * *For any* component with inputMode='numeric', the hidden input element SHALL have inputmode="numeric" and pattern="[0-9]*" attributes.
- * **Validates: Requirements 11.1**
- */
-describe('Property 18: Mobile Numeric Keyboard', () => {
-  it('should have correct inputmode for numeric mode', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { 
-        length: 6,
-        inputMode: 'numeric',
-      },
-    });
-
-    const hiddenInput = wrapper.find('.ex-verification-code__hidden-input');
-    expect(hiddenInput.attributes('inputmode')).toBe('numeric');
-    expect(hiddenInput.attributes('pattern')).toBe('[0-9]*');
-    
-    wrapper.unmount();
-  });
-
-  it('should have correct inputmode for alphanumeric mode', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { 
-        length: 6,
-        inputMode: 'alphanumeric',
-      },
-    });
-
-    const hiddenInput = wrapper.find('.ex-verification-code__hidden-input');
-    expect(hiddenInput.attributes('inputmode')).toBe('text');
-    
-    wrapper.unmount();
-  });
-
-  it('should have autocomplete="one-time-code" for OTP autofill', () => {
-    const wrapper = mount(ExVerificationCode, {
-      props: { length: 6 },
-    });
-
-    const hiddenInput = wrapper.find('.ex-verification-code__hidden-input');
-    expect(hiddenInput.attributes('autocomplete')).toBe('one-time-code');
-    
+  it.each([
+    ['numeric', 'numeric', '[0-9]*'],
+    ['alphanumeric', 'text', undefined],
+  ] as const)('maps %s mode to truthful mobile input attributes', (mode, inputmode, pattern) => {
+    const wrapper = mount(ExVerificationCode, { props: { length: 6, inputMode: mode } });
+    const input = wrapper.get('.ex-verification-code__hidden-input');
+    expect(input.attributes('inputmode')).toBe(inputmode);
+    expect(input.attributes('pattern')).toBe(pattern);
+    expect(input.attributes('autocomplete')).toBe('one-time-code');
     wrapper.unmount();
   });
 });

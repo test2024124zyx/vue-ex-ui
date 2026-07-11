@@ -531,11 +531,10 @@ export default {
   fileDownload: {
     download: '下载',
     downloading: '下载中...',
-    downloadSuccess: '下载成功',
+    downloadRequested: '已请求下载',
+    downloadReady: '文件已就绪',
     downloadError: '下载失败',
-    pause: '暂停',
-    resume: '继续',
-    cancel: '取消',
+    progressLabel: '下载进度',
   },
 
   filePreview: {
