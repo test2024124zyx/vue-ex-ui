@@ -308,6 +308,8 @@ export {
   destroyLoading,
 };
 
+export { ICONS, getBuiltinIcon, isBuiltinIcon } from './components/icon';
+
 // 导出类型
 export type * from './components/affix/types';
 export type * from './components/alert/types';
@@ -334,6 +336,7 @@ export type * from './components/grid/types';
 export type { GridBreakpoint, NormalizedGridGutter } from './components/grid/grid-utils';
 export type * from './components/heatmap/types';
 export type * from './components/icon/types';
+export type { BuiltinIconName } from './components/icon/icons';
 export type * from './components/layout/types';
 export type * from './components/image/types';
 export type * from './components/input/types';

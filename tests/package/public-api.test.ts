@@ -54,5 +54,8 @@ describe('v2 公共组件契约', () => {
   it('辅助运行时 API 不会被误判为组件', () => {
     expect(publicApi.ExFileDownloadError).toBeInstanceOf(Function);
     expect(isRenderableComponent(publicApi.ExFileDownloadError)).toBe(false);
+    expect(Object.isFrozen(publicApi.ICONS)).toBe(true);
+    expect(publicApi.isBuiltinIcon('search-line')).toBe(true);
+    expect(publicApi.getBuiltinIcon('missing-icon')).toBe('');
   });
 });

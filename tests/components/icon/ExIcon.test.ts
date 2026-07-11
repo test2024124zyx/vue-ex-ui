@@ -1,141 +1,166 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
-import ExIcon from '../../../src/components/icon/ExIcon.vue'
+import { Comment, h } from 'vue';
+import { describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
+import ExIcon from '../../../src/components/icon/ExIcon.vue';
 
 describe('ExIcon', () => {
-  // 基础渲染测试
-  describe('基础渲染', () => {
-    it('应该正确渲染默认图标', () => {
-      const wrapper = mount(ExIcon)
-      expect(wrapper.find('.ex-icon').exists()).toBe(true)
-      expect(wrapper.find('svg').exists()).toBe(true)
-    })
+  it('无来源时保持为空，不再伪造默认星形图标', () => {
+    const wrapper = mount(ExIcon);
 
-    it('应该使用正确的HTML标签', () => {
-      const wrapper = mount(ExIcon, {
-        props: { tag: 'div' }
-      })
-      expect(wrapper.element.tagName).toBe('DIV')
-    })
+    expect(wrapper.element.tagName).toBe('SPAN');
+    expect(wrapper.classes()).toContain('ex-icon--empty');
+    expect(wrapper.find('svg').exists()).toBe(false);
+    expect(wrapper.attributes('aria-hidden')).toBe('true');
+  });
 
-    it('应该应用自定义类名', () => {
-      const wrapper = mount(ExIcon, {
-        props: { customClass: 'custom-icon' }
-      })
-      expect(wrapper.classes()).toContain('custom-icon')
-    })
-  })
+  it('渲染冻结注册表中的内置 SVG，未知名称不回退到误导图形', () => {
+    const known = mount(ExIcon, { props: { icon: 'search-line' } });
+    const unknown = mount(ExIcon, { props: { icon: 'missing-icon' } });
 
-  // SVG 图标测试
-  describe('SVG 图标', () => {
-    it('应该渲染插槽中的SVG内容', () => {
-      const wrapper = mount(ExIcon, {
-        slots: {
-          default: '<svg><path d="test"/></svg>'
-        }
-      })
-      expect(wrapper.find('svg path').exists()).toBe(true)
-      expect(wrapper.find('svg path').attributes('d')).toBe('test')
-    })
-  })
+    expect(known.find('svg circle').exists()).toBe(true);
+    expect(known.find('.ex-icon__content').attributes('aria-hidden')).toBe('true');
+    expect(unknown.find('.ex-icon__content').exists()).toBe(false);
+    expect(unknown.classes()).toContain('ex-icon--empty');
+  });
 
-  // 字体图标测试
-  describe('字体图标', () => {
-    it('应该渲染字体图标', () => {
-      const wrapper = mount(ExIcon, {
-        props: {
-          name: 'star',
-          prefix: 'fas'
-        }
-      })
-      const icon = wrapper.find('i')
-      expect(icon.exists()).toBe(true)
-      expect(icon.classes()).toContain('fas')
-      expect(icon.classes()).toContain('fas-star')
-    })
+  it('真实插槽优先于其他来源，空插槽会继续使用内置图标', () => {
+    const custom = mount(ExIcon, {
+      props: { icon: 'search-line', src: '/fallback.png' },
+      slots: { default: '<svg class="custom-svg"><path d="M0 0" /></svg>' },
+    });
+    const empty = mount(ExIcon, {
+      props: { icon: 'check-line' },
+      slots: { default: () => h(Comment) },
+    });
 
-    it('应该处理没有前缀的图标名称', () => {
-      const wrapper = mount(ExIcon, {
-        props: { name: 'icon-name' }
-      })
-      const icon = wrapper.find('i')
-      expect(icon.classes()).toContain('icon-name')
-    })
-  })
+    expect(custom.find('.custom-svg').exists()).toBe(true);
+    expect(custom.find('img').exists()).toBe(false);
+    expect(empty.find('svg path').attributes('d')).toBe('M5 12l5 5L20 7');
+  });
 
-  // 图片图标测试
-  describe('图片图标', () => {
-    it('应该渲染图片图标', () => {
-      const wrapper = mount(ExIcon, {
-        props: {
-          src: '/test-icon.png',
-          alt: 'Test Icon'
-        }
-      })
-      const img = wrapper.find('img')
-      expect(img.exists()).toBe(true)
-      expect(img.attributes('src')).toBe('/test-icon.png')
-      expect(img.attributes('alt')).toBe('Test Icon')
-    })
+  it('未知内置名称允许后续图片来源接管渲染', () => {
+    const wrapper = mount(ExIcon, {
+      props: { icon: 'missing-icon', src: '/fallback.png', alt: '备用图标' },
+    });
 
-    it('应该使用默认alt文本', () => {
-      const wrapper = mount(ExIcon, {
-        props: { src: '/test-icon.png' }
-      })
-      const img = wrapper.find('img')
-      expect(img.attributes('alt')).toBe('icon')
-    })
-  })
+    expect(wrapper.find('img').attributes('src')).toBe('/fallback.png');
+    expect(wrapper.attributes('role')).toBe('img');
+    expect(wrapper.attributes('aria-label')).toBe('备用图标');
+  });
 
-  // 大小测试
-  describe('大小设置', () => {
-    it('应该设置数字大小', () => {
-      const wrapper = mount(ExIcon, {
-        props: { size: 24 }
-      })
-      const style = wrapper.attributes('style')
-      expect(style).toContain('font-size: 24px')
-      expect(style).toContain('width: 24px')
-      expect(style).toContain('height: 24px')
-    })
+  it('字体图标会生成规范类名并拒绝异常类名片段', async () => {
+    const wrapper = mount(ExIcon, { props: { name: 'star', prefix: 'fas' } });
+    expect(wrapper.find('i').classes()).toEqual(['fas', 'fas-star']);
 
-    it('应该设置字符串大小', () => {
-      const wrapper = mount(ExIcon, {
-        props: { size: '2rem' }
-      })
-      const style = wrapper.attributes('style')
-      expect(style).toContain('font-size: 2rem')
-      expect(style).toContain('width: 2rem')
-      expect(style).toContain('height: 2rem')
-    })
-  })
+    await wrapper.setProps({ name: 'bad name' });
+    expect(wrapper.find('i').exists()).toBe(false);
+    expect(wrapper.classes()).toContain('ex-icon--empty');
+  });
 
-  // 交互测试
-  describe('交互功能', () => {
-    it('应该处理点击事件', async () => {
-      const wrapper = mount(ExIcon, {
-        props: { clickable: true }
-      })
-      
-      expect(wrapper.classes()).toContain('ex-icon--clickable')
-      
-      await wrapper.trigger('click')
-      expect(wrapper.emitted('click')).toBeTruthy()
-      expect(wrapper.emitted('click')?.[0]).toHaveLength(1)
-    })
+  it('图片由根元素统一提供可访问名称，内部图片不会重复朗读', () => {
+    const wrapper = mount(ExIcon, {
+      props: { src: '/logo.png', alt: '产品标志' },
+    });
+    const image = wrapper.find('img');
 
-    it('应该在禁用时阻止点击', async () => {
-      const wrapper = mount(ExIcon, {
-        props: {
-          clickable: true,
-          disabled: true
-        }
-      })
-      
-      expect(wrapper.classes()).toContain('ex-icon--disabled')
-      
-      await wrapper.trigger('click')
-      expect(wrapper.emitted('click')).toBeFalsy()
-    })
-  })
-})
+    expect(wrapper.attributes('role')).toBe('img');
+    expect(wrapper.attributes('aria-label')).toBe('产品标志');
+    expect(image.attributes('alt')).toBe('');
+    expect(image.attributes('aria-hidden')).toBe('true');
+    expect(image.attributes('decoding')).toBe('async');
+    expect(image.attributes('draggable')).toBe('false');
+  });
+
+  it('图片着色使用转义后的 mask URL，并保留可访问名称', () => {
+    const wrapper = mount(ExIcon, {
+      props: { src: '/icon.svg', color: '#f00', alt: '告警' },
+    });
+    const mask = wrapper.find('.ex-icon__image-mask');
+
+    expect(wrapper.find('img').exists()).toBe(false);
+    expect(wrapper.attributes('aria-label')).toBe('告警');
+    expect(mask.attributes('style')).toContain('--ex-icon-src: url("/icon.svg")');
+  });
+
+  it('尺寸和旋转通过独立变量作用，spin 不会覆盖基础旋转', async () => {
+    const wrapper = mount(ExIcon, {
+      props: { icon: 'refresh-line', size: 24, rotate: 450, spin: true },
+    });
+
+    expect(wrapper.attributes('style')).toContain('--ex-icon-size: 24px');
+    expect(wrapper.attributes('style')).toContain('--ex-icon-rotation: 90deg');
+    expect(wrapper.classes()).toContain('ex-icon--spin');
+    expect(wrapper.find('.ex-icon__content').exists()).toBe(true);
+
+    await wrapper.setProps({ size: -1, rotate: Number.NaN });
+    expect(wrapper.attributes('style')).toContain('--ex-icon-size: 16px');
+    expect(wrapper.attributes('style')).toContain('--ex-icon-rotation: 0deg');
+  });
+
+  it('同时合并原生 class 与兼容 customClass', () => {
+    const wrapper = mount(ExIcon, {
+      attrs: { class: 'native-class' },
+      props: { icon: 'star-line', customClass: 'legacy-class' },
+    });
+
+    expect(wrapper.classes()).toEqual(
+      expect.arrayContaining(['ex-icon', 'native-class', 'legacy-class'])
+    );
+  });
+
+  it('clickable 使用 type=button 的原生按钮并发出真实 MouseEvent', async () => {
+    const wrapper = mount(ExIcon, {
+      props: { icon: 'search-line', clickable: true, ariaLabel: '搜索' },
+    });
+
+    expect(wrapper.element.tagName).toBe('BUTTON');
+    expect(wrapper.attributes('type')).toBe('button');
+    expect(wrapper.attributes('aria-label')).toBe('搜索');
+    expect(wrapper.classes()).toContain('ex-icon--clickable');
+
+    await wrapper.trigger('click');
+    const event = wrapper.emitted('click')?.[0]?.[0];
+    expect(event).toBeInstanceOf(MouseEvent);
+  });
+
+  it('clickable 缺少显式名称时使用图标名兜底，避免无名称按钮', () => {
+    const wrapper = mount(ExIcon, {
+      props: { icon: 'search-line', clickable: true },
+    });
+
+    expect(wrapper.attributes('aria-label')).toBe('search-line');
+  });
+
+  it('非交互图标不会伪发 click 事件', async () => {
+    const wrapper = mount(ExIcon, { props: { icon: 'search-line' } });
+    await wrapper.trigger('click');
+
+    expect(wrapper.emitted('click')).toBeUndefined();
+  });
+
+  it('禁用交互图标使用原生 disabled 且不会发出点击', async () => {
+    const wrapper = mount(ExIcon, {
+      props: { icon: 'search-line', clickable: true, disabled: true, ariaLabel: '搜索' },
+    });
+
+    expect(wrapper.attributes('disabled')).toBeDefined();
+    expect(wrapper.classes()).toContain('ex-icon--disabled');
+    await wrapper.trigger('click');
+    expect(wrapper.emitted('click')).toBeUndefined();
+  });
+
+  it('允许调用方显式覆盖装饰性图标的 ARIA 属性', () => {
+    const labelled = mount(ExIcon, {
+      props: { icon: 'information-line', ariaLabel: '说明' },
+    });
+    const hidden = mount(ExIcon, {
+      props: { icon: 'information-line', ariaLabel: '说明' },
+      attrs: { 'aria-hidden': 'true' },
+    });
+
+    expect(labelled.attributes('role')).toBe('img');
+    expect(labelled.attributes('aria-label')).toBe('说明');
+    expect(labelled.attributes('aria-hidden')).toBeUndefined();
+    expect(hidden.attributes('aria-hidden')).toBe('true');
+  });
+});

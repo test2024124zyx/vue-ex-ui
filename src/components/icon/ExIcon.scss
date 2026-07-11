@@ -1,165 +1,139 @@
-// ExIcon 图标组件样式
-// 通用图标组件，支持SVG、字体图标、图片图
+@use '../../styles/mixins' as *;
 
 .ex-icon {
-  // 基础样式
+  --ex-icon-size: 16px;
+  --ex-icon-rotation: 0deg;
+
+  box-sizing: border-box;
   display: inline-flex;
+  width: var(--ex-icon-size);
+  height: var(--ex-icon-size);
+  flex: none;
   align-items: center;
   justify-content: center;
-  vertical-align: middle;
+  color: inherit;
+  font-size: var(--ex-icon-size);
   line-height: 1;
-  
-  // 默认大小
-  width: 1em;
-  height: 1em;
-  font-size: var(--ex-text-base, 16px);
-  
-  // 默认颜色
-  color: var(--ex-color-text-primary, #e6f0ff);
-  
-  // 过渡动画
-  transition: all var(--ex-motion-duration-fast, 120ms) var(--ex-motion-ease-in-out, ease);
-  
-  // SVG 样式
-  svg {
-    width: 100%;
-    height: 100%;
-    fill: currentColor;
-    stroke: currentColor; // 确保描边类图标同样受 color 驱动
-    display: block;
-  }
+  vertical-align: -0.125em;
+}
 
-  // 字体图标样式
-  i {
-    color: currentColor;   // 与容color 保持一
-    font-size: 1em;        // 跟随容器 font-size（size 属性影1em
-    line-height: 1;
-    display: inline-block; // 避免行内元素基线偏移
-    font-style: normal;    // 规避部分 iconfont 默认斜体
-  }
-  
-  // 图片样式
-  &__image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-  }
+.ex-icon__content {
+  display: inline-flex;
+  width: var(--ex-icon-size);
+  height: var(--ex-icon-size);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transform: rotate(var(--ex-icon-rotation));
+  transform-origin: center;
+}
 
-  // 图片单色着色（mask）模式：SVG/字体图标保持 color 一
-  &__image-mask {
-    width: 100%;
-    height: 100%;
-    display: block;
-    background-color: currentColor; // 着色来currentColor
-    -webkit-mask: var(--ex-icon-src) no-repeat center / contain;
-    mask: var(--ex-icon-src) no-repeat center / contain;
-  }
-  
-  // 可点击状
-  &--clickable {
-    cursor: pointer;
-    user-select: none;
-    
-    &:hover {
-      color: var(--ex-color-primary, #29ABE2);
-      transform: translateY(-1px);
-      filter: drop-shadow(0 2px 8px var(--ex-color-primary-alpha-30));
-    }
-    
-    &:active {
-      transform: translateY(0);
-      filter: drop-shadow(0 1px 4px var(--ex-color-primary-alpha-20));
-    }
-    
-    // 聚焦样式
-    &:focus-visible {
-      outline: 2px solid var(--ex-color-primary, #29ABE2);
-      outline-offset: 2px;
-      border-radius: var(--ex-radius-sm, 2px);
-    }
-  }
-  
-  // 禁用状
-  &--disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-    
-    &:hover {
-      transform: none;
-      filter: none;
-      color: inherit;
-    }
-  }
-  
-  // 旋转动画
-  &--spin {
-    animation: ex-icon-spin 1s linear infinite;
+.ex-icon__content > svg,
+.ex-icon__image,
+.ex-icon__image-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ex-icon__content > svg {
+  overflow: visible;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.ex-icon__content > i {
+  display: inline-block;
+  color: currentColor;
+  font-size: 1em;
+  font-style: normal;
+  line-height: 1;
+}
+
+.ex-icon__image {
+  object-fit: contain;
+  user-select: none;
+}
+
+.ex-icon__image-mask {
+  background-color: currentColor;
+  -webkit-mask: var(--ex-icon-src) no-repeat center / contain;
+  mask: var(--ex-icon-src) no-repeat center / contain;
+}
+
+.ex-icon--clickable {
+  width: max(var(--ex-icon-size), 44px);
+  height: max(var(--ex-icon-size), 44px);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  appearance: none;
+  color: inherit;
+  font-family: inherit;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+  @include focus-ring();
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    filter: drop-shadow(0 1px 4px var(--ex-color-primary-alpha-20));
   }
 }
 
-// 旋转动画关键
+@media (hover: hover) {
+  .ex-icon--clickable:hover:not(:disabled) {
+    color: var(--ex-color-primary);
+    transform: translateY(-1px);
+    filter: drop-shadow(0 2px 8px var(--ex-color-primary-alpha-30));
+  }
+}
+
+.ex-icon--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ex-icon--spin .ex-icon__content {
+  animation: ex-icon-spin 1s linear infinite;
+}
+
 @keyframes ex-icon-spin {
   from {
-    transform: rotate(0deg);
+    transform: rotate(var(--ex-icon-rotation));
   }
+
   to {
-    transform: rotate(360deg);
+    transform: rotate(calc(var(--ex-icon-rotation) + 360deg));
   }
 }
 
-// 响应式适配
-@media (max-width: 768px) {
-  .ex-icon {
-    // 移动端触摸友
-    &--clickable {
-      min-width: 44px;
-      min-height: 44px;
-      
-      &:hover {
-        // 移动端禁用hover效果
-        transform: none;
-        filter: none;
-        color: inherit;
-      }
-      
-      &:active {
-        color: var(--ex-color-primary, #29ABE2);
-        transform: scale(0.95);
-      }
-    }
-  }
-}
-
-// 无障碍支
 @media (prefers-reduced-motion: reduce) {
-  .ex-icon {
+  .ex-icon--clickable {
     transition: none;
-    
-    &--spin {
-      animation: none;
+
+    &:hover,
+    &:active {
+      transform: none;
+      filter: none;
     }
-    
-    &--clickable {
-      &:hover,
-      &:active {
-        transform: none;
-      }
-    }
+  }
+
+  .ex-icon--spin .ex-icon__content {
+    animation: none;
   }
 }
 
-// 高对比度模式
-@media (prefers-contrast: high) {
-  .ex-icon {
-    &--clickable {
-      &:focus-visible {
-        outline-width: 3px;
-        outline-color: currentColor;
-      }
-    }
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-icon--clickable:focus-visible {
+    outline-width: 3px;
+    outline-color: currentColor;
   }
 }
-
-
