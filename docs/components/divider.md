@@ -255,22 +255,23 @@
 
 ### Divider Props
 
-| 参数               | 说明                                                                                            | 类型                                        | 默认值         |
-| ------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------- |
-| type               | 水平还是垂直类型                                                                                | `'horizontal' \| 'vertical'`                | `'horizontal'` |
-| orientation        | 分割线标题的位置                                                                                | `'left' \| 'center' \| 'right'`             | `'center'`     |
-| orientation-margin | 标题和最近 left/right 边框之间的距离，去除了分割线，同时 `orientation` 必须为 `left` 或 `right` | `string \| number`                          | -              |
-| dashed             | 是否虚线                                                                                        | `boolean`                                   | `false`        |
-| size               | 分割线粗细                                                                                      | `'small' \| 'default' \| 'large' \| number` | `'default'`    |
-| margin             | 分割线上下间距                                                                                  | `string \| number`                          | -              |
-| plain              | 文字是否显示为普通正文样式                                                                      | `boolean`                                   | `false`        |
-| color              | 分割线颜色                                                                                      | `string`                                    | -              |
+| 参数               | 说明                                                        | 类型                                        | 默认值         |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------- | -------------- |
+| type               | 分割线方向                                                  | `'horizontal' \| 'vertical'`                | `'horizontal'` |
+| orientation        | 水平标题的位置                                              | `'left' \| 'center' \| 'right'`             | `'center'`     |
+| orientation-margin | 标题与最近一侧线段的距离，仅 left/right 且有标题时生效      | `string \| number`                          | -              |
+| dashed             | 是否使用虚线                                                | `boolean`                                   | `false`        |
+| size               | 预设粗细或正数像素值                                        | `'small' \| 'default' \| 'large' \| number` | `'default'`    |
+| margin             | 水平线的上下间距或垂直线的左右间距                          | `string \| number`                          | -              |
+| plain              | 标题是否使用普通正文权重，仅有标题时生效                    | `boolean`                                   | `false`        |
+| color              | 分割线颜色                                                  | `string`                                    | -              |
+| aria-label         | 可选的无障碍名称；普通装饰性分隔线无需设置                  | `string`                                    | -              |
 
 ### Divider Slots
 
 | 名称    | 说明       |
 | ------- | ---------- |
-| default | 嵌套的标题 |
+| default | 水平分割线标题；垂直模式忽略该插槽 |
 
 ### Divider CSS Variables
 

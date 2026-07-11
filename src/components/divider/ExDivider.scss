@@ -1,89 +1,65 @@
-// ExDivider 分割线组件样�?
-// 游戏主题风格 - ClutchZone
-
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/performance' as *;
 
 .ex-divider {
   position: relative;
   display: flex;
   clear: both;
-  width: 100%;
-  min-width: 100%;
   margin: var(--ex-divider-margin, 24px 0);
   font-family: var(--ex-font-secondary);
-  font-size: 16px;
+  font-size: var(--ex-text-base);
   color: var(--ex-color-text-primary);
 
-  // ============================================================================
-  // 水平分割线（默认�?
-  // ============================================================================
-  
   &--horizontal {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    margin: var(--ex-divider-margin, 24px 0);
+    min-width: 100%;
   }
 
-  // ============================================================================
-  // 垂直分割�?
-  // ============================================================================
-  
   &--vertical {
-    position: relative;
     display: inline-flex;
-    align-items: stretch;
-    // 必须覆盖基础样式里的 width/min-width: 100%，否则垂直分割线会被撑满整行而非行内显示
     flex: 0 0 auto;
+    align-items: stretch;
     width: auto;
     min-width: 0;
     height: 1em;
     margin: var(--ex-divider-margin, 0 8px);
     vertical-align: middle;
-    // 线条由内层 __line--vertical 绘制，容器本身不再画 border，避免重复线
   }
 
-  // ============================================================================
-  // 分割线元�?
-  // ============================================================================
-  
   &__line {
     position: relative;
+    box-sizing: border-box;
     flex: 1;
     width: 100%;
     height: var(--ex-divider-size, 1px);
     background: linear-gradient(
       90deg,
       transparent 0%,
-      var(--ex-color-border-primary) 50%,
+      var(--ex-divider-color, var(--ex-color-border-primary)) 50%,
       transparent 100%
     );
-    @include safe-transition(all);
 
-    // 霓虹发光效果
     &::after {
-      content: '';
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
       width: 60%;
       height: 100%;
+      content: '';
       background: linear-gradient(
         90deg,
         transparent 0%,
         var(--ex-color-neon-blue-500) 50%,
         transparent 100%
       );
-      opacity: 0;
       filter: blur(4px);
-      @include safe-transition(opacity);
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-out);
     }
   }
 
-  // 垂直线：覆盖水平基础样式（竖向、纯色、无横向渐变与发光）
   &__line--vertical {
     flex: none;
     width: var(--ex-divider-size, 1px);
@@ -96,219 +72,123 @@
     }
   }
 
-  // ============================================================================
-  // 文字内容
-  // ============================================================================
-  
   &__content {
     flex: none;
     padding: 0 1em;
     font-size: inherit;
     font-weight: var(--ex-font-medium);
-    color: inherit;
-    white-space: nowrap;
-    text-align: center;
     line-height: 1;
-    @include safe-transition(color);
+    color: inherit;
+    text-align: center;
+    white-space: nowrap;
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      text-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out);
   }
 
-  // ============================================================================
-  // 文字位置 - 左对�?
-  // ============================================================================
-  
   &--left {
     .ex-divider__line:first-child {
       flex: 0 0 var(--ex-divider-orientation-margin, 5%);
       max-width: var(--ex-divider-orientation-margin, 5%);
     }
-
-    .ex-divider__line:last-child {
-      flex: 1;
-    }
   }
 
-  // ============================================================================
-  // 文字位置 - 居中（默认）
-  // ============================================================================
-  
-  &--center {
-    .ex-divider__line {
-      flex: 1;
-    }
-  }
-
-  // ============================================================================
-  // 文字位置 - 右对�?
-  // ============================================================================
-  
   &--right {
-    .ex-divider__line:first-child {
-      flex: 1;
-    }
-
     .ex-divider__line:last-child {
       flex: 0 0 var(--ex-divider-orientation-margin, 5%);
       max-width: var(--ex-divider-orientation-margin, 5%);
     }
   }
 
-  // ============================================================================
-  // 虚线样式
-  // ============================================================================
-  
-  &--dashed {
-    &.ex-divider--horizontal {
-      .ex-divider__line {
-        background: none;
-        border-top: 1px dashed var(--ex-color-border-primary);
-
-        &::after {
-          display: none;
-        }
-      }
-    }
-
-    &.ex-divider--vertical .ex-divider__line--vertical {
+  &--dashed.ex-divider--horizontal {
+    .ex-divider__line {
+      height: 0;
       background: none;
-      border-left: var(--ex-divider-size, 1px) dashed
+      border-top: var(--ex-divider-size, 1px) dashed
         var(--ex-divider-color, var(--ex-color-border-primary));
+
+      &::after {
+        display: none;
+      }
     }
   }
 
-  // ============================================================================
-  // 朴素样式
-  // ============================================================================
-  
+  &--dashed.ex-divider--vertical .ex-divider__line--vertical {
+    width: 0;
+    background: none;
+    border-left: var(--ex-divider-size, 1px) dashed
+      var(--ex-divider-color, var(--ex-color-border-primary));
+  }
+
   &--plain {
     color: var(--ex-color-text-secondary);
-    
+
     .ex-divider__content {
       font-weight: var(--ex-font-normal);
     }
   }
 
-  // ============================================================================
-  // 尺寸样式
-  // ============================================================================
-  
   &--size-small {
-    font-size: 14px;
+    --ex-divider-size: 1px;
 
-    &.ex-divider--horizontal .ex-divider__line {
-      height: 1px;
-    }
-
-    &.ex-divider--vertical .ex-divider__line--vertical {
-      width: 1px;
-    }
+    font-size: var(--ex-text-sm);
   }
 
   &--size-default {
-    font-size: 16px;
+    --ex-divider-size: 1px;
 
-    &.ex-divider--horizontal .ex-divider__line {
-      height: 1px;
-    }
-
-    &.ex-divider--vertical .ex-divider__line--vertical {
-      width: 1px;
-    }
+    font-size: var(--ex-text-base);
   }
 
   &--size-large {
-    font-size: 18px;
+    --ex-divider-size: 2px;
 
-    &.ex-divider--horizontal .ex-divider__line {
-      height: 2px;
-    }
-
-    &.ex-divider--vertical .ex-divider__line--vertical {
-      width: 2px;
-    }
+    font-size: var(--ex-text-lg);
   }
 
-  // ============================================================================
-  // 自定义颜�?
-  // ============================================================================
-  
-  &[style*='--ex-divider-color'] {
-    .ex-divider__line {
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--ex-divider-color) 50%,
-        transparent 100%
-      );
-    }
-
-    &.ex-divider--vertical {
-      border-left-color: var(--ex-divider-color);
-    }
-
-    &.ex-divider--dashed .ex-divider__line {
-      border-top-color: var(--ex-divider-color);
-    }
-  }
-
-  // ============================================================================
-  // 悬停效果
-  // ============================================================================
-  
   &:hover {
     &.ex-divider--horizontal .ex-divider__line::after {
       opacity: 0.3;
     }
 
-    &:not(.ex-divider--plain) {
+    &:not(.ex-divider--plain) .ex-divider__content {
       color: var(--ex-color-neon-blue-500);
       text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-30);
     }
   }
 
-  // ============================================================================
-  // 响应式设�?
-  // ============================================================================
-  
   @include mobile {
     &--horizontal {
-      margin: 16px 0;
+      margin: var(--ex-divider-margin, 16px 0);
     }
 
     &--vertical {
-      margin: 0 6px;
+      margin: var(--ex-divider-margin, 0 6px);
     }
 
     .ex-divider__content {
-      font-size: var(--ex-text-sm);
       padding: 0 var(--ex-spacing-3);
+      font-size: var(--ex-text-sm);
     }
   }
 
-  // ============================================================================
-  // 无障碍支�?
-  // ============================================================================
-  
   @media (prefers-reduced-motion: reduce) {
-    &,
-    .ex-divider__line,
     .ex-divider__line::after,
     .ex-divider__content {
       transition: none;
-      animation: none;
     }
   }
 
-  // 高对比度模式
   @media (prefers-contrast: high) {
     .ex-divider__line {
-      background: var(--ex-color-border-primary);
+      background: var(--ex-divider-color, var(--ex-color-border-primary));
 
       &::after {
         display: none;
       }
     }
 
-    &:hover {
+    .ex-divider__content {
       text-shadow: none;
     }
 
@@ -317,4 +197,3 @@
     }
   }
 }
-

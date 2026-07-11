@@ -1,258 +1,159 @@
-import { describe, it, expect } from 'vitest';
+import { Comment, h } from 'vue';
+import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExDivider from '../../../src/components/divider/ExDivider.vue';
-import type { ExDividerProps } from '../../../src/components/divider/types';
 
 describe('ExDivider', () => {
-  it('renders correctly with default props', () => {
+  it('默认渲染无名称的水平分隔线和单条装饰线', () => {
     const wrapper = mount(ExDivider);
 
-    expect(wrapper.find('.ex-divider').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--horizontal').exists()).toBe(true);
+    expect(wrapper.classes()).toContain('ex-divider--horizontal');
+    expect(wrapper.classes()).toContain('ex-divider--size-default');
+    expect(wrapper.attributes('role')).toBe('separator');
+    expect(wrapper.attributes('aria-orientation')).toBe('horizontal');
+    expect(wrapper.attributes('aria-label')).toBeUndefined();
+    expect(wrapper.findAll('.ex-divider__line')).toHaveLength(1);
+    expect(wrapper.find('.ex-divider__content').exists()).toBe(false);
   });
 
-  it('renders with text content', () => {
+  it('有意义的标题内容渲染在两段线之间', () => {
     const wrapper = mount(ExDivider, {
-      slots: {
-        default: 'Divider Text',
-      },
+      slots: { default: () => h('strong', '章节标题') },
     });
 
-    // 有标题时根据 orientation 添加位置类（默认 center），文字渲染在 __content 中
-    expect(wrapper.find('.ex-divider--center').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider__content').exists()).toBe(true);
-    expect(wrapper.text()).toBe('Divider Text');
+    expect(wrapper.classes()).toContain('ex-divider--center');
+    expect(wrapper.findAll('.ex-divider__line')).toHaveLength(2);
+    expect(wrapper.find('.ex-divider__content strong').text()).toBe('章节标题');
   });
 
-  it('renders as vertical divider', () => {
+  it('忽略注释和空白组成的空插槽', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        type: 'vertical',
-      },
+      slots: { default: () => [h(Comment), '   '] },
     });
 
-    expect(wrapper.find('.ex-divider--vertical').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--horizontal').exists()).toBe(false);
+    expect(wrapper.find('.ex-divider__content').exists()).toBe(false);
+    expect(wrapper.findAll('.ex-divider__line')).toHaveLength(1);
+    expect(wrapper.classes()).not.toContain('ex-divider--center');
   });
 
-  it('renders with different orientations', () => {
-    const orientations: ExDividerProps['orientation'][] = ['left', 'center', 'right'];
-
-    orientations.forEach(orientation => {
-      const wrapper = mount(ExDivider, {
-        props: {
-          orientation,
-        },
-        slots: {
-          default: 'Text',
-        },
-      });
-
-      expect(wrapper.find(`.ex-divider--${orientation}`).exists()).toBe(true);
-    });
-  });
-
-  it('renders with dashed style', () => {
+  it('垂直分割线忽略标题并声明垂直方向', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        dashed: true,
-      },
+      props: { type: 'vertical' },
+      slots: { default: '不会渲染' },
     });
 
-    expect(wrapper.find('.ex-divider--dashed').exists()).toBe(true);
+    expect(wrapper.classes()).toContain('ex-divider--vertical');
+    expect(wrapper.attributes('aria-orientation')).toBe('vertical');
+    expect(wrapper.find('.ex-divider__content').exists()).toBe(false);
+    expect(wrapper.findAll('.ex-divider__line--vertical')).toHaveLength(1);
   });
 
-  it('renders with different sizes', () => {
-    const sizes = ['small', 'default', 'large'] as const;
-
-    sizes.forEach(size => {
-      const wrapper = mount(ExDivider, {
-        props: {
-          size,
-        },
-      });
-
-      expect(wrapper.find(`.ex-divider--size-${size}`).exists()).toBe(true);
+  it.each(['left', 'center', 'right'] as const)('标题支持 %s 方位', orientation => {
+    const wrapper = mount(ExDivider, {
+      props: { orientation },
+      slots: { default: '标题' },
     });
+
+    expect(wrapper.classes()).toContain(`ex-divider--${orientation}`);
   });
 
-  it('renders with custom numeric size', () => {
+  it.each(['small', 'default', 'large'] as const)('支持 %s 预设尺寸', size => {
+    const wrapper = mount(ExDivider, { props: { size } });
+    expect(wrapper.classes()).toContain(`ex-divider--size-${size}`);
+  });
+
+  it('非法运行时枚举稳定回退到默认值', () => {
     const wrapper = mount(ExDivider, {
       props: {
-        size: 5,
+        type: 'diagonal' as never,
+        orientation: 'outside' as never,
+        size: 'huge' as never,
       },
+      slots: { default: '标题' },
     });
 
-    // 数字尺寸通过 CSS 变量下发
-    const dividerElement = wrapper.find('.ex-divider');
-    expect(dividerElement.attributes('style')).toContain('--ex-divider-size: 5px');
+    expect(wrapper.classes()).toContain('ex-divider--horizontal');
+    expect(wrapper.classes()).toContain('ex-divider--center');
+    expect(wrapper.classes()).toContain('ex-divider--size-default');
   });
 
-  it('renders with custom margin', () => {
+  it('正的有限数字尺寸写入 CSS 变量', () => {
+    const wrapper = mount(ExDivider, { props: { size: 5 } });
+    expect(wrapper.attributes('style')).toContain('--ex-divider-size: 5px');
+  });
+
+  it.each([0, -1, Number.POSITIVE_INFINITY, Number.NaN])('非法数字尺寸 %s 不生成无效 CSS', size => {
+    const wrapper = mount(ExDivider, { props: { size } });
+    expect(wrapper.classes()).toContain('ex-divider--size-default');
+    expect(wrapper.attributes('style') || '').not.toContain('--ex-divider-size');
+  });
+
+  it('水平和垂直间距沿各自主轴应用', async () => {
+    const wrapper = mount(ExDivider, { props: { margin: 20 } });
+    expect(wrapper.attributes('style')).toContain('--ex-divider-margin: 20px 0');
+
+    await wrapper.setProps({ type: 'vertical' });
+    expect(wrapper.attributes('style')).toContain('--ex-divider-margin: 0 20px');
+  });
+
+  it('非有限数字间距不会写入 CSS', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        margin: '16px',
-      },
+      props: { margin: Number.POSITIVE_INFINITY },
+    });
+    expect(wrapper.attributes('style') || '').not.toContain('--ex-divider-margin');
+  });
+
+  it('orientationMargin 只对带标题的 left/right 水平分隔线生效', async () => {
+    const wrapper = mount(ExDivider, {
+      props: { orientation: 'left', orientationMargin: 24 },
+      slots: { default: '标题' },
+    });
+    expect(wrapper.attributes('style')).toContain('--ex-divider-orientation-margin: 24px');
+
+    await wrapper.setProps({ orientation: 'center' });
+    expect(wrapper.attributes('style') || '').not.toContain('--ex-divider-orientation-margin');
+  });
+
+  it('无标题时不宣称 orientationMargin 与 plain 生效', () => {
+    const wrapper = mount(ExDivider, {
+      props: { orientation: 'left', orientationMargin: '10%', plain: true },
     });
 
-    const dividerElement = wrapper.find('.ex-divider');
-    expect(dividerElement.attributes('style')).toContain('margin: 16px 0');
+    expect(wrapper.attributes('style') || '').not.toContain('--ex-divider-orientation-margin');
+    expect(wrapper.classes()).not.toContain('ex-divider--plain');
   });
 
-  it('renders with numeric margin', () => {
+  it('自定义颜色通过稳定 CSS 变量透传', () => {
+    const wrapper = mount(ExDivider, { props: { color: '#00f0ff' } });
+    expect(wrapper.attributes('style')).toContain('--ex-divider-color: #00f0ff');
+  });
+
+  it('虚线与朴素标题样式可组合', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        margin: 20,
-      },
+      props: { dashed: true, plain: true },
+      slots: { default: '标题' },
     });
-
-    const dividerElement = wrapper.find('.ex-divider');
-    expect(dividerElement.attributes('style')).toContain('margin: 20px 0');
+    expect(wrapper.classes()).toContain('ex-divider--dashed');
+    expect(wrapper.classes()).toContain('ex-divider--plain');
   });
 
-  it('renders with orientation margin', () => {
+  it('仅在显式传入时设置可访问名称', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        orientation: 'left',
-        orientationMargin: '10%',
-      },
-      slots: {
-        default: 'Text',
-      },
+      props: { ariaLabel: '内容章节分隔' },
     });
-
-    // orientationMargin 通过 CSS 变量下发到根元素
-    expect(wrapper.find('.ex-divider').attributes('style')).toContain(
-      '--ex-divider-orientation-margin: 10%'
-    );
+    expect(wrapper.attributes('aria-label')).toBe('内容章节分隔');
   });
 
-  it('renders with numeric orientation margin', () => {
+  it('合并原生类名、样式和数据属性', () => {
     const wrapper = mount(ExDivider, {
-      props: {
-        orientation: 'right',
-        orientationMargin: 50,
-      },
-      slots: {
-        default: 'Text',
-      },
-    });
-
-    expect(wrapper.find('.ex-divider').attributes('style')).toContain(
-      '--ex-divider-orientation-margin: 50px'
-    );
-  });
-
-  it('renders with plain text style', () => {
-    const wrapper = mount(ExDivider, {
-      props: {
-        plain: true,
-      },
-      slots: {
-        default: 'Plain Text',
-      },
-    });
-
-    expect(wrapper.find('.ex-divider--plain').exists()).toBe(true);
-  });
-
-  it('applies custom class and style', () => {
-    const wrapper = mount(ExDivider, {
-      props: {
+      attrs: {
         class: 'custom-divider',
-        style: { borderColor: 'red' },
+        style: { opacity: '0.8' },
+        'data-testid': 'divider',
       },
     });
-
     expect(wrapper.classes()).toContain('custom-divider');
-    expect(wrapper.attributes('style')).toContain('border-color: red');
-  });
-
-  it('vertical divider ignores text content', () => {
-    const wrapper = mount(ExDivider, {
-      props: {
-        type: 'vertical',
-      },
-      slots: {
-        default: 'Vertical Text',
-      },
-    });
-
-    // 垂直分割线不支持标题文本
-    expect(wrapper.find('.ex-divider--vertical').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider__content').exists()).toBe(false);
-  });
-
-  it('combines multiple props correctly', () => {
-    const wrapper = mount(ExDivider, {
-      props: {
-        type: 'horizontal',
-        orientation: 'left',
-        dashed: true,
-        size: 'large',
-        plain: true,
-        margin: '32px',
-      },
-      slots: {
-        default: 'Combined Props',
-      },
-    });
-
-    expect(wrapper.find('.ex-divider--horizontal').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--left').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--dashed').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--size-large').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--plain').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider__content').exists()).toBe(true);
-    expect(wrapper.attributes('style')).toContain('margin: 32px 0');
-  });
-
-  it('handles empty slot content', () => {
-    const wrapper = mount(ExDivider);
-
-    expect(wrapper.find('.ex-divider__content').exists()).toBe(false);
-  });
-
-  it('renders with complex slot content', () => {
-    const wrapper = mount(ExDivider, {
-      slots: {
-        default: '<span class="custom-text">Custom <strong>Content</strong></span>',
-      },
-    });
-
-    expect(wrapper.find('.custom-text').exists()).toBe(true);
-    expect(wrapper.find('strong').exists()).toBe(true);
-    expect(wrapper.text()).toContain('Custom Content');
-  });
-
-  it('applies orientation margin variable for left orientation', () => {
-    const leftWrapper = mount(ExDivider, {
-      props: {
-        orientation: 'left',
-        orientationMargin: '20px',
-      },
-      slots: {
-        default: 'Left Text',
-      },
-    });
-
-    expect(leftWrapper.find('.ex-divider').attributes('style')).toContain(
-      '--ex-divider-orientation-margin: 20px'
-    );
-    expect(leftWrapper.find('.ex-divider--left').exists()).toBe(true);
-  });
-
-  it('handles different size and type combinations', () => {
-    const wrapper = mount(ExDivider, {
-      props: {
-        type: 'vertical',
-        size: 'small',
-        dashed: true,
-      },
-    });
-
-    expect(wrapper.find('.ex-divider--vertical').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--size-small').exists()).toBe(true);
-    expect(wrapper.find('.ex-divider--dashed').exists()).toBe(true);
+    expect(wrapper.attributes('style')).toContain('opacity: 0.8');
+    expect(wrapper.attributes('data-testid')).toBe('divider');
   });
 });

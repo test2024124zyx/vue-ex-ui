@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, defineOptions, useSlots } from 'vue';
-import { useI18n } from '../../locale';
-import type { ExDividerProps } from './types';
+import { Comment, Fragment, Text, computed, isVNode, useSlots } from 'vue';
+import type { CSSProperties, VNode } from 'vue';
+import type { DividerOrientation, DividerPresetSize, DividerType, ExDividerProps } from './types';
 
 defineOptions({ name: 'ExDivider' });
 
@@ -14,76 +14,121 @@ const props = withDefaults(defineProps<ExDividerProps>(), {
 });
 
 const slots = useSlots();
-const { t } = useI18n();
+const DIVIDER_TYPES = new Set<DividerType>(['horizontal', 'vertical']);
+const DIVIDER_ORIENTATIONS = new Set<DividerOrientation>(['left', 'center', 'right']);
+const PRESET_SIZES = new Set<DividerPresetSize>(['small', 'default', 'large']);
 
-const isVertical = computed(() => props.type === 'vertical');
-const hasTitle = computed(() => !!slots.default);
+/** 递归忽略注释、空文本和空 Fragment，避免空插槽生成断裂的双线布局。 */
+const hasRenderableContent = (value: unknown): boolean => {
+  if (value === null || value === undefined || typeof value === 'boolean') return false;
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value).trim().length > 0;
+  }
+  if (Array.isArray(value)) return value.some(hasRenderableContent);
+  if (!isVNode(value)) return true;
+
+  const node = value as VNode;
+  if (node.type === Comment) return false;
+  if (node.type === Text) return hasRenderableContent(node.children);
+  if (node.type === Fragment) return hasRenderableContent(node.children);
+  return true;
+};
+
+/** 将有限数字或非空字符串转换为 CSS 长度。 */
+const normalizeLength = (
+  value: string | number | undefined,
+  minimum = Number.NEGATIVE_INFINITY
+): string | undefined => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value >= minimum ? `${value}px` : undefined;
+  }
+  const normalized = value?.trim();
+  return normalized || undefined;
+};
+
+const normalizedType = computed<DividerType>(() =>
+  DIVIDER_TYPES.has(props.type) ? props.type : 'horizontal'
+);
+const normalizedOrientation = computed<DividerOrientation>(() =>
+  DIVIDER_ORIENTATIONS.has(props.orientation) ? props.orientation : 'center'
+);
+const normalizedSize = computed<DividerPresetSize | number>(() => {
+  if (typeof props.size === 'number') {
+    return Number.isFinite(props.size) && props.size > 0 ? props.size : 'default';
+  }
+  return PRESET_SIZES.has(props.size) ? props.size : 'default';
+});
+const isVertical = computed(() => normalizedType.value === 'vertical');
+const hasTitle = computed(() =>
+  isVertical.value ? false : hasRenderableContent(slots.default?.())
+);
 
 const classes = computed(() => [
   'ex-divider',
-  `ex-divider--${props.type}`,
+  `ex-divider--${normalizedType.value}`,
   {
     'ex-divider--dashed': props.dashed,
-    'ex-divider--plain': props.plain,
-    [`ex-divider--${props.orientation}`]: hasTitle.value && !isVertical.value,
-    [`ex-divider--size-${props.size}`]: typeof props.size === 'string',
+    'ex-divider--plain': props.plain && hasTitle.value,
+    [`ex-divider--${normalizedOrientation.value}`]: hasTitle.value,
+    [`ex-divider--size-${normalizedSize.value}`]: typeof normalizedSize.value === 'string',
   },
 ]);
 
-const dividerStyle = computed(() => {
-  const style: Record<string, string> = {};
-
-  if (props.margin !== undefined) {
-    const margin = typeof props.margin === 'number' ? `${props.margin}px` : props.margin;
+const dividerStyle = computed<CSSProperties>(() => {
+  const style: CSSProperties = {};
+  const margin = normalizeLength(props.margin);
+  if (margin) {
     style['--ex-divider-margin'] = isVertical.value ? `0 ${margin}` : `${margin} 0`;
   }
 
-  if (typeof props.size === 'number') {
-    style['--ex-divider-size'] = `${props.size}px`;
+  if (typeof normalizedSize.value === 'number') {
+    style['--ex-divider-size'] = `${normalizedSize.value}px`;
   }
 
-  if (props.orientationMargin !== undefined && !isVertical.value) {
-    const orientationMargin =
-      typeof props.orientationMargin === 'number'
-        ? `${props.orientationMargin}px`
-        : props.orientationMargin;
+  const canApplyOrientationMargin = hasTitle.value && normalizedOrientation.value !== 'center';
+  const orientationMargin = normalizeLength(props.orientationMargin, 0);
+  if (canApplyOrientationMargin && orientationMargin) {
     style['--ex-divider-orientation-margin'] = orientationMargin;
   }
 
-  if (props.color) {
-    style['--ex-divider-color'] = props.color;
-  }
-
+  const color = props.color?.trim();
+  if (color) style['--ex-divider-color'] = color;
   return style;
 });
 
-const ariaLabel = computed(() => {
-  if (hasTitle.value) return undefined;
-  return isVertical.value ? t('divider.vertical') : t('divider.horizontal');
-});
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
 </script>
 
 <template>
   <div
     :class="classes"
+    :style="dividerStyle"
     role="separator"
     :aria-orientation="isVertical ? 'vertical' : 'horizontal'"
-    :aria-label="ariaLabel"
-    :style="dividerStyle"
+    :aria-label="accessibleLabel"
   >
-    <!-- 水平分割线：无文字时渲染单条连续线，避免两条半线在正中相接处出现断开 -->
     <template v-if="!isVertical">
-      <div class="ex-divider__line" aria-hidden="true" />
+      <div
+        class="ex-divider__line"
+        aria-hidden="true"
+      />
       <template v-if="hasTitle">
         <div class="ex-divider__content">
           <slot />
         </div>
-        <div class="ex-divider__line" aria-hidden="true" />
+        <div
+          class="ex-divider__line"
+          aria-hidden="true"
+        />
       </template>
     </template>
 
-    <!-- 垂直分割线 -->
-    <div v-else class="ex-divider__line ex-divider__line--vertical" aria-hidden="true" />
+    <div
+      v-else
+      class="ex-divider__line ex-divider__line--vertical"
+      aria-hidden="true"
+    />
   </div>
 </template>
+
 <style scoped lang="scss" src="./ExDivider.scss"></style>

@@ -72,4 +72,15 @@ describe('v2 样式系统边界', () => {
       expect(css).toContain(`.ex-button--${type}`);
     }
   });
+
+  it('Divider 的颜色、粗细和响应式间距始终由同一组变量驱动', () => {
+    const css = compile("@use 'src/components/divider/ExDivider';");
+
+    expect(css).toContain('.ex-divider--dashed.ex-divider--horizontal .ex-divider__line');
+    expect(css).toContain('border-top: var(--ex-divider-size, 1px) dashed');
+    expect(css).toContain('var(--ex-divider-color, var(--ex-color-border-primary))');
+    expect(css).toContain('margin: var(--ex-divider-margin, 16px 0)');
+    expect(css).not.toContain("[style*='--ex-divider-color']");
+    expect(css).not.toContain('transition-property: all');
+  });
 });

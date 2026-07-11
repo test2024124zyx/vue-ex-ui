@@ -1,13 +1,27 @@
 <template>
   <div
-    :id="id"
+    v-if="divided"
+    class="ex-dropdown-item__divider"
+    role="separator"
+  />
+  <div
+    v-bind="$attrs"
+    :id="itemId"
     :class="itemClasses"
     role="menuitem"
-    :tabindex="disabled ? undefined : -1"
-    :aria-disabled="disabled || undefined"
+    data-ex-dropdown-item
+    :aria-disabled="disabled ? 'true' : undefined"
+    @mouseenter="handleMouseEnter"
     @click="handleClick"
   >
-    <img v-if="icon" :src="icon" alt="icon" class="ex-dropdown-item__icon" />
+    <!-- prettier-ignore -->
+    <img
+      v-if="icon"
+      :src="icon"
+      alt=""
+      class="ex-dropdown-item__icon"
+      aria-hidden="true"
+    >
     <span class="ex-dropdown-item__label">
       <slot>{{ label }}</slot>
     </span>
@@ -15,37 +29,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { ExDropdownItemProps } from './types';
+import { computed, inject, useId } from 'vue';
+import { DROPDOWN_INJECTION_KEY } from './context';
+import type { ExDropdownItemEmits, ExDropdownItemProps } from './types';
 
 defineOptions({
   name: 'ExDropdownItem',
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<ExDropdownItemProps>(), {
   disabled: false,
   divided: false,
 });
+const emit = defineEmits<ExDropdownItemEmits>();
+const dropdown = inject(DROPDOWN_INJECTION_KEY, null);
+const generatedId = `ex-dropdown-item-${useId()}`;
+const itemId = computed(() => props.id || generatedId);
 
-const emit = defineEmits<{
-  click: [];
-}>();
+const itemClasses = computed(() => [
+  'ex-dropdown-item',
+  {
+    'ex-dropdown-item--disabled': props.disabled,
+    'ex-dropdown-item--active': dropdown?.activeItemId.value === itemId.value,
+  },
+]);
 
-// 计算属性
-const itemClasses = computed(() => {
-  const classes = ['ex-dropdown-item'];
+const handleMouseEnter = () => {
+  if (!props.disabled) dropdown?.activate(itemId.value);
+};
 
-  if (props.disabled) classes.push('ex-dropdown-item--disabled');
-  if (props.active) classes.push('ex-dropdown-item--active');
-
-  return classes;
-});
-
-// 方法
-const handleClick = () => {
-  if (!props.disabled) {
-    emit('click');
-  }
+const handleClick = (event: MouseEvent) => {
+  if (props.disabled) return;
+  emit('click', event);
+  dropdown?.select();
 };
 </script>
 

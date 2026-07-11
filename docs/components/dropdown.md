@@ -54,8 +54,8 @@ const handleItemClick = (item) => {
 最基础的下拉菜单用法。
 
 <div class="demo-container">
-  <ExDropdown :items="basicItems" @item-click="handleItemClick">
-    <ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">
       下拉菜单
       <template #suffix>
         <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
@@ -66,8 +66,8 @@ const handleItemClick = (item) => {
 
 ```vue
 <template>
-  <ExDropdown :items="items" @item-click="handleItemClick">
-    <ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">
       下拉菜单
       <template #suffix>
         <img
@@ -101,8 +101,8 @@ const handleItemClick = item => {
 菜单项可以显示图标。
 
 <div class="demo-container">
-  <ExDropdown :items="iconItems" @item-click="handleItemClick">
-    <ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="iconItems" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">
       操作
       <template #suffix>
         <img src="https://api.iconify.design/ri/more-line.svg" alt="more" width="16" height="16" />
@@ -113,8 +113,8 @@ const handleItemClick = item => {
 
 ```vue
 <template>
-  <ExDropdown :items="items" @item-click="handleItemClick">
-    <ExButton>操作</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">操作</ExButton>
   </ExDropdown>
 </template>
 
@@ -150,8 +150,8 @@ const handleItemClick = item => {
 使用 `divided` 属性可以在菜单项之间添加分割线。
 
 <div class="demo-container">
-  <ExDropdown :items="dividedItems" @item-click="handleItemClick">
-    <ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="dividedItems" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">
       文件
       <template #suffix>
         <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
@@ -162,8 +162,8 @@ const handleItemClick = item => {
 
 ```vue
 <template>
-  <ExDropdown :items="items" @item-click="handleItemClick">
-    <ExButton>文件</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">文件</ExButton>
   </ExDropdown>
 </template>
 
@@ -186,8 +186,8 @@ const items = ref([
 可以禁用某些菜单项。
 
 <div class="demo-container">
-  <ExDropdown :items="disabledItems" @item-click="handleItemClick">
-    <ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="disabledItems" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">
       选项
       <template #suffix>
         <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
@@ -198,8 +198,8 @@ const items = ref([
 
 ```vue
 <template>
-  <ExDropdown :items="items" @item-click="handleItemClick">
-    <ExButton>选项</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">选项</ExButton>
   </ExDropdown>
 </template>
 
@@ -219,16 +219,16 @@ const items = ref([
 支持 hover、click 和 contextmenu 三种触发方式。
 
 <div class="demo-container" style="display: flex; gap: 16px;">
-  <ExDropdown :items="basicItems" trigger="hover" @item-click="handleItemClick">
-    <ExButton>悬停触发</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="hover" @item-click="handleItemClick">
+    <ExButton v-bind="triggerProps">悬停触发</ExButton>
   </ExDropdown>
 
-<ExDropdown :items="basicItems" trigger="click" @item-click="handleItemClick">
-<ExButton>点击触发</ExButton>
+<ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="click" @item-click="handleItemClick">
+<ExButton v-bind="triggerProps">点击触发</ExButton>
 </ExDropdown>
 
-<ExDropdown :items="basicItems" trigger="contextmenu" @item-click="handleItemClick">
-<ExButton>右键触发</ExButton>
+<ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="contextmenu" @item-click="handleItemClick">
+<ExButton v-bind="triggerProps">右键触发</ExButton>
 </ExDropdown>
 
 </div>
@@ -236,16 +236,16 @@ const items = ref([
 ```vue
 <template>
   <div style="display: flex; gap: 16px;">
-    <ExDropdown :items="items" trigger="hover">
-      <ExButton>悬停触发</ExButton>
+    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="hover">
+      <ExButton v-bind="triggerProps">悬停触发</ExButton>
     </ExDropdown>
 
-    <ExDropdown :items="items" trigger="click">
-      <ExButton>点击触发</ExButton>
+    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="click">
+      <ExButton v-bind="triggerProps">点击触发</ExButton>
     </ExDropdown>
 
-    <ExDropdown :items="items" trigger="contextmenu">
-      <ExButton>右键触发</ExButton>
+    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="contextmenu">
+      <ExButton v-bind="triggerProps">右键触发</ExButton>
     </ExDropdown>
   </div>
 </template>
@@ -266,35 +266,35 @@ const items = ref([
 支持 12 个不同的弹出位置。
 
 <div class="demo-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-  <ExDropdown :items="basicItems" placement="top-start">
-    <ExButton>上左</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top-start">
+    <ExButton v-bind="triggerProps">上左</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" placement="top">
-    <ExButton>上中</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top">
+    <ExButton v-bind="triggerProps">上中</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" placement="top-end">
-    <ExButton>上右</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top-end">
+    <ExButton v-bind="triggerProps">上右</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" placement="bottom-start">
-    <ExButton>下左</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom-start">
+    <ExButton v-bind="triggerProps">下左</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" placement="bottom">
-    <ExButton>下中</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom">
+    <ExButton v-bind="triggerProps">下中</ExButton>
   </ExDropdown>
 
-  <ExDropdown :items="basicItems" placement="bottom-end">
-    <ExButton>下右</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom-end">
+    <ExButton v-bind="triggerProps">下右</ExButton>
   </ExDropdown>
 </div>
 
 ```vue
 <template>
-  <ExDropdown :items="items" placement="bottom-start">
-    <ExButton>下拉菜单</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" placement="bottom-start">
+    <ExButton v-bind="triggerProps">下拉菜单</ExButton>
   </ExDropdown>
 </template>
 ```
@@ -304,15 +304,15 @@ const items = ref([
 整个下拉菜单可以被禁用。
 
 <div class="demo-container">
-  <ExDropdown :items="basicItems" :disabled="true">
-    <ExButton disabled>禁用的下拉菜单</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" :disabled="true">
+    <ExButton v-bind="triggerProps" disabled>禁用的下拉菜单</ExButton>
   </ExDropdown>
 </div>
 
 ```vue
 <template>
-  <ExDropdown :items="items" :disabled="true">
-    <ExButton disabled>禁用的下拉菜单</ExButton>
+  <ExDropdown v-slot="{ triggerProps }" :items="items" :disabled="true">
+    <ExButton v-bind="triggerProps" disabled>禁用的下拉菜单</ExButton>
   </ExDropdown>
 </template>
 ```
@@ -321,16 +321,22 @@ const items = ref([
 
 ### Dropdown Props
 
-| 属性       | 说明           | 类型                                            | 默认值           |
-| ---------- | -------------- | ----------------------------------------------- | ---------------- |
-| items      | 下拉菜单项列表 | `DropdownItemData[]`                            | `[]`             |
-| trigger    | 触发方式       | `'hover' \| 'click' \| 'contextmenu'`           | `'hover'`        |
-| placement  | 弹出位置       | `DropdownPlacement`                             | `'bottom-start'` |
-| disabled   | 是否禁用       | `boolean`                                       | `false`          |
-| visible    | 菜单是否显示   | `boolean`                                       | -                |
-| aria-label | 无障碍标签     | `string`                                        | -                |
-| class      | 自定义CSS类名  | `string \| string[] \| Record<string, boolean>` | -                |
-| style      | 自定义样式     | `string \| Record<string, string \| number>`    | -                |
+| 属性                | 说明                                   | 类型                                  | 默认值           |
+| ------------------- | -------------------------------------- | ------------------------------------- | ---------------- |
+| items               | 数据驱动菜单项                         | `DropdownItemData[]`                  | `[]`             |
+| trigger             | 触发方式                               | `'hover' \| 'click' \| 'contextmenu'` | `'hover'`        |
+| placement           | 首选弹出位置                           | `DropdownPlacement`                   | `'bottom-start'` |
+| disabled            | 是否禁用打开请求                       | `boolean`                             | `false`          |
+| visible             | 受控显示状态；未传入时内部管理         | `boolean`                             | -                |
+| aria-label          | 菜单的显式无障碍名称                   | `string`                              | -                |
+| offset              | 弹层间距，单位像素                     | `number`                              | `8`              |
+| match-trigger-width | 是否精确匹配触发器宽度                 | `boolean`                             | `false`          |
+| flip                | 首选方向空间不足时是否翻转             | `boolean`                             | `true`           |
+| viewport-padding    | 浮层与视口边缘的安全距离               | `number`                              | `8`              |
+| show-delay          | hover 打开延迟，单位毫秒               | `number`                              | `0`              |
+| hide-delay          | hover 关闭延迟，单位毫秒               | `number`                              | `150`            |
+| hide-on-click       | 选择菜单项后是否关闭                   | `boolean`                             | `true`           |
+| z-index             | 自定义层级；未设置时跟随全局配置       | `number`                              | 全局层级 + 20    |
 
 ### Dropdown Events
 
@@ -338,16 +344,26 @@ const items = ref([
 | -------------- | ------------------ | ---------------------------------- |
 | item-click     | 菜单项点击时触发   | `(item: DropdownItemData) => void` |
 | update:visible | 显示状态改变时触发 | `(visible: boolean) => void`       |
-| show           | 显示时触发         | `() => void`                       |
-| hide           | 隐藏时触发         | `() => void`                       |
+| show           | 状态真正变为显示时触发 | `() => void`                    |
+| hide           | 状态真正变为隐藏时触发 | `() => void`                    |
 
 ### Dropdown Methods
 
-| 方法名     | 说明         | 参数 |
-| ---------- | ------------ | ---- |
-| show       | 显示下拉菜单 | -    |
-| hide       | 隐藏下拉菜单 | -    |
-| getElement | 获取DOM元素  | -    |
+| 方法名         | 说明                 | 类型                           |
+| -------------- | -------------------- | ------------------------------ |
+| show           | 请求显示下拉菜单     | `() => void`                   |
+| hide           | 请求隐藏下拉菜单     | `() => void`                   |
+| updatePosition | 立即重新计算浮层位置 | `() => void`                   |
+| getElement     | 获取根元素           | `() => HTMLDivElement \| null` |
+
+### Dropdown Slots
+
+| 名称    | 说明                                                     |
+| ------- | -------------------------------------------------------- |
+| default | 触发控件；提供 `open`、`disabled` 和 `triggerProps` 参数 |
+| menu    | 自定义菜单项内容                                         |
+
+实际触发控件应绑定 `v-bind="triggerProps"`，保证 `aria-expanded`、`aria-controls` 与禁用语义落在唯一的交互元素上。
 
 ### DropdownItem Props
 
@@ -357,6 +373,7 @@ const items = ref([
 | icon     | 图标URL        | `string`  | -       |
 | disabled | 是否禁用       | `boolean` | `false` |
 | divided  | 是否显示分割线 | `boolean` | `false` |
+| id       | 菜单项元素 id  | `string`  | 自动生成 |
 
 ### Types
 
@@ -374,8 +391,6 @@ interface DropdownItemData {
   disabled?: boolean;
   /** 是否分割线 */
   divided?: boolean;
-  /** 子菜单 */
-  children?: DropdownItemData[];
   /** 自定义数据 */
   data?: Record<string, unknown>;
 }

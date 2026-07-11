@@ -226,8 +226,8 @@ const themes = [
 
 <template>
   <div class="theme-switcher">
-    <ExDropdown>
-      <ExButton>
+    <ExDropdown v-slot="{ triggerProps }">
+      <ExButton v-bind="triggerProps">
         {{ themes.find(t => t.value === theme)?.icon }}
         切换主题
       </ExButton>
