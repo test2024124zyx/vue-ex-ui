@@ -1,21 +1,18 @@
-// Layout Component Types
-// 布局组件类型定义
+/** 布局方向；未传入时由直系 Sider 自动决定。 */
+export type LayoutDirection = 'horizontal' | 'vertical';
 
-import type { CSSProperties } from 'vue';
+/** 与设计令牌一致的有效响应式断点。 */
+export type LayoutBreakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-// ============================================================================
-// Layout 主容器
-// ============================================================================
+/** 可由浏览器 style 属性执行的尺寸。 */
+export type LayoutLength = string | number;
+
+/** 侧栏收起请求的真实来源。 */
+export type SiderCollapseSource = 'trigger' | 'responsive' | 'mask';
 
 export interface ExLayoutProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 是否有侧边栏 */
-  hasSider?: boolean;
-  /** 布局方向 */
-  direction?: 'horizontal' | 'vertical';
+  /** 显式布局方向；省略时包含直系 Sider 的布局自动使用水平方向。 */
+  direction?: LayoutDirection;
 }
 
 export interface ExLayoutSlots {
@@ -23,107 +20,86 @@ export interface ExLayoutSlots {
 }
 
 export interface ExLayoutExposed {
-  /** 获取 DOM 元素 */
-  getElement: () => HTMLElement | null;
+  /** 获取根容器。 */
+  getElement: () => HTMLDivElement | null;
 }
 
-// ============================================================================
-// Header 头部
-// ============================================================================
-
 export interface ExHeaderProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 高度 */
-  height?: string | number;
-  /** 是否固定 */
+  /** 头部高度。非法值回退为 64px。 */
+  height?: LayoutLength;
+  /** 是否固定在视口顶部。 */
   fixed?: boolean;
-  /** 是否显示霓虹边框 */
+  /** 是否显示主题强调边框；省略时继承 ConfigProvider。 */
   neonBorder?: boolean;
-  /** 是否显示背景模糊 */
+  /** 是否启用背景模糊。 */
   blur?: boolean;
 }
 
 export interface ExHeaderSlots {
   default?: () => unknown;
-  /** 左侧内容 */
   left?: () => unknown;
-  /** 中间内容 */
   center?: () => unknown;
-  /** 右侧内容 */
   right?: () => unknown;
 }
 
 export interface ExHeaderExposed {
+  /** 获取 header 元素。 */
   getElement: () => HTMLElement | null;
 }
 
-// ============================================================================
-// Sider 侧边栏
-// ============================================================================
-
 export interface ExSiderProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 宽度 */
-  width?: string | number;
-  /** 收起时的宽度 */
-  collapsedWidth?: string | number;
-  /** 是否收起 */
+  /** 展开宽度。 */
+  width?: LayoutLength;
+  /** 收起宽度；允许为 0。 */
+  collapsedWidth?: LayoutLength;
+  /** 受控收起状态。 */
   collapsed?: boolean;
-  /** 是否可收起 */
+  /** 非受控初始收起状态。 */
+  defaultCollapsed?: boolean;
+  /** 是否显示收起触发器。 */
   collapsible?: boolean;
-  /** 触发器位置 */
+  /** 触发器位置；null 隐藏触发器。 */
   trigger?: 'top' | 'bottom' | null;
-  /** 侧边栏位置 */
+  /** 侧栏位于布局的左侧或右侧。 */
   position?: 'left' | 'right';
-  /** 是否显示霓虹边框 */
+  /** 是否显示主题强调边框；省略时继承 ConfigProvider。 */
   neonBorder?: boolean;
-  /** 是否显示背景模糊 */
+  /** 是否启用背景模糊。 */
   blur?: boolean;
-  /** 响应式断点 */
-  breakpoint?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-  /** 动画过渡时长（毫秒） */
+  /** 视口小于该设计断点时进入 broken 状态。 */
+  breakpoint?: LayoutBreakpoint;
+  /** 宽度过渡时长，单位毫秒。 */
   transitionDuration?: number;
+  /** aside 的无障碍名称。 */
+  ariaLabel?: string;
 }
 
 export interface ExSiderEmits {
-  /** 收起状态变化 */
-  (e: 'update:collapsed', value: boolean): void;
-  /** 收起状态变化（兼容） */
-  (e: 'collapse', collapsed: boolean, type: 'clickTrigger' | 'responsive'): void;
-  /** 断点触发 */
-  (e: 'breakpoint', broken: boolean): void;
+  'update:collapsed': [value: boolean];
+  collapse: [collapsed: boolean, source: SiderCollapseSource];
+  breakpoint: [broken: boolean];
 }
 
 export interface ExSiderSlots {
   default?: () => unknown;
-  /** 自定义触发器 */
-  trigger?: (props: { collapsed: boolean }) => unknown;
+  trigger?: (props: { collapsed: boolean; broken: boolean }) => unknown;
 }
 
 export interface ExSiderExposed {
+  /** 获取 aside 元素。 */
   getElement: () => HTMLElement | null;
-  /** 切换收起状态 */
+  /** 请求切换收起状态。 */
   toggle: () => void;
 }
 
-// ============================================================================
-// Content 内容区
-// ============================================================================
+export type ExContentTag = 'main' | 'section' | 'div';
 
 export interface ExContentProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 是否显示背景网格 */
+  /** 根元素标签。 */
+  tag?: ExContentTag;
+  /** 是否显示背景网格。 */
   grid?: boolean;
-  /** 是否显示扫描线效果 */
+  /** 是否显示扫描线效果。 */
   scanline?: boolean;
 }
 
@@ -132,55 +108,40 @@ export interface ExContentSlots {
 }
 
 export interface ExContentExposed {
+  /** 获取内容根元素。 */
   getElement: () => HTMLElement | null;
 }
 
-// ============================================================================
-// Footer 底部
-// ============================================================================
-
 export interface ExFooterProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 高度 */
-  height?: string | number;
-  /** 是否固定 */
+  /** 底部高度。非法值回退为 64px。 */
+  height?: LayoutLength;
+  /** 是否固定在视口底部。 */
   fixed?: boolean;
-  /** 是否显示霓虹边框 */
+  /** 是否显示主题强调边框；省略时继承 ConfigProvider。 */
   neonBorder?: boolean;
-  /** 是否显示背景模糊 */
+  /** 是否启用背景模糊。 */
   blur?: boolean;
 }
 
 export interface ExFooterSlots {
   default?: () => unknown;
-  /** 左侧内容 */
   left?: () => unknown;
-  /** 中间内容 */
   center?: () => unknown;
-  /** 右侧内容 */
   right?: () => unknown;
 }
 
 export interface ExFooterExposed {
+  /** 获取 footer 元素。 */
   getElement: () => HTMLElement | null;
 }
 
-// ============================================================================
-// Container 容器
-// ============================================================================
+export type ContainerSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export interface ExContainerProps {
-  /** 自定义类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: CSSProperties | string;
-  /** 是否为流式容器（100%宽度） */
+  /** 是否取消最大宽度限制。 */
   fluid?: boolean;
-  /** 固定尺寸 */
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  /** 固定最大宽度令牌。 */
+  size?: ContainerSize;
 }
 
 export interface ExContainerSlots {
@@ -188,5 +149,6 @@ export interface ExContainerSlots {
 }
 
 export interface ExContainerExposed {
-  getElement: () => HTMLElement | null;
+  /** 获取容器元素。 */
+  getElement: () => HTMLDivElement | null;
 }
