@@ -1,136 +1,178 @@
-/**
- * 文件上传状态
- */
+import type { ExFileUploadError } from './errors';
+
+/** 上传文件状态。 */
 export type UploadStatus = 'ready' | 'uploading' | 'success' | 'error';
 
-/**
- * 文件类型
- */
-export type FileType = 'image' | 'video' | 'audio' | 'document' | 'archive' | 'other';
-
-/**
- * 上传列表类型
- */
+/** 上传列表展示类型。 */
 export type UploadListType = 'text' | 'picture' | 'picture-card';
 
-/**
- * 文件项接口
- */
+/** 内建 XHR 传输支持的方法。 */
+export type UploadHttpMethod = 'POST' | 'PUT' | 'PATCH';
+
+/** 上传文件项。 */
 export interface UploadFile {
-  /** 文件唯一标识 */
   uid: string;
-  /** 文件名 */
   name: string;
-  /** 文件大小（字节） */
+  /** 文件大小，单位为字节。 */
   size: number;
-  /** 文件类型 */
+  /** MIME 类型。 */
   type: string;
-  /** 上传状态 */
   status: UploadStatus;
-  /** 上传进度 0-100 */
+  /** 上传进度，组件写入时始终为 0 至 100 的整数。 */
   percent?: number;
-  /** 原始文件对象 */
+  /** 原始文件；需要由内建传输上传的 ready 文件必须提供。 */
   raw?: File;
-  /** 文件URL（上传成功后） */
+  /** 服务端文件地址。 */
   url?: string;
-  /** 缩略图URL */
+  /** 外部提供的缩略图地址。 */
   thumbUrl?: string;
-  /** 错误信息 */
+  /** 最近一次失败的可读信息。 */
   error?: string;
-  /** 响应数据 */
+  /** 服务端响应。 */
   response?: unknown;
 }
 
-/**
- * 上传前钩子返回类型
- */
-export type BeforeUploadResult = boolean | Promise<boolean> | File | Promise<File>;
+export interface UploadResolveContext {
+  /** 动态配置解析和 XHR 使用同一中止信号。 */
+  signal: AbortSignal;
+}
 
-/**
- * 文件上传组件属性
- */
-export interface ExFileUploadProps {
-  /** 上传地址 */
-  action?: string;
-  /** 上传请求头 */
-  headers?: Record<string, string>;
-  /** 上传时附带的额外参数 */
-  data?: Record<string, unknown>;
-  /** 上传的文件字段名 */
-  name?: string;
-  /** 是否支持多选 */
-  multiple?: boolean;
-  /** 是否支持拖拽上传 */
-  drag?: boolean;
-  /** 接受的文件类型 */
+export type UploadActionResolver = (
+  file: UploadFile,
+  context: UploadResolveContext
+) => string | Promise<string>;
+export type UploadAction = string | UploadActionResolver;
+
+export type UploadDataValue = string | number | boolean | Blob | null | undefined;
+export type UploadData = Record<string, UploadDataValue>;
+export type UploadHeaders = Record<string, string>;
+export type UploadConfigResolver<T> = (
+  file: UploadFile,
+  context: UploadResolveContext
+) => T | Promise<T>;
+
+export type BeforeAddResult = File | false | void;
+export type BeforeAdd = (
+  file: File,
+  currentFiles: readonly UploadFile[]
+) => BeforeAddResult | Promise<BeforeAddResult>;
+
+export type UploadRejectionCode =
+  | 'accept'
+  | 'size'
+  | 'limit'
+  | 'multiple'
+  | 'before-add'
+  | 'before-add-error';
+
+/** 选择阶段的可判别拒绝结果。 */
+export interface UploadRejection {
+  code: UploadRejectionCode;
+  file: File;
   accept?: string;
-  /** 文件列表 */
-  fileList?: UploadFile[];
-  /** 最大上传数量 */
+  maxFileSize?: number;
   limit?: number;
-  /** 文件大小限制（MB） */
-  maxSize?: number;
-  /** 是否自动上传 */
+  cause?: unknown;
+}
+
+export type UploadIgnoredReason = 'no-action' | 'missing-raw' | 'not-ready';
+export type UploadOutcome = 'success' | 'error' | 'aborted' | 'ignored';
+
+/** 单个文件上传任务的最终结果。 */
+export interface UploadResult {
+  uid: string;
+  outcome: UploadOutcome;
+  response?: unknown;
+  error?: ExFileUploadError;
+  reason?: UploadIgnoredReason;
+}
+
+export type UploadAbortReason = 'manual' | 'remove' | 'clear' | 'external';
+
+/** 文件上传组件属性。 */
+export interface ExFileUploadProps {
+  /** 上传地址或可中止的动态地址解析器。 */
+  action?: UploadAction;
+  /** 上传请求方法。 */
+  method?: UploadHttpMethod;
+  /** 静态请求头或动态请求头解析器。 */
+  headers?: UploadHeaders | UploadConfigResolver<UploadHeaders>;
+  /** 静态附加数据或动态附加数据解析器。 */
+  data?: UploadData | UploadConfigResolver<UploadData>;
+  /** multipart 文件字段名。 */
+  name?: string;
+  /** 是否允许一次选择多个文件。 */
+  multiple?: boolean;
+  /** 是否显示拖拽选择区。 */
+  drag?: boolean;
+  /** 原生 accept 规则；拖拽文件也会执行相同校验。 */
+  accept?: string;
+  /** 受控文件列表。 */
+  fileList?: UploadFile[];
+  /** 非受控模式的初始文件列表。 */
+  defaultFileList?: UploadFile[];
+  /** 最大文件数量。 */
+  limit?: number;
+  /** 单个文件最大字节数。 */
+  maxFileSize?: number;
+  /** 选择通过后是否自动上传。 */
   autoUpload?: boolean;
-  /** 是否显示文件列表 */
+  /** 是否显示文件列表。 */
   showFileList?: boolean;
-  /** 文件列表类型 */
+  /** 文件列表展示类型。 */
   listType?: UploadListType;
-  /** 是否禁用 */
+  /** 是否禁用选择、预览和移除交互。 */
   disabled?: boolean;
-  /** 是否携带cookie */
+  /** XHR 是否携带跨域凭证。 */
   withCredentials?: boolean;
-  /** 提示文本 */
+  /** XHR 超时时间，单位毫秒；0 表示不限制。 */
+  timeout?: number;
+  /** 提示文本。 */
   tip?: string;
-  /** 上传按钮文本 */
+  /** 选择按钮文本。 */
   buttonText?: string;
-  /** 拖拽区域提示文本 */
+  /** 拖拽区域主文本。 */
   dragText?: string;
-  /** 拖拽区域描述文本 */
+  /** 拖拽区域补充文本。 */
   dragDescription?: string;
-  /**
-   * 上传前钩子。返回 false 阻止上传；返回 File（或其 Promise）替换待上传文件。
-   * 在文件大小 / 类型校验通过后调用。
-   */
-  beforeUpload?: (file: File) => BeforeUploadResult;
+  /** 加入列表前的异步转换或守卫。 */
+  beforeAdd?: BeforeAdd;
+  /** 根分组的无障碍名称。 */
+  ariaLabel?: string;
 }
 
-/**
- * 文件上传组件事件
- */
+/** 文件上传组件事件。 */
 export interface ExFileUploadEmits {
-  /** 文件列表变化 */
   'update:fileList': [fileList: UploadFile[]];
-  /** 文件选择后 */
-  change: [file: UploadFile, fileList: UploadFile[]];
-  /** 上传进度 */
-  progress: [percent: number, file: UploadFile];
-  /** 上传成功 */
+  added: [file: UploadFile, fileList: UploadFile[]];
+  rejected: [rejection: UploadRejection, fileList: UploadFile[]];
+  progress: [file: UploadFile, fileList: UploadFile[]];
   success: [response: unknown, file: UploadFile, fileList: UploadFile[]];
-  /** 上传失败 */
-  error: [error: Error, file: UploadFile, fileList: UploadFile[]];
-  /** 文件移除 */
-  remove: [file: UploadFile, fileList: UploadFile[]];
-  /** 超出文件数量限制 */
-  exceed: [files: File[], fileList: UploadFile[]];
-  /** 文件超出大小限制（maxSize） */
-  oversize: [file: File, maxSize: number];
-  /** 文件类型不匹配 accept */
-  'type-mismatch': [file: File, accept: string];
-  /** 文件预览 */
-  preview: [file: UploadFile];
+  error: [error: ExFileUploadError, file: UploadFile, fileList: UploadFile[]];
+  aborted: [file: UploadFile, fileList: UploadFile[], reason: UploadAbortReason];
+  'remove-request': [file: UploadFile];
+  'preview-request': [file: UploadFile];
 }
 
-/**
- * 文件上传组件暴露的方法
- */
+/** 文件上传组件公开方法。 */
 export interface ExFileUploadExposed {
-  /** 手动上传 */
-  submit: () => void;
-  /** 清空文件列表 */
-  clearFiles: () => void;
-  /** 中止上传 */
-  abort: (file?: UploadFile) => void;
-  /** 获取组件DOM元素 */
+  /** 打开原生文件选择器；无法操作时返回 false。 */
+  openFileDialog: () => boolean;
+  /** 上传指定 ready 文件，未指定时上传全部 ready 文件。 */
+  submit: (file?: UploadFile | string) => Promise<UploadResult[]>;
+  /** 中止指定任务，未指定时中止全部；返回真实中止数量。 */
+  abort: (file?: UploadFile | string) => number;
+  /** 中止全部任务并请求清空列表；返回真实中止数量。 */
+  requestClear: () => number;
+  /** 获取当前真实生效的文件列表快照。 */
+  getFiles: () => UploadFile[];
+  /** 获取组件根元素。 */
   getElement: () => HTMLDivElement | null;
+}
+
+/** 文件上传组件插槽。 */
+export interface ExFileUploadSlots {
+  trigger?: (props: { disabled: boolean; openFileDialog: () => boolean }) => unknown;
+  'drag-icon'?: () => unknown;
+  tip?: () => unknown;
 }

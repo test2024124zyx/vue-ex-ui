@@ -391,22 +391,6 @@ export default {
     comboboxLabel: 'Select option',
   },
 
-  // Upload
-  upload: {
-    selectFile: 'Select File',
-    uploading: 'Uploading...',
-    dragHint: 'Click or drag files to this area to upload',
-    dragDescription: 'Support for single or bulk upload',
-    acceptTip: 'Supported formats: {accept}',
-    maxSizeTip: 'File size should not exceed {size}',
-    maxCountTip: 'Maximum {count} files allowed',
-    uploadSuccess: 'Upload Success',
-    uploadError: 'Upload Failed',
-    preview: 'Preview',
-    download: 'Download',
-    remove: 'Remove',
-  },
-
   // Skeleton
   skeleton: {
     loading: 'Loading',
@@ -515,17 +499,18 @@ export default {
   // File Management
   fileUpload: {
     selectFile: 'Select File',
-    uploading: 'Uploading...',
+    uploadGroup: 'File upload',
     dragHint: 'Click or drag files to this area to upload',
     dragDescription: 'Support for single or bulk upload',
     acceptTip: 'Supported formats: {accept}',
-    maxSizeTip: 'File size should not exceed {size}',
-    maxCountTip: 'Maximum {count} files allowed',
-    uploadSuccess: 'Upload Success',
-    uploadError: 'Upload Failed',
-    preview: 'Preview',
-    download: 'Download',
-    remove: 'Remove',
+    maxFileSizeTip: 'Each file must not exceed {size}',
+    previewFile: 'Preview {name}',
+    removeFile: 'Remove {name}',
+    uploadProgress: 'Upload progress for {name}',
+    statusReady: 'Ready to upload',
+    statusUploading: 'Uploading',
+    statusSuccess: 'Uploaded',
+    statusError: 'Upload failed',
   },
 
   fileDownload: {

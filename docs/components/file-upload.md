@@ -1,414 +1,239 @@
 # FileUpload 文件上传
 
-支持拖拽上传、多文件上传、进度显示等功能的文件上传组件。
+`ExFileUpload` 提供文件选择、拖拽校验、列表状态和可中止的 XHR multipart 上传。上传结果会区分成功、失败、中止和未启动。
 
 <script setup>
 import { ref } from 'vue'
 
-const fileList = ref([])
-const fileList2 = ref([])
-const fileList3 = ref([])
-const manualList = ref([])
+const files = ref([])
 const uploadRef = ref()
 
-const handleManualSubmit = () => {
-  uploadRef.value?.submit()
-}
-
-const handleChange = (file, list) => {
-  console.log('文件变化:', file, list)
-}
-
-const handleSuccess = (response, file, list) => {
-  console.log('上传成功:', response, file)
-}
-
-const handleError = (error, file, list) => {
-  console.error('上传失败:', error, file)
-}
-
-const handlePreview = (file) => {
-  console.log('预览文件:', file)
+const submit = async () => {
+  const results = await uploadRef.value?.submit()
+  console.log(results)
 }
 </script>
 
-## 基础用法
-
-最基础的文件上传功能。
+## 选择文件
 
 <div class="demo-container">
   <ExFileUpload
+    v-model:file-list="files"
     :auto-upload="false"
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    @change="handleChange"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px; margin-top: 8px;">
-        提示：由于是演示环境，文件不会真实上传到服务器
-      </div>
-    </template>
-  </ExFileUpload>
+    accept="image/*,.pdf"
+    :max-file-size="5 * 1024 * 1024"
+  />
 </div>
 
 ```vue
 <template>
   <ExFileUpload
-    action="/api/upload"
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    @change="handleChange"
-    @success="handleSuccess"
+    v-model:file-list="files"
+    :auto-upload="false"
+    accept="image/*,.pdf"
+    :max-file-size="5 * 1024 * 1024"
+    @rejected="handleRejected"
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
+import type { UploadFile, UploadRejection } from 'vue-ex-ui';
 
-const fileList = ref([]);
+const files = ref<UploadFile[]>([]);
 
-const handleChange = (file, list) => {
-  console.log('文件变化:', file, list);
-};
-
-const handleSuccess = (response, file, list) => {
-  console.log('上传成功:', response, file);
+const handleRejected = (rejection: UploadRejection) => {
+  console.warn(rejection.code, rejection.file.name);
 };
 </script>
 ```
 
-## 拖拽上传
+传入 `file-list` 后列表为受控状态。组件只发出新快照，父级同步 `update:fileList` 前不会提前改变界面；不需要受控时使用 `default-file-list`。
 
-设置 `drag` 属性启用拖拽上传功能。
-
-<div class="demo-container">
-  <ExFileUpload
-    drag
-    :auto-upload="false"
-    :file-list="fileList2"
-    @update:file-list="fileList2 = $event"
-    accept="image/*"
-    :max-size="5"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px; margin-top: 8px;">
-        只能上传图片文件，且不超过 5MB
-      </div>
-    </template>
-  </ExFileUpload>
-</div>
+## 自动上传
 
 ```vue
-<template>
-  <ExFileUpload
-    drag
-    action="/api/upload"
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    accept="image/*"
-    :max-size="5"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px; margin-top: 8px;">
-        只能上传图片文件，且不超过 5MB
-      </div>
-    </template>
-  </ExFileUpload>
-</template>
+<ExFileUpload
+  v-model:file-list="files"
+  action="/api/files"
+  method="POST"
+  :headers="{ Authorization: token }"
+  :data="{ folderId }"
+  :timeout="30_000"
+  @progress="handleProgress"
+  @success="handleSuccess"
+  @error="handleError"
+/>
 ```
 
-## 图片卡片列表
+只有 HTTP 2xx 响应会触发 `success`。HTTP 状态错误、网络错误、超时、配置错误和响应解析错误都会产生 `ExFileUploadError`。
 
-使用 `list-type="picture-card"` 展示图片卡片列表，支持点击加号图标上传。
-
-<div class="demo-container">
-  <ExFileUpload
-    :auto-upload="false"
-    list-type="picture-card"
-    :file-list="fileList3"
-    @update:file-list="fileList3 = $event"
-    accept="image/*"
-    :limit="9"
-    @preview="handlePreview"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px;">
-        点击加号图标或拖拽图片到此处上传，最多 9 张
-      </div>
-    </template>
-  </ExFileUpload>
-</div>
-
-```vue
-<template>
-  <ExFileUpload
-    action="/api/upload"
-    list-type="picture-card"
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    accept="image/*"
-    :limit="9"
-    @preview="handlePreview"
-  />
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const fileList = ref([]);
-
-const handlePreview = file => {
-  console.log('预览文件:', file);
-};
-</script>
-```
-
-## 卡片拖拽上传
-
-在 `picture-card` 模式下，可以直接拖拽图片到加号区域上传。
-
-<div class="demo-container">
-  <ExFileUpload
-    :auto-upload="false"
-    list-type="picture-card"
-    multiple
-    :file-list="fileList3"
-    @update:file-list="fileList3 = $event"
-    accept="image/*"
-    :limit="6"
-    @preview="handlePreview"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px;">
-        💡 提示：可以直接拖拽图片到加号区域上传
-      </div>
-    </template>
-  </ExFileUpload>
-</div>
-
-```vue
-<template>
-  <ExFileUpload
-    action="/api/upload"
-    list-type="picture-card"
-    multiple
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    accept="image/*"
-    :limit="6"
-  />
-</template>
-```
-
-## 多文件上传
-
-设置 `multiple` 属性允许同时选择多个文件。
-
-<div class="demo-container">
-  <ExFileUpload
-    :auto-upload="false"
-    multiple
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    :limit="10"
-  >
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px; margin-top: 8px;">
-        最多可上传 10 个文件
-      </div>
-    </template>
-  </ExFileUpload>
-</div>
-
-```vue
-<template>
-  <ExFileUpload
-    action="/api/upload"
-    multiple
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
-    :limit="10"
-  />
-</template>
-```
-
-## 手动上传
-
-设置 `auto-upload` 为 `false` 后，需要手动触发上传。
-
-<div class="demo-container">
-  <ExFileUpload
-    ref="uploadRef"
-    :auto-upload="false"
-    :file-list="manualList"
-    @update:file-list="manualList = $event"
-  >
-    <template #trigger>
-      <ExButton type="primary">选择文件</ExButton>
-    </template>
-    <template #tip>
-      <div style="color: var(--ex-color-text-secondary); font-size: 12px; margin-top: 8px;">
-        选择文件后，点击上传按钮开始上传（演示环境未配置 action，不会真实上传）
-      </div>
-    </template>
-  </ExFileUpload>
-  <ExButton 
-    type="success" 
-    style="margin-top: 12px;"
-    :disabled="manualList.length === 0"
-    @click="handleManualSubmit"
-  >
-    开始上传
-  </ExButton>
-</div>
+## 手动上传与结果
 
 ```vue
 <template>
   <ExFileUpload
     ref="uploadRef"
+    v-model:file-list="files"
+    action="/api/files"
     :auto-upload="false"
-    :file-list="fileList"
-    @update:file-list="fileList = $event"
+    multiple
   />
-  <ExButton @click="handleUpload">开始上传</ExButton>
+  <ExButton @click="submit">开始上传</ExButton>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
+import type { ExFileUploadExposed, UploadFile } from 'vue-ex-ui';
 
-const uploadRef = ref();
-const fileList = ref([]);
+const uploadRef = ref<ExFileUploadExposed>();
+const files = ref<UploadFile[]>([]);
 
-const handleUpload = () => {
-  uploadRef.value?.submit();
+const submit = async () => {
+  const results = await uploadRef.value?.submit();
+  for (const result of results ?? []) {
+    if (result.outcome === 'error') console.error(result.error);
+  }
 };
 </script>
+```
+
+没有 `action`、缺少原始 `File` 或文件不是 `ready` 状态时，`submit()` 返回 `ignored`，不会伪装为已上传。
+
+## 动态上传配置与中止
+
+`action`、`headers` 和 `data` 都可按文件异步解析。解析器会收到与 XHR 共用的 `AbortSignal`。
+
+```vue
+<ExFileUpload v-model:file-list="files" :action="resolveAction" :headers="resolveHeaders" />
+```
+
+```ts
+const resolveAction = async (file, { signal }) => {
+  const response = await fetch(`/api/upload-ticket?name=${encodeURIComponent(file.name)}`, {
+    signal,
+  });
+  return (await response.json()).uploadUrl;
+};
+
+const resolveHeaders = async (_file, { signal }) => {
+  const token = await getUploadToken({ signal });
+  return { Authorization: `Bearer ${token}` };
+};
+```
+
+调用 `abort(fileOrUid)` 可在动态配置解析或 XHR 传输阶段中止任务，并返回真实中止数量。中止后的文件恢复为 `ready`，可以再次提交。
+
+## 拖拽和图片列表
+
+```vue
+<ExFileUpload
+  v-model:file-list="files"
+  drag
+  multiple
+  list-type="picture-card"
+  accept="image/*"
+  :limit="8"
+  @preview-request="handlePreviewRequest"
+  @remove-request="handleRemoveRequest"
+/>
+```
+
+本地图片缩略图使用对象地址；文件移除、来源替换或组件卸载时会自动释放，不会把 base64 内容写入公开列表。
+
+## 加入前转换
+
+`before-add` 在文件加入列表前运行。返回 `false` 会产生 `before-add` 拒绝；返回新 `File` 后，组件会对替换文件重新执行 `accept` 和大小校验；异常会保留在 `before-add-error.cause`。
+
+```vue
+<ExFileUpload v-model:file-list="files" :before-add="compressImage" accept="image/*" />
 ```
 
 ## API
 
 ### Props
 
-| 属性                          | 说明                                                                         | 类型                                                          | 默认值   |
-| ----------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- | -------- |
-| action                        | 上传地址（未配置时不会自动上传）                                             | `string`                                                      | -        |
-| headers                       | 上传请求头                                                                   | `Record<string, string>`                                      | -        |
-| data                          | 上传附带的额外参数                                                           | `Record<string, unknown>`                                     | -        |
-| name                          | 文件字段名                                                                   | `string`                                                      | `'file'` |
-| multiple                      | 是否多选                                                                     | `boolean`                                                     | `false`  |
-| drag                          | 是否拖拽上传                                                                 | `boolean`                                                     | `false`  |
-| accept                        | 接受的文件类型（拖拽时也会校验，不匹配触发 `type-mismatch`）                 | `string`                                                      | -        |
-| file-list / v-model:file-list | 文件列表                                                                     | `UploadFile[]`                                                | `[]`     |
-| limit                         | 最大上传数量                                                                 | `number`                                                      | -        |
-| max-size                      | 文件大小限制（MB），超出触发 `oversize`                                      | `number`                                                      | -        |
-| auto-upload                   | 是否自动上传（需同时配置 `action`）                                          | `boolean`                                                     | `true`   |
-| show-file-list                | 是否显示文件列表                                                             | `boolean`                                                     | `true`   |
-| list-type                     | 文件列表类型                                                                 | `'text' \| 'picture' \| 'picture-card'`                       | `'text'` |
-| disabled                      | 是否禁用                                                                     | `boolean`                                                     | `false`  |
-| with-credentials              | 是否携带 cookie                                                              | `boolean`                                                     | `false`  |
-| tip                           | 提示文本                                                                     | `string`                                                      | -        |
-| button-text                   | 上传按钮文本                                                                 | `string`                                                      | -        |
-| drag-text                     | 拖拽区域提示文本                                                             | `string`                                                      | -        |
-| drag-description              | 拖拽区域描述文本                                                             | `string`                                                      | -        |
-| before-upload                 | 上传前钩子。返回 `false` 阻止上传；返回 `File`（或其 Promise）替换待上传文件 | `(file: File) => boolean \| File \| Promise<boolean \| File>` | -        |
+| 属性                | 类型                                                   | 默认值   |
+| ------------------- | ------------------------------------------------------ | -------- |
+| `action`            | `string \| UploadActionResolver`                       | —        |
+| `method`            | `'POST' \| 'PUT' \| 'PATCH'`                           | `'POST'` |
+| `headers`           | `UploadHeaders \| UploadConfigResolver<UploadHeaders>` | —        |
+| `data`              | `UploadData \| UploadConfigResolver<UploadData>`       | —        |
+| `name`              | `string`                                               | `'file'` |
+| `multiple`          | `boolean`                                              | `false`  |
+| `drag`              | `boolean`                                              | `false`  |
+| `accept`            | `string`                                               | —        |
+| `file-list`         | `UploadFile[]`                                         | —        |
+| `default-file-list` | `UploadFile[]`                                         | `[]`     |
+| `limit`             | `number`                                               | —        |
+| `max-file-size`     | `number`，字节                                         | —        |
+| `auto-upload`       | `boolean`                                              | `true`   |
+| `show-file-list`    | `boolean`                                              | `true`   |
+| `list-type`         | `'text' \| 'picture' \| 'picture-card'`                | `'text'` |
+| `disabled`          | `boolean`                                              | `false`  |
+| `with-credentials`  | `boolean`                                              | `false`  |
+| `timeout`           | `number`，毫秒                                         | `0`      |
+| `tip`               | `string`                                               | —        |
+| `button-text`       | `string`                                               | —        |
+| `drag-text`         | `string`                                               | —        |
+| `drag-description`  | `string`                                               | —        |
+| `before-add`        | `BeforeAdd`                                            | —        |
+| `aria-label`        | `string`                                               | 文件上传 |
+
+附加数据支持 `string`、`number`、`boolean` 和 `Blob`；`null` 与 `undefined` 会被忽略。组件负责 multipart 边界，不能在 `headers` 中手动设置 `Content-Type`。
 
 ### Events
 
-| 事件名           | 说明                           | 类型                                                                    |
-| ---------------- | ------------------------------ | ----------------------------------------------------------------------- |
-| update:file-list | 文件列表变化时触发             | `(fileList: UploadFile[]) => void`                                      |
-| change           | 文件加入列表后触发             | `(file: UploadFile, fileList: UploadFile[]) => void`                    |
-| progress         | 上传进度更新时触发             | `(percent: number, file: UploadFile) => void`                           |
-| success          | 上传成功时触发                 | `(response: unknown, file: UploadFile, fileList: UploadFile[]) => void` |
-| error            | 上传失败时触发                 | `(error: Error, file: UploadFile, fileList: UploadFile[]) => void`      |
-| remove           | 文件移除时触发                 | `(file: UploadFile, fileList: UploadFile[]) => void`                    |
-| preview          | 点击文件预览时触发             | `(file: UploadFile) => void`                                            |
-| exceed           | 超出 `limit` 数量限制时触发    | `(files: File[], fileList: UploadFile[]) => void`                       |
-| oversize         | 文件超出 `max-size` 限制时触发 | `(file: File, maxSize: number) => void`                                 |
-| type-mismatch    | 文件类型不匹配 `accept` 时触发 | `(file: File, accept: string) => void`                                  |
+| 事件              | 参数                                                                    |
+| ----------------- | ----------------------------------------------------------------------- |
+| `update:fileList` | `(fileList: UploadFile[])`                                              |
+| `added`           | `(file: UploadFile, fileList: UploadFile[])`                            |
+| `rejected`        | `(rejection: UploadRejection, fileList: UploadFile[])`                  |
+| `progress`        | `(file: UploadFile, fileList: UploadFile[])`                            |
+| `success`         | `(response: unknown, file: UploadFile, fileList: UploadFile[])`         |
+| `error`           | `(error: ExFileUploadError, file: UploadFile, fileList: UploadFile[])`  |
+| `aborted`         | `(file: UploadFile, fileList: UploadFile[], reason: UploadAbortReason)` |
+| `remove-request`  | `(file: UploadFile)`                                                    |
+| `preview-request` | `(file: UploadFile)`                                                    |
+
+`UploadRejection.code` 为 `accept`、`size`、`limit`、`multiple`、`before-add` 或 `before-add-error`。
+
+`ExFileUploadError.code` 为 `configuration-error`、`request-error`、`http-error`、`timeout` 或 `response-error`。
 
 ### Slots
 
-| 插槽名    | 说明                                                           |
-| --------- | -------------------------------------------------------------- |
-| trigger   | 自定义触发文件选择的内容（非 `picture-card` / 非 `drag` 模式） |
-| drag-icon | 自定义拖拽区域图标（`drag` 模式）                              |
-| tip       | 提示信息                                                       |
+| 插槽        | 作用域                                                 |
+| ----------- | ------------------------------------------------------ |
+| `trigger`   | `{ disabled: boolean, openFileDialog: () => boolean }` |
+| `drag-icon` | —                                                      |
+| `tip`       | —                                                      |
 
-### Methods
+### Exposed
 
-通过模板 ref 调用：
+| 方法             | 类型                                                       |
+| ---------------- | ---------------------------------------------------------- |
+| `openFileDialog` | `() => boolean`                                            |
+| `submit`         | `(file?: UploadFile \| string) => Promise<UploadResult[]>` |
+| `abort`          | `(file?: UploadFile \| string) => number`                  |
+| `requestClear`   | `() => number`                                             |
+| `getFiles`       | `() => UploadFile[]`                                       |
+| `getElement`     | `() => HTMLDivElement \| null`                             |
 
-| 方法名     | 说明                                | 类型                           |
-| ---------- | ----------------------------------- | ------------------------------ |
-| submit     | 手动上传列表中状态为 `ready` 的文件 | `() => void`                   |
-| clearFiles | 清空文件列表（并中止进行中的上传）  | `() => void`                   |
-| abort      | 中止上传（不传则中止全部）          | `(file?: UploadFile) => void`  |
-| getElement | 获取组件根 DOM 元素                 | `() => HTMLDivElement \| null` |
+`requestClear()` 会真实中止活动任务并请求空列表；受控模式下仍需父级同步列表，方法不会提前清空受控界面。
 
-## 类型定义
+## 无障碍
 
-```typescript
-type UploadStatus = 'ready' | 'uploading' | 'success' | 'error';
-
-interface UploadFile {
-  /** 文件唯一标识 */
-  uid: string;
-  /** 文件名 */
-  name: string;
-  /** 文件大小（字节） */
-  size: number;
-  /** 文件 MIME 类型 */
-  type: string;
-  /** 上传状态 */
-  status: UploadStatus;
-  /** 上传进度 0-100 */
-  percent?: number;
-  /** 原始文件对象 */
-  raw?: File;
-  /** 文件 URL（上传成功后） */
-  url?: string;
-  /** 缩略图 URL */
-  thumbUrl?: string;
-  /** 错误信息 */
-  error?: string;
-  /** 响应数据 */
-  response?: unknown;
-}
-```
-
-## 无障碍支持
-
-- 上传触发器使用 `ExButton`，原生支持键盘聚焦与 Enter / Space 触发。
-- 根容器带有 `aria-label`，拖拽区图标标注 `aria-hidden`，对屏幕阅读器友好。
-
-## 常见问题
-
-**Q：为什么选了文件却没有上传？**
-自动上传需要同时满足 `auto-upload`（默认 `true`）和配置了 `action`。未配置 `action` 时文件只会进入列表，可通过 ref 调用 `submit()` 手动触发。
-
-**Q：拖拽上传时 `accept` 不生效？**
-原生 `<input>` 的 `accept` 只约束点击选择的对话框；拖拽进来的文件由组件手动按 `accept` 校验，不匹配会触发 `type-mismatch` 事件而不是静默丢弃。
-
-**Q：如何在上传前压缩 / 重命名文件？**
-使用 `before-upload` 钩子，返回一个新的 `File`（或其 Promise）即可替换待上传文件；返回 `false` 则取消该文件上传。
-
-## 最佳实践
-
-- 始终监听 `oversize` / `type-mismatch` / `exceed` 给用户明确反馈，而非依赖静默过滤。
-- 配合 `v-model:file-list` 受控管理列表，便于在外部做提交校验与回显。
-- 移动端建议使用 `list-type="picture-card"` 并设置合理 `limit`，避免列表过长。
-
-## 主题定制
-
-文件上传跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
+- 拖拽区具备按钮语义，可使用 Enter 或 Space 打开文件选择器。
+- 预览和移除操作使用有名称的原生按钮。
+- 上传进度使用 `progressbar` 语义，并提供当前文件名和数值。
+- 禁用状态同时阻止选择、拖拽、预览和移除。
 
 <style scoped>
 .demo-container {
+  margin: 16px 0;
   padding: 24px;
   background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
 }
 </style>

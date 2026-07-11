@@ -391,22 +391,6 @@ export default {
     comboboxLabel: '选择一个选项',
   },
 
-  // 上传
-  upload: {
-    selectFile: '选择文件',
-    uploading: '上传中...',
-    dragHint: '点击或拖拽文件到此区域上传',
-    dragDescription: '支持单个或批量上传',
-    acceptTip: '支持格式：{accept}',
-    maxSizeTip: '文件大小不超过 {size}',
-    maxCountTip: '最多上传 {count} 个文件',
-    uploadSuccess: '上传成功',
-    uploadError: '上传失败',
-    preview: '预览',
-    download: '下载',
-    remove: '删除',
-  },
-
   // 骨架屏
   skeleton: {
     loading: '加载中',
@@ -515,17 +499,18 @@ export default {
   // 文件管理
   fileUpload: {
     selectFile: '选择文件',
-    uploading: '上传中...',
+    uploadGroup: '文件上传',
     dragHint: '点击或拖拽文件到此区域上传',
     dragDescription: '支持单个或批量上传',
     acceptTip: '支持格式：{accept}',
-    maxSizeTip: '文件大小不超过 {size}',
-    maxCountTip: '最多上传 {count} 个文件',
-    uploadSuccess: '上传成功',
-    uploadError: '上传失败',
-    preview: '预览',
-    download: '下载',
-    remove: '删除',
+    maxFileSizeTip: '每个文件不超过 {size}',
+    previewFile: '预览 {name}',
+    removeFile: '移除 {name}',
+    uploadProgress: '{name} 的上传进度',
+    statusReady: '等待上传',
+    statusUploading: '上传中',
+    statusSuccess: '上传完成',
+    statusError: '上传失败',
   },
 
   fileDownload: {

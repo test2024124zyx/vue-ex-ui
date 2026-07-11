@@ -1,18 +1,31 @@
 <template>
-  <div ref="uploadRef" :class="uploadClasses" :aria-label="ariaLabel">
-    <!-- 拖拽上传区域 -->
+  <div
+    ref="uploadRef"
+    :class="uploadClasses"
+    role="group"
+    :aria-label="rootAriaLabel"
+  >
     <div
       v-if="drag"
       class="ex-file-upload__drag"
       :class="{ 'is-dragover': isDragOver }"
+      role="button"
+      :tabindex="disabled || isLimitReached ? -1 : 0"
+      :aria-disabled="disabled || isLimitReached ? 'true' : undefined"
+      @click="openFileDialog"
+      @keydown.enter.prevent="openFileDialog"
+      @keydown.space.prevent="openFileDialog"
       @drop.prevent="handleDrop"
       @dragover.prevent="handleDragOver"
       @dragleave.prevent="handleDragLeave"
-      @click="handleClick"
     >
       <div class="ex-file-upload__drag-icon">
         <slot name="drag-icon">
-          <ExIcon icon="upload-cloud-2-line" :size="48" aria-hidden="true" />
+          <ExIcon
+            icon="upload-cloud-2-line"
+            :size="48"
+            aria-hidden="true"
+          />
         </slot>
       </div>
       <div class="ex-file-upload__drag-text">
@@ -21,553 +34,789 @@
       <div class="ex-file-upload__drag-description">
         {{ dragDescription || t('dragDescription') }}
       </div>
-      <div v-if="accept" class="ex-file-upload__drag-tip">
+      <div
+        v-if="accept"
+        class="ex-file-upload__drag-tip"
+      >
         {{ t('acceptTip', { accept }) }}
       </div>
-      <div v-if="maxSize" class="ex-file-upload__drag-tip">
-        {{ t('maxSizeTip', { size: `${maxSize}MB` }) }}
+      <div
+        v-if="normalizedMaxFileSize"
+        class="ex-file-upload__drag-tip"
+      >
+        {{ t('maxFileSizeTip', { size: formatUploadFileSize(normalizedMaxFileSize) }) }}
       </div>
     </div>
 
-    <!-- 按钮上传 -->
     <div
       v-else-if="listType !== 'picture-card'"
       class="ex-file-upload__button"
-      @click="handleClick"
     >
-      <slot name="trigger">
-        <ExButton :disabled="disabled || isLimitExceeded">
+      <slot
+        name="trigger"
+        :disabled="disabled || isLimitReached"
+        :open-file-dialog="openFileDialog"
+      >
+        <ExButton
+          :disabled="disabled || isLimitReached"
+          @click="openFileDialog"
+        >
           <template #prefix>
-            <ExIcon icon="upload-2-line" :size="16" aria-hidden="true" />
+            <ExIcon
+              icon="upload-2-line"
+              :size="16"
+              aria-hidden="true"
+            />
           </template>
           {{ buttonText || t('selectFile') }}
         </ExButton>
       </slot>
     </div>
 
-    <!-- 隐藏的文件输入 -->
     <input
       ref="inputRef"
       type="file"
       class="ex-file-upload__input"
       :accept="accept"
       :multiple="multiple"
-      :disabled="disabled"
+      :disabled="disabled || isLimitReached"
       @change="handleFileChange"
     />
 
-    <!-- 提示信息 -->
-    <div v-if="(tip || $slots.tip) && listType !== 'picture-card'" class="ex-file-upload__tip">
+    <div
+      v-if="(tip || $slots.tip) && listType !== 'picture-card'"
+      class="ex-file-upload__tip"
+    >
       <slot name="tip">
         {{ tip }}
       </slot>
     </div>
 
-    <!-- 文件列表 -->
-    <div
+    <TransitionGroup
       v-if="showFileList"
+      :name="listType === 'picture-card' ? 'ex-upload-list' : 'ex-list'"
+      tag="ul"
       class="ex-file-upload__list"
       :class="{ 'ex-file-upload__list--card': listType === 'picture-card' }"
     >
-      <transition-group :name="listType === 'picture-card' ? 'ex-upload-list' : 'ex-list'">
-        <!-- 文件项 -->
-        <div v-for="file in internalFileList" :key="file.uid" :class="getFileItemClass(file)">
-          <!-- 文本列表 -->
-          <template v-if="listType === 'text'">
-            <div class="ex-file-upload__list-item-info">
-              <ExIcon
-                icon="file-text-line"
-                :size="16"
-                class="ex-file-upload__list-item-icon"
-                aria-hidden="true"
-              />
-              <span class="ex-file-upload__list-item-name" @click="handlePreview(file)">
-                {{ file.name }}
-              </span>
-            </div>
-            <div class="ex-file-upload__list-item-actions">
-              <span v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress">
-                {{ file.percent }}%
-              </span>
-              <ExIcon
-                v-if="file.status === 'success'"
-                icon="check-line"
-                :size="16"
-                class="ex-file-upload__list-item-status-icon success"
-                aria-hidden="true"
-              />
-              <ExIcon
-                v-if="file.status === 'error'"
-                icon="close-line"
-                :size="16"
-                class="ex-file-upload__list-item-status-icon error"
-                aria-hidden="true"
-              />
+      <li
+        v-for="file in displayedFileList"
+        :key="file.uid"
+        :class="getFileItemClass(file)"
+        :aria-label="getFileItemLabel(file)"
+      >
+        <template v-if="listType === 'text'">
+          <div class="ex-file-upload__list-item-info">
+            <ExIcon
+              icon="file-text-line"
+              :size="16"
+              class="ex-file-upload__list-item-icon"
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              class="ex-file-upload__list-item-name"
+              :disabled="disabled"
+              :aria-label="t('previewFile', { name: file.name })"
+              @click="handlePreview(file)"
+            >
+              {{ file.name }}
+            </button>
+          </div>
+          <div class="ex-file-upload__list-item-actions">
+            <span
+              v-if="file.status === 'uploading'"
+              class="ex-file-upload__list-item-progress"
+              aria-hidden="true"
+            >
+              {{ getFilePercent(file) }}%
+            </span>
+            <ExIcon
+              v-else-if="file.status === 'success'"
+              icon="check-line"
+              :size="16"
+              class="ex-file-upload__list-item-status-icon is-success"
+              aria-hidden="true"
+            />
+            <ExIcon
+              v-else-if="file.status === 'error'"
+              icon="close-line"
+              :size="16"
+              class="ex-file-upload__list-item-status-icon is-error"
+              aria-hidden="true"
+            />
+            <ExButton
+              type="text"
+              size="small"
+              shape="circle"
+              class="ex-file-upload__list-item-action"
+              :disabled="disabled"
+              :aria-label="t('removeFile', { name: file.name })"
+              @click="handleRemove(file)"
+            >
               <ExIcon
                 icon="delete-bin-line"
                 :size="16"
-                class="ex-file-upload__list-item-delete"
-                clickable
-                @click="handleRemove(file)"
+                aria-hidden="true"
               />
-            </div>
-            <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress-bar">
-              <div
-                class="ex-file-upload__list-item-progress-bar-inner"
-                :style="{ width: `${file.percent}%` }"
-              />
-            </div>
-          </template>
+            </ExButton>
+          </div>
+          <UploadProgress
+            v-if="file.status === 'uploading'"
+            :percent="getFilePercent(file)"
+            :label="t('uploadProgress', { name: file.name })"
+          />
+        </template>
 
-          <!-- 图片列表 -->
-          <template v-else-if="listType === 'picture'">
-            <img
-              v-if="file.thumbUrl || file.url"
-              :src="file.thumbUrl || file.url"
-              :alt="file.name"
-              class="ex-file-upload__list-item-thumbnail"
+        <template v-else-if="listType === 'picture'">
+          <img
+            v-if="getPreviewUrl(file)"
+            :src="getPreviewUrl(file)"
+            :alt="file.name"
+            class="ex-file-upload__list-item-thumbnail"
+          />
+          <div
+            v-else
+            class="ex-file-upload__list-item-thumbnail-placeholder"
+            aria-hidden="true"
+          >
+            <ExIcon
+              icon="image-line"
+              :size="24"
+              aria-hidden="true"
             />
-            <div v-else class="ex-file-upload__list-item-thumbnail-placeholder">
-              <ExIcon icon="image-line" :size="24" aria-hidden="true" />
+          </div>
+          <div class="ex-file-upload__list-item-info">
+            <button
+              type="button"
+              class="ex-file-upload__list-item-name"
+              :disabled="disabled"
+              :aria-label="t('previewFile', { name: file.name })"
+              @click="handlePreview(file)"
+            >
+              {{ file.name }}
+            </button>
+            <div class="ex-file-upload__list-item-actions">
+              <ExButton
+                type="text"
+                size="small"
+                shape="circle"
+                class="ex-file-upload__list-item-action"
+                :disabled="disabled"
+                :aria-label="t('previewFile', { name: file.name })"
+                @click="handlePreview(file)"
+              >
+                <ExIcon
+                  icon="eye-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </ExButton>
+              <ExButton
+                type="text"
+                size="small"
+                shape="circle"
+                class="ex-file-upload__list-item-action"
+                :disabled="disabled"
+                :aria-label="t('removeFile', { name: file.name })"
+                @click="handleRemove(file)"
+              >
+                <ExIcon
+                  icon="delete-bin-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </ExButton>
             </div>
-            <div class="ex-file-upload__list-item-info">
-              <span class="ex-file-upload__list-item-name" @click="handlePreview(file)">
-                {{ file.name }}
+          </div>
+          <UploadProgress
+            v-if="file.status === 'uploading'"
+            :percent="getFilePercent(file)"
+            :label="t('uploadProgress', { name: file.name })"
+          />
+        </template>
+
+        <template v-else>
+          <div class="ex-file-upload__list-item-card-content">
+            <img
+              v-if="getPreviewUrl(file)"
+              :src="getPreviewUrl(file)"
+              :alt="file.name"
+              class="ex-file-upload__list-item-card-image"
+            />
+            <div
+              v-else
+              class="ex-file-upload__list-item-card-placeholder"
+              aria-hidden="true"
+            >
+              <ExIcon
+                icon="image-line"
+                :size="32"
+                aria-hidden="true"
+              />
+            </div>
+            <div
+              v-if="file.status === 'uploading'"
+              class="ex-file-upload__list-item-card-mask"
+            >
+              <span class="ex-file-upload__list-item-card-progress">
+                {{ getFilePercent(file) }}%
               </span>
-              <div class="ex-file-upload__list-item-actions">
-                <ExIcon icon="eye-line" :size="16" clickable @click="handlePreview(file)" />
-                <ExIcon icon="delete-bin-line" :size="16" clickable @click="handleRemove(file)" />
-              </div>
-            </div>
-            <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-progress-bar">
-              <div
-                class="ex-file-upload__list-item-progress-bar-inner"
-                :style="{ width: `${file.percent}%` }"
+              <UploadProgress
+                :percent="getFilePercent(file)"
+                :label="t('uploadProgress', { name: file.name })"
+                visually-hidden
               />
             </div>
-          </template>
-
-          <!-- 卡片列表 -->
-          <template v-else-if="listType === 'picture-card'">
-            <div class="ex-file-upload__list-item-card-content">
-              <img
-                v-if="file.thumbUrl || file.url"
-                :src="file.thumbUrl || file.url"
-                :alt="file.name"
-                class="ex-file-upload__list-item-card-image"
-              />
-              <div v-else class="ex-file-upload__list-item-card-placeholder">
-                <ExIcon icon="image-line" :size="32" aria-hidden="true" />
-              </div>
-              <div v-if="file.status === 'uploading'" class="ex-file-upload__list-item-card-mask">
-                <div class="ex-file-upload__list-item-card-progress">{{ file.percent }}%</div>
-              </div>
-              <div v-else class="ex-file-upload__list-item-card-actions">
-                <ExIcon icon="eye-line" :size="20" clickable @click="handlePreview(file)" />
-                <ExIcon icon="delete-bin-line" :size="20" clickable @click="handleRemove(file)" />
-              </div>
+            <div
+              v-else
+              class="ex-file-upload__list-item-card-actions"
+            >
+              <ExButton
+                type="text"
+                shape="circle"
+                class="ex-file-upload__list-item-action"
+                :disabled="disabled"
+                :aria-label="t('previewFile', { name: file.name })"
+                @click="handlePreview(file)"
+              >
+                <ExIcon
+                  icon="eye-line"
+                  :size="20"
+                  aria-hidden="true"
+                />
+              </ExButton>
+              <ExButton
+                type="text"
+                shape="circle"
+                class="ex-file-upload__list-item-action"
+                :disabled="disabled"
+                :aria-label="t('removeFile', { name: file.name })"
+                @click="handleRemove(file)"
+              >
+                <ExIcon
+                  icon="delete-bin-line"
+                  :size="20"
+                  aria-hidden="true"
+                />
+              </ExButton>
             </div>
-          </template>
-        </div>
+          </div>
+        </template>
 
-        <!-- picture-card 模式的上传按钮 -->
-        <div
-          v-if="listType === 'picture-card' && !isLimitExceeded"
-          key="upload-trigger"
-          class="ex-file-upload__list-item ex-file-upload__list-item--card ex-file-upload__upload-trigger"
-          :class="{ 'is-dragover': isDragOver }"
-          @click="handleClick"
+        <span class="ex-file-upload__sr-only">
+          {{ getFileStatusLabel(file) }}
+        </span>
+      </li>
+
+      <li
+        v-if="listType === 'picture-card' && !isLimitReached"
+        key="upload-trigger"
+        class="ex-file-upload__list-item ex-file-upload__list-item--picture-card ex-file-upload__upload-trigger"
+        :class="{ 'is-dragover': isDragOver, 'is-disabled': disabled }"
+      >
+        <button
+          type="button"
+          class="ex-file-upload__upload-trigger-content"
+          :disabled="disabled"
+          :aria-label="buttonText || t('selectFile')"
+          @click="openFileDialog"
           @drop.prevent="handleDrop"
           @dragover.prevent="handleDragOver"
           @dragleave.prevent="handleDragLeave"
         >
-          <div class="ex-file-upload__upload-trigger-content">
-            <ExIcon
-              icon="add-line"
-              :size="32"
-              class="ex-file-upload__upload-trigger-icon"
-              aria-hidden="true"
-            />
-            <div class="ex-file-upload__upload-trigger-text">
-              {{ buttonText || t('selectFile') }}
-            </div>
-          </div>
-        </div>
-      </transition-group>
+          <ExIcon
+            icon="add-line"
+            :size="32"
+            class="ex-file-upload__upload-trigger-icon"
+            aria-hidden="true"
+          />
+          <span class="ex-file-upload__upload-trigger-text">
+            {{ buttonText || t('selectFile') }}
+          </span>
+        </button>
+      </li>
+    </TransitionGroup>
 
-      <!-- picture-card 模式的提示信息 -->
-      <div
-        v-if="(tip || $slots.tip) && listType === 'picture-card'"
-        class="ex-file-upload__tip ex-file-upload__tip--card"
-      >
-        <slot name="tip">
-          {{ tip }}
-        </slot>
-      </div>
+    <div
+      v-if="showFileList && (tip || $slots.tip) && listType === 'picture-card'"
+      class="ex-file-upload__tip ex-file-upload__tip--card"
+    >
+      <slot name="tip">
+        {{ tip }}
+      </slot>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, defineComponent, h, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
-import type {
-  ExFileUploadProps,
-  ExFileUploadEmits,
-  ExFileUploadExposed,
-  UploadFile,
-} from './types';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
-import ExButton from '../button/ExButton.vue';
+import { createUploadRequest } from './upload-request';
+import type { UploadRequestHandle } from './upload-request';
+import {
+  cloneUploadFileList,
+  formatUploadFileSize,
+  getUploadResponseUrl,
+  matchesUploadAccept,
+  normalizeUploadLimit,
+  normalizeUploadMaxFileSize,
+  normalizeUploadPercent,
+} from './upload-utils';
+import { useUploadPreviewUrls } from './useUploadPreviewUrls';
+import type {
+  ExFileUploadEmits,
+  ExFileUploadExposed,
+  ExFileUploadProps,
+  ExFileUploadSlots,
+  UploadAbortReason,
+  UploadFile,
+  UploadRejection,
+  UploadResult,
+} from './types';
 
 defineOptions({
   name: 'ExFileUpload',
 });
 
+const UploadProgress = defineComponent({
+  name: 'ExFileUploadProgress',
+  props: {
+    percent: { type: Number, required: true },
+    label: { type: String, required: true },
+    visuallyHidden: { type: Boolean, default: false },
+  },
+  setup(progressProps) {
+    return () =>
+      h(
+        'div',
+        {
+          class: progressProps.visuallyHidden
+            ? 'ex-file-upload__sr-only'
+            : 'ex-file-upload__list-item-progress-bar',
+          role: 'progressbar',
+          'aria-label': progressProps.label,
+          'aria-valuemin': 0,
+          'aria-valuemax': 100,
+          'aria-valuenow': progressProps.percent,
+        },
+        progressProps.visuallyHidden
+          ? undefined
+          : h('div', {
+              class: 'ex-file-upload__list-item-progress-bar-inner',
+              style: { width: `${progressProps.percent}%` },
+            })
+      );
+  },
+});
+
 const props = withDefaults(defineProps<ExFileUploadProps>(), {
+  method: 'POST',
   name: 'file',
   multiple: false,
   drag: false,
+  defaultFileList: () => [],
   autoUpload: true,
   showFileList: true,
   listType: 'text',
   disabled: false,
   withCredentials: false,
-  fileList: () => [],
+  timeout: 0,
 });
 
 const emit = defineEmits<ExFileUploadEmits>();
+defineSlots<ExFileUploadSlots>();
 
 const { t } = useLocale('fileUpload');
 const uploadRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const isDragOver = ref(false);
-const internalFileList = ref<UploadFile[]>([...props.fileList]);
-const uploadQueue = new Map<string, XMLHttpRequest>();
-
-// 计算属性
+const destroyed = ref(false);
+const isControlled = computed(() => props.fileList !== undefined);
+const initialFiles = cloneUploadFileList(props.fileList ?? props.defaultFileList);
+const internalFileList = shallowRef<UploadFile[]>(cloneUploadFileList(initialFiles));
+const operationFileList = shallowRef<UploadFile[]>(cloneUploadFileList(initialFiles));
+const displayedFileList = computed<readonly UploadFile[]>(() =>
+  isControlled.value ? (props.fileList ?? []) : internalFileList.value
+);
+const normalizedLimit = computed(() => normalizeUploadLimit(props.limit));
+const normalizedMaxFileSize = computed(() => normalizeUploadMaxFileSize(props.maxFileSize));
+const isLimitReached = computed(
+  () =>
+    normalizedLimit.value !== undefined && displayedFileList.value.length >= normalizedLimit.value
+);
+const rootAriaLabel = computed(() =>
+  props.ariaLabel ? props.ariaLabel : props.drag ? t('dragHint') : t('uploadGroup')
+);
 const uploadClasses = computed(() => [
   'ex-file-upload',
+  `ex-file-upload--${props.listType}`,
   {
     'ex-file-upload--drag': props.drag,
     'ex-file-upload--disabled': props.disabled,
-    [`ex-file-upload--${props.listType}`]: props.listType,
   },
 ]);
 
-const isLimitExceeded = computed(() => {
-  return props.limit !== undefined && internalFileList.value.length >= props.limit;
-});
+const { synchronize: synchronizePreviewUrls, getPreviewUrl } = useUploadPreviewUrls();
+watch(displayedFileList, files => synchronizePreviewUrls(files), { deep: true, immediate: true });
 
-const ariaLabel = computed(() => {
-  return props.drag ? t('dragHint') : t('selectFile');
-});
+interface ActiveUpload {
+  file: UploadFile;
+  handle: UploadRequestHandle;
+  result: Promise<UploadResult>;
+}
 
-// 监听文件列表变化
+const activeUploads = new Map<string, ActiveUpload>();
+
+const requestFileList = (files: readonly UploadFile[]): UploadFile[] => {
+  const operationSnapshot = cloneUploadFileList(files);
+  operationFileList.value = operationSnapshot;
+  if (!isControlled.value) internalFileList.value = cloneUploadFileList(operationSnapshot);
+  const emittedSnapshot = cloneUploadFileList(operationSnapshot);
+  emit('update:fileList', emittedSnapshot);
+  return cloneUploadFileList(operationSnapshot);
+};
+
+const patchFile = (
+  uid: string,
+  patch: Partial<UploadFile>
+): { file: UploadFile; files: UploadFile[] } | null => {
+  const nextFiles = cloneUploadFileList(operationFileList.value);
+  const index = nextFiles.findIndex(file => file.uid === uid);
+  const currentFile = nextFiles[index];
+  if (index < 0 || !currentFile) return null;
+  const nextFile = { ...currentFile, ...patch };
+  nextFiles[index] = nextFile;
+  const files = requestFileList(nextFiles);
+  return { file: { ...nextFile }, files };
+};
+
+const emitRejection = (rejection: UploadRejection, files = operationFileList.value): void => {
+  emit('rejected', rejection, cloneUploadFileList(files));
+};
+
+const getFilePercent = (file: UploadFile): number => normalizeUploadPercent(file.percent ?? 0);
+const getFileStatusLabel = (file: UploadFile): string =>
+  t(`status${file.status[0]?.toUpperCase()}${file.status.slice(1)}`);
+const getFileItemLabel = (file: UploadFile): string => `${file.name}, ${getFileStatusLabel(file)}`;
+const getFileItemClass = (file: UploadFile) => [
+  'ex-file-upload__list-item',
+  `ex-file-upload__list-item--${file.status}`,
+  `ex-file-upload__list-item--${props.listType}`,
+];
+
+const abortActiveUpload = (uid: string, reason: UploadAbortReason): boolean => {
+  const task = activeUploads.get(uid);
+  if (!task || !task.handle.abort()) return false;
+  activeUploads.delete(uid);
+  const patched = patchFile(uid, { status: 'ready', percent: 0, error: undefined });
+  const file = patched?.file ?? { ...task.file, status: 'ready', percent: 0, error: undefined };
+  const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
+  emit('aborted', file, files, reason);
+  return true;
+};
+
+const abortUploads = (uids: readonly string[], reason: UploadAbortReason): number =>
+  uids.reduce((count, uid) => count + Number(abortActiveUpload(uid, reason)), 0);
+
 watch(
   () => props.fileList,
-  newList => {
-    internalFileList.value = [...newList];
+  (nextFiles, previousFiles) => {
+    if (nextFiles !== undefined) {
+      operationFileList.value = cloneUploadFileList(nextFiles);
+      const currentUids = new Set(nextFiles.map(file => file.uid));
+      const removedTaskUids = [...activeUploads.keys()].filter(uid => !currentUids.has(uid));
+      abortUploads(removedTaskUids, 'external');
+    } else if (previousFiles !== undefined) {
+      internalFileList.value = cloneUploadFileList(previousFiles);
+      operationFileList.value = cloneUploadFileList(previousFiles);
+    }
   },
   { deep: true }
 );
 
-// 生成唯一ID
-const generateUid = () => {
-  return generateId('ex-upload');
+watch(
+  () => props.disabled,
+  disabled => {
+    if (disabled) isDragOver.value = false;
+  }
+);
+
+const openFileDialog = (): boolean => {
+  if (props.disabled || isLimitReached.value || !inputRef.value) return false;
+  inputRef.value.click();
+  return true;
 };
 
-// 获取文件项类名
-const getFileItemClass = (file: UploadFile) => {
-  return [
-    'ex-file-upload__list-item',
-    `ex-file-upload__list-item--${file.status}`,
-    `ex-file-upload__list-item--${props.listType}`,
-  ];
+const createUploadFile = (raw: File): UploadFile => ({
+  uid: generateId('ex-upload'),
+  name: raw.name,
+  size: raw.size,
+  type: raw.type,
+  status: 'ready',
+  percent: 0,
+  raw,
+});
+
+const validateFile = (file: File): UploadRejection | null => {
+  if (!matchesUploadAccept(file, props.accept)) {
+    return { code: 'accept', file, accept: props.accept ?? '' };
+  }
+  if (normalizedMaxFileSize.value !== undefined && file.size > normalizedMaxFileSize.value) {
+    return {
+      code: 'size',
+      file,
+      maxFileSize: normalizedMaxFileSize.value,
+    };
+  }
+  return null;
 };
 
-// 点击上传
-const handleClick = () => {
-  if (props.disabled || isLimitExceeded.value) return;
-  inputRef.value?.click();
+const startUpload = (sourceFile: UploadFile): Promise<UploadResult> => {
+  const existing = activeUploads.get(sourceFile.uid);
+  if (existing) return existing.result;
+
+  const currentFile =
+    operationFileList.value.find(file => file.uid === sourceFile.uid) ?? sourceFile;
+  if (currentFile.status !== 'ready') {
+    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'not-ready' });
+  }
+  if (!props.action) {
+    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'no-action' });
+  }
+  if (!currentFile.raw) {
+    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'missing-raw' });
+  }
+
+  const uploading = patchFile(currentFile.uid, {
+    status: 'uploading',
+    percent: 0,
+    error: undefined,
+  })?.file ?? { ...currentFile, status: 'uploading' as const, percent: 0 };
+  const task = {} as ActiveUpload;
+  const handle = createUploadRequest({
+    file: uploading,
+    action: props.action,
+    method: props.method,
+    headers: props.headers,
+    data: props.data,
+    name: props.name,
+    withCredentials: props.withCredentials,
+    timeout: props.timeout,
+    onProgress: percent => {
+      if (activeUploads.get(uploading.uid) !== task) return;
+      const currentPercent = getFilePercent(
+        operationFileList.value.find(file => file.uid === uploading.uid) ?? uploading
+      );
+      const patched = patchFile(uploading.uid, { percent: Math.max(currentPercent, percent) });
+      if (patched) emit('progress', patched.file, patched.files);
+    },
+  });
+
+  const result = handle.promise.then(transportResult => {
+    if (activeUploads.get(uploading.uid) !== task) {
+      return { uid: uploading.uid, outcome: 'aborted' } satisfies UploadResult;
+    }
+    activeUploads.delete(uploading.uid);
+
+    if (transportResult.outcome === 'aborted') {
+      const patched = patchFile(uploading.uid, { status: 'ready', percent: 0 });
+      const file = patched?.file ?? { ...uploading, status: 'ready' as const, percent: 0 };
+      const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
+      emit('aborted', file, files, 'manual');
+      return { uid: uploading.uid, outcome: 'aborted' } satisfies UploadResult;
+    }
+
+    if (transportResult.outcome === 'error') {
+      const patched = patchFile(uploading.uid, {
+        status: 'error',
+        error: transportResult.error.message,
+      });
+      const file = patched?.file ?? {
+        ...uploading,
+        status: 'error' as const,
+        error: transportResult.error.message,
+      };
+      const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
+      emit('error', transportResult.error, file, files);
+      return {
+        uid: uploading.uid,
+        outcome: 'error',
+        error: transportResult.error,
+      } satisfies UploadResult;
+    }
+
+    const responseUrl = getUploadResponseUrl(transportResult.response);
+    const patched = patchFile(uploading.uid, {
+      status: 'success',
+      percent: 100,
+      response: transportResult.response,
+      ...(responseUrl ? { url: responseUrl } : {}),
+      error: undefined,
+    });
+    const file = patched?.file ?? {
+      ...uploading,
+      status: 'success' as const,
+      percent: 100,
+      response: transportResult.response,
+      ...(responseUrl ? { url: responseUrl } : {}),
+    };
+    const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
+    emit('success', transportResult.response, file, files);
+    return {
+      uid: uploading.uid,
+      outcome: 'success',
+      response: transportResult.response,
+    } satisfies UploadResult;
+  });
+
+  task.file = uploading;
+  task.handle = handle;
+  task.result = result;
+  activeUploads.set(uploading.uid, task);
+  return result;
 };
 
-// 文件选择
-const handleFileChange = (event: Event) => {
+const submit = (file?: UploadFile | string): Promise<UploadResult[]> => {
+  let targets: UploadFile[];
+  if (typeof file === 'string') {
+    const target = operationFileList.value.find(item => item.uid === file);
+    targets = target ? [target] : [];
+  } else if (file) {
+    targets = [operationFileList.value.find(item => item.uid === file.uid) ?? file];
+  } else {
+    targets = operationFileList.value.filter(item => item.status === 'ready');
+  }
+  return Promise.all(targets.map(startUpload));
+};
+
+let selectionQueue: Promise<void> = Promise.resolve();
+
+const processSelectedFiles = async (files: readonly File[]): Promise<void> => {
+  let nextFiles = cloneUploadFileList(operationFileList.value);
+  const addedFiles: UploadFile[] = [];
+
+  for (const originalFile of files) {
+    if (destroyed.value) return;
+    let candidate = originalFile;
+    if (props.beforeAdd) {
+      try {
+        const result = await props.beforeAdd(originalFile, cloneUploadFileList(nextFiles));
+        if (destroyed.value) return;
+        if (result === false) {
+          emitRejection({ code: 'before-add', file: originalFile }, nextFiles);
+          continue;
+        }
+        if (result instanceof File) candidate = result;
+      } catch (cause) {
+        emitRejection({ code: 'before-add-error', file: originalFile, cause }, nextFiles);
+        continue;
+      }
+    }
+
+    const rejection = validateFile(candidate);
+    if (rejection) {
+      emitRejection(rejection, nextFiles);
+      continue;
+    }
+    if (normalizedLimit.value !== undefined && nextFiles.length >= normalizedLimit.value) {
+      emitRejection({ code: 'limit', file: candidate, limit: normalizedLimit.value }, nextFiles);
+      continue;
+    }
+
+    const uploadFile = createUploadFile(candidate);
+    nextFiles = [...nextFiles, uploadFile];
+    addedFiles.push(uploadFile);
+  }
+
+  if (addedFiles.length === 0 || destroyed.value) return;
+  const committedFiles = requestFileList(nextFiles);
+  for (const file of addedFiles) emit('added', { ...file }, cloneUploadFileList(committedFiles));
+  if (props.autoUpload) void Promise.all(addedFiles.map(startUpload));
+};
+
+const enqueueFiles = (files: File[]): void => {
+  if (props.disabled || files.length === 0) return;
+  let acceptedSelection = files;
+  if (!props.multiple && files.length > 1) {
+    acceptedSelection = files.slice(0, 1);
+    for (const file of files.slice(1)) {
+      emitRejection({ code: 'multiple', file });
+    }
+  }
+  selectionQueue = selectionQueue.then(() => processSelectedFiles(acceptedSelection));
+};
+
+const handleFileChange = (event: Event): void => {
   const target = event.target as HTMLInputElement;
-  const files = Array.from(target.files || []);
-  if (files.length === 0) return;
-
-  handleFiles(files);
-  // 清空input，允许重复选择同一文件
+  enqueueFiles(Array.from(target.files ?? []));
   target.value = '';
 };
 
-// 拖拽相关
-const handleDragOver = () => {
-  if (props.disabled) return;
-  isDragOver.value = true;
+const handleDragOver = (): void => {
+  if (!props.disabled && !isLimitReached.value) isDragOver.value = true;
 };
 
-const handleDragLeave = () => {
+const handleDragLeave = (event: DragEvent): void => {
+  const currentTarget = event.currentTarget;
+  if (currentTarget instanceof Element && event.relatedTarget instanceof Node) {
+    if (currentTarget.contains(event.relatedTarget)) return;
+  }
   isDragOver.value = false;
 };
 
-const handleDrop = (event: DragEvent) => {
-  if (props.disabled) return;
+const handleDrop = (event: DragEvent): void => {
   isDragOver.value = false;
-
-  const files = Array.from(event.dataTransfer?.files || []);
-  if (files.length === 0) return;
-
-  handleFiles(files);
+  if (props.disabled || isLimitReached.value) return;
+  enqueueFiles(Array.from(event.dataTransfer?.files ?? []));
 };
 
-// 校验文件是否匹配 accept（拖拽上传时原生不会过滤，需手动校验）
-const matchesAccept = (file: File): boolean => {
-  if (!props.accept) return true;
-
-  const tokens = props.accept
-    .split(',')
-    .map(t => t.trim().toLowerCase())
-    .filter(Boolean);
-  if (tokens.length === 0) return true;
-
-  const fileName = file.name.toLowerCase();
-  const fileType = file.type.toLowerCase();
-
-  return tokens.some(token => {
-    if (token.startsWith('.')) {
-      return fileName.endsWith(token);
-    }
-    if (token.endsWith('/*')) {
-      return fileType.startsWith(token.slice(0, -1));
-    }
-    return fileType === token;
-  });
+const handleRemove = (file: UploadFile): void => {
+  if (props.disabled) return;
+  abortActiveUpload(file.uid, 'remove');
+  requestFileList(operationFileList.value.filter(item => item.uid !== file.uid));
+  emit('remove-request', file);
 };
 
-// 将单个文件加入列表并按需上传（支持 beforeUpload 异步钩子）
-const addFile = async (file: File): Promise<void> => {
-  // 类型校验（覆盖拖拽场景）
-  if (!matchesAccept(file)) {
-    emit('type-mismatch', file, props.accept || '');
-    return;
-  }
-
-  // 大小校验：超限时给出明确反馈，而非静默丢弃
-  if (props.maxSize && file.size > props.maxSize * 1024 * 1024) {
-    emit('oversize', file, props.maxSize);
-    return;
-  }
-
-  // 上传前钩子：返回 false 阻止；返回 File 替换待上传文件
-  let rawFile = file;
-  if (props.beforeUpload) {
-    try {
-      const result = await props.beforeUpload(file);
-      if (result === false) return;
-      if (result instanceof File) rawFile = result;
-    } catch {
-      return;
-    }
-  }
-
-  const uploadFile: UploadFile = {
-    uid: generateUid(),
-    name: rawFile.name,
-    size: rawFile.size,
-    type: rawFile.type,
-    status: 'ready',
-    percent: 0,
-    raw: rawFile,
-  };
-
-  // 先添加到列表
-  internalFileList.value.push(uploadFile);
-  emit('change', uploadFile, internalFileList.value);
-  emit('update:fileList', internalFileList.value);
-
-  // 如果是图片，生成缩略图
-  if (rawFile.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = _e => {
-      uploadFile.thumbUrl = _e.target?.result as string;
-      // 触发响应式更新
-      emit('update:fileList', [...internalFileList.value]);
-    };
-    reader.readAsDataURL(rawFile);
-  }
-
-  // 自动上传
-  if (props.autoUpload && props.action) {
-    uploadFile.status = 'uploading';
-    uploadSingleFile(uploadFile);
-  }
+const handlePreview = (file: UploadFile): void => {
+  if (!props.disabled) emit('preview-request', file);
 };
 
-// 处理文件
-const handleFiles = (files: File[]) => {
-  // 检查数量限制
-  if (props.limit !== undefined) {
-    const remainingSlots = props.limit - internalFileList.value.length;
-    if (files.length > remainingSlots) {
-      emit('exceed', files, internalFileList.value);
-      files = files.slice(0, Math.max(0, remainingSlots));
-    }
-  }
-
-  files.forEach(file => {
-    void addFile(file);
-  });
-};
-
-// 上传单个文件
-const uploadSingleFile = (file: UploadFile) => {
-  if (!props.action || !file.raw) return;
-
-  const xhr = new XMLHttpRequest();
-  uploadQueue.set(file.uid, xhr);
-
-  const formData = new FormData();
-  formData.append(props.name, file.raw);
-
-  // 添加额外数据
-  if (props.data) {
-    Object.entries(props.data).forEach(([key, value]) => {
-      formData.append(key, value as string);
-    });
-  }
-
-  // 上传进度
-  xhr.upload.addEventListener('progress', e => {
-    if (e.lengthComputable) {
-      file.percent = Math.round((e.loaded / e.total) * 100);
-      emit('progress', file.percent, file);
-    }
-  });
-
-  // 上传成功
-  xhr.addEventListener('load', () => {
-    if (xhr.status >= 200 && xhr.status < 300) {
-      file.status = 'success';
-      try {
-        file.response = JSON.parse(xhr.responseText);
-        file.url = (file.response as { url?: string })?.url || file.thumbUrl;
-      } catch (_e) {
-        file.response = xhr.responseText;
-      }
-      emit('success', file.response, file, internalFileList.value);
-    } else {
-      file.status = 'error';
-      file.error = xhr.statusText;
-      emit('error', new Error(xhr.statusText), file, internalFileList.value);
-    }
-    uploadQueue.delete(file.uid);
-    emit('update:fileList', internalFileList.value);
-  });
-
-  // 上传失败
-  xhr.addEventListener('error', _e => {
-    file.status = 'error';
-    file.error = 'Upload failed';
-    emit('error', new Error('Upload failed'), file, internalFileList.value);
-    uploadQueue.delete(file.uid);
-    emit('update:fileList', internalFileList.value);
-  });
-
-  // 发送请求
-  xhr.open('POST', props.action);
-
-  // 设置请求头
-  if (props.headers) {
-    Object.entries(props.headers).forEach(([key, value]) => {
-      xhr.setRequestHeader(key, value);
-    });
-  }
-
-  if (props.withCredentials) {
-    xhr.withCredentials = true;
-  }
-
-  xhr.send(formData);
-};
-
-// 移除文件
-const handleRemove = (file: UploadFile) => {
-  const index = internalFileList.value.findIndex(f => f.uid === file.uid);
-  if (index > -1) {
-    // 如果正在上传，中止上传
-    const xhr = uploadQueue.get(file.uid);
-    if (xhr) {
-      xhr.abort();
-      uploadQueue.delete(file.uid);
-    }
-
-    internalFileList.value.splice(index, 1);
-    emit('remove', file, internalFileList.value);
-    emit('update:fileList', internalFileList.value);
-  }
-};
-
-// 预览文件
-const handlePreview = (file: UploadFile) => {
-  emit('preview', file);
-};
-
-// 手动上传
-const submit = () => {
-  internalFileList.value
-    .filter(file => file.status === 'ready')
-    .forEach(file => {
-      file.status = 'uploading';
-      uploadSingleFile(file);
-    });
-};
-
-// 清空文件列表
-const clearFiles = () => {
-  // 中止所有上传
-  uploadQueue.forEach(xhr => xhr.abort());
-  uploadQueue.clear();
-
-  internalFileList.value = [];
-  emit('update:fileList', internalFileList.value);
-};
-
-// 中止上传
-const abort = (file?: UploadFile) => {
+const abort = (file?: UploadFile | string): number => {
   if (file) {
-    const xhr = uploadQueue.get(file.uid);
-    if (xhr) {
-      xhr.abort();
-      uploadQueue.delete(file.uid);
-      file.status = 'ready';
-    }
-  } else {
-    uploadQueue.forEach(xhr => xhr.abort());
-    uploadQueue.clear();
-    internalFileList.value.forEach(f => {
-      if (f.status === 'uploading') {
-        f.status = 'ready';
-      }
-    });
+    const uid = typeof file === 'string' ? file : file.uid;
+    return Number(abortActiveUpload(uid, 'manual'));
   }
+  return abortUploads([...activeUploads.keys()], 'manual');
 };
 
-const getElement = () => uploadRef.value || null;
+const requestClear = (): number => {
+  const abortedCount = abortUploads([...activeUploads.keys()], 'clear');
+  requestFileList([]);
+  return abortedCount;
+};
 
-// 卸载时中止所有进行中的上传，避免回调落在已销毁实例上
+const getFiles = (): UploadFile[] => cloneUploadFileList(displayedFileList.value);
+const getElement = (): HTMLDivElement | null => uploadRef.value ?? null;
+
 onBeforeUnmount(() => {
-  uploadQueue.forEach(xhr => xhr.abort());
-  uploadQueue.clear();
+  destroyed.value = true;
+  // 卸载属于资源清理，不再向已销毁的业务树发送列表或中止事件。
+  for (const [uid, task] of activeUploads) {
+    activeUploads.delete(uid);
+    task.handle.abort();
+  }
 });
 
 defineExpose<ExFileUploadExposed>({
+  openFileDialog,
   submit,
-  clearFiles,
   abort,
+  requestClear,
+  getFiles,
   getElement,
 });
 </script>

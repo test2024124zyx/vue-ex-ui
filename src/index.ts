@@ -376,6 +376,10 @@ export type * from './components/virtual-list/types';
 export type * from './components/watermark/types';
 export type * from './components/tag/types';
 export type * from './components/file-upload/types';
+export type {
+  ExFileUploadErrorCode,
+  ExFileUploadErrorOptions,
+} from './components/file-upload/errors';
 export type * from './components/file-download/types';
 export type {
   ExFileDownloadErrorCode,
@@ -404,6 +408,16 @@ export type * from './components/color-picker/types';
 export type * from './components/time-picker/types';
 export type * from './components/tree-select/types';
 export type * from './components/descriptions/types';
+export { ExFileUploadError } from './components/file-upload/errors';
+export {
+  cloneUploadFileList,
+  formatUploadFileSize,
+  getUploadResponseUrl,
+  matchesUploadAccept,
+  normalizeUploadLimit,
+  normalizeUploadMaxFileSize,
+  normalizeUploadPercent,
+} from './components/file-upload/upload-utils';
 export { ExFileDownloadError } from './components/file-download/errors';
 export { ExFilePreviewError } from './components/file-preview/errors';
 export {
