@@ -31,6 +31,9 @@ export function toImageCompressError(
   fallbackMessage: string
 ): ExImageCompressError {
   if (error instanceof ExImageCompressError) return error;
+  if (error instanceof BrowserImageError) {
+    return new ExImageCompressError(error.code, error.message, error.cause ?? error);
+  }
   if (error instanceof Error && error.name === 'AbortError') {
     return new ExImageCompressError('ABORTED', '图片压缩已取消', error);
   }
@@ -38,3 +41,4 @@ export function toImageCompressError(
   const message = error instanceof Error && error.message.trim() ? error.message : fallbackMessage;
   return new ExImageCompressError(code, message, error);
 }
+import { BrowserImageError } from '../../utils/image-resource';

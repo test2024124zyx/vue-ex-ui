@@ -397,6 +397,7 @@ export type {
 } from './components/file-preview/errors';
 export type { PreviewScaleConfig } from './components/file-preview/preview-utils';
 export type * from './components/image-crop/types';
+export type { ImageCropErrorCode } from './components/image-crop/errors';
 export type * from './components/image-compress/types';
 export type { ImageCompressErrorCode } from './components/image-compress/errors';
 export type * from './components/file-list/types';
@@ -443,6 +444,7 @@ export {
 } from './components/file-upload/upload-utils';
 export { ExFileDownloadError } from './components/file-download/errors';
 export { ExFilePreviewError } from './components/file-preview/errors';
+export { ExImageCropError } from './components/image-crop/errors';
 export { ExImageCompressError } from './components/image-compress/errors';
 export {
   compressImage,

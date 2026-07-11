@@ -548,15 +548,25 @@ export default {
   },
 
   imageCrop: {
-    crop: '裁剪',
+    editor: '图片裁剪编辑器',
+    toolbar: '裁剪操作',
     cancel: '取消',
-    confirm: '确认',
     confirmCrop: '确认裁剪',
     reset: '重置',
     zoomIn: '放大',
     zoomOut: '缩小',
     rotateLeft: '逆时针旋转',
     rotateRight: '顺时针旋转',
+    sourceLoading: '正在加载图片',
+    cropArea: '裁剪区域',
+    resizeNorth: '向上调整裁剪区域',
+    resizeSouth: '向下调整裁剪区域',
+    resizeEast: '向右调整裁剪区域',
+    resizeWest: '向左调整裁剪区域',
+    resizeNorthwest: '调整裁剪区域左上角',
+    resizeNortheast: '调整裁剪区域右上角',
+    resizeSouthwest: '调整裁剪区域左下角',
+    resizeSoutheast: '调整裁剪区域右下角',
   },
 
   imageCompress: {

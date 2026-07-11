@@ -1,3 +1,4 @@
+import { encodeCanvasToBlob, loadBrowserImageResource } from '../../utils/image-resource';
 import { ExImageCompressError, toImageCompressError } from './errors';
 import type {
   CompressMode,
@@ -91,111 +92,23 @@ function assertDomAvailable(): void {
   }
 }
 
-async function resolveSourceBlob(source: ImageCompressSource, signal?: AbortSignal): Promise<Blob> {
-  assertNotAborted(signal);
-
-  if (source instanceof Blob) return source;
-  if (typeof source !== 'string' || !source.trim()) {
-    throw new ExImageCompressError('INVALID_SOURCE', '图片来源不能为空');
-  }
-  if (typeof fetch !== 'function') {
-    throw new ExImageCompressError('SOURCE_FETCH_FAILED', '当前环境无法读取远程图片');
-  }
-
-  try {
-    const response = await fetch(source, { signal });
-    if (!response.ok) {
-      throw new ExImageCompressError(
-        'SOURCE_FETCH_FAILED',
-        '图片请求失败，HTTP 状态码 ' + String(response.status)
-      );
-    }
-    return await response.blob();
-  } catch (error) {
-    throw toImageCompressError(error, 'SOURCE_FETCH_FAILED', '图片请求失败');
-  }
-}
-
-function decodeImage(url: string, signal?: AbortSignal): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    let settled = false;
-
-    const cleanup = (): void => {
-      image.onload = null;
-      image.onerror = null;
-      signal?.removeEventListener('abort', handleAbort);
-    };
-    const finishResolve = (): void => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(image);
-    };
-    const finishReject = (error: ExImageCompressError): void => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(error);
-    };
-    const handleAbort = (): void => {
-      image.src = '';
-      finishReject(new ExImageCompressError('ABORTED', '图片加载已取消'));
-    };
-
-    image.onload = () => finishResolve();
-    image.onerror = event => {
-      finishReject(new ExImageCompressError('LOAD_FAILED', '图片无法解码', event));
-    };
-    signal?.addEventListener('abort', handleAbort, { once: true });
-
-    if (signal?.aborted) {
-      handleAbort();
-      return;
-    }
-    image.src = url;
-  });
-}
-
 /** 读取并解码一次图片资源；调用方必须在不再使用时执行 dispose。 */
 export async function loadImageResource(
   source: ImageCompressSource,
   signal?: AbortSignal
 ): Promise<ImageCompressLoadedResource> {
-  assertDomAvailable();
-  const blob = await resolveSourceBlob(source, signal);
-  assertNotAborted(signal);
-
-  if (blob.size <= 0 || (blob.type && !blob.type.toLowerCase().startsWith('image/'))) {
-    throw new ExImageCompressError('INVALID_SOURCE', '来源不是有效图片');
-  }
-
-  const previewUrl = URL.createObjectURL(blob);
   try {
-    const image = await decodeImage(previewUrl, signal);
-    const width = image.naturalWidth;
-    const height = image.naturalHeight;
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-      throw new ExImageCompressError('INVALID_DIMENSION', '图片尺寸无效');
-    }
-
-    let disposed = false;
+    const loaded = await loadBrowserImageResource(source, signal);
     return {
-      image,
-      blob,
-      previewUrl,
-      originalSize: blob.size,
-      originalType: blob.type || 'application/octet-stream',
-      originalDimension: { width, height },
-      dispose: () => {
-        if (disposed) return;
-        disposed = true;
-        URL.revokeObjectURL(previewUrl);
-      },
+      image: loaded.image,
+      blob: loaded.blob,
+      previewUrl: loaded.objectUrl,
+      originalSize: loaded.size,
+      originalType: loaded.mediaType,
+      originalDimension: { ...loaded.dimension },
+      dispose: loaded.dispose,
     };
   } catch (error) {
-    URL.revokeObjectURL(previewUrl);
     throw toImageCompressError(error, 'LOAD_FAILED', '图片加载失败');
   }
 }
@@ -248,54 +161,17 @@ function drawImage(
   context.drawImage(resource.image, 0, 0, dimension.width, dimension.height);
 }
 
-function encodeCanvas(
+async function encodeCanvas(
   canvas: HTMLCanvasElement,
   outputType: ImageOutputType,
   quality: number | undefined,
   signal?: AbortSignal
 ): Promise<Blob> {
-  assertNotAborted(signal);
-
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const cleanup = (): void => signal?.removeEventListener('abort', handleAbort);
-    const finishReject = (error: ExImageCompressError): void => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(error);
-    };
-    const handleAbort = (): void => {
-      finishReject(new ExImageCompressError('ABORTED', '图片压缩已取消'));
-    };
-
-    signal?.addEventListener('abort', handleAbort, { once: true });
-    try {
-      canvas.toBlob(
-        blob => {
-          if (settled) return;
-          if (!blob) {
-            finishReject(new ExImageCompressError('ENCODE_FAILED', '浏览器未能编码图片'));
-            return;
-          }
-          if (blob.type.toLowerCase() !== outputType) {
-            finishReject(
-              new ExImageCompressError('UNSUPPORTED_OUTPUT', '当前浏览器不支持输出 ' + outputType)
-            );
-            return;
-          }
-
-          settled = true;
-          cleanup();
-          resolve(blob);
-        },
-        outputType,
-        quality
-      );
-    } catch (error) {
-      finishReject(toImageCompressError(error, 'ENCODE_FAILED', '图片编码失败'));
-    }
-  });
+  try {
+    return await encodeCanvasToBlob(canvas, outputType, quality, signal);
+  } catch (error) {
+    throw toImageCompressError(error, 'ENCODE_FAILED', '图片编码失败');
+  }
 }
 
 interface EncodedCandidate {

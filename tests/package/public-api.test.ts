@@ -57,6 +57,7 @@ describe('v2 公共组件契约', () => {
     expect(Object.isFrozen(publicApi.ICONS)).toBe(true);
     expect(publicApi.isBuiltinIcon('search-line')).toBe(true);
     expect(publicApi.getBuiltinIcon('missing-icon')).toBe('');
+    expect(publicApi.ExImageCropError).toBeInstanceOf(Function);
     expect(publicApi.ExImageCompressError).toBeInstanceOf(Function);
     expect(publicApi.compressImage).toBeInstanceOf(Function);
     expect(publicApi.compressImages).toBeInstanceOf(Function);
