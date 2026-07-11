@@ -1,232 +1,239 @@
 <template>
   <nav
     ref="menuRef"
+    v-bind="rootAttrs"
     :class="menuClasses"
-    :style="menuStyles"
-    role="navigation"
-    :aria-label="ariaLabel || 'Main menu'"
+    :aria-label="resolvedAriaLabel"
   >
-    <!-- 搜索框 -->
-    <div v-if="searchable" class="ex-menu__search">
-      <input
-        v-model="searchQuery"
-        type="text"
-        class="ex-menu__search-input"
+    <div
+      v-if="props.searchable"
+      class="ex-menu__search"
+    >
+      <ExInput
+        :model-value="searchQuery"
+        size="small"
+        clearable
         :placeholder="t('search')"
         :aria-label="t('search')"
-        @input="handleSearch"
-      />
-      <span class="ex-menu__search-icon">
-        <ExIcon icon="search-line" :size="16" aria-hidden="true" />
-      </span>
+        @update:model-value="handleSearch"
+      >
+        <template #prefix>
+          <ExIcon
+            icon="search-line"
+            aria-hidden="true"
+          />
+        </template>
+      </ExInput>
     </div>
 
     <ul
       class="ex-menu__list"
-      :role="mode === 'horizontal' ? 'menubar' : 'menu'"
-      :aria-orientation="mode === 'horizontal' ? 'horizontal' : 'vertical'"
+      :role="normalizedMode === 'horizontal' ? 'menubar' : 'menu'"
+      :aria-orientation="normalizedMode === 'horizontal' ? 'horizontal' : 'vertical'"
+      data-ex-menu-list
     >
-      <slot v-if="$slots.default" />
-      <template v-else-if="displayItems && displayItems.length > 0">
-        <template v-for="item in displayItems" :key="item.key">
-          <ExSubMenu
-            v-if="item.children && item.children.length > 0"
-            :item-key="item.key"
-            :title="item.label"
-            :disabled="item.disabled"
-          >
-            <template v-if="item.icon" #icon>
-              <img :src="item.icon" :alt="item.label" width="20" height="20" />
-            </template>
-            <ExMenuItem
-              v-for="child in item.children"
-              :key="child.key"
-              :item-key="child.key"
-              :disabled="child.disabled"
-              :path="child.path"
-            >
-              <template v-if="child.icon" #icon>
-                <img :src="child.icon" :alt="child.label" width="18" height="18" />
-              </template>
-              {{ child.label }}
-            </ExMenuItem>
-          </ExSubMenu>
-          <ExMenuItem v-else :item-key="item.key" :disabled="item.disabled" :path="item.path">
-            <template v-if="item.icon" #icon>
-              <img :src="item.icon" :alt="item.label" width="20" height="20" />
-            </template>
-            {{ item.label }}
-          </ExMenuItem>
-        </template>
-      </template>
+      <slot v-if="$slots.default"></slot>
+      <ExMenuNode
+        v-for="item in displayItems"
+        v-else
+        :key="item.key"
+        :item="item"
+      />
     </ul>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
-import ExIcon from '../icon/ExIcon.vue';
-import { computed, provide, ref, watch, onMounted, onUnmounted } from 'vue';
-import type { ExMenuProps, ExMenuEmits, ExMenuExposed, MenuItem } from './types';
+import { computed, provide, ref, useAttrs, watch } from 'vue';
+import type { Ref } from 'vue';
+import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
-import { useNeonEffect, useAnimation } from '../config-provider/composables';
+import ExIcon from '../icon/ExIcon.vue';
+import ExInput from '../input/ExInput.vue';
+import { MENU_INJECTION_KEY } from './context';
+import ExMenuNode from './ExMenuNode.vue';
+import {
+  buildMenuItemMap,
+  filterMenuItems,
+  normalizeMenuKeys,
+  normalizeMenuMode,
+  validateMenuItems,
+} from './menu-utils';
+import type { ExMenuEmits, ExMenuExposed, ExMenuProps, ExMenuSlots, MenuSelectInfo } from './types';
 
 defineOptions({
   name: 'ExMenu',
+  inheritAttrs: false,
 });
+
+defineSlots<ExMenuSlots>();
 
 const props = withDefaults(defineProps<ExMenuProps>(), {
   mode: 'vertical',
-  collapsed: false,
-  selectable: true,
-  responsive: false,
-  breakpoint: 768,
-  searchable: false,
   activeKey: undefined,
   defaultActiveKey: undefined,
   openKeys: undefined,
   defaultOpenKeys: undefined,
-  items: undefined,
-  ariaLabel: undefined,
-  class: undefined,
-  style: undefined,
+  collapsed: false,
+  selectable: true,
+  items: () => [],
+  searchable: false,
 });
-
 const emit = defineEmits<ExMenuEmits>();
-
-const menuRef = ref<HTMLElement>();
-const internalActiveKey = ref<string>(props.defaultActiveKey || props.activeKey || '');
-const internalOpenKeys = ref<string[]>(props.defaultOpenKeys || props.openKeys || []);
-const isMobile = ref(false);
-const searchQuery = ref('');
-let _mql: MediaQueryList | null = null;
-const _applyResponsive = () => {
-  if (!_mql) return;
-  isMobile.value = _mql.matches;
-};
-onMounted(() => {
-  if (props.responsive && typeof window !== 'undefined') {
-    _mql = window.matchMedia(`(max-width: ${props.breakpoint}px)`);
-    _applyResponsive();
-    _mql.addEventListener?.('change', _applyResponsive);
-  }
-});
-onUnmounted(() => {
-  if (_mql && _mql.removeEventListener) {
-    _mql.removeEventListener('change', _applyResponsive);
-  }
-  _mql = null;
-});
-
-watch(
-  () => props.activeKey,
-  newKey => {
-    if (newKey !== undefined) internalActiveKey.value = newKey;
-  }
-);
-
-watch(
-  () => props.openKeys,
-  newKeys => {
-    if (newKeys !== undefined) internalOpenKeys.value = [...newKeys];
-  }
-);
-
-// 全局配置
+const attrs = useAttrs();
 const { t } = useLocale('menu');
-const globalNeonEffect = useNeonEffect();
-const globalAnimation = useAnimation();
+const menuRef = ref<HTMLElement | null>(null);
+const searchQuery = ref('');
+const normalizedMode = computed(() => normalizeMenuMode(props.mode));
+const isCollapsed = computed(() => normalizedMode.value === 'inline' && props.collapsed);
 
-const menuClasses = computed(() => {
-  const classes = ['ex-menu', `ex-menu--${props.mode}`];
-
-  if (props.collapsed && props.mode === 'inline') classes.push('ex-menu--collapsed');
-
-  // 支持全局霓虹效果
-  if (globalNeonEffect.value) classes.push('ex-menu--neon');
-
-  // 支持全局动画配置
-  if (!globalAnimation.value) classes.push('ex-menu--no-animation');
-
-  // 响应式支持
-  if (props.responsive && isMobile.value) classes.push('ex-menu--mobile');
-
-  classes.push(...normalizeCustomClass(props.class));
-  return classes;
+const activeState = useControllableState<string>({
+  controlledValue: () => (typeof props.activeKey === 'string' ? props.activeKey : undefined),
+  defaultValue: () => (typeof props.defaultActiveKey === 'string' ? props.defaultActiveKey : ''),
+  onChange: key => emit('update:activeKey', key),
 });
+const activeKey = computed(() => activeState.value.value);
 
-const menuStyles = computed(() => {
-  if (!props.style) return undefined;
-  return typeof props.style === 'string' ? props.style : props.style;
+const openState = useControllableState<string[]>({
+  controlledValue: () =>
+    props.openKeys === undefined ? undefined : normalizeMenuKeys(props.openKeys),
+  defaultValue: () => normalizeMenuKeys(props.defaultOpenKeys),
+  clone: keys => [...keys],
+  onChange: keys => {
+    const snapshot = [...keys];
+    emit('update:openKeys', snapshot);
+    emit('open-change', [...snapshot]);
+  },
 });
+const openKeys = computed(() => normalizeMenuKeys(openState.value.value));
 
-const handleItemClick = (key: string, item?: MenuItem) => {
-  if (!props.selectable) return;
-  internalActiveKey.value = key;
-  emit('update:activeKey', key);
-  emit('select', key, item || { key, label: '' });
-  emit('click', key, item || { key, label: '' });
-};
+const validatedItems = computed(() => validateMenuItems(props.items));
+const itemMap = computed(() => buildMenuItemMap(validatedItems.value));
+const displayItems = computed(() =>
+  props.searchable ? filterMenuItems(validatedItems.value, searchQuery.value) : validatedItems.value
+);
 
-const handleOpenChange = (key: string, open: boolean) => {
-  const newOpenKeys = [...internalOpenKeys.value];
-  const index = newOpenKeys.indexOf(key);
-  if (open && index === -1) newOpenKeys.push(key);
-  else if (!open && index !== -1) newOpenKeys.splice(index, 1);
-  internalOpenKeys.value = newOpenKeys;
-  emit('update:openKeys', newOpenKeys);
-  emit('openChange', newOpenKeys);
-};
+const menuClasses = computed(() => [
+  'ex-menu',
+  `ex-menu--${normalizedMode.value}`,
+  { 'ex-menu--collapsed': isCollapsed.value },
+]);
 
-// 搜索功能：对 items 模式做真实过滤（保留命中项及其祖先链），并同时 emit 供自定义处理。
-// 插槽（default slot）模式下组件无法感知子项文本，仍只 emit，由使用方自行过滤。
-const filterMenuItems = (list: MenuItem[], query: string): MenuItem[] =>
-  list
-    .map(item => {
-      const selfMatch = (item.label || '').toLowerCase().includes(query);
-      const matchedChildren = item.children ? filterMenuItems(item.children, query) : undefined;
-      if (selfMatch) return { ...item };
-      if (matchedChildren && matchedChildren.length > 0) {
-        return { ...item, children: matchedChildren };
-      }
-      return null;
+const OBSOLETE_ATTRS = new Set(['responsive', 'breakpoint', 'arialabel']);
+const rootAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => {
+      const normalizedKey = key.replace(/-/g, '').toLowerCase();
+      return key !== 'aria-label' && key !== 'role' && !OBSOLETE_ATTRS.has(normalizedKey);
     })
-    .filter((item): item is MenuItem => item !== null);
-
-const displayItems = computed(() => {
-  const list = props.items;
-  if (!list || !props.searchable) return list;
-  const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return list;
-  return filterMenuItems(list, query);
+  )
+);
+const resolvedAriaLabel = computed(() => {
+  const label = attrs['aria-label'];
+  return typeof label === 'string' && label.trim() ? label.trim() : t('menu');
 });
 
-const handleSearch = () => {
-  emit('search', searchQuery.value);
+const focusables = new Map<string, Readonly<Ref<boolean>>>();
+const tabStopKey = ref<string | null>(activeKey.value || null);
+
+const ensureTabStop = (): void => {
+  const activeRecord = activeKey.value ? focusables.get(activeKey.value) : undefined;
+  if (activeRecord && !activeRecord.value) {
+    tabStopKey.value = activeKey.value;
+    return;
+  }
+
+  const currentRecord = tabStopKey.value ? focusables.get(tabStopKey.value) : undefined;
+  if (currentRecord && !currentRecord.value) return;
+
+  tabStopKey.value =
+    Array.from(focusables.entries()).find(([, disabled]) => !disabled.value)?.[0] ?? null;
 };
 
-provide('exMenu', {
-  mode: computed(() => props.mode),
-  collapsed: computed(() => props.collapsed),
-  activeKey: computed(() => internalActiveKey.value),
-  openKeys: computed(() => internalOpenKeys.value),
+const registerFocusable = (key: string, disabled: Readonly<Ref<boolean>>): (() => void) => {
+  focusables.set(key, disabled);
+  const stop = watch(disabled, ensureTabStop);
+  ensureTabStop();
+
+  return () => {
+    stop();
+    if (focusables.get(key) === disabled) focusables.delete(key);
+    ensureTabStop();
+  };
+};
+
+watch(activeKey, ensureTabStop);
+
+const getTabIndex = (key: string, disabled: boolean): 0 | -1 => {
+  if (disabled) return -1;
+  if (activeKey.value) return activeKey.value === key ? 0 : -1;
+  return tabStopKey.value === key ? 0 : -1;
+};
+
+const setTabStop = (key: string): void => {
+  const record = focusables.get(key);
+  if (record && !record.value) tabStopKey.value = key;
+};
+
+const handleItemClick = (key: string, event: MouseEvent): MenuSelectInfo => {
+  setTabStop(key);
+  const info: MenuSelectInfo = { key, item: itemMap.value.get(key), event };
+  emit('item-click', info);
+
+  if (props.selectable) {
+    if (activeKey.value !== key) activeState.request(key);
+    emit('select', info);
+  }
+  return info;
+};
+
+const arraysEqual = (first: readonly string[], second: readonly string[]): boolean =>
+  first.length === second.length && first.every((key, index) => key === second[index]);
+
+const handleOpenChange = (key: string, open: boolean): void => {
+  const nextKeys = [...openKeys.value];
+  const index = nextKeys.indexOf(key);
+  if (open && index < 0) nextKeys.push(key);
+  else if (!open && index >= 0) nextKeys.splice(index, 1);
+  if (!arraysEqual(nextKeys, openKeys.value)) openState.request(nextKeys);
+};
+
+const handleSearch = (query: string): void => {
+  searchQuery.value = query;
+  emit('search', query);
+};
+
+provide(MENU_INJECTION_KEY, {
+  mode: normalizedMode,
+  collapsed: isCollapsed,
+  activeKey,
+  openKeys,
+  tabStopKey,
+  registerFocusable,
+  getTabIndex,
+  setTabStop,
   handleItemClick,
   handleOpenChange,
-  t,
 });
 
+const setActiveKey = (key: string): void => {
+  if (typeof key !== 'string' || key.trim() === '') {
+    throw new TypeError('Menu activeKey 必须是非空字符串');
+  }
+  if (activeKey.value !== key) activeState.request(key);
+};
+
+const setOpenKeys = (keys: string[]): void => {
+  const normalized = normalizeMenuKeys(keys);
+  if (!arraysEqual(normalized, openKeys.value)) openState.request(normalized);
+};
+
 defineExpose<ExMenuExposed>({
-  getActiveKey: () => internalActiveKey.value,
-  getOpenKeys: () => [...internalOpenKeys.value],
-  setActiveKey: (key: string) => {
-    internalActiveKey.value = key;
-    emit('update:activeKey', key);
-  },
-  setOpenKeys: (keys: string[]) => {
-    internalOpenKeys.value = [...keys];
-    emit('update:openKeys', keys);
-  },
-  getElement: () => menuRef.value || null,
+  getActiveKey: () => activeKey.value || undefined,
+  getOpenKeys: () => [...openKeys.value],
+  setActiveKey,
+  setOpenKeys,
+  getElement: () => menuRef.value,
 });
 </script>
 

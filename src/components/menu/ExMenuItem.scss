@@ -1,208 +1,144 @@
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
-
-// ============================================================================
-// ExMenuItem - 菜单项组
-// ============================================================================
-
 .ex-menu-item {
   position: relative;
+  min-width: 0;
   list-style: none;
-  cursor: pointer;
-  border-radius: var(--ex-radius-md);
-  overflow: hidden;
-  @include transition(all);
+
+  &__action {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    color: var(--ex-color-text-secondary);
+    font: inherit;
+    text-align: start;
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ex-radius-md);
+    cursor: pointer;
+    transition:
+      color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+  }
+
+  &__action:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
+  }
 
   &__content {
     position: relative;
     display: flex;
+    min-height: 40px;
     align-items: center;
     gap: var(--ex-spacing-3);
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
-    padding-right: calc(var(--ex-spacing-4) + 16px + var(--ex-spacing-2)); // SubMenu 对齐
-    color: var(--ex-color-white-alpha-70);
-    font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-medium);
-    font-family: var(--ex-font-secondary);
-    line-height: 1.25;
-    @include transition(background-color, color, box-shadow);
-    z-index: 1;
+    padding: var(--ex-spacing-2) calc(var(--ex-spacing-4) + 12px) var(--ex-spacing-2)
+      var(--ex-spacing-4);
   }
 
   &__icon {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
     width: 20px;
     height: 20px;
-    @include transition(all);
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    color: currentColor;
+  }
 
-    img, svg {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      // 图标跟随主题颜色 - 使用滤镜将图标转换为主题色
-      filter: brightness(0) saturate(100%) invert(85%) sepia(10%) saturate(500%) hue-rotate(180deg) brightness(95%) contrast(90%);
-      @include transition(filter);
-    }
+  &__icon :deep(.ex-icon),
+  &__icon :deep(img),
+  &__icon :deep(svg) {
+    width: 100%;
+    height: 100%;
   }
 
   &__label {
+    min-width: 0;
     flex: 1;
-    white-space: nowrap;
     overflow: hidden;
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-normal);
     text-overflow: ellipsis;
-    @include transition(all);
+    white-space: nowrap;
   }
 
   &__indicator {
     position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    inset-block: 25%;
+    inset-inline-start: 0;
     width: 3px;
-    height: 60%;
-    background: linear-gradient(180deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
-    border-radius: 0 2px 2px 0;
-    @include neon-glow('blue', 'md');
-    animation: pulse-indicator 2s ease-in-out infinite;
+    background: var(--ex-color-primary);
+    border-radius: 0 var(--ex-radius-full) var(--ex-radius-full) 0;
+    box-shadow: 0 0 8px var(--ex-color-primary-alpha-40);
   }
 
-  // 悬停效果
-  &:hover:not(&--disabled):not(&--active) {
-    .ex-menu-item__content {
-      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-15), transparent);
-      color: var(--ex-color-white-alpha-90);
-    }
-
-    .ex-menu-item__icon img,
-    .ex-menu-item__icon svg {
-      // 悬停时增强霓虹蓝色效果
-      filter: brightness(0) saturate(100%) invert(65%) sepia(80%) saturate(2000%) hue-rotate(180deg) brightness(110%) contrast(95%) drop-shadow(0 0 6px var(--ex-color-neon-blue-alpha-60));
-      transform: scale(1.1);
-    }
+  &--active &__action {
+    color: var(--ex-color-primary);
+    background: var(--ex-color-primary-alpha-10);
   }
 
-  // 激活状
-  &--active {
-    .ex-menu-item__content {
-      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-25), var(--ex-color-neon-pink-alpha-10));
-      color: var(--ex-color-neon-blue-500);
-      font-weight: var(--ex-font-semibold);
-      @include neon-text('blue');
-    }
-
-    .ex-menu-item__icon img,
-    .ex-menu-item__icon svg {
-      // 激活时使用强烈的霓虹蓝色
-      filter: brightness(0) saturate(100%) invert(55%) sepia(100%) saturate(3000%) hue-rotate(180deg) brightness(120%) contrast(100%) drop-shadow(0 0 8px var(--ex-color-neon-blue-alpha-80));
-      transform: scale(1.15);
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      right: var(--ex-spacing-2);
-      top: 50%;
-      transform: translateY(-50%);
-      width: 6px;
-      height: 6px;
-      background: var(--ex-color-neon-pink-500);
-      border-radius: 50%;
-      @include neon-glow('pink', 'sm');
-      animation: pulse-dot 1.5s ease-in-out infinite;
-    }
-  }
-
-  // 禁用状
-  &--disabled {
+  &--disabled &__action {
+    color: var(--ex-color-text-disabled);
     cursor: not-allowed;
-    opacity: 0.4;
-    filter: grayscale(0.8);
-
-    .ex-menu-item__content {
-      color: var(--ex-color-text-disabled);
-    }
-  }
-
-  // 聚焦状
-  &:focus-visible {
-    outline: none;
-    @include focus-ring(var(--ex-color-neon-blue-500), 2px, 2px);
-  }
-}
-
-// 动画
-@keyframes pulse-indicator {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 10px var(--ex-color-neon-blue-alpha-60);
-  }
-  50% {
-    opacity: 0.7;
-    box-shadow: 0 0 20px var(--ex-color-neon-blue-alpha-80), 0 0 30px var(--ex-color-neon-pink-alpha-40);
-  }
-}
-
-@keyframes pulse-dot {
-  0%, 100% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  50% {
     opacity: 0.6;
-    transform: translateY(-50%) scale(1.3);
+  }
+
+  &--collapsed &__content {
+    justify-content: center;
+    padding-inline: var(--ex-spacing-2);
+  }
+
+  &--collapsed.ex-menu-item--has-icon &__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
 
-// 响应
+@media (hover: hover) {
+  .ex-menu-item:not(.ex-menu-item--disabled) .ex-menu-item__action:hover {
+    color: var(--ex-color-text-primary);
+    background: var(--ex-color-bg-hover);
+  }
+
+  .ex-menu-item--active:not(.ex-menu-item--disabled) .ex-menu-item__action:hover {
+    color: var(--ex-color-primary);
+    background: var(--ex-color-primary-alpha-15);
+  }
+}
+
 @media (max-width: 768px) {
   .ex-menu-item__content {
-    padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    font-size: var(--ex-text-sm);
-    gap: var(--ex-spacing-2);
-  }
-
-  .ex-menu-item__icon {
-    width: 18px;
-    height: 18px;
+    min-height: 44px;
+    padding-inline: var(--ex-spacing-3);
   }
 }
 
-// 无障
 @media (prefers-reduced-motion: reduce) {
-  .ex-menu-item,
-  .ex-menu-item__content,
-  .ex-menu-item__icon img,
-  .ex-menu-item__icon svg {
+  .ex-menu-item__action {
     transition: none;
   }
-
-  .ex-menu-item__icon img,
-  .ex-menu-item__icon svg {
-    transform: none !important;
-  }
-
-  @keyframes pulse-indicator {
-    0%, 100% {
-      opacity: 1;
-      box-shadow: 0 0 10px var(--ex-color-neon-blue-alpha-60);
-    }
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-  }
 }
 
-@media (prefers-contrast: high) {
-  .ex-menu-item--active .ex-menu-item__indicator {
-    width: 4px;
+@media (forced-colors: active) {
+  .ex-menu-item--active .ex-menu-item__action {
+    color: HighlightText;
+    background: Highlight;
+  }
+
+  .ex-menu-item__indicator {
+    background: currentColor;
+    box-shadow: none;
   }
 }
-
-

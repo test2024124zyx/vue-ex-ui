@@ -1,202 +1,189 @@
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
-
-// ============================================================================
-// ExSubMenu - 子菜单组
-// ============================================================================
-
 .ex-submenu {
   position: relative;
+  min-width: 0;
   list-style: none;
-  border-radius: var(--ex-radius-md);
-  overflow: visible;
+
+  > :deep(.ex-dropdown) {
+    width: 100%;
+  }
+
+  > :deep(.ex-dropdown .ex-dropdown__trigger) {
+    display: block;
+    width: 100%;
+  }
 
   &__title {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    color: var(--ex-color-text-secondary);
+    font: inherit;
+    text-align: start;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ex-radius-md);
+    cursor: pointer;
+    transition:
+      color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+  }
+
+  &__title:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
+  }
+
+  &__content {
     position: relative;
     display: flex;
+    min-height: 40px;
     align-items: center;
     gap: var(--ex-spacing-3);
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
-    padding-right: calc(var(--ex-spacing-4) + 16px + var(--ex-spacing-2)); // 为箭头留出空
-    color: var(--ex-color-white-alpha-70);
-    font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-medium);
-    font-family: var(--ex-font-secondary);
-    cursor: pointer;
-    border-radius: var(--ex-radius-md);
-    @include transition(background-color, color, box-shadow);
-
-    // Reset native button styles to align height with menu items
-    margin: 0;
-    border: 0;
-    background: transparent;
-    box-sizing: border-box;
-    appearance: none;
-    -webkit-appearance: none;
-    line-height: 1.25;
-    min-height: calc(var(--ex-spacing-3) * 2 + 1.25em);
-
-    &:hover:not(.ex-submenu--disabled &) {
-      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-15), transparent);
-      color: var(--ex-color-white-alpha-90);
-
-      .ex-submenu__icon img,
-      .ex-submenu__icon svg {
-        // 悬停时增强霓虹蓝色效果
-        filter: brightness(0) saturate(100%) invert(65%) sepia(80%) saturate(2000%) hue-rotate(180deg) brightness(110%) contrast(95%) drop-shadow(0 0 6px var(--ex-color-neon-blue-alpha-60));
-        transform: scale(1.1);
-      }
-
-      .ex-submenu__arrow {
-        color: var(--ex-color-neon-blue-400);
-      }
-    }
-
-    &:focus-visible {
-      outline: none;
-      @include focus-ring(var(--ex-color-neon-blue-500), 2px, 2px);
-    }
+    padding: var(--ex-spacing-2) calc(var(--ex-spacing-4) + 16px + var(--ex-spacing-2))
+      var(--ex-spacing-2) var(--ex-spacing-4);
   }
 
   &__icon {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
     width: 20px;
     height: 20px;
-    @include transition(all);
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
 
-    img, svg {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      // 图标跟随主题颜色 - 使用滤镜将图标转换为主题色
-      filter: brightness(0) saturate(100%) invert(85%) sepia(10%) saturate(500%) hue-rotate(180deg) brightness(95%) contrast(90%);
-      @include transition(filter);
-    }
+  &__icon :deep(.ex-icon),
+  &__icon :deep(img),
+  &__icon :deep(svg) {
+    width: 100%;
+    height: 100%;
   }
 
   &__label {
+    min-width: 0;
     flex: 1;
-    white-space: nowrap;
     overflow: hidden;
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    line-height: var(--ex-leading-normal);
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__arrow {
     position: absolute;
-    right: var(--ex-spacing-4);
-    top: 50%;
-    transform: translateY(-50%);
+    inset-block-start: 50%;
+    inset-inline-end: var(--ex-spacing-4);
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
     width: 16px;
     height: 16px;
-    color: var(--ex-color-white-alpha-50);
-    @include transition(all);
+    align-items: center;
+    justify-content: center;
+    color: var(--ex-color-text-tertiary);
+    transform: translateY(-50%);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+  }
 
-    svg {
-      width: 100%;
-      height: 100%;
-    }
+  &__collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      grid-template-rows var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      visibility 0s linear var(--ex-motion-duration-base);
+  }
+
+  &__collapse--open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
   }
 
   &__list {
-    list-style: none;
+    min-height: 0;
     margin: 0;
-    padding: 0;
-    padding-left: var(--ex-spacing-6);
+    padding: 0 0 0 var(--ex-spacing-5);
     overflow: hidden;
-
-    .ex-menu-item {
-      margin-top: var(--ex-spacing-1);
-    }
+    list-style: none;
   }
 
-  // 展开状
-  &--open {
-    > .ex-submenu__title {
-      color: var(--ex-color-neon-blue-500);
-      background: linear-gradient(90deg, var(--ex-color-neon-blue-alpha-10), transparent);
-
-      .ex-submenu__icon img,
-      .ex-submenu__icon svg {
-        // 展开时使用霓虹蓝色
-        filter: brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(2500%) hue-rotate(180deg) brightness(115%) contrast(100%) drop-shadow(0 0 6px var(--ex-color-neon-blue-alpha-50));
-      }
-
-      .ex-submenu__arrow {
-        transform: translateY(-50%) rotate(180deg);
-        color: var(--ex-color-neon-blue-500);
-      }
-    }
+  &__list--popup {
+    min-width: 200px;
+    padding: var(--ex-spacing-1);
+    overflow: visible;
   }
 
-  // 禁用状
-  &--disabled {
+  &--open > &__title,
+  &--open > :deep(.ex-dropdown) &__title {
+    color: var(--ex-color-primary);
+    background: var(--ex-color-primary-alpha-10);
+  }
+
+  &--open &__arrow {
+    color: var(--ex-color-primary);
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  &--disabled &__title {
+    color: var(--ex-color-text-disabled);
     cursor: not-allowed;
-    opacity: 0.4;
-    filter: grayscale(0.8);
+    opacity: 0.6;
+  }
 
-    .ex-submenu__title {
-      color: var(--ex-color-text-disabled);
-      cursor: not-allowed;
-    }
+  &--collapsed &__content {
+    justify-content: center;
+    padding-inline: var(--ex-spacing-2);
+  }
+
+  &--collapsed.ex-submenu--has-icon &__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  &--collapsed &__arrow {
+    display: none;
   }
 }
 
-// 动画
-.ex-submenu-slide-enter-active,
-.ex-submenu-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@media (hover: hover) {
+  .ex-submenu:not(.ex-submenu--disabled) .ex-submenu__title:hover {
+    color: var(--ex-color-text-primary);
+    background: var(--ex-color-bg-hover);
+  }
 }
 
-.ex-submenu-slide-enter-from,
-.ex-submenu-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-.ex-submenu-slide-enter-to,
-.ex-submenu-slide-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-// 响应
 @media (max-width: 768px) {
-  .ex-submenu__title {
-    padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    font-size: var(--ex-text-sm);
-    gap: var(--ex-spacing-2);
-  }
-
-  .ex-submenu__icon {
-    width: 18px;
-    height: 18px;
+  .ex-submenu__content {
+    min-height: 44px;
+    padding-inline-start: var(--ex-spacing-3);
   }
 }
 
-// 无障
 @media (prefers-reduced-motion: reduce) {
   .ex-submenu__title,
   .ex-submenu__arrow,
-  .ex-submenu__icon img,
-  .ex-submenu__icon svg {
+  .ex-submenu__collapse {
     transition: none;
-  }
-
-  .ex-submenu-slide-enter-active,
-  .ex-submenu-slide-leave-active {
-    transition: none;
-  }
-
-  .ex-submenu__icon img,
-  .ex-submenu__icon svg {
-    transform: none !important;
   }
 }
 
+@media (forced-colors: active) {
+  .ex-submenu--open .ex-submenu__title {
+    color: HighlightText;
+    background: Highlight;
+  }
+}

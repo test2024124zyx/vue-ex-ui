@@ -92,6 +92,22 @@ describe('ExDropdown', () => {
     expect(wrapper!.emitted('show')).toBeUndefined();
   });
 
+  it('浏览器未提供动画帧能力时同步响应位置配置变化', async () => {
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    vi.stubGlobal('cancelAnimationFrame', undefined);
+
+    try {
+      mountDropdown({ visible: true });
+      setRects();
+      await flushPromises();
+      await wrapper!.setProps({ placement: 'top-start' });
+      expect(menuElement().dataset.placement).toBe('top-start');
+      expect(menuElement().style.top).toBe('32px');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('受控点击只请求更新，父级真正同步后才发出 show', async () => {
     mountDropdown({ visible: false });
     await triggerButton().trigger('click');

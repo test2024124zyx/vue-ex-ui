@@ -1,123 +1,113 @@
-// ExUI Menu Component Types
-// 菜单组件类型定义
-
+import type { VNodeChild } from 'vue';
 import type { DropdownPlacement } from '../dropdown/types';
+import type { LinkTarget } from '../link/types';
 
+/** 菜单真实支持的布局模式。 */
 export type MenuMode = 'horizontal' | 'vertical' | 'inline';
 
-// 菜单项数据接口
+/** 数据驱动菜单节点；children 可递归到任意深度。 */
 export interface MenuItem {
   key: string;
   label: string;
   icon?: string;
   disabled?: boolean;
   children?: MenuItem[];
-  path?: string;
-  [key: string]: unknown;
+  /** 叶节点的原生导航地址。 */
+  href?: string;
+  target?: LinkTarget;
+  rel?: string;
+  /** 横向弹出菜单位置。 */
+  popupPlacement?: DropdownPlacement;
 }
 
-// ExMenu Props
+/** 菜单项交互事件的稳定信息对象。 */
+export interface MenuSelectInfo {
+  key: string;
+  item?: MenuItem;
+  event: MouseEvent;
+}
+
 export interface ExMenuProps {
-  // 菜单模式
   mode?: MenuMode;
-  // 当前激活的菜单项 key
+  /** 受控激活键；undefined 时组件自行管理。 */
   activeKey?: string;
-  // 默认激活的菜单项 key
   defaultActiveKey?: string;
-  // 当前展开的子菜单 key 数组
+  /** 受控展开键；undefined 时组件自行管理。 */
   openKeys?: string[];
-  // 默认展开的子菜单 key 数组
   defaultOpenKeys?: string[];
-  // 是否折叠（仅 inline 模式有效）
+  /** 仅 inline 模式生效。 */
   collapsed?: boolean;
-  // 是否可选择
   selectable?: boolean;
-  // 菜单数据（可选，也可以使用插槽）
   items?: MenuItem[];
-  // 是否响应式（移动端自动切换为折叠模式）
-  responsive?: boolean;
-  // 响应式断点（像素）
-  breakpoint?: number;
-  // 是否显示搜索框
   searchable?: boolean;
-  // 无障碍标签
-  ariaLabel?: string;
-  // 自定义类名
-  class?: string | string[] | Record<string, boolean>;
-  // 自定义样式
-  style?: string | Record<string, string | number>;
 }
 
-// ExMenu Emits
 export interface ExMenuEmits {
-  (e: 'update:activeKey', key: string): void;
-  (e: 'update:openKeys', keys: string[]): void;
-  (e: 'select', key: string, item: MenuItem): void;
-  (e: 'click', key: string, item: MenuItem): void;
-  (e: 'openChange', openKeys: string[]): void;
-  (e: 'search', query: string): void;
+  'update:activeKey': [key: string];
+  'update:openKeys': [keys: string[]];
+  select: [info: MenuSelectInfo];
+  'item-click': [info: MenuSelectInfo];
+  'open-change': [openKeys: string[]];
+  search: [query: string];
 }
 
-// ExMenu Exposed
+export interface ExMenuSlots {
+  default?: () => VNodeChild;
+}
+
 export interface ExMenuExposed {
   getActiveKey: () => string | undefined;
   getOpenKeys: () => string[];
+  /** 与用户选择相同，受控模式只发出更新请求。 */
   setActiveKey: (key: string) => void;
   setOpenKeys: (keys: string[]) => void;
   getElement: () => HTMLElement | null;
 }
 
-// ExMenuItem Props
 export interface ExMenuItemProps {
-  // 菜单项唯一标识
   itemKey: string;
-  // 是否禁用
   disabled?: boolean;
-  // 路径（用于路由）
-  path?: string;
-  // 自定义类名
-  class?: string | string[] | Record<string, boolean>;
-  // 自定义样式
-  style?: string | Record<string, string | number>;
+  href?: string;
+  target?: LinkTarget;
+  rel?: string;
 }
 
-// ExMenuItem Emits
 export interface ExMenuItemEmits {
-  (e: 'click', key: string): void;
+  click: [key: string, event: MouseEvent];
 }
 
-// ExMenuItem Exposed
+export interface ExMenuItemSlots {
+  default?: () => VNodeChild;
+  icon?: () => VNodeChild;
+}
+
 export interface ExMenuItemExposed {
-  getElement: () => HTMLElement | null;
+  getElement: () => HTMLLIElement | null;
+  getActionElement: () => HTMLAnchorElement | HTMLButtonElement | null;
 }
 
-// ExSubMenu Props
 export interface ExSubMenuProps {
-  // 子菜单唯一标识
   itemKey: string;
-  // 子菜单标题
   title: string;
-  // 是否禁用
   disabled?: boolean;
-  // 弹出位置（horizontal 模式下有效）
   popupPlacement?: DropdownPlacement;
-  // 自定义类名
-  class?: string | string[] | Record<string, boolean>;
-  // 自定义样式
-  style?: string | Record<string, string | number>;
 }
 
-// ExSubMenu Emits
 export interface ExSubMenuEmits {
-  (e: 'titleClick', key: string): void;
-  (e: 'openChange', open: boolean): void;
+  'title-click': [key: string, event: MouseEvent];
+  'open-change': [open: boolean];
 }
 
-// ExSubMenu Exposed
+export interface ExSubMenuSlots {
+  default?: () => VNodeChild;
+  icon?: () => VNodeChild;
+  title?: () => VNodeChild;
+}
+
 export interface ExSubMenuExposed {
   isOpen: () => boolean;
   toggle: () => void;
   open: () => void;
   close: () => void;
-  getElement: () => HTMLElement | null;
+  getElement: () => HTMLLIElement | null;
 }

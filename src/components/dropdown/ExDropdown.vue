@@ -17,7 +17,7 @@
         :open="isVisible"
         :disabled="disabled"
         :trigger-props="triggerProps"
-      />
+      ></slot>
     </span>
 
     <Teleport to="body">
@@ -49,7 +49,7 @@
               :divided="item.divided"
               @click="handleDataItemClick(item)"
             />
-            <slot name="menu" />
+            <slot name="menu"></slot>
           </div>
         </div>
       </Transition>
@@ -304,9 +304,23 @@ const updatePosition = () => {
   };
 };
 
+/** 只取消当前组件创建的定位任务，服务端渲染期间不读取浏览器全局对象。 */
+const cancelScheduledPosition = () => {
+  if (positionFrame === undefined) return;
+  if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+    window.cancelAnimationFrame(positionFrame);
+  }
+  positionFrame = undefined;
+};
+
 const schedulePosition = () => {
-  if (positionFrame !== undefined) cancelAnimationFrame(positionFrame);
-  positionFrame = requestAnimationFrame(() => {
+  if (typeof window === 'undefined') return;
+  cancelScheduledPosition();
+  if (typeof window.requestAnimationFrame !== 'function') {
+    updatePosition();
+    return;
+  }
+  positionFrame = window.requestAnimationFrame(() => {
     positionFrame = undefined;
     updatePosition();
   });
@@ -338,8 +352,7 @@ const detachPositionListeners = () => {
   window.removeEventListener('scroll', schedulePosition, true);
   resizeObserver?.disconnect();
   resizeObserver = null;
-  if (positionFrame !== undefined) cancelAnimationFrame(positionFrame);
-  positionFrame = undefined;
+  cancelScheduledPosition();
   listenersAttached = false;
 };
 
