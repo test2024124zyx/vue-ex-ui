@@ -48,9 +48,7 @@ export default {
 
   // 输入框
   input: {
-    placeholder: '请输入',
     clear: '清空',
-    search: '搜索',
     showPassword: '显示密码',
     hidePassword: '隐藏密码',
     validationSuccess: '验证通过',

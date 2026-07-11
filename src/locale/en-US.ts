@@ -48,9 +48,7 @@ export default {
 
   // Input
   input: {
-    placeholder: 'Please input',
     clear: 'Clear',
-    search: 'Search',
     showPassword: 'Show Password',
     hidePassword: 'Hide Password',
     validationSuccess: 'Validation passed',
