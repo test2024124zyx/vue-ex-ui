@@ -440,17 +440,13 @@ export {
   usePersistedTheme,
   saveThemeToStorage,
   loadThemeFromStorage,
+  isTheme,
+  DEFAULT_THEME,
+  VALID_THEMES,
 } from './composables/useTheme';
 
 // 导出主题类型和工具函
-export type {
-  Theme,
-  ThemeConfig,
-  ThemeVariables,
-  CustomThemeConfig,
-  ThemeSwitchOptions,
-  ThemeChangeEvent,
-} from './types/theme';
+export type { Theme, ThemeConfig, ThemeVariables, ThemeChangeEvent } from './types/theme';
 export { THEME_CONFIGS, getThemeConfig, isDarkTheme, isHighContrastTheme } from './types/theme';
 
 export * from './utils';

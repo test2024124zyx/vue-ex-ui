@@ -1,178 +1,195 @@
-// ExUI Theme Composable
-// 主题切换和管理的组合式 API
-
-import { ref, watch } from 'vue';
-import type { Ref } from 'vue';
+import { getCurrentScope, onScopeDispose, readonly, ref, watch } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
+import { isDarkTheme, THEME_CONFIGS } from '../types/theme';
 import type { Theme } from '../types/theme';
 
-// 当前主题状态
-const currentTheme = ref<Theme>('neon-blue');
+export const DEFAULT_THEME: Theme = 'neon-blue';
+export const THEME_STORAGE_KEY = 'ex-ui-theme';
+export const VALID_THEMES = Object.freeze(Object.keys(THEME_CONFIGS) as Theme[]);
 
-// 主题变化回调
 type ThemeChangeCallback = (theme: Theme) => void;
-const themeChangeCallbacks: Set<ThemeChangeCallback> = new Set();
+type ReadonlyThemeRef = DeepReadonly<Ref<Theme>>;
 
-/**
- * 设置主题
- * @param theme 主题名称
- */
-export function setTheme(theme: Theme): void {
-  if (currentTheme.value === theme) return;
+const readDocumentTheme = (): Theme => {
+  if (typeof document === 'undefined') return DEFAULT_THEME;
+  const theme = document.documentElement.getAttribute('data-theme');
+  return isTheme(theme) ? theme : DEFAULT_THEME;
+};
 
-  currentTheme.value = theme;
+const currentTheme = ref<Theme>(readDocumentTheme());
+const readonlyTheme = readonly(currentTheme);
+const themeChangeCallbacks = new Set<ThemeChangeCallback>();
 
-  // 更新 document 的 data-theme 属性
-  if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-theme', theme);
-
-    // 触发主题变化事件
-    const event = new CustomEvent('theme-change', { detail: { theme } });
-    document.dispatchEvent(event);
-  }
-
-  // 执行回调
-  themeChangeCallbacks.forEach(callback => callback(theme));
+export function isTheme(value: unknown): value is Theme {
+  return typeof value === 'string' && VALID_THEMES.includes(value as Theme);
 }
 
+const applyThemeToDocument = (theme: Theme): void => {
+  if (typeof document === 'undefined') return;
+
+  const root = document.documentElement;
+  root.setAttribute('data-theme', theme);
+  root.style.colorScheme = isDarkTheme(theme) ? 'dark' : 'light';
+  root.classList.add('ex-theme-loaded');
+};
+
 /**
- * 获取当前主题
+ * 设置全局主题，并同步响应式状态、DOM 颜色模式及变化通知。
  */
+export function setTheme(theme: Theme): void {
+  if (!isTheme(theme)) {
+    throw new TypeError(`[ExUI] 未知主题：${String(theme)}`);
+  }
+
+  const oldTheme = currentTheme.value;
+  const changed = oldTheme !== theme;
+  currentTheme.value = theme;
+  // 即使状态未变化也重新同步 DOM，修复宿主代码意外删除属性的情况。
+  applyThemeToDocument(theme);
+
+  if (!changed) return;
+
+  if (typeof document !== 'undefined') {
+    document.dispatchEvent(
+      new CustomEvent('ex-theme-change', {
+        detail: { oldTheme, newTheme: theme, timestamp: Date.now() },
+      })
+    );
+  }
+
+  // 使用快照遍历，允许回调在执行期间安全取消自身订阅。
+  for (const callback of [...themeChangeCallbacks]) {
+    callback(theme);
+  }
+}
+
 export function getTheme(): Theme {
   return currentTheme.value;
 }
 
-/**
- * 切换主题
- * @param themes 主题列表，如果不提供则在所有主题间循环
- */
-export function toggleTheme(themes?: Theme[]): void {
-  const allThemes: Theme[] = themes || ['neon-blue', 'neon-pink', 'dark', 'matrix', 'light'];
-  const currentIndex = allThemes.indexOf(currentTheme.value);
-  const nextIndex = (currentIndex + 1) % allThemes.length;
-  const nextTheme = allThemes[nextIndex];
-  if (nextTheme) {
-    setTheme(nextTheme);
+export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
+  if (themes.length === 0) return;
+
+  for (const theme of themes) {
+    if (!isTheme(theme)) {
+      throw new TypeError(`[ExUI] 主题列表包含未知主题：${String(theme)}`);
+    }
   }
+
+  const currentIndex = themes.indexOf(currentTheme.value);
+  const nextTheme = themes[(currentIndex + 1) % themes.length] ?? themes[0];
+  if (nextTheme) setTheme(nextTheme);
 }
 
-/**
- * 监听主题变化
- * @param callback 回调函数
- * @returns 取消监听的函数
- */
 export function onThemeChange(callback: ThemeChangeCallback): () => void {
   themeChangeCallbacks.add(callback);
-  return () => {
-    themeChangeCallbacks.delete(callback);
-  };
+  const stop = () => themeChangeCallbacks.delete(callback);
+
+  if (getCurrentScope()) {
+    onScopeDispose(stop);
+  }
+
+  return stop;
 }
 
-/**
- * 使用主题（组合式 API）
- */
 export function useTheme(): {
-  theme: Ref<Theme>;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: (themes?: Theme[]) => void;
+  theme: ReadonlyThemeRef;
+  setTheme: typeof setTheme;
+  toggleTheme: typeof toggleTheme;
 } {
-  return {
-    theme: currentTheme,
-    setTheme,
-    toggleTheme,
-  };
+  return { theme: readonlyTheme, setTheme, toggleTheme };
+}
+
+export function getPreferredSystemTheme(): Theme {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return DEFAULT_THEME;
+  }
+
+  try {
+    if (window.matchMedia('(prefers-contrast: high)').matches) return 'matrix';
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  } catch {
+    return DEFAULT_THEME;
+  }
+
+  return DEFAULT_THEME;
 }
 
 /**
- * 根据系统偏好自动设置主题
+ * 观察系统主题。返回的清理函数可重复调用，且组合式作用域销毁时会自动解绑。
  */
-export function useSystemTheme(): (() => void) | undefined {
-  if (typeof window === 'undefined') return;
+export function observeSystemTheme(callback: (theme: Theme) => void, immediate = true): () => void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    if (immediate) callback(DEFAULT_THEME);
+    return () => undefined;
+  }
 
-  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  const highContrastQuery = window.matchMedia('(prefers-contrast: high)');
+  let darkModeQuery: MediaQueryList;
+  let highContrastQuery: MediaQueryList;
 
-  const updateTheme = () => {
-    if (highContrastQuery.matches) {
-      setTheme('matrix');
-    } else if (darkModeQuery.matches) {
-      setTheme('dark');
-    } else {
-      setTheme('neon-blue');
-    }
-  };
+  try {
+    darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    highContrastQuery = window.matchMedia('(prefers-contrast: high)');
+  } catch {
+    if (immediate) callback(DEFAULT_THEME);
+    return () => undefined;
+  }
 
-  // 初始设置
-  updateTheme();
-
-  // 监听变化
+  const updateTheme = () => callback(getPreferredSystemTheme());
   darkModeQuery.addEventListener('change', updateTheme);
   highContrastQuery.addEventListener('change', updateTheme);
 
-  // 返回清理函数
-  return () => {
+  let active = true;
+  const stop = () => {
+    if (!active) return;
+    active = false;
     darkModeQuery.removeEventListener('change', updateTheme);
     highContrastQuery.removeEventListener('change', updateTheme);
   };
+
+  if (getCurrentScope()) {
+    onScopeDispose(stop);
+  }
+  if (immediate) updateTheme();
+
+  return stop;
 }
 
-/**
- * 保存主题到 localStorage
- */
+export function useSystemTheme(): () => void {
+  return observeSystemTheme(setTheme);
+}
+
 export function saveThemeToStorage(theme: Theme): void {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('ex-ui-theme', theme);
+  if (!isTheme(theme) || typeof localStorage === 'undefined') return;
+
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // 隐私模式或存储配额限制不应阻断主题切换。
   }
 }
 
-/**
- * 从 localStorage 加载主题
- */
 export function loadThemeFromStorage(): Theme | null {
-  if (typeof localStorage !== 'undefined') {
-    const saved = localStorage.getItem('ex-ui-theme');
-    if (
-      saved &&
-      ['neon-blue', 'neon-pink', 'dark', 'matrix', 'high-contrast', 'light'].includes(saved)
-    ) {
-      return saved as Theme;
-    }
+  if (typeof localStorage === 'undefined') return null;
+
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    return isTheme(savedTheme) ? savedTheme : null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
-/**
- * 使用持久化主题
- */
 export function usePersistedTheme(): {
-  theme: Ref<Theme>;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: (themes?: Theme[]) => void;
+  theme: ReadonlyThemeRef;
+  setTheme: typeof setTheme;
+  toggleTheme: typeof toggleTheme;
 } {
-  // 从 storage 加载主题
   const savedTheme = loadThemeFromStorage();
-  if (savedTheme) {
-    setTheme(savedTheme);
-  }
+  if (savedTheme) setTheme(savedTheme);
 
-  // 监听主题变化并保存
-  watch(currentTheme, newTheme => {
-    saveThemeToStorage(newTheme);
-  });
+  // Vue 会把同步创建的监听器绑定到当前组件作用域，并在卸载时自动停止。
+  watch(currentTheme, saveThemeToStorage);
 
-  return {
-    theme: currentTheme,
-    setTheme,
-    toggleTheme,
-  };
-}
-
-// 初始化：从 document 读取初始主题
-if (typeof document !== 'undefined') {
-  const initialTheme = document.documentElement.getAttribute('data-theme') as Theme;
-  if (
-    initialTheme &&
-    ['neon-blue', 'neon-pink', 'dark', 'matrix', 'high-contrast', 'light'].includes(initialTheme)
-  ) {
-    currentTheme.value = initialTheme;
-  }
+  return { theme: readonlyTheme, setTheme, toggleTheme };
 }

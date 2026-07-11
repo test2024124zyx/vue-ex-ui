@@ -1,17 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
+import type { Component } from 'vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import {
   useConfig,
   useConfigTheme,
   useGlobalSize,
 } from '../../../src/components/config-provider/composables';
+import { getCurrentLocale, setLocale, useLocale as useComponentLocale } from '../../../src/locale';
 
 describe('ExConfigProvider', () => {
   beforeEach(() => {
-    // 清理 DOM
+    // 配置提供者只作用于自身子树，保留一个可检测的宿主全局状态。
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.style.setProperty('--ex-motion-duration-base', '125ms');
+    setLocale('en-US');
+  });
+
+  afterEach(() => {
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.removeProperty('--ex-motion-duration-base');
   });
 
   it('renders correctly', () => {
@@ -43,7 +52,7 @@ describe('ExConfigProvider', () => {
 
     expect(wrapper.attributes('data-theme')).toBe('neon-pink');
     expect(wrapper.classes()).toContain('ex-theme-neon-pink');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('neon-pink');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 
   it('applies size class', () => {
@@ -56,15 +65,11 @@ describe('ExConfigProvider', () => {
     expect(wrapper.classes()).toContain('ex-size-large');
   });
 
-  it('applies namespace', () => {
-    const wrapper = mount(ExConfigProvider, {
-      props: {
-        namespace: 'custom',
-      },
-    });
+  it('uses the stable ex namespace that matches every component stylesheet', () => {
+    const wrapper = mount(ExConfigProvider);
 
-    expect(wrapper.attributes('data-namespace')).toBe('custom');
-    expect(wrapper.classes()).toContain('custom-config-provider');
+    expect(wrapper.attributes('data-namespace')).toBeUndefined();
+    expect(wrapper.classes()).toContain('ex-config-provider');
   });
 
   it('disables neon effect', () => {
@@ -115,7 +120,7 @@ describe('ExConfigProvider', () => {
         size: 'small',
       },
       slots: {
-        default: ChildComponent as any,
+        default: ChildComponent as Component,
       },
     });
 
@@ -136,7 +141,48 @@ describe('ExConfigProvider', () => {
     await wrapper.setProps({ theme: 'neon-pink' });
 
     expect(wrapper.attributes('data-theme')).toBe('neon-pink');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('neon-pink');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+
+  it('does not leak animation or theme configuration to the document root', () => {
+    const first = mount(ExConfigProvider, {
+      props: { theme: 'light', animation: false },
+    });
+    const second = mount(ExConfigProvider, {
+      props: { theme: 'neon-pink', animation: true },
+    });
+
+    expect(first.attributes('data-theme')).toBe('light');
+    expect(second.attributes('data-theme')).toBe('neon-pink');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.style.getPropertyValue('--ex-motion-duration-base')).toBe(
+      '125ms'
+    );
+
+    first.unmount();
+    second.unmount();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('isolates locale for sibling provider trees without changing the global locale', () => {
+    const LocalizedChild = {
+      setup() {
+        const { t } = useComponentLocale('pagination');
+        return () => h('span', t('pagination'));
+      },
+    };
+    const english = mount(ExConfigProvider, {
+      props: { locale: 'en-US' },
+      slots: { default: LocalizedChild },
+    });
+    const chinese = mount(ExConfigProvider, {
+      props: { locale: 'zh-CN' },
+      slots: { default: LocalizedChild },
+    });
+
+    expect(english.text()).toBe('Pagination');
+    expect(chinese.text()).toBe('分页');
+    expect(getCurrentLocale()).toBe('en-US');
   });
 
   it('applies custom class', () => {
@@ -177,7 +223,7 @@ describe('Config Composables', () => {
         theme: 'dark',
       },
       slots: {
-        default: TestComponent as any,
+        default: TestComponent as Component,
       },
     });
 
@@ -201,7 +247,7 @@ describe('Config Composables', () => {
         size: 'large',
       },
       slots: {
-        default: TestComponent as any,
+        default: TestComponent as Component,
       },
     });
 
@@ -220,7 +266,7 @@ describe('Config Composables', () => {
       },
     };
 
-    mount(TestComponent as any);
+    mount(TestComponent as Component);
 
     expect(config).not.toBeNull();
     expect(config!.theme.value).toBe('neon-blue');

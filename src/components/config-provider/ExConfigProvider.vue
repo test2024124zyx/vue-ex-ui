@@ -1,21 +1,15 @@
 <template>
-  <div
-    ref="providerRef"
-    :class="providerClasses"
-    :style="providerStyles"
-    :data-theme="theme"
-    :data-namespace="namespace"
-  >
+  <div ref="providerRef" :class="providerClasses" :style="providerStyles" :data-theme="theme">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, provide, ref, toRef, watch } from 'vue';
+import { computed, provide, ref, toRef } from 'vue';
 import type { ExConfigProviderProps, ConfigContext } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
-import { setLocale } from '../../locale';
+import { LOCALE_INJECTION_KEY } from '../../locale';
 
 defineOptions({
   name: 'ExConfigProvider',
@@ -27,7 +21,6 @@ const props = withDefaults(defineProps<ExConfigProviderProps>(), {
   size: DEFAULT_CONFIG.size,
   neonEffect: DEFAULT_CONFIG.neonEffect,
   animation: DEFAULT_CONFIG.animation,
-  namespace: DEFAULT_CONFIG.namespace,
   zIndex: DEFAULT_CONFIG.zIndex,
 });
 
@@ -39,7 +32,6 @@ const locale = toRef(props, 'locale');
 const size = toRef(props, 'size');
 const neonEffect = toRef(props, 'neonEffect');
 const animation = toRef(props, 'animation');
-const namespace = toRef(props, 'namespace');
 const zIndex = toRef(props, 'zIndex');
 
 // 提供配置上下文
@@ -49,26 +41,22 @@ const configContext: ConfigContext = {
   size,
   neonEffect,
   animation,
-  namespace,
   zIndex,
 };
 
 provide(CONFIG_PROVIDER_INJECTION_KEY, configContext);
+provide(LOCALE_INJECTION_KEY, locale);
 
 // 计算属性
 const providerClasses = computed(() => {
-  const classes = [
-    `${namespace.value}-config-provider`,
-    `${namespace.value}-theme-${theme.value}`,
-    `${namespace.value}-size-${size.value}`,
-  ];
+  const classes = ['ex-config-provider', `ex-theme-${theme.value}`, `ex-size-${size.value}`];
 
   if (!neonEffect.value) {
-    classes.push(`${namespace.value}-no-neon`);
+    classes.push('ex-no-neon');
   }
 
   if (!animation.value) {
-    classes.push(`${namespace.value}-no-animation`);
+    classes.push('ex-no-animation');
   }
 
   classes.push(...normalizeCustomClass(props.class));
@@ -97,66 +85,6 @@ const providerStyles = computed(() => {
 
   return styles;
 });
-
-// 监听语言变化，更新全局语言
-watch(
-  locale,
-  newLocale => {
-    setLocale(newLocale);
-  },
-  { immediate: true }
-);
-
-// 监听主题变化，更新 body 的 data-theme 属性
-watch(
-  theme,
-  (newTheme, oldTheme) => {
-    if (typeof document !== 'undefined') {
-      // 添加过渡类
-      if (oldTheme && animation.value) {
-        document.documentElement.classList.add('ex-theme-transitioning');
-      }
-
-      // 更新主题属性
-      document.documentElement.setAttribute('data-theme', newTheme);
-
-      // 移除过渡类
-      if (oldTheme && animation.value) {
-        setTimeout(() => {
-          document.documentElement.classList.remove('ex-theme-transitioning');
-        }, 300);
-      }
-
-      // 触发自定义事件
-      const event = new CustomEvent('ex-theme-change', {
-        detail: { oldTheme, newTheme, timestamp: Date.now() },
-      });
-      document.dispatchEvent(event);
-    }
-  },
-  { immediate: true }
-);
-
-// 监听动画偏好，更新 CSS 变量
-watch(
-  animation,
-  enabled => {
-    if (typeof document !== 'undefined') {
-      if (enabled) {
-        document.documentElement.style.removeProperty('--ex-motion-duration-fast');
-        document.documentElement.style.removeProperty('--ex-motion-duration-base');
-        document.documentElement.style.removeProperty('--ex-motion-duration-medium');
-        document.documentElement.style.removeProperty('--ex-motion-duration-slow');
-      } else {
-        document.documentElement.style.setProperty('--ex-motion-duration-fast', '0ms');
-        document.documentElement.style.setProperty('--ex-motion-duration-base', '0ms');
-        document.documentElement.style.setProperty('--ex-motion-duration-medium', '0ms');
-        document.documentElement.style.setProperty('--ex-motion-duration-slow', '0ms');
-      }
-    }
-  },
-  { immediate: true }
-);
 
 // 暴露的方法
 const getElement = () => providerRef.value || null;

@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import { ref, shallowRef, computed } from 'vue';
+import type { App, InjectionKey, Ref } from 'vue';
+import { computed, inject, ref, shallowRef } from 'vue';
 import enUS from './en-US';
 import zhCN from './zh-CN';
 import { logger } from '../utils/logger';
@@ -27,6 +27,10 @@ export const SUPPORTED_LOCALES = {
 } as const;
 
 export type SupportedLocale = keyof typeof SUPPORTED_LOCALES;
+
+/** ConfigProvider 用于隔离子树语言的注入键。 */
+export const LOCALE_INJECTION_KEY: InjectionKey<Readonly<Ref<SupportedLocale>>> =
+  Symbol('exui-locale');
 
 // 默认语言
 export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
@@ -56,32 +60,42 @@ export function setLocale(locale: SupportedLocale): void {
   }
 }
 
+const translateBuiltIn = (
+  locale: SupportedLocale,
+  key: string,
+  params?: TranslationParams
+): string => {
+  const keys = key.split('.');
+  let value: unknown = SUPPORTED_LOCALES[locale];
+
+  for (const segment of keys) {
+    if (value && typeof value === 'object' && segment in (value as Record<string, unknown>)) {
+      value = (value as Record<string, unknown>)[segment];
+    } else {
+      logger.warn(`Translation key "${key}" not found`);
+      return key;
+    }
+  }
+
+  if (typeof value !== 'string') {
+    logger.warn(`Translation key "${key}" is not a string`);
+    return key;
+  }
+
+  return params
+    ? value.replace(/\{(\w+)\}/g, (match, name: string) =>
+        params[name] !== undefined ? String(params[name]) : match
+      )
+    : value;
+};
+
 // 获取翻译文本
 export function t(key: string, params?: TranslationParams): string {
   if (_i18n.value) {
     const composer = _i18n.value.global;
     return params ? composer.t(key, params) : composer.t(key);
   }
-  const keys = key.split('.');
-  let value: unknown = currentMessages.value;
-  for (const k of keys) {
-    if (value && typeof value === 'object' && k in (value as Record<string, unknown>)) {
-      value = (value as Record<string, unknown>)[k];
-    } else {
-      logger.warn(`Translation key "${key}" not found`);
-      return key;
-    }
-  }
-  if (typeof value !== 'string') {
-    logger.warn(`Translation key "${key}" is not a string`);
-    return key;
-  }
-  if (params) {
-    return (value as string).replace(/\{(\w+)\}/g, (m, p) =>
-      params[p] !== undefined ? String(params[p]) : m
-    );
-  }
-  return value as string;
+  return translateBuiltIn(currentLocale.value, key, params);
 }
 
 // 组合式 API
@@ -96,6 +110,17 @@ export function useI18n() {
 }
 
 export function useLocale(componentName: keyof Locale) {
+  const providedLocale = inject(LOCALE_INJECTION_KEY, null);
+
+  if (providedLocale) {
+    const tWithScope = (key: string, params?: TranslationParams) =>
+      translateBuiltIn(providedLocale.value, `${componentName}.${key}`, params);
+    const messages = computed(
+      () => SUPPORTED_LOCALES[providedLocale.value][componentName] as Record<string, string>
+    );
+    return { t: tWithScope, messages };
+  }
+
   if (_i18n.value) {
     const composer = _i18n.value.global;
     const tWithScope = (key: string, params?: TranslationParams) => {

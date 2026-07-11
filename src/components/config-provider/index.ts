@@ -1,8 +1,9 @@
 // ExUI Config Provider
 // 全局配置提供者
 
-import type { App } from 'vue';
-import ExConfigProvider from './ExConfigProvider.vue';
+import ExConfigProviderComponent from './ExConfigProvider.vue';
+import { withInstall } from '../../utils/install';
+import type { InstallableComponent } from '../../utils/install';
 
 // 导出类型
 export type * from './types';
@@ -11,11 +12,7 @@ export type * from './types';
 export * from './composables';
 
 // 导出组件
-export { ExConfigProvider };
-
-// 安装函数
-ExConfigProvider.install = (app: App) => {
-  app.component(ExConfigProvider.name as string, ExConfigProvider);
-};
+export const ExConfigProvider: InstallableComponent<typeof ExConfigProviderComponent> =
+  withInstall(ExConfigProviderComponent);
 
 export default ExConfigProvider;

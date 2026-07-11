@@ -43,11 +43,6 @@ export interface ExConfigProviderProps {
   animation?: boolean;
 
   /**
-   * 命名空间（CSS 类名前缀）
-   */
-  namespace?: string;
-
-  /**
    * z-index 基础值
    */
   zIndex?: number;
@@ -93,11 +88,6 @@ export interface ConfigContext {
   animation: Ref<boolean>;
 
   /**
-   * 命名空间
-   */
-  namespace: Ref<string>;
-
-  /**
    * z-index 基础值
    */
   zIndex: Ref<number>;
@@ -118,6 +108,5 @@ export const DEFAULT_CONFIG: Required<Omit<ExConfigProviderProps, 'class' | 'sty
   size: 'medium',
   neonEffect: true,
   animation: true,
-  namespace: 'ex',
   zIndex: 1000,
 };

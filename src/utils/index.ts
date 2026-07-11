@@ -108,27 +108,11 @@ export function hasOwnProperty<T extends Record<string, unknown>>(
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-/**
- * 防抖函数
- */
-export function debounce<T extends (...args: never[]) => unknown>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-
-  return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-/**
- * 节流函数
- */
+/** 防抖与节流函数共享可取消、可刷新语义。 */
+export { debounce } from './debounce';
+export type { DebouncedFunction } from './debounce';
 export { throttle } from './throttle';
+export type { ThrottledFunction } from './throttle';
 
 /**
  * 生成唯一 ID
@@ -167,8 +151,6 @@ export function classNames(...classes: (string | undefined | null | false)[]): s
  */
 export function styleToString(style: Record<string, string | number>): string {
   return Object.entries(style)
-    .map(
-      ([key, value]) => `${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}: ${value}`
-    )
+    .map(([key, value]) => `${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}: ${value}`)
     .join('; ');
 }

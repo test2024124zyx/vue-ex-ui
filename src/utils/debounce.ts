@@ -1,67 +1,55 @@
-/**
- * 防抖函数返回类型：可调用，并带 cancel() 用于在组件卸载时清理待执行的定时器
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DebouncedFunction<T extends (...args: any[]) => any> {
-  (...args: Parameters<T>): void;
-  /** 取消尚未触发的延迟调用 */
-  cancel: () => void;
+import { normalizeDelay } from './timing';
+import type { TimingCallback } from './timing';
+
+export interface DebouncedFunction<T extends TimingCallback> {
+  (this: ThisParameterType<T>, ...args: Parameters<T>): void;
+  /** 取消尚未执行的尾调用。 */
+  cancel(): void;
+  /** 立即执行待处理调用并返回原函数结果。 */
+  flush(): ReturnType<T> | undefined;
+  /** 是否存在尚未执行的调用。 */
+  pending(): boolean;
 }
 
 /**
- * 防抖函数
- * @param fn 要防抖的函数
- * @param delay 延迟时间（毫秒）
- * @returns 防抖后的函数（带 cancel 方法）
+ * 创建尾缘防抖函数，始终使用最后一次调用的参数与 this。
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function debounce<T extends (...args: any[]) => any>(
-  fn: T,
-  delay: number
-): DebouncedFunction<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+export function debounce<T extends TimingCallback>(fn: T, delay: number): DebouncedFunction<T> {
+  const wait = normalizeDelay(delay);
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pendingCall: { context: ThisParameterType<T>; args: Parameters<T> } | null = null;
 
-  const debounced = function (this: unknown, ...args: Parameters<T>) {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+  const invoke = (): ReturnType<T> | undefined => {
+    if (!pendingCall) return undefined;
 
-    timeoutId = setTimeout(() => {
-      fn.apply(this, args);
-      timeoutId = null;
-    }, delay);
+    const call = pendingCall;
+    pendingCall = null;
+    return Reflect.apply(fn, call.context, call.args) as ReturnType<T>;
+  };
+
+  const cancel = (): void => {
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+    pendingCall = null;
+  };
+
+  const debounced = function (this: ThisParameterType<T>, ...args: Parameters<T>): void {
+    if (timer !== null) clearTimeout(timer);
+    pendingCall = { context: this, args };
+    timer = setTimeout(() => {
+      timer = null;
+      invoke();
+    }, wait);
   } as DebouncedFunction<T>;
 
-  debounced.cancel = () => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
+  debounced.cancel = cancel;
+  debounced.flush = () => {
+    if (timer === null) return undefined;
+    clearTimeout(timer);
+    timer = null;
+    return invoke();
   };
+  debounced.pending = () => timer !== null;
 
   return debounced;
-}
-
-/**
- * 节流函数
- * @param fn 要节流的函数
- * @param delay 延迟时间（毫秒）
- * @returns 节流后的函数
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function throttle<T extends (...args: any[]) => any>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let lastCall = 0;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function (this: any, ...args: Parameters<T>) {
-    const now = Date.now();
-
-    if (now - lastCall >= delay) {
-      lastCall = now;
-      fn.apply(this, args);
-    }
-  };
 }

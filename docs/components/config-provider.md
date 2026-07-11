@@ -443,24 +443,6 @@ const animation = ref(true);
 </template>
 ```
 
-## 自定义命名空间
-
-通过 `namespace` 属性可以自定义 CSS 类名前缀。
-
-<div class="demo-container">
-  <ExConfigProvider namespace="custom">
-    <ExButton type="primary">自定义命名空间按钮</ExButton>
-  </ExConfigProvider>
-</div>
-
-```vue
-<template>
-  <ExConfigProvider namespace="custom">
-    <ExButton type="primary">自定义命名空间按钮</ExButton>
-  </ExConfigProvider>
-</template>
-```
-
 ## 自定义 z-index
 
 通过 `z-index` 属性可以自定义组件的 z-index 基础值。
@@ -711,12 +693,11 @@ ConfigProvider 提供了一系列组合式 API，方便在组件中使用配置�
 <script setup>
 import {
   useConfig,
-  useTheme,
+  useConfigTheme,
   useGlobalSize,
   useComponentSize,
   useNeonEffect,
   useAnimation,
-  useNamespace,
   useZIndex,
 } from 'vue-ex-ui';
 
@@ -724,7 +705,7 @@ import {
 const config = useConfig();
 
 // 获取主题
-const theme = useTheme();
+const theme = useConfigTheme();
 
 // 获取全局尺寸
 const globalSize = useGlobalSize();
@@ -738,37 +719,9 @@ const neonEffect = useNeonEffect();
 // 获取动画开关
 const animation = useAnimation();
 
-// 获取命名空间工具
-const { namespace, b, e, m, em, is } = useNamespace('button');
-
 // 获取 z-index
 const zIndex = useZIndex(10); // 基础值 + 10
 </script>
-```
-
-### useNamespace 示例
-
-`useNamespace` 提供了 BEM 命名规范的工具函数：
-
-```vue
-<script setup>
-import { useNamespace } from 'vue-ex-ui';
-
-const ns = useNamespace('button');
-
-// b() -> 'ex-button'
-// e('icon') -> 'ex-button__icon'
-// m('primary') -> 'ex-button--primary'
-// em('icon', 'left') -> 'ex-button__icon--left'
-// is('disabled') -> 'is-disabled'
-</script>
-
-<template>
-  <button :class="[ns.b(), ns.m('primary'), ns.is('disabled', disabled)]">
-    <span :class="ns.e('icon')">Icon</span>
-    <span :class="ns.e('text')">Text</span>
-  </button>
-</template>
 ```
 
 ## API
@@ -782,7 +735,6 @@ const ns = useNamespace('button');
 | `size`        | 全局组件尺寸                                                                       | `'small' \| 'medium' \| 'large'`                                                 | `'medium'`    |
 | `neon-effect` | 是否启用霓虹效果                                                                   | `boolean`                                                                        | `true`        |
 | `animation`   | 是否启用动画                                                                       | `boolean`                                                                        | `true`        |
-| `namespace`   | CSS 类名前缀                                                                       | `string`                                                                         | `'ex'`        |
 | `z-index`     | z-index 基础值                                                                     | `number`                                                                         | `1000`        |
 
 ### ConfigProvider Slots
@@ -801,12 +753,12 @@ const ns = useNamespace('button');
 function useConfig(): ConfigContext;
 ```
 
-#### useTheme()
+#### useConfigTheme()
 
 获取当前主题。
 
 ```typescript
-function useTheme(): ComputedRef<Theme>;
+function useConfigTheme(): ComputedRef<Theme>;
 ```
 
 #### useLocale()
@@ -849,21 +801,6 @@ function useNeonEffect(): ComputedRef<boolean>;
 
 ```typescript
 function useAnimation(): ComputedRef<boolean>;
-```
-
-#### useNamespace(block?)
-
-获取命名空间工具（BEM 规范）。
-
-```typescript
-function useNamespace(block?: string): {
-  namespace: ComputedRef<string>;
-  b: ComputedRef<string>;
-  e: (element: string) => ComputedRef<string>;
-  m: (modifier: string) => ComputedRef<string>;
-  em: (element: string, modifier: string) => ComputedRef<string>;
-  is: (name: string, state?: boolean | Ref<boolean>) => ComputedRef<string>;
-};
 ```
 
 #### useZIndex(offset?)

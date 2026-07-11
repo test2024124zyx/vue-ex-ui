@@ -98,36 +98,6 @@ export interface ThemeVariables {
 }
 
 /**
- * 自定义主题配置
- */
-export interface CustomThemeConfig {
-  /** 基础主题（继承） */
-  base?: Theme;
-  /** 主题名称 */
-  name: string;
-  /** 主题显示名称 */
-  displayName: string;
-  /** 主题描述 */
-  description?: string;
-  /** 自定义变量 */
-  variables: Partial<ThemeVariables>;
-}
-
-/**
- * 主题切换选项
- */
-export interface ThemeSwitchOptions {
-  /** 是否启用过渡动画 */
-  transition?: boolean;
-  /** 过渡持续时间（毫秒） */
-  transitionDuration?: number;
-  /** 是否保存到 localStorage */
-  persist?: boolean;
-  /** 是否触发事件 */
-  emitEvent?: boolean;
-}
-
-/**
  * 主题变化事件
  */
 export interface ThemeChangeEvent {
