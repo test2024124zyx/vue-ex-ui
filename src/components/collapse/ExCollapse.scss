@@ -6,11 +6,11 @@
 // ============================================================================
 
 .ex-collapse {
+  background: var(--ex-color-bg-secondary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  background: var(--ex-color-bg-secondary);
   overflow: hidden;
-  @include transition(all);
+  @include transition((background-color, border-color, opacity));
 
   // 无边框模式
   &--borderless {
@@ -33,10 +33,4 @@
     cursor: not-allowed;
   }
 
-  // 图标在右侧
-  &--icon-right {
-    .ex-collapse-item__header {
-      flex-direction: row-reverse;
-    }
-  }
 }

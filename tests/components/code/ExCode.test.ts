@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import ExCode from '../../../src/components/code/ExCode.vue';
+import type { ExCodeExposed } from '../../../src/components/code/types';
 
 describe('ExCode', () => {
   afterEach(() => {
@@ -54,6 +55,27 @@ describe('ExCode', () => {
     // start-line 生效。
     expect(gutters[0].text()).toBe('5');
     expect(gutters[2].text()).toBe('7');
+  });
+
+  it('非法 startLine 与 tabSize 不会产生 Infinity 行号或编辑异常', async () => {
+    const wrapper = mount(ExCode, {
+      props: {
+        code: 'a\nb',
+        editable: true,
+        lineNumbers: true,
+        startLine: Number.POSITIVE_INFINITY,
+        tabSize: Number.POSITIVE_INFINITY,
+        copyable: false,
+      },
+    });
+
+    expect(wrapper.findAll('.ex-code__gutter').map(item => item.text())).toEqual(['1', '2']);
+    const textarea = wrapper.find('textarea');
+    const element = textarea.element as HTMLTextAreaElement;
+    element.selectionStart = 0;
+    element.selectionEnd = 0;
+    await expect(textarea.trigger('keydown', { key: 'Tab' })).resolves.toBeUndefined();
+    expect(wrapper.emitted('update:code')?.[0]).toEqual(['  a\nb']);
   });
 
   it('highlight-lines 应高亮指定行（基于展示行号）', () => {
@@ -109,6 +131,28 @@ describe('ExCode', () => {
     expect(wrapper.emitted('update:code')?.[0]).toEqual(['  a']);
   });
 
+  it('多行选区结束在下一行行首时不应额外缩进该行', async () => {
+    const wrapper = mount(ExCode, {
+      props: { code: 'a\nb\nc', editable: true, tabSize: 2, copyable: false },
+    });
+    const textarea = wrapper.find('textarea');
+    const element = textarea.element as HTMLTextAreaElement;
+    element.selectionStart = 0;
+    element.selectionEnd = 2;
+
+    await textarea.trigger('keydown', { key: 'Tab' });
+
+    expect(wrapper.emitted('update:code')?.[0]).toEqual(['  a\nb\nc']);
+  });
+
+  it('tab-size 同时控制插入宽度与已有制表符的视觉宽度', () => {
+    const wrapper = mount(ExCode, {
+      props: { code: '\tvalue', editable: true, tabSize: 6, copyable: false },
+    });
+
+    expect(wrapper.attributes('style')).toContain('--ex-code-tab-size: 6');
+  });
+
   it('只读编辑模式下 textarea 应带 readonly', () => {
     const wrapper = mount(ExCode, {
       props: { code: 'x', editable: true, readonly: true, copyable: false },
@@ -133,6 +177,24 @@ describe('ExCode', () => {
     expect(wrapper.emitted('copy')?.[0]).toEqual(['console.log("copy");']);
   });
 
+  it('异步复制期间外部代码变化时，copy 事件仍对应实际写入的快照', async () => {
+    let resolveWrite: (() => void) | undefined;
+    const writeText = vi.fn(() => new Promise<void>(resolve => (resolveWrite = resolve)));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const wrapper = mount(ExCode, { props: { code: 'before' } });
+    const copying = (wrapper.vm as unknown as ExCodeExposed).copy();
+
+    await wrapper.setProps({ code: 'after' });
+    resolveWrite?.();
+    await copying;
+
+    expect(writeText).toHaveBeenCalledWith('before');
+    expect(wrapper.emitted('copy')?.[0]).toEqual(['before']);
+  });
+
   it('clipboard 不可用时应降级到 execCommand', async () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     const execCommand = vi.fn().mockReturnValue(true);
@@ -143,6 +205,71 @@ describe('ExCode', () => {
 
     expect(execCommand).toHaveBeenCalledWith('copy');
     expect(wrapper.emitted('copy')?.[0]).toEqual(['fallback']);
+  });
+
+  it('降级复制完成后恢复原有焦点', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(true),
+    });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    const wrapper = mount(ExCode, { props: { code: 'fallback' }, attachTo: document.body });
+
+    await (wrapper.vm as unknown as ExCodeExposed).copy();
+
+    expect(document.activeElement).toBe(input);
+    wrapper.unmount();
+    input.remove();
+  });
+
+  it('降级复制返回 false 时不宣称复制成功', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(false),
+    });
+    const wrapper = mount(ExCode, { props: { code: 'not-copied' } });
+    const exposed = wrapper.vm as unknown as ExCodeExposed;
+
+    await expect(exposed.copy()).resolves.toBe(false);
+    expect(wrapper.emitted('copy')).toBeUndefined();
+    expect(wrapper.find('.ex-code__copy-btn').classes()).not.toContain('ex-code__copy-btn--copied');
+  });
+
+  it('剪贴板拒绝写入时返回 false 并派发 copy-error', async () => {
+    const copyError = new Error('permission denied');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(copyError) },
+    });
+    const wrapper = mount(ExCode, { props: { code: 'denied' } });
+    const exposed = wrapper.vm as unknown as ExCodeExposed;
+
+    await expect(exposed.copy()).resolves.toBe(false);
+    expect(wrapper.emitted('copy-error')?.[0]).toEqual([copyError]);
+    expect(wrapper.emitted('copy')).toBeUndefined();
+  });
+
+  it('上一次复制成功后再次复制失败会立即清除成功状态', async () => {
+    const writeText = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('x'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const wrapper = mount(ExCode, { props: { code: 'value' } });
+    const exposed = wrapper.vm as unknown as ExCodeExposed;
+
+    await exposed.copy();
+    expect(wrapper.find('.ex-code__copy-btn').classes()).toContain('ex-code__copy-btn--copied');
+    await exposed.copy();
+
+    expect(wrapper.find('.ex-code__copy-btn').classes()).not.toContain('ex-code__copy-btn--copied');
   });
 
   it('max-height 应作用于内容滚动容器', () => {

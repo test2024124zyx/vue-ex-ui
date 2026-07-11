@@ -16,6 +16,7 @@
   --ex-code-padding-x: var(--ex-spacing-4);
   --ex-code-gutter-chars: 2;
   --ex-code-gutter-pad-x: var(--ex-spacing-3);
+  --ex-code-tab-size: 2;
   // 行号栏宽度：位数 × 1ch（等宽字体精确）+ 两侧内边距。
   --ex-code-gutter-width: calc(
     var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x)
@@ -159,7 +160,12 @@
     font-size: var(--ex-text-xs);
     font-family: var(--ex-font-secondary);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
@@ -277,7 +283,7 @@
     white-space: pre;
     color: var(--ex-color-text-primary);
     letter-spacing: 0;
-    tab-size: 4;
+    tab-size: var(--ex-code-tab-size);
     // 关闭连字，保证字符宽度稳定（编辑层叠加时尤为关键）。
     font-variant-ligatures: none;
     font-feature-settings:
@@ -341,7 +347,7 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
-    tab-size: 4;
+    tab-size: var(--ex-code-tab-size);
     overflow: hidden;
     font-variant-ligatures: none;
     font-feature-settings:

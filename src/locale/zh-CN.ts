@@ -296,6 +296,12 @@ export default {
     confirm: '确定',
     clear: '清空',
     hex: 'HEX',
+    trigger: '选择颜色',
+    panel: '颜色选择面板',
+    saturationValue: '饱和度与明度',
+    hue: '色相',
+    alpha: '透明度',
+    selectColor: '选择颜色',
   },
 
   // 树选择
@@ -480,6 +486,7 @@ export default {
   code: {
     copy: '复制',
     copied: '已复制',
+    copyFailed: '复制失败',
     edit: '编辑',
     readonly: '只读',
     codeBlock: '代码块',

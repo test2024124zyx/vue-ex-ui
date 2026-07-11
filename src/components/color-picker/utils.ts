@@ -1,5 +1,4 @@
-// ExUI ColorPicker 颜色转换工具
-
+/** RGBA 颜色通道。 */
 export interface RGBA {
   r: number;
   g: number;
@@ -7,136 +6,171 @@ export interface RGBA {
   a: number;
 }
 
+/** HSVA 颜色通道。 */
 export interface HSVA {
-  h: number; // 0-360
-  s: number; // 0-1
-  v: number; // 0-1
-  a: number; // 0-1
+  /** 色相，范围为 0～360。 */
+  h: number;
+  /** 饱和度，范围为 0～1。 */
+  s: number;
+  /** 明度，范围为 0～1。 */
+  v: number;
+  /** 透明度，范围为 0～1。 */
+  a: number;
 }
 
 export type ColorFormat = 'hex' | 'rgb';
 
-export const clamp = (n: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, n));
+export const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
-/** HSV -> RGB（h:0-360, s/v:0-1） */
-export function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: number } {
-  h = ((h % 360) + 360) % 360;
-  s = clamp(s, 0, 1);
-  v = clamp(v, 0, 1);
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (h < 60) [r, g, b] = [c, x, 0];
-  else if (h < 120) [r, g, b] = [x, c, 0];
-  else if (h < 180) [r, g, b] = [0, c, x];
-  else if (h < 240) [r, g, b] = [0, x, c];
-  else if (h < 300) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
+const normalizeFinite = (value: number, fallback: number): number =>
+  Number.isFinite(value) ? value : fallback;
+
+const normalizeChannel = (value: number): number =>
+  clamp(Math.round(normalizeFinite(value, 0)), 0, 255);
+
+const normalizeAlpha = (value: number): number => clamp(normalizeFinite(value, 1), 0, 1);
+
+/** 将 HSV 转换为 RGB，并约束异常输入，避免向样式层传播 NaN。 */
+export function hsvToRgb(h: number, s: number, v: number): Pick<RGBA, 'r' | 'g' | 'b'> {
+  h = ((normalizeFinite(h, 0) % 360) + 360) % 360;
+  s = clamp(normalizeFinite(s, 0), 0, 1);
+  v = clamp(normalizeFinite(v, 0), 0, 1);
+
+  const chroma = v * s;
+  const secondary = chroma * (1 - Math.abs(((h / 60) % 2) - 1));
+  const offset = v - chroma;
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (h < 60) [red, green, blue] = [chroma, secondary, 0];
+  else if (h < 120) [red, green, blue] = [secondary, chroma, 0];
+  else if (h < 180) [red, green, blue] = [0, chroma, secondary];
+  else if (h < 240) [red, green, blue] = [0, secondary, chroma];
+  else if (h < 300) [red, green, blue] = [secondary, 0, chroma];
+  else [red, green, blue] = [chroma, 0, secondary];
+
   return {
-    r: Math.round((r + m) * 255),
-    g: Math.round((g + m) * 255),
-    b: Math.round((b + m) * 255),
+    r: Math.round((red + offset) * 255),
+    g: Math.round((green + offset) * 255),
+    b: Math.round((blue + offset) * 255),
   };
 }
 
-/** RGB -> HSV */
-export function rgbToHsv(r: number, g: number, b: number): { h: number; s: number; v: number } {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
-  let h = 0;
-  if (d !== 0) {
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h *= 60;
-    if (h < 0) h += 360;
+/** 将 RGB 转换为 HSV。 */
+export function rgbToHsv(r: number, g: number, b: number): Pick<HSVA, 'h' | 's' | 'v'> {
+  r = normalizeChannel(r) / 255;
+  g = normalizeChannel(g) / 255;
+  b = normalizeChannel(b) / 255;
+
+  const maximum = Math.max(r, g, b);
+  const minimum = Math.min(r, g, b);
+  const difference = maximum - minimum;
+  let hue = 0;
+
+  if (difference !== 0) {
+    if (maximum === r) hue = ((g - b) / difference) % 6;
+    else if (maximum === g) hue = (b - r) / difference + 2;
+    else hue = (r - g) / difference + 4;
+    hue *= 60;
+    if (hue < 0) hue += 360;
   }
-  const s = max === 0 ? 0 : d / max;
-  return { h, s, v: max };
+
+  const saturation = maximum === 0 ? 0 : difference / maximum;
+  return { h: hue, s: saturation, v: maximum };
 }
 
-const hex2 = (n: number): string => clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0');
+const toHexChannel = (value: number): string =>
+  normalizeChannel(value).toString(16).padStart(2, '0');
 
-/** RGB -> #rrggbb */
+/** 将 RGB 转换为六位十六进制颜色。 */
 export function rgbToHex(r: number, g: number, b: number): string {
-  return `#${hex2(r)}${hex2(g)}${hex2(b)}`;
+  return `#${toHexChannel(r)}${toHexChannel(g)}${toHexChannel(b)}`;
 }
 
-/** 解析颜色字符串（hex / rgb / rgba），失败返回 null */
-export function parseColor(str: string): RGBA | null {
-  if (!str) return null;
-  const s = str.trim().toLowerCase();
+const CSS_NUMBER_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 
-  const hexMatch = s.match(/^#([0-9a-f]{3,8})$/);
+const parsePercentageOrNumber = (
+  token: string,
+  numberMaximum: number,
+  percentageScale: number
+): number | null => {
+  const value = token.trim();
+  const isPercentage = value.endsWith('%');
+  const numericText = isPercentage ? value.slice(0, -1).trim() : value;
+  if (!CSS_NUMBER_PATTERN.test(numericText)) return null;
+
+  const numericValue = Number(numericText);
+  const maximum = isPercentage ? 100 : numberMaximum;
+  if (!Number.isFinite(numericValue) || numericValue < 0 || numericValue > maximum) return null;
+  return isPercentage ? (numericValue / 100) * percentageScale : numericValue;
+};
+
+const parseRgbChannel = (token: string): number | null => {
+  const value = parsePercentageOrNumber(token, 255, 255);
+  return value === null ? null : Math.round(value);
+};
+
+const parseAlphaChannel = (token: string): number | null => parsePercentageOrNumber(token, 1, 1);
+
+/**
+ * 解析十六进制及逗号分隔的 rgb/rgba 颜色。
+ * 参数数量和范围不合法时返回 null，避免浏览器容错导致跨环境结果不一致。
+ */
+export function parseColor(input: string): RGBA | null {
+  if (typeof input !== 'string') return null;
+  const color = input.trim().toLowerCase();
+  if (!color) return null;
+
+  const hexMatch = color.match(/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/);
   if (hexMatch) {
-    let h = hexMatch[1]!;
-    if (h.length === 3)
-      h = h
-        .split('')
-        .map(c => c + c)
-        .join('');
-    if (h.length === 4)
-      h = h
-        .split('')
-        .map(c => c + c)
-        .join('');
-    if (h.length === 6) {
-      return {
-        r: parseInt(h.slice(0, 2), 16),
-        g: parseInt(h.slice(2, 4), 16),
-        b: parseInt(h.slice(4, 6), 16),
-        a: 1,
-      };
+    let hex = hexMatch[1]!;
+    if (hex.length === 3 || hex.length === 4) {
+      hex = [...hex].map(character => `${character}${character}`).join('');
     }
-    if (h.length === 8) {
-      return {
-        r: parseInt(h.slice(0, 2), 16),
-        g: parseInt(h.slice(2, 4), 16),
-        b: parseInt(h.slice(4, 6), 16),
-        a: parseInt(h.slice(6, 8), 16) / 255,
-      };
-    }
-    return null;
+
+    return {
+      r: Number.parseInt(hex.slice(0, 2), 16),
+      g: Number.parseInt(hex.slice(2, 4), 16),
+      b: Number.parseInt(hex.slice(4, 6), 16),
+      a: hex.length === 8 ? Number.parseInt(hex.slice(6, 8), 16) / 255 : 1,
+    };
   }
 
-  const rgbMatch = s.match(/^rgba?\(([^)]+)\)$/);
-  if (rgbMatch) {
-    const parts = rgbMatch[1]!.split(',').map(p => p.trim());
-    const r = parseInt(parts[0]!, 10);
-    const g = parseInt(parts[1]!, 10);
-    const b = parseInt(parts[2]!, 10);
-    const a = parts[3] !== undefined ? parseFloat(parts[3]) : 1;
-    if ([r, g, b].some(n => Number.isNaN(n))) return null;
-    return { r, g, b, a: Number.isNaN(a) ? 1 : clamp(a, 0, 1) };
-  }
+  const functionalMatch = color.match(/^(rgb|rgba)\((.*)\)$/);
+  if (!functionalMatch) return null;
+  const functionName = functionalMatch[1]!;
+  const parts = functionalMatch[2]!.split(',').map(part => part.trim());
+  const expectedLength = functionName === 'rgba' ? 4 : 3;
+  if (parts.length !== expectedLength || parts.some(part => !part)) return null;
 
-  return null;
+  const red = parseRgbChannel(parts[0]!);
+  const green = parseRgbChannel(parts[1]!);
+  const blue = parseRgbChannel(parts[2]!);
+  const alpha = functionName === 'rgba' ? parseAlphaChannel(parts[3]!) : 1;
+  if (red === null || green === null || blue === null || alpha === null) return null;
+  return { r: red, g: green, b: blue, a: alpha };
 }
 
-/** 按格式输出颜色字符串 */
+/** 按指定格式输出颜色；启用 Alpha 时始终保留透明通道，确保返回值结构稳定。 */
 export function formatColor(rgba: RGBA, format: ColorFormat, showAlpha: boolean): string {
-  const { r, g, b, a } = rgba;
+  const red = normalizeChannel(rgba.r);
+  const green = normalizeChannel(rgba.g);
+  const blue = normalizeChannel(rgba.b);
+  const alpha = normalizeAlpha(rgba.a);
+
   if (format === 'rgb') {
-    return showAlpha && a < 1
-      ? `rgba(${r}, ${g}, ${b}, ${Math.round(a * 100) / 100})`
-      : `rgb(${r}, ${g}, ${b})`;
+    if (!showAlpha) return `rgb(${red}, ${green}, ${blue})`;
+    const roundedAlpha = Math.round(alpha * 1000) / 1000;
+    return `rgba(${red}, ${green}, ${blue}, ${roundedAlpha})`;
   }
-  const hex = rgbToHex(r, g, b);
-  if (showAlpha && a < 1) {
-    return `${hex}${hex2(a * 255)}`;
-  }
-  return hex;
+
+  const hex = rgbToHex(red, green, blue);
+  return showAlpha ? `${hex}${toHexChannel(alpha * 255)}` : hex;
 }
 
-/** 不含透明度的纯色（用于透明度滑块渐变终点） */
+/** 返回不含透明度的 RGB 字符串，用作透明度渐变终点。 */
 export function opaqueRgb(rgba: RGBA): string {
-  return `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
+  return `rgb(${normalizeChannel(rgba.r)}, ${normalizeChannel(rgba.g)}, ${normalizeChannel(rgba.b)})`;
 }

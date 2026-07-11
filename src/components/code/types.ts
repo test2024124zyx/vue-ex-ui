@@ -1,6 +1,6 @@
-/**
- * 代码语言类型
- */
+import type { CSSProperties } from 'vue';
+
+/** 内置语法高亮语言。 */
 export type CodeLanguage =
   | 'javascript'
   | 'typescript'
@@ -23,69 +23,63 @@ export type CodeLanguage =
   | 'xml'
   | 'plaintext';
 
-/**
- * 代码主题类型
- */
+/** 代码块视觉主题。 */
 export type CodeTheme = 'dark' | 'light' | 'neon';
 
-/**
- * 代码组件属性接口
- */
+/** 代码组件属性。 */
 export interface ExCodeProps {
-  /** 代码内容 */
+  /** 展示或编辑的代码内容。 */
   code?: string;
-  /** 代码语言 */
+  /** 语法高亮语言。 */
   language?: CodeLanguage;
-  /** 代码主题 */
+  /** 代码块视觉主题。 */
   theme?: CodeTheme;
-  /** 是否显示行号 */
+  /** 是否显示行号。 */
   lineNumbers?: boolean;
-  /** 高亮的行号（逗号分隔或数组） */
-  highlightLines?: string | number[];
-  /** 起始行号 */
+  /** 高亮行号，支持数组或 `1,3-5` 格式。 */
+  highlightLines?: string | readonly number[];
+  /** 第一行显示的行号。 */
   startLine?: number;
-  /** 是否可复制 */
+  /** 是否展示复制按钮。 */
   copyable?: boolean;
-  /** 是否显示语言标签 */
+  /** 是否展示语言标签。 */
   showLanguage?: boolean;
-  /** 文件名 */
+  /** 可选文件名。 */
   filename?: string;
-  /** 最大高度 */
+  /** 内容区最大高度。 */
   maxHeight?: string | number;
-  /** 是否自动换行 */
+  /** 是否自动换行。 */
   wrap?: boolean;
-  /** 是否可编辑（开启后代码可在原位编辑，支持 v-model:code） */
+  /** 是否启用原位编辑。 */
   editable?: boolean;
-  /** 是否只读（editable 时仍禁止修改） */
+  /** 编辑模式是否只读。 */
   readonly?: boolean;
-  /** 编辑模式下 Tab 键插入的空格数 */
+  /** Tab 插入空格数及制表符显示宽度，范围为 1～16。 */
   tabSize?: number;
-  /** 自定义CSS类名 */
+  /** 根元素自定义类名。 */
   class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: string | Record<string, string | number>;
+  /** 根元素自定义样式。 */
+  style?: string | CSSProperties;
 }
 
-/**
- * 代码组件事件接口
- */
+/** 代码组件事件。 */
 export interface ExCodeEmits {
-  /** 复制成功事件 */
+  /** 复制成功，参数为实际写入剪贴板的代码快照。 */
   copy: [code: string];
-  /** 代码内容更新（可编辑，支持 v-model:code） */
+  /** 剪贴板写入失败。 */
+  'copy-error': [error: Error];
+  /** 编辑内容实时更新。 */
   'update:code': [code: string];
-  /** 代码内容变化 */
+  /** 编辑内容发生变化。 */
   change: [code: string];
 }
 
-/**
- * 代码组件暴露的方法接口
- */
+/** 代码组件公开方法。 */
 export interface ExCodeExposed {
-  /** 获取代码内容 */
+  /** 获取当前代码内容。 */
   getCode: () => string;
-  /** 复制代码 */
-  copy: () => Promise<void>;
-  /** 获取组件DOM元素 */
+  /** 复制当前代码并返回是否成功。 */
+  copy: () => Promise<boolean>;
+  /** 获取根元素。 */
   getElement: () => HTMLDivElement | null;
 }

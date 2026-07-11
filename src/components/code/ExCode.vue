@@ -56,7 +56,7 @@
           :class="{ 'ex-code__line--highlighted': isLineHighlighted(index) }"
         >
           <span v-if="lineNumbers" class="ex-code__gutter" aria-hidden="true">
-            {{ startLine + index }}
+            {{ normalizedStartLine + index }}
           </span>
           <span class="ex-code__line-content">
             <template v-for="(token, ti) in line" :key="ti">
@@ -97,6 +97,7 @@ import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { tokenizeToLines } from './highlighter';
+import { normalizeLineNumber, normalizeTabSize, parseHighlightedLines } from './line-utils';
 
 defineOptions({
   name: 'ExCode',
@@ -135,6 +136,8 @@ watch(
 
 // 同步高亮：纯函数、零依赖、无异步加载，逐字符即时高亮，编辑不卡顿。
 const renderLines = computed(() => tokenizeToLines(currentCode.value, props.language));
+const normalizedStartLine = computed(() => normalizeLineNumber(props.startLine));
+const normalizedTabSize = computed(() => normalizeTabSize(props.tabSize));
 
 const rootClasses = computed(() => {
   const classes = [
@@ -155,47 +158,38 @@ const rootClasses = computed(() => {
 // 行号栏宽度由「最大行号位数」决定（等宽字体下 1ch 恰为一位数字宽）。
 // 必须落在根元素上：--ex-code-gutter-width 的 calc 在根层求值。
 const gutterChars = computed(() => {
-  const maxLine = props.startLine + renderLines.value.length - 1;
+  const maxLine = normalizedStartLine.value + renderLines.value.length - 1;
   return Math.max(2, String(maxLine).length);
 });
 
 const rootStyleList = computed(() => [
-  { '--ex-code-gutter-chars': String(gutterChars.value) },
+  {
+    '--ex-code-gutter-chars': String(gutterChars.value),
+    '--ex-code-tab-size': String(normalizedTabSize.value),
+  },
   props.style ?? '',
 ]);
 
 const contentStyles = computed<CSSProperties>(() => {
   if (props.maxHeight === undefined) return {};
+  if (typeof props.maxHeight === 'number' && !Number.isFinite(props.maxHeight)) return {};
   return {
-    maxHeight: typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight,
+    maxHeight:
+      typeof props.maxHeight === 'number' ? `${Math.max(0, props.maxHeight)}px` : props.maxHeight,
   };
 });
 
-const highlightedLines = computed(() => {
-  if (!props.highlightLines) return new Set<number>();
-
-  if (Array.isArray(props.highlightLines)) {
-    return new Set(props.highlightLines);
-  }
-
-  // 解析字符串格式：'1,3-5,7' => {1, 3, 4, 5, 7}
-  const lines = new Set<number>();
-  props.highlightLines.split(',').forEach(part => {
-    const range = part.trim().split('-');
-    if (range.length === 1 && range[0]) {
-      lines.add(parseInt(range[0], 10));
-    } else if (range.length === 2 && range[0] && range[1]) {
-      const start = parseInt(range[0], 10);
-      const end = parseInt(range[1], 10);
-      for (let i = start; i <= end; i++) lines.add(i);
-    }
-  });
-
-  return lines;
-});
+const highlightedLines = computed(() =>
+  parseHighlightedLines(
+    props.highlightLines,
+    normalizedStartLine.value,
+    normalizedStartLine.value + renderLines.value.length - 1
+  )
+);
 
 // index 为 0 基行下标；展示行号与高亮判定都基于 startLine + index。
-const isLineHighlighted = (index: number) => highlightedLines.value.has(props.startLine + index);
+const isLineHighlighted = (index: number) =>
+  highlightedLines.value.has(normalizedStartLine.value + index);
 
 const LANGUAGE_LABELS: Record<string, string> = {
   javascript: 'JavaScript',
@@ -261,7 +255,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   const value = currentCode.value;
   const selStart = ta.selectionStart;
   const selEnd = ta.selectionEnd;
-  const indent = ' '.repeat(Math.max(1, props.tabSize));
+  const indent = ' '.repeat(normalizedTabSize.value);
 
   const selection = value.slice(selStart, selEnd);
   const multiline = selection.includes('\n');
@@ -274,31 +268,45 @@ const handleKeydown = (event: KeyboardEvent) => {
     return;
   }
 
+  // 单光标反缩进需要检查整行前缀，即使光标正位于行首也能移除缩进。
+  if (event.shiftKey && selStart === selEnd) {
+    const lineStart = value.lastIndexOf('\n', selStart - 1) + 1;
+    const leadingWhitespace = value.slice(lineStart).match(/^(?:\t| +)/)?.[0] ?? '';
+    const removeLength = leadingWhitespace.startsWith('\t')
+      ? 1
+      : Math.min(normalizedTabSize.value, leadingWhitespace.length);
+    if (removeLength === 0) return;
+    const next = value.slice(0, lineStart) + value.slice(lineStart + removeLength);
+    const caret = Math.max(lineStart, selStart - removeLength);
+    applyEditorChange(next, caret, caret);
+    return;
+  }
+
   // 跨行 / Shift+Tab：对选区覆盖的每一行整体缩进或反缩进。
   const lineStart = value.lastIndexOf('\n', selStart - 1) + 1;
-  const region = value.slice(lineStart, selEnd);
+  const selectionEndsAtNextLineStart = multiline && value[selEnd - 1] === '\n';
+  const regionEnd = selectionEndsAtNextLineStart ? selEnd - 1 : selEnd;
+  const region = value.slice(lineStart, regionEnd);
   const lines = region.split('\n');
 
   let firstDelta = 0;
   let totalDelta = 0;
-  const newLines = lines.map(line => {
+  const newLines = lines.map((line, index) => {
     if (event.shiftKey) {
-      const removed = line.match(/^[ \t]{1,2}/);
-      const removeLen = removed
-        ? line.startsWith('\t')
-          ? 1
-          : Math.min(indent.length, line.match(/^ +/)?.[0].length ?? 0)
-        : 0;
-      if (totalDelta === 0 && firstDelta === 0) firstDelta = -removeLen;
-      totalDelta -= removeLen;
-      return line.slice(removeLen);
+      const leadingWhitespace = line.match(/^(?:\t| +)/)?.[0] ?? '';
+      const removeLength = leadingWhitespace.startsWith('\t')
+        ? 1
+        : Math.min(indent.length, leadingWhitespace.length);
+      if (index === 0) firstDelta = -removeLength;
+      totalDelta -= removeLength;
+      return line.slice(removeLength);
     }
-    if (firstDelta === 0 && totalDelta === 0) firstDelta = indent.length;
+    if (index === 0) firstDelta = indent.length;
     totalDelta += indent.length;
     return indent + line;
   });
 
-  const next = value.slice(0, lineStart) + newLines.join('\n') + value.slice(selEnd);
+  const next = value.slice(0, lineStart) + newLines.join('\n') + value.slice(regionEnd);
   applyEditorChange(next, Math.max(lineStart, selStart + firstDelta), selEnd + totalDelta);
 };
 
@@ -306,7 +314,9 @@ const handleKeydown = (event: KeyboardEvent) => {
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 降级复制：navigator.clipboard 不可用（非安全上下文 / 旧浏览器）时回退到 execCommand。
-const fallbackCopy = (text: string) => {
+const fallbackCopy = (text: string): boolean => {
+  const previouslyFocused =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.style.position = 'fixed';
@@ -315,31 +325,44 @@ const fallbackCopy = (text: string) => {
   textarea.focus();
   textarea.select();
   try {
-    document.execCommand('copy');
+    return typeof document.execCommand === 'function' && document.execCommand('copy');
   } finally {
     document.body.removeChild(textarea);
+    if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true });
   }
 };
 
-const handleCopy = async () => {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(currentCode.value);
-    } else {
-      fallbackCopy(currentCode.value);
-    }
-    copied.value = true;
-    emit('copy', currentCode.value);
+const handleCopy = async (): Promise<boolean> => {
+  const codeSnapshot = currentCode.value;
+  copied.value = false;
+  if (copyTimer) {
+    clearTimeout(copyTimer);
+    copyTimer = null;
+  }
 
-    if (copyTimer) clearTimeout(copyTimer);
+  try {
+    let success = true;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(codeSnapshot);
+    } else {
+      success = fallbackCopy(codeSnapshot);
+    }
+    if (!success) {
+      emit('copy-error', new Error(t('code.copyFailed')));
+      return false;
+    }
+
+    copied.value = true;
+    emit('copy', codeSnapshot);
+
     copyTimer = setTimeout(() => {
       copied.value = false;
       copyTimer = null;
     }, 2000);
+    return true;
   } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error('Failed to copy code:', error);
-    }
+    emit('copy-error', error instanceof Error ? error : new Error(String(error)));
+    return false;
   }
 };
 
@@ -349,9 +372,7 @@ onBeforeUnmount(() => {
 
 // 暴露的方法
 const getCode = () => currentCode.value;
-const copy = async () => {
-  await handleCopy();
-};
+const copy = () => handleCopy();
 const getElement = () => rootRef.value || null;
 
 defineExpose<ExCodeExposed>({

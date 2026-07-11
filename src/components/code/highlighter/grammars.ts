@@ -9,6 +9,7 @@
  */
 
 import type { Grammar, GrammarRule } from './engine';
+import { JS_BUILTINS, JS_KEYWORDS } from './javascript-words';
 
 /** 把关键字数组编译为 `\b(?:a|b|c)\b` 形式的正则。 */
 function words(list: string[]): RegExp {
@@ -29,98 +30,6 @@ const SQ_STRING: GrammarRule = { type: 'string', re: /'(?:\\.|[^'\\\n])*'/ };
 // ---------------------------------------------------------------------------
 // JavaScript / TypeScript
 // ---------------------------------------------------------------------------
-
-const JS_KEYWORDS = [
-  'abstract',
-  'as',
-  'async',
-  'await',
-  'break',
-  'case',
-  'catch',
-  'class',
-  'const',
-  'continue',
-  'debugger',
-  'declare',
-  'default',
-  'delete',
-  'do',
-  'else',
-  'enum',
-  'export',
-  'extends',
-  'finally',
-  'for',
-  'from',
-  'function',
-  'get',
-  'if',
-  'implements',
-  'import',
-  'in',
-  'instanceof',
-  'interface',
-  'let',
-  'namespace',
-  'new',
-  'of',
-  'package',
-  'private',
-  'protected',
-  'public',
-  'readonly',
-  'return',
-  'satisfies',
-  'set',
-  'static',
-  'super',
-  'switch',
-  'this',
-  'throw',
-  'try',
-  'typeof',
-  'var',
-  'void',
-  'while',
-  'with',
-  'yield',
-  'keyof',
-  'infer',
-  'is',
-  'override',
-  'type',
-];
-
-const JS_BUILTINS = [
-  'Array',
-  'ArrayBuffer',
-  'Boolean',
-  'BigInt',
-  'Date',
-  'Error',
-  'Function',
-  'JSON',
-  'Map',
-  'Math',
-  'Number',
-  'Object',
-  'Promise',
-  'Proxy',
-  'Reflect',
-  'RegExp',
-  'Set',
-  'String',
-  'Symbol',
-  'WeakMap',
-  'WeakSet',
-  'console',
-  'document',
-  'window',
-  'globalThis',
-  'Infinity',
-  'NaN',
-];
 
 function javascript(): Grammar {
   return {

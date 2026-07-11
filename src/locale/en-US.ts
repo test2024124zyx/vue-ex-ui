@@ -296,6 +296,12 @@ export default {
     confirm: 'Confirm',
     clear: 'Clear',
     hex: 'HEX',
+    trigger: 'Choose color',
+    panel: 'Color picker panel',
+    saturationValue: 'Saturation and brightness',
+    hue: 'Hue',
+    alpha: 'Opacity',
+    selectColor: 'Choose color',
   },
 
   // Tree Select
@@ -480,6 +486,7 @@ export default {
   code: {
     copy: 'Copy',
     copied: 'Copied',
+    copyFailed: 'Copy failed',
     edit: 'Edit',
     readonly: 'Read Only',
     codeBlock: 'code block',
