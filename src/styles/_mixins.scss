@@ -3,6 +3,8 @@
 
 @use 'sass:map';
 @use 'sass:math';
+@use 'sass:meta';
+@use 'sass:string';
 @use 'tokens' as *;
 
 // ============================================================================
@@ -313,12 +315,38 @@
 // ============================================================================
 
 // 基础过渡
+@function _is-transition-duration($value) {
+  // 兼容历史上的多属性调用，同时保留属性、时长、缓动三个参数的公开用法。
+  @if meta.type-of($value) == 'number' {
+    @return true;
+  }
+
+  @return string.index(meta.inspect($value), 'duration') != null;
+}
+
 @mixin transition(
   $properties: all,
   $duration: var(--ex-motion-duration-base),
   $easing: var(--ex-motion-ease-out)
 ) {
-  transition: $properties $duration $easing;
+  $resolved-properties: $properties;
+  $resolved-duration: $duration;
+  $resolved-easing: $easing;
+
+  @if not _is-transition-duration($duration) {
+    $resolved-properties: ($properties, $duration);
+    $resolved-duration: var(--ex-motion-duration-base);
+
+    @if $easing != var(--ex-motion-ease-out) {
+      $resolved-properties: ($properties, $duration, $easing);
+      $resolved-easing: var(--ex-motion-ease-out);
+    }
+  }
+
+  // 使用长写法可正确表达多个属性，避免逗号列表被解析成无效的过渡简写。
+  transition-property: $resolved-properties;
+  transition-duration: $resolved-duration;
+  transition-timing-function: $resolved-easing;
 
   // 尊重用户的动画偏好
   @media (prefers-reduced-motion: reduce) {
@@ -378,7 +406,7 @@
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
   padding: var(--ex-input-padding-y) var(--ex-input-padding-x);
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &::placeholder {
     color: var(--ex-color-text-tertiary);
@@ -528,7 +556,7 @@
 
 // 卡片悬停效果
 @mixin card-hover {
-  @include transition(transform, box-shadow);
+  @include transition((transform, box-shadow));
 
   &:hover {
     transform: translateY(-4px);

@@ -236,4 +236,4 @@ defineExpose<ExStepExposed>({
 });
 </script>
 
-<style scoped lang="scss" src="./ExSteps.scss"></style>
+<style scoped lang="scss" src="./ExStep.scss"></style>

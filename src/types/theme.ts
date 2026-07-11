@@ -1,4 +1,4 @@
-// ExUI Theme Type Definitions
+// ExUI 主题类型与运行时配置
 // 主题系统的 TypeScript 类型定义
 
 /**

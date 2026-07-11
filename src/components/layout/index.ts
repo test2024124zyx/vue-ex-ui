@@ -1,30 +1,36 @@
 // Layout Components
 // 布局组件导出
 
-import type { App } from 'vue';
-import ExLayout from './ExLayout.vue';
-import ExHeader from './ExHeader.vue';
-import ExSider from './ExSider.vue';
-import ExContent from './ExContent.vue';
-import ExFooter from './ExFooter.vue';
-import ExContainer from './ExContainer.vue';
+import ExLayoutComponent from './ExLayout.vue';
+import ExHeaderComponent from './ExHeader.vue';
+import ExSiderComponent from './ExSider.vue';
+import ExContentComponent from './ExContent.vue';
+import ExFooterComponent from './ExFooter.vue';
+import ExContainerComponent from './ExContainer.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出类型
 export type * from './types';
 
 // 导出组件
-export { ExLayout, ExHeader, ExSider, ExContent, ExFooter, ExContainer };
+export const ExHeader: InstallableComponent<typeof ExHeaderComponent> =
+  withInstall(ExHeaderComponent);
+export const ExSider: InstallableComponent<typeof ExSiderComponent> = withInstall(ExSiderComponent);
+export const ExContent: InstallableComponent<typeof ExContentComponent> =
+  withInstall(ExContentComponent);
+export const ExFooter: InstallableComponent<typeof ExFooterComponent> =
+  withInstall(ExFooterComponent);
+export const ExContainer: InstallableComponent<typeof ExContainerComponent> =
+  withInstall(ExContainerComponent);
+export const ExLayout: InstallableComponent<typeof ExLayoutComponent> = withInstall(
+  ExLayoutComponent,
+  {
+    ExHeader,
+    ExSider,
+    ExContent,
+    ExFooter,
+    ExContainer,
+  }
+);
 
-// 布局插件
-export const LayoutPlugin = {
-  install(app: App) {
-    app.component('ExLayout', ExLayout);
-    app.component('ExHeader', ExHeader);
-    app.component('ExSider', ExSider);
-    app.component('ExContent', ExContent);
-    app.component('ExFooter', ExFooter);
-    app.component('ExContainer', ExContainer);
-  },
-};
-
-export default LayoutPlugin;
+export default ExLayout;

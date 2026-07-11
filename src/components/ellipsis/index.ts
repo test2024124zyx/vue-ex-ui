@@ -1,14 +1,8 @@
-import type { App } from 'vue';
-import ExEllipsis from './ExEllipsis.vue';
+import ExEllipsisComponent from './ExEllipsis.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-export { ExEllipsis };
+export const ExEllipsis: InstallableComponent<typeof ExEllipsisComponent> =
+  withInstall(ExEllipsisComponent);
 export type { ExEllipsisProps } from './types';
 
-// 插件安装函数
-export const ExEllipsisPlugin = {
-  install(app: App) {
-    app.component('ExEllipsis', ExEllipsis);
-  },
-};
-
-export default ExEllipsisPlugin;
+export default ExEllipsis;

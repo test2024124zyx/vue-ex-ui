@@ -1,6 +1,5 @@
 <template>
   <ExPopover
-    ref="popoverRef"
     v-model="popoverVisible"
     :placement="placement"
     :trigger="trigger"
@@ -90,7 +89,6 @@ const emit = defineEmits<ExPopconfirmEmits>();
 
 const { t } = useLocale('dialog');
 
-const popoverRef = ref();
 const popoverVisible = ref(false);
 
 // 计算属性

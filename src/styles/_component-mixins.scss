@@ -195,7 +195,7 @@
 
 // 卡片悬停效果
 @mixin card-hover {
-  @include safe-transition(transform, box-shadow);
+  @include safe-transition((transform, box-shadow));
   
   &:hover {
     transform: translateY(-4px);

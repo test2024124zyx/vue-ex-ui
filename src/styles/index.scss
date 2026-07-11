@@ -20,8 +20,8 @@
 // 4.5 组件混合器 (Component Mixins)
 @use 'component-mixins';
 
-// 4.6 性能优化 (Performance)
-@use 'performance';
+// 4.6 性能工具类 (Performance Utilities)
+@use 'performance-utilities';
 
 // 5. 基础样式 (Base Styles)
 @use 'base';
@@ -66,13 +66,6 @@
 
 @use 'animations/transitions';
 @use 'animations/keyframes';
-
-// ============================================================================
-// 字体导入 (Fonts)
-// ============================================================================
-// 导入 Audiowide 字体（赛博朋克风格主字体）
-// 注意：@import 必须在所有 @use 之后
-@import '@fontsource/audiowide/400.css';
 
 // ============================================================================
 // 全局样式导出

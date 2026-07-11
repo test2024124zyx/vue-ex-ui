@@ -1,306 +1,195 @@
-@use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
 .ex-step {
   position: relative;
   display: flex;
-  
-  &__icon-wrapper {
-    position: relative;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  outline: none;
+
+  &__head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    width: 100%;
   }
-  
+
   &__icon {
-    @include flex-center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid var(--ex-color-border-primary);
-    background-color: var(--ex-color-bg-secondary);
-    color: var(--ex-color-text-secondary);
-    font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-medium);
-    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    position: relative;
     z-index: 1;
+    display: inline-flex;
+    flex: 0 0 var(--ex-step-icon-size);
+    align-items: center;
+    justify-content: center;
+    width: var(--ex-step-icon-size);
+    height: var(--ex-step-icon-size);
+    color: var(--ex-color-text-tertiary);
+    font-weight: var(--ex-font-semibold);
+    font-size: var(--ex-text-sm);
+    background: var(--ex-color-bg-secondary);
+    border: 2px solid var(--ex-color-border-secondary);
+    border-radius: 50%;
+    @include transition((color, background-color, border-color, transform, box-shadow));
   }
-  
-  &__status-icon,
-  &__custom-icon {
-    font-size: 14px;
+
+  &__icon-image {
+    font-size: 1em;
   }
-  
-  &__number {
-    font-size: 12px;
+
+  &__icon-number {
     line-height: 1;
   }
-  
-  &__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: currentColor;
-  }
-  
+
   &__line {
-    position: absolute;
-    background-color: var(--ex-color-border-primary);
-    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
-    
-    &--horizontal {
-      top: 50%;
-      left: 100%;
-      width: 100%;
-      height: 1px;
-      transform: translateY(-50%);
+    flex: 1;
+    height: 2px;
+    margin: 0 var(--ex-step-gap);
+    background: var(--ex-color-border-secondary);
+    @include transition(background-color);
+
+    &--finish {
+      background: var(--ex-color-success);
     }
-    
-    &--vertical {
-      top: 100%;
-      left: 50%;
-      width: 1px;
-      height: 100%;
-      transform: translateX(-50%);
+
+    &--process {
+      background: var(--ex-color-primary);
     }
-    
-    &--dashed {
-      border-style: dashed;
-      background: none;
-      border-width: 1px 0 0 0;
-      
-      &.ex-step__line--vertical {
-        border-width: 0 0 0 1px;
-      }
-    }
-    
-    &--dotted {
-      border-style: dotted;
-      background: none;
-      border-width: 1px 0 0 0;
-      
-      &.ex-step__line--vertical {
-        border-width: 0 0 0 1px;
-      }
+
+    &--error {
+      background: var(--ex-color-error);
     }
   }
-  
+
   &__content {
-    margin-left: var(--ex-spacing-2);
-    flex: 1;
+    min-width: 0;
+    margin-top: var(--ex-spacing-3);
+    padding-right: var(--ex-step-gap);
   }
-  
+
   &__title {
-    font-size: var(--ex-text-base);
-    font-weight: var(--ex-font-medium);
+    overflow-wrap: anywhere;
     color: var(--ex-color-text-secondary);
-    line-height: 1.5;
-    margin-bottom: var(--ex-spacing-1);
-    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    font-weight: var(--ex-font-medium);
+    font-size: var(--ex-step-title-size);
+    line-height: var(--ex-leading-snug);
+    @include transition(color);
   }
-  
+
+  &__subtitle,
   &__description {
-    font-size: var(--ex-text-sm);
+    margin-top: var(--ex-spacing-1);
+    overflow-wrap: anywhere;
     color: var(--ex-color-text-tertiary);
-    line-height: 1.5;
+    font-size: var(--ex-step-description-size);
+    line-height: var(--ex-leading-normal);
   }
-  
-  // 水平方向
-  &--horizontal {
-    flex-direction: row;
-    flex: 1;
-    
-    &:not(.ex-step--last) {
-      .ex-step__icon-wrapper {
-        width: 100%;
-      }
-    }
-    
-    .ex-step__content {
-      margin-left: var(--ex-spacing-2);
-      margin-top: 0;
-    }
+
+  &--process &__icon {
+    color: var(--ex-color-text-inverse);
+    background: var(--ex-color-primary);
+    border-color: var(--ex-color-primary);
+    box-shadow: 0 0 10px var(--ex-color-neon-blue-alpha-30);
   }
-  
-  // 垂直方向
-  &--vertical {
-    flex-direction: column;
-    
-    .ex-step__icon-wrapper {
-      height: 100%;
-      min-height: 60px;
-    }
-    
-    .ex-step__content {
-      margin-left: 0;
-      margin-top: var(--ex-spacing-2);
-      padding-left: calc(32px + var(--ex-spacing-2));
-    }
+
+  &--finish &__icon {
+    color: var(--ex-color-text-inverse);
+    background: var(--ex-color-success);
+    border-color: var(--ex-color-success);
   }
-  
-  // 状态样�?
-  &--wait {
-    .ex-step__icon {
-      border-color: var(--ex-color-border-primary);
-      background-color: var(--ex-color-bg-secondary);
-      color: var(--ex-color-text-tertiary);
-    }
-    
-    .ex-step__title {
-      color: var(--ex-color-text-tertiary);
-    }
+
+  &--error &__icon {
+    color: var(--ex-color-text-inverse);
+    background: var(--ex-color-error);
+    border-color: var(--ex-color-error);
   }
-  
-  &--process {
-    .ex-step__icon {
-      border-color: var(--ex-color-primary);
-      background-color: var(--ex-color-primary);
-      color: var(--ex-color-white);
-    }
-    
-    .ex-step__title {
-      color: var(--ex-color-text-primary);
-    }
-    
-    .ex-step__line {
-      background-color: var(--ex-color-border-primary);
-    }
+
+  &--current &__title,
+  &--finish &__title {
+    color: var(--ex-color-text-primary);
   }
-  
-  &--finish {
-    .ex-step__icon {
-      border-color: var(--ex-color-success);
-      background-color: var(--ex-color-success);
-      color: var(--ex-color-white);
-    }
-    
-    .ex-step__title {
-      color: var(--ex-color-text-primary);
-    }
-    
-    .ex-step__line {
-      background-color: var(--ex-color-success);
-    }
+
+  &--error &__title {
+    color: var(--ex-color-error);
   }
-  
-  &--error {
-    .ex-step__icon {
-      border-color: var(--ex-color-error);
-      background-color: var(--ex-color-error);
-      color: var(--ex-color-white);
-    }
-    
-    .ex-step__title {
-      color: var(--ex-color-error);
-    }
-    
-    .ex-step__line {
-      background-color: var(--ex-color-border-primary);
-    }
-  }
-  
-  // 尺寸变体
-  &--small {
-    .ex-step__icon {
-      width: 24px;
-      height: 24px;
-      font-size: 10px;
-    }
-    
-    .ex-step__title {
-      font-size: var(--ex-text-sm);
-    }
-    
-    .ex-step__description {
-      font-size: var(--ex-text-xs);
-    }
-    
-    &.ex-step--vertical .ex-step__content {
-      padding-left: calc(24px + var(--ex-spacing-2));
-    }
-  }
-  
-  &--large {
-    .ex-step__icon {
-      width: 40px;
-      height: 40px;
-      font-size: var(--ex-text-base);
-    }
-    
-    .ex-step__title {
-      font-size: var(--ex-text-lg);
-    }
-    
-    .ex-step__description {
-      font-size: var(--ex-text-base);
-    }
-    
-    &.ex-step--vertical .ex-step__content {
-      padding-left: calc(40px + var(--ex-spacing-2));
-    }
-  }
-  
-  // 点状图标样式
-  &--dot {
-    .ex-step__icon {
-      width: 16px;
-      height: 16px;
-      border: none;
-      background-color: var(--ex-color-border-primary);
-    }
-    
-    &.ex-step--process .ex-step__icon {
-      background-color: var(--ex-color-primary);
-    }
-    
-    &.ex-step--finish .ex-step__icon {
-      background-color: var(--ex-color-success);
-    }
-    
-    &.ex-step--error .ex-step__icon {
-      background-color: var(--ex-color-error);
-    }
-  }
-  
-  // 可点击状�?
+
   &--clickable {
     cursor: pointer;
-    
-    &:hover:not(.ex-step--disabled) {
-      .ex-step__icon {
-        transform: scale(1.1);
-      }
-      
-      .ex-step__title {
-        color: var(--ex-color-primary);
-      }
+
+    &:hover .ex-step__icon {
+      transform: scale(1.08);
     }
-    
+
+    &:hover .ex-step__title {
+      color: var(--ex-color-primary);
+    }
+
     &:focus-visible {
-      outline: 2px solid var(--ex-color-primary);
-      outline-offset: 2px;
       border-radius: var(--ex-radius-base);
+      box-shadow: 0 0 0 2px var(--ex-color-border-focus);
     }
   }
-  
-  // 禁用状�?
+
   &--disabled {
     cursor: not-allowed;
-    opacity: 0.6;
-    
-    .ex-step__title,
-    .ex-step__description {
-      color: var(--ex-color-text-disabled);
+    opacity: 0.55;
+  }
+
+  // 垂直布局由父级方向类控制，子组件自身不复制方向状态。
+  :global(.ex-steps--vertical) & {
+    flex: none;
+    flex-direction: row;
+    min-height: calc(var(--ex-step-icon-size) + var(--ex-spacing-8));
+
+    &:last-child {
+      min-height: var(--ex-step-icon-size);
+    }
+
+    .ex-step__head {
+      flex: 0 0 var(--ex-step-icon-size);
+      flex-direction: column;
+      width: var(--ex-step-icon-size);
+    }
+
+    .ex-step__line {
+      width: 2px;
+      height: auto;
+      min-height: var(--ex-spacing-6);
+      margin: var(--ex-spacing-2) 0;
+    }
+
+    .ex-step__content {
+      margin-top: 0;
+      margin-left: var(--ex-step-gap);
+      padding-right: 0;
+      padding-bottom: var(--ex-spacing-8);
     }
   }
-  
-  // 响应式设�?
-  @include respond-to(xs) {
-    &--horizontal {
-      .ex-step__content {
-        margin-top: var(--ex-spacing-1);
-      }
+
+  // 进度点模式只保留状态色圆点，内容与连线仍保持完整语义。
+  :global(.ex-steps--progress-dot) &__icon {
+    color: var(--ex-color-border-secondary);
+    font-size: 0;
+    background: transparent;
+  }
+
+  :global(.ex-steps--progress-dot) &--process &__icon {
+    color: var(--ex-color-primary);
+    background: currentColor;
+  }
+
+  :global(.ex-steps--progress-dot) &--finish &__icon {
+    color: var(--ex-color-success);
+    background: currentColor;
+  }
+
+  :global(.ex-steps--progress-dot) &--error &__icon {
+    color: var(--ex-color-error);
+    background: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &--clickable:hover .ex-step__icon {
+      transform: none;
     }
   }
 }

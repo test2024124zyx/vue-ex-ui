@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExProgress from './ExProgress.vue';
+import ExProgressComponent from './ExProgress.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExProgressProps,
   ExProgressEmits,
@@ -20,13 +20,7 @@ export type {
 };
 
 // 导出组件
-export { ExProgress };
+export const ExProgress: InstallableComponent<typeof ExProgressComponent> =
+  withInstall(ExProgressComponent);
 
-// 组件安装插件
-export const ExProgressPlugin = {
-  install(app: App) {
-    app.component('ExProgress', ExProgress);
-  },
-};
-
-export default ExProgressPlugin;
+export default ExProgress;

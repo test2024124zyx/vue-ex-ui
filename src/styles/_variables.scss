@@ -232,7 +232,7 @@
   --ex-badge-font-weight: var(--ex-font-medium);
   --ex-badge-border-width: 2px;
   --ex-badge-border-radius: 10px;
-  --ex-badge-transition: all var(--ex-motion-duration-base) var(--ex-motion-easing-standard);
+  --ex-badge-transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
   
   // 徽章尺寸
   --ex-badge-sm-min-width: 14px;

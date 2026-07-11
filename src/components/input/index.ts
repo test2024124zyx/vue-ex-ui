@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExInput from './ExInput.vue';
+import ExInputComponent from './ExInput.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type {
@@ -14,13 +14,6 @@ export type {
 } from './types';
 
 // 导出组件
-export { ExInput };
+export const ExInput: InstallableComponent<typeof ExInputComponent> = withInstall(ExInputComponent);
 
-// 组件安装插件
-export const ExInputPlugin = {
-  install(app: App) {
-    app.component('ExInput', ExInput);
-  },
-};
-
-export default ExInputPlugin;
+export default ExInput;

@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExSelect from './ExSelect.vue';
+import ExSelectComponent from './ExSelect.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type {
@@ -13,13 +13,7 @@ export type {
 } from './types';
 
 // 导出组件
-export { ExSelect };
+export const ExSelect: InstallableComponent<typeof ExSelectComponent> =
+  withInstall(ExSelectComponent);
 
-// 组件安装插件
-export const ExSelectPlugin = {
-  install(app: App) {
-    app.component('ExSelect', ExSelect);
-  },
-};
-
-export default ExSelectPlugin;
+export default ExSelect;

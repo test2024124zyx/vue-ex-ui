@@ -3,7 +3,7 @@
 
 import type { InjectionKey, Ref } from 'vue';
 import type { SupportedLocale } from '../../locale';
-import type { Theme } from '../../types/theme.d';
+import type { Theme } from '../../types/theme';
 
 // 重新导出 Theme 类型
 export type { Theme };
@@ -112,9 +112,7 @@ export const CONFIG_PROVIDER_INJECTION_KEY: InjectionKey<ConfigContext> =
 /**
  * 默认配置
  */
-export const DEFAULT_CONFIG: Required<
-  Omit<ExConfigProviderProps, 'class' | 'style'>
-> = {
+export const DEFAULT_CONFIG: Required<Omit<ExConfigProviderProps, 'class' | 'style'>> = {
   theme: 'neon-blue',
   locale: 'en-US',
   size: 'medium',

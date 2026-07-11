@@ -1,11 +1,15 @@
-import type { App } from 'vue'
-import ExBreadcrumb from './ExBreadcrumb.vue'
-import ExBreadcrumbItem from './ExBreadcrumbItem.vue'
-import './ExBreadcrumb.scss'
-import './ExBreadcrumbItem.scss'
+import ExBreadcrumbComponent from './ExBreadcrumb.vue';
+import ExBreadcrumbItemComponent from './ExBreadcrumbItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
+import './ExBreadcrumb.scss';
+import './ExBreadcrumbItem.scss';
 
-// 导出组件
-export { ExBreadcrumb, ExBreadcrumbItem }
+export const ExBreadcrumbItem: InstallableComponent<typeof ExBreadcrumbItemComponent> =
+  withInstall(ExBreadcrumbItemComponent);
+export const ExBreadcrumb: InstallableComponent<typeof ExBreadcrumbComponent> = withInstall(
+  ExBreadcrumbComponent,
+  { ExBreadcrumbItem }
+);
 
 // 导出类型
 export type {
@@ -13,15 +17,7 @@ export type {
   BreadcrumbItemProps,
   BreadcrumbItem,
   BreadcrumbEmits,
-  BreadcrumbItemEmits
-} from './types'
+  BreadcrumbItemEmits,
+} from './types';
 
-// Vue插件
-export const BreadcrumbPlugin = {
-  install(app: App) {
-    app.component('ExBreadcrumb', ExBreadcrumb)
-    app.component('ExBreadcrumbItem', ExBreadcrumbItem)
-  }
-}
-
-export default BreadcrumbPlugin
+export default ExBreadcrumb;

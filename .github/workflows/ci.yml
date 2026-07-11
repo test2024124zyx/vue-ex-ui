@@ -32,5 +32,8 @@ jobs:
       - name: Build (library)
         run: npm run build
 
+      - name: Verify published package
+        run: npm run verify:package
+
       - name: Build (docs)
         run: npm run docs:build

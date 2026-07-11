@@ -9,7 +9,7 @@
  * import './utils/theme-init'
  */
 
-import type { Theme } from '../types/theme.d';
+import type { Theme } from '../types/theme';
 
 /**
  * 有效的主题列表

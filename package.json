@@ -17,6 +17,7 @@
     },
     "./style.css": "./dist/ex-ui.css",
     "./base.css": "./dist/es/assets/style-base.css",
+    "./font.css": "./dist/es/assets/style-font.css",
     "./es": {
       "types": "./dist/es/index.d.ts",
       "import": "./dist/es/index.js"
@@ -36,6 +37,7 @@
     "build": "npm run build:full && npm run build:es",
     "build:full": "vite build",
     "build:es": "vite build --config vite.config.es.ts",
+    "verify:package": "node scripts/verify-package.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint \"src/**/*.{ts,tsx,vue}\" --max-warnings=10",
@@ -46,7 +48,7 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "prepublishOnly": "npm run build && npm run typecheck",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run verify:package",
     "prepare": "husky"
   },
   "lint-staged": {

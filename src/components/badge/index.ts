@@ -1,19 +1,11 @@
-import type { App } from 'vue';
-import ExBadge from './ExBadge.vue';
+import ExBadgeComponent from './ExBadge.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed } from './types';
 
 // 导出组件类型
 export type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed };
 export type { BadgeType, BadgeSize, BadgeStatus, BadgePosition } from './types';
 
-// 导出组件
-export { ExBadge };
+export const ExBadge: InstallableComponent<typeof ExBadgeComponent> = withInstall(ExBadgeComponent);
 
-// 组件安装插件
-export const ExBadgePlugin = {
-  install(app: App) {
-    app.component('ExBadge', ExBadge);
-  },
-};
-
-export default ExBadgePlugin;
+export default ExBadge;

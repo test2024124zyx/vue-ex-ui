@@ -24,6 +24,7 @@ const external = ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-ja
 const entryFiles = [
   'src/index.ts',
   'src/style-base.ts',
+  'src/style-font.ts',
   'src/locale/index.ts',
   'src/utils/index.ts',
   ...glob.sync('src/components/*/index.ts'),
@@ -47,6 +48,12 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
       outDir: 'dist/es',
       entryRoot: 'src',
+      afterDiagnostic(diagnostics) {
+        // 按需构建的声明错误同样必须阻断发布。
+        if (diagnostics.length > 0) {
+          throw new Error(`声明生成失败，共发现 ${diagnostics.length} 个类型诊断`);
+        }
+      },
     }),
   ],
   css: {

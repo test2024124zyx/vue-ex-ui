@@ -1,9 +1,5 @@
 import type { App } from 'vue';
 import { ref, shallowRef, computed } from 'vue';
-// vue-i18n 为可选依赖：仅在用户显式调用 createLocaleProvider() 时才动态加载。
-// 因此这里只做「类型导入」（编译期擦除，不产生运行时依赖），未安装 vue-i18n 的
-// 项目使用内置的轻量翻译实现即可正常工作。
-import type { Composer, I18n, NamedValue } from 'vue-i18n';
 import enUS from './en-US';
 import zhCN from './zh-CN';
 import { logger } from '../utils/logger';
@@ -11,6 +7,18 @@ import { logger } from '../utils/logger';
 export type Locale = typeof enUS;
 export type LocaleKey = keyof Locale;
 export type LocaleMessages = Record<string, unknown>;
+export type TranslationParams = Record<string, unknown>;
+
+interface LocaleComposer {
+  locale: { value: string };
+  messages: { value: Record<string, Record<string, unknown>> };
+  t(key: string, params?: TranslationParams): string;
+}
+
+interface LocaleI18n {
+  global: LocaleComposer;
+  install(app: App): void;
+}
 
 // 支持的语言列表
 export const SUPPORTED_LOCALES = {
@@ -24,7 +32,7 @@ export type SupportedLocale = keyof typeof SUPPORTED_LOCALES;
 export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
 // 用 shallowRef 持有 vue-i18n 实例（可能异步加载完成）。设为响应式后，
 // 当实例就绪时，读取过它的 t()/模板会自动重新求值，无需手动刷新。
-const _i18n = shallowRef<I18n | null>(null);
+const _i18n = shallowRef<LocaleI18n | null>(null);
 
 // 当前语言状态 - 使用响应式
 const currentLocale = ref<SupportedLocale>(DEFAULT_LOCALE);
@@ -42,16 +50,16 @@ export function setLocale(locale: SupportedLocale): void {
     return;
   }
   if (_i18n.value) {
-    (_i18n.value.global as Composer).locale.value = locale;
+    _i18n.value.global.locale.value = locale;
   } else {
     currentLocale.value = locale;
   }
 }
 
 // 获取翻译文本
-export function t(key: string, params?: NamedValue): string {
+export function t(key: string, params?: TranslationParams): string {
   if (_i18n.value) {
-    const composer = _i18n.value.global as Composer;
+    const composer = _i18n.value.global;
     return params ? composer.t(key, params) : composer.t(key);
   }
   const keys = key.split('.');
@@ -82,15 +90,15 @@ export function t(key: string, params?: NamedValue): string {
 // 返回对象里的 t 始终是模块级响应式 t()，即便 vue-i18n 稍后异步就绪也能自动生效。
 export function useI18n() {
   if (_i18n.value) {
-    return _i18n.value.global as Composer;
+    return _i18n.value.global;
   }
   return { t, locale: currentLocale, setLocale, getCurrentLocale };
 }
 
 export function useLocale(componentName: keyof Locale) {
   if (_i18n.value) {
-    const composer = _i18n.value.global as Composer;
-    const tWithScope = (key: string, params?: NamedValue) => {
+    const composer = _i18n.value.global;
+    const tWithScope = (key: string, params?: TranslationParams) => {
       const fullKey = `${componentName}.${key}`;
       return params ? composer.t(fullKey, params) : composer.t(fullKey);
     };
@@ -130,7 +138,7 @@ export function createLocaleProvider(options: LocaleProviderOptions = {}) {
       // 动态加载 vue-i18n（可选依赖）。未安装时静默降级到内置翻译。
       import('vue-i18n')
         .then(({ createI18n }) => {
-          _i18n.value = createI18n({ legacy: false, locale: initial, messages });
+          _i18n.value = createI18n({ legacy: false, locale: initial, messages }) as LocaleI18n;
           app.use(_i18n.value);
         })
         .catch(() => {

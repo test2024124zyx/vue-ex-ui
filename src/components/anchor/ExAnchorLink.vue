@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="linkRef"
-    class="ex-anchor-link"
-    :class="{ 'is-active': isActive }"
-  >
+  <div ref="linkRef" class="ex-anchor-link" :class="{ 'is-active': isActive }">
     <a
       :href="href"
       :class="['ex-anchor-link__title', { 'is-active': isActive }]"
@@ -34,7 +30,7 @@ const anchor = inject<{
   unregisterLink: (href: string) => void;
   activeLink: { value: string };
   handleClick: (href: string, element: HTMLElement) => void;
-    }>('anchor');
+}>('anchor');
 
 const isActive = computed(() => anchor?.activeLink.value === props.href);
 
@@ -58,4 +54,4 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped lang="scss" src="./ExAnchor.scss"></style>
+<style scoped lang="scss" src="./ExAnchorLink.scss"></style>

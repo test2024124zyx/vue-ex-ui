@@ -1,0 +1,67 @@
+// ExUI 性能工具类仅由全局样式入口加载，组件样式不得重复输出这些选择器。
+
+@use 'performance' as *;
+
+.ex-performance-container {
+  @include content-visibility(auto);
+  @include prevent-layout-shift;
+}
+
+.ex-performance-list {
+  @include virtual-scroll-container;
+
+  > * {
+    @include virtual-list-item;
+  }
+}
+
+.ex-performance-image {
+  @include lazy-image;
+  content-visibility: auto;
+}
+
+.ex-performance-text {
+  @include optimized-text-rendering;
+}
+
+.ex-gpu-accelerated {
+  @include gpu-accelerate;
+}
+
+.ex-hide-on-low-end {
+  @include low-end-device {
+    display: none !important;
+  }
+}
+
+.ex-show-on-high-end {
+  display: none;
+
+  @include high-end-device {
+    display: block;
+  }
+}
+
+.ex-no-animation {
+  animation: none !important;
+  transition: none !important;
+}
+
+.ex-no-effects {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+[data-performance-critical] {
+  contain: layout style;
+}
+
+[data-performance-defer] {
+  content-visibility: auto;
+}
+
+[data-performance-static] {
+  contain: strict;
+}

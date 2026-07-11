@@ -1,6 +1,6 @@
-import type { App } from 'vue';
-import ExCheckbox from './ExCheckbox.vue';
-import ExCheckboxGroup from './ExCheckboxGroup.vue';
+import ExCheckboxComponent from './ExCheckbox.vue';
+import ExCheckboxGroupComponent from './ExCheckboxGroup.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExCheckboxProps,
   ExCheckboxEmits,
@@ -16,8 +16,12 @@ import type {
   CheckboxOption,
 } from './types';
 
-// 导出组件
-export { ExCheckbox, ExCheckboxGroup };
+export const ExCheckboxGroup: InstallableComponent<typeof ExCheckboxGroupComponent> =
+  withInstall(ExCheckboxGroupComponent);
+export const ExCheckbox: InstallableComponent<typeof ExCheckboxComponent> = withInstall(
+  ExCheckboxComponent,
+  { ExCheckboxGroup }
+);
 
 // 导出类型
 export type {
@@ -35,13 +39,4 @@ export type {
   CheckboxOption,
 };
 
-// 导出安装函数
-const ExCheckboxPlugin = {
-  install(app: App) {
-    app.component('ExCheckbox', ExCheckbox);
-    app.component('ExCheckboxGroup', ExCheckboxGroup);
-  },
-};
-
-export { ExCheckboxPlugin };
-export default ExCheckboxPlugin;
+export default ExCheckbox;

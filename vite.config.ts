@@ -12,6 +12,12 @@ export default defineConfig({
       insertTypesEntry: true,
       include: ['src/**/*'],
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+      afterDiagnostic(diagnostics) {
+        // 声明生成错误必须直接阻断发布，不能只打印后继续成功退出。
+        if (diagnostics.length > 0) {
+          throw new Error(`声明生成失败，共发现 ${diagnostics.length} 个类型诊断`);
+        }
+      },
     }),
   ],
   css: {

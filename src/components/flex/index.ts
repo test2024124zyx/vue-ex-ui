@@ -1,17 +1,14 @@
-import type { App } from 'vue';
-import ExFlex from './ExFlex.vue';
-import ExFlexItem from './ExFlexItem.vue';
+import ExFlexComponent from './ExFlex.vue';
+import ExFlexItemComponent from './ExFlexItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import './ExFlex.scss';
 import './ExFlexItem.scss';
 
-export { ExFlex, ExFlexItem };
+export const ExFlexItem: InstallableComponent<typeof ExFlexItemComponent> =
+  withInstall(ExFlexItemComponent);
+export const ExFlex: InstallableComponent<typeof ExFlexComponent> = withInstall(ExFlexComponent, {
+  ExFlexItem,
+});
 export * from './types';
 
-export const FlexPlugin = {
-  install(app: App) {
-    app.component('ExFlex', ExFlex);
-    app.component('ExFlexItem', ExFlexItem);
-  },
-};
-
-export default FlexPlugin;
+export default ExFlex;

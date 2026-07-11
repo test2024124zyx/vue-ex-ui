@@ -3,7 +3,7 @@
 
 import { ref, watch } from 'vue';
 import type { Ref } from 'vue';
-import type { Theme } from '../types/theme.d';
+import type { Theme } from '../types/theme';
 
 // 当前主题状态
 const currentTheme = ref<Theme>('neon-blue');

@@ -2,6 +2,8 @@
 // 性能优化相关的样式和混合器
 
 @use 'sass:map';
+@use 'sass:meta';
+@use 'sass:string';
 @use 'tokens' as *;
 
 // ============================================================================
@@ -26,8 +28,34 @@
 }
 
 // 条件性应用过渡（仅在用户允许时）
+@function _is-safe-transition-duration($value) {
+  // 数值与名称中含 duration 的 CSS 变量均视为时长，其余参数兼容为属性列表。
+  @if meta.type-of($value) == 'number' {
+    @return true;
+  }
+
+  @return string.index(meta.inspect($value), 'duration') != null;
+}
+
 @mixin safe-transition($properties: all, $duration: 200ms, $timing: ease) {
-  transition: $properties $duration $timing;
+  $resolved-properties: $properties;
+  $resolved-duration: $duration;
+  $resolved-timing: $timing;
+
+  @if not _is-safe-transition-duration($duration) {
+    $resolved-properties: ($properties, $duration);
+    $resolved-duration: 200ms;
+
+    @if $timing != ease {
+      $resolved-properties: ($properties, $duration, $timing);
+      $resolved-timing: ease;
+    }
+  }
+
+  // 长写法同时支持单属性与属性列表，避免第二个属性被误当成持续时间。
+  transition-property: $resolved-properties;
+  transition-duration: $resolved-duration;
+  transition-timing-function: $resolved-timing;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -309,86 +337,3 @@
   @include respect-motion-preference;
 }
 
-// ============================================================================
-// 性能优化工具类
-// ============================================================================
-
-// 性能优化的容器
-.ex-performance-container {
-  @include content-visibility(auto);
-  @include prevent-layout-shift;
-}
-
-// 性能优化的列表
-.ex-performance-list {
-  @include virtual-scroll-container;
-
-  > * {
-    @include virtual-list-item;
-  }
-}
-
-// 性能优化的图片
-.ex-performance-image {
-  @include lazy-image;
-  content-visibility: auto;
-}
-
-// 性能优化的文本
-.ex-performance-text {
-  @include optimized-text-rendering;
-}
-
-// GPU 加速的元素
-.ex-gpu-accelerated {
-  @include gpu-accelerate;
-}
-
-// 低端设备隐藏
-.ex-hide-on-low-end {
-  @include low-end-device {
-    display: none !important;
-  }
-}
-
-// 高端设备显示
-.ex-show-on-high-end {
-  display: none;
-
-  @include high-end-device {
-    display: block;
-  }
-}
-
-// 禁用动画类
-.ex-no-animation {
-  animation: none !important;
-  transition: none !important;
-}
-
-// 禁用效果类
-.ex-no-effects {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  backdrop-filter: none !important;
-  filter: none !important;
-}
-
-// ============================================================================
-// 性能监控辅助
-// ============================================================================
-
-// 标记性能关键元素
-[data-performance-critical] {
-  contain: layout style;
-}
-
-// 标记可延迟加载元素
-[data-performance-defer] {
-  content-visibility: auto;
-}
-
-// 标记静态元素（不会改变）
-[data-performance-static] {
-  contain: strict;
-}

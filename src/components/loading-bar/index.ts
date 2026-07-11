@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExLoadingBar from './ExLoadingBar.vue';
+import ExLoadingBarComponent from './ExLoadingBar.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import { loadingBar } from './loading-bar';
 import type {
   ExLoadingBarProps,
@@ -9,23 +9,16 @@ import type {
 } from './types';
 
 // 导出组件类型
-export type {
-  ExLoadingBarProps,
-  LoadingBarOptions,
-  LoadingBarInstance,
-  LoadingBarStatus,
+export type { ExLoadingBarProps, LoadingBarOptions, LoadingBarInstance, LoadingBarStatus };
+
+export const ExLoadingBar: InstallableComponent<typeof ExLoadingBarComponent> =
+  withInstall(ExLoadingBarComponent);
+export { loadingBar };
+
+const installComponent = ExLoadingBar.install;
+ExLoadingBar.install = app => {
+  installComponent(app);
+  app.config.globalProperties.$loadingBar = loadingBar;
 };
 
-// 导出组件和 API
-export { ExLoadingBar, loadingBar };
-
-// 组件安装插件
-export const ExLoadingBarPlugin = {
-  install(app: App) {
-    app.component('ExLoadingBar', ExLoadingBar);
-    // 将 loadingBar 方法挂载到全局属性
-    app.config.globalProperties.$loadingBar = loadingBar;
-  },
-};
-
-export default ExLoadingBarPlugin;
+export default ExLoadingBar;

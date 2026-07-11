@@ -2,7 +2,6 @@
   <li ref="subMenuRef" :class="subMenuClasses" :style="subMenuStyles" role="none">
     <template v-if="isHorizontal">
       <ExDropdown
-        ref="dropdownRef"
         :visible="isOpen"
         trigger="hover"
         :placement="popupPlacement"
@@ -160,7 +159,6 @@ interface MenuContext {
 const subMenuRef = ref<HTMLLIElement>();
 const titleButtonRef = ref<HTMLButtonElement>();
 const submenuListRef = ref<HTMLUListElement>();
-const dropdownRef = ref<InstanceType<typeof ExDropdown>>();
 // 用全局唯一 id，避免同一页面多个 Menu 含相同 itemKey 的子菜单时 DOM id / aria-controls 冲突
 const submenuId = generateId('ex-submenu');
 const menuContext = inject<MenuContext | null>('exMenu', null);

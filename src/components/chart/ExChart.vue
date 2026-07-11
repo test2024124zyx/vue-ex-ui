@@ -29,10 +29,14 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, shallowRef } from 'vue';
-// 仅类型导入：echarts 作为可选依赖，运行时通过动态 import() 按需加载，
-// 不会作为顶层静态依赖被打进产物。
-import type * as echarts from 'echarts';
-import type { ExChartProps, ExChartEmits, ExChartExposed } from './types';
+import type {
+  ChartEventParams,
+  ChartInstance,
+  ChartOption,
+  ExChartProps,
+  ExChartEmits,
+  ExChartExposed,
+} from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize, useGlobalConfig } from '../config-provider/composables';
 import { getChartTheme, applyNeonGlow } from './utils';
@@ -70,7 +74,7 @@ const globalConfig = useGlobalConfig();
 
 // 引用
 const chartRef = ref<HTMLDivElement>();
-const chartInstance = shallowRef<echarts.ECharts | null>(null);
+const chartInstance = shallowRef<ChartInstance | null>(null);
 const resizeObserver = ref<ResizeObserver | null>(null);
 const resizeTimer = ref<number | null>(null);
 // 异步初始化竞态控制：序号 + 卸载标记
@@ -152,7 +156,7 @@ const initChart = async () => {
     chartInstance.value = echartsLib.init(chartRef.value, themeConfig, {
       renderer: props.renderer,
       ...props.initOptions,
-    });
+    }) as unknown as ChartInstance;
 
     // 设置配置选项
     updateChart();
@@ -176,7 +180,7 @@ const updateChart = () => {
 
   try {
     // 合并配置
-    const mergedOption = {
+    const mergedOption: ChartOption = {
       ...props.option,
       animation: globalConfig.animation.value,
       animationDuration: props.animationDuration,
@@ -220,37 +224,37 @@ const bindEvents = () => {
 
   // 绑定点击事件
   chartInstance.value?.on('click', params => {
-    emit('click', params as echarts.ECElementEvent);
+    emit('click', params as ChartEventParams);
   });
 
   // 绑定双击事件
   chartInstance.value?.on('dblclick', params => {
-    emit('dblclick', params as echarts.ECElementEvent);
+    emit('dblclick', params as ChartEventParams);
   });
 
   // 绑定鼠标移入事件
   chartInstance.value?.on('mouseover', params => {
-    emit('mouseover', params as echarts.ECElementEvent);
+    emit('mouseover', params as ChartEventParams);
   });
 
   // 绑定鼠标移出事件
   chartInstance.value?.on('mouseout', params => {
-    emit('mouseout', params as echarts.ECElementEvent);
+    emit('mouseout', params as ChartEventParams);
   });
 
   // 绑定鼠标移动事件
   chartInstance.value?.on('mousemove', params => {
-    emit('mousemove', params as echarts.ECElementEvent);
+    emit('mousemove', params as ChartEventParams);
   });
 
   // 绑定数据缩放事件
   chartInstance.value?.on('datazoom', params => {
-    emit('datazoom', params as echarts.ECElementEvent);
+    emit('datazoom', params as ChartEventParams);
   });
 
   // 绑定图例选择改变事件
   chartInstance.value?.on('legendselectchanged', params => {
-    emit('legendselectchanged', params as echarts.ECElementEvent);
+    emit('legendselectchanged', params as ChartEventParams);
   });
 
   // 渲染完成事件
@@ -319,7 +323,7 @@ const dispose = () => {
 };
 
 const setOption = (
-  option: echarts.EChartsOption,
+  option: ChartOption,
   opts?: {
     notMerge?: boolean;
     lazyUpdate?: boolean;

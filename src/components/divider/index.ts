@@ -1,17 +1,11 @@
-import type { App } from 'vue';
-import ExDivider from './ExDivider.vue';
+import ExDividerComponent from './ExDivider.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type { ExDividerProps } from './types';
 
 // 导出组件
-export { ExDivider };
+export const ExDivider: InstallableComponent<typeof ExDividerComponent> =
+  withInstall(ExDividerComponent);
 
-// 组件安装插件
-export const ExDividerPlugin = {
-  install(app: App) {
-    app.component('ExDivider', ExDivider);
-  },
-};
-
-export default ExDividerPlugin;
+export default ExDivider;

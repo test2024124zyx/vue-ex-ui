@@ -3,8 +3,8 @@
  * 用于全局展示操作反馈信息
  */
 
-import type { App } from 'vue';
-import ExMessage from './ExMessage.vue';
+import ExMessageComponent from './ExMessage.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import { message } from './message';
 import type {
   ExMessageProps,
@@ -17,8 +17,15 @@ import type {
   MessagePosition,
 } from './types';
 
-// 导出组件
-export { ExMessage, message };
+export const ExMessage: InstallableComponent<typeof ExMessageComponent> =
+  withInstall(ExMessageComponent);
+export { message };
+
+const installComponent = ExMessage.install;
+ExMessage.install = app => {
+  installComponent(app);
+  app.config.globalProperties.$message = message;
+};
 
 // 导出类型
 export type {
@@ -32,14 +39,4 @@ export type {
   MessagePosition,
 };
 
-// 组件安装插件
-export const ExMessagePlugin = {
-  install(app: App) {
-    // 注册组件
-    app.component('ExMessage', ExMessage);
-    // 挂载全局方法
-    app.config.globalProperties.$message = message;
-  },
-};
-
-export default ExMessagePlugin;
+export default ExMessage;

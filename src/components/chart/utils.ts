@@ -1,4 +1,4 @@
-import type * as echarts from 'echarts';
+import type { ChartComponentOption, ChartGradient, ChartOption } from './types';
 
 /**
  * 获取图表主题配置
@@ -227,7 +227,7 @@ export function getChartTheme(theme: string): object {
 /**
  * 应用霓虹发光效果到图表配置
  */
-export function applyNeonGlow(option: echarts.EChartsOption, theme: string): void {
+export function applyNeonGlow(option: ChartOption, theme: string): void {
   if (!option.series) return;
 
   const glowColor = theme === 'neon-pink' ? 'rgba(255, 0, 127, 0.3)' : 'rgba(0, 240, 255, 0.3)';
@@ -301,7 +301,7 @@ export function createGradientColor(
   color1: string,
   color2: string,
   direction: 'horizontal' | 'vertical' = 'vertical'
-): echarts.LinearGradientObject {
+): ChartGradient {
   return {
     type: 'linear',
     x: 0,
@@ -334,7 +334,7 @@ export function formatNumber(value: number, decimals = 2): string {
 /**
  * 生成默认的工具栏配置
  */
-export function createDefaultToolbox(): echarts.ToolboxComponentOption {
+export function createDefaultToolbox(): ChartComponentOption {
   return {
     feature: {
       saveAsImage: {
@@ -378,7 +378,7 @@ export function createDefaultToolbox(): echarts.ToolboxComponentOption {
 /**
  * 生成默认的数据缩放配置
  */
-export function createDefaultDataZoom(): echarts.DataZoomComponentOption[] {
+export function createDefaultDataZoom(): ChartComponentOption[] {
   return [
     {
       type: 'slider',
@@ -419,7 +419,7 @@ export function createDefaultDataZoom(): echarts.DataZoomComponentOption[] {
 /**
  * 生成默认的图例配置
  */
-export function createDefaultLegend(): echarts.LegendComponentOption {
+export function createDefaultLegend(): ChartComponentOption {
   return {
     textStyle: {
       color: '#e6f0ff',
@@ -436,7 +436,7 @@ export function createDefaultLegend(): echarts.LegendComponentOption {
 /**
  * 生成默认的提示框配置
  */
-export function createDefaultTooltip(): echarts.TooltipComponentOption {
+export function createDefaultTooltip(): ChartComponentOption {
   return {
     trigger: 'axis',
     backgroundColor: 'rgba(15, 23, 32, 0.95)',
@@ -471,7 +471,7 @@ export function createDefaultTooltip(): echarts.TooltipComponentOption {
 /**
  * 生成默认的网格配置
  */
-export function createDefaultGrid(): echarts.GridComponentOption {
+export function createDefaultGrid(): ChartComponentOption {
   return {
     left: '3%',
     right: '4%',

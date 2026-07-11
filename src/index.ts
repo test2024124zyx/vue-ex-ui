@@ -1,43 +1,36 @@
 import type { App, Plugin } from 'vue';
+import { withInstall } from './utils/install';
 
 // 导入所有
 import ExAffix from './components/affix';
-import ExAlert from './components/alert';
+import { ExAlert } from './components/alert';
 import ExAnchor, { ExAnchorLink } from './components/anchor';
-import ExAvatar from './components/avatar';
-import ExBadge from './components/badge';
-import ExBreadcrumb, { ExBreadcrumbItem } from './components/breadcrumb';
-import ExButton from './components/button';
+import { ExAvatar, ExAvatarGroup } from './components/avatar';
+import { ExBadge } from './components/badge';
+import { ExBreadcrumb, ExBreadcrumbItem } from './components/breadcrumb';
+import { ExButton } from './components/button';
 import ExCard from './components/card';
-import ExCheckbox, { ExCheckboxGroup } from './components/checkbox';
+import { ExCheckbox, ExCheckboxGroup } from './components/checkbox';
 import ExCollapse, { ExCollapseItem } from './components/collapse';
 import ExConfigProvider from './components/config-provider';
 import ExDialog from './components/dialog';
-import ExDivider from './components/divider';
-import ExDrawer from './components/drawer';
+import { ExDivider } from './components/divider';
+import { ExDrawer } from './components/drawer';
 import ExDropdown, { ExDropdownItem } from './components/dropdown';
-import ExEllipsis from './components/ellipsis';
+import { ExEllipsis } from './components/ellipsis';
 import ExEmpty from './components/empty';
-import FlexPlugin, { ExFlex, ExFlexItem } from './components/flex';
+import { ExFlex, ExFlexItem } from './components/flex';
 import ExForm, { ExFormItem } from './components/form';
-import GridPlugin, { ExGrid, ExGridItem } from './components/grid';
-import ExHeatmap from './components/heatmap';
-import ExIcon from './components/icon';
+import { ExGrid, ExGridItem } from './components/grid';
+import { ExHeatmap } from './components/heatmap';
+import { ExIcon } from './components/icon';
 import ExTag, { ExTagInput } from './components/tag';
-import {
-  LayoutPlugin,
-  ExLayout,
-  ExHeader,
-  ExContent,
-  ExFooter,
-  ExSider,
-  ExContainer,
-} from './components/layout';
-import ExImage from './components/image';
-import ExDateTimePicker from './components/datetime-picker';
-import ExInput from './components/input';
-import ExLink from './components/link';
-import ExList from './components/list';
+import { ExLayout, ExHeader, ExContent, ExFooter, ExSider, ExContainer } from './components/layout';
+import { ExImage } from './components/image';
+import { ExDateTimePicker } from './components/datetime-picker';
+import { ExInput } from './components/input';
+import { ExLink } from './components/link';
+import { ExList } from './components/list';
 import ExLoading, {
   loadingService,
   showLoading,
@@ -45,49 +38,49 @@ import ExLoading, {
   destroyLoading,
 } from './components/loading';
 import LoadingPlugin from './components/loading/LoadingService';
-import ExLoadingBar, { loadingBar } from './components/loading-bar';
-import MenuPlugin, { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
-import ExMessage, { message } from './components/message';
+import { ExLoadingBar, loadingBar } from './components/loading-bar';
+import { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
+import { ExMessage, message } from './components/message';
 import ExModal from './components/modal';
-import ExNotification, { notification } from './components/notification';
-import ExPagination from './components/pagination';
+import { ExNotification, notification } from './components/notification';
+import { ExPagination } from './components/pagination';
 import ExPanel from './components/panel';
 import ExPopconfirm from './components/popconfirm';
 import ExPopover from './components/popover';
-import ExProgress from './components/progress';
+import { ExProgress } from './components/progress';
 import ExQRCode from './components/qrcode';
 import ExBarcode from './components/barcode';
-import ExRadio, { ExRadioGroup } from './components/radio';
+import { ExRadio, ExRadioGroup } from './components/radio';
 import ExRate from './components/rate';
-import ExSelect from './components/select';
+import { ExSelect } from './components/select';
 import ExSkeleton from './components/skeleton';
 import ExSlider from './components/slider';
-import ExSpace from './components/space';
-import ExSteps, { ExStep } from './components/steps';
+import { ExSpace } from './components/space';
+import { ExSteps, ExStep } from './components/steps';
 import ExSwitch from './components/switch';
 import ExTable from './components/table';
 import ExTabs, { ExTabPane } from './components/tabs';
-import ExTooltip from './components/tooltip';
-import ExTree from './components/tree';
-import ExTypography from './components/typography';
-import ExVirtualList from './components/virtual-list';
-import ExWatermark from './components/watermark';
+import { ExTooltip } from './components/tooltip';
+import { ExTree } from './components/tree';
+import { ExTypography } from './components/typography';
+import { ExVirtualList } from './components/virtual-list';
+import { ExWatermark } from './components/watermark';
 import ExFileUpload from './components/file-upload';
 import ExFileDownload from './components/file-download';
 import ExFilePreview from './components/file-preview';
 import ExImageCrop from './components/image-crop';
 import ExImageCompress from './components/image-compress';
 import ExFileList from './components/file-list';
-import ExCalendar from './components/calendar';
-import TimelinePlugin, { ExTimeline, ExTimelineItem } from './components/timeline';
+import { ExCalendar } from './components/calendar';
+import { ExTimeline, ExTimelineItem } from './components/timeline';
 import ExCode from './components/code';
-import CarouselPlugin, { ExCarousel, ExCarouselItem } from './components/carousel';
+import { ExCarousel, ExCarouselItem } from './components/carousel';
 import ExCascader from './components/cascader';
 import ExNumberInput from './components/number-input';
 import ExBackTop from './components/back-top';
-import ExPageHeader from './components/page-header';
-import ExChart from './components/chart';
-import ExVerificationCode from './components/verification-code';
+import { ExPageHeader } from './components/page-header';
+import { ExChart } from './components/chart';
+import { ExVerificationCode } from './components/verification-code';
 import ExColorPicker from './components/color-picker';
 import ExTimePicker from './components/time-picker';
 import ExTreeSelect from './components/tree-select';
@@ -96,13 +89,14 @@ import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 // 导入样式（全局导入时自动引入）
 import './styles/index.scss';
 
-// 导出所有组
-export {
+// v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
+const publicComponents = [
   ExAffix,
   ExAlert,
   ExAnchor,
   ExAnchorLink,
   ExAvatar,
+  ExAvatarGroup,
   ExBadge,
   ExBreadcrumb,
   ExBreadcrumbItem,
@@ -140,7 +134,114 @@ export {
   ExList,
   ExLoading,
   ExLoadingBar,
-  MenuPlugin,
+  ExMenu,
+  ExMenuItem,
+  ExSubMenu,
+  ExMessage,
+  ExModal,
+  ExNotification,
+  ExPagination,
+  ExPanel,
+  ExPopconfirm,
+  ExPopover,
+  ExProgress,
+  ExQRCode,
+  ExBarcode,
+  ExRadio,
+  ExRadioGroup,
+  ExRate,
+  ExSelect,
+  ExSkeleton,
+  ExSlider,
+  ExSpace,
+  ExSteps,
+  ExStep,
+  ExSwitch,
+  ExTable,
+  ExTabs,
+  ExTabPane,
+  ExTooltip,
+  ExTree,
+  ExTypography,
+  ExVirtualList,
+  ExWatermark,
+  ExDateTimePicker,
+  ExTag,
+  ExTagInput,
+  ExFileUpload,
+  ExFileDownload,
+  ExFilePreview,
+  ExImageCrop,
+  ExImageCompress,
+  ExFileList,
+  ExCalendar,
+  ExTimeline,
+  ExTimelineItem,
+  ExCode,
+  ExCarousel,
+  ExCarouselItem,
+  ExCascader,
+  ExNumberInput,
+  ExChart,
+  ExBackTop,
+  ExPageHeader,
+  ExVerificationCode,
+  ExColorPicker,
+  ExTimePicker,
+  ExTreeSelect,
+  ExDescriptions,
+  ExDescriptionsItem,
+] as const;
+
+for (const component of publicComponents) {
+  withInstall(component);
+}
+
+// 导出所有组
+export {
+  ExAffix,
+  ExAlert,
+  ExAnchor,
+  ExAnchorLink,
+  ExAvatar,
+  ExAvatarGroup,
+  ExBadge,
+  ExBreadcrumb,
+  ExBreadcrumbItem,
+  ExButton,
+  ExCard,
+  ExCheckbox,
+  ExCheckboxGroup,
+  ExCollapse,
+  ExCollapseItem,
+  ExConfigProvider,
+  ExDialog,
+  ExDivider,
+  ExDrawer,
+  ExDropdown,
+  ExDropdownItem,
+  ExEllipsis,
+  ExEmpty,
+  ExFlex,
+  ExFlexItem,
+  ExForm,
+  ExFormItem,
+  ExGrid,
+  ExGridItem,
+  ExHeatmap,
+  ExIcon,
+  ExLayout,
+  ExHeader,
+  ExContent,
+  ExFooter,
+  ExSider,
+  ExContainer,
+  ExImage,
+  ExInput,
+  ExLink,
+  ExList,
+  ExLoading,
+  ExLoadingBar,
   ExMenu,
   ExMenuItem,
   ExSubMenu,
@@ -307,104 +408,12 @@ export {
   DEFAULT_LOCALE,
 } from './locale';
 
-// 所有组件列
-// 修复组件安装问题
-const components = [
-  ExAffix,
-  ExAlert,
-  ExAnchor,
-  ExAnchorLink,
-  ExAvatar,
-  ExBadge,
-  ExBreadcrumb,
-  ExBreadcrumbItem,
-  ExButton,
-  ExCard,
-  ExCheckbox,
-  ExCheckboxGroup,
-  ExCollapse,
-  ExCollapseItem,
-  ExConfigProvider,
-  ExDialog,
-  ExDivider,
-  ExDrawer,
-  ExDropdown,
-  ExEllipsis,
-  ExEmpty,
-  FlexPlugin,
-  ExForm,
-  ExFormItem,
-  GridPlugin,
-  ExHeatmap,
-  ExIcon,
-  LayoutPlugin,
-  ExImage,
-  ExInput,
-  ExLink,
-  ExList,
-  ExLoading,
-  ExLoadingBar,
-  MenuPlugin,
-  ExMessage,
-  ExModal,
-  ExNotification,
-  ExPagination,
-  ExPanel,
-  ExPopconfirm,
-  ExPopover,
-  ExProgress,
-  ExQRCode,
-  ExBarcode,
-  ExRadio,
-  ExRadioGroup,
-  ExRate,
-  ExSelect,
-  ExSkeleton,
-  ExSlider,
-  ExSpace,
-  ExSteps,
-  ExStep,
-  ExSwitch,
-  ExTable,
-  ExTabs,
-  ExTabPane,
-  ExDateTimePicker,
-  ExTooltip,
-  ExTree,
-  ExTypography,
-  ExVirtualList,
-  ExWatermark,
-  ExTag,
-  ExTagInput,
-  ExFileUpload,
-  ExFileDownload,
-  ExFilePreview,
-  ExImageCrop,
-  ExImageCompress,
-  ExFileList,
-  ExCalendar,
-  TimelinePlugin,
-  ExCode,
-  CarouselPlugin,
-  ExCascader,
-  ExNumberInput,
-  ExChart,
-  ExBackTop,
-  ExPageHeader,
-  ExVerificationCode,
-  ExColorPicker,
-  ExTimePicker,
-  ExTreeSelect,
-  ExDescriptions,
-];
-
 // 安装函数
 const install: Plugin['install'] = (app: App) => {
-  components.forEach(component => {
-    if (component && typeof component === 'object' && 'install' in component) {
-      app.use(component as { install: (app: App) => void });
-    }
-  });
+  for (const component of publicComponents) {
+    app.use(component as Plugin);
+  }
+
   // 注册 v-loading 指令与 $loading 全局服务
   app.use(LoadingPlugin);
 };
@@ -441,7 +450,7 @@ export type {
   CustomThemeConfig,
   ThemeSwitchOptions,
   ThemeChangeEvent,
-} from './types/theme.d';
-export { THEME_CONFIGS, getThemeConfig, isDarkTheme, isHighContrastTheme } from './types/theme.d';
+} from './types/theme';
+export { THEME_CONFIGS, getThemeConfig, isDarkTheme, isHighContrastTheme } from './types/theme';
 
 export * from './utils';
