@@ -63,5 +63,13 @@ describe('v2 公共组件契约', () => {
     expect(publicApi.compressImages).toBeInstanceOf(Function);
     expect(publicApi.downloadCompressedImage).toBeInstanceOf(Function);
     expect(publicApi.formatBytes(1024)).toBe('1.00 KB');
+    expect(publicApi.createLoadingBar).toBeInstanceOf(Function);
+    expect(publicApi.loadingBar).toEqual(
+      expect.objectContaining({
+        start: expect.any(Function),
+        update: expect.any(Function),
+        destroy: expect.any(Function),
+      })
+    );
   });
 });

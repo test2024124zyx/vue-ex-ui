@@ -1,24 +1,18 @@
 import ExLoadingBarComponent from './ExLoadingBar.vue';
 import { withInstall, type InstallableComponent } from '../../utils/install';
-import { loadingBar } from './loading-bar';
-import type {
+
+export type {
+  ExLoadingBarExposed,
   ExLoadingBarProps,
+  LoadingBarColor,
   LoadingBarOptions,
-  LoadingBarInstance,
+  LoadingBarService,
   LoadingBarStatus,
 } from './types';
 
-// 导出组件类型
-export type { ExLoadingBarProps, LoadingBarOptions, LoadingBarInstance, LoadingBarStatus };
+export { createLoadingBar, loadingBar } from './loading-bar';
 
 export const ExLoadingBar: InstallableComponent<typeof ExLoadingBarComponent> =
   withInstall(ExLoadingBarComponent);
-export { loadingBar };
-
-const installComponent = ExLoadingBar.install;
-ExLoadingBar.install = app => {
-  installComponent(app);
-  app.config.globalProperties.$loadingBar = loadingBar;
-};
 
 export default ExLoadingBar;

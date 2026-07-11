@@ -38,7 +38,7 @@ import ExLoading, {
   destroyLoading,
 } from './components/loading';
 import LoadingPlugin from './components/loading/LoadingService';
-import { ExLoadingBar, loadingBar } from './components/loading-bar';
+import { ExLoadingBar, createLoadingBar, loadingBar } from './components/loading-bar';
 import { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
 import { ExMessage, message } from './components/message';
 import ExModal from './components/modal';
@@ -301,6 +301,7 @@ export {
   ExDescriptionsItem,
   notification,
   message,
+  createLoadingBar,
   loadingBar,
   loadingService,
   showLoading,
@@ -344,8 +345,11 @@ export type * from './components/link/types';
 export type * from './components/list/types';
 export type * from './components/loading/types';
 export type {
+  ExLoadingBarExposed,
+  ExLoadingBarProps,
+  LoadingBarColor,
   LoadingBarOptions,
-  LoadingBarInstance,
+  LoadingBarService,
   LoadingBarStatus,
 } from './components/loading-bar/types';
 export type * from './components/menu/types';
