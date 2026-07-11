@@ -1,10 +1,15 @@
 <template>
   <div
+    ref="groupRef"
     :class="groupClasses"
     :style="groupStyles"
     role="group"
-    :aria-labelledby="labelId"
+    :aria-labelledby="hasGroupLabel ? labelId : undefined"
     :aria-describedby="ariaDescribedBy"
+    :aria-required="required || undefined"
+    :aria-invalid="showErrorMessage"
+    :aria-disabled="disabled || undefined"
+    :aria-readonly="readonly || undefined"
   >
     <!-- 标签 -->
     <label v-if="label || $slots.label" :id="labelId" class="ex-checkbox-group__label">
@@ -16,7 +21,19 @@
 
     <!-- 复选框容器 -->
     <div class="ex-checkbox-group__content">
-      <slot />
+      <template v-if="options !== undefined">
+        <ExCheckbox
+          v-for="(option, index) in options"
+          :key="`${typeof option.value}-${option.value}-${index}`"
+          :value="option.value"
+          :disabled="option.disabled"
+        >
+          <slot name="option" :option="option" :index="index">
+            {{ option.label }}
+          </slot>
+        </ExCheckbox>
+      </template>
+      <slot v-else />
     </div>
 
     <!-- 底部信息 -->
@@ -56,9 +73,11 @@ import type {
   ExCheckboxGroupInstance,
 } from './types';
 import ExIcon from '../icon/ExIcon.vue';
+import ExCheckbox from './ExCheckbox.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
+import { checkboxGroupContextKey, type CheckboxRegistration } from './context';
 
 defineOptions({
   name: 'ExCheckboxGroup',
@@ -88,9 +107,12 @@ const componentSize = useComponentSize(computed(() => props.size));
 // 生成唯一 ID
 const groupId = generateId('ex-checkbox-group');
 const labelId = `${groupId}-label`;
+const groupRef = ref<HTMLDivElement>();
+const registrations = new Map<number, CheckboxRegistration>();
 
 // 状态
 const currentErrorMessage = ref('');
+const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 
 // 计算属性
 const showErrorMessage = computed(() => {
@@ -136,32 +158,48 @@ const groupStyles = computed(() => {
   return props.customStyle || {};
 });
 
-// 更新值的方法
-const updateValue = (value: string | number, checked: boolean) => {
-  if (props.disabled || props.readonly) return;
+const normalizedMin = computed(() => {
+  if (props.min === undefined || !Number.isFinite(props.min)) return 0;
+  return Math.max(0, Math.trunc(props.min));
+});
+
+const normalizedMax = computed(() => {
+  if (props.max === undefined || !Number.isFinite(props.max)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Math.trunc(props.max));
+});
+
+const commitValue = (value: Array<string | number>) => {
+  const uniqueValue = [...new Set(value)];
+  validateGroup(uniqueValue);
+  emit('update:modelValue', uniqueValue);
+  emit('change', uniqueValue);
+};
+
+// 返回是否接受本次切换，子组件据此恢复原生 checked 状态。
+const updateValue = (value: string | number, checked: boolean): boolean => {
+  if (props.disabled || props.readonly) return false;
 
   const newValue = [...props.modelValue];
   const index = newValue.indexOf(value);
 
   if (checked && index === -1) {
     // 检查最大选择数量
-    if (props.max !== undefined && newValue.length >= props.max) {
-      return;
+    if (newValue.length >= normalizedMax.value) {
+      return false;
     }
     newValue.push(value);
   } else if (!checked && index > -1) {
     // 检查最小选择数量
-    if (props.min !== undefined && newValue.length <= props.min) {
-      return;
+    if (newValue.length <= normalizedMin.value) {
+      return false;
     }
     newValue.splice(index, 1);
+  } else {
+    return true;
   }
 
-  // 验证
-  validateGroup(newValue);
-
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
+  commitValue(newValue);
+  return true;
 };
 
 // 验证复选框组
@@ -196,56 +234,83 @@ watch(
 // 提供上下文给子 Checkbox 组件。
 // size/status/disabled/readonly 用 getter 暴露，确保子组件读取时建立
 // 响应式依赖——Group 运行时改变这些属性能正确传播到所有子项。
-provide('checkboxGroup', {
+const registerCheckbox = (uid: number, registration: CheckboxRegistration) => {
+  registrations.set(uid, registration);
+};
+
+const unregisterCheckbox = (uid: number) => {
+  registrations.delete(uid);
+};
+
+provide(checkboxGroupContextKey, {
   modelValue: computed(() => props.modelValue),
-  get name() {
-    return props.name;
-  },
-  get size() {
-    return componentSize.value;
-  },
-  get status() {
-    return props.status;
-  },
-  get disabled() {
-    return props.disabled;
-  },
-  get readonly() {
-    return props.readonly;
-  },
+  name: computed(() => props.name),
+  size: componentSize,
+  status: computed(() => props.status),
+  disabled: computed(() => props.disabled),
+  readonly: computed(() => props.readonly),
   updateValue,
+  registerCheckbox,
+  unregisterCheckbox,
 });
+
+const getAvailableOptions = () => {
+  if (props.options !== undefined) return props.options;
+
+  return Array.from(registrations.values())
+    .map(registration => {
+      const value = registration.getValue();
+      return value === undefined
+        ? null
+        : { value, label: String(value), disabled: registration.isDisabled() };
+    })
+    .filter((option): option is NonNullable<typeof option> => option !== null);
+};
 
 // 暴露方法
 const checkAll = () => {
-  if (props.disabled || props.readonly || !props.options) return;
+  if (props.disabled || props.readonly) return;
 
-  const allValues = props.options.filter(option => !option.disabled).map(option => option.value);
-
-  emit('update:modelValue', allValues);
-  emit('change', allValues);
+  const result = [...new Set(props.modelValue)];
+  for (const option of getAvailableOptions()) {
+    if (!option.disabled && !result.includes(option.value) && result.length < normalizedMax.value) {
+      result.push(option.value);
+    }
+  }
+  commitValue(result);
 };
 
 const uncheckAll = () => {
   if (props.disabled || props.readonly) return;
 
-  emit('update:modelValue', []);
-  emit('change', []);
+  const options = getAvailableOptions();
+  const disabledValues = new Set(
+    options.filter(option => option.disabled).map(option => option.value)
+  );
+  const result = props.modelValue.filter(value => disabledValues.has(value));
+
+  for (const value of props.modelValue) {
+    if (result.length >= normalizedMin.value) break;
+    if (!result.includes(value)) result.push(value);
+  }
+  commitValue(result);
 };
 
 const toggleAll = () => {
-  if (props.disabled || props.readonly || !props.options) return;
+  if (props.disabled || props.readonly) return;
 
-  const allValues = props.options.filter(option => !option.disabled).map(option => option.value);
+  const enabledValues = getAvailableOptions()
+    .filter(option => !option.disabled)
+    .map(option => option.value);
+  const allEnabledChecked =
+    enabledValues.length > 0 && enabledValues.every(value => props.modelValue.includes(value));
 
-  const newValue = props.modelValue.length === allValues.length ? [] : allValues;
-
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
+  if (allEnabledChecked) uncheckAll();
+  else checkAll();
 };
 
 const getCheckboxGroupElement = () => {
-  return null; // 可以根据需要返回实际的 DOM 元素
+  return groupRef.value || null;
 };
 
 defineExpose<ExCheckboxGroupInstance>({

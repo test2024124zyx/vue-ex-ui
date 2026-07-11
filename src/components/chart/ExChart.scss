@@ -8,7 +8,7 @@
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
   overflow: visible; // 改为 visible 以避免 tooltip 被裁剪
-  @include transition(all);
+  @include transition((background-color, border-color, box-shadow));
 
   // ECharts 容器
   &__container {
@@ -83,6 +83,7 @@
   // 加载状态
   &--loading {
     pointer-events: none;
+    cursor: wait;
   }
 
   // 空状态
@@ -95,6 +96,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2;
+    background: var(--ex-color-bg-surface);
   }
 
   // 响应式设计 - 移动端优先
@@ -116,10 +119,6 @@
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 
-    .ex-chart__loading-spinner {
-      animation: none;
-      border-top-color: var(--ex-color-primary);
-    }
   }
 
   // 高对比度模式支持

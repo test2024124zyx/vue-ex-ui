@@ -10,8 +10,10 @@
         :readonly="!filterable"
         class="ex-cascader__input"
         role="combobox"
-        aria-haspopup="tree"
+        aria-haspopup="listbox"
         :aria-expanded="visible"
+        :aria-controls="dropdownId"
+        :aria-activedescendant="activeDescendant"
         @input="handleInput"
         @keydown="handleKeydown"
         @blur="handleInputBlur"
@@ -22,6 +24,8 @@
         <button
           v-if="clearable && hasValue && !disabled"
           class="ex-cascader__clear"
+          type="button"
+          :aria-label="t('common.clear')"
           @click.stop="handleClear"
         >
           <ExIcon icon="close-line" :size="14" aria-hidden="true" />
@@ -35,18 +39,30 @@
     <!-- 下拉面板（Teleport 到 body，避免被祖先 overflow:hidden 裁剪 / z-index 影响） -->
     <Teleport to="body" :disabled="!teleported">
       <transition name="ex-cascader-dropdown">
-        <div v-if="visible" ref="dropdownRef" class="ex-cascader__dropdown" :style="dropdownStyle">
+        <div
+          v-if="visible"
+          :id="dropdownId"
+          ref="dropdownRef"
+          class="ex-cascader__dropdown"
+          :style="dropdownStyle"
+        >
           <!-- 搜索结果（filterable 且有输入时） -->
-          <div v-if="filterable && searchQuery" class="ex-cascader__search-results">
-            <div
+          <div v-if="filterable && searchQuery" class="ex-cascader__search-results" role="listbox">
+            <button
               v-for="result in searchResults"
               :key="result.values.join('/')"
               class="ex-cascader__option"
               :class="{ 'ex-cascader__option--disabled': result.disabled }"
+              type="button"
+              role="option"
+              tabindex="-1"
+              :disabled="result.disabled"
+              :aria-disabled="result.disabled || undefined"
+              aria-selected="false"
               @click="handleSearchResultClick(result)"
             >
               <span class="ex-cascader__option-label">{{ result.labels.join(separator) }}</span>
-            </div>
+            </button>
             <div v-if="searchResults.length === 0" class="ex-cascader__empty">
               {{ t('cascader.noData') }}
             </div>
@@ -59,11 +75,15 @@
               class="ex-cascader__menu"
               role="listbox"
             >
-              <div
+              <button
                 v-for="(option, optIndex) in menu"
+                :id="getOptionId(index, optIndex)"
                 :key="option.value"
                 class="ex-cascader__option"
+                type="button"
+                tabindex="-1"
                 role="option"
+                :disabled="option.disabled"
                 :aria-selected="isSelected(option, index)"
                 :aria-disabled="option.disabled || undefined"
                 :class="{
@@ -82,7 +102,7 @@
                 >
                   <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -94,7 +114,7 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, useId } from 'vue';
 import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -134,14 +154,22 @@ const triggerRef = ref<HTMLDivElement>();
 const dropdownRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const visible = ref(false);
+const dropdownId = `ex-cascader-${useId()}`;
 // 下拉面板定位样式（Teleport 到 body 后用 fixed 坐标定位）
 const dropdownStyle = ref<Record<string, string>>({});
 const selectedPath = ref<(string | number)[]>([...props.modelValue]);
+const activePath = ref<(string | number)[]>([...props.modelValue]);
 const menus = ref<CascaderOption[][]>([]);
 const searchQuery = ref('');
 /** 键盘导航高亮位置：列索引与该列内选项索引（-1 表示无） */
 const activeCol = ref(0);
 const activeIndex = ref(-1);
+const activeDescendant = computed(() => {
+  if (!visible.value || activeIndex.value < 0) return undefined;
+  return getOptionId(activeCol.value, activeIndex.value);
+});
+
+const getOptionId = (column: number, index: number) => `${dropdownId}-option-${column}-${index}`;
 
 /** 搜索结果：一条完整的可选路径 */
 interface CascaderSearchResult {
@@ -231,11 +259,11 @@ const displayValue = computed(() => {
 const initMenus = () => {
   menus.value = [props.options];
 
-  if (selectedPath.value.length > 0) {
+  if (activePath.value.length > 0) {
     let currentOptions = props.options;
 
-    for (let i = 0; i < selectedPath.value.length; i++) {
-      const value = selectedPath.value[i];
+    for (let i = 0; i < activePath.value.length; i++) {
+      const value = activePath.value[i];
       const option = currentOptions.find(opt => opt.value === value);
 
       if (option && option.children && option.children.length) {
@@ -250,7 +278,7 @@ const initMenus = () => {
 
 // 判断选项是否激活
 const isActive = (option: CascaderOption, level: number) => {
-  return selectedPath.value[level] === option.value;
+  return activePath.value[level] === option.value;
 };
 
 // 判断选项是否被选中
@@ -287,7 +315,9 @@ const updateDropdownPosition = () => {
 
 // 显示/隐藏面板
 const show = () => {
-  if (props.disabled) return;
+  if (props.disabled || visible.value) return;
+  activePath.value = [...selectedPath.value];
+  initMenus();
   visible.value = true;
   emit('visible-change', true);
 
@@ -299,6 +329,7 @@ const show = () => {
 };
 
 const hide = () => {
+  if (!visible.value) return;
   visible.value = false;
   searchQuery.value = '';
   activeIndex.value = -1;
@@ -409,6 +440,7 @@ const handleSearchResultClick = (result: CascaderSearchResult) => {
   if (result.disabled) return;
 
   selectedPath.value = [...result.values];
+  activePath.value = [...result.values];
   initMenus();
   emitChange();
   searchQuery.value = '';
@@ -418,9 +450,10 @@ const handleSearchResultClick = (result: CascaderSearchResult) => {
 const handleOptionClick = (option: CascaderOption, level: number) => {
   if (option.disabled) return;
 
-  // 更新选中路径
-  selectedPath.value = selectedPath.value.slice(0, level);
-  selectedPath.value.push(option.value);
+  // 基于浏览路径提交，悬停展开的祖先不会在叶子选择时丢失。
+  const nextPath = activePath.value.slice(0, level);
+  nextPath.push(option.value);
+  activePath.value = nextPath;
 
   // 更新菜单
   menus.value = menus.value.slice(0, level + 1);
@@ -430,10 +463,12 @@ const handleOptionClick = (option: CascaderOption, level: number) => {
 
     // 如果允许选择任意一级，则触发变化
     if (props.changeOnSelect) {
+      selectedPath.value = [...nextPath];
       emitChange();
     }
   } else {
     // 叶子节点，触发变化并关闭
+    selectedPath.value = [...nextPath];
     emitChange();
     hide();
   }
@@ -442,14 +477,16 @@ const handleOptionClick = (option: CascaderOption, level: number) => {
 const handleOptionHover = (option: CascaderOption, level: number) => {
   if (option.disabled) return;
 
+  activePath.value = [...activePath.value.slice(0, level), option.value];
+  menus.value = menus.value.slice(0, level + 1);
   if (option.children && option.children.length) {
-    menus.value = menus.value.slice(0, level + 1);
     menus.value.push(option.children);
   }
 };
 
 const handleClear = () => {
   selectedPath.value = [];
+  activePath.value = [];
   menus.value = [props.options];
   emit('update:modelValue', []);
   emit('change', [], []);
@@ -495,7 +532,25 @@ watch(
   () => props.modelValue,
   newValue => {
     selectedPath.value = [...newValue];
+    activePath.value = [...newValue];
     initMenus();
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.options,
+  () => {
+    activePath.value = [...selectedPath.value];
+    initMenus();
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.disabled,
+  disabled => {
+    if (disabled) hide();
   }
 );
 

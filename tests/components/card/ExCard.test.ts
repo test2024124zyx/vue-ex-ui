@@ -19,9 +19,16 @@ describe('ExCard', () => {
   });
 
   it('renders different card types', () => {
-    const types: ExCardProps['type'][] = ['default', 'primary', 'success', 'warning', 'danger', 'info'];
+    const types: ExCardProps['type'][] = [
+      'default',
+      'primary',
+      'success',
+      'warning',
+      'danger',
+      'info',
+    ];
 
-    types.forEach((type) => {
+    types.forEach(type => {
       const wrapper = mount(ExCard, {
         props: { type },
         slots: { default: 'Card' },
@@ -33,7 +40,7 @@ describe('ExCard', () => {
   it('renders different card sizes', () => {
     const sizes: ExCardProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       const wrapper = mount(ExCard, {
         props: { size },
         slots: { default: 'Card' },
@@ -45,7 +52,7 @@ describe('ExCard', () => {
   it('renders different shadow effects', () => {
     const shadows: ExCardProps['shadow'][] = ['none', 'sm', 'base', 'md', 'lg', 'xl', 'neon'];
 
-    shadows.forEach((shadow) => {
+    shadows.forEach(shadow => {
       const wrapper = mount(ExCard, {
         props: { shadow },
         slots: { default: 'Card' },
@@ -62,12 +69,14 @@ describe('ExCard', () => {
 
     expect(wrapper.find('.ex-card__cover').exists()).toBe(true);
     expect(wrapper.find('.ex-card__cover-image').exists()).toBe(true);
-    expect(wrapper.find('.ex-card__cover-image').attributes('src')).toBe('https://example.com/image.jpg');
+    expect(wrapper.find('.ex-card__cover-image').attributes('src')).toBe(
+      'https://example.com/image.jpg'
+    );
   });
 
   it('renders with custom cover height', () => {
     const wrapper = mount(ExCard, {
-      props: { 
+      props: {
         cover: 'https://example.com/image.jpg',
         coverHeight: 300,
       },
@@ -166,6 +175,42 @@ describe('ExCard', () => {
 
     await wrapper.trigger('click');
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('有点击监听器时提供按钮语义与键盘触发能力', async () => {
+    const onClick = vi.fn();
+    const wrapper = mount(ExCard, {
+      props: { onClick },
+      slots: { default: '可交互卡片' },
+    });
+
+    expect(wrapper.attributes('role')).toBe('button');
+    expect(wrapper.attributes('tabindex')).toBe('0');
+
+    await wrapper.trigger('keydown', { key: 'Enter' });
+    await wrapper.trigger('keydown', { key: ' ' });
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(onClick.mock.calls[0]?.[0]).toBeInstanceOf(MouseEvent);
+  });
+
+  it('加载时公开忙碌与禁用语义并隔离内部交互', () => {
+    const wrapper = mount(ExCard, {
+      props: { loading: true, onClick: vi.fn() },
+      slots: { default: '<button>内部操作</button>' },
+    });
+
+    expect(wrapper.attributes('aria-busy')).toBe('true');
+    expect(wrapper.attributes('aria-disabled')).toBe('true');
+    expect(wrapper.attributes('tabindex')).toBe('-1');
+    expect(wrapper.find('.ex-card__body').attributes()).toHaveProperty('inert');
+    expect(wrapper.find('.ex-card__loading').attributes('role')).toBe('status');
+  });
+
+  it('没有点击监听器时不会伪装成可交互控件', () => {
+    const wrapper = mount(ExCard, { slots: { default: '静态卡片' } });
+
+    expect(wrapper.attributes('role')).toBeUndefined();
+    expect(wrapper.attributes('tabindex')).toBeUndefined();
   });
 
   it('renders with custom class', () => {

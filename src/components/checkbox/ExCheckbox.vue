@@ -12,9 +12,13 @@
         :checked="isChecked"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
+        :name="currentName"
         :required="required"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
+        :aria-readonly="currentReadonly || undefined"
+        :aria-checked="ariaChecked"
+        @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -29,11 +33,14 @@
         :class="inputClasses"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
+        :name="currentName"
         :required="required"
         :true-value="trueValue"
         :false-value="falseValue"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
+        :aria-readonly="currentReadonly || undefined"
+        :aria-checked="ariaChecked"
         @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
@@ -94,7 +101,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, useSlots, inject } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  useSlots,
+  inject,
+  getCurrentInstance,
+  onBeforeUnmount,
+  onMounted,
+} from 'vue';
 import type {
   ExCheckboxProps,
   ExCheckboxEmits,
@@ -106,6 +122,7 @@ import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
 import { useFormItem } from '../form/use-form-item';
+import { checkboxGroupContextKey } from './context';
 
 defineOptions({
   name: 'ExCheckbox',
@@ -113,7 +130,6 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExCheckboxProps>(), {
   size: undefined,
-  status: 'default',
   trueValue: true,
   falseValue: false,
   disabled: false,
@@ -137,15 +153,16 @@ const componentSize = useComponentSize(computed(() => props.size));
 const formItem = useFormItem();
 
 // 注入 CheckboxGroup 上下文（如果存在）
-const checkboxGroupContext = inject<{
-  modelValue: import('vue').ComputedRef<Array<string | number>>;
-  name?: string;
-  size?: string;
-  status?: string;
-  disabled?: boolean;
-  readonly?: boolean;
-  updateValue: (value: string | number, checked: boolean) => void;
-} | null>('checkboxGroup', null);
+const checkboxGroupContext = inject(checkboxGroupContextKey, null);
+const instance = getCurrentInstance();
+
+if (checkboxGroupContext && instance) {
+  checkboxGroupContext.registerCheckbox(instance.uid, {
+    getValue: () => props.value,
+    isDisabled: () => props.disabled,
+  });
+  onBeforeUnmount(() => checkboxGroupContext.unregisterCheckbox(instance.uid));
+}
 
 // 生成唯一ID
 const checkboxId = generateId('ex-checkbox');
@@ -191,19 +208,26 @@ const currentSize = computed(() => {
   if (props.size) {
     return props.size;
   }
-  return checkboxGroupContext?.size || componentSize.value;
+  return checkboxGroupContext?.size.value || componentSize.value;
 });
 
 const currentStatus = computed(() => {
-  return checkboxGroupContext?.status || props.status;
+  return props.status ?? checkboxGroupContext?.status.value ?? 'default';
 });
 
 const currentDisabled = computed(() => {
-  return checkboxGroupContext?.disabled || props.disabled;
+  return checkboxGroupContext?.disabled.value || props.disabled;
 });
 
 const currentReadonly = computed(() => {
-  return checkboxGroupContext?.readonly || props.readonly;
+  return checkboxGroupContext?.readonly.value || props.readonly;
+});
+
+const currentName = computed(() => checkboxGroupContext?.name.value);
+
+const ariaChecked = computed(() => {
+  if (props.indeterminate) return 'mixed';
+  return isChecked.value ? 'true' : 'false';
 });
 
 const iconSize = computed(() => {
@@ -299,7 +323,11 @@ const handleChange = (event: Event) => {
 
   if (checkboxGroupContext && props.value !== undefined) {
     // CheckboxGroup 模式
-    checkboxGroupContext.updateValue(props.value, target.checked);
+    const accepted = checkboxGroupContext.updateValue(props.value, target.checked);
+    if (!accepted) {
+      target.checked = isChecked.value;
+      target.indeterminate = props.indeterminate;
+    }
   } else {
     // 独立模式
     const value = target.checked ? props.trueValue : props.falseValue;
@@ -366,6 +394,13 @@ watch(
   },
   { immediate: true }
 );
+
+const syncIndeterminate = () => {
+  if (checkboxRef.value) checkboxRef.value.indeterminate = props.indeterminate;
+};
+
+onMounted(syncIndeterminate);
+watch(() => props.indeterminate, syncIndeterminate, { flush: 'post' });
 
 // 暴露方法
 const focus = () => {

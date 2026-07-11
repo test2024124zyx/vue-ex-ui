@@ -22,22 +22,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const chartOption = ref({
   xAxis: {
     type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
   },
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],
-    type: 'line',
-    smooth: true
-  }]
-})
+  series: [
+    {
+      data: [120, 200, 150, 80, 70, 110, 130],
+      type: 'line',
+      smooth: true,
+    },
+  ],
+});
 </script>
 ```
 
@@ -74,6 +76,7 @@ const chartOption = ref({
 ```
 
 支持的主题：
+
 - **neon-blue** - 霓虹蓝主题（默认）
 - **neon-pink** - 霓虹粉主题
 - **dark** - 暗黑主题
@@ -86,11 +89,7 @@ const chartOption = ref({
 自动调整大小，支持防抖延迟：
 
 ```vue
-<ex-chart 
-  :option="chartOption" 
-  :auto-resize="true" 
-  :resize-delay="300" 
-/>
+<ex-chart :option="chartOption" :auto-resize="true" :resize-delay="300" />
 ```
 
 ## 加载状态
@@ -118,11 +117,7 @@ const chartOption = ref({
 监听图表事件：
 
 ```vue
-<ex-chart 
-  :option="chartOption" 
-  @click="handleClick"
-  @finished="handleFinished"
-/>
+<ex-chart :option="chartOption" @click="handleClick" @finished="handleFinished" />
 ```
 
 ## 方法调用
@@ -135,21 +130,21 @@ const chartOption = ref({
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const chartRef = ref()
+const chartRef = ref();
 
 // 获取 ECharts 实例
-const instance = chartRef.value?.getInstance()
+const instance = chartRef.value?.getInstance();
 
 // 调整大小
-chartRef.value?.resize()
+chartRef.value?.resize();
 
 // 清空图表
-chartRef.value?.clear()
+chartRef.value?.clear();
 
 // 导出图片
-const dataURL = chartRef.value?.getDataURL()
+const dataURL = chartRef.value?.getDataURL();
 </script>
 ```
 
@@ -168,19 +163,19 @@ import {
   createDefaultLegend,
   createDefaultTooltip,
   createDefaultGrid,
-} from 'vue-ex-ui'
+} from 'vue-ex-ui';
 
 // 获取主题配置
-const theme = getChartTheme('neon-blue')
+const theme = getChartTheme('neon-blue');
 
 // 应用霓虹发光
-applyNeonGlow(option, 'neon-blue')
+const glowingOption = applyNeonGlow(option, 'neon-blue');
 
 // 创建渐变色
-const gradient = createGradientColor('#00f0ff', '#ff007f')
+const gradient = createGradientColor('#00f0ff', '#ff007f');
 
 // 格式化数字
-const formatted = formatNumber(1234567) // "1.23M"
+const formatted = formatNumber(1234567); // "1.23M"
 ```
 
 ## 性能优化

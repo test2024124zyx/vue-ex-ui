@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExCascader from '../../../src/components/cascader/ExCascader.vue';
 import type { CascaderOption } from '../../../src/components/cascader/types';
+
+enableAutoUnmount(afterEach);
 
 describe('ExCascader', () => {
   const options: CascaderOption[] = [
@@ -70,6 +72,86 @@ describe('ExCascader', () => {
       const changed = wrapper.emitted('change');
       expect(changed).toBeTruthy();
       expect(changed![changed!.length - 1][0]).toEqual(['zhejiang', 'hangzhou', 'xihu']);
+    });
+
+    it('悬停展开时保留祖先路径并在叶子选择后提交完整值', async () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, trigger: 'hover', teleported: false },
+      });
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+
+      await wrapper
+        .findAll('.ex-cascader__menu')[0]
+        .findAll('.ex-cascader__option')[0]
+        .trigger('mouseenter');
+      await nextTick();
+      await wrapper
+        .findAll('.ex-cascader__menu')[1]
+        .findAll('.ex-cascader__option')[0]
+        .trigger('mouseenter');
+      await nextTick();
+      await wrapper
+        .findAll('.ex-cascader__menu')[2]
+        .findAll('.ex-cascader__option')[0]
+        .trigger('click');
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+        ['zhejiang', 'hangzhou', 'xihu'],
+      ]);
+    });
+
+    it('禁用的搜索结果使用原生禁用控件且不能提交值', async () => {
+      const disabledOptions: CascaderOption[] = [
+        {
+          value: 'disabled-parent',
+          label: '禁用区域',
+          disabled: true,
+          children: [{ value: 'leaf', label: '目标节点' }],
+        },
+      ];
+      const wrapper = mount(ExCascader, {
+        props: { options: disabledOptions, filterable: true, teleported: false },
+      });
+      const input = wrapper.find('.ex-cascader__input');
+      await input.setValue('目标');
+
+      const result = wrapper.find('.ex-cascader__search-results .ex-cascader__option');
+      expect(result.element.tagName).toBe('BUTTON');
+      expect(result.attributes()).toHaveProperty('disabled');
+      await result.trigger('click');
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    });
+  });
+
+  describe('动态属性', () => {
+    it('options 变化后立即重建菜单而不保留旧选项引用', async () => {
+      const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+
+      await wrapper.setProps({
+        options: [{ value: 'guangdong', label: '广东' }],
+      });
+
+      expect(wrapper.find('.ex-cascader__menu').text()).toContain('广东');
+      expect(wrapper.find('.ex-cascader__menu').text()).not.toContain('浙江');
+    });
+
+    it('打开状态下切换为 disabled 会立即关闭面板', async () => {
+      const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+      await wrapper.setProps({ disabled: true });
+
+      expect(wrapper.find('.ex-cascader__input').attributes('aria-expanded')).toBe('false');
+      expect(wrapper.emitted('visible-change')?.at(-1)).toEqual([false]);
+    });
+
+    it('面板未打开时外部点击不会产生虚假的关闭事件', async () => {
+      const wrapper = mount(ExCascader, { props: { options } });
+
+      document.body.click();
+      await nextTick();
+
+      expect(wrapper.emitted('visible-change')).toBeUndefined();
     });
   });
 

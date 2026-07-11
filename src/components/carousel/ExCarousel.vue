@@ -18,6 +18,7 @@
         @touchstart="handleTouchStart"
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
+        @touchcancel="resetTouch"
       >
         <slot />
       </div>
@@ -30,6 +31,7 @@
         :class="{ 'ex-carousel__arrow--disabled': !canGoPrev }"
         :disabled="!canGoPrev"
         :aria-label="t('carousel.previous')"
+        type="button"
         @click="prev"
       >
         <slot name="arrow-prev">
@@ -45,6 +47,7 @@
         :class="{ 'ex-carousel__arrow--disabled': !canGoNext }"
         :disabled="!canGoNext"
         :aria-label="t('carousel.next')"
+        type="button"
         @click="next"
       >
         <slot name="arrow-next">
@@ -66,6 +69,7 @@
         :class="{ 'ex-carousel__indicator--active': index === currentIndex }"
         :aria-label="`${t('carousel.goToSlide')} ${index + 1}`"
         :aria-current="index === currentIndex ? 'true' : 'false'"
+        type="button"
         @click="goTo(index)"
       >
         <span class="ex-carousel__indicator-dot" />
@@ -80,6 +84,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, onMounted, onBeforeUnmount, provide, watch } from 'vue';
 import type { ExCarouselProps, ExCarouselEmits, ExCarouselExposed } from './types';
 import { useI18n } from '../../locale';
+import { carouselContextKey } from './context';
 
 defineOptions({
   name: 'ExCarousel',
@@ -120,32 +125,91 @@ const { t } = useI18n();
 
 const carouselRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
-const currentIndex = ref(modelValue.value);
+const currentIndex = ref(
+  Number.isFinite(modelValue.value) ? Math.max(0, Math.trunc(modelValue.value)) : 0
+);
 const isHovering = ref(false);
 const autoplayTimer = ref<number>();
 const itemCount = ref(0);
 const isTransitioning = ref(false);
+let transitionTimer: number | undefined;
+let mounted = false;
+let itemObserver: MutationObserver | undefined;
 
 // 触摸相关
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchEndX = ref(0);
 const touchEndY = ref(0);
+const touchActive = ref(false);
 
-// 子组件注册（支持动态增删，索引由 getItemIndex 实时计算，避免一次性快照错位）
+// 子项索引以真实 DOM 顺序为准，保证 keyed 节点重排后语义与视觉顺序一致。
 const itemUids = ref<number[]>([]);
-const registerItem = (uid: number) => {
-  if (!itemUids.value.includes(uid)) {
-    itemUids.value = [...itemUids.value, uid];
+const itemElements = new Map<number, HTMLElement>();
+const elementUids = new Map<HTMLElement, number>();
+
+const normalizeIndex = (value: number, count = itemCount.value): number => {
+  const integer = Number.isFinite(value) ? Math.trunc(value) : 0;
+  if (count <= 0) return Math.max(0, integer);
+  return Math.min(Math.max(0, integer), count - 1);
+};
+
+const reconcileCurrentIndex = (emitCorrection: boolean) => {
+  const nextIndex = normalizeIndex(currentIndex.value);
+  if (nextIndex === currentIndex.value) return;
+
+  const previousIndex = currentIndex.value;
+  currentIndex.value = nextIndex;
+  if (emitCorrection) {
+    emit('update:modelValue', nextIndex);
+    emit('change', nextIndex, previousIndex);
   }
 };
+
+const syncItemOrder = () => {
+  const orderedUids = trackRef.value
+    ? Array.from(trackRef.value.children)
+        .map(element => elementUids.get(element as HTMLElement))
+        .filter((uid): uid is number => uid !== undefined)
+    : [];
+  const orderChanged =
+    orderedUids.length !== itemUids.value.length ||
+    orderedUids.some((uid, index) => uid !== itemUids.value[index]);
+  const previousCount = itemCount.value;
+
+  if (orderChanged) {
+    itemUids.value = orderedUids;
+  }
+  itemCount.value = orderedUids.length;
+
+  if (itemCount.value < previousCount) {
+    reconcileCurrentIndex(true);
+  }
+  if (mounted && itemCount.value !== previousCount) {
+    startAutoplay();
+  }
+};
+
+const registerItem = (uid: number, element: HTMLElement) => {
+  const previousElement = itemElements.get(uid);
+  if (previousElement && previousElement !== element) {
+    elementUids.delete(previousElement);
+  }
+  itemElements.set(uid, element);
+  elementUids.set(element, uid);
+  syncItemOrder();
+};
+
 const unregisterItem = (uid: number) => {
-  itemUids.value = itemUids.value.filter(u => u !== uid);
+  const element = itemElements.get(uid);
+  if (element) elementUids.delete(element);
+  itemElements.delete(uid);
+  syncItemOrder();
 };
 const getItemIndex = (uid: number) => itemUids.value.indexOf(uid);
 
 // 提供给子组件
-provide('carousel', {
+provide(carouselContextKey, {
   currentIndex,
   direction,
   effect,
@@ -209,24 +273,17 @@ const trackStyles = computed(() => {
 });
 
 const canGoPrev = computed(() => {
-  return loop.value || currentIndex.value > 0;
+  return loop.value ? itemCount.value > 1 : currentIndex.value > 0;
 });
 
 const canGoNext = computed(() => {
-  return loop.value || currentIndex.value < itemCount.value - 1;
+  return loop.value ? itemCount.value > 1 : currentIndex.value < itemCount.value - 1;
 });
 
-// 方法
-const updateItemCount = () => {
-  if (trackRef.value) {
-    itemCount.value = trackRef.value.children.length;
-  }
-};
-
 const goTo = (index: number) => {
-  if (isTransitioning.value) return;
+  if (isTransitioning.value || itemCount.value === 0) return;
 
-  const newIndex = Math.max(0, Math.min(index, itemCount.value - 1));
+  const newIndex = normalizeIndex(index);
 
   if (newIndex === currentIndex.value) return;
 
@@ -237,8 +294,9 @@ const goTo = (index: number) => {
   emit('update:modelValue', newIndex);
   emit('change', newIndex, oldIndex);
 
-  setTimeout(() => {
+  transitionTimer = window.setTimeout(() => {
     isTransitioning.value = false;
+    transitionTimer = undefined;
   }, 300);
 };
 
@@ -267,17 +325,17 @@ const prev = () => {
 };
 
 const startAutoplay = () => {
+  stopAutoplay();
   if (!autoplay.value || itemCount.value <= 1) return;
 
-  stopAutoplay();
-
+  const delay = Number.isFinite(interval.value) && interval.value > 0 ? interval.value : 3000;
   autoplayTimer.value = window.setInterval(() => {
     next();
-  }, interval.value);
+  }, delay);
 };
 
 const stopAutoplay = () => {
-  if (autoplayTimer.value) {
+  if (autoplayTimer.value !== undefined) {
     clearInterval(autoplayTimer.value);
     autoplayTimer.value = undefined;
   }
@@ -306,9 +364,13 @@ const handleTouchStart = (e: TouchEvent) => {
 
   touchStartX.value = touch.clientX;
   touchStartY.value = touch.clientY;
+  touchEndX.value = touch.clientX;
+  touchEndY.value = touch.clientY;
+  touchActive.value = true;
 };
 
 const handleTouchMove = (e: TouchEvent) => {
+  if (!touchActive.value) return;
   const touch = e.touches[0];
   if (!touch) return;
 
@@ -326,7 +388,17 @@ const handleTouchMove = (e: TouchEvent) => {
   }
 };
 
+const resetTouch = () => {
+  touchActive.value = false;
+  touchStartX.value = 0;
+  touchStartY.value = 0;
+  touchEndX.value = 0;
+  touchEndY.value = 0;
+};
+
 const handleTouchEnd = () => {
+  if (!touchActive.value) return;
+
   const deltaX = touchEndX.value - touchStartX.value;
   const deltaY = touchEndY.value - touchStartY.value;
 
@@ -350,18 +422,17 @@ const handleTouchEnd = () => {
     }
   }
 
-  touchStartX.value = 0;
-  touchStartY.value = 0;
-  touchEndX.value = 0;
-  touchEndY.value = 0;
+  resetTouch();
 };
 
 // 监听 modelValue 变化（受控）：直接同步 currentIndex，绕过过渡锁，避免脱节
 watch(modelValue, newValue => {
-  if (newValue !== currentIndex.value) {
-    const max = Math.max(0, itemCount.value - 1);
-    const clamped = Math.max(0, Math.min(newValue, max));
-    if (clamped !== currentIndex.value) {
+  const clamped = normalizeIndex(newValue);
+  if (clamped !== newValue) {
+    emit('update:modelValue', clamped);
+  }
+  if (clamped !== currentIndex.value) {
+    if (itemCount.value > 0) {
       const oldIndex = currentIndex.value;
       currentIndex.value = clamped;
       emit('change', clamped, oldIndex);
@@ -370,7 +441,7 @@ watch(modelValue, newValue => {
 });
 
 // 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）
-watch([autoplay, interval], () => {
+watch([autoplay, interval, pauseOnHover], () => {
   stopAutoplay();
   if (!(isHovering.value && pauseOnHover.value)) {
     startAutoplay();
@@ -379,27 +450,33 @@ watch([autoplay, interval], () => {
 
 // 生命周期
 onMounted(() => {
-  updateItemCount();
+  mounted = true;
+  syncItemOrder();
+  reconcileCurrentIndex(true);
   startAutoplay();
 
   // 监听子元素变化
   if (trackRef.value) {
-    const observer = new MutationObserver(() => {
-      updateItemCount();
+    itemObserver = new MutationObserver(() => {
+      syncItemOrder();
     });
 
-    observer.observe(trackRef.value, {
+    itemObserver.observe(trackRef.value, {
       childList: true,
-    });
-
-    onBeforeUnmount(() => {
-      observer.disconnect();
     });
   }
 });
 
 onBeforeUnmount(() => {
+  mounted = false;
+  itemObserver?.disconnect();
+  itemObserver = undefined;
   stopAutoplay();
+  resetTouch();
+  if (transitionTimer !== undefined) {
+    window.clearTimeout(transitionTimer);
+    transitionTimer = undefined;
+  }
 });
 
 // 暴露的方法

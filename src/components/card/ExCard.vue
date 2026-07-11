@@ -4,27 +4,47 @@
     :class="cardClasses"
     :style="cardStyles"
     :aria-label="ariaLabel"
+    :role="hasClickListener() ? 'button' : undefined"
+    :tabindex="hasClickListener() ? (loading ? -1 : 0) : undefined"
+    :aria-busy="loading || undefined"
+    :aria-disabled="hasClickListener() && loading ? 'true' : undefined"
     @click="handleClick"
+    @keydown="handleKeydown"
   >
     <!-- 封面图片 -->
-    <div v-if="cover || $slots.cover" class="ex-card__cover" :style="coverStyle">
+    <div
+      v-if="cover || $slots.cover"
+      class="ex-card__cover"
+      :style="coverStyle"
+      :inert="loading || undefined"
+    >
       <slot name="cover">
-        <img :src="cover" :alt="ariaLabel || 'Card cover'" class="ex-card__cover-image" />
+        <img :src="cover" :alt="ariaLabel || ''" class="ex-card__cover-image" />
       </slot>
     </div>
 
     <!-- 卡片头部 -->
-    <div v-if="$slots.header" class="ex-card__header" :style="headerStyle">
+    <div
+      v-if="$slots.header"
+      class="ex-card__header"
+      :style="headerStyle"
+      :inert="loading || undefined"
+    >
       <slot name="header" />
     </div>
 
     <!-- 卡片内容 -->
-    <div class="ex-card__body" :style="bodyStyle">
+    <div class="ex-card__body" :style="bodyStyle" :inert="loading || undefined">
       <slot />
     </div>
 
     <!-- 卡片底部 -->
-    <div v-if="$slots.footer || $slots.actions" class="ex-card__footer" :style="footerStyle">
+    <div
+      v-if="$slots.footer || $slots.actions"
+      class="ex-card__footer"
+      :style="footerStyle"
+      :inert="loading || undefined"
+    >
       <slot name="footer">
         <div v-if="$slots.actions" class="ex-card__actions">
           <slot name="actions" />
@@ -33,7 +53,13 @@
     </div>
 
     <!-- 加载遮罩 -->
-    <div v-if="loading" class="ex-card__loading">
+    <div
+      v-if="loading"
+      class="ex-card__loading"
+      role="status"
+      aria-live="polite"
+      :aria-label="t('common.loading')"
+    >
       <div class="ex-card__loading-spinner" />
     </div>
   </div>
@@ -41,8 +67,9 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref } from 'vue';
+import { computed, getCurrentInstance, ref } from 'vue';
 import type { ExCardProps, ExCardEmits, ExCardExposed } from './types';
+import { useI18n } from '../../locale';
 
 defineOptions({
   name: 'ExCard',
@@ -58,8 +85,13 @@ const props = withDefaults(defineProps<ExCardProps>(), {
 });
 
 const emit = defineEmits<ExCardEmits>();
+const { t } = useI18n();
 
 const cardRef = ref<HTMLDivElement>();
+const instance = getCurrentInstance();
+
+// 仅在实际注册 click 监听器时提供按钮语义，静态卡片不会进入 Tab 顺序。
+const hasClickListener = (): boolean => Boolean(instance?.vnode.props?.onClick);
 
 // 计算属性
 const cardClasses = computed(() => {
@@ -99,6 +131,21 @@ const handleClick = (event: MouseEvent) => {
   if (!props.loading) {
     emit('click', event);
   }
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (
+    props.loading ||
+    !hasClickListener() ||
+    event.target !== event.currentTarget ||
+    (event.key !== 'Enter' && event.key !== ' ')
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  // 使用原生 click 生成 MouseEvent，使键盘与指针事件保持同一事件契约。
+  cardRef.value?.click();
 };
 
 // 暴露的方法

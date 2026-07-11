@@ -1,10 +1,8 @@
-import type { App } from 'vue';
-import ExCascader from './ExCascader.vue';
+import ExCascaderComponent from './ExCascader.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExCascader.install = (app: App) => {
-  app.component('ExCascader', ExCascader);
-};
+export const ExCascader: InstallableComponent<typeof ExCascaderComponent> =
+  withInstall(ExCascaderComponent);
 
 export default ExCascader;
-export { ExCascader };
 export type * from './types';

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick, reactive } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import type { ExChartProps } from '../../../src/components/chart/types';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../../../src/components/config-provider/types';
@@ -64,6 +64,7 @@ describe('ExChart', () => {
     if (wrapper) {
       wrapper.unmount();
     }
+    vi.unstubAllGlobals();
   });
 
   it('渲染正确的默认属性', () => {
@@ -330,5 +331,86 @@ describe('ExChart', () => {
     });
 
     expect(wrapper.find('.ex-chart').exists()).toBe(true);
+  });
+
+  it('将工具栏、缩放、图例和提示开关转换为真实 ECharts 配置', async () => {
+    wrapper = mount(ExChart, {
+      props: {
+        option: defaultOption,
+        showToolbox: true,
+        showDataZoom: true,
+        showLegend: false,
+        showTooltip: false,
+      },
+    });
+    await flushPromises();
+
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)?.value as unknown as {
+      setOption: ReturnType<typeof vi.fn>;
+    };
+    const appliedOption = instance.setOption.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+
+    expect(appliedOption.toolbox).toMatchObject({ show: true });
+    expect(appliedOption.dataZoom).toBeInstanceOf(Array);
+    expect(appliedOption.legend).toMatchObject({ show: false });
+    expect(appliedOption.tooltip).toMatchObject({ show: false });
+  });
+
+  it('应用霓虹效果时不修改调用方传入的 option', async () => {
+    const option = {
+      series: [{ type: 'line', data: [1, 2, 3] }],
+    };
+    wrapper = mount(ExChart, { props: { option } });
+
+    await flushPromises();
+
+    expect(option.series[0]).not.toHaveProperty('lineStyle');
+    expect(option.series[0]).not.toHaveProperty('itemStyle');
+  });
+
+  it('响应 option 的嵌套数据变化', async () => {
+    const option = reactive({
+      series: [{ type: 'line', data: [1, 2] }],
+    });
+    const host = defineComponent({
+      setup() {
+        return () => h(ExChart, { option });
+      },
+    });
+    wrapper = mount(host);
+    await flushPromises();
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)?.value as unknown as {
+      setOption: ReturnType<typeof vi.fn>;
+    };
+    const callsBeforeMutation = instance.setOption.mock.calls.length;
+
+    option.series[0]?.data.push(3);
+    await nextTick();
+
+    expect(instance.setOption.mock.calls.length).toBeGreaterThan(callsBeforeMutation);
+  });
+
+  it('autoResize 动态切换时创建并释放 ResizeObserver', async () => {
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    const ResizeObserverMock = vi.fn(function (this: {
+      observe: typeof observe;
+      disconnect: typeof disconnect;
+    }) {
+      this.observe = observe;
+      this.disconnect = disconnect;
+    });
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    wrapper = mount(ExChart, {
+      props: { option: defaultOption, autoResize: false },
+    });
+    await flushPromises();
+    expect(observe).not.toHaveBeenCalled();
+
+    await wrapper.setProps({ autoResize: true });
+    expect(observe).toHaveBeenCalledOnce();
+
+    await wrapper.setProps({ autoResize: false });
+    expect(disconnect).toHaveBeenCalledOnce();
   });
 });

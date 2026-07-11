@@ -10,8 +10,6 @@ export interface CascaderOption {
   children?: CascaderOption[];
   /** 是否禁用 */
   disabled?: boolean;
-  /** 是否为叶子节点 */
-  leaf?: boolean;
 }
 
 /**

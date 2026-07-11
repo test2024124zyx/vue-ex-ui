@@ -153,10 +153,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    border: 0;
+    background: transparent;
     color: var(--ex-color-text-primary);
+    font: inherit;
+    text-align: left;
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    appearance: none;
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover:not(&--disabled) {
       background: var(--ex-color-bg-hover);
@@ -291,4 +300,3 @@
   opacity: 0;
   transform: scaleY(0.8);
 }
-

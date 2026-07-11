@@ -212,6 +212,20 @@ describe('ExCheckbox', () => {
 
       expect(wrapper.find('.ex-checkbox__indeterminate-icon').exists()).toBe(true);
     });
+
+    it('同步原生 indeterminate 属性与 mixed ARIA 语义', async () => {
+      const wrapper = mount(ExCheckbox, {
+        props: { indeterminate: true },
+        slots: { default: 'Checkbox' },
+      });
+      const input = wrapper.find('input').element as HTMLInputElement;
+
+      expect(input.indeterminate).toBe(true);
+      expect(wrapper.find('input').attributes('aria-checked')).toBe('mixed');
+
+      await wrapper.setProps({ indeterminate: false });
+      expect(input.indeterminate).toBe(false);
+    });
   });
 
   // 事件测试

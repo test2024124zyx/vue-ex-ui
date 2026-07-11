@@ -1,4 +1,4 @@
-import type { ChartComponentOption, ChartGradient, ChartOption } from './types';
+import type { ChartComponentOption, ChartGradient, ChartOption, ChartSeriesOption } from './types';
 
 /**
  * 获取图表主题配置
@@ -227,71 +227,78 @@ export function getChartTheme(theme: string): object {
 /**
  * 应用霓虹发光效果到图表配置
  */
-export function applyNeonGlow(option: ChartOption, theme: string): void {
-  if (!option.series) return;
+export function applyNeonGlow(option: ChartOption, theme: string): ChartOption {
+  if (!option.series) return { ...option };
 
   const glowColor = theme === 'neon-pink' ? 'rgba(255, 0, 127, 0.3)' : 'rgba(0, 240, 255, 0.3)';
 
-  const series = Array.isArray(option.series) ? option.series : [option.series];
-
-  series.forEach(s => {
-    if (!s) return;
+  const enhanceSeries = (series: ChartSeriesOption): ChartSeriesOption => {
+    const enhanced = { ...series };
 
     // 折线图发光效果
-    if (s.type === 'line') {
-      s.lineStyle = {
-        ...s.lineStyle,
+    if (series.type === 'line') {
+      enhanced.lineStyle = {
+        ...series.lineStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
-      s.itemStyle = {
-        ...s.itemStyle,
+      enhanced.itemStyle = {
+        ...series.itemStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
     }
 
     // 柱状图发光效果
-    if (s.type === 'bar') {
-      s.itemStyle = {
-        ...s.itemStyle,
+    if (series.type === 'bar') {
+      enhanced.itemStyle = {
+        ...series.itemStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
     }
 
     // 饼图发光效果
-    if (s.type === 'pie') {
-      s.itemStyle = {
-        ...s.itemStyle,
+    if (series.type === 'pie') {
+      enhanced.itemStyle = {
+        ...series.itemStyle,
         shadowBlur: 15,
         shadowColor: glowColor,
       };
     }
 
     // 散点图发光效果
-    if (s.type === 'scatter') {
-      s.itemStyle = {
-        ...s.itemStyle,
+    if (series.type === 'scatter') {
+      enhanced.itemStyle = {
+        ...series.itemStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
     }
 
     // 雷达图发光效果
-    if (s.type === 'radar') {
-      s.lineStyle = {
-        ...s.lineStyle,
+    if (series.type === 'radar') {
+      enhanced.lineStyle = {
+        ...series.lineStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
-      s.itemStyle = {
-        ...s.itemStyle,
+      enhanced.itemStyle = {
+        ...series.itemStyle,
         shadowBlur: 10,
         shadowColor: glowColor,
       };
     }
-  });
+
+    return enhanced;
+  };
+
+  return {
+    ...option,
+    series: Array.isArray(option.series)
+      ? option.series.map(enhanceSeries)
+      : enhanceSeries(option.series),
+  };
 }
 
 /**

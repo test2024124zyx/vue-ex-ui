@@ -4,13 +4,7 @@ import type { ExChartProps, ExChartEmits, ExChartExposed } from './types';
 
 // 导出组件类型
 export type { ExChartProps, ExChartEmits, ExChartExposed };
-export type {
-  ChartType,
-  ChartTheme,
-  ChartSize,
-  ChartLoadingStatus,
-  ChartPresetConfig,
-} from './types';
+export type { ChartType, ChartTheme, ChartSize } from './types';
 
 // 导出工具函数
 export {

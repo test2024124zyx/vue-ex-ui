@@ -878,26 +878,24 @@ const handleFinished = () => {
 
 ### Props
 
-| 参数               | 说明                     | 类型            | 可选值                                                                                                                                                 | 默认值 |
-| ------------------ | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| option             | ECharts 配置选项         | EChartsOption   | —                                                                                                                                                      | —      |
-| type               | 图表类型（用于预设配置） | string          | line / bar / pie / scatter / radar / gauge / funnel / candlestick / heatmap / tree / treemap / sunburst / graph / sankey / boxplot / parallel / custom | —      |
-| size               | 图表尺寸                 | string          | small / medium / large                                                                                                                                 | medium |
-| width              | 图表宽度                 | string / number | —                                                                                                                                                      | 100%   |
-| height             | 图表高度                 | string / number | —                                                                                                                                                      | 400px  |
-| loading            | 是否显示加载动画         | boolean         | —                                                                                                                                                      | false  |
-| loading-text       | 加载文本                 | string          | —                                                                                                                                                      | —      |
-| auto-resize        | 是否自动调整大小         | boolean         | —                                                                                                                                                      | true   |
-| resize-delay       | 调整大小防抖延迟（毫秒） | number          | —                                                                                                                                                      | 300    |
-| show-toolbox       | 是否显示工具栏           | boolean         | —                                                                                                                                                      | false  |
-| show-data-zoom     | 是否显示数据缩放         | boolean         | —                                                                                                                                                      | false  |
-| show-legend        | 是否显示图例             | boolean         | —                                                                                                                                                      | true   |
-| show-tooltip       | 是否显示提示框           | boolean         | —                                                                                                                                                      | true   |
-| show-grid          | 是否显示网格             | boolean         | —                                                                                                                                                      | true   |
-| animation-duration | 动画时长（毫秒）         | number          | —                                                                                                                                                      | 1000   |
-| renderer           | 图表渲染器               | string          | canvas / svg                                                                                                                                           | canvas |
-| init-options       | 初始化配置               | EChartsInitOpts | —                                                                                                                                                      | —      |
-| aria-label         | 无障碍标签               | string          | —                                                                                                                                                      | —      |
+| 参数               | 说明                     | 类型            | 可选值                 | 默认值 |
+| ------------------ | ------------------------ | --------------- | ---------------------- | ------ |
+| option             | ECharts 配置选项         | EChartsOption   | —                      | —      |
+| size               | 图表尺寸                 | string          | small / medium / large | medium |
+| width              | 图表宽度                 | string / number | —                      | 100%   |
+| height             | 图表高度                 | string / number | —                      | 400px  |
+| loading            | 是否显示加载动画         | boolean         | —                      | false  |
+| loading-text       | 加载文本                 | string          | —                      | —      |
+| auto-resize        | 是否自动调整大小         | boolean         | —                      | true   |
+| resize-delay       | 调整大小防抖延迟（毫秒） | number          | —                      | 300    |
+| show-toolbox       | 是否显示工具栏           | boolean         | —                      | false  |
+| show-data-zoom     | 是否显示数据缩放         | boolean         | —                      | false  |
+| show-legend        | 是否显示图例             | boolean         | —                      | true   |
+| show-tooltip       | 是否显示提示框           | boolean         | —                      | true   |
+| animation-duration | 动画时长（毫秒）         | number          | —                      | 1000   |
+| renderer           | 图表渲染器               | string          | canvas / svg           | canvas |
+| init-options       | 初始化配置               | EChartsInitOpts | —                      | —      |
+| aria-label         | 无障碍标签               | string          | —                      | —      |
 
 ### Events
 

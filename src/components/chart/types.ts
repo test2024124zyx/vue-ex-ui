@@ -38,11 +38,6 @@ export type ChartTheme =
  */
 export type ChartSize = 'small' | 'medium' | 'large';
 
-/**
- * 图表加载状态
- */
-export type ChartLoadingStatus = 'idle' | 'loading' | 'success' | 'error';
-
 export interface ChartSeriesOption extends Record<string, unknown> {
   type?: ChartType | string;
   lineStyle?: Record<string, unknown>;
@@ -101,8 +96,6 @@ export type ChartComponentOption = Record<string, unknown>;
 export interface ExChartProps {
   /** 图表配置选项 */
   option: ChartOption;
-  /** 图表类型（用于预设配置） */
-  type?: ChartType;
   /** 图表尺寸 */
   size?: ChartSize;
   /** 图表宽度 */
@@ -125,8 +118,6 @@ export interface ExChartProps {
   showLegend?: boolean;
   /** 是否显示提示框 */
   showTooltip?: boolean;
-  /** 是否显示网格 */
-  showGrid?: boolean;
   /** 动画时长（毫秒） */
   animationDuration?: number;
   /** 自定义CSS类名 */
@@ -209,14 +200,4 @@ export interface ExChartExposed {
   convertToPixel: (finder: unknown, value: unknown) => number | number[];
   /** 转换像素到坐标 */
   convertFromPixel: (finder: unknown, value: unknown) => number | number[];
-}
-
-/**
- * 图表预设配置
- */
-export interface ChartPresetConfig {
-  /** 图表类型 */
-  type: ChartType;
-  /** 默认配置 */
-  defaultOption: Partial<ChartOption>;
 }

@@ -3,6 +3,7 @@
     :class="chartClasses"
     :style="chartStyles"
     :aria-label="ariaLabel || t('chart.chart')"
+    :aria-busy="loading || undefined"
     role="img"
   >
     <!-- ECharts 容器 - 始终存在 -->
@@ -39,8 +40,14 @@ import type {
 } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize, useGlobalConfig } from '../config-provider/composables';
-import { getChartTheme, applyNeonGlow } from './utils';
-import { logger } from '../../utils/logger';
+import {
+  getChartTheme,
+  applyNeonGlow,
+  createDefaultDataZoom,
+  createDefaultLegend,
+  createDefaultToolbox,
+  createDefaultTooltip,
+} from './utils';
 import ExEmpty from '../empty/ExEmpty.vue';
 import ExLoading from '../loading/ExLoading.vue';
 
@@ -49,7 +56,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExChartProps>(), {
-  type: undefined,
   size: undefined,
   width: '100%',
   height: '400px',
@@ -61,7 +67,6 @@ const props = withDefaults(defineProps<ExChartProps>(), {
   showDataZoom: false,
   showLegend: true,
   showTooltip: true,
-  showGrid: true,
   animationDuration: 1000,
   renderer: 'canvas',
 });
@@ -128,7 +133,6 @@ const isEmpty = computed(() => {
 // 初始化图表
 const initChart = async () => {
   if (!chartRef.value) {
-    logger.warn('Chart container not found');
     return;
   }
 
@@ -166,12 +170,30 @@ const initChart = async () => {
 
     // 触发初始化完成事件
     emit('init', chartInstance.value);
-
-    logger.info('Chart initialized successfully');
   } catch (error) {
-    logger.error('Failed to initialize chart:', error);
     emit('error', error as Error);
   }
+};
+
+const asComponentOption = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const cloneSeries = (series: ChartOption['series']): ChartOption['series'] => {
+  if (Array.isArray(series)) {
+    return series.map(item => ({
+      ...item,
+      ...(item.lineStyle ? { lineStyle: { ...item.lineStyle } } : {}),
+      ...(item.itemStyle ? { itemStyle: { ...item.itemStyle } } : {}),
+    }));
+  }
+  if (!series) return series;
+  return {
+    ...series,
+    ...(series.lineStyle ? { lineStyle: { ...series.lineStyle } } : {}),
+    ...(series.itemStyle ? { itemStyle: { ...series.itemStyle } } : {}),
+  };
 };
 
 // 更新图表
@@ -180,29 +202,42 @@ const updateChart = () => {
 
   try {
     // 合并配置
-    const mergedOption: ChartOption = {
+    let mergedOption: ChartOption = {
       ...props.option,
+      series: cloneSeries(props.option.series),
       animation: globalConfig.animation.value,
-      animationDuration: props.animationDuration,
+      animationDuration:
+        Number.isFinite(props.animationDuration) && props.animationDuration >= 0
+          ? props.animationDuration
+          : 1000,
     };
 
-    // 确保 tooltip 配置正确，避免被容器遮挡
-    if (!mergedOption.tooltip) {
-      mergedOption.tooltip = {};
-    }
-    // 设置 tooltip 的 z-index，确保在最上层
-    if (typeof mergedOption.tooltip === 'object') {
-      mergedOption.tooltip = {
-        ...mergedOption.tooltip,
-        // 使用全局 z-index 配置，确保 tooltip 在最上层
-        appendToBody: true,
-        confine: false, // 不限制在图表容器内
-      };
-    }
+    mergedOption.toolbox = {
+      ...(props.showToolbox ? createDefaultToolbox() : {}),
+      ...asComponentOption(props.option.toolbox),
+      show: props.showToolbox,
+    };
+    mergedOption.legend = {
+      ...(props.showLegend ? createDefaultLegend() : {}),
+      ...asComponentOption(props.option.legend),
+      show: props.showLegend,
+    };
+    mergedOption.tooltip = {
+      ...(props.showTooltip ? createDefaultTooltip() : {}),
+      ...asComponentOption(props.option.tooltip),
+      show: props.showTooltip,
+      appendToBody: true,
+      confine: false,
+    };
+    mergedOption.dataZoom = props.showDataZoom
+      ? Array.isArray(props.option.dataZoom) && props.option.dataZoom.length > 0
+        ? props.option.dataZoom.map(item => ({ ...asComponentOption(item) }))
+        : createDefaultDataZoom()
+      : [];
 
     // 应用霓虹发光效果（使用全局配置）
     if (globalConfig.neonEffect.value) {
-      applyNeonGlow(mergedOption, globalConfig.theme.value);
+      mergedOption = applyNeonGlow(mergedOption, globalConfig.theme.value);
     }
 
     // 设置配置：notMerge 保证声明式 option 为完整状态，series 减少时不残留旧系列
@@ -210,10 +245,7 @@ const updateChart = () => {
       notMerge: true,
       lazyUpdate: true,
     });
-
-    logger.info('Chart updated successfully');
   } catch (error) {
-    logger.error('Failed to update chart:', error);
     emit('error', error as Error);
   }
 };
@@ -267,23 +299,25 @@ const bindEvents = () => {
 const handleResize = () => {
   if (!chartInstance.value || !props.autoResize) return;
 
-  if (resizeTimer.value) {
+  if (resizeTimer.value !== null) {
     clearTimeout(resizeTimer.value);
   }
 
+  const delay =
+    Number.isFinite(props.resizeDelay) && props.resizeDelay >= 0 ? props.resizeDelay : 300;
   resizeTimer.value = window.setTimeout(() => {
     chartInstance.value?.resize();
-    logger.info('Chart resized');
-  }, props.resizeDelay);
+    resizeTimer.value = null;
+  }, delay);
 };
 
 // 设置 ResizeObserver
 const setupResizeObserver = () => {
   if (!chartRef.value || !props.autoResize) return;
+  cleanupResizeObserver();
 
   // 检查 ResizeObserver 是否可用（测试环境可能不支持）
   if (typeof ResizeObserver === 'undefined') {
-    logger.warn('ResizeObserver is not available');
     return;
   }
 
@@ -316,6 +350,7 @@ const clear = () => {
 };
 
 const dispose = () => {
+  initSeq += 1;
   if (chartInstance.value) {
     chartInstance.value.dispose();
     chartInstance.value = null;
@@ -364,27 +399,33 @@ const getSvgDataURL = () => {
 
 const convertToPixel = (finder: unknown, value: unknown) => {
   if (!chartInstance.value) return 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return chartInstance.value.convertToPixel(finder as any, value as any) || 0;
+  return chartInstance.value.convertToPixel(finder, value) || 0;
 };
 
 const convertFromPixel = (finder: unknown, value: unknown) => {
   if (!chartInstance.value) return 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return chartInstance.value.convertFromPixel(finder as any, value as any) || 0;
+  return chartInstance.value.convertFromPixel(finder, value) || 0;
 };
 
 // 监听配置变化
 watch(
-  () => props.option,
-  (newOption, oldOption) => {
-    // 避免无限循环：只在配置真正改变时更新
-    if (chartInstance.value && newOption !== oldOption) {
+  [
+    () => props.option,
+    () => props.showToolbox,
+    () => props.showDataZoom,
+    () => props.showLegend,
+    () => props.showTooltip,
+    () => props.animationDuration,
+    () => globalConfig.animation.value,
+    () => globalConfig.neonEffect.value,
+  ],
+  () => {
+    if (chartInstance.value) {
       updateChart();
       emit('updated');
     }
   },
-  { deep: false }
+  { deep: true }
 );
 
 // 加载状态由模板中的 ExLoading 遮罩统一呈现，避免与 echarts 原生 loading 双重叠加；
@@ -401,6 +442,29 @@ watch(
   }
 );
 
+watch(
+  () => props.autoResize,
+  enabled => {
+    if (enabled) {
+      setupResizeObserver();
+    } else {
+      cleanupResizeObserver();
+      if (resizeTimer.value !== null) {
+        window.clearTimeout(resizeTimer.value);
+        resizeTimer.value = null;
+      }
+    }
+  }
+);
+
+watch(
+  [() => props.renderer, () => props.initOptions],
+  () => {
+    nextTick(initChart);
+  },
+  { deep: true }
+);
+
 // 生命周期
 onMounted(async () => {
   await nextTick();
@@ -411,8 +475,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   isUnmounted = true;
   cleanupResizeObserver();
-  if (resizeTimer.value) {
+  if (resizeTimer.value !== null) {
     clearTimeout(resizeTimer.value);
+    resizeTimer.value = null;
   }
   dispose();
 });
