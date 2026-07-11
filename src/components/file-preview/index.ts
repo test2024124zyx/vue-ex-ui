@@ -1,9 +1,10 @@
-import type { App } from 'vue';
-import ExFilePreview from './ExFilePreview.vue';
+import ExFilePreviewComponent from './ExFilePreview.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExFilePreview.install = (app: App) => {
-  app.component('ExFilePreview', ExFilePreview);
-};
+export const ExFilePreview: InstallableComponent<typeof ExFilePreviewComponent> =
+  withInstall(ExFilePreviewComponent);
 
-export default ExFilePreview;
+export * from './errors';
+export * from './preview-utils';
 export * from './types';
+export default ExFilePreview;

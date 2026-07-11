@@ -382,6 +382,11 @@ export type {
   ExFileDownloadErrorOptions,
 } from './components/file-download/errors';
 export type * from './components/file-preview/types';
+export type {
+  ExFilePreviewErrorCode,
+  ExFilePreviewErrorOptions,
+} from './components/file-preview/errors';
+export type { PreviewScaleConfig } from './components/file-preview/preview-utils';
 export type * from './components/image-crop/types';
 export type * from './components/image-compress/types';
 export type * from './components/file-list/types';
@@ -400,6 +405,15 @@ export type * from './components/time-picker/types';
 export type * from './components/tree-select/types';
 export type * from './components/descriptions/types';
 export { ExFileDownloadError } from './components/file-download/errors';
+export { ExFilePreviewError } from './components/file-preview/errors';
+export {
+  clampPreviewIndex,
+  clampPreviewScale,
+  detectPreviewType,
+  normalizePreviewRotation,
+  resolvePreviewScaleConfig,
+  validatePreviewUrl,
+} from './components/file-preview/preview-utils';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
 export {
