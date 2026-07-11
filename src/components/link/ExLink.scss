@@ -1,97 +1,62 @@
-// ExLink 链接组件样式
-// 游戏主题风格 - ClutchZone
-
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
+// ExLink 同时覆盖原生锚点与动作按钮，基础重置必须保持两者视觉一致。
 @use '../../styles/performance' as *;
 @use '../../styles/component-mixins' as *;
 
 .ex-link {
   position: relative;
   display: inline-flex;
-  align-items: center;
-  vertical-align: middle; // 行内多个链接/文本混排时保持垂直居中对齐
   gap: var(--ex-spacing-1);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  vertical-align: baseline;
+  color: inherit;
+  font: inherit;
   font-family: var(--ex-font-secondary);
   font-weight: var(--ex-font-medium);
-  text-decoration: none;
+  line-height: inherit;
+  text-align: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  background: transparent;
   cursor: pointer;
   outline: none;
-  @include safe-transition(all);
+  @include safe-transition((color, text-shadow, transform));
 
-  // ============================================================================
-  // 链接内容
-  // ============================================================================
-  
-  &__content {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  // ============================================================================
-  // 图标样式
-  // ============================================================================
-  
-  &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    @include safe-transition(transform);
-
-    &--left {
-      margin-right: var(--ex-spacing-1);
-    }
-
-    &--right {
-      margin-left: var(--ex-spacing-1);
-    }
-  }
-
+  &__content,
+  &__icon,
   &__external-icon {
     display: inline-flex;
     align-items: center;
+  }
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__icon,
+  &__external-icon {
+    flex: none;
     justify-content: center;
-    margin-left: var(--ex-spacing-1);
+  }
+
+  &__external-icon {
     opacity: 0.7;
-    @include safe-transition(opacity, transform);
+    @include safe-transition((opacity, transform));
   }
 
-  // ============================================================================
-  // 下划线效�?
-  // ============================================================================
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background: currentColor;
-    transform: scaleX(0);
-    transform-origin: right;
-    @include safe-transition(transform);
-  }
-
-  &:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
-  }
-
-  // ============================================================================
-  // 类型样式
-  // ============================================================================
-  
   &--default {
     color: var(--ex-color-text-primary);
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-neon-blue-500);
       text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-30);
     }
 
-    &:active {
+    &:not(.ex-link--disabled):active {
       color: var(--ex-color-neon-pink-500);
     }
   }
@@ -100,13 +65,13 @@
     color: var(--ex-color-neon-blue-500);
     @include optimized-neon-glow('blue', 'sm');
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-neon-pink-500);
-      @include optimized-neon-glow('pink', 'md');
       transform: translateY(-1px);
+      @include optimized-neon-glow('pink', 'md');
     }
 
-    &:active {
+    &:not(.ex-link--disabled):active {
       transform: translateY(0);
     }
   }
@@ -114,7 +79,7 @@
   &--success {
     color: var(--ex-color-success);
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-success-hover);
       text-shadow: 0 0 8px var(--ex-color-success-alpha-30);
     }
@@ -123,7 +88,7 @@
   &--warning {
     color: var(--ex-color-warning);
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-warning-hover);
       text-shadow: 0 0 8px var(--ex-color-warning-alpha-30);
     }
@@ -132,7 +97,7 @@
   &--danger {
     color: var(--ex-color-danger);
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-danger-hover);
       text-shadow: 0 0 8px var(--ex-color-error-alpha-30);
     }
@@ -141,19 +106,15 @@
   &--info {
     color: var(--ex-color-info);
 
-    &:hover {
+    &:not(.ex-link--disabled):hover {
       color: var(--ex-color-info-hover);
       text-shadow: 0 0 8px var(--ex-color-info-alpha-30);
     }
   }
 
-  // ============================================================================
-  // 尺寸样式
-  // ============================================================================
-  
   &--small {
-    font-size: var(--ex-text-sm);
     gap: calc(var(--ex-spacing-1) / 2);
+    font-size: var(--ex-text-sm);
 
     .ex-link__icon {
       font-size: 14px;
@@ -162,7 +123,6 @@
 
   &--medium {
     font-size: var(--ex-text-base);
-    gap: var(--ex-spacing-1);
 
     .ex-link__icon {
       font-size: 16px;
@@ -170,115 +130,55 @@
   }
 
   &--large {
-    font-size: var(--ex-text-lg);
     gap: var(--ex-spacing-2);
+    font-size: var(--ex-text-lg);
 
     .ex-link__icon {
       font-size: 18px;
     }
   }
 
-  // ============================================================================
-  // 状态样�?
-  // ============================================================================
-  
   &--disabled {
     opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
     text-shadow: none;
-    box-shadow: none;
-
-    &::after {
-      display: none;
-    }
+    cursor: not-allowed;
+    transform: none;
   }
 
   &--no-underline {
-    &::after {
-      display: none;
-    }
+    text-decoration: none;
   }
 
-  // ============================================================================
-  // 外部链接样式
-  // ============================================================================
-  
-  &--external {
-    &:hover {
-      .ex-link__external-icon {
-        opacity: 1;
-        transform: translate(2px, -2px);
-      }
-    }
+  &--external:not(.ex-link--disabled):hover .ex-link__external-icon {
+    opacity: 1;
+    transform: translate(2px, -2px);
   }
 
-  // ============================================================================
-  // 聚焦样式
-  // ============================================================================
-  
   &:focus-visible {
+    border-radius: var(--ex-radius-sm);
     outline: 2px solid var(--ex-color-neon-blue-500);
     outline-offset: 4px;
-    border-radius: var(--ex-radius-sm);
     box-shadow: 0 0 0 4px var(--ex-color-neon-blue-alpha-20);
   }
 
-  // ============================================================================
-  // 响应式设�?
-  // ============================================================================
-  
-  @include mobile {
-    min-height: 44px;
-    padding: var(--ex-spacing-2) 0;
-
-    &--small {
-      min-height: 36px;
-      font-size: var(--ex-text-base);
-    }
-
-    &--large {
-      min-height: 52px;
-      font-size: var(--ex-text-xl);
-    }
-  }
-
-  // ============================================================================
-  // 无障碍支�?
-  // ============================================================================
-  
   @media (prefers-reduced-motion: reduce) {
     &,
-    &::after,
-    &__icon,
     &__external-icon {
       transition: none;
-      animation: none;
     }
 
-    &:hover {
+    &:hover,
+    &--external:hover .ex-link__external-icon {
       transform: none;
-
-      &::after {
-        transform: scaleX(1);
-      }
-
-      .ex-link__external-icon {
-        transform: none;
-      }
     }
   }
 
-  // 高对比度模式
   @media (prefers-contrast: high) {
+    text-decoration-thickness: 2px;
+
     &:focus-visible {
       outline-width: 3px;
       outline-offset: 2px;
     }
-
-    &::after {
-      height: 2px;
-    }
   }
 }
-

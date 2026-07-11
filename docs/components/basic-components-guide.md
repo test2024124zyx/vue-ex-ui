@@ -295,8 +295,11 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   <!-- 外部链接 -->
   <ex-link href="https://external.com" target="_blank" :show-external-icon="true">外部链接</ex-link>
 
-  <!-- Router 链接 -->
-  <ex-link to="/game/detail">游戏详情</ex-link>
+  <!-- 站内链接使用解析后的原生地址 -->
+  <ex-link href="/game/detail">游戏详情</ex-link>
+
+  <!-- 无 href 时是不会提交表单的动作按钮 -->
+  <ex-link type="primary" @click="openGame">打开游戏</ex-link>
 </template>
 ```
 
@@ -307,8 +310,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 | type             | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` | 链接类型         |
 | size             | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  | 链接大小         |
 | href             | `string`                                                                 | -           | 链接地址         |
-| to               | `string \| object`                                                       | -           | 路由地址         |
-| target           | `string`                                                                 | `'_self'`   | 打开方式         |
+| target           | `string`                                                                 | -           | 打开方式         |
 | disabled         | `boolean`                                                                | `false`     | 禁用状态         |
 | underline        | `boolean`                                                                | `true`      | 下划线           |
 | showExternalIcon | `boolean`                                                                | `true`      | 显示外部链接图标 |

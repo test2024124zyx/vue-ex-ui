@@ -1,321 +1,250 @@
-import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, expect, it, vi } from 'vitest';
 import ExLink from '../../../src/components/link/ExLink.vue';
-import ExIcon from '../../../src/components/icon/ExIcon.vue';
+import type { ExLinkExposed, LinkSize, LinkType } from '../../../src/components/link/types';
 
-// Mock ExIcon 组件
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
   default: {
     name: 'ExIcon',
-    props: ['name'],
-    template: '<i :class="`icon-${name}`"></i>',
+    props: ['icon'],
+    template: '<i class="ex-icon-stub" :data-icon="icon" />',
   },
 }));
 
-describe('ExLink', () => {
-  it('renders correctly with default props', () => {
-    const wrapper = mount(ExLink, {
-      slots: {
-        default: 'Test Link',
-      },
-    });
-
-    expect(wrapper.text()).toBe('Test Link');
-    expect(wrapper.classes()).toContain('ex-link');
-    expect(wrapper.classes()).toContain('ex-link--default');
-    expect(wrapper.classes()).toContain('ex-link--medium');
+const mountLink = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
+  mount(ExLink, {
+    props,
+    slots: {
+      default: '链接内容',
+      ...slots,
+    },
   });
 
-  it('renders as anchor tag with href', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'External Link',
-      },
-    });
+describe('ExLink', () => {
+  it('没有 href 时渲染为不会提交表单的动作按钮', () => {
+    const wrapper = mountLink();
+
+    expect(wrapper.element.tagName).toBe('BUTTON');
+    expect(wrapper.attributes('type')).toBe('button');
+    expect(wrapper.text()).toBe('链接内容');
+    expect(wrapper.classes()).toEqual(
+      expect.arrayContaining(['ex-link', 'ex-link--default', 'ex-link--medium'])
+    );
+  });
+
+  it('存在安全 href 时渲染为原生锚点', () => {
+    const wrapper = mountLink({ href: '/account?tab=profile#name' });
 
     expect(wrapper.element.tagName).toBe('A');
-    expect(wrapper.attributes('href')).toBe('https://example.com');
+    expect(wrapper.attributes('href')).toBe('/account?tab=profile#name');
+    expect(wrapper.attributes('target')).toBeUndefined();
+    expect(wrapper.attributes('rel')).toBeUndefined();
   });
 
-  it('renders as router-link with to prop', async () => {
-    // Mock router-link component
-    const RouterLinkStub = {
-      name: 'RouterLink',
-      props: ['to'],
-      template: '<a><slot /></a>',
-    };
+  it.each<LinkType>(['default', 'primary', 'success', 'warning', 'danger', 'info'])(
+    '为 %s 类型应用稳定类名',
+    type => {
+      expect(mountLink({ type }).classes()).toContain(`ex-link--${type}`);
+    }
+  );
 
-    const wrapper = mount(ExLink, {
-      props: {
-        to: '/about',
-      },
-      slots: {
-        default: 'Router Link',
-      },
-      global: {
-        stubs: {
-          'router-link': RouterLinkStub,
-        },
-        config: {
-          // 组件仅在宿主安装了 vue-router 时才渲染 router-link
-          globalProperties: { $router: {} },
-        },
-      },
-    });
-
-    expect(wrapper.vm.$options.name).toBe('ExLink');
-    // 检查是否渲染为router-link组件
-    expect(wrapper.findComponent(RouterLinkStub).exists()).toBe(true);
+  it.each<LinkSize>(['small', 'medium', 'large'])('为 %s 尺寸应用稳定类名', size => {
+    expect(mountLink({ size }).classes()).toContain(`ex-link--${size}`);
   });
 
-  it('applies correct type classes', () => {
-    const types = ['primary', 'success', 'warning', 'danger', 'info'];
-
-    types.forEach(type => {
-      const wrapper = mount(ExLink, {
-        props: { type },
-        slots: { default: 'Link' },
-      });
-      expect(wrapper.classes()).toContain(`ex-link--${type}`);
-    });
+  it('关闭下划线时仅添加对应状态类', () => {
+    expect(mountLink({ underline: false }).classes()).toContain('ex-link--no-underline');
+    expect(mountLink({ underline: true }).classes()).not.toContain('ex-link--no-underline');
   });
 
-  it('applies correct size classes', () => {
-    const sizes = ['small', 'medium', 'large'];
-
-    sizes.forEach(size => {
-      const wrapper = mount(ExLink, {
-        props: { size },
-        slots: { default: 'Link' },
-      });
-      expect(wrapper.classes()).toContain(`ex-link--${size}`);
+  it('通过 Vue 原生透传合并 class、style 与无障碍属性', () => {
+    const wrapper = mountLink({
+      class: ['custom-link', { active: true, inactive: false }],
+      style: { color: 'rgb(255, 0, 0)' },
+      'aria-label': '打开个人资料',
+      'data-track-id': 'profile-link',
     });
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['custom-link', 'active']));
+    expect(wrapper.classes()).not.toContain('inactive');
+    expect((wrapper.element as HTMLElement).style.color).toBe('rgb(255, 0, 0)');
+    expect(wrapper.attributes('aria-label')).toBe('打开个人资料');
+    expect(wrapper.attributes('data-track-id')).toBe('profile-link');
   });
 
-  it('handles disabled state correctly', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        disabled: true,
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'Disabled Link',
-      },
-    });
+  it('动作按钮点击时发送原始鼠标事件', async () => {
+    const wrapper = mountLink();
 
+    await wrapper.trigger('click');
+
+    const event = wrapper.emitted('click')?.[0]?.[0];
+    expect(event).toBeInstanceOf(MouseEvent);
+  });
+
+  it('锚点点击时保留原生导航默认行为并发送事件', () => {
+    const wrapper = mountLink({ href: '#details' });
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+    wrapper.element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(wrapper.emitted('click')?.[0]?.[0]).toBe(event);
+  });
+
+  it('禁用动作按钮时使用原生 disabled 且不发送交互事件', async () => {
+    const wrapper = mountLink({ disabled: true });
+
+    expect(wrapper.element.tagName).toBe('BUTTON');
+    expect(wrapper.attributes('disabled')).toBe('');
     expect(wrapper.classes()).toContain('ex-link--disabled');
-    expect(wrapper.attributes('tabindex')).toBe('-1');
-    expect(wrapper.attributes('aria-disabled')).toBe('true');
-    expect(wrapper.attributes('href')).toBeUndefined();
-  });
-
-  it('shows/hides underline correctly', () => {
-    const withUnderline = mount(ExLink, {
-      props: { underline: true },
-      slots: { default: 'Link' },
-    });
-    expect(withUnderline.classes()).not.toContain('ex-link--no-underline');
-
-    const withoutUnderline = mount(ExLink, {
-      props: { underline: false },
-      slots: { default: 'Link' },
-    });
-    expect(withoutUnderline.classes()).toContain('ex-link--no-underline');
-  });
-
-  it('renders icon correctly (slot + Iconify)', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        iconPlacement: 'left',
-      },
-      slots: {
-        default: 'Home Link',
-        icon: '<ex-icon src="https://api.iconify.design/ri/home-2-line.svg"></ex-icon>',
-      },
-      global: {
-        components: {
-          'ex-icon': {
-            name: 'ex-icon',
-            props: ['src'],
-            template: '<i class="ex-link__icon ex-icon" :src="src"></i>',
-          },
-        },
-      },
-    });
-
-    const iconEl = wrapper.find('.ex-link__icon--left');
-    expect(iconEl.exists()).toBe(true);
-  });
-
-  it('renders external icon for external links', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://external.com',
-        showExternalIcon: true,
-      },
-      slots: {
-        default: 'External Link',
-      },
-      global: {
-        components: {
-          ExIcon,
-        },
-      },
-    });
-
-    expect(wrapper.classes()).toContain('ex-link--external');
-    const externalIcon = wrapper.find('.ex-link__external-icon');
-    expect(externalIcon.exists()).toBe(true);
-  });
-
-  it('emits click event', async () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'Click Me',
-      },
-    });
 
     await wrapper.trigger('click');
-    expect(wrapper.emitted('click')).toBeTruthy();
-    expect(wrapper.emitted('click')?.[0]).toHaveLength(1);
-  });
-
-  it('prevents click when disabled', async () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        disabled: true,
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'Disabled Link',
-      },
-    });
-
-    await wrapper.trigger('click');
-    expect(wrapper.emitted('click')).toBeFalsy();
-  });
-
-  it('emits focus and blur events', async () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'Focus Me',
-      },
-    });
-
     await wrapper.trigger('focus');
-    expect(wrapper.emitted('focus')).toBeTruthy();
-
     await wrapper.trigger('blur');
-    expect(wrapper.emitted('blur')).toBeTruthy();
+
+    expect(wrapper.emitted('click')).toBeUndefined();
+    expect(wrapper.emitted('focus')).toBeUndefined();
+    expect(wrapper.emitted('blur')).toBeUndefined();
   });
 
-  it('applies custom class and style', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        class: 'custom-class',
-        style: { color: 'red' },
-      },
-      slots: {
-        default: 'Styled Link',
-      },
+  it('禁用锚点时移除所有导航属性并阻止冒泡', () => {
+    const parentClick = vi.fn();
+    const wrapper = mount({
+      components: { ExLink },
+      setup: () => ({ parentClick }),
+      template:
+        '<div @click="parentClick"><ExLink href="https://example.com" target="_blank" rel="nofollow" disabled>禁用链接</ExLink></div>',
     });
+    const link = wrapper.findComponent(ExLink);
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
 
-    expect(wrapper.classes()).toContain('custom-class');
-    expect((wrapper.element as HTMLElement).style.color).toBe('red');
+    link.element.dispatchEvent(event);
+
+    expect(link.element.tagName).toBe('A');
+    expect(link.attributes('href')).toBeUndefined();
+    expect(link.attributes('target')).toBeUndefined();
+    expect(link.attributes('rel')).toBeUndefined();
+    expect(link.attributes('tabindex')).toBe('-1');
+    expect(link.attributes('role')).toBe('link');
+    expect(link.attributes('aria-disabled')).toBe('true');
+    expect(event.defaultPrevented).toBe(true);
+    expect(parentClick).not.toHaveBeenCalled();
+    expect(link.emitted('click')).toBeUndefined();
   });
 
-  it('sets correct target and rel attributes', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://external.com',
-        target: '_blank',
-      },
-      slots: {
-        default: 'External Link',
-      },
+  it.each(['javascript:alert(1)', ' java\nscript:alert(1)', 'data:text/html,<script>1</script>'])(
+    '危险地址 %s 会退化为不可导航的禁用锚点',
+    href => {
+      const wrapper = mountLink({ href });
+
+      expect(wrapper.element.tagName).toBe('A');
+      expect(wrapper.attributes('href')).toBeUndefined();
+      expect(wrapper.attributes('role')).toBe('link');
+      expect(wrapper.attributes('aria-disabled')).toBe('true');
+      expect(wrapper.classes()).toContain('ex-link--disabled');
+    }
+  );
+
+  it('空白 href 不会被误判为动作按钮', () => {
+    const wrapper = mountLink({ href: '   ' });
+
+    expect(wrapper.element.tagName).toBe('A');
+    expect(wrapper.attributes('href')).toBeUndefined();
+    expect(wrapper.attributes('aria-disabled')).toBe('true');
+  });
+
+  it('绝对网络地址稳定显示外链标识且不依赖 window.origin', () => {
+    const absolute = mountLink({ href: 'https://example.com/path' });
+    const protocolRelative = mountLink({ href: '//cdn.example.com/file' });
+    const relative = mountLink({ href: '/local/path' });
+    const mail = mountLink({ href: 'mailto:team@example.com' });
+
+    expect(absolute.classes()).toContain('ex-link--external');
+    expect(protocolRelative.classes()).toContain('ex-link--external');
+    expect(relative.classes()).not.toContain('ex-link--external');
+    expect(mail.classes()).not.toContain('ex-link--external');
+    expect(absolute.find('.ex-link__external-icon').exists()).toBe(true);
+    expect(absolute.find('.ex-icon-stub').attributes('data-icon')).toBe('external-link-line');
+    expect(absolute.find('.ex-icon-stub').attributes('aria-hidden')).toBe('true');
+  });
+
+  it('允许关闭或替换外链图标', () => {
+    const hidden = mountLink({ href: 'https://example.com', showExternalIcon: false });
+    const custom = mountLink(
+      { href: 'https://example.com' },
+      { 'external-icon': '<span class="custom-external-icon">离开</span>' }
+    );
+
+    expect(hidden.find('.ex-link__external-icon').exists()).toBe(false);
+    expect(custom.find('.custom-external-icon').exists()).toBe(true);
+  });
+
+  it('目标为 _blank 时保留 rel 令牌、去重并强制使用 noopener', () => {
+    const wrapper = mountLink({
+      href: 'https://example.com',
+      target: '_blank',
+      rel: 'nofollow OPENER nofollow',
     });
 
     expect(wrapper.attributes('target')).toBe('_blank');
-    expect(wrapper.attributes('rel')).toBe('noopener noreferrer');
+    expect(wrapper.attributes('rel')).toBe('nofollow noopener');
   });
 
-  it('exposes focus and blur methods', () => {
+  it('非 _blank 目标不会擅自改写 rel', () => {
+    const wrapper = mountLink({
+      href: '/license',
+      target: '_self',
+      rel: 'license nofollow',
+    });
+
+    expect(wrapper.attributes('rel')).toBe('license nofollow');
+  });
+
+  it('按图标位置渲染 icon 插槽，并由 prefix/suffix 插槽覆盖对应位置', () => {
+    const left = mountLink({}, { icon: '<i class="slot-icon" />' });
+    const right = mountLink(
+      { iconPlacement: 'right' },
+      { icon: '<i class="slot-icon" />', suffix: '<i class="suffix-icon" />' }
+    );
+
+    expect(left.find('.ex-link__icon--left .slot-icon').exists()).toBe(true);
+    expect(left.find('.ex-link__icon--right').exists()).toBe(false);
+    expect(right.find('.ex-link__icon--right .suffix-icon').exists()).toBe(true);
+    expect(right.find('.ex-link__icon--right .slot-icon').exists()).toBe(false);
+  });
+
+  it('有效状态发送 focus/blur，暴露的方法操作真实根元素', async () => {
     const wrapper = mount(ExLink, {
-      props: {
-        href: 'https://example.com',
-      },
-      slots: {
-        default: 'Test Link',
-      },
+      attachTo: document.body,
+      props: { href: '#focus-target' },
+      slots: { default: '可聚焦链接' },
     });
+    const exposed = wrapper.vm as unknown as ExLinkExposed;
 
-    const vm = wrapper.vm as any;
-    expect(typeof vm.focus).toBe('function');
-    expect(typeof vm.blur).toBe('function');
-    expect(typeof vm.getElement).toBe('function');
+    exposed.focus();
+    expect(document.activeElement).toBe(wrapper.element);
+    expect(exposed.getElement()).toBe(wrapper.element);
+
+    await wrapper.trigger('focus');
+    await wrapper.trigger('blur');
+    expect(wrapper.emitted('focus')?.[0]?.[0]).toBeInstanceOf(FocusEvent);
+    expect(wrapper.emitted('blur')?.[0]?.[0]).toBeInstanceOf(FocusEvent);
+
+    exposed.blur();
+    expect(document.activeElement).not.toBe(wrapper.element);
+    wrapper.unmount();
   });
 
-  it('handles array class prop correctly', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        class: ['class1', 'class2'],
-      },
-      slots: {
-        default: 'Link',
-      },
-    });
+  it('禁用状态的暴露 focus 方法不会改变当前焦点', () => {
+    const previous = document.createElement('button');
+    document.body.append(previous);
+    previous.focus();
+    const wrapper = mountLink({ href: '/private', disabled: true });
+    const exposed = wrapper.vm as unknown as ExLinkExposed;
 
-    expect(wrapper.classes()).toContain('class1');
-    expect(wrapper.classes()).toContain('class2');
-  });
+    exposed.focus();
 
-  it('handles object class prop correctly', () => {
-    const wrapper = mount(ExLink, {
-      props: {
-        class: {
-          active: true,
-          inactive: false,
-        },
-      },
-      slots: {
-        default: 'Link',
-      },
-    });
-
-    expect(wrapper.classes()).toContain('active');
-    expect(wrapper.classes()).not.toContain('inactive');
-  });
-
-  it('detects external links correctly', () => {
-    // 内部链接
-    const internalWrapper = mount(ExLink, {
-      props: {
-        href: '/internal-page',
-      },
-      slots: {
-        default: 'Internal Link',
-      },
-    });
-    expect(internalWrapper.classes()).not.toContain('ex-link--external');
-
-    // 外部链接
-    const externalWrapper = mount(ExLink, {
-      props: {
-        href: 'https://external.com',
-      },
-      slots: {
-        default: 'External Link',
-      },
-    });
-    expect(externalWrapper.classes()).toContain('ex-link--external');
+    expect(document.activeElement).toBe(previous);
+    previous.remove();
   });
 });

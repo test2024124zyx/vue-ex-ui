@@ -1,7 +1,7 @@
 import ExLinkComponent from './ExLink.vue';
 import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件类型
+// 显式导出稳定的公共类型，避免内部实现进入组件 API。
 export type {
   ExLinkProps,
   ExLinkEmits,
@@ -11,7 +11,6 @@ export type {
   LinkTarget,
 } from './types';
 
-// 导出组件
 export const ExLink: InstallableComponent<typeof ExLinkComponent> = withInstall(ExLinkComponent);
 
 export default ExLink;

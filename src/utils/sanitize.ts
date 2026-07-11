@@ -68,7 +68,7 @@ const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:'];
  * @param allowDataImage - 是否允许 data:image/*（用于 img src 的内联图片）
  * @returns 是否安全
  */
-function isSafeUrl(url: string, allowDataImage = false): boolean {
+export function isSafeUrl(url: string, allowDataImage = false): boolean {
   // 先去除控制字符/空白（绕过手段之一：java\tscript:）
   const trimmedUrl = Array.from(url)
     .filter(ch => ch.charCodeAt(0) > 0x20)
