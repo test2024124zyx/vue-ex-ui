@@ -83,4 +83,13 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain("[style*='--ex-divider-color']");
     expect(css).not.toContain('transition-property: all');
   });
+
+  it('Empty 的图片尺寸由组件变量驱动且不执行无休止装饰动画', () => {
+    const css = compile("@use 'src/components/empty/ExEmpty';");
+
+    expect(css).toContain('inline-size: var(--ex-empty-image-size');
+    expect(css).toContain('.ex-empty--custom');
+    expect(css).not.toContain('animation:');
+    expect(css).not.toContain('@keyframes');
+  });
 });

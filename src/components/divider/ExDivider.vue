@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Comment, Fragment, Text, computed, isVNode, useSlots } from 'vue';
-import type { CSSProperties, VNode } from 'vue';
+import { computed, useSlots } from 'vue';
+import type { CSSProperties } from 'vue';
+import { hasRenderableContent } from '../../utils/vnode';
 import type { DividerOrientation, DividerPresetSize, DividerType, ExDividerProps } from './types';
 
 defineOptions({ name: 'ExDivider' });
@@ -17,22 +18,6 @@ const slots = useSlots();
 const DIVIDER_TYPES = new Set<DividerType>(['horizontal', 'vertical']);
 const DIVIDER_ORIENTATIONS = new Set<DividerOrientation>(['left', 'center', 'right']);
 const PRESET_SIZES = new Set<DividerPresetSize>(['small', 'default', 'large']);
-
-/** 递归忽略注释、空文本和空 Fragment，避免空插槽生成断裂的双线布局。 */
-const hasRenderableContent = (value: unknown): boolean => {
-  if (value === null || value === undefined || typeof value === 'boolean') return false;
-  if (typeof value === 'string' || typeof value === 'number') {
-    return String(value).trim().length > 0;
-  }
-  if (Array.isArray(value)) return value.some(hasRenderableContent);
-  if (!isVNode(value)) return true;
-
-  const node = value as VNode;
-  if (node.type === Comment) return false;
-  if (node.type === Text) return hasRenderableContent(node.children);
-  if (node.type === Fragment) return hasRenderableContent(node.children);
-  return true;
-};
 
 /** 将有限数字或非空字符串转换为 CSS 长度。 */
 const normalizeLength = (

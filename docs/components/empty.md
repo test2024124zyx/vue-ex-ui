@@ -1,24 +1,9 @@
 # Empty 空状态
 
-空状态时的占位提示组件，用于展示无数据、搜索无结果等场景。
-
-<script setup>
-import { ref } from 'vue'
-
-const loading = ref(false)
-
-const handleRefresh = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 2000)
-}
-</script>
+用于呈现无数据、无搜索结果、错误或网络异常状态。
 
 ## 基础用法
 
-最简单的空状态展示。
-
 <div class="demo-container">
   <ExEmpty />
 </div>
@@ -29,377 +14,98 @@ const handleRefresh = () => {
 </template>
 ```
 
-## 自定义描述
+## 场景文案
 
-通过 `description` 属性可以自定义描述文字。
+未传入 `description` 时，`type` 会选择当前语言下的内置文案。
 
-<div class="demo-container">
-  <ExEmpty description="暂无游戏数据" />
-</div>
-
-```vue
-<template>
-  <ExEmpty description="暂无游戏数据" />
-</template>
-```
-
-## 自定义图片
-
-通过 `image` 属性可以自定义图片。
-
-<div class="demo-container">
-  <ExEmpty 
-    image="https://images.unsplash.com/photo-1614294148960-9aa740632a87?w=200&h=200&fit=crop"
-    description="暂无战绩记录"
-  />
-</div>
-
-```vue
-<template>
+<div class="demo-grid">
   <ExEmpty
-    image="https://images.unsplash.com/photo-1614294148960-9aa740632a87?w=200&h=200&fit=crop"
-    description="暂无战绩记录"
+    type="no-result"
+    image-size="small"
   />
-</template>
-```
-
-## 不同尺寸
-
-通过 `image-size` 属性可以设置不同的图片尺寸。
-
-<div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">小尺寸</h4>
-    <ExEmpty image-size="small" description="暂无数据" />
-  </div>
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">中等尺寸（默认）</h4>
-    <ExEmpty image-size="medium" description="暂无数据" />
-  </div>
-  <div>
-    <h4 style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">大尺寸</h4>
-    <ExEmpty image-size="large" description="暂无数据" />
-  </div>
+  <ExEmpty
+    type="network-error"
+    image-size="small"
+  />
 </div>
 
 ```vue
 <template>
-  <ExEmpty image-size="small" description="暂无数据" />
-  <ExEmpty image-size="medium" description="暂无数据" />
-  <ExEmpty image-size="large" description="暂无数据" />
+  <ExEmpty type="no-result" />
+  <ExEmpty type="network-error" />
 </template>
 ```
 
-## 自定义尺寸
+## 描述与操作
 
-`image-size` 也可以设置为数字，单位为 px。
-
-<div class="demo-container">
-  <ExEmpty :image-size="200" description="自定义尺寸 200px" />
-</div>
-
-```vue
-<template>
-  <ExEmpty :image-size="200" description="自定义尺寸 200px" />
-</template>
-```
-
-## 带操作按钮
-
-通过默认插槽可以添加操作按钮。
+`description` 覆盖内置文案；传入空字符串可隐藏描述。默认插槽用于放置操作。
 
 <div class="demo-container">
-  <ExEmpty description="暂无游戏记录">
-    <ExButton type="primary">
-      <template #prefix>
-        <img src="https://api.iconify.design/ri/add-line.svg" alt="添加" width="16" height="16" />
-      </template>
-      开始游戏
-    </ExButton>
+  <ExEmpty description="当前筛选条件下没有数据">
+    <ExButton type="primary">清除筛选</ExButton>
   </ExEmpty>
 </div>
 
 ```vue
 <template>
-  <ExEmpty description="暂无游戏记录">
-    <ExButton type="primary">
-      <template #prefix>
-        <img src="https://api.iconify.design/ri/add-line.svg" alt="添加" width="16" height="16" />
-      </template>
-      开始游戏
-    </ExButton>
+  <ExEmpty description="当前筛选条件下没有数据">
+    <ExButton type="primary">清除筛选</ExButton>
   </ExEmpty>
 </template>
 ```
 
-## 多个操作按钮
+## 图片
 
-可以添加多个操作按钮。
-
-<div class="demo-container">
-  <ExEmpty description="搜索无结果">
-    <ExSpace>
-      <ExButton @click="handleRefresh" :loading="loading">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/refresh-line.svg" alt="刷新" width="16" height="16" />
-        </template>
-        刷新
-      </ExButton>
-      <ExButton type="primary">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/search-line.svg" alt="搜索" width="16" height="16" />
-        </template>
-        重新搜索
-      </ExButton>
-    </ExSpace>
-  </ExEmpty>
-</div>
+可以传入图片地址或使用 `image` 插槽。外部图片默认按装饰处理；只有图片包含描述之外的独立信息时才应设置 `image-alt`。
 
 ```vue
-<script setup>
-import { ref } from 'vue';
-
-const loading = ref(false);
-
-const handleRefresh = () => {
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 2000);
+<script setup lang="ts">
+const handleImageError = (event: Event) => {
+  console.error('空状态图片加载失败', event);
 };
 </script>
 
 <template>
-  <ExEmpty description="搜索无结果">
-    <ExSpace>
-      <ExButton @click="handleRefresh" :loading="loading">
-        <template #prefix>
-          <img
-            src="https://api.iconify.design/ri/refresh-line.svg"
-            alt="刷新"
-            width="16"
-            height="16"
-          />
-        </template>
-        刷新
-      </ExButton>
-      <ExButton type="primary">
-        <template #prefix>
-          <img
-            src="https://api.iconify.design/ri/search-line.svg"
-            alt="搜索"
-            width="16"
-            height="16"
-          />
-        </template>
-        重新搜索
-      </ExButton>
-    </ExSpace>
-  </ExEmpty>
+  <ExEmpty
+    image="/assets/empty-state.svg"
+    image-alt="空购物车"
+    @image-error="handleImageError"
+  />
 </template>
 ```
 
-## 自定义图片插槽
+图片加载失败时组件会触发 `image-error`，并自动回退到内置插图。设置 `:show-image="false"` 会隐藏图片属性、内置图片和图片插槽的整个布局区域。
 
-通过 `image` 插槽可以完全自定义图片内容。
+## 自定义图片与描述
 
 <div class="demo-container">
-  <ExEmpty description="暂无收藏">
+  <ExEmpty :image-size="96">
     <template #image>
-      <div style="font-size: 80px; opacity: 0.6;">🎮</div>
+      <span
+        aria-hidden="true"
+        class="custom-empty-icon"
+      >
+        ◇
+      </span>
     </template>
-    <ExButton type="primary">去收藏游戏</ExButton>
+    <template #description>
+      <span>还没有收藏内容</span>
+    </template>
+    <ExButton>浏览内容</ExButton>
   </ExEmpty>
 </div>
 
 ```vue
 <template>
-  <ExEmpty description="暂无收藏">
+  <ExEmpty :image-size="96">
     <template #image>
-      <div style="font-size: 80px; opacity: 0.6;">🎮</div>
+      <span aria-hidden="true">◇</span>
     </template>
-    <ExButton type="primary">去收藏游戏</ExButton>
-  </ExEmpty>
-</template>
-```
-
-## 自定义描述插槽
-
-通过 `description` 插槽可以自定义描述内容。
-
-<div class="demo-container">
-  <ExEmpty>
     <template #description>
-      <div style="color: var(--ex-color-text-secondary);">
-        <p style="margin: 0 0 8px;">暂无战绩数据</p>
-        <p style="margin: 0; font-size: 14px; opacity: 0.8;">快去开始你的第一场游戏吧！</p>
-      </div>
+      <span>还没有收藏内容</span>
     </template>
-    <ExButton type="primary" size="large">
-      <template #prefix>
-        <img src="https://api.iconify.design/ri/gamepad-line.svg" alt="游戏" width="18" height="18" />
-      </template>
-      开始游戏
-    </ExButton>
+    <ExButton>浏览内容</ExButton>
   </ExEmpty>
-</div>
-
-```vue
-<template>
-  <ExEmpty>
-    <template #description>
-      <div style="color: var(--ex-color-text-secondary);">
-        <p style="margin: 0 0 8px;">暂无战绩数据</p>
-        <p style="margin: 0; font-size: 14px; opacity: 0.8;">快去开始你的第一场游戏吧！</p>
-      </div>
-    </template>
-    <ExButton type="primary" size="large">
-      <template #prefix>
-        <img
-          src="https://api.iconify.design/ri/gamepad-line.svg"
-          alt="游戏"
-          width="18"
-          height="18"
-        />
-      </template>
-      开始游戏
-    </ExButton>
-  </ExEmpty>
-</template>
-```
-
-## 赛博朋克主题示例
-
-展示游戏主题风格的空状态。
-
-<div class="demo-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-  <ExCard type="primary">
-    <ExEmpty 
-      image-size="small"
-      description="暂无好友在线"
-    >
-      <ExButton type="primary" size="small">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/user-add-line.svg" alt="添加" width="16" height="16" />
-        </template>
-        添加好友
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
-
-  <ExCard type="success">
-    <ExEmpty 
-      image-size="small"
-      description="暂无成就解锁"
-    >
-      <ExButton type="success" size="small">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/trophy-line.svg" alt="成就" width="16" height="16" />
-        </template>
-        查看成就
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
-
-  <ExCard type="warning">
-    <ExEmpty 
-      image-size="small"
-      description="暂无消息通知"
-    >
-      <ExButton type="warning" size="small">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/notification-line.svg" alt="通知" width="16" height="16" />
-        </template>
-        查看全部
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
-</div>
-
-```vue
-<template>
-  <ExCard type="primary">
-    <ExEmpty image-size="small" description="暂无好友在线">
-      <ExButton type="primary" size="small">
-        <template #prefix>
-          <img
-            src="https://api.iconify.design/ri/user-add-line.svg"
-            alt="添加"
-            width="16"
-            height="16"
-          />
-        </template>
-        添加好友
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
-</template>
-```
-
-## 不显示图片
-
-设置 `:show-image="false"` 可以不显示图片。
-
-<div class="demo-container">
-  <ExEmpty 
-    :show-image="false"
-    description="暂无数据"
-  >
-    <ExButton type="primary">刷新</ExButton>
-  </ExEmpty>
-</div>
-
-```vue
-<template>
-  <ExEmpty :show-image="false" description="暂无数据">
-    <ExButton type="primary">刷新</ExButton>
-  </ExEmpty>
-</template>
-```
-
-## 在表格中使用
-
-Empty 组件常用于表格无数据时的展示。
-
-<div class="demo-container">
-  <ExCard>
-    <template #header>
-      <h3 style="margin: 0; color: var(--ex-color-text-primary);">玩家排行榜</h3>
-    </template>
-    <ExEmpty 
-      image-size="small"
-      description="暂无排行数据"
-    >
-      <ExButton type="primary" size="small">
-        <template #prefix>
-          <img src="https://api.iconify.design/ri/refresh-line.svg" alt="刷新" width="16" height="16" />
-        </template>
-        刷新数据
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
-</div>
-
-```vue
-<template>
-  <ExCard>
-    <template #header>
-      <h3>玩家排行榜</h3>
-    </template>
-    <ExEmpty image-size="small" description="暂无排行数据">
-      <ExButton type="primary" size="small">
-        <template #prefix>
-          <img
-            src="https://api.iconify.design/ri/refresh-line.svg"
-            alt="刷新"
-            width="16"
-            height="16"
-          />
-        </template>
-        刷新数据
-      </ExButton>
-    </ExEmpty>
-  </ExCard>
 </template>
 ```
 
@@ -407,38 +113,53 @@ Empty 组件常用于表格无数据时的展示。
 
 ### Props
 
-| 参数          | 说明         | 类型                                       | 默认值       |
-| ------------- | ------------ | ------------------------------------------ | ------------ |
-| `image`       | 图片地址     | `string`                                   | -            |
-| `image-size`  | 图片尺寸     | `'small' \| 'medium' \| 'large' \| number` | `'medium'`   |
-| `description` | 描述文字     | `string`                                   | `'暂无数据'` |
-| `show-image`  | 是否显示图片 | `boolean`                                  | `true`       |
+| 参数        | 说明                           | 类型                                                                  | 默认值       |
+| ----------- | ------------------------------ | --------------------------------------------------------------------- | ------------ |
+| image       | 外部图片地址；空白地址会被忽略 | `string`                                                              | -            |
+| image-alt   | 外部图片的可访问名称           | `string`                                                              | -            |
+| image-size  | 图片预设尺寸或正数像素值       | `'small' \| 'medium' \| 'large' \| number`                            | `'medium'`   |
+| description | 描述文字；空字符串隐藏描述     | `string`                                                              | 对应场景文案 |
+| show-image  | 是否显示整个图片区域           | `boolean`                                                             | `true`       |
+| type        | 内置文案场景                   | `'default' \| 'no-data' \| 'no-result' \| 'error' \| 'network-error'` | `'default'`  |
+
+### Events
+
+| 事件名      | 说明               | 类型                     |
+| ----------- | ------------------ | ------------------------ |
+| image-error | 外部图片加载失败时 | `(event: Event) => void` |
 
 ### Slots
 
-| 插槽名        | 说明           |
-| ------------- | -------------- |
-| `image`       | 自定义图片内容 |
-| `description` | 自定义描述内容 |
-| `default`     | 自定义操作按钮 |
+| 名称        | 说明       |
+| ----------- | ---------- |
+| image       | 自定义图片 |
+| description | 自定义描述 |
+| default     | 操作区域   |
 
-## 无障碍支持
+## 无障碍
 
-- 使用语义化的 HTML 结构
-- 图片包含 alt 属性
-- 支持屏幕阅读器
-- 支持键盘导航（操作按钮）
-
-## 主题定制
-
-Empty 跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
+- 内置插图和未设置 `image-alt` 的外部图片不会产生重复朗读。
+- 描述区域使用礼貌级状态播报。
+- 图片插槽和操作插槽中的内容由调用方提供对应的可访问名称与键盘行为。
 
 <style scoped>
 .demo-container {
+  margin: 16px 0;
   padding: 24px;
-  background: var(--ex-color-bg-secondary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+  background: var(--ex-color-bg-secondary);
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.custom-empty-icon {
+  color: var(--ex-color-text-disabled);
+  font-size: 72px;
+  line-height: 1;
 }
 </style>
