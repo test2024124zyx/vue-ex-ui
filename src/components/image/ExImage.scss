@@ -1,282 +1,225 @@
-// ExImage 图片组件样式
-// 游戏主题风格 - ClutchZone
-
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/performance' as *;
-@use '../../styles/component-mixins' as *;
 
 .ex-image {
+  --ex-image-fit: cover;
+
   position: relative;
-  display: inline-block;
+  box-sizing: border-box;
+  display: inline-grid;
+  max-width: 100%;
   overflow: hidden;
+  color: var(--ex-color-text-primary);
+  line-height: 0;
+  vertical-align: middle;
   background: var(--ex-color-bg-secondary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-base);
-  @include safe-transition(all);
+  transition:
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
 
-  // 霓虹边框效果
-  &::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(
-      135deg,
-      var(--ex-color-neon-blue-500),
-      var(--ex-color-neon-pink-500)
-    );
-    border-radius: var(--ex-radius-base);
-    opacity: 0;
-    z-index: -1;
-    @include safe-transition(opacity);
+.ex-image__img,
+.ex-image__placeholder,
+.ex-image__error,
+.ex-image__overlay {
+  grid-area: 1 / 1;
+}
+
+.ex-image__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  object-fit: var(--ex-image-fit);
+  transition: transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+.ex-image__placeholder,
+.ex-image__error {
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--ex-color-text-tertiary);
+  line-height: 1.5;
+  text-align: center;
+  background: var(--ex-color-bg-tertiary);
+}
+
+.ex-image__spinner {
+  display: block;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ex-color-neon-blue-500);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ex-image-spinner 800ms linear infinite;
+}
+
+.ex-image__error {
+  min-width: 120px;
+  min-height: 80px;
+  flex-direction: column;
+  gap: var(--ex-spacing-2);
+  padding: var(--ex-spacing-4);
+  font-size: var(--ex-text-sm);
+}
+
+.ex-image__error-icon {
+  color: var(--ex-color-error);
+  opacity: 0.7;
+}
+
+.ex-image__error-text {
+  font-family: var(--ex-font-secondary);
+  letter-spacing: 0.02em;
+}
+
+.ex-image__overlay {
+  z-index: 2;
+  line-height: normal;
+  pointer-events: none;
+}
+
+.ex-image__preview-trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: wait;
+  touch-action: manipulation;
+
+  &:disabled {
+    cursor: not-allowed;
   }
 
-  &:hover::before {
-    opacity: 0.3;
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: -3px;
   }
+}
 
-  // ============================================================================
-  // 图片元素
-  // ============================================================================
-  
-  &__img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    @include safe-transition(transform, filter);
+.ex-image--preview-ready {
+  cursor: zoom-in;
 
-    &:hover {
-      transform: scale(1.05);
-    }
+  .ex-image__preview-trigger {
+    cursor: zoom-in;
   }
+}
 
-  // ============================================================================
-  // 加载占位
-  // ============================================================================
-  
-  &__placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--ex-color-bg-tertiary);
-    color: var(--ex-color-text-tertiary);
-    z-index: 1;
-
-    // 加载动画
-    &::after {
-      content: '';
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--ex-color-neon-blue-500);
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      @include optimized-neon-glow('blue', 'sm');
-    }
-  }
-
-  // ============================================================================
-  // 错误状态
-  // ============================================================================
-  
-  &__error {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ex-spacing-2);
-    background: var(--ex-color-bg-tertiary);
-    color: var(--ex-color-text-tertiary);
-    font-size: var(--ex-text-sm);
-    text-align: center;
-    padding: var(--ex-spacing-4);
-    z-index: 1;
-
-    &-icon {
-      width: 48px;
-      height: 48px;
-      color: var(--ex-color-error);
-      opacity: 0.6;
-
-      svg {
-        width: 100%;
-        height: 100%;
-      }
-    }
-
-    &-text {
-      font-family: var(--ex-font-secondary);
-      letter-spacing: 0.5px;
-    }
-  }
-
-  // ============================================================================
-  // 预览模式
-  // ============================================================================
-  
-  &--preview {
-    cursor: pointer;
-
-    &:hover {
-      border-color: var(--ex-color-neon-blue-500);
-      @include optimized-neon-glow('blue', 'sm');
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
-
-  // ============================================================================
-  // 圆形图片
-  // ============================================================================
-  
-  &--circle {
-    border-radius: 50%;
-
-    &::before {
-      border-radius: 50%;
-    }
+@media (hover: hover) {
+  .ex-image--preview-ready:hover {
+    border-color: var(--ex-color-neon-blue-500);
+    box-shadow: 0 0 0 2px var(--ex-color-neon-blue-alpha-20);
+    transform: translateY(-1px);
 
     .ex-image__img {
-      border-radius: 50%;
-    }
-  }
-
-  // ============================================================================
-  // 响应式设计
-  // ============================================================================
-  
-  @include mobile {
-    &__placeholder::after {
-      width: 32px;
-      height: 32px;
-      border-width: 2px;
-    }
-
-    &__error {
-      font-size: var(--ex-text-xs);
-      padding: var(--ex-spacing-3);
-
-      &-icon {
-        width: 36px;
-        height: 36px;
-      }
-    }
-  }
-
-  // ============================================================================
-  // 无障碍支持
-  // ============================================================================
-  
-  @media (prefers-reduced-motion: reduce) {
-    &,
-    &__img,
-    &::before {
-      transition: none;
-      animation: none;
-    }
-
-    &__img:hover {
-      transform: none;
-    }
-
-    &__placeholder::after {
-      animation: none;
-    }
-  }
-
-  // 高对比度模式
-  @media (prefers-contrast: high) {
-    border-width: 2px;
-
-    &:hover {
-      border-width: 3px;
+      transform: scale(1.04);
     }
   }
 }
 
-// ============================================================================
-// 动画定义
-// ============================================================================
+.ex-image--circle,
+.ex-image--circle .ex-image__img {
+  border-radius: 50%;
+}
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
+@keyframes ex-image-spinner {
   to {
     transform: rotate(360deg);
   }
 }
 
-// ============================================================================
-// 内置全屏预览
-// ============================================================================
-
 .ex-image-preview {
   position: fixed;
   inset: 0;
   z-index: var(--ex-z-modal, 1050);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--ex-spacing-6, 24px);
-  background: var(--ex-color-black-alpha-70, rgba(0, 0, 0, 0.7));
+  padding: var(--ex-spacing-6);
+  background: var(--ex-color-black-alpha-70);
   backdrop-filter: blur(4px);
+}
 
-  &__img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: var(--ex-radius-base);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+.ex-image-preview__img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--ex-radius-base);
+  box-shadow: var(--ex-shadow-xl);
+}
+
+.ex-image-preview__close {
+  position: absolute;
+  top: var(--ex-spacing-4);
+  right: var(--ex-spacing-4);
+  z-index: 2;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  appearance: none;
+  color: var(--ex-color-text-primary);
+  background: var(--ex-color-bg-secondary);
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-base);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+  @include focus-ring();
+}
+
+@media (hover: hover) {
+  .ex-image-preview__close:hover {
+    color: var(--ex-color-neon-blue-500);
+    border-color: var(--ex-color-neon-blue-500);
   }
+}
 
-  &__close {
-    position: absolute;
-    top: var(--ex-spacing-4, 16px);
-    right: var(--ex-spacing-4, 16px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    color: var(--ex-color-text-primary, #fff);
-    background: var(--ex-color-bg-secondary, rgba(0, 0, 0, 0.4));
-    border: 1px solid var(--ex-color-border-primary, rgba(255, 255, 255, 0.2));
-    border-radius: var(--ex-radius-base);
-    cursor: pointer;
-    @include safe-transition(all);
+.ex-image-preview__loading,
+.ex-image-preview__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 
-    &:hover {
-      color: var(--ex-color-neon-blue-500);
-      border-color: var(--ex-color-neon-blue-500);
-    }
+.ex-image-preview__error {
+  flex-direction: column;
+  gap: var(--ex-spacing-3);
+  color: var(--ex-color-text-primary);
+  font-size: var(--ex-text-base);
+  line-height: 1.5;
+}
 
-    &:focus-visible {
-      outline: 2px solid var(--ex-color-neon-blue-500);
-      outline-offset: 2px;
-    }
-  }
+.ex-image-preview__error .ex-icon {
+  color: var(--ex-color-error);
 }
 
 .ex-image-preview-fade-enter-active,
 .ex-image-preview-fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 160ms ease;
 }
 
 .ex-image-preview-fade-enter-from,
@@ -284,9 +227,48 @@
   opacity: 0;
 }
 
+@include mobile {
+  .ex-image__spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+
+  .ex-image__error {
+    padding: var(--ex-spacing-3);
+    font-size: var(--ex-text-xs);
+  }
+
+  .ex-image-preview {
+    padding: var(--ex-spacing-3);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ex-image,
+  .ex-image__img,
   .ex-image-preview-fade-enter-active,
   .ex-image-preview-fade-leave-active {
     transition: none;
+  }
+
+  .ex-image--preview-ready:hover,
+  .ex-image--preview-ready:hover .ex-image__img {
+    transform: none;
+  }
+
+  .ex-image__spinner {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-image {
+    border-width: 2px;
+  }
+
+  .ex-image__preview-trigger:focus-visible,
+  .ex-image-preview__close:focus-visible {
+    outline-width: 3px;
   }
 }

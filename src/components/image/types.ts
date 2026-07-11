@@ -1,28 +1,37 @@
+export type ImageLength = string | number;
+export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+
+/** 图片组件属性。 */
 export interface ExImageProps {
-  /** 图片地址 */
+  /** 主图地址。 */
   src: string;
-  /** 无障碍：替代文本（必填） */
+  /** 原生图片替代文本；装饰性图片应显式传空字符串。 */
   alt: string;
-  /** 可选标题（tooltip） */
+  /** 仅在显式设置时写入原生 title。 */
   title?: string;
-  /** 宽度（number 视为 px） */
-  width?: string | number;
-  /** 高度（number 视为 px） */
-  height?: string | number;
-  /** 对齐/裁切模式 */
-  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
-  /** 圆角（CSS 值，建议通过 tokens 覆盖） */
-  radius?: string;
-  /** 懒加载（原生 loading="lazy"） */
+  /** 宽度；非负数字和纯数字字符串按像素处理。 */
+  width?: ImageLength;
+  /** 高度；非负数字和纯数字字符串按像素处理。 */
+  height?: ImageLength;
+  /** 图片裁切模式。 */
+  fit?: ImageFit;
+  /** 圆角；非负数字按像素处理。 */
+  radius?: ImageLength;
+  /** 是否使用原生懒加载。 */
   lazy?: boolean;
-  /** 预览模式：开启后点击/回车打开内置全屏预览，并仍会触发 preview 事件 */
+  /** 是否提供内置全屏预览按钮。 */
   preview?: boolean;
-  /** 预览时展示的高清图地址，缺省时使用 src */
+  /** 高清预览地址，缺省时使用主图地址。 */
   previewSrc?: string;
 }
 
-export type ExImageEmits = {
-  (e: 'load', ev: Event): void;
-  (e: 'error', ev: Event): void;
-  (e: 'preview'): void;
-};
+export interface ExImageEmits {
+  load: [event: Event];
+  error: [event: Event];
+  preview: [];
+}
+
+export interface ExImageExposed {
+  /** 获取承载图片状态的根元素。 */
+  getElement: () => HTMLDivElement | null;
+}

@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref, watch, computed, defineOptions } from 'vue';
-import type { ExImageProps, ExImageEmits } from './types';
-import { useI18n } from '../../locale';
+import { computed, ref, useSlots, watch, type CSSProperties } from 'vue';
 import { useOverlay } from '../../composables/useOverlay';
+import { useLocale } from '../../locale';
+import { hasRenderableContent } from '../../utils/vnode';
+import ExIcon from '../icon/ExIcon.vue';
+import { normalizeImageDimension, normalizeImageRadius } from './image-utils';
+import type { ExImageEmits, ExImageExposed, ExImageProps } from './types';
 
-defineOptions({ name: 'ExImage' });
+defineOptions({
+  name: 'ExImage',
+  inheritAttrs: false,
+});
 
-const rootRef = ref<HTMLElement>();
-const overlayRef = ref<HTMLElement>();
+type ImageStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 const props = withDefaults(defineProps<ExImageProps>(), {
   fit: 'cover',
@@ -15,19 +20,68 @@ const props = withDefaults(defineProps<ExImageProps>(), {
   preview: false,
 });
 const emit = defineEmits<ExImageEmits>();
-const { t } = useI18n();
+const slots = useSlots();
+const { t } = useLocale('image');
 
-const status = ref<'idle' | 'loading' | 'loaded' | 'error'>(props.src ? 'loading' : 'idle');
-
-// 内置全屏预览
+const rootRef = ref<HTMLDivElement>();
+const mainImageRef = ref<HTMLImageElement>();
+const overlayRef = ref<HTMLDivElement>();
+const previewImageRef = ref<HTMLImageElement>();
+const status = ref<ImageStatus>(props.src ? 'loading' : 'idle');
 const previewVisible = ref(false);
-const previewSource = computed(() => props.previewSrc || props.src);
+const previewStatus = ref<ImageStatus>('idle');
 
-function closePreview() {
+const previewSource = computed(() => props.previewSrc || props.src);
+const canPreview = computed(
+  () => props.preview && status.value === 'loaded' && Boolean(previewSource.value)
+);
+const hasPlaceholderSlot = computed(() => hasRenderableContent(slots.placeholder?.({})));
+const hasErrorSlot = computed(() => hasRenderableContent(slots.error?.({})));
+const hasDefaultSlot = computed(() => hasRenderableContent(slots.default?.({})));
+
+const normalizedWidth = computed(() => normalizeImageDimension(props.width));
+const normalizedHeight = computed(() => normalizeImageDimension(props.height));
+const normalizedRadius = computed(() => normalizeImageRadius(props.radius));
+
+const imageClasses = computed(() => [
+  'ex-image',
+  `ex-image--${status.value}`,
+  {
+    'ex-image--preview': props.preview,
+    'ex-image--preview-ready': canPreview.value,
+    'ex-image--circle': normalizedRadius.value === '50%',
+  },
+]);
+
+const imageStyles = computed<CSSProperties>(
+  () =>
+    ({
+      width: normalizedWidth.value,
+      height: normalizedHeight.value,
+      borderRadius: normalizedRadius.value,
+      '--ex-image-fit': props.fit,
+    }) as CSSProperties
+);
+
+const previewTriggerLabel = computed(() =>
+  props.alt ? t('openPreview', { alt: props.alt }) : t('preview')
+);
+const previewDialogLabel = computed(() =>
+  props.alt ? t('previewDialog', { alt: props.alt }) : t('preview')
+);
+
+function closePreview(): void {
   previewVisible.value = false;
+  previewStatus.value = 'idle';
 }
 
-// 复用浮层通用机制：Esc 关闭、滚动锁定、焦点陷阱与归还
+function openPreview(): void {
+  if (!canPreview.value) return;
+  previewStatus.value = 'loading';
+  emit('preview');
+  previewVisible.value = true;
+}
+
 useOverlay({
   active: () => previewVisible.value,
   container: overlayRef,
@@ -36,138 +90,199 @@ useOverlay({
   restoreFocus: true,
 });
 
-const imageClasses = computed(() => [
-  'ex-image',
-  {
-    'ex-image--preview': props.preview,
-    'ex-image--circle': props.radius === '50%',
-  },
-]);
-
 watch(
   () => props.src,
-  src => {
-    status.value = src ? 'loading' : 'idle';
+  source => {
+    status.value = source ? 'loading' : 'idle';
+    closePreview();
   }
 );
 
-function onLoad(e: Event) {
-  status.value = 'loaded';
-  emit('load', e);
-}
-
-function onError(e: Event) {
-  status.value = 'error';
-  emit('error', e);
-}
-
-function handlePreview() {
-  if (!props.preview) return;
-  emit('preview');
-  previewVisible.value = true;
-}
-
-// 键盘触发预览：preview 模式下根元素可聚焦，Enter / Space 等同点击
-function handleKeydown(e: KeyboardEvent) {
-  if (!props.preview) return;
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    handlePreview();
+watch(
+  () => props.preview,
+  enabled => {
+    if (!enabled) closePreview();
   }
+);
+
+watch(previewSource, () => {
+  if (!previewVisible.value) return;
+  previewStatus.value = 'loading';
+});
+
+function handleLoad(event: Event): void {
+  if (event.currentTarget !== mainImageRef.value) return;
+  status.value = 'loaded';
+  emit('load', event);
 }
 
-const getElement = () => rootRef.value || null;
+function handleError(event: Event): void {
+  if (event.currentTarget !== mainImageRef.value) return;
+  status.value = 'error';
+  emit('error', event);
+}
 
-defineExpose({ getElement });
+function handlePreviewLoad(event: Event): void {
+  if (event.currentTarget === previewImageRef.value) previewStatus.value = 'loaded';
+}
+
+function handlePreviewError(event: Event): void {
+  if (event.currentTarget === previewImageRef.value) previewStatus.value = 'error';
+}
+
+const getElement = () => rootRef.value ?? null;
+
+defineExpose<ExImageExposed>({
+  getElement,
+});
 </script>
 
 <template>
   <div
     ref="rootRef"
+    v-bind="$attrs"
     :class="imageClasses"
-    role="img"
-    :aria-label="alt"
-    :tabindex="preview ? 0 : undefined"
-    :style="{
-      width: typeof width === 'number' ? `${width}px` : width,
-      height: typeof height === 'number' ? `${height}px` : height,
-      borderRadius: radius,
-    }"
-    @click="handlePreview"
-    @keydown="handleKeydown"
+    :style="imageStyles"
+    :aria-busy="status === 'loading' ? 'true' : undefined"
   >
     <img
       v-if="src && status !== 'error'"
+      :key="src"
+      ref="mainImageRef"
       class="ex-image__img"
       :src="src"
       :alt="alt"
-      :title="title || alt"
-      :loading="lazy ? 'lazy' : undefined"
-      :decoding="lazy ? 'async' : 'auto'"
-      :style="{ objectFit: fit }"
-      @load="onLoad"
-      @error="onError"
+      :title="title"
+      :loading="lazy ? 'lazy' : 'eager'"
+      decoding="async"
+      :draggable="false"
+      @load="handleLoad"
+      @error="handleError"
     />
 
-    <!-- 加载占位 -->
-    <div v-if="status === 'loading'" class="ex-image__placeholder" aria-hidden="true">
-      <slot name="placeholder" />
+    <div
+      v-if="status === 'loading'"
+      class="ex-image__placeholder"
+      role="status"
+      aria-live="polite"
+      :aria-label="t('loading')"
+    >
+      <slot
+        v-if="hasPlaceholderSlot"
+        name="placeholder"
+      ></slot>
+      <span
+        v-else
+        class="ex-image__spinner"
+        aria-hidden="true"
+      ></span>
     </div>
 
-    <!-- 错误状态 -->
     <div
       v-else-if="status === 'error'"
       class="ex-image__error"
       role="alert"
-      :aria-label="t('image.error')"
+      :aria-label="hasErrorSlot ? undefined : t('error')"
     >
-      <slot name="error">
-        <div class="ex-image__error-icon">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
-              fill="currentColor"
-            />
-          </svg>
-        </div>
-        <span class="ex-image__error-text">{{ t('image.error') }}</span>
-      </slot>
+      <slot
+        v-if="hasErrorSlot"
+        name="error"
+      ></slot>
+      <template v-else>
+        <ExIcon
+          class="ex-image__error-icon"
+          icon="error-warning-line"
+          :size="48"
+          aria-hidden="true"
+        />
+        <span class="ex-image__error-text">{{ t('error') }}</span>
+      </template>
     </div>
 
-    <!-- 默认插槽：额外装饰内容 -->
-    <slot v-if="status === 'loaded'" />
-  </div>
+    <div
+      v-if="status === 'loaded' && hasDefaultSlot"
+      class="ex-image__overlay"
+    >
+      <slot></slot>
+    </div>
 
-  <!-- 内置全屏预览 -->
-  <Teleport to="body">
-    <Transition name="ex-image-preview-fade">
-      <div
-        v-if="previewVisible"
-        ref="overlayRef"
-        class="ex-image-preview"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="alt"
-        @click.self="closePreview"
-      >
-        <button
-          type="button"
-          class="ex-image-preview__close"
-          :aria-label="t('image.closePreview')"
-          @click="closePreview"
+    <button
+      v-if="preview"
+      type="button"
+      class="ex-image__preview-trigger"
+      :disabled="!canPreview"
+      :aria-label="previewTriggerLabel"
+      aria-haspopup="dialog"
+      :aria-expanded="previewVisible"
+      @click="openPreview"
+    ></button>
+
+    <Teleport to="body">
+      <Transition name="ex-image-preview-fade">
+        <div
+          v-if="previewVisible"
+          ref="overlayRef"
+          class="ex-image-preview"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="previewDialogLabel"
+          :aria-busy="previewStatus === 'loading' ? 'true' : undefined"
+          @click.self="closePreview"
         >
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-            <path
-              d="M6 6l12 12M18 6L6 18"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
+          <button
+            type="button"
+            class="ex-image-preview__close"
+            :aria-label="t('closePreview')"
+            @click="closePreview"
+          >
+            <ExIcon
+              icon="close-line"
+              :size="24"
+              aria-hidden="true"
             />
-          </svg>
-        </button>
-        <img class="ex-image-preview__img" :src="previewSource" :alt="alt" />
-      </div>
-    </Transition>
-  </Teleport>
+          </button>
+
+          <img
+            v-if="previewStatus !== 'error'"
+            :key="previewSource"
+            ref="previewImageRef"
+            class="ex-image-preview__img"
+            :src="previewSource"
+            :alt="alt"
+            decoding="async"
+            :draggable="false"
+            @load="handlePreviewLoad"
+            @error="handlePreviewError"
+          />
+
+          <div
+            v-if="previewStatus === 'loading'"
+            class="ex-image-preview__loading"
+            role="status"
+            :aria-label="t('previewLoading')"
+          >
+            <span
+              class="ex-image__spinner"
+              aria-hidden="true"
+            ></span>
+          </div>
+
+          <div
+            v-else-if="previewStatus === 'error'"
+            class="ex-image-preview__error"
+            role="alert"
+          >
+            <ExIcon
+              icon="error-warning-line"
+              :size="48"
+              aria-hidden="true"
+            />
+            <span>{{ t('previewError') }}</span>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
+
 <style scoped lang="scss" src="./ExImage.scss"></style>
