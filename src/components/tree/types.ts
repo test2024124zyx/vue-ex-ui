@@ -1,3 +1,5 @@
+import type { VNode } from 'vue';
+
 /**
  * 树节点数据
  */
@@ -58,6 +60,8 @@ export interface ExTreeProps {
   draggable?: boolean;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 树容器的无障碍名称。 */
+  ariaLabel?: string;
   /** 是否虚拟滚动（大数据量时仅渲染可视窗口内的节点） */
   virtual?: boolean;
   /** 节点行高（虚拟滚动时使用，像素） */
@@ -111,6 +115,11 @@ export interface ExTreeEmits {
   ];
 }
 
+/** 树节点内容插槽。 */
+export interface ExTreeSlots {
+  default?: (props: { node: TreeNode }) => VNode[];
+}
+
 /**
  * 树组件暴露的方法
  */
@@ -121,18 +130,18 @@ export interface ExTreeExposed {
   getCheckedNodes: () => TreeNode[];
   /** 获取半选中的节点 */
   getHalfCheckedNodes: () => TreeNode[];
-  /** 设置某个节点的选中状态 */
-  setSelected: (key: string, selected: boolean) => void;
-  /** 设置某个节点的勾选状态 */
-  setChecked: (key: string, checked: boolean) => void;
-  /** 设置某个节点的展开状态 */
-  setExpanded: (key: string, expanded: boolean) => void;
+  /** 请求父级或内部状态更新某个节点的选择状态；返回是否接受请求。 */
+  requestNodeSelection: (key: string, selected: boolean) => boolean;
+  /** 请求父级或内部状态更新某个节点的勾选状态；返回是否接受请求。 */
+  requestNodeCheck: (key: string, checked: boolean) => boolean;
+  /** 请求父级或内部状态更新某个节点的展开状态；返回是否接受请求。 */
+  requestNodeExpansion: (key: string, expanded: boolean) => boolean;
   /** 获取节点 */
   getNode: (key: string) => TreeNode | null;
-  /** 展开所有节点 */
-  expandAll: () => void;
-  /** 收起所有节点 */
-  collapseAll: () => void;
+  /** 请求展开所有可展开节点。 */
+  requestExpandAll: () => void;
+  /** 请求收起所有节点。 */
+  requestCollapseAll: () => void;
   /** 过滤节点 */
   filter: (value: string) => void;
   /** 获取组件DOM元素 */

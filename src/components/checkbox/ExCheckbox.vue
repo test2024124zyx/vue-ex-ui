@@ -1,7 +1,13 @@
 <template>
-  <div :class="wrapperClasses" :style="wrapperStyles">
+  <div
+    :class="wrapperClasses"
+    :style="wrapperStyles"
+  >
     <!-- 复选框容器 -->
-    <label :class="checkboxClasses" :for="checkboxId">
+    <label
+      :class="checkboxClasses"
+      :for="checkboxId"
+    >
       <!-- 隐藏的原生复选框 -->
       <input
         v-if="checkboxGroupContext"
@@ -14,6 +20,7 @@
         :readonly="currentReadonly"
         :name="currentName"
         :required="required"
+        :aria-label="ariaLabel"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         :aria-readonly="currentReadonly || undefined"
@@ -35,6 +42,7 @@
         :readonly="currentReadonly"
         :name="currentName"
         :required="required"
+        :aria-label="ariaLabel"
         :true-value="trueValue"
         :false-value="falseValue"
         :aria-describedby="ariaDescribedBy"
@@ -67,15 +75,25 @@
       </span>
 
       <!-- 标签文本 -->
-      <span v-if="hasLabel" class="ex-checkbox__label-text">
+      <span
+        v-if="hasLabel"
+        class="ex-checkbox__label-text"
+      >
         <slot>{{ label }}</slot>
       </span>
     </label>
 
     <!-- 底部信息 -->
-    <div v-if="showBottomInfo" class="ex-checkbox__bottom">
+    <div
+      v-if="showBottomInfo"
+      class="ex-checkbox__bottom"
+    >
       <!-- 帮助文本 -->
-      <div v-if="helpText || $slots.help" :id="`${checkboxId}-help`" class="ex-checkbox__help">
+      <div
+        v-if="helpText || $slots.help"
+        :id="`${checkboxId}-help`"
+        class="ex-checkbox__help"
+      >
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -90,7 +108,11 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon icon="error-warning-line" :size="14" class="ex-checkbox__error-icon" />
+          <ex-icon
+            icon="error-warning-line"
+            :size="14"
+            class="ex-checkbox__error-icon"
+          />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>

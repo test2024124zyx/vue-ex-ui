@@ -1,8 +1,8 @@
 import { ExFileDownloadError } from './errors';
 import type { ExFileDownloadProgress } from './types';
+import { formatFileSize } from '../../utils/format';
 
 const ALLOWED_DOWNLOAD_PROTOCOLS = new Set(['http:', 'https:', 'blob:']);
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'] as const;
 const DEFAULT_DOWNLOAD_NAME = 'download';
 
 const runtimeBaseUrl = (): string => {
@@ -135,15 +135,5 @@ export const calculateDownloadProgress = (
   return { loaded: safeLoaded, total: safeTotal, percent };
 };
 
-/** 使用最多两位有效小数格式化字节，非法输入统一按零字节处理。 */
-export const formatDownloadBytes = (bytes: number): string => {
-  const safeBytes = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
-  if (safeBytes === 0) return '0 B';
-
-  const unitIndex = Math.min(
-    Math.floor(Math.log(safeBytes) / Math.log(1024)),
-    BYTE_UNITS.length - 1
-  );
-  const value = safeBytes / 1024 ** unitIndex;
-  return `${Number(value.toFixed(2))} ${BYTE_UNITS[unitIndex]}`;
-};
+/** 下载命名空间保留兼容别名，实际格式化能力统一由共享工具实现。 */
+export const formatDownloadBytes = formatFileSize;

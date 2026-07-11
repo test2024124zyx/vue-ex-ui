@@ -419,6 +419,7 @@ const agreed = ref(false)
 | falseValue | 未选中状态的值 | `boolean \| string \| number` | `false` |
 | value | 复选框的值（在 CheckboxGroup 中使用） | `string \| number` | - |
 | label | 复选框标签 | `string` | - |
+| aria-label | 无可见标签时的无障碍名称 | `string` | - |
 | size | 组件大小 | `'small' \| 'medium' \| 'large'` | `'medium'` |
 | status | 组件状态 | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` |
 | disabled | 是否禁用 | `boolean` | `false` |

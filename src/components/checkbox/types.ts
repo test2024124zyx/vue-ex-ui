@@ -23,6 +23,8 @@ export interface ExCheckboxProps {
   value?: string | number;
   /** 复选框标签 */
   label?: string;
+  /** 原生复选框的无障碍名称；无可见标签时必须提供。 */
+  ariaLabel?: string;
   /** 组件大小 */
   size?: CheckboxSize;
   /** 组件状态 */

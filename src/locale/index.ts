@@ -28,6 +28,9 @@ export const SUPPORTED_LOCALES = {
 
 export type SupportedLocale = keyof typeof SUPPORTED_LOCALES;
 
+const isSupportedLocale = (value: string): value is SupportedLocale =>
+  Object.prototype.hasOwnProperty.call(SUPPORTED_LOCALES, value);
+
 /** ConfigProvider 用于隔离子树语言的注入键。 */
 export const LOCALE_INJECTION_KEY: InjectionKey<Readonly<Ref<SupportedLocale>>> =
   Symbol('exui-locale');
@@ -113,16 +116,21 @@ export function useLocale(componentName: keyof Locale) {
   const providedLocale = inject(LOCALE_INJECTION_KEY, null);
 
   if (providedLocale) {
+    const locale = computed(() => providedLocale.value);
     const tWithScope = (key: string, params?: TranslationParams) =>
       translateBuiltIn(providedLocale.value, `${componentName}.${key}`, params);
     const messages = computed(
       () => SUPPORTED_LOCALES[providedLocale.value][componentName] as Record<string, string>
     );
-    return { t: tWithScope, messages };
+    return { t: tWithScope, messages, locale };
   }
 
   if (_i18n.value) {
     const composer = _i18n.value.global;
+    const locale = computed<SupportedLocale>(() => {
+      const value = composer.locale.value;
+      return isSupportedLocale(value) ? value : DEFAULT_LOCALE;
+    });
     const tWithScope = (key: string, params?: TranslationParams) => {
       const fullKey = `${componentName}.${key}`;
       return params ? composer.t(fullKey, params) : composer.t(fullKey);
@@ -133,14 +141,15 @@ export function useLocale(componentName: keyof Locale) {
       const scoped = all[localeCode] as Record<string, unknown> | undefined;
       return (scoped?.[componentName as string] as Record<string, string>) || {};
     });
-    return { t: tWithScope, messages };
+    return { t: tWithScope, messages, locale };
   }
   const componentMessages = computed(
     () => currentMessages.value[componentName] as Record<string, string>
   );
   const tWithScope = (key: string, params?: Record<string, unknown>) =>
     t(`${componentName}.${key}`, params);
-  return { t: tWithScope, messages: componentMessages };
+  const locale = computed(() => currentLocale.value);
+  return { t: tWithScope, messages: componentMessages, locale };
 }
 
 // Vue 插件

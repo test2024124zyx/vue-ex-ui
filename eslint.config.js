@@ -39,6 +39,15 @@ export default tseslint.config(
       // Vue 规则
       'vue/attributes-order': 'warn', // 启用属性顺序检查
       'vue/singleline-html-element-content-newline': 'warn', // 启用单行HTML元素换行检查
+      // 与 Prettier 的 Vue 输出保持同一套严格语法，避免空元素产生不可同时满足的冲突。
+      'vue/html-self-closing': [
+        'warn',
+        {
+          html: { void: 'always', normal: 'never', component: 'always' },
+          svg: 'always',
+          math: 'always',
+        },
+      ],
       'vue/multi-word-component-names': 'off', // 允许单词组件名称
     },
   }

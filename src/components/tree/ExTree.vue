@@ -1,5 +1,13 @@
 <template>
-  <div ref="treeRef" :class="treeClasses" :style="treeStyles" role="tree">
+  <div
+    ref="treeRef"
+    :class="treeClasses"
+    :style="treeStyles"
+    role="tree"
+    :aria-label="ariaLabel"
+    :aria-multiselectable="multiple ? true : undefined"
+    :aria-disabled="disabled || undefined"
+  >
     <!-- 虚拟滚动模式：扁平化 + 窗口化渲染 -->
     <div
       v-if="virtual"
@@ -18,11 +26,12 @@
             flat
             :node="node"
             :level="level"
-            :style="{ height: `${itemHeight}px` }"
-            :expanded-keys="internalExpandedKeys"
-            :selected-keys="internalSelectedKeys"
-            :checked-keys="internalCheckedKeys"
+            :style="{ height: `${safeItemHeight}px` }"
+            :expanded-keys="effectiveExpandedKeys"
+            :selected-keys="effectiveSelectedKeys"
+            :checked-keys="effectiveCheckedKeys"
             :half-checked-keys="halfCheckedKeys"
+            :active-key="renderedActiveKey"
             :selectable="selectable"
             :checkable="checkable"
             :show-line="showLine"
@@ -32,6 +41,7 @@
             @toggle="handleToggle"
             @select="handleSelect"
             @check="handleCheck"
+            @focus-node="handleFocusNode"
             @node-click="handleNodeClick"
             @node-contextmenu="handleNodeContextmenu"
             @node-drag-start="handleNodeDragStart"
@@ -39,7 +49,13 @@
             @node-drag-leave="handleNodeDragLeave"
             @node-drag-end="handleNodeDragEnd"
             @node-drop="handleNodeDrop"
-          />
+          >
+            <template #default="{ node: slotNode }">
+              <slot :node="slotNode">
+                {{ slotNode.label }}
+              </slot>
+            </template>
+          </ExTreeNode>
         </div>
       </div>
     </div>
@@ -51,10 +67,11 @@
         :key="node.key"
         :node="node"
         :level="0"
-        :expanded-keys="internalExpandedKeys"
-        :selected-keys="internalSelectedKeys"
-        :checked-keys="internalCheckedKeys"
+        :expanded-keys="effectiveExpandedKeys"
+        :selected-keys="effectiveSelectedKeys"
+        :checked-keys="effectiveCheckedKeys"
         :half-checked-keys="halfCheckedKeys"
+        :active-key="renderedActiveKey"
         :selectable="selectable"
         :checkable="checkable"
         :show-line="showLine"
@@ -64,6 +81,7 @@
         @toggle="handleToggle"
         @select="handleSelect"
         @check="handleCheck"
+        @focus-node="handleFocusNode"
         @node-click="handleNodeClick"
         @node-contextmenu="handleNodeContextmenu"
         @node-drag-start="handleNodeDragStart"
@@ -71,7 +89,13 @@
         @node-drag-leave="handleNodeDragLeave"
         @node-drag-end="handleNodeDragEnd"
         @node-drop="handleNodeDrop"
-      />
+      >
+        <template #default="{ node: slotNode }">
+          <slot :node="slotNode">
+            {{ slotNode.label }}
+          </slot>
+        </template>
+      </ExTreeNode>
     </template>
   </div>
 </template>
@@ -79,7 +103,8 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { ref, computed, watch, provide, onBeforeUnmount } from 'vue';
-import type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode } from './types';
+import { useControllableState } from '../../composables/useControllableState';
+import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
 
 defineOptions({
@@ -110,21 +135,58 @@ const props = withDefaults(defineProps<ExTreeProps>(), {
 });
 
 const emit = defineEmits<ExTreeEmits>();
+defineSlots<ExTreeSlots>();
 
 const treeRef = ref<HTMLDivElement>();
 const filterValue = ref('');
 
-// 内部状态（始终持有副本，避免原地 mutate 外部传入的 prop 数组）
-const internalExpandedKeys = ref<string[]>([
-  ...(props.expandedKeys ?? props.defaultExpandedKeys ?? []),
-]);
-const internalSelectedKeys = ref<string[]>([
-  ...(props.selectedKeys ?? props.defaultSelectedKeys ?? []),
-]);
-const internalCheckedKeys = ref<string[]>([
-  ...(props.checkedKeys ?? props.defaultCheckedKeys ?? []),
-]);
-const halfCheckedKeys = ref<string[]>([]);
+const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
+  for (const node of nodes) {
+    if (!node.disabled) return node.key;
+    const childKey = node.children ? findFirstEnabledKey(node.children) : null;
+    if (childKey) return childKey;
+  }
+  return null;
+};
+const activeKey = ref<string | null>(findFirstEnabledKey(props.data));
+
+const collectExpandableKeys = (nodes: readonly TreeNode[]): string[] => {
+  const keys: string[] = [];
+  const visit = (items: readonly TreeNode[]) => {
+    for (const node of items) {
+      if (node.children && node.children.length > 0) {
+        keys.push(node.key);
+        visit(node.children);
+      }
+    }
+  };
+  visit(nodes);
+  return keys;
+};
+
+const expandedState = useControllableState<string[]>({
+  controlledValue: () => props.expandedKeys,
+  defaultValue: () =>
+    props.defaultExpandAll ? collectExpandableKeys(props.data) : [...props.defaultExpandedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:expandedKeys', keys),
+});
+const selectedState = useControllableState<string[]>({
+  controlledValue: () => props.selectedKeys,
+  defaultValue: () => [...props.defaultSelectedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:selectedKeys', keys),
+});
+const checkedState = useControllableState<string[]>({
+  controlledValue: () => props.checkedKeys,
+  defaultValue: () => [...props.defaultCheckedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:checkedKeys', keys),
+});
+
+const effectiveExpandedKeys = expandedState.value;
+const effectiveSelectedKeys = selectedState.value;
+const effectiveCheckedKeys = checkedState.value;
 
 // 节点映射
 const nodeMap = computed(() => {
@@ -191,8 +253,24 @@ const treeStyles = computed(() => {
 // ============================================================================
 const scrollTop = ref(0);
 
+const safeItemHeight = computed(() =>
+  Number.isFinite(props.itemHeight) && props.itemHeight >= 1 ? Math.floor(props.itemHeight) : 28
+);
+const safeVirtualBuffer = computed(() =>
+  Number.isFinite(props.virtualBuffer) && props.virtualBuffer >= 0
+    ? Math.floor(props.virtualBuffer)
+    : 6
+);
+const safeViewportHeight = computed(() =>
+  typeof props.height === 'number' && Number.isFinite(props.height) && props.height > 0
+    ? props.height
+    : 400
+);
 const viewportStyle = computed(() => ({
-  height: typeof props.height === 'number' ? `${props.height}px` : props.height,
+  height:
+    typeof props.height === 'number'
+      ? `${safeViewportHeight.value}px`
+      : props.height.trim() || '400px',
   overflowY: 'auto' as const,
 }));
 
@@ -205,7 +283,7 @@ const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
       if (
         node.children &&
         node.children.length > 0 &&
-        internalExpandedKeys.value.includes(node.key)
+        effectiveExpandedKeys.value.includes(node.key)
       ) {
         walk(node.children, level + 1);
       }
@@ -217,10 +295,10 @@ const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
 
 const virtualRange = computed(() => {
   const total = flattenedNodes.value.length;
-  const viewport = typeof props.height === 'number' ? props.height : 400;
-  const buffer = props.virtualBuffer;
-  const start = Math.max(0, Math.floor(scrollTop.value / props.itemHeight) - buffer);
-  const visibleCount = Math.ceil(viewport / props.itemHeight) + buffer * 2;
+  const viewport = safeViewportHeight.value;
+  const buffer = safeVirtualBuffer.value;
+  const start = Math.max(0, Math.floor(scrollTop.value / safeItemHeight.value) - buffer);
+  const visibleCount = Math.ceil(viewport / safeItemHeight.value) + buffer * 2;
   const end = Math.min(total, start + visibleCount);
   return { start, end };
 });
@@ -229,8 +307,30 @@ const virtualNodes = computed(() =>
   flattenedNodes.value.slice(virtualRange.value.start, virtualRange.value.end)
 );
 
-const topSpacerHeight = computed(() => virtualRange.value.start * props.itemHeight);
-const totalSpacerHeight = computed(() => flattenedNodes.value.length * props.itemHeight);
+watch(
+  flattenedNodes,
+  nodes => {
+    const enabledNodes = nodes.filter(({ node }) => !node.disabled);
+    if (enabledNodes.some(({ node }) => node.key === activeKey.value)) return;
+
+    const selectedNode = enabledNodes.find(({ node }) =>
+      effectiveSelectedKeys.value.includes(node.key)
+    );
+    activeKey.value = selectedNode?.node.key ?? enabledNodes[0]?.node.key ?? null;
+  },
+  { immediate: true }
+);
+
+const renderedActiveKey = computed(() => {
+  if (!props.virtual) return activeKey.value;
+  const enabledNodes = virtualNodes.value.filter(({ node }) => !node.disabled);
+  return enabledNodes.some(({ node }) => node.key === activeKey.value)
+    ? activeKey.value
+    : (enabledNodes[0]?.node.key ?? null);
+});
+
+const topSpacerHeight = computed(() => virtualRange.value.start * safeItemHeight.value);
+const totalSpacerHeight = computed(() => flattenedNodes.value.length * safeItemHeight.value);
 
 let virtualRaf: number | null = null;
 const handleVirtualScroll = (e: Event) => {
@@ -249,71 +349,14 @@ onBeforeUnmount(() => {
   }
 });
 
-// 监听外部变化
-watch(
-  () => props.expandedKeys,
-  val => {
-    if (val !== undefined) {
-      internalExpandedKeys.value = [...val];
-    }
-  }
-);
-
-watch(
-  () => props.selectedKeys,
-  val => {
-    if (val !== undefined) {
-      internalSelectedKeys.value = [...val];
-    }
-  }
-);
-
-watch(
-  () => props.checkedKeys,
-  val => {
-    if (val !== undefined) {
-      internalCheckedKeys.value = [...val];
-      updateHalfCheckedKeys();
-    }
-  }
-);
-
-// 暴露的方法（需要在 watch 之前定义）
-const expandAll = () => {
-  const keys: string[] = [];
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        keys.push(node.key);
-        traverse(node.children);
-      }
-    });
-  };
-  traverse(props.data);
-  internalExpandedKeys.value = keys;
-  emit('update:expandedKeys', keys);
-};
-
-// 默认展开所有
-watch(
-  () => props.defaultExpandAll,
-  val => {
-    if (val) {
-      expandAll();
-    }
-  },
-  { immediate: true }
-);
-
-// 更新半选状态
-const updateHalfCheckedKeys = () => {
+// 半选状态完全由真实 checkedKeys 推导，不维护可失步的第二份状态。
+const halfCheckedKeys = computed<string[]>(() => {
   if (props.checkStrictly) {
-    halfCheckedKeys.value = [];
-    return;
+    return [];
   }
 
   const half = new Set<string>();
-  const checked = new Set(internalCheckedKeys.value);
+  const checked = new Set(effectiveCheckedKeys.value);
 
   const traverse = (nodes: TreeNode[]) => {
     nodes.forEach(node => {
@@ -331,14 +374,16 @@ const updateHalfCheckedKeys = () => {
   };
 
   traverse(props.data);
-  halfCheckedKeys.value = Array.from(half);
-};
+  return Array.from(half);
+});
 
 // 获取所有子节点的 key
+const isNodeCheckable = (node: TreeNode): boolean => !node.disabled && node.checkable !== false;
+
 const getAllChildKeys = (node: TreeNode): string[] => {
   const keys: string[] = [];
   const traverse = (n: TreeNode) => {
-    keys.push(n.key);
+    if (isNodeCheckable(n)) keys.push(n.key);
     if (n.children) {
       n.children.forEach(traverse);
     }
@@ -378,44 +423,52 @@ const getAllParentKeys = (key: string): string[] => {
 
 // 处理展开/收起（不可变更新 + emit 拷贝，避免外泄内部引用）
 const handleToggle = (node: TreeNode, expanded: boolean) => {
-  const has = internalExpandedKeys.value.includes(node.key);
+  if (props.disabled || node.disabled) return;
+  const currentKeys = effectiveExpandedKeys.value;
+  const has = currentKeys.includes(node.key);
+  let nextKeys: string[];
 
   if (expanded && !has) {
-    internalExpandedKeys.value = [...internalExpandedKeys.value, node.key];
+    nextKeys = [...currentKeys, node.key];
   } else if (!expanded && has) {
-    internalExpandedKeys.value = internalExpandedKeys.value.filter(k => k !== node.key);
+    nextKeys = currentKeys.filter(key => key !== node.key);
   } else {
     return;
   }
 
-  emit('update:expandedKeys', [...internalExpandedKeys.value]);
-  emit('expand', [...internalExpandedKeys.value], node, expanded);
+  expandedState.request(nextKeys);
+  emit('expand', [...nextKeys], node, expanded);
 };
 
 // 处理选择
 const handleSelect = (node: TreeNode, selected: boolean) => {
-  if (!props.selectable || node.disabled || node.selectable === false) return;
+  if (props.disabled || !props.selectable || node.disabled || node.selectable === false) return;
+
+  const currentKeys = effectiveSelectedKeys.value;
+  let nextKeys: string[];
 
   if (props.multiple) {
-    const has = internalSelectedKeys.value.includes(node.key);
+    const has = currentKeys.includes(node.key);
     if (selected && !has) {
-      internalSelectedKeys.value = [...internalSelectedKeys.value, node.key];
+      nextKeys = [...currentKeys, node.key];
     } else if (!selected && has) {
-      internalSelectedKeys.value = internalSelectedKeys.value.filter(k => k !== node.key);
+      nextKeys = currentKeys.filter(key => key !== node.key);
+    } else {
+      return;
     }
   } else {
-    internalSelectedKeys.value = selected ? [node.key] : [];
+    nextKeys = selected ? [node.key] : [];
   }
 
-  emit('update:selectedKeys', [...internalSelectedKeys.value]);
-  emit('select', [...internalSelectedKeys.value], node, selected);
+  selectedState.request(nextKeys);
+  emit('select', [...nextKeys], node, selected);
 };
 
 // 处理勾选
 const handleCheck = (node: TreeNode, checked: boolean) => {
-  if (!props.checkable || node.disabled || node.checkable === false) return;
+  if (props.disabled || !props.checkable || node.disabled || node.checkable === false) return;
 
-  const checkedSet = new Set(internalCheckedKeys.value);
+  const checkedSet = new Set(effectiveCheckedKeys.value);
 
   if (checked) {
     checkedSet.add(node.key);
@@ -427,8 +480,9 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
       parentKeys.forEach(parentKey => {
         const parentNode = nodeMap.value.get(parentKey);
         if (parentNode?.children) {
-          const allChildrenChecked = parentNode.children.every(child => checkedSet.has(child.key));
-          if (allChildrenChecked) {
+          const checkableChildren = parentNode.children.filter(isNodeCheckable);
+          const allChildrenChecked = checkableChildren.every(child => checkedSet.has(child.key));
+          if (checkableChildren.length > 0 && allChildrenChecked) {
             checkedSet.add(parentKey);
           }
         }
@@ -444,16 +498,18 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
     }
   }
 
-  internalCheckedKeys.value = Array.from(checkedSet);
-  updateHalfCheckedKeys();
-
-  emit('update:checkedKeys', [...internalCheckedKeys.value]);
-  emit('check', [...internalCheckedKeys.value], node, checked);
+  const nextKeys = Array.from(checkedSet);
+  checkedState.request(nextKeys);
+  emit('check', [...nextKeys], node, checked);
 };
 
 // 处理节点点击
 const handleNodeClick = (node: TreeNode, event: MouseEvent) => {
   emit('node-click', node, event);
+};
+
+const handleFocusNode = (node: TreeNode) => {
+  activeKey.value = node.key;
 };
 
 // 处理节点右键
@@ -484,20 +540,21 @@ const handleNodeDrop = (
   position: 'before' | 'after' | 'inner',
   event: DragEvent
 ) => {
-  // 子组件只携带 key 透传，这里用 nodeMap 还原出完整的拖拽节点
-  const resolvedDragNode = nodeMap.value.get(dragNode.key) ?? dragNode;
+  // 只接受当前树发起的拖拽，保证事件中的 dragNode 始终是完整原始节点。
+  const resolvedDragNode = nodeMap.value.get(dragNode.key);
+  if (!resolvedDragNode) return;
   emit('node-drop', resolvedDragNode, dropNode, position, event);
 };
 
 // 其他暴露的方法
 const getSelectedNodes = (): TreeNode[] => {
-  return internalSelectedKeys.value
+  return effectiveSelectedKeys.value
     .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
 
 const getCheckedNodes = (): TreeNode[] => {
-  return internalCheckedKeys.value
+  return effectiveCheckedKeys.value
     .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
@@ -508,34 +565,41 @@ const getHalfCheckedNodes = (): TreeNode[] => {
     .filter((node): node is TreeNode => node !== undefined);
 };
 
-const setSelected = (key: string, selected: boolean) => {
+const requestNodeSelection = (key: string, selected: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleSelect(node, selected);
+  if (!node || props.disabled || !props.selectable || node.disabled || node.selectable === false) {
+    return false;
   }
+  handleSelect(node, selected);
+  return true;
 };
 
-const setChecked = (key: string, checked: boolean) => {
+const requestNodeCheck = (key: string, checked: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleCheck(node, checked);
+  if (!node || props.disabled || !props.checkable || node.disabled || node.checkable === false) {
+    return false;
   }
+  handleCheck(node, checked);
+  return true;
 };
 
-const setExpanded = (key: string, expanded: boolean) => {
+const requestNodeExpansion = (key: string, expanded: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleToggle(node, expanded);
-  }
+  if (!node || props.disabled || node.disabled) return false;
+  handleToggle(node, expanded);
+  return true;
 };
 
 const getNode = (key: string): TreeNode | null => {
   return nodeMap.value.get(key) || null;
 };
 
-const collapseAll = () => {
-  internalExpandedKeys.value = [];
-  emit('update:expandedKeys', []);
+const requestExpandAll = () => {
+  expandedState.request(collectExpandableKeys(props.data));
+};
+
+const requestCollapseAll = () => {
+  expandedState.request([]);
 };
 
 const filter = (value: string) => {
@@ -543,7 +607,7 @@ const filter = (value: string) => {
 
   // 过滤时自动展开命中节点的所有祖先，确保命中项可见
   if (value && props.filterNodeMethod) {
-    const toExpand = new Set(internalExpandedKeys.value);
+    const toExpand = new Set(effectiveExpandedKeys.value);
     const walk = (nodes: TreeNode[], ancestors: string[]) => {
       for (const node of nodes) {
         if (props.filterNodeMethod!(value, node)) {
@@ -555,8 +619,13 @@ const filter = (value: string) => {
       }
     };
     walk(props.data, []);
-    internalExpandedKeys.value = Array.from(toExpand);
-    emit('update:expandedKeys', [...internalExpandedKeys.value]);
+    const nextKeys = Array.from(toExpand);
+    if (
+      nextKeys.length !== effectiveExpandedKeys.value.length ||
+      nextKeys.some(key => !effectiveExpandedKeys.value.includes(key))
+    ) {
+      expandedState.request(nextKeys);
+    }
   }
 };
 
@@ -572,12 +641,12 @@ defineExpose<ExTreeExposed>({
   getSelectedNodes,
   getCheckedNodes,
   getHalfCheckedNodes,
-  setSelected,
-  setChecked,
-  setExpanded,
+  requestNodeSelection,
+  requestNodeCheck,
+  requestNodeExpansion,
   getNode,
-  expandAll,
-  collapseAll,
+  requestExpandAll,
+  requestCollapseAll,
   filter,
   getElement,
 });

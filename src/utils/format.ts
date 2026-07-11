@@ -2,6 +2,8 @@
  * 格式化工具函数
  */
 
+const FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] as const;
+
 /**
  * 格式化时间戳
  * @param timestamp 时间戳（毫秒）
@@ -10,9 +12,10 @@
  */
 export function formatTimestamp(timestamp: number, format: string = 'HH:mm:ss'): string {
   const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) return '';
 
   const formatMap: Record<string, string> = {
-    YYYY: date.getFullYear().toString(),
+    YYYY: date.getFullYear().toString().padStart(4, '0'),
     MM: String(date.getMonth() + 1).padStart(2, '0'),
     DD: String(date.getDate()).padStart(2, '0'),
     HH: String(date.getHours()).padStart(2, '0'),
@@ -34,11 +37,15 @@ export function formatTimestamp(timestamp: number, format: string = 'HH:mm:ss'):
  * @returns 格式化后的文件大小字符串
  */
 export function formatFileSize(size: number): string {
-  if (size === 0) return '0 B';
+  const safeSize = Number.isFinite(size) && size > 0 ? size : 0;
+  if (safeSize === 0) return '0 B';
 
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const k = 1024;
-  const i = Math.floor(Math.log(size) / Math.log(k));
+  const unitIndex = Math.min(
+    Math.floor(Math.log(safeSize) / Math.log(1024)),
+    FILE_SIZE_UNITS.length - 1
+  );
+  const value = safeSize / 1024 ** unitIndex;
 
-  return `${(size / Math.pow(k, i)).toFixed(2)} ${units[i]}`;
+  // 最多保留两位小数，同时去掉无意义的尾随零。
+  return `${Number(value.toFixed(2))} ${FILE_SIZE_UNITS[unitIndex]}`;
 }

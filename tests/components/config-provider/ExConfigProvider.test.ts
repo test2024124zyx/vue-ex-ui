@@ -185,6 +185,28 @@ describe('ExConfigProvider', () => {
     expect(getCurrentLocale()).toBe('en-US');
   });
 
+  it('component locale exposes the nearest reactive locale code for Intl formatters', async () => {
+    let capturedLocale: ReturnType<typeof useComponentLocale>['locale'] | null = null;
+    const LocalizedChild = {
+      setup() {
+        const componentLocale = useComponentLocale('fileList');
+        capturedLocale = componentLocale.locale;
+        return () => h('span', componentLocale.locale.value);
+      },
+    };
+    const wrapper = mount(ExConfigProvider, {
+      props: { locale: 'en-US' },
+      slots: { default: LocalizedChild },
+    });
+
+    expect(capturedLocale?.value).toBe('en-US');
+    expect(wrapper.text()).toBe('en-US');
+
+    await wrapper.setProps({ locale: 'zh-CN' });
+    expect(capturedLocale?.value).toBe('zh-CN');
+    expect(wrapper.text()).toBe('zh-CN');
+  });
+
   it('applies custom class', () => {
     const wrapper = mount(ExConfigProvider, {
       props: {
