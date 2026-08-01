@@ -1,55 +1,77 @@
-@use '../../styles/mixins' as *;
+@use 'sass:map';
+@use '../../styles/_tokens' as tokens;
+
+$breakpoint-micro-max: map.get(tokens.$breakpoints, micro) - 1px;
+$breakpoint-mobile-max: map.get(tokens.$breakpoints, sm) - 1px;
+$breakpoint-tablet-min: map.get(tokens.$breakpoints, sm);
+$breakpoint-tablet-max: map.get(tokens.$breakpoints, lg) - 1px;
+$breakpoint-desktop-min: map.get(tokens.$breakpoints, lg);
+$breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
 .ex-typography {
+  --ex-typography-variant-size: var(--ex-text-base);
+
   margin: 0;
   padding: 0;
   border: none;
   font-family: var(--ex-font-secondary);
+  font-size: var(--ex-typography-size, var(--ex-typography-variant-size));
   line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
-  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    text-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
   // ============================================================================
-  // 变体样式 (Variant Styles)
+  // 变体样式
   // ============================================================================
 
   &--display {
-    font-size: var(--ex-text-4xl);
+    --ex-typography-variant-size: var(--ex-text-4xl);
+
+    font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-bold);
     line-height: var(--ex-leading-tight);
     letter-spacing: var(--ex-tracking-tight);
   }
 
   &--heading {
-    font-size: var(--ex-text-3xl);
+    --ex-typography-variant-size: var(--ex-text-3xl);
+
+    font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-semibold);
     line-height: var(--ex-leading-tight);
     letter-spacing: var(--ex-tracking-tight);
   }
 
   &--title {
-    font-size: var(--ex-text-xl);
+    --ex-typography-variant-size: var(--ex-text-xl);
+
+    font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-snug);
     letter-spacing: var(--ex-tracking-normal);
   }
 
   &--body {
-    font-size: var(--ex-text-base);
+    --ex-typography-variant-size: var(--ex-text-base);
+
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-relaxed);
     letter-spacing: var(--ex-tracking-normal);
   }
 
   &--caption {
-    font-size: var(--ex-text-sm);
+    --ex-typography-variant-size: var(--ex-text-sm);
+
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wide);
   }
 
   &--overline {
-    font-size: var(--ex-text-xs);
+    --ex-typography-variant-size: var(--ex-text-xs);
+
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wider);
@@ -57,46 +79,60 @@
   }
 
   // ============================================================================
-  // 尺寸样式 (Size Styles)
+  // 尺寸样式：显式 size 通过独立变量覆盖变体默认字号。
   // ============================================================================
 
   &--xs {
-    font-size: var(--ex-text-xs);
+    --ex-typography-size: var(--ex-text-xs);
   }
+
   &--sm {
-    font-size: var(--ex-text-sm);
+    --ex-typography-size: var(--ex-text-sm);
   }
+
   &--md {
-    font-size: var(--ex-text-base);
+    --ex-typography-size: var(--ex-text-base);
   }
+
   &--lg {
-    font-size: var(--ex-text-lg);
+    --ex-typography-size: var(--ex-text-lg);
   }
+
   &--xl {
-    font-size: var(--ex-text-xl);
+    --ex-typography-size: var(--ex-text-xl);
   }
+
   &--2xl {
-    font-size: var(--ex-text-2xl);
+    --ex-typography-size: var(--ex-text-2xl);
   }
+
   &--3xl {
-    font-size: var(--ex-text-3xl);
+    --ex-typography-size: var(--ex-text-3xl);
   }
+
   &--4xl {
-    font-size: var(--ex-text-4xl);
+    --ex-typography-size: var(--ex-text-4xl);
   }
 
   // ============================================================================
-  // 文本效果与排版变体相互独立，可应用于任意标签和文字层级。
+  // 文本效果与排版变体相互独立，可应用于任意标签和文本层级。
   // ============================================================================
 
   &--truncate {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &--truncate-single-line {
     white-space: nowrap;
   }
 
+  &--truncate-multiline {
+    white-space: normal;
+  }
+
   &--gradient {
-    color: transparent;
+    color: var(--ex-typography-gradient-fallback, transparent);
     background-image: var(
       --ex-typography-gradient,
       linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary))
@@ -107,14 +143,14 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: gradient-shift 3s ease-in-out infinite;
+    animation: ex-typography-gradient-shift 3s ease-in-out infinite;
   }
 
   &--glow {
     text-shadow:
-      0 0 5px currentColor,
-      0 0 10px currentColor,
-      0 0 15px currentColor;
+      0 0 5px var(--ex-typography-glow-color, currentColor),
+      0 0 10px var(--ex-typography-glow-color, currentColor),
+      0 0 15px var(--ex-typography-glow-color, currentColor);
   }
 
   &--center {
@@ -137,20 +173,79 @@
   }
 
   // ============================================================================
-  // 响应式排版。
+  // 组件级响应式排版。响应式规则只调整变体默认值，不覆盖显式 size。
   // ============================================================================
 
-  @include respond-to(xs) {
+  @media (max-width: $breakpoint-mobile-max) {
     &--display {
-      font-size: var(--ex-text-3xl);
+      --ex-typography-variant-size: clamp(2rem, 8vw, 3rem);
     }
 
     &--heading {
-      font-size: var(--ex-text-2xl);
+      --ex-typography-variant-size: clamp(1.75rem, 6vw, 2.5rem);
     }
 
     &--title {
-      font-size: var(--ex-text-lg);
+      --ex-typography-variant-size: clamp(1.25rem, 4vw, 1.75rem);
+    }
+  }
+
+  @media (max-width: $breakpoint-micro-max) {
+    &--display {
+      --ex-typography-variant-size: clamp(1.5rem, 10vw, 2.5rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(1.125rem, 7vw, 1.75rem);
+    }
+  }
+
+  @media (min-width: $breakpoint-tablet-min) and (max-width: $breakpoint-tablet-max) {
+    &--display {
+      --ex-typography-variant-size: clamp(3rem, 6vw, 4rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(2rem, 3.5vw, 2.5rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(1.75rem, 3vw, 2rem);
+    }
+
+    @media (orientation: landscape) {
+      &--display,
+      &--heading {
+        line-height: var(--ex-leading-snug);
+      }
+    }
+  }
+
+  @media (min-width: $breakpoint-desktop-min) {
+    &--display {
+      --ex-typography-variant-size: clamp(4rem, 5vw, 6rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(2.5rem, 3vw, 3rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(2rem, 2.5vw, 2.5rem);
+    }
+  }
+
+  @media (min-width: $breakpoint-wide-min) {
+    &--display {
+      --ex-typography-variant-size: clamp(5rem, 4vw, 7rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(3rem, 2.5vw, 4rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(2.5rem, 2vw, 3rem);
     }
   }
 
@@ -159,12 +254,13 @@
   // ============================================================================
 
   @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+
     &--gradient {
       animation: none;
     }
   }
 
-  // 高对比度模式
   @media (prefers-contrast: high) {
     &--gradient {
       color: var(--ex-color-text-primary);
@@ -176,14 +272,25 @@
       text-shadow: none;
     }
   }
+
+  @media (min-resolution: 192dpi), (min-resolution: 2dppx) {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    &--display,
+    &--heading,
+    &--title {
+      text-rendering: optimizeLegibility;
+    }
+  }
 }
 
-// ============================================================================
-@keyframes gradient-shift {
+@keyframes ex-typography-gradient-shift {
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }

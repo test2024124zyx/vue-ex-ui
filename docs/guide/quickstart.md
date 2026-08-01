@@ -94,14 +94,14 @@ const handleClick = () => {
 <template>
   <div class="app">
     <ex-typography
-      variant="h1"
+      variant="display"
       class="title"
     >
       🎮 欢迎使用 ExUI
     </ex-typography>
 
     <ex-typography
-      variant="body1"
+      variant="body"
       class="description"
     >
       专为赛博朋克风格应用打造的Vue3组件库

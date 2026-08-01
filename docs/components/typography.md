@@ -5,6 +5,7 @@
 ## 文本层级
 
 ::: raw
+
 <div class="vp-raw demo-container typography-stack">
   <ex-typography variant="display">智能运营中心</ex-typography>
   <ex-typography variant="heading">本月业务概览</ex-typography>
@@ -26,6 +27,7 @@
 `gradient` 是独立文本效果，可应用于任意文本层级和 HTML 标签。
 
 ::: raw
+
 <div class="vp-raw demo-container typography-stack">
   <ex-typography variant="heading" gradient>跨区域业务增长 28.6%</ex-typography>
   <ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
@@ -56,6 +58,7 @@
 ## 尺寸与修饰
 
 ::: raw
+
 <div class="vp-raw demo-container typography-stack">
   <ex-typography size="xs">Extra Small</ex-typography>
   <ex-typography size="sm">Small</ex-typography>
@@ -69,6 +72,7 @@
 ## 文本截断
 
 ::: raw
+
 <div class="vp-raw demo-container typography-truncate">
   <ex-typography truncate>
     单行内容过长时显示省略号，并保持当前容器布局稳定。
@@ -84,9 +88,12 @@
 <ex-typography truncate :max-lines="2">多行截断内容</ex-typography>
 ```
 
+通过 `text` 属性传入内容并启用截断时，组件会自动将完整文本放入 `title` 提示；使用默认插槽时，请按需自行传入 `title` 或 `aria-label`。
+
 ## 标签与颜色
 
 ::: raw
+
 <div class="vp-raw demo-container typography-stack">
   <ex-typography tag="h2" variant="title">语义化 H2 标题</ex-typography>
   <ex-typography tag="span" color="success">已完成</ex-typography>
@@ -99,27 +106,27 @@
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `text` | 无默认插槽时显示的文本 | `string` | — |
-| `tag` | HTML 标签 | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
-| `variant` | 文本层级 | `display \| heading \| title \| body \| caption \| overline` | `body` |
-| `size` | 字号 | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl` | `md` |
-| `color` | 主题色名或有效 CSS 颜色 | `TypographyColor \| string` | `text-primary` |
-| `truncate` | 是否截断文本 | `boolean` | `false` |
-| `maxLines` | 截断时保留的最大行数 | `number` | `1` |
-| `gradient` | 是否启用渐变文本效果 | `boolean` | `false` |
-| `glow` | 是否启用发光效果 | `boolean` | `false` |
-| `center` | 是否居中 | `boolean` | `false` |
-| `bold` | 是否加粗 | `boolean` | `false` |
-| `italic` | 是否斜体 | `boolean` | `false` |
-| `underline` | 是否显示下划线 | `boolean` | `false` |
-| `customStyle` | 合并到根元素的样式 | `CSSProperties` | — |
+| 参数          | 说明                                   | 类型                                                            | 默认值              |
+| ------------- | -------------------------------------- | --------------------------------------------------------------- | ------------------- |
+| `text`        | 无默认插槽时显示的文本                 | `string`                                                        | —                   |
+| `tag`         | HTML 标签                              | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
+| `variant`     | 文本层级                               | `display \| heading \| title \| body \| caption \| overline`    | `body`              |
+| `size`        | 字号                                   | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | `md`                |
+| `color`       | 主题色名或有效 CSS 颜色                | `TypographyColor \| string`                                     | `text-primary`      |
+| `truncate`    | 是否截断文本                           | `boolean`                                                       | `false`             |
+| `maxLines`    | 截断时保留的最大行数，非整数会向下取整 | `number`                                                        | `1`                 |
+| `gradient`    | 是否启用渐变文本效果                   | `boolean`                                                       | `false`             |
+| `glow`        | 是否启用发光效果                       | `boolean`                                                       | `false`             |
+| `center`      | 是否居中                               | `boolean`                                                       | `false`             |
+| `bold`        | 是否加粗                               | `boolean`                                                       | `false`             |
+| `italic`      | 是否斜体                               | `boolean`                                                       | `false`             |
+| `underline`   | 是否显示下划线                         | `boolean`                                                       | `false`             |
+| `customStyle` | 合并到根元素的样式                     | `CSSProperties`                                                 | —                   |
 
 ### Slots
 
-| 名称 | 说明 |
-| --- | --- |
+| 名称      | 说明                        |
+| --------- | --------------------------- |
 | `default` | 文本内容，优先级高于 `text` |
 
 <style scoped>

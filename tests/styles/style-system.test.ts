@@ -149,16 +149,22 @@ describe('v2 样式系统边界', () => {
     expect(css).toContain('--ex-color-neon-blue-300: #5a9be7');
   });
 
-  it('响应式入口统一使用 Token 断点，避免全局边界漂移', () => {
-    const mobileCss = compile("@use 'src/styles/responsive/mobile';");
-    const tabletCss = compile("@use 'src/styles/responsive/tablet';");
-    const desktopCss = compile("@use 'src/styles/responsive/desktop';");
+  it('Typography 响应式规则集中在组件内并保留尺寸覆盖契约', () => {
+    const typographyCss = compile("@use 'src/components/typography/ExTypography';");
 
-    expect(mobileCss).toContain('@media (max-width: 479px)');
-    expect(mobileCss).toContain('@media (max-width: 374px)');
-    expect(tabletCss).toContain('@media (min-width: 480px) and (max-width: 1023px)');
-    expect(desktopCss).toContain('@media (min-width: 1024px)');
-    expect(desktopCss).toContain('@media (min-width: 1400px)');
+    expect(typographyCss).toContain('@media (max-width: 479px)');
+    expect(typographyCss).toContain('@media (max-width: 374px)');
+    expect(typographyCss).toContain('@media (min-width: 480px) and (max-width: 1023px)');
+    expect(typographyCss).toContain('@media (min-width: 1024px)');
+    expect(typographyCss).toContain('@media (min-width: 1400px)');
+    expect(typographyCss).toContain('--ex-typography-size: var(--ex-text-4xl)');
+    expect(typographyCss).toContain(
+      'font-size: var(--ex-typography-size, var(--ex-typography-variant-size))'
+    );
+    expect(typographyCss).toContain('white-space: normal');
+    expect(typographyCss).not.toContain('.ex-typography--h1');
+    expect(typographyCss).not.toContain('.ex-typography--body1');
+    expect(typographyCss).not.toContain('.ex-typography--link');
   });
 
   it('首屏初始化脚本与组件样式只识别两个主题', () => {
