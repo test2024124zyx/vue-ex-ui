@@ -18,6 +18,9 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   font-size: var(--ex-typography-size, var(--ex-typography-variant-size));
   line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  text-rendering: optimizeLegibility;
   transition:
     color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     text-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
@@ -32,7 +35,9 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-bold);
     line-height: var(--ex-leading-tight);
-    letter-spacing: var(--ex-tracking-tight);
+    letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
+    text-wrap: balance;
   }
 
   &--heading {
@@ -41,16 +46,19 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-semibold);
     line-height: var(--ex-leading-tight);
-    letter-spacing: var(--ex-tracking-tight);
+    letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
+    text-wrap: balance;
   }
 
   &--title {
     --ex-typography-variant-size: var(--ex-text-xl);
 
-    font-family: var(--ex-font-primary);
+    font-family: var(--ex-font-secondary);
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-snug);
     letter-spacing: var(--ex-tracking-normal);
+    text-wrap: balance;
   }
 
   &--body {
@@ -132,7 +140,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   }
 
   &--gradient {
-    color: var(--ex-typography-gradient-fallback, transparent);
+    color: var(--ex-typography-gradient-fallback, var(--ex-color-text-primary));
     background-image: var(
       --ex-typography-gradient,
       linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary))
@@ -151,6 +159,15 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
       0 0 5px var(--ex-typography-glow-color, currentColor),
       0 0 10px var(--ex-typography-glow-color, currentColor),
       0 0 15px var(--ex-typography-glow-color, currentColor);
+  }
+
+  // 不支持文字裁剪渐变的浏览器仍需保持正文可读。
+  @supports not (background-clip: text) {
+    &--gradient {
+      background-image: none;
+      color: var(--ex-typography-gradient-fallback, var(--ex-color-text-primary));
+      -webkit-text-fill-color: currentColor;
+    }
   }
 
   &--center {
