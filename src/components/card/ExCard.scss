@@ -8,9 +8,68 @@
 .ex-card {
   position: relative;
   background: var(--ex-color-bg-secondary);
-  border-radius: var(--ex-radius-lg);
+  border-radius: var(--ex-radius-none);
   overflow: hidden;
-  @include transition(all);
+  @include chamfer(var(--ex-chamfer-md));
+  @include transition((transform, border-color, filter, background-color));
+
+  // 顶部 HUD 光带强化层级，同时保持内容和交互区域不变
+  &::before {
+    position: absolute;
+    top: 0;
+    right: var(--ex-spacing-4);
+    left: var(--ex-spacing-4);
+    z-index: 2;
+    height: 1px;
+    content: '';
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--ex-color-primary),
+      var(--ex-color-cyber-magenta),
+      transparent
+    );
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  &[role='button']:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 4px;
+    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
+  }
+
+  // 通过 class prop 提供终端面板和全息面板两种可组合的视觉变体
+  &.ex-terminal {
+    background: var(--ex-color-bg-primary);
+
+    &::after {
+      position: absolute;
+      top: var(--ex-spacing-3);
+      left: var(--ex-spacing-4);
+      z-index: 3;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      content: '';
+      background: var(--ex-color-error);
+      box-shadow:
+        12px 0 var(--ex-color-warning),
+        24px 0 var(--ex-color-success);
+      pointer-events: none;
+    }
+
+    .ex-card__header {
+      padding-top: var(--ex-spacing-8);
+    }
+  }
+
+  &.ex-holographic {
+    border-color: var(--ex-color-primary-alpha-30);
+    background: rgba(var(--ex-color-bg-tertiary-rgb), 0.32);
+    backdrop-filter: blur(8px);
+    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-20));
+  }
 
   // 边框
   &:not(.ex-card--borderless) {
@@ -20,41 +79,43 @@
   // 阴影变体
   &--shadow-none {
     box-shadow: none;
+    filter: none;
   }
 
   &--shadow-sm {
-    box-shadow: var(--ex-shadow-sm);
+    filter: var(--ex-card-filter-shadow-sm);
   }
 
   &--shadow-base {
-    box-shadow: var(--ex-shadow-base);
+    filter: var(--ex-card-filter-shadow-base);
   }
 
   &--shadow-md {
-    box-shadow: var(--ex-shadow-md);
+    filter: var(--ex-card-filter-shadow-md);
   }
 
   &--shadow-lg {
-    box-shadow: var(--ex-shadow-lg);
+    filter: var(--ex-card-filter-shadow-lg);
   }
 
   &--shadow-xl {
-    box-shadow: var(--ex-shadow-xl);
+    filter: var(--ex-card-filter-shadow-xl);
   }
 
   &--shadow-neon {
-    @include neon-glow('blue', 'sm');
+    filter: drop-shadow(0 0 6px var(--ex-color-primary-alpha-30));
   }
 
   // 可悬停
   &--hoverable {
     cursor: pointer;
-    transition: all 0.9s ease-in-out;
+    @include transition((transform, border-color, filter));
 
     &:hover:not(.ex-card--loading) {
-      transform: translateY(-4px);
-      box-shadow: var(--ex-shadow-xl);
-      @include neon-glow('blue', 'md');
+      transform: translateY(-2px);
+      filter:
+        var(--ex-card-filter-shadow-lg)
+        drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
 
       .ex-card__cover-image {
         transform: scale(1.05);
@@ -79,7 +140,7 @@
       var(--ex-color-primary-alpha-05),
       var(--ex-color-bg-secondary)
     );
-    transition: all 0.9s ease-in-out;
+    @include transition((border-color, background-color, box-shadow, filter));
 
     .ex-card__header {
       background: linear-gradient(
@@ -116,7 +177,7 @@
       var(--ex-color-success-alpha-05),
       var(--ex-color-bg-secondary)
     );
-    transition: all 0.9s ease-in-out;
+    @include transition((border-color, background-color, box-shadow, filter));
 
     .ex-card__header {
       background: linear-gradient(
@@ -148,7 +209,7 @@
       var(--ex-color-warning-alpha-05),
       var(--ex-color-bg-secondary)
     );
-    transition: all 0.9s ease-in-out;
+    @include transition((border-color, background-color, box-shadow, filter));
 
     .ex-card__header {
       background: linear-gradient(
@@ -180,7 +241,7 @@
       var(--ex-color-error-alpha-05),
       var(--ex-color-bg-secondary)
     );
-    transition: all 0.9s ease-in-out;
+    @include transition((border-color, background-color, box-shadow, filter));
 
     .ex-card__header {
       background: linear-gradient(
@@ -212,7 +273,7 @@
       rgba(var(--ex-color-neon-blue-500-rgb), 0.03),
       var(--ex-color-bg-secondary)
     );
-    transition: all 0.9s ease-in-out;
+    @include transition((border-color, background-color, box-shadow, filter));
 
     .ex-card__header {
       background: linear-gradient(
@@ -307,7 +368,7 @@
   padding: var(--ex-spacing-4) var(--ex-spacing-6);
   background: var(--ex-color-bg-elevated);
   border-bottom: 1px solid var(--ex-color-border-primary);
-  @include transition(all);
+  @include transition((background-color, border-color, color));
 }
 
 // 卡片内容

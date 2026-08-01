@@ -33,6 +33,18 @@
   --ex-color-black-alpha-70: rgba(0, 0, 0, 0.7);
   --ex-color-black-alpha-80: rgba(0, 0, 0, 0.8);
   --ex-color-black-alpha-90: rgba(0, 0, 0, 0.9);
+
+  // 赛博朋克视觉辅助色：所有暗色主题共享，保证组件纹理和色差效果一致
+  --ex-color-cyber-green: #00ff88;
+  --ex-color-cyber-magenta: #ff00ff;
+  --ex-color-cyber-cyan: #00d4ff;
+  --ex-color-cyber-green-rgb: 0, 255, 136;
+  --ex-color-cyber-magenta-rgb: 255, 0, 255;
+  --ex-color-cyber-cyan-rgb: 0, 212, 255;
+  --ex-cyber-grid-size: 48px;
+  --ex-cyber-grid-opacity: 0.06;
+  --ex-cyber-scanline-opacity: 0.045;
+  --ex-cyber-scanline-duration: 12s;
   
   // 灰色透明度
   --ex-color-gray-alpha-30: rgba(128, 128, 128, 0.3);
@@ -125,10 +137,10 @@
 @mixin theme-transition {
   * {
     transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      color 0.3s ease,
-      box-shadow 0.3s ease;
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out);
   }
 
   // 禁用动画的元素

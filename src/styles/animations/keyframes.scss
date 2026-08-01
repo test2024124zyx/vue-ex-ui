@@ -243,3 +243,35 @@
     opacity: 0.3;
   }
 }
+
+// 低频扫描线移动：只改变伪元素的位移，不触发布局重排
+@keyframes ex-cyber-scanline {
+  from {
+    transform: translateY(-4px);
+  }
+
+  to {
+    transform: translateY(4px);
+  }
+}
+
+// 低频色差抖动：保持绝大多数时间稳定，避免持续闪烁影响阅读
+@keyframes ex-cyber-glitch {
+  0%, 92%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  93% {
+    transform: translate3d(-1px, 0, 0) skewX(-1deg);
+    text-shadow:
+      -1px 0 var(--ex-color-cyber-magenta),
+      1px 0 var(--ex-color-cyber-cyan);
+  }
+
+  94% {
+    transform: translate3d(1px, 0, 0) skewX(1deg);
+    text-shadow:
+      1px 0 var(--ex-color-cyber-magenta),
+      -1px 0 var(--ex-color-cyber-cyan);
+  }
+}

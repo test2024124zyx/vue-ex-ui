@@ -87,6 +87,18 @@ export interface ThemeVariables {
   '--ex-color-neon-blue-600': string;
   '--ex-color-neon-pink-500': string;
 
+  // 赛博朋克视觉辅助 token
+  '--ex-color-cyber-green': string;
+  '--ex-color-cyber-magenta': string;
+  '--ex-color-cyber-cyan': string;
+  '--ex-color-cyber-green-rgb': string;
+  '--ex-color-cyber-magenta-rgb': string;
+  '--ex-color-cyber-cyan-rgb': string;
+  '--ex-cyber-grid-size': string;
+  '--ex-cyber-grid-opacity': string;
+  '--ex-cyber-scanline-opacity': string;
+  '--ex-cyber-scanline-duration': string;
+
   // RGB 格式
   '--ex-color-bg-primary-rgb': string;
   '--ex-color-bg-secondary-rgb': string;

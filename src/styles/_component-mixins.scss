@@ -17,6 +17,7 @@
   background: transparent;
   border: 2px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+  @include chamfer(var(--ex-chamfer-sm));
   color: var(--ex-color-text-primary);
   font-family: var(--ex-font-secondary);
   font-weight: var(--ex-font-medium);
@@ -86,6 +87,7 @@
     var(--ex-color-bg-primary-alpha-90) 100%
   );
   border: 2px solid var(--ex-color-neon-blue-500);
+  @include chamfer(var(--ex-chamfer-sm));
   @include optimized-backdrop-blur(8px);
   @include optimized-neon-glow('blue', 'sm');
   @include safe-transition(all);
@@ -101,6 +103,7 @@
 @mixin component-variant-ghost {
   background: transparent;
   border: 2px solid var(--ex-color-border-primary);
+  @include chamfer(var(--ex-chamfer-sm));
   box-shadow: none;
   @include safe-transition(all);
   
@@ -121,6 +124,7 @@
 @mixin component-variant-filled {
   background: var(--ex-color-bg-tertiary);
   border: 2px solid transparent;
+  @include chamfer(var(--ex-chamfer-sm));
   box-shadow: none;
   @include safe-transition(all);
   
@@ -189,6 +193,7 @@
   background: var(--ex-color-bg-surface);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+  @include chamfer(var(--ex-chamfer-md));
   box-shadow: var(--ex-shadow-md);
   overflow: hidden;
 }
@@ -199,8 +204,7 @@
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: var(--ex-shadow-lg);
-    @include optimized-neon-glow('blue', 'sm');
+    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
   }
 }
 
@@ -340,4 +344,3 @@
 
 // 注意：关键帧动画统一定义在 animations/keyframes.scss
 // 这里使用 ex-spin 关键帧
-

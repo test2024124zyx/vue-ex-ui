@@ -71,21 +71,23 @@ defineExpose<ExContentExposed>({ getElement });
 
   &--grid::before {
     background-image:
-      linear-gradient(var(--ex-color-border-primary) 1px, transparent 1px),
-      linear-gradient(90deg, var(--ex-color-border-primary) 1px, transparent 1px);
-    background-size: 20px 20px;
-    opacity: 0.1;
+      linear-gradient(
+        rgba(var(--ex-color-cyber-green-rgb), var(--ex-cyber-grid-opacity)) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(var(--ex-color-cyber-cyan-rgb), var(--ex-cyber-grid-opacity)) 1px,
+        transparent 1px
+      );
+    background-size: var(--ex-cyber-grid-size) var(--ex-cyber-grid-size);
+    opacity: 0.9;
   }
 
   &--scanline::after {
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      var(--ex-color-primary-alpha-05) 50%,
-      transparent 100%
-    );
-    background-size: 100% 4px;
-    animation: ex-content-scanline 8s linear infinite;
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.9) 2px 4px);
+    opacity: var(--ex-cyber-scanline-opacity);
+    animation: ex-content-scanline var(--ex-cyber-scanline-duration) linear infinite;
   }
 
   &--no-animation::after {

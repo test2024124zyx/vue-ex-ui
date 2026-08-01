@@ -1,6 +1,11 @@
 <template>
-  <div ref="providerRef" :class="providerClasses" :style="providerStyles" :data-theme="theme">
-    <slot />
+  <div
+    ref="providerRef"
+    :class="providerClasses"
+    :style="providerStyles"
+    :data-theme="theme"
+  >
+    <slot></slot>
   </div>
 </template>
 
@@ -107,6 +112,7 @@ defineExpose({
   :deep(*) {
     box-shadow: none !important;
     text-shadow: none !important;
+    filter: none !important;
   }
 }
 

@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-input {
   --ex-input-control-height: var(--ex-input-height-md);
   --ex-input-control-padding: var(--ex-spacing-4);
@@ -24,7 +26,9 @@
   cursor: pointer;
   font-size: var(--ex-text-sm);
   font-weight: var(--ex-font-medium);
+  letter-spacing: var(--ex-tracking-wide);
   line-height: 1.5;
+  text-transform: uppercase;
   transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 }
 
@@ -49,12 +53,24 @@
   flex: 1 1 auto;
   align-items: center;
   border: 1px solid var(--ex-input-border-color);
-  border-radius: var(--ex-radius-lg);
+  border-radius: var(--ex-radius-none);
   background: var(--ex-input-background);
+  @include chamfer(var(--ex-chamfer-sm));
   transition:
     border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+// Neon 输入框默认采用终端提示符，已有 prefix slot 时不重复添加
+.ex-input--neon:not(:has(.ex-input__prefix)) .ex-input__inner::before {
+  flex: none;
+  margin-inline-start: var(--ex-spacing-3);
+  color: var(--ex-color-primary);
+  content: '>';
+  font-family: var(--ex-font-mono);
+  font-weight: var(--ex-font-bold);
+  text-shadow: 0 0 6px var(--ex-color-primary-alpha-30);
 }
 
 .ex-input__control {
@@ -116,7 +132,7 @@
   justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: var(--ex-radius-md);
+  border-radius: var(--ex-radius-none);
   outline: 0;
   background: transparent;
   color: var(--ex-color-text-secondary);
@@ -151,6 +167,7 @@
   align-items: center;
   padding: 0 var(--ex-spacing-4);
   border: 1px solid var(--ex-input-border-color);
+  border-radius: var(--ex-radius-none);
   background: var(--ex-color-bg-tertiary);
   color: var(--ex-color-text-secondary);
   font-size: var(--ex-text-sm);
@@ -162,12 +179,12 @@
 
 .ex-input__prepend {
   border-inline-end: 0;
-  border-radius: var(--ex-radius-lg) 0 0 var(--ex-radius-lg);
+  border-radius: var(--ex-radius-none);
 }
 
 .ex-input__append {
   border-inline-start: 0;
-  border-radius: 0 var(--ex-radius-lg) var(--ex-radius-lg) 0;
+  border-radius: var(--ex-radius-none);
 }
 
 .ex-input--with-prepend .ex-input__inner {
@@ -226,7 +243,9 @@
   }
 
   .ex-input__inner {
-    box-shadow: 0 0 0 3px var(--ex-color-primary-alpha-20);
+    box-shadow:
+      0 0 0 2px var(--ex-color-primary-alpha-20),
+      0 0 12px var(--ex-color-primary-alpha-20);
   }
 }
 

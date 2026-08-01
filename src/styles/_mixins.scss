@@ -173,6 +173,9 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow:
+    -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
+    1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
 }
 
 // ============================================================================

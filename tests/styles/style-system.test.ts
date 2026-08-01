@@ -102,4 +102,26 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('animation:');
     expect(css).not.toContain('@keyframes');
   });
+  it('赛博朋克视觉 token 和全局纹理保持可复用且支持无障碍回退', () => {
+    const css = compile("@use 'src/styles/index';");
+
+    expect(css).toContain('--ex-color-cyber-green: #00ff88');
+    expect(css).toContain('--ex-cyber-grid-size: 48px');
+    expect(css).toContain('.ex-app::after');
+    expect(css).toContain('@keyframes ex-cyber-scanline');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('核心组件使用切角、终端提示符和低频 CTA 色差效果', () => {
+    const buttonCss = compile("@use 'src/components/button/ExButton';");
+    const cardCss = compile("@use 'src/components/card/ExCard';");
+    const inputCss = compile("@use 'src/components/input/ExInput';");
+
+    expect(buttonCss).toContain('border: 2px solid var(--ex-button-border)');
+    expect(buttonCss).toContain('animation: ex-cyber-glitch 2.4s steps(1, end) infinite');
+    expect(cardCss).toContain('clip-path: polygon(');
+    expect(cardCss).toContain('.ex-card.ex-terminal');
+    expect(inputCss).toContain('content: ">"');
+    expect(inputCss).toContain('clip-path: polygon(');
+  });
 });

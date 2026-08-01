@@ -37,6 +37,10 @@
   --ex-color-bg-hover: #f0f3f7;
   --ex-color-bg-active: #e6ebf2;
 
+  // 赛博朋克纹理只服务于暗色主题，浅色主题保持清晰的文档阅读体验
+  --ex-cyber-grid-opacity: 0;
+  --ex-cyber-scanline-opacity: 0;
+
   // ========== 文本色系（深色）==========
   --ex-color-text-primary: #1a2332;
   --ex-color-text-secondary: #5a6b7d;

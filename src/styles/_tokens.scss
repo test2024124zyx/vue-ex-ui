@@ -79,6 +79,11 @@ $colors: (
   shadow-neon-blue: rgba(41, 171, 226, 0.3),
   shadow-neon-pink: rgba(255, 59, 209, 0.3),
   shadow-dark: rgba(0, 0, 0, 0.5),
+
+  // 赛博朋克辅助色：用于扫描线、色差和 HUD 装饰，不替代语义状态色
+  cyber-green: #00ff88,
+  cyber-magenta: #ff00ff,
+  cyber-cyan: #00d4ff,
 );
 
 // ============================================================================
@@ -88,8 +93,9 @@ $colors: (
 $typography: (
   // 字体族
   font-primary: ('Audiowide', 'Orbitron', 'Rajdhani', sans-serif),
-  font-secondary: ('Rajdhani', 'Inter', sans-serif),
+  font-secondary: ('JetBrains Mono', 'Fira Code', 'Consolas', monospace),
   font-mono: ('JetBrains Mono', 'Fira Code', monospace),
+  font-label: ('Share Tech Mono', 'JetBrains Mono', monospace),
   
   // 字体大小 (移动端优先)
   text-xs: 12px,     // 0.75rem
@@ -180,13 +186,14 @@ $sizes: (
 
 $radius: (
   none: 0,
-  sm: 2px,
-  base: 4px,
-  md: 6px,
-  lg: 8px,
-  xl: 12px,
-  2xl: 16px,
-  3xl: 24px,
+  // 赛博朋克组件默认使用硬朗轮廓，圆角只由 full/round/circle 语义显式启用
+  sm: 0,
+  base: 0,
+  md: 0,
+  lg: 0,
+  xl: 0,
+  2xl: 0,
+  3xl: 0,
   full: 9999px,
 );
 
@@ -324,7 +331,7 @@ $components: (
     width-medium: 520px,
     width-large: 720px,
     padding: map.get($spacing, 6),
-    radius: map.get($radius, xl),
+    radius: map.get($radius, none),
     background: var(--ex-color-bg-elevated),
     border-color: var(--ex-color-border-primary),
     mask-background: var(--ex-color-black-alpha-70),

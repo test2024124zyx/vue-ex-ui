@@ -1,12 +1,12 @@
 @use '../../styles/mixins' as *;
 
 .ex-button {
-  --ex-button-bg: var(--ex-color-bg-secondary);
-  --ex-button-bg-hover: var(--ex-color-bg-hover);
-  --ex-button-bg-active: var(--ex-color-bg-active);
+  --ex-button-bg: transparent;
+  --ex-button-bg-hover: var(--ex-color-primary-alpha-10);
+  --ex-button-bg-active: var(--ex-color-primary-alpha-20);
   --ex-button-fg: var(--ex-color-text-primary);
   --ex-button-fg-hover: var(--ex-color-text-primary);
-  --ex-button-border: var(--ex-color-border-primary);
+  --ex-button-border: var(--ex-color-primary);
   --ex-button-border-hover: var(--ex-color-primary);
   --ex-button-accent: var(--ex-color-primary);
   --ex-button-soft-bg: var(--ex-color-primary-alpha-10);
@@ -21,16 +21,18 @@
   margin: 0;
   padding: var(--ex-spacing-2) var(--ex-spacing-4);
   overflow: hidden;
-  border: 1px solid var(--ex-button-border);
+  border: 2px solid var(--ex-button-border);
   border-radius: var(--ex-button-radius);
   appearance: none;
   color: var(--ex-button-fg);
   background: var(--ex-button-bg);
-  font-family: var(--ex-font-secondary);
+  font-family: var(--ex-font-label);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
+  letter-spacing: var(--ex-tracking-wider);
   line-height: var(--ex-leading-normal);
   text-align: center;
+  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -45,7 +47,7 @@
     transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
   // 默认轮廓保留组件库的切角语言，圆角与圆形按钮使用各自轮廓。
-  &:not(.ex-button--round):not(.ex-button--circle) {
+  &:not(.ex-button--round):not(.ex-button--circle):not(.ex-button--text):not(.ex-button--link) {
     @include chamfer(var(--ex-chamfer-sm));
   }
 
@@ -80,6 +82,7 @@
   &:focus-visible {
     outline: 2px solid var(--ex-color-border-focus);
     outline-offset: 2px;
+    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
   }
 
   &:active:not(:disabled):not(.ex-button--loading) {
@@ -140,30 +143,19 @@
 
   // 默认、主要、次要三种基础层级必须保持明确区分。
   &--default {
-    --ex-button-bg: var(--ex-color-bg-secondary);
-    --ex-button-bg-hover: var(--ex-color-bg-hover);
-    --ex-button-bg-active: var(--ex-color-bg-active);
-    --ex-button-fg: var(--ex-color-text-primary);
-    --ex-button-border: var(--ex-color-border-primary);
+    --ex-button-bg: transparent;
+    --ex-button-bg-hover: var(--ex-color-primary-alpha-10);
+    --ex-button-bg-active: var(--ex-color-primary-alpha-20);
+    --ex-button-fg: var(--ex-color-primary);
+    --ex-button-fg-hover: var(--ex-color-primary);
+    --ex-button-border: var(--ex-color-primary);
     --ex-button-border-hover: var(--ex-color-primary);
   }
 
   &--primary {
-    --ex-button-bg: linear-gradient(
-      135deg,
-      var(--ex-color-primary) 0%,
-      var(--ex-color-secondary) 100%
-    );
-    --ex-button-bg-hover: linear-gradient(
-      135deg,
-      var(--ex-color-primary-hover) 0%,
-      var(--ex-color-secondary-hover) 100%
-    );
-    --ex-button-bg-active: linear-gradient(
-      135deg,
-      var(--ex-color-primary-active) 0%,
-      var(--ex-color-secondary-active) 100%
-    );
+    --ex-button-bg: var(--ex-color-primary);
+    --ex-button-bg-hover: var(--ex-color-primary-hover);
+    --ex-button-bg-active: var(--ex-color-primary-active);
     --ex-button-fg: var(--ex-button-ink-on-bright);
     --ex-button-fg-hover: var(--ex-button-ink-on-bright);
     --ex-button-border: var(--ex-color-primary);
@@ -241,12 +233,12 @@
 
   &--ghost {
     --ex-button-bg: transparent;
-    --ex-button-bg-hover: var(--ex-color-bg-hover);
-    --ex-button-bg-active: var(--ex-color-bg-active);
-    --ex-button-fg: var(--ex-color-text-primary);
+    --ex-button-bg-hover: var(--ex-color-primary-alpha-10);
+    --ex-button-bg-active: var(--ex-color-primary-alpha-20);
+    --ex-button-fg: var(--ex-color-text-secondary);
     --ex-button-fg-hover: var(--ex-color-primary);
-    --ex-button-border: var(--ex-color-border-primary);
-    --ex-button-border-hover: var(--ex-color-primary);
+    --ex-button-border: transparent;
+    --ex-button-border-hover: transparent;
   }
 
   &--text,
@@ -260,6 +252,7 @@
     --ex-button-border-hover: transparent;
 
     overflow: visible;
+    border-width: 0;
   }
 
   &--text {
@@ -293,8 +286,8 @@
     }
 
     &.ex-button--circle {
-      width: 28px;
-      height: 28px;
+      width: 44px;
+      height: 44px;
       padding: 0;
     }
   }
@@ -308,8 +301,8 @@
     }
 
     &.ex-button--circle {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       padding: 0;
     }
   }
@@ -334,8 +327,8 @@
   }
 
   &--circle {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     flex: none;
     padding: 0;
     border-radius: 50%;
@@ -375,6 +368,11 @@
   .ex-button--glow.ex-button--link:hover {
     text-shadow: 0 0 10px var(--ex-button-glow-color);
   }
+
+  // 主行动按钮只在用户悬停时触发低频色差，避免页面持续闪烁
+  .ex-button--primary:hover .ex-button__content {
+    animation: ex-cyber-glitch 2.4s steps(1, end) infinite;
+  }
 }
 
 @media (max-width: 768px) {
@@ -405,6 +403,10 @@
   .ex-button__loading-spinner {
     animation: none;
   }
+
+  .ex-button--primary:hover .ex-button__content {
+    animation: none;
+  }
 }
 
 @media (prefers-contrast: more), (forced-colors: active) {
@@ -416,6 +418,11 @@
   .ex-button:focus-visible {
     outline-width: 3px;
     outline-color: currentColor;
+  }
+
+  .ex-button--text,
+  .ex-button--link {
+    border-width: 0;
   }
 }
 
