@@ -124,4 +124,16 @@ describe('v2 样式系统边界', () => {
     expect(inputCss).toContain('content: ">"');
     expect(inputCss).toContain('clip-path: polygon(');
   });
+
+  it('共享切角控件使用形状发光而不是会被 clip-path 裁掉的阴影', () => {
+    const css = compile(`
+      @use 'src/styles/component-mixins' as component;
+      .control {
+        @include component.form-control-base;
+      }
+    `);
+
+    expect(css).toContain('filter: drop-shadow(0 0 8px var(--ex-color-neon-pink-alpha-30))');
+    expect(css).not.toContain('box-shadow: 0 0 10px var(--ex-color-neon-pink-alpha-30)');
+  });
 });
