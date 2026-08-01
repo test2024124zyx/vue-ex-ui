@@ -14,8 +14,9 @@ const countLiveComponent = (name: string, component: string): number =>
 const readBlocks = (document: string, marker: RegExp): string[] =>
   [...document.matchAll(marker)].map(match => match[1] ?? '');
 
-// 折叠代码中的换行只用于排版，比较时统一为空格以验证示例内容本身。
-const normalizeTypographyExample = (example: string): string => example.replace(/\s+/g, ' ').trim();
+// 折叠代码中的换行和对象尾逗号只用于排版，比较时统一后验证示例内容本身。
+const normalizeTypographyExample = (example: string): string =>
+  example.replace(/\s+/g, ' ').replace(/,\s*}/g, ' }').trim();
 
 const extractTypographyExamples = (block: string): string[] =>
   (block.match(/<ex-typography\b[\s\S]*?(?:<\/ex-typography>|\/>)/gi) ?? []).map(
@@ -24,7 +25,7 @@ const extractTypographyExamples = (block: string): string[] =>
 
 describe('组件文档实时演示', () => {
   it.each([
-    ['typography', 'ex-typography', 29],
+    ['typography', 'ex-typography', 32],
     ['icon', 'ex-icon', 4],
     ['button', 'ex-button', 8],
     ['image', 'ex-image', 3],
@@ -55,7 +56,7 @@ describe('组件文档实时演示', () => {
       /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
     );
 
-    expect(liveBlocks).toHaveLength(6);
+    expect(liveBlocks).toHaveLength(7);
     expect(codeBlocks).toHaveLength(liveBlocks.length);
 
     liveBlocks.forEach((liveBlock, index) => {
@@ -70,6 +71,12 @@ describe('组件文档实时演示', () => {
     expect(markup).toMatch(
       /<ex-typography\b(?=[^>]*\bgradient\b)(?=[^>]*variant="(?:body|caption)")/i
     );
+  });
+
+  it('Typography 文档包含可控的赛博朋克文字风格演示', () => {
+    const markup = readLiveMarkup('typography');
+    expect(markup).toMatch(/<ex-typography\b[^>]*cyberpunk[^>]*gradient/i);
+    expect(markup).toMatch(/<ex-typography\b[^>]*cyberpunk(?![^>]*gradient)/i);
   });
 
   it('Button 演示可关闭的光效和只展示一个字形的圆形按钮', () => {

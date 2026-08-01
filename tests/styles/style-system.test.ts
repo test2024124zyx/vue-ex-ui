@@ -165,8 +165,15 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('text-rendering: optimizeLegibility');
     expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-wide)');
     expect(typographyCss).toContain('text-wrap: balance');
-    expect(typographyCss).toContain('@supports not (background-clip: text)');
+    expect(typographyCss).toContain(
+      '@supports not ((background-clip: text) or (-webkit-background-clip: text))'
+    );
     expect(typographyCss).toContain('background-size: 100% 100%');
+    expect(typographyCss).toContain('background-clip: text');
+    expect(typographyCss).toContain('-webkit-background-clip: text');
+    expect(typographyCss).toContain('background-size: 220% 100%');
+    expect(typographyCss).toContain('.ex-typography--cyberpunk');
+    expect(typographyCss).toContain('--ex-color-cyber-magenta-rgb');
     expect(typographyCss).toContain('.ex-typography--gradient-animated');
     expect(typographyCss).toContain(
       'animation: ex-typography-gradient-shift 3s ease-in-out infinite'

@@ -139,7 +139,7 @@ describe('ExTypography', () => {
     });
 
     expect(wrapper.attributes('style')).toContain(
-      '--ex-typography-gradient: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%)'
+      '--ex-typography-gradient: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-cyber-cyan) 30%, var(--ex-color-secondary) 68%, var(--ex-color-accent) 100%)'
     );
   });
 
@@ -156,6 +156,15 @@ describe('ExTypography', () => {
     expect(staticWrapper.classes()).toContain('ex-typography--gradient');
     expect(staticWrapper.classes()).not.toContain('ex-typography--gradient-animated');
     expect(animatedWrapper.classes()).toContain('ex-typography--gradient-animated');
+  });
+
+  it('支持可控的赛博朋克文字风格', () => {
+    const wrapper = mount(ExTypography, {
+      props: { cyberpunk: true },
+      slots: { default: '赛博朋克标题' },
+    });
+
+    expect(wrapper.classes()).toContain('ex-typography--cyberpunk');
   });
 
   it('支持模板使用的 kebab-case 动态渐变属性', () => {

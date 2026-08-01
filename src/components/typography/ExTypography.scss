@@ -38,6 +38,9 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     letter-spacing: var(--ex-tracking-wide);
     text-transform: uppercase;
     text-wrap: balance;
+    text-shadow:
+      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
+      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
   }
 
   &--heading {
@@ -49,6 +52,9 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     letter-spacing: var(--ex-tracking-wide);
     text-transform: uppercase;
     text-wrap: balance;
+    text-shadow:
+      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
+      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
   }
 
   &--title {
@@ -140,23 +146,46 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   }
 
   &--gradient {
-    color: var(--ex-typography-gradient-fallback, var(--ex-color-text-primary));
+    color: transparent;
+    background-color: transparent;
     background-image: var(
       --ex-typography-gradient,
-      linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary))
+      linear-gradient(
+        90deg,
+        var(--ex-color-primary) 0%,
+        var(--ex-color-cyber-cyan) 30%,
+        var(--ex-color-secondary) 68%,
+        var(--ex-color-accent) 100%
+      )
     );
     background-repeat: no-repeat;
     background-position: 0% 50%;
     background-size: 100% 100%;
-    -webkit-background-clip: text;
     background-clip: text;
+    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   // 静态渐变是默认行为，只有显式开启动画时才扩大背景并移动渐变位置。
   &--gradient-animated {
-    background-size: 200% 200%;
+    background-size: 220% 100%;
+    will-change: background-position;
     animation: ex-typography-gradient-shift 3s ease-in-out infinite;
+  }
+
+  // 赛博朋克修饰符提供品牌字体、青紫色差和轻量霓虹，不默认引入持续闪烁。
+  &--cyberpunk {
+    font-family: var(--ex-font-primary);
+    letter-spacing: var(--ex-tracking-wide);
+    text-shadow:
+      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.55),
+      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.55),
+      0 0 12px var(--ex-color-primary-alpha-30);
+  }
+
+  // 未启用渐变时仍保留可感知的霓虹主色，避免 cyberpunk 只改变字体而没有视觉结果。
+  &--cyberpunk:not(.ex-typography--gradient) {
+    color: var(--ex-color-cyber-cyan, var(--ex-color-primary));
   }
 
   &--glow {
@@ -166,8 +195,8 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
       0 0 15px var(--ex-typography-glow-color, currentColor);
   }
 
-  // 不支持文字裁剪渐变的浏览器仍需保持正文可读。
-  @supports not (background-clip: text) {
+  // 不支持文字裁剪渐变的浏览器仍需保持正文可读，同时兼容仅支持前缀属性的浏览器。
+  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
     &--gradient {
       background-image: none;
       color: var(--ex-typography-gradient-fallback, var(--ex-color-text-primary));
@@ -284,13 +313,29 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   }
 
   @media (prefers-contrast: high) {
+    // 高对比度偏好只移除装饰性霓虹色差，保留静态渐变本身。
+    &--cyberpunk,
+    &--display,
+    &--heading {
+      text-shadow: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    // 强制颜色模式由系统接管颜色，必须关闭文字裁剪以保证可读性。
     &--gradient {
-      color: var(--ex-color-text-primary);
       background-image: none;
-      -webkit-text-fill-color: unset;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
     }
 
     &--glow {
+      text-shadow: none;
+    }
+
+    &--cyberpunk,
+    &--display,
+    &--heading {
       text-shadow: none;
     }
   }

@@ -11,6 +11,7 @@
         'ex-typography--truncate-multiline': isMultiLineTruncate,
         'ex-typography--gradient': props.gradient,
         'ex-typography--gradient-animated': props.gradient && props.gradientAnimated,
+        'ex-typography--cyberpunk': props.cyberpunk,
         'ex-typography--glow': props.glow,
         'ex-typography--center': props.center,
         'ex-typography--bold': props.bold,
@@ -42,6 +43,7 @@ const props = withDefaults(defineProps<ExTypographyProps>(), {
   truncate: false,
   gradient: false,
   gradientAnimated: false,
+  cyberpunk: false,
   glow: false,
   center: false,
   bold: false,
@@ -51,7 +53,7 @@ const props = withDefaults(defineProps<ExTypographyProps>(), {
 });
 
 const DEFAULT_TEXT_GRADIENT =
-  'linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%)';
+  'linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-cyber-cyan) 30%, var(--ex-color-secondary) 68%, var(--ex-color-accent) 100%)';
 
 const MIN_MULTILINE_LINES = 2;
 const THEME_COLOR_TOKENS = new Set([

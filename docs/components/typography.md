@@ -54,20 +54,33 @@
 
 ## 渐变文本效果
 
-`gradient` 是独立文本效果，默认使用从左到右的静态渐变，可应用于任意文本层级和 HTML 标签。需要动态位移时，再显式添加 `gradient-animated`。
+`gradient` 是独立文本效果，默认使用从左到右的静态渐变，可应用于任意文本层级和 HTML 标签。静态模式展示完整渐变色带；需要让色带持续位移时，再显式添加 `gradient-animated`。
 
 ::: raw
 
 <div class="vp-raw demo-container typography-stack">
-  <ex-typography variant="heading" gradient>跨区域业务增长 28.6%</ex-typography>
-  <ex-typography variant="heading" gradient gradient-animated>动态渐变标题</ex-typography>
+  <ex-typography
+    variant="heading"
+    gradient
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #00d4ff 0%, #a86bff 50%, #ff3bd1 100%)' }"
+  >
+    静态渐变：跨区域业务增长 28.6%
+  </ex-typography>
+  <ex-typography
+    variant="heading"
+    gradient
+    gradient-animated
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #00ff88 0%, #00d4ff 35%, #ff00ff 100%)' }"
+  >
+    动态渐变：实时数据流
+  </ex-typography>
   <ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
   <ex-typography variant="caption" gradient>渐变说明文字</ex-typography>
   <ex-typography
     tag="span"
     variant="body"
     gradient
-    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed, #06b6d4)' }"
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%)' }"
   >
     自定义渐变色
   </ex-typography>
@@ -77,18 +90,58 @@
 ::: details 查看示例代码
 
 ```vue
-<ex-typography variant="heading" gradient>跨区域业务增长 28.6%</ex-typography>
-<ex-typography variant="heading" gradient gradient-animated>动态渐变标题</ex-typography>
+<ex-typography
+  variant="heading"
+  gradient
+  :custom-style="{
+    '--ex-typography-gradient': 'linear-gradient(90deg, #00d4ff 0%, #a86bff 50%, #ff3bd1 100%)',
+  }"
+>
+  静态渐变：跨区域业务增长 28.6%
+</ex-typography>
+<ex-typography
+  variant="heading"
+  gradient
+  gradient-animated
+  :custom-style="{
+    '--ex-typography-gradient': 'linear-gradient(90deg, #00ff88 0%, #00d4ff 35%, #ff00ff 100%)',
+  }"
+>
+  动态渐变：实时数据流
+</ex-typography>
 <ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
 <ex-typography variant="caption" gradient>渐变说明文字</ex-typography>
 <ex-typography
   tag="span"
   variant="body"
   gradient
-  :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed, #06b6d4)' }"
+  :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%)' }"
 >
   自定义渐变色
 </ex-typography>
+```
+
+:::
+
+## 赛博朋克文字风格
+
+`cyberpunk` 提供品牌展示字体、青紫色差和轻量霓虹阴影，不会默认引入持续闪烁；`display` 和 `heading` 即使不启用该属性，也会保留极轻的静态色差作为基础风格。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography variant="display" cyberpunk gradient>NEON COMMAND CENTER</ex-typography>
+  <ex-typography variant="heading" cyberpunk>系统状态：ONLINE</ex-typography>
+  <ex-typography variant="body" cyberpunk>终端链路已建立，等待下一条指令。</ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-typography variant="display" cyberpunk gradient>NEON COMMAND CENTER</ex-typography>
+<ex-typography variant="heading" cyberpunk>系统状态：ONLINE</ex-typography>
+<ex-typography variant="body" cyberpunk>终端链路已建立，等待下一条指令。</ex-typography>
 ```
 
 :::
@@ -202,6 +255,7 @@
 | `maxLines`         | 截断时保留的最大行数，非整数会向下取整      | `number`                                                        | `1`                 |
 | `gradient`         | 是否启用渐变文本效果                        | `boolean`                                                       | `false`             |
 | `gradientAnimated` | 是否启用渐变背景动态位移（需要 `gradient`） | `boolean`                                                       | `false`             |
+| `cyberpunk`        | 是否启用赛博朋克文字风格                    | `boolean`                                                       | `false`             |
 | `glow`             | 是否启用发光效果                            | `boolean`                                                       | `false`             |
 | `center`           | 是否居中                                    | `boolean`                                                       | `false`             |
 | `bold`             | 是否加粗                                    | `boolean`                                                       | `false`             |
