@@ -1,11 +1,8 @@
 // ExUI Design Tokens - ClutchZone Gaming Theme
 // 基于 ClutchZone 游戏主题的设计令牌系统
 //
-// 注意：这里的 $colors 是「单一事实来源」。它同时驱动：
-//   1) 工具类（utilities/_colors.scss 里 map.get 烘焙的字面量）
-//   2) 无主题时 :root 的回退变量（_variables.scss）
-// 因此它必须与运行时主题（themes/neon-blue.scss 等覆盖的 CSS 变量）保持一致，
-// 否则同一页面上工具类与组件会渲染出两种「主蓝」。下方色板已对齐默认主题。
+// 注意：这里的 $colors 提供静态色阶和无主题回退值；语义颜色工具类使用
+// --ex-* CSS 变量，以便与运行时的两套主题保持一致。下方默认色板与暗色主题对齐。
 
 @use 'sass:map';
 

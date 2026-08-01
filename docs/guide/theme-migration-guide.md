@@ -70,7 +70,7 @@ toggleTheme(['neon-blue', 'light']);
 
 ## 持久化数据
 
-存储键仍为 `ex-ui-theme`。升级后如果存储中保存的是旧值，加载函数会返回 `null`，应用会回退到系统偏好或默认的 `neon-blue`。如需在升级时保留用户选择，可以在调用 `initTheme` 前迁移：
+存储键仍为 `ex-ui-theme`。升级后如果存储中保存的是旧值，加载函数会返回 `null`，应用会回退到系统偏好或默认的 `neon-blue`。如需在升级时保留用户选择，请在调用 `usePersistedTheme` 前完成迁移：
 
 ```ts
 const saved = localStorage.getItem('ex-ui-theme');

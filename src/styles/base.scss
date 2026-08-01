@@ -9,11 +9,11 @@
 // 导入基础样式模块
 // ============================================================================
 
-// 安全、必要的最小重置（box-sizing、focus-visible 等）——可全局生效而不改宿主外观。
+// 安全、必要的最小重置（box-sizing、focus-visible 等）——只作用于 ExUI 控件或 .ex-app。
 @use 'base/reset';
-// 仅类名选择器（.sr-only / .skip-link），不污染裸元素。
+// 仅作用于 ExUI 命名空间或 .ex-app 内的无障碍辅助类，不污染宿主页面。
 @use 'base/accessibility';
-// 打印样式，仅在 @media print 下生效。
+// 打印样式仅作用于用户主动启用的 .ex-app 区域。
 @use 'base/print';
 
 // 以下模块只暴露 `base-styles` mixin，会改动宿主裸元素外观，

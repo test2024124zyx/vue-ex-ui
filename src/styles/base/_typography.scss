@@ -11,7 +11,10 @@
 
 // 节能模式下使用系统字体
 @media (prefers-reduced-data: reduce) {
-  :root {
+  .ex-app,
+  .ex-config-provider,
+  [data-theme='neon-blue'],
+  [data-theme='light'] {
     --ex-font-primary: system-ui, -apple-system, sans-serif;
     --ex-font-secondary: system-ui, -apple-system, sans-serif;
     --ex-font-mono: 'Courier New', monospace;

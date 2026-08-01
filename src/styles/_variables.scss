@@ -83,7 +83,7 @@
 
 // 减少动画
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :where([data-theme='neon-blue'], [data-theme='light'], .ex-app, .ex-config-provider) {
     --ex-motion-duration-fast: 0ms;
     --ex-motion-duration-base: 0ms;
     --ex-motion-duration-medium: 0ms;
@@ -94,7 +94,7 @@
 
 // 高对比度偏好
 @media (prefers-contrast: high) {
-  :root {
+  :where([data-theme='neon-blue'], [data-theme='light'], .ex-app, .ex-config-provider) {
     --ex-color-border-primary: var(--ex-color-text-primary);
     --ex-shadow-neon-sm: 0 0 0 2px var(--ex-color-primary);
     --ex-shadow-neon-md: 0 0 0 3px var(--ex-color-primary);

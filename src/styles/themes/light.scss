@@ -29,11 +29,14 @@
 
   // ========== 强调色（品红）==========
   --ex-color-accent: #c2298a;
+  --ex-color-accent-alpha-10: rgba(194, 41, 138, 0.1);
+  --ex-color-accent-alpha-20: rgba(194, 41, 138, 0.2);
 
   // ========== 背景色系（白 → 浅灰）==========
   --ex-color-bg-primary: #ffffff;
   --ex-color-bg-secondary: #f5f7fa;
   --ex-color-bg-tertiary: #eef1f5;
+  --ex-color-bg-surface: #f5f7fa;
   --ex-color-bg-elevated: #ffffff;
   --ex-color-bg-hover: #f0f3f7;
   --ex-color-bg-active: #e6ebf2;
@@ -47,10 +50,14 @@
   --ex-color-text-secondary: #5a6b7d;
   --ex-color-text-tertiary: #64748b;
   --ex-color-text-disabled: #b3bdc9;
+  --ex-color-text-inverse: #ffffff;
 
   // ========== 边框色系（浅灰）==========
   --ex-color-border-primary: #d9e0e8;
   --ex-color-border-secondary: #c4cdd8;
+  --ex-color-border-focus: #1668dc;
+  --ex-color-border-hover: #c2298a;
+  --ex-color-border: var(--ex-color-border-primary);
 
   // ========== 状态色系（深饱和，白字达标）==========
   --ex-color-success: #18794e;
@@ -87,9 +94,13 @@
   --ex-shadow-neon-lg: 0 12px 28px rgba(16, 24, 40, 0.12), 0 4px 8px rgba(16, 24, 40, 0.06);
 
   // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-300: #5a9be7;
   --ex-color-neon-blue-500: #1668dc;
+  --ex-color-neon-blue-400: #347fdf;
   --ex-color-neon-blue-600: #0e57c2;
+  --ex-color-neon-pink-400: #d14aa0;
   --ex-color-neon-pink-500: #c2298a;
+  --ex-color-neon-pink-600: #a71f75;
 
   // ========== 主色透明度 ==========
   --ex-color-primary-alpha-05: rgba(22, 104, 220, 0.05);
@@ -101,6 +112,7 @@
   --ex-color-primary-alpha-40: rgba(22, 104, 220, 0.4);
   --ex-color-primary-alpha-50: rgba(22, 104, 220, 0.5);
   --ex-color-primary-alpha-60: rgba(22, 104, 220, 0.6);
+  --ex-color-primary-alpha-80: rgba(22, 104, 220, 0.8);
 
   // ========== 次要色透明度 ==========
   --ex-color-secondary-alpha-05: rgba(102, 69, 201, 0.05);
@@ -110,11 +122,13 @@
   --ex-color-secondary-alpha-20: rgba(102, 69, 201, 0.2);
   --ex-color-secondary-alpha-30: rgba(102, 69, 201, 0.3);
   --ex-color-secondary-alpha-40: rgba(102, 69, 201, 0.4);
+  --ex-color-secondary-alpha-50: rgba(102, 69, 201, 0.5);
   --ex-color-secondary-alpha-60: rgba(102, 69, 201, 0.6);
   --ex-color-secondary-alpha-80: rgba(102, 69, 201, 0.8);
 
   // ========== 霓虹蓝透明度（= 主色）==========
   --ex-color-neon-blue-alpha-05: rgba(22, 104, 220, 0.05);
+  --ex-color-neon-blue-alpha-08: rgba(22, 104, 220, 0.08);
   --ex-color-neon-blue-alpha-10: rgba(22, 104, 220, 0.1);
   --ex-color-neon-blue-alpha-15: rgba(22, 104, 220, 0.15);
   --ex-color-neon-blue-alpha-20: rgba(22, 104, 220, 0.2);

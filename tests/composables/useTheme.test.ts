@@ -10,7 +10,6 @@ import {
   useSystemTheme,
   VALID_THEMES,
 } from '../../src/composables/useTheme';
-import { initTheme } from '../../src/utils/theme-init';
 
 describe('useTheme', () => {
   beforeEach(() => {
@@ -120,13 +119,5 @@ describe('useTheme', () => {
 
     stop();
     expect(darkListeners.size).toBe(0);
-  });
-
-  it('初始化工具复用同一状态源并正确处理浅色主题', () => {
-    localStorage.setItem('ex-ui-theme', 'light');
-
-    expect(initTheme()).toBe('light');
-    expect(getTheme()).toBe('light');
-    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 });

@@ -8,19 +8,19 @@
 // 背景颜色工具类 (Background Color Utilities)
 // ============================================================================
 
-.bg-primary { background-color: map.get($colors, bg-primary) !important; }
-.bg-secondary { background-color: map.get($colors, bg-secondary) !important; }
-.bg-tertiary { background-color: map.get($colors, bg-tertiary) !important; }
-.bg-surface { background-color: map.get($colors, bg-surface) !important; }
-.bg-elevated { background-color: map.get($colors, bg-elevated) !important; }
+.bg-primary { background-color: var(--ex-color-bg-primary) !important; }
+.bg-secondary { background-color: var(--ex-color-bg-secondary) !important; }
+.bg-tertiary { background-color: var(--ex-color-bg-tertiary) !important; }
+.bg-surface { background-color: var(--ex-color-bg-surface) !important; }
+.bg-elevated { background-color: var(--ex-color-bg-elevated) !important; }
 
-.bg-success { background-color: map.get($colors, success) !important; }
-.bg-warning { background-color: map.get($colors, warning) !important; }
-.bg-error { background-color: map.get($colors, error) !important; }
-.bg-info { background-color: map.get($colors, info) !important; }
+.bg-success { background-color: var(--ex-color-success) !important; }
+.bg-warning { background-color: var(--ex-color-warning) !important; }
+.bg-error { background-color: var(--ex-color-error) !important; }
+.bg-info { background-color: var(--ex-color-info) !important; }
 
-.bg-neon-blue { background-color: map.get($colors, neon-blue-500) !important; }
-.bg-neon-pink { background-color: map.get($colors, neon-pink-500) !important; }
+.bg-neon-blue { background-color: var(--ex-color-neon-blue-500) !important; }
+.bg-neon-pink { background-color: var(--ex-color-neon-pink-500) !important; }
 
 .bg-transparent { background-color: transparent !important; }
 
@@ -28,36 +28,36 @@
 // 文本颜色工具类 (Text Color Utilities)
 // ============================================================================
 
-.text-primary { color: map.get($colors, text-primary) !important; }
-.text-secondary { color: map.get($colors, text-secondary) !important; }
-.text-tertiary { color: map.get($colors, text-tertiary) !important; }
-.text-disabled { color: map.get($colors, text-disabled) !important; }
-.text-inverse { color: map.get($colors, text-inverse) !important; }
+.text-primary { color: var(--ex-color-text-primary) !important; }
+.text-secondary { color: var(--ex-color-text-secondary) !important; }
+.text-tertiary { color: var(--ex-color-text-tertiary) !important; }
+.text-disabled { color: var(--ex-color-text-disabled) !important; }
+.text-inverse { color: var(--ex-color-text-inverse) !important; }
 
-.text-success { color: map.get($colors, success) !important; }
-.text-warning { color: map.get($colors, warning) !important; }
-.text-error { color: map.get($colors, error) !important; }
-.text-info { color: map.get($colors, info) !important; }
+.text-success { color: var(--ex-color-success) !important; }
+.text-warning { color: var(--ex-color-warning) !important; }
+.text-error { color: var(--ex-color-error) !important; }
+.text-info { color: var(--ex-color-info) !important; }
 
-.text-neon-blue { color: map.get($colors, neon-blue-500) !important; }
-.text-neon-pink { color: map.get($colors, neon-pink-500) !important; }
+.text-neon-blue { color: var(--ex-color-neon-blue-500) !important; }
+.text-neon-pink { color: var(--ex-color-neon-pink-500) !important; }
 
 // ============================================================================
 // 边框颜色工具类 (Border Color Utilities)
 // ============================================================================
 
-.border-primary { border-color: map.get($colors, border-primary) !important; }
-.border-secondary { border-color: map.get($colors, border-secondary) !important; }
-.border-focus { border-color: map.get($colors, border-focus) !important; }
-.border-hover { border-color: map.get($colors, border-hover) !important; }
+.border-primary { border-color: var(--ex-color-border-primary) !important; }
+.border-secondary { border-color: var(--ex-color-border-secondary) !important; }
+.border-focus { border-color: var(--ex-color-border-focus) !important; }
+.border-hover { border-color: var(--ex-color-border-hover) !important; }
 
-.border-success { border-color: map.get($colors, success) !important; }
-.border-warning { border-color: map.get($colors, warning) !important; }
-.border-error { border-color: map.get($colors, error) !important; }
-.border-info { border-color: map.get($colors, info) !important; }
+.border-success { border-color: var(--ex-color-success) !important; }
+.border-warning { border-color: var(--ex-color-warning) !important; }
+.border-error { border-color: var(--ex-color-error) !important; }
+.border-info { border-color: var(--ex-color-info) !important; }
 
-.border-neon-blue { border-color: map.get($colors, neon-blue-500) !important; }
-.border-neon-pink { border-color: map.get($colors, neon-pink-500) !important; }
+.border-neon-blue { border-color: var(--ex-color-neon-blue-500) !important; }
+.border-neon-pink { border-color: var(--ex-color-neon-pink-500) !important; }
 
 .border-transparent { border-color: transparent !important; }
 
@@ -66,19 +66,19 @@
 // ============================================================================
 
 .bg-gradient-primary {
-  background: linear-gradient(135deg, map.get($colors, neon-blue-500), map.get($colors, neon-pink-500)) !important;
+  background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500)) !important;
 }
 
 .bg-gradient-blue {
-  background: linear-gradient(135deg, map.get($colors, neon-blue-400), map.get($colors, neon-blue-600)) !important;
+  background: linear-gradient(135deg, var(--ex-color-neon-blue-400), var(--ex-color-neon-blue-600)) !important;
 }
 
 .bg-gradient-pink {
-  background: linear-gradient(135deg, map.get($colors, neon-pink-400), map.get($colors, neon-pink-600)) !important;
+  background: linear-gradient(135deg, var(--ex-color-neon-pink-400), var(--ex-color-neon-pink-600)) !important;
 }
 
 .bg-gradient-dark {
-  background: linear-gradient(135deg, map.get($colors, bg-primary), map.get($colors, bg-surface)) !important;
+  background: linear-gradient(135deg, var(--ex-color-bg-primary), var(--ex-color-bg-surface)) !important;
 }
 
 // ============================================================================
@@ -206,18 +206,79 @@
 // 响应式颜色工具类 (Responsive Color Utilities)
 // ============================================================================
 
-@media (prefers-color-scheme: dark) {
-  .dark\:bg-primary { background-color: map.get($colors, bg-primary) !important; }
-  .dark\:bg-secondary { background-color: map.get($colors, bg-secondary) !important; }
-  .dark\:text-primary { color: map.get($colors, text-primary) !important; }
-  .dark\:text-secondary { color: map.get($colors, text-secondary) !important; }
+// 暗色变体只由 ExUI 的主题状态驱动，不再读取系统偏好覆盖用户明确选择的主题。
+[data-theme='neon-blue'].dark\:bg-primary,
+[data-theme='neon-blue'] .dark\:bg-primary,
+.ex-theme-neon-blue.dark\:bg-primary,
+.ex-theme-neon-blue .dark\:bg-primary {
+  background-color: var(--ex-color-bg-primary) !important;
+}
+
+[data-theme='neon-blue'].dark\:bg-secondary,
+[data-theme='neon-blue'] .dark\:bg-secondary,
+.ex-theme-neon-blue.dark\:bg-secondary,
+.ex-theme-neon-blue .dark\:bg-secondary {
+  background-color: var(--ex-color-bg-secondary) !important;
+}
+
+[data-theme='neon-blue'].dark\:text-primary,
+[data-theme='neon-blue'] .dark\:text-primary,
+.ex-theme-neon-blue.dark\:text-primary,
+.ex-theme-neon-blue .dark\:text-primary {
+  color: var(--ex-color-text-primary) !important;
+}
+
+[data-theme='neon-blue'].dark\:text-secondary,
+[data-theme='neon-blue'] .dark\:text-secondary,
+.ex-theme-neon-blue.dark\:text-secondary,
+.ex-theme-neon-blue .dark\:text-secondary {
+  color: var(--ex-color-text-secondary) !important;
 }
 
 @media (prefers-contrast: high) {
-  .high-contrast\:text-primary { color: #ffffff !important; }
-  .high-contrast\:text-secondary { color: #e5e5e5 !important; }
-  .high-contrast\:bg-primary { background-color: #000000 !important; }
-  .high-contrast\:border-primary { border-color: #ffffff !important; }
+  [data-theme='neon-blue'].high-contrast\:text-primary,
+  [data-theme='neon-blue'] .high-contrast\:text-primary,
+  [data-theme='light'].high-contrast\:text-primary,
+  [data-theme='light'] .high-contrast\:text-primary,
+  .ex-theme-neon-blue.high-contrast\:text-primary,
+  .ex-theme-neon-blue .high-contrast\:text-primary,
+  .ex-theme-light.high-contrast\:text-primary,
+  .ex-theme-light .high-contrast\:text-primary {
+    color: var(--ex-color-text-primary) !important;
+  }
+
+  [data-theme='neon-blue'].high-contrast\:text-secondary,
+  [data-theme='neon-blue'] .high-contrast\:text-secondary,
+  [data-theme='light'].high-contrast\:text-secondary,
+  [data-theme='light'] .high-contrast\:text-secondary,
+  .ex-theme-neon-blue.high-contrast\:text-secondary,
+  .ex-theme-neon-blue .high-contrast\:text-secondary,
+  .ex-theme-light.high-contrast\:text-secondary,
+  .ex-theme-light .high-contrast\:text-secondary {
+    color: var(--ex-color-text-secondary) !important;
+  }
+
+  [data-theme='neon-blue'].high-contrast\:bg-primary,
+  [data-theme='neon-blue'] .high-contrast\:bg-primary,
+  [data-theme='light'].high-contrast\:bg-primary,
+  [data-theme='light'] .high-contrast\:bg-primary,
+  .ex-theme-neon-blue.high-contrast\:bg-primary,
+  .ex-theme-neon-blue .high-contrast\:bg-primary,
+  .ex-theme-light.high-contrast\:bg-primary,
+  .ex-theme-light .high-contrast\:bg-primary {
+    background-color: var(--ex-color-bg-primary) !important;
+  }
+
+  [data-theme='neon-blue'].high-contrast\:border-primary,
+  [data-theme='neon-blue'] .high-contrast\:border-primary,
+  [data-theme='light'].high-contrast\:border-primary,
+  [data-theme='light'] .high-contrast\:border-primary,
+  .ex-theme-neon-blue.high-contrast\:border-primary,
+  .ex-theme-neon-blue .high-contrast\:border-primary,
+  .ex-theme-light.high-contrast\:border-primary,
+  .ex-theme-light .high-contrast\:border-primary {
+    border-color: var(--ex-color-text-primary) !important;
+  }
 }
 
 // ============================================================================

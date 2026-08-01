@@ -276,15 +276,15 @@
   @if $color == 'blue' {
     color: var(--ex-color-neon-blue-500);
     text-shadow:
-      0 0 5px var(--ex-color-shadow-neon-blue),
-      0 0 10px var(--ex-color-shadow-neon-blue),
-      0 0 15px var(--ex-color-shadow-neon-blue);
+      0 0 5px var(--ex-color-neon-blue-alpha-30),
+      0 0 10px var(--ex-color-neon-blue-alpha-30),
+      0 0 15px var(--ex-color-neon-blue-alpha-30);
   } @else if $color == 'pink' {
     color: var(--ex-color-neon-pink-500);
     text-shadow:
-      0 0 5px var(--ex-color-shadow-neon-pink),
-      0 0 10px var(--ex-color-shadow-neon-pink),
-      0 0 15px var(--ex-color-shadow-neon-pink);
+      0 0 5px var(--ex-color-neon-pink-alpha-30),
+      0 0 10px var(--ex-color-neon-pink-alpha-30),
+      0 0 15px var(--ex-color-neon-pink-alpha-30);
   }
 }
 
@@ -430,7 +430,7 @@
   &:focus {
     outline: none;
     border-color: var(--ex-color-border-focus);
-    box-shadow: 0 0 0 var(--ex-input-focus-ring-width) var(--ex-color-shadow-neon-blue);
+    box-shadow: 0 0 0 var(--ex-input-focus-ring-width) var(--ex-color-primary-alpha-40);
   }
 
   &:disabled {

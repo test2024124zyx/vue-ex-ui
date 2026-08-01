@@ -6,48 +6,57 @@
 // ============================================================================
 
 @media print {
-  * {
+  .ex-app,
+  .ex-app *,
+  .ex-app *::before,
+  .ex-app *::after {
     background: transparent;
     color: black;
     box-shadow: none;
     text-shadow: none;
   }
   
-  a, a:visited {
+  .ex-app a,
+  .ex-app a:visited {
     text-decoration: underline;
   }
   
-  a[href]:after {
+  .ex-app a[href]::after {
     content: " (" attr(href) ")";
   }
   
-  abbr[title]:after {
+  .ex-app abbr[title]::after {
     content: " (" attr(title) ")";
   }
   
-  pre, blockquote {
+  .ex-app pre,
+  .ex-app blockquote {
     border: 1px solid #999;
     page-break-inside: avoid;
   }
   
-  thead {
+  .ex-app thead {
     display: table-header-group;
   }
   
-  tr, img {
+  .ex-app tr,
+  .ex-app img {
     page-break-inside: avoid;
   }
   
-  img {
+  .ex-app img {
     max-width: 100%;
   }
   
-  p, h2, h3 {
+  .ex-app p,
+  .ex-app h2,
+  .ex-app h3 {
     orphans: 3;
     widows: 3;
   }
   
-  h2, h3 {
+  .ex-app h2,
+  .ex-app h3 {
     page-break-after: avoid;
   }
 }

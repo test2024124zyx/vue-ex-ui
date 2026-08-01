@@ -25,9 +25,12 @@ export interface ThemeVariables {
   '--ex-color-secondary-hover': string;
   '--ex-color-secondary-active': string;
   '--ex-color-accent': string;
+  '--ex-color-accent-alpha-10': string;
+  '--ex-color-accent-alpha-20': string;
   '--ex-color-bg-primary': string;
   '--ex-color-bg-secondary': string;
   '--ex-color-bg-tertiary': string;
+  '--ex-color-bg-surface': string;
   '--ex-color-bg-elevated': string;
   '--ex-color-bg-hover': string;
   '--ex-color-bg-active': string;
@@ -35,8 +38,12 @@ export interface ThemeVariables {
   '--ex-color-text-secondary': string;
   '--ex-color-text-tertiary': string;
   '--ex-color-text-disabled': string;
+  '--ex-color-text-inverse': string;
   '--ex-color-border-primary': string;
   '--ex-color-border-secondary': string;
+  '--ex-color-border-focus': string;
+  '--ex-color-border-hover': string;
+  '--ex-color-border': string;
 
   // 状态色。
   '--ex-color-success': string;
@@ -62,9 +69,20 @@ export interface ThemeVariables {
   '--ex-shadow-neon-lg': string;
   '--ex-color-white': string;
   '--ex-color-black': string;
+  '--ex-color-black-alpha-60': string;
+  '--ex-color-neon-blue-300': string;
+  '--ex-color-neon-blue-400': string;
   '--ex-color-neon-blue-500': string;
   '--ex-color-neon-blue-600': string;
+  '--ex-color-neon-blue-alpha-08': string;
+  '--ex-color-neon-pink-400': string;
   '--ex-color-neon-pink-500': string;
+  '--ex-color-neon-pink-600': string;
+  '--ex-color-primary-alpha-80': string;
+  '--ex-color-primary-alpha-08': string;
+  '--ex-color-primary-alpha-15': string;
+  '--ex-color-secondary-alpha-08': string;
+  '--ex-color-secondary-alpha-50': string;
 
   // 赛博纹理辅助变量。
   '--ex-color-cyber-green': string;

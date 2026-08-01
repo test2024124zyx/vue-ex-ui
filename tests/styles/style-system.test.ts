@@ -112,6 +112,57 @@ describe('v2 样式系统边界', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
   });
 
+  it('基础样式只在 ExUI 作用域内修改宿主页面', () => {
+    const resetCss = compile("@use 'src/styles/base/reset';");
+    const accessibilityCss = compile("@use 'src/styles/base/accessibility';");
+    const printCss = compile("@use 'src/styles/base/print';");
+
+    expect(resetCss).toContain('.ex-app');
+    expect(resetCss).not.toMatch(/(^|\n)html\s*\{/);
+    expect(resetCss).not.toMatch(/(^|\n)\*\s*,/);
+    expect(accessibilityCss).toContain('.ex-sr-only');
+    expect(accessibilityCss).toContain('.ex-app .sr-only');
+    expect(accessibilityCss).not.toMatch(/(^|\n)\.sr-only\s*\{/);
+    expect(printCss).toContain('@media print');
+    expect(printCss).toContain('.ex-app');
+    expect(printCss).not.toMatch(/@media print\s*\{\s*\*/);
+  });
+
+  it('可选颜色工具由双主题状态驱动且不读取系统暗色偏好', () => {
+    const css = compile("@use 'src/styles/utilities/colors';");
+
+    expect(css).toContain('[data-theme=neon-blue] .dark\\:bg-primary');
+    expect(css).toContain('[data-theme=light] .high-contrast\\:text-primary');
+    expect(css).not.toContain('prefers-color-scheme');
+  });
+
+  it('两个主题都覆盖组件实际依赖的语义变量', () => {
+    const css = compile("@use 'src/styles/index';");
+
+    expect(css).toContain('--ex-color-accent-alpha-10: rgba(255, 59, 209, 0.1)');
+    expect(css).toContain('--ex-color-neon-blue-alpha-08: rgba(41, 171, 226, 0.08)');
+    expect(css).toContain('--ex-color-primary-alpha-80: rgba(41, 171, 226, 0.8)');
+    expect(css).toContain('--ex-color-primary-alpha-08: rgba(41, 171, 226, 0.08)');
+    expect(css).toContain('--ex-color-secondary-alpha-50: rgba(168, 107, 255, 0.5)');
+    expect(css).toContain('--ex-color-border: var(--ex-color-border-primary)');
+    expect(css).toContain('--ex-color-neon-blue-300: #72c8ef');
+    expect(css).toContain('--ex-color-neon-blue-300: #5a9be7');
+  });
+
+  it('首屏初始化脚本与组件样式只识别两个主题', () => {
+    const themeInit = readFileSync(join(root, 'public/theme-init.js'), 'utf8');
+    const virtualListStyles = readFileSync(
+      join(root, 'src/components/virtual-list/ExVirtualList.scss'),
+      'utf8'
+    );
+
+    expect(themeInit).toContain("var VALID_THEMES = ['neon-blue', 'light'];");
+    expect(themeInit).toContain("theme === 'neon-blue' ? 'dark' : 'light'");
+    expect(themeInit).not.toContain('neon-pink');
+    expect(themeInit).not.toContain('high-contrast');
+    expect(virtualListStyles).not.toContain('prefers-color-scheme');
+  });
+
   it('核心组件使用切角、终端提示符和低频 CTA 色差效果', () => {
     const buttonCss = compile("@use 'src/components/button/ExButton';");
     const cardCss = compile("@use 'src/components/card/ExCard';");

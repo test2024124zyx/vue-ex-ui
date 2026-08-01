@@ -8,12 +8,14 @@
 // ============================================================================
 
 // 屏幕阅读器专用内容
-.sr-only {
+.ex-sr-only,
+.ex-app .sr-only {
   @include sr-only;
 }
 
 // 跳转链接
-.skip-link {
+.ex-skip-link,
+.ex-app .skip-link {
   position: absolute;
   top: -40px;
   left: 6px;
@@ -32,17 +34,24 @@
 
 // 减少动画偏好
 @media (prefers-reduced-motion: reduce) {
-  // 针对所有元素禁用动画和过渡
-  html {
-    scroll-behavior: auto;
-  }
-  
-  *,
-  *::before,
-  *::after {
+  // 仅对 ExUI 应用区域和 ExUI 控件禁用动画，避免修改宿主页面。
+  .ex-app,
+  .ex-app *,
+  .ex-app *::before,
+  .ex-app *::after,
+  [class^='ex-'],
+  [class*=' ex-'],
+  [class^='ex-']::before,
+  [class^='ex-']::after,
+  [class*=' ex-']::before,
+  [class*=' ex-']::after {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
     transition-duration: 0.01ms;
+  }
+
+  .ex-app {
+    scroll-behavior: auto;
   }
   
   // 禁用复杂效果（仅针对有这些效果的元素）
@@ -55,7 +64,7 @@
   }
   
   // 简化背景
-  body.ex-app::before {
+  .ex-app::before {
     display: none;
   }
 }
@@ -70,7 +79,9 @@
   }
   
   // 增强链接可见性
-  a {
+  .ex-app a,
+  [class^='ex-'] a,
+  [class*=' ex-'] a {
     text-decoration: underline;
   }
   
