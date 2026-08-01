@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { h } from 'vue';
 import ExTypography from '../../../src/components/typography/ExTypography.vue';
 import type { ExTypographyProps } from '../../../src/components/typography/types';
 
@@ -155,6 +156,20 @@ describe('ExTypography', () => {
     expect(staticWrapper.classes()).toContain('ex-typography--gradient');
     expect(staticWrapper.classes()).not.toContain('ex-typography--gradient-animated');
     expect(animatedWrapper.classes()).toContain('ex-typography--gradient-animated');
+  });
+
+  it('支持模板使用的 kebab-case 动态渐变属性', () => {
+    const wrapper = mount({
+      render: () =>
+        h(ExTypography, {
+          gradient: true,
+          'gradient-animated': true,
+        }),
+    });
+
+    expect(wrapper.findComponent(ExTypography).classes()).toContain(
+      'ex-typography--gradient-animated'
+    );
   });
 
   it('渐变和发光同时启用时提供可见的发光颜色', () => {

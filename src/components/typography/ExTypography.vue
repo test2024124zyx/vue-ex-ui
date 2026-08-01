@@ -3,26 +3,26 @@
     :is="actualTag"
     :class="[
       'ex-typography',
-      `ex-typography--${variant}`,
-      `ex-typography--${size}`,
+      `ex-typography--${props.variant}`,
+      `ex-typography--${props.size}`,
       {
-        'ex-typography--truncate': truncate,
+        'ex-typography--truncate': props.truncate,
         'ex-typography--truncate-single-line': isSingleLineTruncate,
         'ex-typography--truncate-multiline': isMultiLineTruncate,
-        'ex-typography--gradient': gradient,
-        'ex-typography--gradient-animated': gradient && gradientAnimated,
-        'ex-typography--glow': glow,
-        'ex-typography--center': center,
-        'ex-typography--bold': bold,
-        'ex-typography--italic': italic,
-        'ex-typography--underline': underline,
+        'ex-typography--gradient': props.gradient,
+        'ex-typography--gradient-animated': props.gradient && props.gradientAnimated,
+        'ex-typography--glow': props.glow,
+        'ex-typography--center': props.center,
+        'ex-typography--bold': props.bold,
+        'ex-typography--italic': props.italic,
+        'ex-typography--underline': props.underline,
       },
     ]"
     :style="computedStyle"
     :title="truncationTitle"
     v-bind="$attrs"
   >
-    <slot>{{ text }}</slot>
+    <slot>{{ props.text }}</slot>
   </component>
 </template>
 
