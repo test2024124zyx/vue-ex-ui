@@ -33,7 +33,7 @@ app.use(ExUI);
 app.mount('#app');
 ```
 
-如果需要加载赛博标题字体 Audiowide，请额外引入 `vue-ex-ui/font.css`；字体资源默认保持独立，避免基础样式首屏强制加载字体文件。
+完整入口的 `vue-ex-ui/style.css` 会默认包含本地品牌字体资源。若使用按需入口 `vue-ex-ui/base.css`，再额外引入 `vue-ex-ui/font.css` 即可启用同一套赛博朋克字体。
 
 ## 按需引入（推荐）
 

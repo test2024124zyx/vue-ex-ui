@@ -1,6 +1,6 @@
 # Typography 排版
 
-用于标题、正文、说明文字及独立文本效果。
+用于标题、正文、说明文字及独立文本效果。组件默认采用终端等宽字体、展示字体、宽字距和克制的 RGB 色差，赛博朋克是 Typography 的基础视觉，不需要额外开启属性。
 
 ## 文本层级
 
@@ -123,25 +123,27 @@
 
 :::
 
-## 赛博朋克文字风格
+## 赛博朋克字体基线与增强效果
 
-`cyberpunk` 提供品牌展示字体、青紫色差和轻量霓虹阴影，不会默认引入持续闪烁；`display` 和 `heading` 即使不启用该属性，也会保留极轻的静态色差作为基础风格。
+默认的 `display` / `heading` 已使用 Orbitron 展示字体、宽字距、静态 RGB 色差和低频 glitch；`body` / `caption` 使用 JetBrains Mono / Share Tech Mono 等终端字体，优先保证长文本可读。`cyberpunk` 用于把任意变体提升为更强的霓虹色差和展示字体效果，不是基础风格的开关。
 
 ::: raw
 
 <div class="vp-raw demo-container typography-stack">
-  <ex-typography variant="display" cyberpunk gradient>NEON COMMAND CENTER</ex-typography>
-  <ex-typography variant="heading" cyberpunk>系统状态：ONLINE</ex-typography>
-  <ex-typography variant="body" cyberpunk>终端链路已建立，等待下一条指令。</ex-typography>
+  <ex-typography variant="display" gradient>NEON COMMAND CENTER</ex-typography>
+  <ex-typography variant="heading">系统状态：ONLINE</ex-typography>
+  <ex-typography variant="body">终端链路已建立，等待下一条指令。</ex-typography>
+  <ex-typography variant="body" cyberpunk>强化模式：色差与霓虹效果已提升。</ex-typography>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ex-typography variant="display" cyberpunk gradient>NEON COMMAND CENTER</ex-typography>
-<ex-typography variant="heading" cyberpunk>系统状态：ONLINE</ex-typography>
-<ex-typography variant="body" cyberpunk>终端链路已建立，等待下一条指令。</ex-typography>
+<ex-typography variant="display" gradient>NEON COMMAND CENTER</ex-typography>
+<ex-typography variant="heading">系统状态：ONLINE</ex-typography>
+<ex-typography variant="body">终端链路已建立，等待下一条指令。</ex-typography>
+<ex-typography variant="body" cyberpunk>强化模式：色差与霓虹效果已提升。</ex-typography>
 ```
 
 :::
@@ -255,7 +257,7 @@
 | `maxLines`         | 截断时保留的最大行数，非整数会向下取整      | `number`                                                        | `1`                 |
 | `gradient`         | 是否启用渐变文本效果                        | `boolean`                                                       | `false`             |
 | `gradientAnimated` | 是否启用渐变背景动态位移（需要 `gradient`） | `boolean`                                                       | `false`             |
-| `cyberpunk`        | 是否启用赛博朋克文字风格                    | `boolean`                                                       | `false`             |
+| `cyberpunk`        | 是否启用强化赛博朋克文字效果                | `boolean`                                                       | `false`             |
 | `glow`             | 是否启用发光效果                            | `boolean`                                                       | `false`             |
 | `center`           | 是否居中                                    | `boolean`                                                       | `false`             |
 | `bold`             | 是否加粗                                    | `boolean`                                                       | `false`             |

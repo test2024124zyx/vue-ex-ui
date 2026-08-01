@@ -21,7 +21,7 @@ export interface ExTypographyProps {
   gradient?: boolean;
   /** 是否启用渐变背景动态位移，需要同时启用 gradient */
   gradientAnimated?: boolean;
-  /** 是否启用赛博朋克文字风格（霓虹色差与品牌字体） */
+  /** 是否启用强化赛博朋克文字风格（基础赛博字体与标题色差默认开启） */
   cyberpunk?: boolean;
   /** 是否使用霓虹发光效果 */
   glow?: boolean;

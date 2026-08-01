@@ -1,2 +1,9 @@
-// 独立字体样式入口，使用品牌字体时显式导入该入口。
+// 品牌字体统一从本地资源加载，避免依赖运行时网络字体并保持赛博朋克基线。
+// 组件库默认覆盖拉丁字符，中文等字符继续使用宿主系统回退字体。
+import '@fontsource/orbitron/latin-700.css';
+import '@fontsource/orbitron/latin-900.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-500.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
+import '@fontsource/share-tech-mono/latin-400.css';
 import './styles/font.scss';

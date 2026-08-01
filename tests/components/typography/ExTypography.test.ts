@@ -165,6 +165,16 @@ describe('ExTypography', () => {
     });
 
     expect(wrapper.classes()).toContain('ex-typography--cyberpunk');
+    expect(wrapper.element.style.color).toBe('var(--ex-color-cyber-cyan)');
+  });
+
+  it('强化赛博朋克效果仍尊重显式语义色', () => {
+    const wrapper = mount(ExTypography, {
+      props: { cyberpunk: true, color: 'danger' },
+      slots: { default: '危险状态' },
+    });
+
+    expect(wrapper.element.style.color).toBe('var(--ex-color-danger)');
   });
 
   it('支持模板使用的 kebab-case 动态渐变属性', () => {

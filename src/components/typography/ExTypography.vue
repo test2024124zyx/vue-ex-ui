@@ -120,7 +120,13 @@ const computedStyle = computed<CSSProperties>(() => {
   // 仅将已注册的语义色映射为主题变量，其余交给浏览器解析为原始 CSS 颜色。
   if (props.color && !props.gradient) {
     const color = props.color.trim();
-    style.color = isThemeColor(color) ? `var(--ex-color-${color.toLowerCase()})` : color;
+    const resolvedColor =
+      props.cyberpunk && color.toLowerCase() === 'text-primary'
+        ? 'var(--ex-color-cyber-cyan)'
+        : isThemeColor(color)
+          ? `var(--ex-color-${color.toLowerCase()})`
+          : color;
+    style.color = resolvedColor;
   }
 
   // 多行截断需要由浏览器的 line-clamp 布局共同完成。

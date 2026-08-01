@@ -123,7 +123,7 @@ setTheme('light');
 ### 字体变量
 
 ```scss
---ex-font-primary: 'Audiowide', 'Orbitron', 'Rajdhani', sans-serif;
+--ex-font-primary: 'Orbitron', 'Audiowide', 'Rajdhani', sans-serif;
 --ex-font-secondary: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 --ex-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 

@@ -73,10 +73,13 @@ describe('组件文档实时演示', () => {
     );
   });
 
-  it('Typography 文档包含可控的赛博朋克文字风格演示', () => {
+  it('Typography 文档默认展示赛博朋克基线并提供可控增强模式', () => {
     const markup = readLiveMarkup('typography');
-    expect(markup).toMatch(/<ex-typography\b[^>]*cyberpunk[^>]*gradient/i);
-    expect(markup).toMatch(/<ex-typography\b[^>]*cyberpunk(?![^>]*gradient)/i);
+    expect(markup).toMatch(
+      /<ex-typography\b(?=[^>]*variant="display")(?=[^>]*\bgradient\b)(?![^>]*\bcyberpunk\b)/i
+    );
+    expect(markup).toMatch(/<ex-typography\b(?=[^>]*variant="heading")(?![^>]*\bcyberpunk\b)/i);
+    expect(markup).toMatch(/<ex-typography\b(?=[^>]*variant="body")(?=[^>]*\bcyberpunk\b)/i);
   });
 
   it('Button 演示可关闭的光效和只展示一个字形的圆形按钮', () => {

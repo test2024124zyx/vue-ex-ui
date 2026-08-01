@@ -6,8 +6,8 @@
 // ============================================================================
 // 字体说明
 // ============================================================================
-// Audiowide 字体已通过 @fontsource/audiowide 包导入
-// 其他字体（Orbitron, Rajdhani 等）作为备用字体，如果系统中没有会降级到 sans-serif
+// 整包入口和独立 font.css 入口都会加载 Orbitron、JetBrains Mono、Share Tech Mono 与 Audiowide。
+// CJK 字符继续使用宿主系统字体回退，避免引入体积过大的中文字库。
 
 // 节能模式下使用系统字体
 @media (prefers-reduced-data: reduce) {

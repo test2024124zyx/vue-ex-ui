@@ -10,6 +10,8 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
 .ex-typography {
   --ex-typography-variant-size: var(--ex-text-base);
+  --ex-typography-chromatic-left: rgba(var(--ex-color-cyber-magenta-rgb), 0.52);
+  --ex-typography-chromatic-right: rgba(var(--ex-color-cyber-cyan-rgb), 0.52);
 
   margin: 0;
   padding: 0;
@@ -20,6 +22,8 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   color: var(--ex-color-text-primary);
   background: none;
   -webkit-text-fill-color: currentColor;
+  letter-spacing: var(--ex-tracking-wide);
+  font-variant-ligatures: contextual;
   text-rendering: optimizeLegibility;
   transition:
     color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
@@ -35,12 +39,14 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-bold);
     line-height: var(--ex-leading-tight);
-    letter-spacing: var(--ex-tracking-wide);
+    letter-spacing: var(--ex-tracking-widest);
     text-transform: uppercase;
     text-wrap: balance;
     text-shadow:
-      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
-      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
+      -2px 0 var(--ex-typography-chromatic-left),
+      2px 0 var(--ex-typography-chromatic-right),
+      0 0 18px var(--ex-color-primary-alpha-30);
+    animation: ex-cyber-glitch 4s steps(1, end) infinite;
   }
 
   &--heading {
@@ -53,8 +59,9 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     text-transform: uppercase;
     text-wrap: balance;
     text-shadow:
-      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
-      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
+      -1px 0 var(--ex-typography-chromatic-left),
+      1px 0 var(--ex-typography-chromatic-right),
+      0 0 12px var(--ex-color-primary-alpha-30);
   }
 
   &--title {
@@ -72,20 +79,23 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-relaxed);
-    letter-spacing: var(--ex-tracking-normal);
+    letter-spacing: var(--ex-tracking-wide);
   }
 
   &--caption {
     --ex-typography-variant-size: var(--ex-text-sm);
 
+    font-family: var(--ex-font-label);
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
   }
 
   &--overline {
     --ex-typography-variant-size: var(--ex-text-xs);
 
+    font-family: var(--ex-font-label);
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wider);
@@ -176,16 +186,14 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   // 赛博朋克修饰符提供品牌字体、青紫色差和轻量霓虹，不默认引入持续闪烁。
   &--cyberpunk {
     font-family: var(--ex-font-primary);
+    font-weight: var(--ex-font-bold);
     letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
     text-shadow:
-      -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.55),
-      1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.55),
-      0 0 12px var(--ex-color-primary-alpha-30);
-  }
-
-  // 未启用渐变时仍保留可感知的霓虹主色，避免 cyberpunk 只改变字体而没有视觉结果。
-  &--cyberpunk:not(.ex-typography--gradient) {
-    color: var(--ex-color-cyber-cyan, var(--ex-color-primary));
+      -2px 0 var(--ex-color-cyber-magenta),
+      2px 0 var(--ex-color-cyber-cyan),
+      0 0 18px var(--ex-color-primary-alpha-30);
+    animation: ex-cyber-glitch 4s steps(1, end) infinite;
   }
 
   &--glow {
@@ -306,6 +314,11 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
   @media (prefers-reduced-motion: reduce) {
     transition: none !important;
+
+    &--display,
+    &--cyberpunk {
+      animation: none;
+    }
 
     &--gradient-animated {
       animation: none;

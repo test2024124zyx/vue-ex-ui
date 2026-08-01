@@ -65,6 +65,19 @@ describe('v2 样式系统边界', () => {
     expect(fontCss).toContain('font-family: "Audiowide"');
   });
 
+  it('整包入口默认加载完整赛博字体，按需入口保留独立字体资源', () => {
+    const indexSource = readFileSync(join(root, 'src/index.ts'), 'utf8');
+    const fontEntrySource = readFileSync(join(root, 'src/style-font.ts'), 'utf8');
+
+    expect(indexSource).toContain('@fontsource/orbitron/latin-700.css');
+    expect(indexSource).toContain('@fontsource/jetbrains-mono/latin-400.css');
+    expect(indexSource).toContain('@fontsource/share-tech-mono/latin-400.css');
+    expect(indexSource).toContain("import './styles/font.scss';");
+    expect(fontEntrySource).toContain('@fontsource/orbitron/latin-700.css');
+    expect(fontEntrySource).toContain('@fontsource/jetbrains-mono/latin-400.css');
+    expect(fontEntrySource).toContain('@fontsource/share-tech-mono/latin-400.css');
+  });
+
   it('Button 声明的每一种类型都生成实际样式选择器', () => {
     const css = compile("@use 'src/components/button/ExButton';");
 
@@ -164,6 +177,10 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('background: none');
     expect(typographyCss).toContain('text-rendering: optimizeLegibility');
     expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-wide)');
+    expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-widest)');
+    expect(typographyCss).toContain('font-variant-ligatures: contextual');
+    expect(typographyCss).toContain('animation: ex-cyber-glitch 4s steps(1, end) infinite');
+    expect(typographyCss).toContain('font-family: var(--ex-font-label)');
     expect(typographyCss).toContain('text-wrap: balance');
     expect(typographyCss).toContain(
       '@supports not ((background-clip: text) or (-webkit-background-clip: text))'
@@ -173,7 +190,8 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('-webkit-background-clip: text');
     expect(typographyCss).toContain('background-size: 220% 100%');
     expect(typographyCss).toContain('.ex-typography--cyberpunk');
-    expect(typographyCss).toContain('--ex-color-cyber-magenta-rgb');
+    expect(typographyCss).toContain('--ex-typography-chromatic-left');
+    expect(typographyCss).toContain('--ex-color-cyber-magenta');
     expect(typographyCss).toContain('.ex-typography--gradient-animated');
     expect(typographyCss).toContain(
       'animation: ex-typography-gradient-shift 3s ease-in-out infinite'

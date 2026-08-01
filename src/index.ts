@@ -88,6 +88,14 @@ import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 
 // 导入样式（全局导入时自动引入）
 // 整包构建必须从公共入口直接声明全局样式，避免 CSS-only 中间入口被 Rollup 错误裁剪。
+// 完整入口直接加载品牌字体，确保 style.css 与字体变量的默认契约一致。
+import '@fontsource/orbitron/latin-700.css';
+import '@fontsource/orbitron/latin-900.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-500.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
+import '@fontsource/share-tech-mono/latin-400.css';
+import './styles/font.scss';
 import './styles/index.scss';
 
 // v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
