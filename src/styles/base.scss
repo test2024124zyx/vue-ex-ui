@@ -189,9 +189,9 @@
 }
 
 // 配置提供器关闭动画时同步关闭全局扫描线和可选色差效果
-.ex-no-animation .ex-app::after,
-.ex-no-animation.ex-app::after,
-.ex-no-animation .ex-cyber-glitch {
+[class~='ex-no-animation'] .ex-app::after,
+[class~='ex-no-animation'].ex-app::after,
+[class~='ex-no-animation'] .ex-cyber-glitch {
   animation: none !important;
 }
 

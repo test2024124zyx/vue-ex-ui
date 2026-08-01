@@ -33,7 +33,7 @@
   
   &:focus {
     border-color: var(--ex-color-neon-pink-500);
-    @include optimized-neon-glow('pink', 'md');
+    @include chamfer-glow('pink', 'md');
   }
   
   &:disabled {
@@ -89,12 +89,12 @@
   border: 2px solid var(--ex-color-neon-blue-500);
   @include chamfer(var(--ex-chamfer-sm));
   @include optimized-backdrop-blur(8px);
-  @include optimized-neon-glow('blue', 'sm');
+  @include chamfer-glow('blue', 'sm');
   @include safe-transition(all);
   
   &:hover {
     border-color: var(--ex-color-neon-pink-400);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
     transform: translateY(-1px);
   }
 }
@@ -116,7 +116,7 @@
   &.is-focused {
     border-color: var(--ex-color-neon-pink-500);
     background: var(--ex-color-bg-secondary-alpha-50);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
   }
 }
 
@@ -137,7 +137,7 @@
   &.is-focused {
     background: var(--ex-color-bg-secondary);
     border-color: var(--ex-color-neon-pink-500);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
   }
 }
 
