@@ -8,6 +8,7 @@ import {
   setTheme,
   usePersistedTheme,
   useSystemTheme,
+  VALID_THEMES,
 } from '../../src/composables/useTheme';
 import { initTheme } from '../../src/utils/theme-init';
 
@@ -21,6 +22,10 @@ describe('useTheme', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('仅暴露赛博暗色和赛博亮色两个全局主题', () => {
+    expect(VALID_THEMES).toEqual(['neon-blue', 'light']);
   });
 
   it('同步响应式状态、DOM、颜色模式与统一变化事件', () => {
@@ -44,14 +49,14 @@ describe('useTheme', () => {
   });
 
   it('重复设置同一主题只修复 DOM，不重复触发变化通知', () => {
-    setTheme('dark');
+    setTheme('light');
     document.documentElement.removeAttribute('data-theme');
     const callback = vi.fn();
     const stop = onThemeChange(callback);
 
-    setTheme('dark');
+    setTheme('light');
 
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('light');
     expect(callback).not.toHaveBeenCalled();
     stop();
   });
@@ -69,7 +74,7 @@ describe('useTheme', () => {
       throw new DOMException('denied');
     });
 
-    expect(() => saveThemeToStorage('dark')).not.toThrow();
+    expect(() => saveThemeToStorage('light')).not.toThrow();
     expect(loadThemeFromStorage()).toBeNull();
   });
 
@@ -82,9 +87,9 @@ describe('useTheme', () => {
       },
     });
 
-    setTheme('dark');
+    setTheme('light');
     await nextTick();
-    expect(write).toHaveBeenLastCalledWith('ex-ui-theme', 'dark');
+    expect(write).toHaveBeenLastCalledWith('ex-ui-theme', 'light');
 
     wrapper.unmount();
     write.mockClear();
@@ -95,7 +100,6 @@ describe('useTheme', () => {
 
   it('系统主题监听会应用初始偏好并完整解绑', () => {
     const darkListeners = new Set<EventListener>();
-    const contrastListeners = new Set<EventListener>();
     const createQuery = (matches: boolean, listeners: Set<EventListener>): MediaQueryList =>
       ({
         matches,
@@ -108,20 +112,14 @@ describe('useTheme', () => {
         dispatchEvent: () => true,
       }) as MediaQueryList;
 
-    vi.spyOn(window, 'matchMedia').mockImplementation(query =>
-      query.includes('contrast')
-        ? createQuery(true, contrastListeners)
-        : createQuery(false, darkListeners)
-    );
+    vi.spyOn(window, 'matchMedia').mockImplementation(query => createQuery(true, darkListeners));
 
     const stop = useSystemTheme();
-    expect(getTheme()).toBe('matrix');
+    expect(getTheme()).toBe('neon-blue');
     expect(darkListeners.size).toBe(1);
-    expect(contrastListeners.size).toBe(1);
 
     stop();
     expect(darkListeners.size).toBe(0);
-    expect(contrastListeners.size).toBe(0);
   });
 
   it('初始化工具复用同一状态源并正确处理浅色主题', () => {

@@ -102,13 +102,6 @@
 }
 
 // 暗色主题偏好
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ex-color-bg-primary: #0a0a0a;
-    --ex-color-text-primary: #ffffff;
-  }
-}
-
 // ============================================================================
 // 响应式变量 (Responsive Variables)
 // ============================================================================
@@ -239,7 +232,12 @@
   --ex-badge-font-weight: var(--ex-font-medium);
   --ex-badge-border-width: 2px;
   --ex-badge-border-radius: var(--ex-radius-none);
-  --ex-badge-transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+  --ex-badge-transition: background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
   
   // 徽章尺寸
   --ex-badge-sm-min-width: 14px;

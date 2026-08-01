@@ -135,7 +135,12 @@
 // ============================================================================
 
 @mixin theme-transition {
-  * {
+  :where(
+      [class^='ex-'],
+      [class*=' ex-'],
+      .ex-app,
+      .ex-config-provider
+    ) {
     transition:
       background-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
       border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
@@ -145,9 +150,24 @@
 
   // 禁用动画的元素
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    :where(
+        [class^='ex-'],
+        [class*=' ex-'],
+        .ex-app,
+        .ex-config-provider
+      ),
+    :where(
+        [class^='ex-'],
+        [class*=' ex-'],
+        .ex-app,
+        .ex-config-provider
+      )::before,
+    :where(
+        [class^='ex-'],
+        [class*=' ex-'],
+        .ex-app,
+        .ex-config-provider
+      )::after {
       transition: none;
     }
   }

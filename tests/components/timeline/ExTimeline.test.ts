@@ -42,4 +42,17 @@ describe('ExTimelineItem', () => {
     await wrapper.find('.ex-timeline-item').trigger('click');
     expect(wrapper.emitted('click')).toBeTruthy();
   });
+
+  it('exposes keyboard semantics when clickable', async () => {
+    const wrapper = mount(ExTimelineItem, {
+      props: { clickable: true },
+      slots: { default: () => 'content' },
+    });
+    const item = wrapper.find('.ex-timeline-item');
+
+    expect(item.attributes('role')).toBe('button');
+    expect(item.attributes('tabindex')).toBe('0');
+    await item.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('click')).toHaveLength(1);
+  });
 });

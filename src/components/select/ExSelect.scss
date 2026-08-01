@@ -403,11 +403,15 @@
 
 // 下拉动画
 .ex-select-dropdown-enter-active {
-  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+  transition-property: opacity, transform, background-color, border-color, box-shadow;
+  transition-duration: var(--ex-motion-duration-base);
+  transition-timing-function: var(--ex-motion-ease-out);
 }
 
 .ex-select-dropdown-leave-active {
-  transition: all var(--ex-motion-duration-fast) var(--ex-motion-ease-in);
+  transition-property: opacity, transform;
+  transition-duration: var(--ex-motion-duration-fast);
+  transition-timing-function: var(--ex-motion-ease-in);
 }
 
 .ex-select-dropdown-enter-from {

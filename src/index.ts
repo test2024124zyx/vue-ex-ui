@@ -87,7 +87,7 @@ import ExTreeSelect from './components/tree-select';
 import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 
 // 导入样式（全局导入时自动引入）
-import './styles/index.scss';
+import './style-base';
 
 // v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
 const publicComponents = [
@@ -528,6 +528,6 @@ export {
 
 // 导出主题类型和工具函
 export type { Theme, ThemeConfig, ThemeVariables, ThemeChangeEvent } from './types/theme';
-export { THEME_CONFIGS, getThemeConfig, isDarkTheme, isHighContrastTheme } from './types/theme';
+export { THEME_CONFIGS, THEME_NAMES, getThemeConfig, isDarkTheme } from './types/theme';
 
 export * from './utils';

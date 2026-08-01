@@ -4,14 +4,10 @@ ExUI 提供了灵活的主题系统，让你可以轻松定制组件的外观以
 
 ## 默认主题
 
-ExUI 内置了多个主题：
+ExUI 内置两个赛博朋克主题：
 
-- **neon-blue** - 霓虹蓝主题（默认，赛博朋克）
-- **neon-pink** - 霓虹粉主题（赛博朋克）
-- **dark** - 纯黑暗主题（冷蓝灰，无霓虹）
-- **matrix** - 矩阵绿黑客风主题（纯黑底 + 荧光绿，极高对比）。旧名 `high-contrast`
-  仍作为兼容别名生效，但建议使用 `matrix`；`high-contrast` 名称保留给未来的无障碍主题
-- **light** - 明亮主题（白底深字，发光收敛为柔和投影，适合后台/文档场景）
+- **neon-blue** - 赛博暗色主题（默认，霓虹蓝紫）
+- **light** - 赛博亮色主题（白底深字，纹理和发光效果收敛）
 
 ## 切换主题
 
@@ -30,11 +26,8 @@ const theme = ref('neon-blue');
 <template>
   <ExConfigProvider :theme="theme">
     <div class="theme-switcher">
-      <button @click="theme = 'neon-blue'">霓虹蓝</button>
-      <button @click="theme = 'neon-pink'">霓虹粉</button>
-      <button @click="theme = 'dark'">暗黑</button>
-      <button @click="theme = 'matrix'">矩阵绿</button>
-      <button @click="theme = 'light'">明亮</button>
+      <button @click="theme = 'neon-blue'">赛博暗色</button>
+      <button @click="theme = 'light'">赛博亮色</button>
     </div>
 
     <App />
@@ -50,26 +43,24 @@ const theme = ref('neon-blue');
 <script setup>
 import { useTheme } from 'vue-ex-ui';
 
-const theme = useTheme();
+const { theme, setTheme } = useTheme();
 
 // 获取当前主题
 console.log(theme.value); // 'neon-blue'
 
-// 切换主题（需要在 ConfigProvider 内部）
-const switchTheme = newTheme => {
-  // 通过更新 ConfigProvider 的 theme prop 来切换
-};
+// 切换主题
+setTheme('light');
 </script>
 ```
 
-## 自定义主题
+## 局部品牌覆盖
+
+全局主题集合保持为两个值。品牌需要调整颜色时，应在应用容器或业务模块内覆盖语义变量，不要注册第三个 `Theme` 值。
 
 ### CSS 变量覆盖
 
-你可以通过覆盖 CSS 变量来自定义主题：
-
 ```css
-:root {
+.app-brand-scope {
   /* 主色调 */
   --ex-color-primary: #ff6b35;
   --ex-color-secondary: #f7931e;
@@ -84,40 +75,7 @@ const switchTheme = newTheme => {
 }
 ```
 
-### SCSS 主题文件
-
-创建自定义主题文件：
-
-```scss
-// themes/custom.scss
-:root[data-theme='custom'] {
-  --ex-color-primary: #ff6b35;
-  --ex-color-primary-hover: #ff5722;
-  --ex-color-primary-active: #e64a19;
-
-  --ex-color-secondary: #f7931e;
-  --ex-color-accent: #4caf50;
-
-  --ex-color-bg-primary: #1a1a2e;
-  --ex-color-bg-secondary: #16213e;
-  --ex-color-bg-elevated: #0f3460;
-
-  --ex-color-text-primary: #ffffff;
-  --ex-color-text-secondary: #b8b8b8;
-  --ex-color-text-disabled: #666666;
-
-  --ex-color-border: #333333;
-}
-```
-
-然后在应用中引入：
-
-```typescript
-import './themes/custom.scss';
-
-// 使用自定义主题
-setTheme('custom');
-```
+覆盖变量时应同时检查暗色和亮色场景的可读性；组件内部仍然只使用 `--ex-color-*` 等语义变量。
 
 ## 主题变量参考
 
@@ -211,46 +169,19 @@ ExUI 支持基于屏幕尺寸的响应式主题：
 }
 ```
 
-## 暗色模式
+## 跟随系统明暗偏好
 
-ExUI 自动支持系统暗色模式：
-
-```scss
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ex-color-bg-primary: #000000;
-    --ex-color-text-primary: #ffffff;
-  }
-}
-```
-
-你也可以使用 ConfigProvider 手动控制暗色模式：
+系统暗色偏好映射到 `neon-blue`，亮色偏好映射到 `light`。使用 `useSystemTheme` 监听并清理媒体查询，不要在根节点额外覆盖背景变量：
 
 ```vue
-<script setup>
-import { ref, onMounted } from 'vue';
-import { ExConfigProvider } from 'vue-ex-ui';
+<script setup lang="ts">
+import { useSystemTheme } from 'vue-ex-ui';
 
-const theme = ref('neon-blue');
-
-// 检测系统暗色模式偏好
-onMounted(() => {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (prefersDark) {
-    theme.value = 'dark';
-  }
-
-  // 监听系统主题变化
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    theme.value = e.matches ? 'dark' : 'neon-blue';
-  });
-});
+useSystemTheme();
 </script>
 
 <template>
-  <ExConfigProvider :theme="theme">
-    <App />
-  </ExConfigProvider>
+  <App />
 </template>
 ```
 
@@ -258,32 +189,11 @@ onMounted(() => {
 
 将用户选择的主题保存到 localStorage：
 
-```vue
-<script setup>
-import { ref, watch, onMounted } from 'vue';
-import { ExConfigProvider } from 'vue-ex-ui';
+```ts
+import { usePersistedTheme } from 'vue-ex-ui';
 
-const theme = ref('neon-blue');
-
-// 从 localStorage 恢复主题
-onMounted(() => {
-  const savedTheme = localStorage.getItem('ex-ui-theme');
-  if (savedTheme) {
-    theme.value = savedTheme;
-  }
-});
-
-// 保存主题到 localStorage
-watch(theme, newTheme => {
-  localStorage.setItem('ex-ui-theme', newTheme);
-});
-</script>
-
-<template>
-  <ExConfigProvider :theme="theme">
-    <App />
-  </ExConfigProvider>
-</template>
+const { theme, setTheme } = usePersistedTheme();
+setTheme('light');
 ```
 
 ## 更多配置
@@ -294,5 +204,4 @@ watch(theme, newTheme => {
 - 全局尺寸
 - 霓虹效果控制
 - 动画控制
-- 命名空间自定义
 - z-index 管理

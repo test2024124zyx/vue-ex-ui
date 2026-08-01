@@ -43,7 +43,9 @@
       text-decoration: none;
       cursor: default;
       border-radius: var(--ex-radius-sm);
-      transition: all var(--ex-motion-duration-base, 200ms) var(--ex-motion-ease-out, ease);
+      transition-property: color, background-color, border-color, transform, box-shadow;
+      transition-duration: var(--ex-motion-duration-base, 200ms);
+      transition-timing-function: var(--ex-motion-ease-out, ease);
 
       &--clickable {
         cursor: pointer;
@@ -87,7 +89,9 @@
     color: var(--ex-color-text-secondary);
     cursor: pointer;
     border-radius: var(--ex-radius-base);
-    transition: all var(--ex-motion-duration-base, 200ms) var(--ex-motion-ease-out, ease);
+      transition-property: color, background-color, border-color, transform, box-shadow;
+      transition-duration: var(--ex-motion-duration-base, 200ms);
+      transition-timing-function: var(--ex-motion-ease-out, ease);
 
     &:hover {
       color: var(--ex-color-primary);

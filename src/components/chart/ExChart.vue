@@ -7,7 +7,11 @@
     role="img"
   >
     <!-- ECharts 容器 - 始终存在 -->
-    <div ref="chartRef" class="ex-chart__container" :style="{ width: '100%', height: '100%' }" />
+    <div
+      ref="chartRef"
+      class="ex-chart__container"
+      :style="{ width: '100%', height: '100%' }"
+    ></div>
 
     <!-- 加载状态 - 使用 ExLoading 组件 -->
     <ex-loading
@@ -19,7 +23,10 @@
     />
 
     <!-- 空状态 - 使用 v-show 而不是 v-if -->
-    <div v-show="!loading && isEmpty" class="ex-chart__empty">
+    <div
+      v-show="!loading && isEmpty"
+      class="ex-chart__empty"
+    >
       <slot name="empty">
         <ex-empty :description="t('chart.noData')" />
       </slot>
@@ -213,17 +220,17 @@ const updateChart = () => {
     };
 
     mergedOption.toolbox = {
-      ...(props.showToolbox ? createDefaultToolbox() : {}),
+      ...(props.showToolbox ? createDefaultToolbox(globalConfig.theme.value) : {}),
       ...asComponentOption(props.option.toolbox),
       show: props.showToolbox,
     };
     mergedOption.legend = {
-      ...(props.showLegend ? createDefaultLegend() : {}),
+      ...(props.showLegend ? createDefaultLegend(globalConfig.theme.value) : {}),
       ...asComponentOption(props.option.legend),
       show: props.showLegend,
     };
     mergedOption.tooltip = {
-      ...(props.showTooltip ? createDefaultTooltip() : {}),
+      ...(props.showTooltip ? createDefaultTooltip(globalConfig.theme.value) : {}),
       ...asComponentOption(props.option.tooltip),
       show: props.showTooltip,
       appendToBody: true,
@@ -232,7 +239,7 @@ const updateChart = () => {
     mergedOption.dataZoom = props.showDataZoom
       ? Array.isArray(props.option.dataZoom) && props.option.dataZoom.length > 0
         ? props.option.dataZoom.map(item => ({ ...asComponentOption(item) }))
-        : createDefaultDataZoom()
+        : createDefaultDataZoom(globalConfig.theme.value)
       : [];
 
     // 应用霓虹发光效果（使用全局配置）

@@ -42,23 +42,6 @@
     }
   }
 
-  &--neon-pink {
-    border-color: var(--ex-color-neon-pink-alpha-30);
-
-    &.ex-chart--neon {
-      box-shadow: 0 0 20px var(--ex-color-neon-pink-alpha-20);
-
-      &:hover {
-        box-shadow: 0 0 30px var(--ex-color-neon-pink-alpha-30);
-      }
-    }
-  }
-
-  &--dark {
-    background: var(--ex-color-bg-primary);
-    border-color: var(--ex-color-border-secondary);
-  }
-
   &--light {
     background: var(--ex-color-white);
     border-color: var(--ex-color-border-primary);

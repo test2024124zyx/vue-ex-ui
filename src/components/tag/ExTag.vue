@@ -1,27 +1,39 @@
 <template>
-  <span :class="classes" :style="styles" @click="handleClick">
-    <span v-if="$slots.prefix" class="ex-tag__prefix">
-      <slot name="prefix" />
+  <span
+    :class="classes"
+    :style="styles"
+    :role="clickable ? 'button' : undefined"
+    :tabindex="clickable ? 0 : undefined"
+    @click="handleClick"
+    @keydown.enter="handleKeydown"
+    @keydown.space.prevent="handleKeydown"
+  >
+    <span
+      v-if="$slots.prefix"
+      class="ex-tag__prefix"
+    >
+      <slot name="prefix"></slot>
     </span>
 
     <span class="ex-tag__content">
-      <slot />
+      <slot></slot>
     </span>
 
-    <span
+    <button
       v-if="closable"
+      type="button"
       class="ex-tag__close"
-      role="button"
-      tabindex="0"
       :aria-label="t('tag.close')"
       @click.stop="handleClose"
-      @keydown.enter.stop.prevent="handleClose"
-      @keydown.space.stop.prevent="handleClose"
+      @keydown.stop
     >
       <slot name="close">
-        <ExIcon icon="close-line" :size="12" />
+        <ExIcon
+          icon="close-line"
+          :size="12"
+        />
       </slot>
-    </span>
+    </button>
   </span>
 </template>
 
@@ -35,6 +47,7 @@ import { useI18n } from '../../locale';
 const props = withDefaults(defineProps<TagProps>(), {
   type: 'primary',
   closable: false,
+  clickable: false,
   round: false,
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
   effect: 'light',
@@ -55,6 +68,7 @@ const classes = computed(() => [
   {
     'is-round': props.round,
     'is-closable': props.closable,
+    'is-clickable': props.clickable,
   },
 ]);
 
@@ -79,6 +93,11 @@ const styles = computed(() => {
 });
 
 const handleClick = (event: MouseEvent) => {
+  emit('click', event);
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.clickable) return;
   emit('click', event);
 };
 

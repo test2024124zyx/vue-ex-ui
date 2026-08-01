@@ -1,5 +1,14 @@
 <template>
-  <div ref="itemRef" :class="itemClasses" :style="itemStyles" role="listitem" @click="handleClick">
+  <div
+    ref="itemRef"
+    :class="itemClasses"
+    :style="itemStyles"
+    :role="clickable ? 'button' : 'listitem'"
+    :tabindex="clickable ? 0 : undefined"
+    @click="handleClick"
+    @keydown.enter="handleKeydown"
+    @keydown.space.prevent="handleKeydown"
+  >
     <!-- 垂直布局 -->
     <template v-if="direction === 'vertical'">
       <!-- 左侧内容区（alternate 模式） -->
@@ -16,7 +25,7 @@
           </slot>
         </div>
         <div class="ex-timeline-item__card">
-          <slot />
+          <slot></slot>
         </div>
         <div
           v-if="timestamp && timestampPosition === 'bottom'"
@@ -31,12 +40,18 @@
       <!-- 时间轴节点 -->
       <div class="ex-timeline-item__tail-wrapper">
         <!-- 连接线 -->
-        <div v-if="showLine && !hideLine" class="ex-timeline-item__tail" />
+        <div
+          v-if="showLine && !hideLine"
+          class="ex-timeline-item__tail"
+        ></div>
 
         <!-- 节点 -->
-        <div class="ex-timeline-item__node" :style="nodeStyle">
+        <div
+          class="ex-timeline-item__node"
+          :style="nodeStyle"
+        >
           <slot name="dot">
-            <div class="ex-timeline-item__dot" />
+            <div class="ex-timeline-item__dot"></div>
           </slot>
         </div>
       </div>
@@ -51,8 +66,11 @@
             {{ timestamp }}
           </slot>
         </div>
-        <div v-if="mode !== 'alternate' || !isRightSide" class="ex-timeline-item__card">
-          <slot />
+        <div
+          v-if="mode !== 'alternate' || !isRightSide"
+          class="ex-timeline-item__card"
+        >
+          <slot></slot>
         </div>
         <div
           v-if="
@@ -72,14 +90,20 @@
       <div class="ex-timeline-item__horizontal-wrapper">
         <!-- 节点 -->
         <div class="ex-timeline-item__node-horizontal">
-          <div class="ex-timeline-item__node" :style="nodeStyle">
+          <div
+            class="ex-timeline-item__node"
+            :style="nodeStyle"
+          >
             <slot name="dot">
-              <div class="ex-timeline-item__dot" />
+              <div class="ex-timeline-item__dot"></div>
             </slot>
           </div>
 
           <!-- 连接线 -->
-          <div v-if="showLine && !hideLine" class="ex-timeline-item__tail-horizontal" />
+          <div
+            v-if="showLine && !hideLine"
+            class="ex-timeline-item__tail-horizontal"
+          ></div>
         </div>
 
         <!-- 内容区 -->
@@ -93,7 +117,7 @@
             </slot>
           </div>
           <div class="ex-timeline-item__card">
-            <slot />
+            <slot></slot>
           </div>
         </div>
       </div>
@@ -123,6 +147,7 @@ const props = withDefaults(defineProps<ExTimelineItemProps>(), {
   timestampPosition: 'bottom',
   hollow: false,
   hideLine: false,
+  clickable: false,
 });
 
 const emit = defineEmits<ExTimelineItemEmits>();
@@ -175,6 +200,10 @@ const itemClasses = computed(() => {
     classes.push('ex-timeline-item--hollow');
   }
 
+  if (props.clickable) {
+    classes.push('is-clickable');
+  }
+
   classes.push(...normalizeCustomClass(props.class));
 
   return classes;
@@ -201,6 +230,11 @@ const nodeStyle = computed(() => {
 
 // 事件处理
 const handleClick = (event: MouseEvent) => {
+  emit('click', event);
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.clickable) return;
   emit('click', event);
 };
 

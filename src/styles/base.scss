@@ -45,13 +45,14 @@
   background-color: var(--ex-color-bg-primary);
   background-image: var(--ex-gradient-bg);
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
   // 让纹理伪元素留在内容下方，同时不改变组件自身的布局上下文
   > * {
+    position: relative;
     z-index: 1;
   }
 

@@ -1,11 +1,16 @@
 <template>
-  <div ref="rootRef" :class="rootClasses" :style="rootStyle">
+  <div
+    ref="rootRef"
+    :class="rootClasses"
+    :style="rootStyle"
+  >
     <!-- 触发器 -->
     <div
       ref="triggerRef"
       class="ex-tree-select__trigger"
       role="combobox"
       aria-haspopup="tree"
+      :aria-controls="panelId"
       :aria-expanded="visible"
       :aria-disabled="disabled"
       :tabindex="disabled ? undefined : 0"
@@ -17,38 +22,66 @@
       <div class="ex-tree-select__value">
         <!-- 多选标签 -->
         <template v-if="multiple">
-          <span v-for="tag in displayTags" :key="tag.value" class="ex-tree-select__tag">
+          <span
+            v-for="tag in displayTags"
+            :key="tag.value"
+            class="ex-tree-select__tag"
+          >
             <span class="ex-tree-select__tag-label">{{ tag.label }}</span>
-            <span
+            <button
               v-if="!disabled"
+              type="button"
               class="ex-tree-select__tag-close"
+              :aria-label="t('removeTag')"
               @click.stop="removeTag(tag.value)"
             >
               ×
-            </span>
+            </button>
           </span>
-          <span v-if="collapsedCount > 0" class="ex-tree-select__tag ex-tree-select__tag--count">
+          <span
+            v-if="collapsedCount > 0"
+            class="ex-tree-select__tag ex-tree-select__tag--count"
+          >
             +{{ collapsedCount }}
           </span>
-          <span v-if="selectedNodes.length === 0" class="ex-tree-select__placeholder">
+          <span
+            v-if="selectedNodes.length === 0"
+            class="ex-tree-select__placeholder"
+          >
             {{ placeholder || t('placeholder') }}
           </span>
         </template>
 
         <!-- 单选 -->
         <template v-else>
-          <span v-if="selectedSingleNode" class="ex-tree-select__label">
+          <span
+            v-if="selectedSingleNode"
+            class="ex-tree-select__label"
+          >
             {{ selectedSingleNode.label }}
           </span>
-          <span v-else class="ex-tree-select__placeholder">
+          <span
+            v-else
+            class="ex-tree-select__placeholder"
+          >
             {{ placeholder || t('placeholder') }}
           </span>
         </template>
       </div>
 
-      <span v-if="showClear" class="ex-tree-select__clear" @click.stop="handleClear">
-        <ExIcon icon="close-circle-line" :size="15" aria-hidden="true" />
-      </span>
+      <button
+        v-if="showClear"
+        type="button"
+        class="ex-tree-select__clear"
+        :aria-label="t('clear')"
+        @click.stop="handleClear"
+      >
+        <ExIcon
+          icon="close-circle-line"
+          :size="15"
+          aria-hidden="true"
+        />
+      </button>
       <ExIcon
         class="ex-tree-select__arrow"
         icon="arrow-down-s-line"
@@ -58,16 +91,23 @@
     </div>
 
     <!-- 下拉面板 -->
-    <Teleport to="body" :disabled="!teleported">
+    <Teleport
+      to="body"
+      :disabled="!teleported"
+    >
       <Transition name="ex-tree-select-dropdown">
         <div
           v-if="visible"
+          :id="panelId"
           ref="panelRef"
           class="ex-tree-select__panel"
           :class="popperClass"
           :style="panelStyle"
         >
-          <div v-if="filterable" class="ex-tree-select__search">
+          <div
+            v-if="filterable"
+            class="ex-tree-select__search"
+          >
             <input
               ref="searchInputRef"
               v-model="searchQuery"
@@ -76,24 +116,35 @@
             />
           </div>
 
-          <div class="ex-tree-select__tree" role="tree">
+          <div
+            class="ex-tree-select__tree"
+            role="tree"
+            :aria-multiselectable="multiple"
+          >
             <div
               v-for="flat in flatNodes"
               :key="flat.node.value"
+              :ref="element => setNodeRef(flat.node.value, element)"
               class="ex-tree-select__node"
               :class="{
                 'is-selected': !multiple && flat.node.value === modelValue,
                 'is-disabled': flat.node.disabled,
               }"
               role="treeitem"
+              :tabindex="flat.node.disabled ? -1 : 0"
               :aria-expanded="flat.hasChildren ? flat.expanded : undefined"
+              :aria-selected="isChecked(flat.node) || flat.node.value === modelValue"
+              :aria-disabled="flat.node.disabled || undefined"
+              :aria-level="flat.level + 1"
               :style="{ paddingLeft: `${flat.level * 18 + 8}px` }"
               @click="handleNodeClick(flat.node)"
+              @keydown="handleNodeKeydown($event, flat)"
             >
               <!-- 展开箭头 -->
               <span
                 class="ex-tree-select__expand"
                 :class="{ 'is-leaf': !flat.hasChildren }"
+                aria-hidden="true"
                 @click.stop="flat.hasChildren && toggleExpand(flat.node)"
               >
                 <ExIcon
@@ -113,12 +164,15 @@
                   'is-checked': isChecked(flat.node),
                   'is-indeterminate': isIndeterminate(flat.node),
                 }"
-              />
+              ></span>
 
               <span class="ex-tree-select__node-label">{{ flat.node.label }}</span>
             </div>
 
-            <div v-if="flatNodes.length === 0" class="ex-tree-select__empty">
+            <div
+              v-if="flatNodes.length === 0"
+              class="ex-tree-select__empty"
+            >
               {{ t('noData') }}
             </div>
           </div>
@@ -129,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted, useId } from 'vue';
 import type {
   ExTreeSelectProps,
   ExTreeSelectEmits,
@@ -172,6 +226,9 @@ const rootRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
 const panelRef = ref<HTMLElement>();
 const searchInputRef = ref<HTMLInputElement>();
+const idSuffix = useId().replace(/:/g, '');
+const panelId = `ex-tree-select-panel-${idSuffix}`;
+const nodeRefs = new Map<string | number, HTMLElement>();
 
 const visible = ref(false);
 const panelStyle = ref<Record<string, string>>({});
@@ -266,6 +323,65 @@ const flatNodes = computed<FlatNode[]>(() => {
   dfs(props.data, 0);
   return out;
 });
+
+const setNodeRef = (value: string | number, element: unknown) => {
+  if (element && typeof element === 'object' && 'focus' in element) {
+    nodeRefs.set(value, element as HTMLElement);
+  } else {
+    nodeRefs.delete(value);
+  }
+};
+
+const focusNodeAt = (index: number) => {
+  const target = flatNodes.value[index];
+  if (!target) return;
+  nodeRefs.get(target.node.value)?.focus();
+};
+
+const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
+  if (flat.node.disabled) return;
+
+  const currentIndex = flatNodes.value.findIndex(item => item.node.value === flat.node.value);
+  if (currentIndex < 0) return;
+
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleNodeClick(flat.node);
+    return;
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    focusNodeAt(Math.min(currentIndex + 1, flatNodes.value.length - 1));
+    return;
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    focusNodeAt(Math.max(currentIndex - 1, 0));
+    return;
+  }
+
+  if (event.key === 'ArrowRight' && flat.hasChildren) {
+    event.preventDefault();
+    if (!flat.expanded) toggleExpand(flat.node);
+    else focusNodeAt(currentIndex + 1);
+    return;
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    if (flat.hasChildren && flat.expanded) {
+      toggleExpand(flat.node);
+      return;
+    }
+    const parentValue = parentMap.value.get(flat.node.value);
+    if (parentValue != null) {
+      const parentIndex = flatNodes.value.findIndex(item => item.node.value === parentValue);
+      focusNodeAt(parentIndex);
+    }
+  }
+};
 
 // ---- 选中状态 ----
 const selectedValues = computed<Array<string | number>>(() =>

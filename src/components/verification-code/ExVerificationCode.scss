@@ -108,9 +108,14 @@
   // 遮罩切换按钮
   &__mask-toggle {
     @include icon-button-base;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--ex-radius-sm);
+
+    &:focus-visible {
+      outline: none;
+      @include focus-ring;
+    }
 
     @include hover-capable {
       &:hover {
@@ -146,8 +151,8 @@
   // 尺寸变体
   &--small {
     .ex-verification-code__cell {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
     }
 
     .ex-verification-code__cell-content {
@@ -263,8 +268,8 @@
 
   @include mobile {
     &__cell {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
     }
 
     &__cell-content {
@@ -272,8 +277,8 @@
     }
 
     &--small .ex-verification-code__cell {
-      width: 32px;
-      height: 32px;
+      width: 44px;
+      height: 44px;
     }
 
     &--large .ex-verification-code__cell {

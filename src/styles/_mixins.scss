@@ -295,7 +295,9 @@
   @include neon-border($color);
   @include neon-glow($color, 'sm');
 
-  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+  transition-property: background-color, border-color, color, opacity, transform, box-shadow, filter;
+  transition-duration: var(--ex-motion-duration-base);
+  transition-timing-function: var(--ex-motion-ease-out);
 
   &:hover {
     @include neon-glow($color, 'md');
@@ -327,21 +329,31 @@
   @return string.index(meta.inspect($value), 'duration') != null;
 }
 
+// 将 all 收敛为实际会变化的属性，避免布局、尺寸和定位变化被隐式动画化。
+@function _resolve-transition-properties($properties) {
+  @if $properties == all {
+    @return (background-color, border-color, color, opacity, transform, box-shadow, filter);
+  }
+
+  @return $properties;
+}
+
 @mixin transition(
   $properties: all,
   $duration: var(--ex-motion-duration-base),
   $easing: var(--ex-motion-ease-out)
 ) {
-  $resolved-properties: $properties;
+  $transition-properties: _resolve-transition-properties($properties);
+  $resolved-properties: $transition-properties;
   $resolved-duration: $duration;
   $resolved-easing: $easing;
 
   @if not _is-transition-duration($duration) {
-    $resolved-properties: ($properties, $duration);
+    $resolved-properties: ($transition-properties, $duration);
     $resolved-duration: var(--ex-motion-duration-base);
 
     @if $easing != var(--ex-motion-ease-out) {
-      $resolved-properties: ($properties, $duration, $easing);
+      $resolved-properties: ($transition-properties, $duration, $easing);
       $resolved-easing: var(--ex-motion-ease-out);
     }
   }

@@ -7,15 +7,18 @@
 // 基础过渡动画
 .ex-transition {
   &--fast {
-    transition: all map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out);
+    transition: opacity map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out),
+      transform map.get(tokens.$motion, duration-fast) map.get(tokens.$motion, ease-in-out);
   }
   
   &--normal {
-    transition: all map.get(tokens.$motion, duration-base) map.get(tokens.$motion, ease-in-out);
+    transition: opacity map.get(tokens.$motion, duration-base) map.get(tokens.$motion, ease-in-out),
+      transform map.get(tokens.$motion, duration-base) map.get(tokens.$motion, ease-in-out);
   }
   
   &--slow {
-    transition: all map.get(tokens.$motion, duration-slow) map.get(tokens.$motion, ease-in-out);
+    transition: opacity map.get(tokens.$motion, duration-slow) map.get(tokens.$motion, ease-in-out),
+      transform map.get(tokens.$motion, duration-slow) map.get(tokens.$motion, ease-in-out);
   }
 }
 

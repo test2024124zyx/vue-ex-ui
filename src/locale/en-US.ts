@@ -316,6 +316,7 @@ export default {
     noData: 'No data',
     loading: 'Loading...',
     clear: 'Clear',
+    removeTag: 'Remove selection',
     searchPlaceholder: 'Search...',
   },
 

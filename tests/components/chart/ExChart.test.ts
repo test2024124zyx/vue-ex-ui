@@ -4,6 +4,11 @@ import { defineComponent, h, nextTick, reactive } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import type { ExChartProps } from '../../../src/components/chart/types';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../../../src/components/config-provider/types';
+import {
+  createDefaultDataZoom,
+  createDefaultLegend,
+  createDefaultTooltip,
+} from '../../../src/components/chart/utils';
 import * as echarts from 'echarts';
 
 // Mock echarts
@@ -55,6 +60,17 @@ describe('ExChart', () => {
     ],
   };
 
+  it('uses readable light-theme colors for chart auxiliary controls', () => {
+    const tooltip = createDefaultTooltip('light');
+    const legend = createDefaultLegend('light');
+    const dataZoom = createDefaultDataZoom('light');
+
+    expect(tooltip.backgroundColor).toBe('#ffffff');
+    expect((tooltip.textStyle as Record<string, unknown>).color).toBe('#1a2332');
+    expect((legend.textStyle as Record<string, unknown>).color).toBe('#1a2332');
+    expect((dataZoom[0]!.textStyle as Record<string, unknown>).color).toBe('#1a2332');
+  });
+
   beforeEach(() => {
     // 清理 mock
     vi.clearAllMocks();
@@ -89,7 +105,7 @@ describe('ExChart', () => {
       global: {
         provide: {
           [CONFIG_PROVIDER_INJECTION_KEY as symbol]: {
-            theme: { value: 'neon-pink' },
+            theme: { value: 'light' },
             locale: { value: 'zh-CN' },
             size: { value: 'medium' },
             neonEffect: { value: true },
@@ -100,7 +116,7 @@ describe('ExChart', () => {
         },
       },
     });
-    expect(wrapper.classes()).toContain('ex-chart--neon-pink');
+    expect(wrapper.classes()).toContain('ex-chart--light');
   });
 
   it('渲染不同的尺寸', () => {

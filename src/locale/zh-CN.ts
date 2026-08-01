@@ -316,6 +316,7 @@ export default {
     noData: '暂无数据',
     loading: '加载中...',
     clear: '清空',
+    removeTag: '移除选择',
     searchPlaceholder: '搜索...',
   },
 

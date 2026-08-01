@@ -9,7 +9,8 @@
 
 @use './base' as *;
 
-[data-theme='light'] {
+[data-theme='light'],
+.ex-theme-light {
   color-scheme: light;
 
   @include theme-transition;
@@ -38,13 +39,13 @@
   --ex-color-bg-active: #e6ebf2;
 
   // 赛博朋克纹理只服务于暗色主题，浅色主题保持清晰的文档阅读体验
-  --ex-cyber-grid-opacity: 0;
-  --ex-cyber-scanline-opacity: 0;
+  --ex-cyber-grid-opacity: 0.035;
+  --ex-cyber-scanline-opacity: 0.012;
 
   // ========== 文本色系（深色）==========
   --ex-color-text-primary: #1a2332;
   --ex-color-text-secondary: #5a6b7d;
-  --ex-color-text-tertiary: #8a98a8;
+  --ex-color-text-tertiary: #64748b;
   --ex-color-text-disabled: #b3bdc9;
 
   // ========== 边框色系（浅灰）==========

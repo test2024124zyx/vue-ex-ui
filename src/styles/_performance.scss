@@ -37,17 +37,27 @@
   @return string.index(meta.inspect($value), 'duration') != null;
 }
 
+// 将 all 收敛为实际会变化的属性，避免性能敏感组件触发隐式布局动画。
+@function _resolve-safe-transition-properties($properties) {
+  @if $properties == all {
+    @return (background-color, border-color, color, opacity, transform, box-shadow, filter);
+  }
+
+  @return $properties;
+}
+
 @mixin safe-transition($properties: all, $duration: 200ms, $timing: ease) {
-  $resolved-properties: $properties;
+  $transition-properties: _resolve-safe-transition-properties($properties);
+  $resolved-properties: $transition-properties;
   $resolved-duration: $duration;
   $resolved-timing: $timing;
 
   @if not _is-safe-transition-duration($duration) {
-    $resolved-properties: ($properties, $duration);
+    $resolved-properties: ($transition-properties, $duration);
     $resolved-duration: 200ms;
 
     @if $timing != ease {
-      $resolved-properties: ($properties, $duration, $timing);
+      $resolved-properties: ($transition-properties, $duration, $timing);
       $resolved-timing: ease;
     }
   }
@@ -336,4 +346,3 @@
 
   @include respect-motion-preference;
 }
-

@@ -1,34 +1,23 @@
-// ExUI 主题类型与运行时配置
-// 主题系统的 TypeScript 类型定义
+// ExUI 全局主题类型与运行时配置。
 
-/**
- * 主题名称
- */
-// 'high-contrast' 为兼容别名，已更名为 'matrix'（矩阵绿黑客风）。
-// 'high-contrast' 名称保留给未来「真正的无障碍高对比主题」。
-export type Theme = 'neon-blue' | 'neon-pink' | 'dark' | 'matrix' | 'high-contrast' | 'light';
+/** 全局主题名称，只保留暗色和亮色两个赛博朋克主题。 */
+export type Theme = 'neon-blue' | 'light';
 
-/**
- * 主题配置接口
- */
+/** 主题配置的公共元数据。 */
 export interface ThemeConfig {
-  /** 主题名称 */
+  /** 主题名称。 */
   name: Theme;
-  /** 主题显示名称 */
+  /** 面向主题选择器的显示名称。 */
   displayName: string;
-  /** 主题描述 */
+  /** 主题描述。 */
   description?: string;
-  /** 是否为暗色主题 */
+  /** 是否为暗色主题。 */
   isDark: boolean;
-  /** 是否为高对比度主题 */
-  isHighContrast: boolean;
 }
 
-/**
- * 主题变量接口
- */
+/** 主题 CSS 变量的类型约束。 */
 export interface ThemeVariables {
-  // 主色调
+  // 主色、背景、文字和边框。
   '--ex-color-primary': string;
   '--ex-color-primary-hover': string;
   '--ex-color-primary-active': string;
@@ -36,26 +25,20 @@ export interface ThemeVariables {
   '--ex-color-secondary-hover': string;
   '--ex-color-secondary-active': string;
   '--ex-color-accent': string;
-
-  // 背景色
   '--ex-color-bg-primary': string;
   '--ex-color-bg-secondary': string;
   '--ex-color-bg-tertiary': string;
   '--ex-color-bg-elevated': string;
   '--ex-color-bg-hover': string;
   '--ex-color-bg-active': string;
-
-  // 文本色
   '--ex-color-text-primary': string;
   '--ex-color-text-secondary': string;
   '--ex-color-text-tertiary': string;
   '--ex-color-text-disabled': string;
-
-  // 边框色
   '--ex-color-border-primary': string;
   '--ex-color-border-secondary': string;
 
-  // 状态色
+  // 状态色。
   '--ex-color-success': string;
   '--ex-color-success-hover': string;
   '--ex-color-success-active': string;
@@ -70,24 +53,20 @@ export interface ThemeVariables {
   '--ex-color-info-hover': string;
   '--ex-color-info-active': string;
 
-  // 渐变
+  // 渐变、阴影和基础颜色。
   '--ex-gradient-primary': string;
   '--ex-gradient-secondary': string;
   '--ex-gradient-bg': string;
-
-  // 阴影
   '--ex-shadow-neon-sm': string;
   '--ex-shadow-neon-md': string;
   '--ex-shadow-neon-lg': string;
-
-  // 特殊颜色
   '--ex-color-white': string;
   '--ex-color-black': string;
   '--ex-color-neon-blue-500': string;
   '--ex-color-neon-blue-600': string;
   '--ex-color-neon-pink-500': string;
 
-  // 赛博朋克视觉辅助 token
+  // 赛博纹理辅助变量。
   '--ex-color-cyber-green': string;
   '--ex-color-cyber-magenta': string;
   '--ex-color-cyber-cyan': string;
@@ -99,94 +78,45 @@ export interface ThemeVariables {
   '--ex-cyber-scanline-opacity': string;
   '--ex-cyber-scanline-duration': string;
 
-  // RGB 格式
-  '--ex-color-bg-primary-rgb': string;
-  '--ex-color-bg-secondary-rgb': string;
-  '--ex-color-bg-tertiary-rgb': string;
-  '--ex-color-neon-blue-500-rgb': string;
-
-  // 其他变量...
-  [key: string]: string;
+  // 允许组件继续声明以 --ex- 开头的专用变量，同时拒绝无命名空间变量。
+  [key: `--ex-${string}`]: string;
 }
 
-/**
- * 主题变化事件
- */
+/** 主题变更事件。 */
 export interface ThemeChangeEvent {
-  /** 旧主题 */
+  /** 旧主题。 */
   oldTheme: Theme;
-  /** 新主题 */
+  /** 新主题。 */
   newTheme: Theme;
-  /** 时间戳 */
+  /** 变更时间戳。 */
   timestamp: number;
 }
 
-/**
- * 预定义主题配置
- */
+/** 全局主题名称的唯一来源，避免运行时枚举与类型声明漂移。 */
+export const THEME_NAMES = ['neon-blue', 'light'] as const satisfies readonly Theme[];
+
+/** 两个赛博朋克主题的运行时配置。 */
 export const THEME_CONFIGS: Record<Theme, ThemeConfig> = {
   'neon-blue': {
     name: 'neon-blue',
-    displayName: 'Neon Blue',
-    description: 'ClutchZone 游戏风格主题 - 霓虹蓝主导',
+    displayName: 'Cyber Dark',
+    description: '深色赛博朋克主题，以霓虹蓝和紫色作为主视觉。',
     isDark: true,
-    isHighContrast: false,
-  },
-  'neon-pink': {
-    name: 'neon-pink',
-    displayName: 'Neon Pink',
-    description: 'ClutchZone 游戏风格主题 - 霓虹粉主导',
-    isDark: true,
-    isHighContrast: false,
-  },
-  dark: {
-    name: 'dark',
-    displayName: 'Dark',
-    description: '纯暗黑主题 - 无霓虹效果',
-    isDark: true,
-    isHighContrast: false,
-  },
-  matrix: {
-    name: 'matrix',
-    displayName: 'Matrix',
-    description: '矩阵绿黑客风主题 - 纯黑底 + 荧光绿，极高对比',
-    isDark: true,
-    isHighContrast: true,
-  },
-  // 兼容别名（已更名为 matrix），保留以免破坏既有用法
-  'high-contrast': {
-    name: 'high-contrast',
-    displayName: 'High Contrast (deprecated → matrix)',
-    description: '已更名为 matrix，保留作为兼容别名',
-    isDark: true,
-    isHighContrast: true,
   },
   light: {
     name: 'light',
-    displayName: 'Light',
-    description: '明亮主题 - 白底深字，发光收敛为柔和投影',
+    displayName: 'Cyber Light',
+    description: '亮色赛博朋克主题，以清晰的深色文字和收敛的霓虹色作为主视觉。',
     isDark: false,
-    isHighContrast: false,
   },
 };
 
-/**
- * 获取主题配置
- */
+/** 获取主题配置。 */
 export function getThemeConfig(theme: Theme): ThemeConfig {
   return THEME_CONFIGS[theme];
 }
 
-/**
- * 判断是否为暗色主题
- */
+/** 判断主题是否为暗色主题。 */
 export function isDarkTheme(theme: Theme): boolean {
   return THEME_CONFIGS[theme].isDark;
-}
-
-/**
- * 判断是否为高对比度主题
- */
-export function isHighContrastTheme(theme: Theme): boolean {
-  return THEME_CONFIGS[theme].isHighContrast;
 }

@@ -9,6 +9,15 @@
   position: relative;
   @include transition(all);
 
+  &.is-clickable {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+      @include focus-ring;
+    }
+  }
+
   // ============================================================================
   // 垂直布局
   // ============================================================================

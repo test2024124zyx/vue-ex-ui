@@ -20,18 +20,8 @@ export type ChartType =
   | 'parallel'
   | 'custom';
 
-/**
- * 图表主题（已废弃，使用全局主题）
- * @deprecated 使用 ConfigProvider 的全局主题配置
- */
-export type ChartTheme =
-  | 'neon-blue'
-  | 'neon-pink'
-  | 'dark'
-  | 'matrix'
-  | 'high-contrast'
-  | 'light'
-  | 'custom';
+/** 图表主题与全局主题保持同一份双主题契约。 */
+export type ChartTheme = import('../../types/theme').Theme;
 
 /**
  * 图表尺寸

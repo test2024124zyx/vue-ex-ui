@@ -5,7 +5,8 @@
 
 // 默认主题（无 data-theme 属性时使用）
 :root,
-[data-theme='neon-blue'] {
+[data-theme='neon-blue'],
+.ex-theme-neon-blue {
   // ========== 主色- 霓虹==========
   --ex-color-primary: #29abe2;
   --ex-color-primary-hover: #0f7ae5;
@@ -159,7 +160,8 @@
 
 // 霓虹蓝主题特定样式
 :root,
-[data-theme='neon-blue'] {
+[data-theme='neon-blue'],
+.ex-theme-neon-blue {
   color-scheme: dark;
 
   // 应用主题切换过渡动画

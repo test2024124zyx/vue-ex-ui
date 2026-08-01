@@ -1,35 +1,58 @@
 <template>
-  <span v-if="!isEditing" :class="buttonClasses" @click="startEdit">
+  <button
+    v-if="!isEditing"
+    type="button"
+    :class="buttonClasses"
+    :aria-label="buttonTextComputed"
+    @click="startEdit"
+  >
     <slot name="icon">
-      <ExIcon icon="add-line" :size="iconSize" />
+      <ExIcon
+        icon="add-line"
+        :size="iconSize"
+      />
     </slot>
     <span class="ex-tag-input__text">{{ buttonTextComputed }}</span>
-  </span>
-  <span v-else class="ex-tag-input__wrapper">
+  </button>
+  <span
+    v-else
+    class="ex-tag-input__wrapper"
+  >
     <input
       ref="inputRef"
       v-model="inputValue"
       :class="inputClasses"
+      :aria-label="placeholderComputed"
       :placeholder="placeholderComputed"
       :maxlength="maxlength"
       @blur="handleBlur"
       @keyup.enter="handleConfirm"
       @keyup.esc="handleCancel"
     />
-    <span
+    <button
+      type="button"
       class="ex-tag-input__action ex-tag-input__action--confirm"
+      :aria-label="t('tag.confirm')"
       :title="t('tag.confirm')"
       @click="handleConfirm"
     >
-      <ExIcon icon="check-line" :size="14" />
-    </span>
-    <span
+      <ExIcon
+        icon="check-line"
+        :size="14"
+      />
+    </button>
+    <button
+      type="button"
       class="ex-tag-input__action ex-tag-input__action--cancel"
+      :aria-label="t('tag.cancel')"
       :title="t('tag.cancel')"
       @click="handleCancel"
     >
-      <ExIcon icon="close-line" :size="14" />
-    </span>
+      <ExIcon
+        icon="close-line"
+        :size="14"
+      />
+    </button>
   </span>
 </template>
 
@@ -79,6 +102,7 @@ const { t } = useI18n();
 const inputRef = ref<HTMLInputElement>();
 const isEditing = ref(false);
 const inputValue = ref('');
+const BLUR_CANCEL_DELAY = 200;
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
@@ -144,7 +168,7 @@ const handleBlur = () => {
     if (isEditing.value) {
       handleCancel();
     }
-  }, 200);
+  }, BLUR_CANCEL_DELAY);
 };
 </script>
 
@@ -157,13 +181,17 @@ const handleBlur = () => {
     align-items: center;
     gap: 4px;
     padding: 4px 12px;
+    min-height: 44px;
     background: var(--ex-color-bg-secondary);
     border: 1px dashed var(--ex-color-border-primary);
     border-radius: var(--ex-radius-md);
     color: var(--ex-color-text-secondary);
     font-size: var(--ex-text-sm);
+    font-family: inherit;
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
     user-select: none;
 
     &:hover {
@@ -244,11 +272,16 @@ const handleBlur = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    font: inherit;
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition-property: color, background-color, box-shadow, transform;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
     flex-shrink: 0;
 
     &:hover {
@@ -257,6 +290,11 @@ const handleBlur = () => {
 
     &:active {
       transform: scale(0.9);
+    }
+
+    &:focus-visible {
+      outline: none;
+      @include focus-ring;
     }
 
     &--confirm {

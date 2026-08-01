@@ -1,8 +1,6 @@
 import ExBreadcrumbComponent from './ExBreadcrumb.vue';
 import ExBreadcrumbItemComponent from './ExBreadcrumbItem.vue';
 import { withInstall, type InstallableComponent } from '../../utils/install';
-import './ExBreadcrumb.scss';
-import './ExBreadcrumbItem.scss';
 
 export const ExBreadcrumbItem: InstallableComponent<typeof ExBreadcrumbItemComponent> =
   withInstall(ExBreadcrumbItemComponent);

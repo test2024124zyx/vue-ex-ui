@@ -17,9 +17,6 @@ import type {
 } from './types';
 import { commonRules, validateUtils } from './utils';
 
-import './ExForm.scss';
-import './ExFormItem.scss';
-
 // 为组件提供 install 方法，用于全局注册
 ExForm.install = (app: App): void => {
   app.component(ExForm.name || 'ExForm', ExForm);

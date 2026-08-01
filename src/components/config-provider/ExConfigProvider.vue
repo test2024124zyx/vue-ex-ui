@@ -109,7 +109,8 @@ defineExpose({
 
 // 禁用霓虹效果
 .ex-no-neon {
-  :deep(*) {
+  :deep([class^='ex-']),
+  :deep([class*=' ex-']) {
     box-shadow: none !important;
     text-shadow: none !important;
     filter: none !important;
@@ -118,7 +119,8 @@ defineExpose({
 
 // 禁用动画
 .ex-no-animation {
-  :deep(*) {
+  :deep([class^='ex-']),
+  :deep([class*=' ex-']) {
     transition: none !important;
     animation: none !important;
   }
@@ -127,7 +129,8 @@ defineExpose({
 // 尊重用户的动画偏好
 @media (prefers-reduced-motion: reduce) {
   .ex-config-provider {
-    :deep(*) {
+    :deep([class^='ex-']),
+    :deep([class*=' ex-']) {
       transition: none !important;
       animation: none !important;
     }

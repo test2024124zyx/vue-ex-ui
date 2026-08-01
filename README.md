@@ -25,7 +25,7 @@ ExUI 是一个专为赛博朋克风格应用打造的 Vue3 组件库，灵感来
 - **🔧 开发友好** - 完整的 TypeScript 支持，类型安全
 - **🌍 国际化** - 内置中英文支持，易于扩展
 - **♿ 无障碍** - 遵循 WCAG 标准，支持键盘导航和屏幕阅读器
-- **🎭 多主题** - 4 种内置主题，支持动态切换和自定义
+- **🎭 双主题** - 赛博暗色与赛博亮色两种内置主题，支持动态切换和自定义
 
 ### 🎨 视觉风格
 
@@ -127,8 +127,16 @@ const handleSubmit = () => {
 
 <template>
   <div>
-    <ExInput v-model="value" placeholder="请输入" />
-    <ExButton type="primary" @click="handleSubmit">提交</ExButton>
+    <ExInput
+      v-model="value"
+      placeholder="请输入"
+    />
+    <ExButton
+      type="primary"
+      @click="handleSubmit"
+    >
+      提交
+    </ExButton>
   </div>
 </template>
 ```
@@ -142,20 +150,42 @@ const handleSubmit = () => {
 <template>
   <div class="cyberpunk-app">
     <!-- 赛博朋克风格按钮 -->
-    <ex-button type="primary" size="large" :loading="loading">启动系统</ex-button>
+    <ex-button
+      type="primary"
+      size="large"
+      :loading="loading"
+    >
+      启动系统
+    </ex-button>
 
     <!-- 用户信息卡片 -->
-    <ex-card class="user-stats" type="neon" hoverable>
-      <ex-avatar :src="userAvatar" size="large" />
-      <ex-badge :count="99" type="primary">
+    <ex-card
+      class="user-stats"
+      type="neon"
+      hoverable
+    >
+      <ex-avatar
+        :src="userAvatar"
+        size="large"
+      />
+      <ex-badge
+        :count="99"
+        type="primary"
+      >
         <!-- 内置图标：icon 属性引用注册表中的图标名 -->
-        <ex-icon icon="star-fill" :size="20" />
+        <ex-icon
+          icon="star-fill"
+          :size="20"
+        />
       </ex-badge>
     </ex-card>
 
     <!-- 赛博朋克布局 -->
     <ex-layout has-sider>
-      <ex-sider neon-border collapsible>
+      <ex-sider
+        neon-border
+        collapsible
+      >
         <ex-menu>
           <ex-menu-item>控制中心</ex-menu-item>
           <ex-menu-item>数据面板</ex-menu-item>
@@ -163,16 +193,25 @@ const handleSubmit = () => {
       </ex-sider>
 
       <ex-layout>
-        <ex-header neon-border blur>
+        <ex-header
+          neon-border
+          blur
+        >
           <template #left>
-            <img src="/logo.png" alt="Logo" />
+            <img
+              src="/logo.png"
+              alt="Logo"
+            />
           </template>
           <template #right>
             <ex-button type="primary">登录</ex-button>
           </template>
         </ex-header>
 
-        <ex-content grid scanline>
+        <ex-content
+          grid
+          scanline
+        >
           <h1>欢迎来到赛博世界</h1>
         </ex-content>
 
@@ -310,12 +349,12 @@ const playerAvatar = ref('/avatar.jpg');
 测试用例: 1200+ 全部通过 ✅
 ```
 
-### 🎨 主题系统
+### 🎨 双主题系统
 
-- ✅ **Neon Blue** - 霓虹蓝主题（默认）
-- ✅ **Neon Pink** - 玫瑰粉主题
+- ✅ **Cyber Dark (`neon-blue`)** - 赛博暗色主题（默认）
+- ✅ **Cyber Light (`light`)** - 赛博亮色主题
 - ✅ **Dark** - GitHub Dark 风格
-- ✅ **High Contrast** - 矩阵绿黑客风格
+- ✅ **可访问性增强** - 通过 `prefers-contrast` 和 `forced-colors` 增强边界，不创建第三个主题
 - ✅ 支持动态主题切换
 - ✅ 支持系统主题跟随
 - ✅ 支持主题持久化
@@ -386,7 +425,7 @@ const playerAvatar = ref('/avatar.jpg');
 import { setTheme, useTheme, usePersistedTheme } from 'vue-ex-ui';
 
 // 手动切换主题
-setTheme('neon-pink');
+setTheme('light');
 
 // 使用主题 Hook
 const { theme, setTheme, toggleTheme } = useTheme();
@@ -506,7 +545,11 @@ $breakpoints: (
 <template>
   <!-- 在移动端自动调整布局 -->
   <ex-layout has-sider>
-    <ex-sider :collapsed="isMobile" :breakpoint="768" @breakpoint="handleBreakpoint">
+    <ex-sider
+      :collapsed="isMobile"
+      :breakpoint="768"
+      @breakpoint="handleBreakpoint"
+    >
       侧边栏内容
     </ex-sider>
     <ex-content>主要内容</ex-content>
@@ -553,7 +596,7 @@ const handleBreakpoint = broken => {
 - **扫描线** - 经典赛博朋克扫描线动画
 - **网格背景** - 未来科技感网格背景
 - **毛玻璃** - 现代模糊背景效果
-- **动态主题** - 4 种赛博朋克主题实时切换
+- **动态主题** - 两种赛博朋克主题实时切换
 
 ### 🎨 特色组件效果
 

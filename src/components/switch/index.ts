@@ -1,7 +1,6 @@
 import type { App } from 'vue';
 import ExSwitch from './ExSwitch.vue';
 import type { ExSwitchProps, SwitchValue, SwitchSize } from './types';
-import './ExSwitch.scss';
 
 // 为组件提供 install 方法，用于全局注册
 ExSwitch.install = (app: App): void => {

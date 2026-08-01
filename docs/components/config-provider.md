@@ -4,7 +4,7 @@
 
 <script setup>
 import { ref } from 'vue'
-const themelist = ['neon-blue','neon-pink','dark','matrix','light']
+const themelist = ['neon-blue', 'light']
 const current_theme = ref(0)
 const current_size = ref(0)
 const sizelist = ['small','medium','large']
@@ -56,12 +56,19 @@ const changesize = () => {
 
 ```vue
 <template>
-  <ExConfigProvider theme="neon-blue" locale="zh-CN" size="medium">
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    size="medium"
+  >
     <ExButton type="primary">主要按钮</ExButton>
     <ExButton type="success">成功按钮</ExButton>
     <ExButton type="warning">警告按钮</ExButton>
   </ExConfigProvider>
-  <ExConfigProvider theme="high-contrast" size="small">
+  <ExConfigProvider
+    theme="light"
+    size="small"
+  >
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
       <ExButton type="primary">主要按钮</ExButton>
       <ExButton type="success">成功按钮</ExButton>
@@ -156,27 +163,6 @@ const { t: tm } = useExI18n();
       @click="theme = 'neon-blue'"
     >
       霓虹蓝
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'neon-pink' ? 'primary' : 'secondary'"
-      @click="theme = 'neon-pink'"
-    >
-      霓虹粉
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'dark' ? 'primary' : 'secondary'"
-      @click="theme = 'dark'"
-    >
-      暗黑
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'matrix' ? 'primary' : 'secondary'"
-      @click="theme = 'matrix'"
-    >
-      矩阵
     </ExButton>
     <ExButton 
       size="small"
@@ -490,17 +476,10 @@ const animation = ref(true);
               </ExButton>
               <ExButton 
                 size="small"
-                :type="customTheme === 'neon-pink' ? 'primary' : 'secondary'"
-                @click="customTheme = 'neon-pink'"
+                :type="customTheme === 'light' ? 'primary' : 'secondary'"
+                @click="customTheme = 'light'"
               >
-                霓虹粉
-              </ExButton>
-              <ExButton 
-                size="small"
-                :type="customTheme === 'dark' ? 'primary' : 'secondary'"
-                @click="customTheme = 'dark'"
-              >
-                暗黑
+                赛博亮色
               </ExButton>
             </div>
           </div>
@@ -595,10 +574,10 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
           <ExTag type="primary">外层标签</ExTag>
         </div>
       </div>
-      <ExConfigProvider theme="neon-pink" size="small">
-        <div style="padding: 16px; background: rgba(255, 0, 127, 0.1); border-radius: 8px;">
+      <ExConfigProvider theme="light" size="small">
+        <div style="padding: 16px; background: rgba(22, 104, 220, 0.1); border-radius: 8px;">
           <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
-            内层配置：霓虹粉主题 + 小尺寸（覆盖外层）
+            内层配置：赛博亮色主题 + 小尺寸（覆盖外层）
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <ExButton type="primary">内层按钮</ExButton>
@@ -612,10 +591,16 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
 
 ```vue
 <template>
-  <ExConfigProvider theme="neon-blue" size="medium">
+  <ExConfigProvider
+    theme="neon-blue"
+    size="medium"
+  >
     <ExButton type="primary">外层配置</ExButton>
 
-    <ExConfigProvider theme="neon-pink" size="small">
+    <ExConfigProvider
+      theme="light"
+      size="small"
+    >
       <ExButton type="primary">内层配置覆盖</ExButton>
     </ExConfigProvider>
   </ExConfigProvider>
@@ -728,14 +713,14 @@ const zIndex = useZIndex(10); // 基础值 + 10
 
 ### ConfigProvider Props
 
-| 属性          | 说明                                                                               | 类型                                                                             | 默认值        |
-| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------- |
-| `theme`       | 主题（`'high-contrast'` 为 `'matrix'` 的兼容别名，保留待后续作真无障碍高对比主题） | `'neon-blue' \| 'neon-pink' \| 'dark' \| 'matrix' \| 'light' \| 'high-contrast'` | `'neon-blue'` |
-| `locale`      | 语言                                                                               | `'zh-CN' \| 'en-US'`                                                             | `'en-US'`     |
-| `size`        | 全局组件尺寸                                                                       | `'small' \| 'medium' \| 'large'`                                                 | `'medium'`    |
-| `neon-effect` | 是否启用霓虹效果                                                                   | `boolean`                                                                        | `true`        |
-| `animation`   | 是否启用动画                                                                       | `boolean`                                                                        | `true`        |
-| `z-index`     | z-index 基础值                                                                     | `number`                                                                         | `1000`        |
+| 属性          | 说明             | 类型                             | 默认值        |
+| ------------- | ---------------- | -------------------------------- | ------------- |
+| `theme`       | 赛博朋克主题     | `'neon-blue' \| 'light'`         | `'neon-blue'` |
+| `locale`      | 语言             | `'zh-CN' \| 'en-US'`             | `'en-US'`     |
+| `size`        | 全局组件尺寸     | `'small' \| 'medium' \| 'large'` | `'medium'`    |
+| `neon-effect` | 是否启用霓虹效果 | `boolean`                        | `true`        |
+| `animation`   | 是否启用动画     | `boolean`                        | `true`        |
+| `z-index`     | z-index 基础值   | `number`                         | `1000`        |
 
 ### ConfigProvider Slots
 
@@ -820,7 +805,12 @@ function useZIndex(offset?: number): ComputedRef<number>;
 ```vue
 <!-- App.vue -->
 <template>
-  <ExConfigProvider theme="neon-blue" locale="zh-CN" :neon-effect="true" :animation="true">
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    :neon-effect="true"
+    :animation="true"
+  >
     <RouterView />
   </ExConfigProvider>
 </template>
@@ -838,8 +828,8 @@ function useZIndex(offset?: number): ComputedRef<number>;
       <ExButton type="primary">主要按钮</ExButton>
     </div>
 
-    <!-- 特定区域使用霓虹粉主题 -->
-    <ExConfigProvider theme="neon-pink">
+    <!-- 特定区域使用赛博亮色主题 -->
+    <ExConfigProvider theme="light">
       <div class="special-section">
         <ExButton type="primary">特殊按钮</ExButton>
       </div>
@@ -872,8 +862,7 @@ if (savedTheme) {
   <ExConfigProvider :theme="theme">
     <div class="theme-switcher">
       <ExButton @click="theme = 'neon-blue'">霓虹蓝</ExButton>
-      <ExButton @click="theme = 'neon-pink'">霓虹粉</ExButton>
-      <ExButton @click="theme = 'dark'">暗黑</ExButton>
+      <ExButton @click="theme = 'light'">赛博亮色</ExButton>
     </div>
 
     <RouterView />
@@ -893,7 +882,7 @@ ConfigProvider 会自动处理无障碍相关的配置：
 <template>
   <ExConfigProvider
     :animation="!prefersReducedMotion"
-    :theme="prefersDarkMode ? 'dark' : 'neon-blue'"
+    :theme="prefersDarkMode ? 'neon-blue' : 'light'"
   >
     <App />
   </ExConfigProvider>
@@ -912,11 +901,11 @@ ConfigProvider 支持通过 CSS 变量进行主题定制：
   --ex-color-bg-primary: #0a0a0a;
 }
 
-/* 自定义霓虹粉主题 */
-[data-theme='neon-pink'] {
-  --ex-color-primary: #ff007f;
-  --ex-color-secondary: #00f0ff;
-  --ex-color-bg-primary: #0a0a0a;
+/* 自定义赛博亮色主题 */
+[data-theme='light'] {
+  --ex-color-primary: #1668dc;
+  --ex-color-secondary: #08979c;
+  --ex-color-bg-primary: #f4f7fb;
 }
 ```
 

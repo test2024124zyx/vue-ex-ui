@@ -3,7 +3,7 @@
  * ExVerificationCode 验证码输入组件
  * 专业的 OTP/验证码输入组件，采用分离式输入格子设计
  */
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, useId } from 'vue';
 import type {
   ExVerificationCodeProps,
   ExVerificationCodeEmits,
@@ -12,6 +12,7 @@ import type {
 import { isValidChar, filterValidChars } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize, useNeonEffect, useAnimation } from '../config-provider/composables';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({ name: 'ExVerificationCode' });
 
@@ -55,6 +56,10 @@ const { t } = useI18n();
 // 组件引用
 const containerRef = ref<HTMLDivElement | null>(null);
 const hiddenInputRef = ref<HTMLInputElement | null>(null);
+const idSuffix = useId().replace(/:/g, '');
+const inputId = `ex-verification-code-${idSuffix}`;
+const labelId = `${inputId}-label`;
+const helpId = `${inputId}-help`;
 
 // 内部状态
 const cells = ref<string[]>(Array(props.length).fill(''));
@@ -122,7 +127,7 @@ const hiddenInputAttrs = computed(() => {
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue !== currentValue.value) {
       const filtered = filterValidChars(newValue || '', props.inputMode);
       const chars = filtered.slice(0, props.length).split('');
@@ -135,9 +140,12 @@ watch(
 // 监听 length 变化
 watch(
   () => props.length,
-  (newLength) => {
+  newLength => {
     const currentChars = cells.value.filter(c => c !== '');
-    cells.value = [...currentChars.slice(0, newLength), ...Array(Math.max(0, newLength - currentChars.length)).fill('')];
+    cells.value = [
+      ...currentChars.slice(0, newLength),
+      ...Array(Math.max(0, newLength - currentChars.length)).fill(''),
+    ];
     if (focusedIndex.value >= newLength) {
       focusedIndex.value = Math.max(0, newLength - 1);
     }
@@ -147,7 +155,7 @@ watch(
 // 监听 mask 属性变化
 watch(
   () => props.mask,
-  (newMask) => {
+  newMask => {
     isMasked.value = newMask;
   }
 );
@@ -378,16 +386,16 @@ function handlePaste(event: ClipboardEvent) {
  */
 function handleCellClick(index: number) {
   if (props.disabled) return;
-  
+
   const firstEmptyIndex = getFirstEmptyIndex();
-  
+
   // 如果点击的位置超过第一个空格子，自动跳转到第一个空格子
   if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
     focusedIndex.value = firstEmptyIndex;
   } else {
     focusedIndex.value = index;
   }
-  
+
   hiddenInputRef.value?.focus();
 }
 
@@ -441,10 +449,6 @@ function shouldShowSeparator(index: number): boolean {
 /**
  * 获取格子的 ARIA 标签
  */
-function getCellAriaLabel(index: number): string {
-  return t('verificationCode.cellLabel', { current: index + 1, total: props.length });
-}
-
 // 暴露的方法
 function focus() {
   // 顺序输入限制：聚焦到第一个空格子
@@ -524,23 +528,29 @@ defineExpose<ExVerificationCodeExposed>({
     <!-- 标签 -->
     <label
       v-if="label"
+      :id="labelId"
+      :for="inputId"
       class="ex-verification-code__label"
     >
       {{ label }}
       <span
         v-if="required"
         class="ex-verification-code__required"
-      >*</span>
+      >
+        *
+      </span>
     </label>
 
     <!-- 格子容器 -->
     <div
       class="ex-verification-code__cells"
-      :aria-label="ariaLabel || t('verificationCode.ariaLabel')"
+      :aria-label="label ? undefined : ariaLabel || t('verificationCode.ariaLabel')"
+      :aria-labelledby="label ? labelId : undefined"
       role="group"
     >
       <!-- 隐藏的输入框（用于移动端键盘和自动填充） -->
       <input
+        :id="inputId"
         ref="hiddenInputRef"
         class="ex-verification-code__hidden-input"
         type="text"
@@ -549,12 +559,18 @@ defineExpose<ExVerificationCodeExposed>({
         :autocomplete="hiddenInputAttrs.autocomplete"
         :disabled="disabled"
         :readonly="readonly"
+        :aria-label="label ? undefined : ariaLabel || t('verificationCode.ariaLabel')"
+        :aria-labelledby="label ? labelId : undefined"
+        :aria-describedby="helpText || errorMessage ? helpId : undefined"
+        :aria-invalid="status === 'error' ? 'true' : undefined"
+        :aria-required="required ? 'true' : undefined"
+        :required="required"
         @input="handleInput"
         @keydown="handleKeyDown"
         @paste="handlePaste"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
 
       <!-- 格子 -->
       <template
@@ -573,11 +589,7 @@ defineExpose<ExVerificationCodeExposed>({
             },
           ]"
           :style="cellStyle"
-          :aria-label="getCellAriaLabel(index)"
-          :aria-current="isFocused && focusedIndex === index ? 'true' : undefined"
-          role="textbox"
-          :aria-readonly="readonly"
-          :aria-disabled="disabled"
+          aria-hidden="true"
           @click="handleCellClick(index)"
         >
           <span class="ex-verification-code__cell-content">
@@ -587,7 +599,7 @@ defineExpose<ExVerificationCodeExposed>({
           <span
             v-if="isFocused && focusedIndex === index && !cells[index]"
             class="ex-verification-code__cursor"
-          />
+          ></span>
         </div>
 
         <!-- 分隔符 -->
@@ -607,8 +619,11 @@ defineExpose<ExVerificationCodeExposed>({
         :aria-label="isMasked ? t('verificationCode.showCode') : t('verificationCode.hideCode')"
         @click="toggleMask"
       >
-        <span v-if="isMasked">👁</span>
-        <span v-else>👁‍🗨</span>
+        <ExIcon
+          :icon="isMasked ? 'eye-line' : 'eye-off-line'"
+          :size="16"
+          aria-hidden="true"
+        />
       </button>
     </div>
 
@@ -617,12 +632,13 @@ defineExpose<ExVerificationCodeExposed>({
       v-if="loading"
       class="ex-verification-code__loading"
     >
-      <span class="ex-verification-code__loading-spinner" />
+      <span class="ex-verification-code__loading-spinner"></span>
     </div>
 
     <!-- 帮助文本 / 错误信息 -->
     <div
       v-if="helpText || errorMessage"
+      :id="helpId"
       :class="[
         'ex-verification-code__help',
         { 'ex-verification-code__help--error': status === 'error' && errorMessage },

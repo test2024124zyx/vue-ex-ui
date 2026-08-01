@@ -5,7 +5,7 @@
 ## 特性
 
 - ✅ **完整的 ECharts 支持** - 支持所有 ECharts 图表类型（折线图、柱状图、饼图、散点图、雷达图、仪表盘等）
-- ✅ **赛博朋克风格** - 内置霓虹蓝、霓虹粉等主题，支持霓虹发光效果
+- ✅ **赛博朋克风格** - 内置赛博暗色和赛博亮色主题，支持收敛的霓虹发光效果
 - ✅ **响应式设计** - 自动调整大小，支持 ResizeObserver
 - ✅ **TypeScript 支持** - 完整的类型定义
 - ✅ **国际化** - 中英文双语支持
@@ -18,7 +18,10 @@
 
 ```vue
 <template>
-  <ex-chart :option="chartOption" height="400px" />
+  <ex-chart
+    :option="chartOption"
+    height="400px"
+  />
 </template>
 
 <script setup>
@@ -69,7 +72,10 @@ const chartOption = ref({
 
 ```vue
 <template>
-  <ex-config-provider theme="neon-pink" :neon-effect="true">
+  <ex-config-provider
+    theme="light"
+    :neon-effect="true"
+  >
     <ex-chart :option="chartOption" />
   </ex-config-provider>
 </template>
@@ -77,10 +83,8 @@ const chartOption = ref({
 
 支持的主题：
 
-- **neon-blue** - 霓虹蓝主题（默认）
-- **neon-pink** - 霓虹粉主题
-- **dark** - 暗黑主题
-- **light** - 明亮主题
+- **neon-blue** - 赛博暗色主题（默认）
+- **light** - 赛博亮色主题
 
 霓虹发光效果由全局配置 `neonEffect` 控制。
 
@@ -126,7 +130,10 @@ const chartOption = ref({
 
 ```vue
 <template>
-  <ex-chart ref="chartRef" :option="chartOption" />
+  <ex-chart
+    ref="chartRef"
+    :option="chartOption"
+  />
 </template>
 
 <script setup>

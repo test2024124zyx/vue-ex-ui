@@ -350,7 +350,9 @@
 // 缩放动画
 .ex-dialog-zoom-enter-active,
 .ex-dialog-zoom-leave-active {
-  transition: all var(--ex-motion-duration-medium) var(--ex-motion-ease-out);
+  transition-property: opacity, transform;
+  transition-duration: var(--ex-motion-duration-medium);
+  transition-timing-function: var(--ex-motion-ease-out);
 }
 
 .ex-dialog-zoom-enter-from,

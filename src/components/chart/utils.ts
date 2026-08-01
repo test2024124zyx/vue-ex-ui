@@ -1,241 +1,148 @@
 import type { ChartComponentOption, ChartGradient, ChartOption, ChartSeriesOption } from './types';
+import type { Theme } from '../../types/theme';
+
+const DARK_CHART_PALETTE = [
+  '#00f0ff',
+  '#29abe2',
+  '#a86bff',
+  '#ff3bd1',
+  '#00d4e6',
+  '#54d1ff',
+  '#ff54dd',
+  '#87e8ff',
+];
+
+const LIGHT_CHART_PALETTE = [
+  '#1668dc',
+  '#08979c',
+  '#722ed1',
+  '#e024b4',
+  '#0958d9',
+  '#13c2c2',
+  '#a61d7a',
+  '#389e0d',
+];
+
+const CHART_FONT_FAMILY = 'Rajdhani, Inter, sans-serif';
+const CHART_TITLE_FONT_FAMILY = 'Audiowide, Orbitron, sans-serif';
+
+interface ChartThemePalette {
+  series: string[];
+  text: string;
+  title: string;
+  mutedText: string;
+  surface: string;
+  border: string;
+}
+
+interface ChartPalette {
+  text: string;
+  mutedText: string;
+  accent: string;
+  surface: string;
+  border: string;
+}
+
+const getThemePalette = (theme: Theme): ChartThemePalette => {
+  if (theme === 'light') {
+    return {
+      series: LIGHT_CHART_PALETTE,
+      text: '#1a2332',
+      title: '#101828',
+      mutedText: '#5a6b7d',
+      surface: '#ffffff',
+      border: '#c4cdd8',
+    };
+  }
+
+  return {
+    series: DARK_CHART_PALETTE,
+    text: '#e6f0ff',
+    title: '#ffffff',
+    mutedText: '#b3c7d9',
+    surface: '#0f1720',
+    border: '#374151',
+  };
+};
 
 /**
- * 获取图表主题配置
+ * 获取与全局双主题契约一致的图表主题配置。
  */
-export function getChartTheme(theme: string): object {
-  const themes: Record<string, object> = {
-    'neon-blue': {
-      color: [
-        '#00f0ff',
-        '#29ABE2',
-        '#a86bff',
-        '#ff3bd1',
-        '#00d4e6',
-        '#54d1ff',
-        '#ff54dd',
-        '#87e8ff',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontFamily: 'Audiowide, Orbitron, sans-serif',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
-      },
-      line: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 3,
-        },
-        symbolSize: 8,
-        symbol: 'circle',
-        smooth: true,
-      },
-      bar: {
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0],
-        },
-      },
-      pie: {
-        itemStyle: {
-          borderRadius: 4,
-          borderColor: '#0f1720',
-          borderWidth: 2,
-        },
-      },
-      radar: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 2,
-        },
-        symbolSize: 6,
-        symbol: 'circle',
-        smooth: false,
-      },
-      candlestick: {
-        itemStyle: {
-          color: '#10b981',
-          color0: '#ef4444',
-          borderColor: '#10b981',
-          borderColor0: '#ef4444',
-        },
-      },
-    },
-    'neon-pink': {
-      color: [
-        '#ff007f',
-        '#ff3bd1',
-        '#a86bff',
-        '#00f0ff',
-        '#ff54dd',
-        '#e6006b',
-        '#29ABE2',
-        '#ff87e6',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontFamily: 'Audiowide, Orbitron, sans-serif',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
-      },
-      line: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 3,
-        },
-        symbolSize: 8,
-        symbol: 'circle',
-        smooth: true,
-      },
-      bar: {
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0],
-        },
-      },
-      pie: {
-        itemStyle: {
-          borderRadius: 4,
-          borderColor: '#0f1720',
-          borderWidth: 2,
-        },
-      },
-      radar: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 2,
-        },
-        symbolSize: 6,
-        symbol: 'circle',
-        smooth: false,
-      },
-      candlestick: {
-        itemStyle: {
-          color: '#10b981',
-          color0: '#ef4444',
-          borderColor: '#10b981',
-          borderColor0: '#ef4444',
-        },
-      },
-    },
-    dark: {
-      color: [
-        '#5470c6',
-        '#91cc75',
-        '#fac858',
-        '#ee6666',
-        '#73c0de',
-        '#3ba272',
-        '#fc8452',
-        '#9a60b4',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
-      },
-    },
-    light: {
-      color: [
-        '#5470c6',
-        '#91cc75',
-        '#fac858',
-        '#ee6666',
-        '#73c0de',
-        '#3ba272',
-        '#fc8452',
-        '#9a60b4',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#333333',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#333333',
-        },
-        subtextStyle: {
-          color: '#666666',
-        },
-      },
-    },
-    matrix: {
-      color: [
-        '#00f0ff',
-        '#ff3bd1',
-        '#00ff00',
-        '#ffff00',
-        '#ff0000',
-        '#00ffff',
-        '#ff00ff',
-        '#ffffff',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#ffffff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontWeight: 'bold',
-        },
-        subtextStyle: {
-          color: '#ffffff',
-        },
-      },
-    },
-    custom: {},
-  };
+export function getChartTheme(theme: Theme): object {
+  const palette = getThemePalette(theme);
 
-  const key = theme === 'high-contrast' ? 'matrix' : theme;
-  return (themes[key] || themes['neon-blue']) as object;
+  return {
+    color: palette.series,
+    backgroundColor: 'transparent',
+    textStyle: {
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
+    },
+    title: {
+      textStyle: {
+        color: palette.title,
+        fontFamily: CHART_TITLE_FONT_FAMILY,
+      },
+      subtextStyle: {
+        color: palette.mutedText,
+      },
+    },
+    line: {
+      itemStyle: {
+        borderWidth: 2,
+      },
+      lineStyle: {
+        width: 3,
+      },
+      symbolSize: 8,
+      symbol: 'circle',
+      smooth: true,
+    },
+    bar: {
+      itemStyle: {
+        borderRadius: [4, 4, 0, 0],
+      },
+    },
+    pie: {
+      itemStyle: {
+        borderRadius: 4,
+        borderColor: palette.surface,
+        borderWidth: 2,
+      },
+    },
+    radar: {
+      itemStyle: {
+        borderWidth: 2,
+      },
+      lineStyle: {
+        width: 2,
+      },
+      symbolSize: 6,
+      symbol: 'circle',
+      smooth: false,
+    },
+    candlestick: {
+      itemStyle: {
+        color: '#10b981',
+        color0: '#ef4444',
+        borderColor: '#10b981',
+        borderColor0: '#ef4444',
+      },
+    },
+  };
 }
 
 /**
- * 应用霓虹发光效果到图表配置
+ * 将赛博发光效果应用到图表系列，不修改调用方传入的原始配置。
  */
-export function applyNeonGlow(option: ChartOption, theme: string): ChartOption {
+export function applyNeonGlow(option: ChartOption, theme: Theme): ChartOption {
   if (!option.series) return { ...option };
 
-  const glowColor = theme === 'neon-pink' ? 'rgba(255, 0, 127, 0.3)' : 'rgba(0, 240, 255, 0.3)';
+  const glowColor = theme === 'light' ? 'rgba(22, 104, 220, 0.25)' : 'rgba(0, 240, 255, 0.3)';
 
   const enhanceSeries = (series: ChartSeriesOption): ChartSeriesOption => {
     const enhanced = { ...series };
 
-    // 折线图发光效果
     if (series.type === 'line') {
       enhanced.lineStyle = {
         ...series.lineStyle,
@@ -249,34 +156,14 @@ export function applyNeonGlow(option: ChartOption, theme: string): ChartOption {
       };
     }
 
-    // 柱状图发光效果
-    if (series.type === 'bar') {
+    if (series.type === 'bar' || series.type === 'pie' || series.type === 'scatter') {
       enhanced.itemStyle = {
         ...series.itemStyle,
-        shadowBlur: 10,
+        shadowBlur: series.type === 'pie' ? 15 : 10,
         shadowColor: glowColor,
       };
     }
 
-    // 饼图发光效果
-    if (series.type === 'pie') {
-      enhanced.itemStyle = {
-        ...series.itemStyle,
-        shadowBlur: 15,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 散点图发光效果
-    if (series.type === 'scatter') {
-      enhanced.itemStyle = {
-        ...series.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 雷达图发光效果
     if (series.type === 'radar') {
       enhanced.lineStyle = {
         ...series.lineStyle,
@@ -302,7 +189,30 @@ export function applyNeonGlow(option: ChartOption, theme: string): ChartOption {
 }
 
 /**
- * 生成渐变色配置
+ * 获取图表附属控件使用的语义调色板。
+ */
+const getChartPalette = (theme: Theme): ChartPalette => {
+  if (theme === 'light') {
+    return {
+      text: '#1a2332',
+      mutedText: '#5a6b7d',
+      accent: '#1668dc',
+      surface: '#ffffff',
+      border: '#c4cdd8',
+    };
+  }
+
+  return {
+    text: '#e6f0ff',
+    mutedText: '#b3c7d9',
+    accent: '#00f0ff',
+    surface: '#0f1720',
+    border: '#374151',
+  };
+};
+
+/**
+ * 生成渐变色配置。
  */
 export function createGradientColor(
   color1: string,
@@ -312,7 +222,7 @@ export function createGradientColor(
   return {
     type: 'linear',
     x: 0,
-    y: direction === 'vertical' ? 0 : 0,
+    y: 0,
     x2: direction === 'horizontal' ? 1 : 0,
     y2: direction === 'vertical' ? 1 : 0,
     colorStops: [
@@ -323,7 +233,7 @@ export function createGradientColor(
 }
 
 /**
- * 格式化数值
+ * 使用统一单位格式化数值。
  */
 export function formatNumber(value: number, decimals = 2): string {
   if (value >= 1e9) {
@@ -339,9 +249,11 @@ export function formatNumber(value: number, decimals = 2): string {
 }
 
 /**
- * 生成默认的工具栏配置
+ * 生成默认工具栏配置。
  */
-export function createDefaultToolbox(): ChartComponentOption {
+export function createDefaultToolbox(theme: Theme = 'neon-blue'): ChartComponentOption {
+  const palette = getChartPalette(theme);
+
   return {
     feature: {
       saveAsImage: {
@@ -372,20 +284,22 @@ export function createDefaultToolbox(): ChartComponentOption {
       },
     },
     iconStyle: {
-      borderColor: '#e6f0ff',
+      borderColor: palette.text,
     },
     emphasis: {
       iconStyle: {
-        borderColor: '#00f0ff',
+        borderColor: palette.accent,
       },
     },
   };
 }
 
 /**
- * 生成默认的数据缩放配置
+ * 生成默认数据缩放配置。
  */
-export function createDefaultDataZoom(): ChartComponentOption[] {
+export function createDefaultDataZoom(theme: Theme = 'neon-blue'): ChartComponentOption[] {
+  const palette = getChartPalette(theme);
+
   return [
     {
       type: 'slider',
@@ -394,23 +308,23 @@ export function createDefaultDataZoom(): ChartComponentOption[] {
       start: 0,
       end: 100,
       textStyle: {
-        color: '#e6f0ff',
+        color: palette.text,
       },
-      borderColor: '#374151',
-      fillerColor: 'rgba(0, 240, 255, 0.2)',
+      borderColor: palette.border,
+      fillerColor: `${palette.accent}33`,
       handleStyle: {
-        color: '#00f0ff',
-        borderColor: '#00f0ff',
+        color: palette.accent,
+        borderColor: palette.accent,
       },
       moveHandleStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
       },
       selectedDataBackground: {
         lineStyle: {
-          color: '#00f0ff',
+          color: palette.accent,
         },
         areaStyle: {
-          color: 'rgba(0, 240, 255, 0.3)',
+          color: `${palette.accent}4d`,
         },
       },
     },
@@ -424,59 +338,62 @@ export function createDefaultDataZoom(): ChartComponentOption[] {
 }
 
 /**
- * 生成默认的图例配置
+ * 生成默认图例配置。
  */
-export function createDefaultLegend(): ChartComponentOption {
+export function createDefaultLegend(theme: Theme = 'neon-blue'): ChartComponentOption {
+  const palette = getChartPalette(theme);
+
   return {
     textStyle: {
-      color: '#e6f0ff',
-      fontFamily: 'Rajdhani, Inter, sans-serif',
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
     },
     pageTextStyle: {
-      color: '#e6f0ff',
+      color: palette.mutedText,
     },
-    pageIconColor: '#00f0ff',
-    pageIconInactiveColor: '#374151',
+    pageIconColor: palette.accent,
+    pageIconInactiveColor: palette.border,
   };
 }
 
 /**
- * 生成默认的提示框配置
+ * 生成默认提示框配置。
  */
-export function createDefaultTooltip(): ChartComponentOption {
+export function createDefaultTooltip(theme: Theme = 'neon-blue'): ChartComponentOption {
+  const palette = getChartPalette(theme);
+
   return {
     trigger: 'axis',
-    backgroundColor: 'rgba(15, 23, 32, 0.95)',
-    borderColor: '#00f0ff',
+    backgroundColor: palette.surface,
+    borderColor: palette.accent,
     borderWidth: 1,
     textStyle: {
-      color: '#e6f0ff',
-      fontFamily: 'Rajdhani, Inter, sans-serif',
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
     },
-    // 确保 tooltip 不被容器遮挡
     appendToBody: true,
     confine: false,
     axisPointer: {
       type: 'cross',
       lineStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
         type: 'dashed',
       },
       crossStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
       },
       label: {
-        backgroundColor: '#0f1720',
-        borderColor: '#00f0ff',
+        backgroundColor: palette.surface,
+        borderColor: palette.accent,
         borderWidth: 1,
-        color: '#e6f0ff',
+        color: palette.text,
       },
     },
   };
 }
 
 /**
- * 生成默认的网格配置
+ * 生成默认网格配置。
  */
 export function createDefaultGrid(): ChartComponentOption {
   return {

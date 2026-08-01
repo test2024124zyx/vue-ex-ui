@@ -13,7 +13,7 @@ import { getCurrentLocale, setLocale, useLocale as useComponentLocale } from '..
 describe('ExConfigProvider', () => {
   beforeEach(() => {
     // 配置提供者只作用于自身子树，保留一个可检测的宿主全局状态。
-    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.setAttribute('data-theme', 'neon-blue');
     document.documentElement.style.setProperty('--ex-motion-duration-base', '125ms');
     setLocale('en-US');
   });
@@ -44,15 +44,15 @@ describe('ExConfigProvider', () => {
   it('applies custom theme', async () => {
     const wrapper = mount(ExConfigProvider, {
       props: {
-        theme: 'neon-pink',
+        theme: 'light',
       },
     });
 
     await nextTick();
 
-    expect(wrapper.attributes('data-theme')).toBe('neon-pink');
-    expect(wrapper.classes()).toContain('ex-theme-neon-pink');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(wrapper.attributes('data-theme')).toBe('light');
+    expect(wrapper.classes()).toContain('ex-theme-light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('neon-blue');
   });
 
   it('applies size class', () => {
@@ -116,7 +116,7 @@ describe('ExConfigProvider', () => {
 
     mount(ExConfigProvider, {
       props: {
-        theme: 'dark',
+        theme: 'neon-blue',
         size: 'small',
       },
       slots: {
@@ -125,7 +125,7 @@ describe('ExConfigProvider', () => {
     });
 
     expect(capturedConfig).not.toBeNull();
-    expect(capturedConfig!.theme.value).toBe('dark');
+    expect(capturedConfig!.theme.value).toBe('neon-blue');
     expect(capturedConfig!.size.value).toBe('small');
   });
 
@@ -138,10 +138,10 @@ describe('ExConfigProvider', () => {
 
     expect(wrapper.attributes('data-theme')).toBe('neon-blue');
 
-    await wrapper.setProps({ theme: 'neon-pink' });
+    await wrapper.setProps({ theme: 'light' });
 
-    expect(wrapper.attributes('data-theme')).toBe('neon-pink');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(wrapper.attributes('data-theme')).toBe('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('neon-blue');
   });
 
   it('does not leak animation or theme configuration to the document root', () => {
@@ -149,19 +149,19 @@ describe('ExConfigProvider', () => {
       props: { theme: 'light', animation: false },
     });
     const second = mount(ExConfigProvider, {
-      props: { theme: 'neon-pink', animation: true },
+      props: { theme: 'light', animation: true },
     });
 
     expect(first.attributes('data-theme')).toBe('light');
-    expect(second.attributes('data-theme')).toBe('neon-pink');
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(second.attributes('data-theme')).toBe('light');
+    expect(document.documentElement.dataset.theme).toBe('neon-blue');
     expect(document.documentElement.style.getPropertyValue('--ex-motion-duration-base')).toBe(
       '125ms'
     );
 
     first.unmount();
     second.unmount();
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('neon-blue');
   });
 
   it('isolates locale for sibling provider trees without changing the global locale', () => {
@@ -242,7 +242,7 @@ describe('Config Composables', () => {
 
     mount(ExConfigProvider, {
       props: {
-        theme: 'dark',
+        theme: 'neon-blue',
       },
       slots: {
         default: TestComponent as Component,
@@ -250,7 +250,7 @@ describe('Config Composables', () => {
     });
 
     expect(theme).not.toBeNull();
-    expect(theme!.value).toBe('dark');
+    expect(theme!.value).toBe('neon-blue');
   });
 
   it('useGlobalSize returns size', () => {
