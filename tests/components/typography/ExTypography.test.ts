@@ -138,8 +138,23 @@ describe('ExTypography', () => {
     });
 
     expect(wrapper.attributes('style')).toContain(
-      '--ex-typography-gradient: var(--ex-gradient-primary, linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary)))'
+      '--ex-typography-gradient: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%)'
     );
+  });
+
+  it('渐变默认静态显示，动态位移需要显式开启', () => {
+    const staticWrapper = mount(ExTypography, {
+      props: { gradient: true },
+      slots: { default: '静态渐变文本' },
+    });
+    const animatedWrapper = mount(ExTypography, {
+      props: { gradient: true, gradientAnimated: true },
+      slots: { default: '动态渐变文本' },
+    });
+
+    expect(staticWrapper.classes()).toContain('ex-typography--gradient');
+    expect(staticWrapper.classes()).not.toContain('ex-typography--gradient-animated');
+    expect(animatedWrapper.classes()).toContain('ex-typography--gradient-animated');
   });
 
   it('渐变和发光同时启用时提供可见的发光颜色', () => {

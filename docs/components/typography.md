@@ -24,12 +24,13 @@
 
 ## 渐变文本效果
 
-`gradient` 是独立文本效果，可应用于任意文本层级和 HTML 标签。
+`gradient` 是独立文本效果，默认使用从左到右的静态渐变，可应用于任意文本层级和 HTML 标签。需要动态位移时，再显式添加 `gradient-animated`。
 
 ::: raw
 
 <div class="vp-raw demo-container typography-stack">
   <ex-typography variant="heading" gradient>跨区域业务增长 28.6%</ex-typography>
+  <ex-typography variant="heading" gradient gradient-animated>动态渐变标题</ex-typography>
   <ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
   <ex-typography variant="caption" gradient>渐变说明文字</ex-typography>
   <ex-typography
@@ -46,6 +47,7 @@
 ```vue
 <ex-typography variant="body" gradient>正文渐变文本</ex-typography>
 <ex-typography variant="caption" gradient>说明文字也可渐变</ex-typography>
+<ex-typography variant="heading" gradient gradient-animated>动态渐变标题</ex-typography>
 <ex-typography
   tag="span"
   gradient
@@ -106,22 +108,23 @@
 
 ### Props
 
-| 参数          | 说明                                   | 类型                                                            | 默认值              |
-| ------------- | -------------------------------------- | --------------------------------------------------------------- | ------------------- |
-| `text`        | 无默认插槽时显示的文本                 | `string`                                                        | —                   |
-| `tag`         | HTML 标签                              | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
-| `variant`     | 文本层级                               | `display \| heading \| title \| body \| caption \| overline`    | `body`              |
-| `size`        | 字号                                   | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | `md`                |
-| `color`       | 主题色名或有效 CSS 颜色                | `TypographyColor \| string`                                     | `text-primary`      |
-| `truncate`    | 是否截断文本                           | `boolean`                                                       | `false`             |
-| `maxLines`    | 截断时保留的最大行数，非整数会向下取整 | `number`                                                        | `1`                 |
-| `gradient`    | 是否启用渐变文本效果                   | `boolean`                                                       | `false`             |
-| `glow`        | 是否启用发光效果                       | `boolean`                                                       | `false`             |
-| `center`      | 是否居中                               | `boolean`                                                       | `false`             |
-| `bold`        | 是否加粗                               | `boolean`                                                       | `false`             |
-| `italic`      | 是否斜体                               | `boolean`                                                       | `false`             |
-| `underline`   | 是否显示下划线                         | `boolean`                                                       | `false`             |
-| `customStyle` | 合并到根元素的样式                     | `CSSProperties`                                                 | —                   |
+| 参数               | 说明                                        | 类型                                                            | 默认值              |
+| ------------------ | ------------------------------------------- | --------------------------------------------------------------- | ------------------- |
+| `text`             | 无默认插槽时显示的文本                      | `string`                                                        | —                   |
+| `tag`              | HTML 标签                                   | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
+| `variant`          | 文本层级                                    | `display \| heading \| title \| body \| caption \| overline`    | `body`              |
+| `size`             | 字号                                        | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | `md`                |
+| `color`            | 主题色名或有效 CSS 颜色                     | `TypographyColor \| string`                                     | `text-primary`      |
+| `truncate`         | 是否截断文本                                | `boolean`                                                       | `false`             |
+| `maxLines`         | 截断时保留的最大行数，非整数会向下取整      | `number`                                                        | `1`                 |
+| `gradient`         | 是否启用渐变文本效果                        | `boolean`                                                       | `false`             |
+| `gradientAnimated` | 是否启用渐变背景动态位移（需要 `gradient`） | `boolean`                                                       | `false`             |
+| `glow`             | 是否启用发光效果                            | `boolean`                                                       | `false`             |
+| `center`           | 是否居中                                    | `boolean`                                                       | `false`             |
+| `bold`             | 是否加粗                                    | `boolean`                                                       | `false`             |
+| `italic`           | 是否斜体                                    | `boolean`                                                       | `false`             |
+| `underline`        | 是否显示下划线                              | `boolean`                                                       | `false`             |
+| `customStyle`      | 合并到根元素的样式                          | `CSSProperties`                                                 | —                   |
 
 ### Slots
 

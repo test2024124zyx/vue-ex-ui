@@ -19,6 +19,8 @@ export interface ExTypographyProps {
   truncate?: boolean;
   /** 是否使用渐变色 */
   gradient?: boolean;
+  /** 是否启用渐变背景动态位移，需要同时启用 gradient */
+  gradientAnimated?: boolean;
   /** 是否使用霓虹发光效果 */
   glow?: boolean;
   /** 是否居中对齐 */

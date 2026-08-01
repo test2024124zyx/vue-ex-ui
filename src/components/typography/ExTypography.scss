@@ -147,10 +147,15 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     );
     background-repeat: no-repeat;
     background-position: 0% 50%;
-    background-size: 200% 200%;
+    background-size: 100% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  // 静态渐变是默认行为，只有显式开启动画时才扩大背景并移动渐变位置。
+  &--gradient-animated {
+    background-size: 200% 200%;
     animation: ex-typography-gradient-shift 3s ease-in-out infinite;
   }
 
@@ -273,7 +278,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   @media (prefers-reduced-motion: reduce) {
     transition: none !important;
 
-    &--gradient {
+    &--gradient-animated {
       animation: none;
     }
   }
