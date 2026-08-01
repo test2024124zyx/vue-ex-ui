@@ -6,15 +6,25 @@ const readDocument = (name: string): string =>
   readFileSync(resolve(process.cwd(), `docs/components/${name}.md`), 'utf8');
 
 // 只统计代码围栏之外的标签，避免把“仅有源码”误判为可操作演示。
-const readLiveMarkup = (name: string): string =>
-  readDocument(name).replace(/```[\s\S]*?```/g, '');
+const readLiveMarkup = (name: string): string => readDocument(name).replace(/```[\s\S]*?```/g, '');
 
 const countLiveComponent = (name: string, component: string): number =>
   readLiveMarkup(name).match(new RegExp(`<${component}\\b`, 'gi'))?.length ?? 0;
 
+const readBlocks = (document: string, marker: RegExp): string[] =>
+  [...document.matchAll(marker)].map(match => match[1] ?? '');
+
+// 折叠代码中的换行只用于排版，比较时统一为空格以验证示例内容本身。
+const normalizeTypographyExample = (example: string): string => example.replace(/\s+/g, ' ').trim();
+
+const extractTypographyExamples = (block: string): string[] =>
+  (block.match(/<ex-typography\b[\s\S]*?(?:<\/ex-typography>|\/>)/gi) ?? []).map(
+    normalizeTypographyExample
+  );
+
 describe('组件文档实时演示', () => {
   it.each([
-    ['typography', 'ex-typography', 4],
+    ['typography', 'ex-typography', 29],
     ['icon', 'ex-icon', 4],
     ['button', 'ex-button', 8],
     ['image', 'ex-image', 3],
@@ -37,19 +47,35 @@ describe('组件文档实时演示', () => {
     expect(countLiveComponent(name, component)).toBeGreaterThanOrEqual(minimum as number);
   });
 
+  it('Typography 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('typography');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(6);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractTypographyExamples(liveBlock)).toEqual(
+        extractTypographyExamples(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
   it('Typography 将渐变作为正文也可用的独立文本效果演示', () => {
     const markup = readLiveMarkup('typography');
     expect(markup).toMatch(
-      /<ex-typography\b(?=[^>]*\bgradient\b)(?=[^>]*variant="(?:body|caption)")/i,
+      /<ex-typography\b(?=[^>]*\bgradient\b)(?=[^>]*variant="(?:body|caption)")/i
     );
   });
 
   it('Button 演示可关闭的光效和只展示一个字形的圆形按钮', () => {
     const markup = readLiveMarkup('button');
     expect(markup).toMatch(/<ex-button\b[^>]*:glow="false"/i);
-    expect(markup).toMatch(
-      /<ex-button\b[^>]*shape="circle"[^>]*>\s*发\s*<\/ex-button>/i,
-    );
+    expect(markup).toMatch(/<ex-button\b[^>]*shape="circle"[^>]*>\s*发\s*<\/ex-button>/i);
   });
 
   it('Ellipsis 同时提供底部按钮和行尾动态图标两种展开方式', () => {
@@ -91,7 +117,7 @@ describe('组件文档实时演示', () => {
     ];
 
     expect(markup).toMatch(
-      /<ex-dropdown\b(?=[^>]*v-for="placement in placements")(?=[^>]*:placement="placement")/i,
+      /<ex-dropdown\b(?=[^>]*v-for="placement in placements")(?=[^>]*:placement="placement")/i
     );
     expectedPlacements.forEach(placement => expect(document).toContain(`'${placement}'`));
   });
