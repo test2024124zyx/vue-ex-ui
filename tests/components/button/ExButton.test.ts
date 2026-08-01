@@ -23,8 +23,9 @@ describe('ExButton', () => {
     expect(wrapper.find('button').exists()).toBe(true);
     expect(wrapper.text()).toContain('Click me');
     expect(wrapper.classes()).toContain('ex-button');
-    expect(wrapper.classes()).toContain('ex-button--primary');
+    expect(wrapper.classes()).toContain('ex-button--default');
     expect(wrapper.classes()).toContain('ex-button--medium');
+    expect(wrapper.classes()).toContain('ex-button--glow');
   });
 
   it('renders different button types', () => {
@@ -237,25 +238,39 @@ describe('ExButton', () => {
     });
   });
 
-  it('circle shape preserves complete slot content instead of silently truncating it', () => {
+  it('圆形文字按钮只显示首个完整字素，并用完整文本保留可访问名称', () => {
     const wrapper = mount(ExButton, {
-      props: { shape: 'circle', ariaLabel: 'User profile' },
-      slots: { default: '用户' },
+      props: { shape: 'circle' },
+      slots: { default: '👨‍👩‍👧‍👦家庭账户' },
     });
 
-    expect(wrapper.text()).toContain('用户');
+    expect(wrapper.text()).toBe('👨‍👩‍👧‍👦');
+    expect(wrapper.attributes('aria-label')).toBe('👨‍👩‍👧‍👦家庭账户');
     expect(wrapper.find('.ex-button__content').exists()).toBe(true);
   });
 
-  it('circle loading state keeps an accessible name and visible content', () => {
+  it('圆形按钮加载时只显示加载图标并保留可访问名称', () => {
     const wrapper = mount(ExButton, {
-      props: { shape: 'circle', loading: true, ariaLabel: 'Loading user' },
+      props: { shape: 'circle', loading: true, ariaLabel: '正在加载用户' },
       slots: { default: '用户' },
     });
 
-    expect(wrapper.text()).toContain('用户');
-    expect(wrapper.attributes('aria-label')).toBe('Loading user');
+    expect(wrapper.text()).toBe('');
+    expect(wrapper.find('.ex-button__content').exists()).toBe(false);
+    expect(wrapper.find('.ex-button__loading-spinner').exists()).toBe(true);
+    expect(wrapper.attributes('aria-label')).toBe('正在加载用户');
     expect(wrapper.attributes('aria-busy')).toBe('true');
+  });
+
+  it('发光效果默认开启，并允许显式关闭', () => {
+    const enabled = mount(ExButton, { slots: { default: '默认发光' } });
+    const disabled = mount(ExButton, {
+      props: { glow: false },
+      slots: { default: '关闭发光' },
+    });
+
+    expect(enabled.classes()).toContain('ex-button--glow');
+    expect(disabled.classes()).not.toContain('ex-button--glow');
   });
 
   it('renders as plain button', () => {

@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { h, nextTick } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExMenu from '../../../src/components/menu/ExMenu.vue';
 import ExMenuItem from '../../../src/components/menu/ExMenuItem.vue';
 import ExSubMenu from '../../../src/components/menu/ExSubMenu.vue';
@@ -97,6 +99,30 @@ describe('ExMenu', () => {
     expect(wrapper.text()).toContain('API 文档');
     expect(wrapper.text()).toContain('控制台');
     expect(warn.mock.calls.flat().join(' ')).not.toContain('Failed to resolve component');
+  });
+
+  it('叶节点不渲染子菜单箭头，列表样式显式清除 marker', () => {
+    const wrapper = mountMenu({
+      props: {
+        items: [
+          {
+            key: 'group',
+            label: '分组',
+            children: [{ key: 'last', label: '最后一项' }],
+          },
+        ],
+      },
+    });
+    const menuStyles = readFileSync(resolve(process.cwd(), 'src/components/menu/ExMenu.scss'), 'utf8');
+    const itemStyles = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExMenuItem.scss'),
+      'utf8'
+    );
+
+    expect(wrapper.findAll('.ex-submenu__arrow')).toHaveLength(1);
+    expect(wrapper.get('.ex-menu-item').find('.ex-submenu__arrow').exists()).toBe(false);
+    expect(`${menuStyles}\n${itemStyles}`).toContain('::marker');
+    expect(`${menuStyles}\n${itemStyles}`).toMatch(/::marker\s*\{[\s\S]*?content:\s*['"]{2}/);
   });
 
   it('数据图标复用 ExIcon 且保持装饰语义', () => {

@@ -1,443 +1,208 @@
 # Dropdown 下拉菜单
 
-向下弹出的列表菜单，用于展示操作选项。
+用于在触发控件附近展示一组操作。
 
 <script setup>
-import { ref } from 'vue'
+const createDataIcon = path => `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="${path}"/></svg>`
+)}`
 
-const basicItems = ref([
-  { key: '1', label: '选项一' },
-  { key: '2', label: '选项二' },
-  { key: '3', label: '选项三' },
-])
+const editIcon = createDataIcon('M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3zm15.9-10.5a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0l-1.1 1.1 2.7 2.7 1.1-1.1z')
+const copyIcon = createDataIcon('M8 8V3h13v13h-5v5H3V8h5zm2 0h6v6h3V5h-9v3zm4 2H5v9h9v-9z')
+const archiveIcon = createDataIcon('M3 4h18v5h-1v11H4V9H3V4zm3 5v9h12V9H6zm-1-3v1h14V6H5zm4 6h6v2H9v-2z')
+const deleteIcon = createDataIcon('M8 4V2h8v2h5v2H3V4h5zm-2 4h12l-1 14H7L6 8zm4 2v9h2v-9h-2zm4 0v9h2v-9h-2z')
 
-const iconItems = ref([
-  { 
-    key: '1', 
-    label: '编辑', 
-    icon: 'https://api.iconify.design/ri/edit-line.svg' 
-  },
-  { 
-    key: '2', 
-    label: '删除', 
-    icon: 'https://api.iconify.design/ri/delete-bin-line.svg' 
-  },
-  { 
-    key: '3', 
-    label: '分享', 
-    icon: 'https://api.iconify.design/ri/share-line.svg' 
-  },
-])
+const actionItems = [
+  { key: 'edit', label: '编辑客户', icon: editIcon },
+  { key: 'copy', label: '复制链接', icon: copyIcon },
+  { key: 'archive', label: '归档记录', icon: archiveIcon, divided: true },
+  { key: 'delete', label: '删除记录', icon: deleteIcon }
+]
 
-const dividedItems = ref([
-  { key: '1', label: '新建文件' },
-  { key: '2', label: '新建文件夹' },
-  { key: '3', label: '打开', divided: true },
-  { key: '4', label: '保存' },
-  { key: '5', label: '另存为', divided: true },
-  { key: '6', label: '退出' },
-])
-
-const disabledItems = ref([
-  { key: '1', label: '可用选项' },
-  { key: '2', label: '禁用选项', disabled: true },
-  { key: '3', label: '可用选项' },
-])
-
-const handleItemClick = (item) => {
-  console.log('Item clicked:', item)
-}
+const placements = [
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end'
+]
 </script>
 
-## 基础用法
+## 数据菜单
 
-最基础的下拉菜单用法。
+图标使用当前菜单文字颜色，在不同主题下保持可见。
 
-<div class="demo-container">
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">
-      下拉菜单
-      <template #suffix>
-        <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
-      </template>
-    </ExButton>
-  </ExDropdown>
+::: raw
+<div class="vp-raw demo-container dropdown-row">
+  <ex-dropdown :items="actionItems" trigger="click" placement="bottom-start" aria-label="客户操作">
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="primary">
+        客户操作
+        <template #suffix><ex-icon icon="arrow-down-s-line" /></template>
+      </ex-button>
+    </template>
+  </ex-dropdown>
 </div>
+:::
 
 ```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">
-      下拉菜单
-      <template #suffix>
-        <img
-          src="https://api.iconify.design/ri/arrow-down-s-line.svg"
-          alt="arrow"
-          width="16"
-          height="16"
-        />
-      </template>
-    </ExButton>
-  </ExDropdown>
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const items = ref([
-  { key: '1', label: '选项一' },
-  { key: '2', label: '选项二' },
-  { key: '3', label: '选项三' },
-]);
-
-const handleItemClick = item => {
-  console.log('Item clicked:', item);
-};
-</script>
-```
-
-## 带图标
-
-菜单项可以显示图标。
-
-<div class="demo-container">
-  <ExDropdown v-slot="{ triggerProps }" :items="iconItems" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">
-      操作
-      <template #suffix>
-        <img src="https://api.iconify.design/ri/more-line.svg" alt="more" width="16" height="16" />
-      </template>
-    </ExButton>
-  </ExDropdown>
-</div>
-
-```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">操作</ExButton>
-  </ExDropdown>
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const items = ref([
-  {
-    key: '1',
-    label: '编辑',
-    icon: 'https://api.iconify.design/ri/edit-line.svg',
-  },
-  {
-    key: '2',
-    label: '删除',
-    icon: 'https://api.iconify.design/ri/delete-bin-line.svg',
-  },
-  {
-    key: '3',
-    label: '分享',
-    icon: 'https://api.iconify.design/ri/share-line.svg',
-  },
-]);
-
-const handleItemClick = item => {
-  console.log('Item clicked:', item);
-};
-</script>
-```
-
-## 分割线
-
-使用 `divided` 属性可以在菜单项之间添加分割线。
-
-<div class="demo-container">
-  <ExDropdown v-slot="{ triggerProps }" :items="dividedItems" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">
-      文件
-      <template #suffix>
-        <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
-      </template>
-    </ExButton>
-  </ExDropdown>
-</div>
-
-```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">文件</ExButton>
-  </ExDropdown>
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const items = ref([
-  { key: '1', label: '新建文件' },
-  { key: '2', label: '新建文件夹' },
-  { key: '3', label: '打开', divided: true },
-  { key: '4', label: '保存' },
-  { key: '5', label: '另存为', divided: true },
-  { key: '6', label: '退出' },
-]);
-</script>
-```
-
-## 禁用选项
-
-可以禁用某些菜单项。
-
-<div class="demo-container">
-  <ExDropdown v-slot="{ triggerProps }" :items="disabledItems" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">
-      选项
-      <template #suffix>
-        <img src="https://api.iconify.design/ri/arrow-down-s-line.svg" alt="arrow" width="16" height="16" />
-      </template>
-    </ExButton>
-  </ExDropdown>
-</div>
-
-```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">选项</ExButton>
-  </ExDropdown>
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const items = ref([
-  { key: '1', label: '可用选项' },
-  { key: '2', label: '禁用选项', disabled: true },
-  { key: '3', label: '可用选项' },
-]);
-</script>
+<ex-dropdown :items="items" trigger="click" @item-click="handleAction">
+  <template #default="{ triggerProps }">
+    <ex-button v-bind="triggerProps">客户操作</ex-button>
+  </template>
+</ex-dropdown>
 ```
 
 ## 触发方式
 
-支持 hover、click 和 contextmenu 三种触发方式。
-
-<div class="demo-container" style="display: flex; gap: 16px;">
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="hover" @item-click="handleItemClick">
-    <ExButton v-bind="triggerProps">悬停触发</ExButton>
-  </ExDropdown>
-
-<ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="click" @item-click="handleItemClick">
-<ExButton v-bind="triggerProps">点击触发</ExButton>
-</ExDropdown>
-
-<ExDropdown v-slot="{ triggerProps }" :items="basicItems" trigger="contextmenu" @item-click="handleItemClick">
-<ExButton v-bind="triggerProps">右键触发</ExButton>
-</ExDropdown>
-
+::: raw
+<div class="vp-raw demo-container dropdown-row">
+  <ex-dropdown :items="actionItems" trigger="hover">
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="default">悬停打开</ex-button>
+    </template>
+  </ex-dropdown>
+  <ex-dropdown :items="actionItems" trigger="click">
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="secondary">点击打开</ex-button>
+    </template>
+  </ex-dropdown>
+  <ex-dropdown :items="actionItems" trigger="contextmenu">
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="default">右键打开</ex-button>
+    </template>
+  </ex-dropdown>
 </div>
+:::
 
-```vue
-<template>
-  <div style="display: flex; gap: 16px;">
-    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="hover">
-      <ExButton v-bind="triggerProps">悬停触发</ExButton>
-    </ExDropdown>
+## 自定义菜单
 
-    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="click">
-      <ExButton v-bind="triggerProps">点击触发</ExButton>
-    </ExDropdown>
-
-    <ExDropdown v-slot="{ triggerProps }" :items="items" trigger="contextmenu">
-      <ExButton v-bind="triggerProps">右键触发</ExButton>
-    </ExDropdown>
-  </div>
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const items = ref([
-  { key: '1', label: '选项一' },
-  { key: '2', label: '选项二' },
-  { key: '3', label: '选项三' },
-]);
-</script>
-```
+::: raw
+<div class="vp-raw demo-container dropdown-row">
+  <ex-dropdown trigger="click" placement="bottom-end" :hide-on-click="false">
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="secondary">筛选条件</ex-button>
+    </template>
+    <template #menu>
+      <ex-dropdown-item label="仅看进行中" />
+      <ex-dropdown-item label="仅看我负责" />
+      <ex-dropdown-item label="包含已归档" divided />
+    </template>
+  </ex-dropdown>
+</div>
+:::
 
 ## 弹出位置
 
-支持 12 个不同的弹出位置。
+此演示关闭自动翻转，因此标签与实际弹出方向保持一致。
 
-<div class="demo-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top-start">
-    <ExButton v-bind="triggerProps">上左</ExButton>
-  </ExDropdown>
-
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top">
-    <ExButton v-bind="triggerProps">上中</ExButton>
-  </ExDropdown>
-
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="top-end">
-    <ExButton v-bind="triggerProps">上右</ExButton>
-  </ExDropdown>
-
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom-start">
-    <ExButton v-bind="triggerProps">下左</ExButton>
-  </ExDropdown>
-
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom">
-    <ExButton v-bind="triggerProps">下中</ExButton>
-  </ExDropdown>
-
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" placement="bottom-end">
-    <ExButton v-bind="triggerProps">下右</ExButton>
-  </ExDropdown>
+::: raw
+<div class="vp-raw demo-container dropdown-placement-stage">
+  <ex-dropdown
+    v-for="placement in placements"
+    :key="placement"
+    :items="actionItems.slice(0, 2)"
+    trigger="click"
+    :placement="placement"
+    :flip="false"
+    :hide-delay="0"
+  >
+    <template #default="{ triggerProps }">
+      <ex-button v-bind="triggerProps" type="default" size="small">{{ placement }}</ex-button>
+    </template>
+  </ex-dropdown>
 </div>
+:::
 
 ```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" placement="bottom-start">
-    <ExButton v-bind="triggerProps">下拉菜单</ExButton>
-  </ExDropdown>
-</template>
-```
-
-## 禁用状态
-
-整个下拉菜单可以被禁用。
-
-<div class="demo-container">
-  <ExDropdown v-slot="{ triggerProps }" :items="basicItems" :disabled="true">
-    <ExButton v-bind="triggerProps" disabled>禁用的下拉菜单</ExButton>
-  </ExDropdown>
-</div>
-
-```vue
-<template>
-  <ExDropdown v-slot="{ triggerProps }" :items="items" :disabled="true">
-    <ExButton v-bind="triggerProps" disabled>禁用的下拉菜单</ExButton>
-  </ExDropdown>
-</template>
+<ex-dropdown placement="top-start" :flip="false">...</ex-dropdown>
+<ex-dropdown placement="right-end" :flip="false">...</ex-dropdown>
 ```
 
 ## API
 
-### Dropdown Props
+### Props
 
-| 属性                | 说明                                   | 类型                                  | 默认值           |
-| ------------------- | -------------------------------------- | ------------------------------------- | ---------------- |
-| items               | 数据驱动菜单项                         | `DropdownItemData[]`                  | `[]`             |
-| trigger             | 触发方式                               | `'hover' \| 'click' \| 'contextmenu'` | `'hover'`        |
-| placement           | 首选弹出位置                           | `DropdownPlacement`                   | `'bottom-start'` |
-| disabled            | 是否禁用打开请求                       | `boolean`                             | `false`          |
-| visible             | 受控显示状态；未传入时内部管理         | `boolean`                             | -                |
-| aria-label          | 菜单的显式无障碍名称                   | `string`                              | -                |
-| offset              | 弹层间距，单位像素                     | `number`                              | `8`              |
-| match-trigger-width | 是否精确匹配触发器宽度                 | `boolean`                             | `false`          |
-| flip                | 首选方向空间不足时是否翻转             | `boolean`                             | `true`           |
-| viewport-padding    | 浮层与视口边缘的安全距离               | `number`                              | `8`              |
-| show-delay          | hover 打开延迟，单位毫秒               | `number`                              | `0`              |
-| hide-delay          | hover 关闭延迟，单位毫秒               | `number`                              | `150`            |
-| hide-on-click       | 选择菜单项后是否关闭                   | `boolean`                             | `true`           |
-| z-index             | 自定义层级；未设置时跟随全局配置       | `number`                              | 全局层级 + 20    |
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| `items` | 数据菜单项 | `DropdownItemData[]` | `[]` |
+| `trigger` | 触发方式 | `hover \| click \| contextmenu` | `hover` |
+| `placement` | 首选弹出位置 | `DropdownPlacement` | `bottom-start` |
+| `disabled` | 是否禁止打开 | `boolean` | `false` |
+| `visible` | 受控显示状态 | `boolean` | — |
+| `ariaLabel` | 菜单无障碍名称 | `string` | — |
+| `offset` | 弹层与触发器间距 | `number` | `8` |
+| `matchTriggerWidth` | 是否匹配触发器宽度 | `boolean` | `false` |
+| `flip` | 空间不足时是否自动翻转 | `boolean` | `true` |
+| `viewportPadding` | 弹层与视口边缘安全距离 | `number` | `8` |
+| `showDelay` | 悬停打开延迟 | `number` | `0` |
+| `hideDelay` | 悬停关闭延迟 | `number` | `150` |
+| `hideOnClick` | 选择菜单项后是否关闭 | `boolean` | `true` |
+| `zIndex` | 自定义层级 | `number` | 全局层级 |
 
-### Dropdown Events
+### DropdownItemData
 
-| 事件名         | 说明               | 类型                               |
-| -------------- | ------------------ | ---------------------------------- |
-| item-click     | 菜单项点击时触发   | `(item: DropdownItemData) => void` |
-| update:visible | 显示状态改变时触发 | `(visible: boolean) => void`       |
-| show           | 状态真正变为显示时触发 | `() => void`                    |
-| hide           | 状态真正变为隐藏时触发 | `() => void`                    |
+| 字段 | 说明 | 类型 |
+| --- | --- | --- |
+| `key` | 唯一标识 | `string \| number` |
+| `label` | 菜单项文本 | `string` |
+| `icon` | 装饰图标地址 | `string` |
+| `disabled` | 是否禁用 | `boolean` |
+| `divided` | 是否显示上方分割线 | `boolean` |
+| `data` | 随事件返回的业务数据 | `Record<string, unknown>` |
 
-### Dropdown Methods
+### Events
 
-| 方法名         | 说明                 | 类型                           |
-| -------------- | -------------------- | ------------------------------ |
-| show           | 请求显示下拉菜单     | `() => void`                   |
-| hide           | 请求隐藏下拉菜单     | `() => void`                   |
-| updatePosition | 立即重新计算浮层位置 | `() => void`                   |
-| getElement     | 获取根元素           | `() => HTMLDivElement \| null` |
+| 事件名 | 参数 |
+| --- | --- |
+| `item-click` | `(item: DropdownItemData)` |
+| `update:visible` | `(visible: boolean)` |
+| `show` | `()` |
+| `hide` | `()` |
 
-### Dropdown Slots
+### Slots
 
-| 名称    | 说明                                                     |
-| ------- | -------------------------------------------------------- |
-| default | 触发控件；提供 `open`、`disabled` 和 `triggerProps` 参数 |
-| menu    | 自定义菜单项内容                                         |
+| 名称 | 参数 |
+| --- | --- |
+| `default` | `{ open, disabled, triggerProps }` |
+| `menu` | — |
 
-实际触发控件应绑定 `v-bind="triggerProps"`，保证 `aria-expanded`、`aria-controls` 与禁用语义落在唯一的交互元素上。
+### Exposes
 
-### DropdownItem Props
-
-| 属性     | 说明           | 类型      | 默认值  |
-| -------- | -------------- | --------- | ------- |
-| label    | 标签文本       | `string`  | -       |
-| icon     | 图标URL        | `string`  | -       |
-| disabled | 是否禁用       | `boolean` | `false` |
-| divided  | 是否显示分割线 | `boolean` | `false` |
-| id       | 菜单项元素 id  | `string`  | 自动生成 |
-
-### Types
-
-#### DropdownItemData
-
-```typescript
-interface DropdownItemData {
-  /** 唯一标识 */
-  key: string | number;
-  /** 标签文本 */
-  label: string;
-  /** 图标URL */
-  icon?: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 是否分割线 */
-  divided?: boolean;
-  /** 自定义数据 */
-  data?: Record<string, unknown>;
-}
-```
-
-#### DropdownPlacement
-
-```typescript
-type DropdownPlacement =
-  | 'top'
-  | 'top-start'
-  | 'top-end'
-  | 'bottom'
-  | 'bottom-start'
-  | 'bottom-end'
-  | 'left'
-  | 'left-start'
-  | 'left-end'
-  | 'right'
-  | 'right-start'
-  | 'right-end';
-```
-
-#### DropdownTrigger
-
-```typescript
-type DropdownTrigger = 'hover' | 'click' | 'contextmenu';
-```
-
-## 无障碍支持
-
-- 支持键盘导航
-- 提供 ARIA 标签
-- 支持屏幕阅读器
-- 支持高对比度模式
-- 支持减少动画模式
-
-## 主题定制
-
-下拉菜单跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
+| 方法 | 类型 |
+| --- | --- |
+| `show` | `() => void` |
+| `hide` | `() => void` |
+| `updatePosition` | `() => void` |
+| `getElement` | `() => HTMLDivElement \| null` |
 
 <style scoped>
-.demo-container {
-  padding: 24px;
-  background: var(--ex-color-bg-primary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+.dropdown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dropdown-placement-stage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 92px 70px;
+  padding: 150px 120px;
+  overflow: visible;
+}
+
+@media (max-width: 760px) {
+  .dropdown-placement-stage {
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+    gap: 84px 48px;
+    padding: 140px 80px;
+  }
 }
 </style>

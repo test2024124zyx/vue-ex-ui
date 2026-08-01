@@ -1,84 +1,135 @@
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
 
 .ex-button {
+  --ex-button-bg: var(--ex-color-bg-secondary);
+  --ex-button-bg-hover: var(--ex-color-bg-hover);
+  --ex-button-bg-active: var(--ex-color-bg-active);
+  --ex-button-fg: var(--ex-color-text-primary);
+  --ex-button-fg-hover: var(--ex-color-text-primary);
+  --ex-button-border: var(--ex-color-border-primary);
+  --ex-button-border-hover: var(--ex-color-primary);
+  --ex-button-accent: var(--ex-color-primary);
+  --ex-button-soft-bg: var(--ex-color-primary-alpha-10);
+  --ex-button-glow-color: var(--ex-color-primary-alpha-30);
+
   position: relative;
   display: inline-flex;
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
   gap: var(--ex-spacing-2);
+  margin: 0;
   padding: var(--ex-spacing-2) var(--ex-spacing-4);
-  border: 1px solid transparent;
-  border-radius: var(--ex-button-radius); // 与输入框/选择器统一的交互圆角
+  overflow: hidden;
+  border: 1px solid var(--ex-button-border);
+  border-radius: var(--ex-button-radius);
+  appearance: none;
+  color: var(--ex-button-fg);
+  background: var(--ex-button-bg);
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
+  line-height: var(--ex-leading-normal);
   text-align: center;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  @include transition((color, background-color, border-color, box-shadow, filter, transform));
-  outline: none;
+  touch-action: manipulation;
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
-  // 默认形状采用赛博朋克切角（左上 + 右下斜切）；round/circle 保持各自轮廓。
-  // 注意：clip-path 会裁掉 box-shadow，切角按钮因此呈扁平硬朗风格（与「发光预算」一致），
-  // 发光交由 filter（见下方各类型 hover）。
+  // 默认轮廓保留组件库的切角语言，圆角与圆形按钮使用各自轮廓。
   &:not(.ex-button--round):not(.ex-button--circle) {
     @include chamfer(var(--ex-chamfer-sm));
   }
 
-  // 聚焦样式 - 游戏主题增强（切角下 outline 在两个斜角处略被裁切，但其余边清晰可见）
+  // 发光开关同时控制外发光和掠光，避免各类型自行决定造成不一致。
+  &::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    content: '';
+    background: linear-gradient(
+      105deg,
+      transparent 20%,
+      var(--ex-color-white-alpha-30) 48%,
+      transparent 76%
+    );
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-140%);
+    transition:
+      opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      transform var(--ex-motion-duration-slow) var(--ex-motion-ease-out);
+  }
+
+  &--glow:not(:disabled):not(.ex-button--disabled) {
+    filter: drop-shadow(0 0 5px var(--ex-button-glow-color));
+  }
+
+  &--glow:not(.ex-button--text):not(.ex-button--link)::before {
+    opacity: 0.6;
+  }
+
   &:focus-visible {
-    outline: 2px solid var(--ex-color-primary);
+    outline: 2px solid var(--ex-color-border-focus);
     outline-offset: 2px;
   }
 
-  // 禁用状
+  &:active:not(:disabled):not(.ex-button--loading) {
+    color: var(--ex-button-fg-hover);
+    background: var(--ex-button-bg-active);
+    border-color: var(--ex-button-border-hover);
+    transform: translateY(0);
+  }
+
   &:disabled,
   &--disabled {
+    color: var(--ex-color-text-disabled);
+    background: var(--ex-color-bg-tertiary);
+    border-color: var(--ex-color-border-secondary);
+    box-shadow: none;
+    filter: grayscale(0.35);
+    opacity: 0.66;
     cursor: not-allowed;
-    opacity: 0.5;
-    pointer-events: none;
-    filter: grayscale(0.5);
-    box-shadow: none !important;
-    transform: none !important;
+    transform: none;
+
+    &::before {
+      display: none;
+    }
   }
 
-  // 加载状
   &--loading {
-    cursor: default;
-    pointer-events: none;
+    cursor: wait;
   }
 
-  // 块级按钮
   &--block {
     display: flex;
     width: 100%;
   }
 
-  // 按钮内容
-  &__content {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  // 图标样式
-  &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-  }
-
-  // 加载图标
+  &__content,
+  &__icon,
   &__loading-icon {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  &__content {
+    min-width: 0;
   }
 
   &__loading-spinner {
+    box-sizing: border-box;
     width: 1em;
     height: 1em;
     border: 2px solid currentColor;
@@ -87,332 +138,152 @@
     animation: ex-button-spin 0.8s linear infinite;
   }
 
-  // 按钮类型样式 - 游戏主题增强
-  &--primary {
-    background: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
-    border-color: var(--ex-color-primary);
-    color: var(--ex-button-ink-on-bright);
-    box-shadow:
-      0 0 10px var(--ex-color-primary-alpha-30),
-      inset 0 1px 0 var(--ex-color-white-alpha-20);
-    position: relative;
-    overflow: hidden;
-
-    // 霓虹发光效果
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, var(--ex-color-white-alpha-20), transparent);
-      transition: left var(--ex-motion-duration-slow);
-    }
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-primary-hover) 0%,
-        var(--ex-color-secondary-hover) 100%
-      );
-      border-color: var(--ex-color-primary-hover);
-      box-shadow:
-        0 0 16px var(--ex-color-primary-alpha-50),
-        0 8px 25px var(--ex-color-primary-alpha-30),
-        inset 0 1px 0 var(--ex-color-white-alpha-30);
-
-      &::before {
-        left: 100%;
-      }
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-primary-active) 0%,
-        var(--ex-color-secondary-active) 100%
-      );
-      border-color: var(--ex-color-primary-active);
-      transform: translateY(0);
-      box-shadow:
-        0 0 15px var(--ex-color-primary-alpha-40),
-        0 2px 10px var(--ex-color-primary-alpha-20);
-    }
-
-    &.ex-button--plain {
-      background: var(--ex-color-bg-secondary-alpha-80);
-      color: var(--ex-color-primary);
-      border-color: var(--ex-color-primary);
-      box-shadow:
-        0 0 10px var(--ex-color-primary-alpha-20),
-        inset 0 1px 0 var(--ex-color-white-alpha-10);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: linear-gradient(
-          135deg,
-          var(--ex-color-primary) 0%,
-          var(--ex-color-secondary) 100%
-        );
-        color: var(--ex-button-ink-on-bright);
-        box-shadow:
-          0 0 10px var(--ex-color-primary-alpha-30),
-          0 4px 15px var(--ex-color-primary-alpha-20);
-      }
-    }
+  // 默认、主要、次要三种基础层级必须保持明确区分。
+  &--default {
+    --ex-button-bg: var(--ex-color-bg-secondary);
+    --ex-button-bg-hover: var(--ex-color-bg-hover);
+    --ex-button-bg-active: var(--ex-color-bg-active);
+    --ex-button-fg: var(--ex-color-text-primary);
+    --ex-button-border: var(--ex-color-border-primary);
+    --ex-button-border-hover: var(--ex-color-primary);
   }
 
-  &--secondary,
-  &--default {
-    background: var(--ex-color-bg-secondary);
-    border-color: var(--ex-color-border-primary);
-    color: var(--ex-color-text-primary);
-    box-shadow: 0 0 10px var(--ex-color-secondary-alpha-10);
+  &--primary {
+    --ex-button-bg: linear-gradient(
+      135deg,
+      var(--ex-color-primary) 0%,
+      var(--ex-color-secondary) 100%
+    );
+    --ex-button-bg-hover: linear-gradient(
+      135deg,
+      var(--ex-color-primary-hover) 0%,
+      var(--ex-color-secondary-hover) 100%
+    );
+    --ex-button-bg-active: linear-gradient(
+      135deg,
+      var(--ex-color-primary-active) 0%,
+      var(--ex-color-secondary-active) 100%
+    );
+    --ex-button-fg: var(--ex-button-ink-on-bright);
+    --ex-button-fg-hover: var(--ex-button-ink-on-bright);
+    --ex-button-border: var(--ex-color-primary);
+    --ex-button-border-hover: var(--ex-color-primary-hover);
+    --ex-button-accent: var(--ex-color-primary);
+    --ex-button-soft-bg: var(--ex-color-primary-alpha-20);
+    --ex-button-glow-color: var(--ex-color-primary-alpha-40);
+  }
 
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-bg-hover);
-      border-color: var(--ex-color-primary);
-      box-shadow:
-        var(--ex-shadow-md),
-        0 0 15px var(--ex-color-secondary-alpha-20);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-bg-active);
-      transform: translateY(0);
-    }
-
-    &.ex-button--plain {
-      background: transparent;
-      box-shadow: 0 0 8px var(--ex-color-secondary-alpha-10);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: var(--ex-color-bg-secondary);
-        box-shadow: 0 0 12px var(--ex-color-secondary-alpha-20);
-      }
-    }
+  &--secondary {
+    --ex-button-bg: var(--ex-color-secondary-alpha-10);
+    --ex-button-bg-hover: var(--ex-color-secondary-alpha-20);
+    --ex-button-bg-active: var(--ex-color-secondary-alpha-30);
+    --ex-button-fg: var(--ex-color-secondary);
+    --ex-button-fg-hover: var(--ex-color-secondary-hover);
+    --ex-button-border: var(--ex-color-secondary-alpha-60);
+    --ex-button-border-hover: var(--ex-color-secondary);
+    --ex-button-accent: var(--ex-color-secondary);
+    --ex-button-soft-bg: var(--ex-color-secondary-alpha-20);
+    --ex-button-glow-color: var(--ex-color-secondary-alpha-40);
   }
 
   &--success {
-    background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
-    border-color: var(--ex-color-success);
-    color: var(--ex-button-ink-on-bright);
-    box-shadow:
-      0 0 10px var(--ex-color-success-alpha-30),
-      inset 0 1px 0 var(--ex-color-white-alpha-20);
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(135deg, var(--ex-color-success-hover) 0%, var(--ex-color-success-dark) 100%);
-      border-color: var(--ex-color-success-hover);
-      box-shadow:
-        0 0 16px var(--ex-color-success-alpha-50),
-        0 8px 25px var(--ex-color-success-alpha-40),
-        inset 0 1px 0 var(--ex-color-white-alpha-30);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(135deg, var(--ex-color-success-active) 0%, var(--ex-color-success-darker) 100%);
-      border-color: var(--ex-color-success-active);
-      transform: translateY(0);
-      box-shadow:
-        0 0 15px var(--ex-color-success-alpha-40),
-        0 2px 10px var(--ex-color-success-alpha-20);
-    }
-
-    &.ex-button--plain {
-      background: transparent;
-      color: var(--ex-color-success);
-      border-color: var(--ex-color-success);
-      box-shadow: 0 0 10px var(--ex-color-success-alpha-20);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
-        color: var(--ex-button-ink-on-bright);
-        box-shadow:
-          0 0 10px var(--ex-color-success-alpha-30),
-          0 4px 15px var(--ex-color-success-alpha-20);
-      }
-    }
+    --ex-button-bg: var(--ex-color-success);
+    --ex-button-bg-hover: var(--ex-color-success-hover);
+    --ex-button-bg-active: var(--ex-color-success-active);
+    --ex-button-fg: var(--ex-button-ink-on-bright);
+    --ex-button-fg-hover: var(--ex-button-ink-on-bright);
+    --ex-button-border: var(--ex-color-success);
+    --ex-button-border-hover: var(--ex-color-success-hover);
+    --ex-button-accent: var(--ex-color-success);
+    --ex-button-soft-bg: var(--ex-color-success-alpha-15);
+    --ex-button-glow-color: var(--ex-color-success-alpha-40);
   }
 
   &--warning {
-    background: var(--ex-color-warning);
-    border-color: var(--ex-color-warning);
-    color: var(--ex-button-ink-on-bright);
-    box-shadow:
-      0 0 10px var(--ex-color-warning-alpha-30),
-      inset 0 1px 0 var(--ex-color-white-alpha-20);
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-warning-hover);
-      border-color: var(--ex-color-warning-hover);
-      box-shadow:
-        0 0 16px var(--ex-color-warning-alpha-50),
-        0 8px 25px var(--ex-color-warning-alpha-30),
-        inset 0 1px 0 var(--ex-color-white-alpha-30);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-warning-active);
-      border-color: var(--ex-color-warning-active);
-      transform: translateY(0);
-      box-shadow:
-        0 0 15px var(--ex-color-warning-alpha-40),
-        0 2px 10px var(--ex-color-warning-alpha-20);
-    }
-
-    &.ex-button--plain {
-      background: transparent;
-      color: var(--ex-color-warning);
-      border-color: var(--ex-color-warning);
-      box-shadow: 0 0 10px var(--ex-color-warning-alpha-20);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: var(--ex-color-warning);
-        color: var(--ex-button-ink-on-bright);
-        box-shadow:
-          0 0 10px var(--ex-color-warning-alpha-30),
-          0 4px 15px var(--ex-color-warning-alpha-20);
-      }
-    }
+    --ex-button-bg: var(--ex-color-warning);
+    --ex-button-bg-hover: var(--ex-color-warning-hover);
+    --ex-button-bg-active: var(--ex-color-warning-active);
+    --ex-button-fg: var(--ex-color-text-inverse);
+    --ex-button-fg-hover: var(--ex-color-text-inverse);
+    --ex-button-border: var(--ex-color-warning);
+    --ex-button-border-hover: var(--ex-color-warning-hover);
+    --ex-button-accent: var(--ex-color-warning);
+    --ex-button-soft-bg: var(--ex-color-warning-alpha-15);
+    --ex-button-glow-color: var(--ex-color-warning-alpha-40);
   }
 
   &--danger,
   &--error {
-    background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
-    border-color: var(--ex-color-danger);
-    color: var(--ex-button-ink-on-bright);
-    box-shadow:
-      0 0 10px var(--ex-color-error-alpha-30),
-      inset 0 1px 0 var(--ex-color-white-alpha-20);
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(135deg, var(--ex-color-danger-hover) 0%, var(--ex-color-danger-dark) 100%);
-      border-color: var(--ex-color-danger-hover);
-      box-shadow:
-        0 0 16px var(--ex-color-error-alpha-50),
-        0 8px 25px var(--ex-color-error-alpha-40),
-        inset 0 1px 0 var(--ex-color-white-alpha-30);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: linear-gradient(135deg, var(--ex-color-danger-active) 0%, var(--ex-color-danger-darker) 100%);
-      border-color: var(--ex-color-danger-active);
-      transform: translateY(0);
-      box-shadow:
-        0 0 15px var(--ex-color-error-alpha-40),
-        0 2px 10px var(--ex-color-error-alpha-20);
-    }
-
-    &.ex-button--plain {
-      background: transparent;
-      color: var(--ex-color-danger);
-      border-color: var(--ex-color-danger);
-      box-shadow: 0 0 10px var(--ex-color-error-alpha-20);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
-        color: var(--ex-button-ink-on-bright);
-        box-shadow:
-          0 0 10px var(--ex-color-error-alpha-30),
-          0 4px 15px var(--ex-color-error-alpha-20);
-      }
-    }
+    --ex-button-bg: var(--ex-color-danger);
+    --ex-button-bg-hover: var(--ex-color-danger-hover);
+    --ex-button-bg-active: var(--ex-color-danger-active);
+    --ex-button-fg: var(--ex-button-ink-on-bright);
+    --ex-button-fg-hover: var(--ex-button-ink-on-bright);
+    --ex-button-border: var(--ex-color-danger);
+    --ex-button-border-hover: var(--ex-color-danger-hover);
+    --ex-button-accent: var(--ex-color-danger);
+    --ex-button-soft-bg: var(--ex-color-error-alpha-15);
+    --ex-button-glow-color: var(--ex-color-error-alpha-40);
   }
 
   &--info {
-    background: var(--ex-color-info);
-    border-color: var(--ex-color-info);
-    color: var(--ex-button-ink-on-bright);
-    box-shadow:
-      0 0 10px var(--ex-color-info-alpha-30),
-      inset 0 1px 0 var(--ex-color-white-alpha-20);
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-info-hover);
-      border-color: var(--ex-color-info-hover);
-      box-shadow:
-        0 0 16px var(--ex-color-info-alpha-40),
-        0 8px 25px var(--ex-color-info-alpha-30),
-        inset 0 1px 0 var(--ex-color-white-alpha-30);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-info-active);
-      border-color: var(--ex-color-info-active);
-      transform: translateY(0);
-      box-shadow:
-        0 0 15px var(--ex-color-info-alpha-40),
-        0 2px 10px var(--ex-color-info-alpha-20);
-    }
-
-    &.ex-button--plain {
-      background: transparent;
-      color: var(--ex-color-info);
-      border-color: var(--ex-color-info);
-      box-shadow: 0 0 10px var(--ex-color-info-alpha-20);
-
-      &:hover:not(:disabled):not(.ex-button--loading) {
-        background: var(--ex-color-info);
-        color: var(--ex-button-ink-on-bright);
-        box-shadow:
-          0 0 10px var(--ex-color-info-alpha-30),
-          0 4px 15px var(--ex-color-info-alpha-20);
-      }
-    }
+    --ex-button-bg: var(--ex-color-info);
+    --ex-button-bg-hover: var(--ex-color-info-hover);
+    --ex-button-bg-active: var(--ex-color-info-active);
+    --ex-button-fg: var(--ex-button-ink-on-bright);
+    --ex-button-fg-hover: var(--ex-button-ink-on-bright);
+    --ex-button-border: var(--ex-color-info);
+    --ex-button-border-hover: var(--ex-color-info-hover);
+    --ex-button-accent: var(--ex-color-info);
+    --ex-button-soft-bg: var(--ex-color-info-alpha-20);
+    --ex-button-glow-color: var(--ex-color-info-alpha-40);
   }
 
   &--ghost {
-    color: var(--ex-color-text-primary);
-    background: transparent;
-    border-color: var(--ex-color-border-primary);
-    box-shadow: none;
+    --ex-button-bg: transparent;
+    --ex-button-bg-hover: var(--ex-color-bg-hover);
+    --ex-button-bg-active: var(--ex-color-bg-active);
+    --ex-button-fg: var(--ex-color-text-primary);
+    --ex-button-fg-hover: var(--ex-color-primary);
+    --ex-button-border: var(--ex-color-border-primary);
+    --ex-button-border-hover: var(--ex-color-primary);
+  }
 
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      color: var(--ex-color-primary);
-      background: var(--ex-color-bg-hover);
-      border-color: var(--ex-color-primary);
-    }
+  &--text,
+  &--link {
+    --ex-button-bg: transparent;
+    --ex-button-bg-hover: var(--ex-color-primary-alpha-10);
+    --ex-button-bg-active: var(--ex-color-primary-alpha-20);
+    --ex-button-fg: var(--ex-color-primary);
+    --ex-button-fg-hover: var(--ex-color-primary-hover);
+    --ex-button-border: transparent;
+    --ex-button-border-hover: transparent;
 
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-bg-active);
-    }
+    overflow: visible;
   }
 
   &--text {
-    background: transparent;
-    border-color: transparent;
-    color: var(--ex-color-primary);
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-bg-hover);
-      color: var(--ex-color-primary-hover);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      background: var(--ex-color-bg-active);
-      color: var(--ex-color-primary-active);
-    }
   }
 
   &--link {
-    background: transparent;
-    border-color: transparent;
-    color: var(--ex-color-primary);
     padding: 0;
     text-decoration: underline;
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      color: var(--ex-color-primary-hover);
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      color: var(--ex-color-primary-active);
-    }
+    text-underline-offset: 3px;
   }
 
-  // 尺寸样式
+  // 朴素样式保持原类型的强调色，但不再在 hover 时反转成不可读文字。
+  &--plain:not(.ex-button--text):not(.ex-button--link) {
+    color: var(--ex-button-accent);
+    background: transparent;
+    border-color: var(--ex-button-accent);
+  }
+
+  &--plain:not(.ex-button--text):not(.ex-button--link):active:not(:disabled) {
+    color: var(--ex-button-accent);
+    background: var(--ex-button-soft-bg);
+  }
+
   &--small {
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
     font-size: var(--ex-text-sm);
@@ -458,61 +329,93 @@
     }
   }
 
-  // 形状样式：round = 胶囊（药丸）形，语义与 default(8px)/circle 区分清晰
   &--round {
     border-radius: var(--ex-radius-full);
   }
 
   &--circle {
-    border-radius: 50%;
     width: 36px;
     height: 36px;
+    flex: none;
     padding: 0;
+    border-radius: 50%;
 
     .ex-button__content {
-      display: block;
-      max-width: calc(100% - 4px);
+      width: 1em;
+      max-width: 1em;
       overflow: hidden;
       line-height: 1;
-      text-overflow: clip;
+      white-space: nowrap;
     }
   }
+}
 
-  // 响应式设- 移动端优
-  @media (max-width: 768px) {
-    &:not(.ex-button--circle) {
-      min-height: 44px; // 移动端最小触摸目
-    }
-
-    &--small:not(.ex-button--circle) {
-      min-height: 36px;
-    }
-
-    &--large:not(.ex-button--circle) {
-      min-height: 52px;
-    }
+@media (hover: hover) {
+  .ex-button:hover:not(:disabled):not(.ex-button--loading) {
+    color: var(--ex-button-fg-hover);
+    background: var(--ex-button-bg-hover);
+    border-color: var(--ex-button-border-hover);
+    transform: translateY(-1px);
   }
 
-  // 无障碍支
-  @media (prefers-reduced-motion: reduce) {
+  .ex-button--plain:hover:not(:disabled):not(.ex-button--loading) {
+    color: var(--ex-button-accent);
+    background: var(--ex-button-soft-bg);
+  }
+
+  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading) {
+    filter: drop-shadow(0 0 9px var(--ex-button-glow-color));
+  }
+
+  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading)::before {
+    transform: translateX(140%);
+  }
+
+  .ex-button--glow.ex-button--text:hover,
+  .ex-button--glow.ex-button--link:hover {
+    text-shadow: 0 0 10px var(--ex-button-glow-color);
+  }
+}
+
+@media (max-width: 768px) {
+  .ex-button:not(.ex-button--circle) {
+    min-height: 44px;
+  }
+
+  .ex-button--small:not(.ex-button--circle) {
+    min-height: 36px;
+  }
+
+  .ex-button--large:not(.ex-button--circle) {
+    min-height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-button,
+  .ex-button::before {
     transition: none;
-
-    &:hover:not(:disabled):not(.ex-button--loading) {
-      transform: none;
-    }
-
-    &:active:not(:disabled):not(.ex-button--loading) {
-      transform: none;
-    }
   }
 
-  // 高对比度模式支持
-  @media (prefers-contrast: high) {
-    border-width: 2px;
+  .ex-button:hover,
+  .ex-button:active {
+    transform: none;
+  }
 
-    &:focus-visible {
-      outline-width: 3px;
-    }
+  .ex-button__loading-spinner {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-button {
+    border-width: 2px;
+    filter: none;
+  }
+
+  .ex-button:focus-visible {
+    outline-width: 3px;
+    outline-color: currentColor;
   }
 }
 

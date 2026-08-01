@@ -1,375 +1,174 @@
 # Button 按钮
 
-按钮用于触发一个操作，如提交表单。
+用于触发即时操作或提交表单。
 
-## 基础用法
+## 按钮层级
 
-基础的按钮用法。
+默认、主要和次要按钮具有明确的视觉层级，悬停时保持文字对比度。
 
-<script setup>
-</script>
-
-<div class="demo-container">
-  <ExButton>默认按钮</ExButton>
-  <ExButton type="primary">主要按钮</ExButton>
-  <ExButton type="secondary">次要按钮</ExButton>
-  <ExButton type="success">成功按钮</ExButton>
-  <ExButton type="warning">警告按钮</ExButton>
-  <ExButton type="danger">危险按钮</ExButton>
-  <ExButton type="info">信息按钮</ExButton>
-  <ExButton shape="circle">用户</ExButton>
+::: raw
+<div class="vp-raw demo-container button-row">
+  <ex-button type="default">默认操作</ex-button>
+  <ex-button type="primary">主要操作</ex-button>
+  <ex-button type="secondary">次要操作</ex-button>
 </div>
+:::
 
 ```vue
-<template>
-  <ExButton>默认按钮</ExButton>
-  <ExButton type="primary">主要按钮</ExButton>
-  <ExButton type="secondary">次要按钮</ExButton>
-  <ExButton type="success">成功按钮</ExButton>
-  <ExButton type="warning">警告按钮</ExButton>
-  <ExButton type="danger">危险按钮</ExButton>
-  <ExButton type="info">信息按钮</ExButton>
-</template>
+<ex-button type="default">默认操作</ex-button>
+<ex-button type="primary">主要操作</ex-button>
+<ex-button type="secondary">次要操作</ex-button>
+```
+
+## 状态类型
+
+::: raw
+<div class="vp-raw demo-container button-row">
+  <ex-button type="success">通过</ex-button>
+  <ex-button type="warning">待确认</ex-button>
+  <ex-button type="danger">删除</ex-button>
+  <ex-button type="info">详情</ex-button>
+  <ex-button type="ghost">幽灵按钮</ex-button>
+  <ex-button type="text">文本按钮</ex-button>
+  <ex-button type="link">链接按钮</ex-button>
+</div>
+:::
+
+## 光效
+
+光效默认开启。设置 `:glow="false"` 后，悬停只保留颜色和位移反馈。
+
+::: raw
+<div class="vp-raw demo-container button-row">
+  <ex-button type="primary">默认光效</ex-button>
+  <ex-button type="primary" :glow="false">关闭光效</ex-button>
+  <ex-button type="secondary">次要按钮光效</ex-button>
+  <ex-button type="secondary" :glow="false">次要按钮无光效</ex-button>
+</div>
+:::
+
+```vue
+<ex-button type="primary">默认光效</ex-button>
+<ex-button type="primary" :glow="false">关闭光效</ex-button>
 ```
 
 ## 朴素按钮
 
-设置 `plain` 属性可得到朴素按钮：默认以浅色/透明底 + 主题色描边与文字呈现；悬停时填充为对应主题色作为强调。适合在深色界面中作次级操作按钮。
-
-<div class="demo-container">
-  <ExButton plain>朴素按钮</ExButton>
-  <ExButton type="primary" plain>主要按钮</ExButton>
-  <ExButton type="success" plain>成功按钮</ExButton>
-  <ExButton type="warning" plain>警告按钮</ExButton>
-  <ExButton type="danger" plain>危险按钮</ExButton>
-  <ExButton type="info" plain>信息按钮</ExButton>
+::: raw
+<div class="vp-raw demo-container button-row">
+  <ex-button type="primary" plain>主要</ex-button>
+  <ex-button type="secondary" plain>次要</ex-button>
+  <ex-button type="success" plain>成功</ex-button>
+  <ex-button type="warning" plain>警告</ex-button>
+  <ex-button type="danger" plain>危险</ex-button>
 </div>
+:::
+
+## 尺寸与形状
+
+圆形按钮只展示默认插槽纯文本的第一个完整字形，并使用完整文本作为无障碍名称。
+
+::: raw
+<div class="vp-raw demo-container button-row button-row--center">
+  <ex-button size="small">小型</ex-button>
+  <ex-button size="medium">中型</ex-button>
+  <ex-button size="large">大型</ex-button>
+  <ex-button shape="round">圆角按钮</ex-button>
+  <ex-button shape="circle">发</ex-button>
+  <ex-button shape="circle">审批</ex-button>
+  <ex-button shape="circle" aria-label="搜索">
+    <ex-icon icon="search-line" />
+  </ex-button>
+</div>
+:::
 
 ```vue
-<template>
-  <ExButton plain>朴素按钮</ExButton>
-  <ExButton type="primary" plain>主要按钮</ExButton>
-  <ExButton type="success" plain>成功按钮</ExButton>
-  <ExButton type="warning" plain>警告按钮</ExButton>
-  <ExButton type="danger" plain>危险按钮</ExButton>
-  <ExButton type="info" plain>信息按钮</ExButton>
-</template>
+<ex-button shape="circle">审批</ex-button>
+<ex-button shape="circle" aria-label="搜索">
+  <ex-icon icon="search-line" />
+</ex-button>
 ```
 
-## 圆角按钮
+## 图标、加载与禁用
 
-<div class="demo-container">
-  <ExButton shape="round">圆角按钮</ExButton>
-  <ExButton type="primary" shape="round">主要按钮</ExButton>
-  <ExButton type="success" shape="round">成功按钮</ExButton>
-  <ExButton type="warning" shape="round">警告按钮</ExButton>
-  <ExButton type="danger" shape="round">危险按钮</ExButton>
-  <ExButton type="info" shape="round">信息按钮</ExButton>
+::: raw
+<div class="vp-raw demo-container button-row">
+  <ex-button type="primary">
+    <template #prefix><ex-icon icon="add-line" /></template>
+    新建客户
+  </ex-button>
+  <ex-button type="secondary">
+    导出报表
+    <template #suffix><ex-icon icon="download-2-line" /></template>
+  </ex-button>
+  <ex-button loading>正在提交</ex-button>
+  <ex-button disabled>不可操作</ex-button>
 </div>
-
-```vue
-<template>
-  <ExButton shape="round">圆角按钮</ExButton>
-  <ExButton type="primary" shape="round">主要按钮</ExButton>
-  <ExButton type="success" shape="round">成功按钮</ExButton>
-  <ExButton type="warning" shape="round">警告按钮</ExButton>
-  <ExButton type="danger" shape="round">危险按钮</ExButton>
-  <ExButton type="info" shape="round">信息按钮</ExButton>
-</template>
-```
-
-## 圆形按钮
-
-<div class="demo-container">
-  <!-- 圆形图标按钮 -->
-  <ExButton shape="circle" type="primary">
-    <template #prefix>
-      <ex-icon icon="star-line" />
-    </template>
-  </ExButton>
-  <ExButton shape="circle" type="success">
-    <template #prefix>
-      <ex-icon icon="star-line" />
-    </template>
-  </ExButton>
-  <ExButton shape="circle" type="warning">
-    <template #prefix>
-      <ex-icon icon="star-line" />
-    </template>
-  </ExButton>
-  <ExButton shape="circle" type="danger">
-    <template #prefix>
-      <ex-icon icon="delete-bin-line" />
-    </template>
-  </ExButton>
-  
-  <!-- 圆形文字按钮 -->
-  <ExButton shape="circle" type="primary">用户</ExButton>
-  <ExButton shape="circle" type="success">管理员</ExButton>
-  <ExButton shape="circle" type="warning">游客</ExButton>
-  <ExButton shape="circle" type="danger">删除</ExButton>
-</div>
-
-```vue
-<template>
-  <!-- 圆形图标按钮 -->
-  <ExButton shape="circle" type="primary">
-    <template #prefix>
-      <ex-icon icon="star-line" />
-    </template>
-  </ExButton>
-  <ExButton shape="circle" type="success">
-    <template #prefix>
-      <ex-icon icon="star-line" />
-    </template>
-  </ExButton>
-
-  <!-- 圆形文字按钮 -->
-  <ExButton shape="circle" type="primary">用户</ExButton>
-  <ExButton shape="circle" type="success">管理员</ExButton>
-</template>
-```
-
-## 图标按钮
-
-带图标的按钮可增强辨识度（有文字）或节省空间（无文字）。使用插槽方式添加 Iconify API 图标。
-
-<div class="demo-container">
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="search-line" />
-    </template>
-    搜索
-  </ExButton>
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="file-copy-line" />
-    </template>
-    编辑
-  </ExButton>
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="check-line" />
-    </template>
-    确认
-  </ExButton>
-  <ExButton type="primary">
-    <template #suffix>
-      <ex-icon icon="information-line" />
-    </template>
-    消息
-  </ExButton>
-  <ExButton type="danger">
-    <template #prefix>
-      <ex-icon icon="delete-bin-line" />
-    </template>
-    删除
-  </ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="search-line" />
-    </template>
-    搜索
-  </ExButton>
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="file-copy-line" />
-    </template>
-    编辑
-  </ExButton>
-  <ExButton type="primary">
-    <template #prefix>
-      <ex-icon icon="check-line" />
-    </template>
-    确认
-  </ExButton>
-  <ExButton type="primary">
-    <template #suffix>
-      <ex-icon icon="information-line" />
-    </template>
-    消息
-  </ExButton>
-  <ExButton type="danger">
-    <template #prefix>
-      <ex-icon icon="delete-bin-line" />
-    </template>
-    删除
-  </ExButton>
-</template>
-```
-
-## 禁用状态
-
-按钮不可用状态。
-
-<div class="demo-container">
-  <ExButton disabled>默认按钮</ExButton>
-  <ExButton type="primary" disabled>主要按钮</ExButton>
-  <ExButton type="success" disabled>成功按钮</ExButton>
-  <ExButton type="warning" disabled>警告按钮</ExButton>
-  <ExButton type="danger" disabled>危险按钮</ExButton>
-  <ExButton type="info" disabled>信息按钮</ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton disabled>默认按钮</ExButton>
-  <ExButton type="primary" disabled>主要按钮</ExButton>
-  <ExButton type="success" disabled>成功按钮</ExButton>
-  <ExButton type="warning" disabled>警告按钮</ExButton>
-  <ExButton type="danger" disabled>危险按钮</ExButton>
-  <ExButton type="info" disabled>信息按钮</ExButton>
-</template>
-```
-
-## 文字按钮
-
-没有边框和背景色的按钮。
-
-<div class="demo-container">
-  <ExButton type="text">文字按钮</ExButton>
-  <ExButton type="text" disabled>文字按钮</ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton type="text">文字按钮</ExButton>
-  <ExButton type="text" disabled>文字按钮</ExButton>
-</template>
-```
-
-## 链接按钮
-
-链接样式的按钮。
-
-<div class="demo-container">
-  <ExButton type="link">链接按钮</ExButton>
-  <ExButton type="link" disabled>链接按钮</ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton type="link">链接按钮</ExButton>
-  <ExButton type="link" disabled>链接按钮</ExButton>
-</template>
-```
-
-## 不同尺寸
-
-Button 组件提供除了默认值以外的三种尺寸，可以在不同场景下选择合适的按钮尺寸。
-
-<div class="demo-container">
-  <ExButton size="large">大型按钮</ExButton>
-  <ExButton>默认按钮</ExButton>
-  <ExButton size="small">小型按钮</ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton size="large">大型按钮</ExButton>
-  <ExButton>默认按钮</ExButton>
-  <ExButton size="small">小型按钮</ExButton>
-</template>
-```
-
-## 加载中
-
-点击按钮后进行数据加载操作，在按钮上显示加载状态。
-
-<div class="demo-container">
-  <ExButton type="primary" loading>加载中</ExButton>
-  <ExButton type="primary" loading>
-    <template #loading>
-      <ex-icon icon="loader-4-line" spin />
-    </template>
-    自定义加载图标
-  </ExButton>
-</div>
-
-```vue
-<template>
-  <ExButton type="primary" loading>加载中</ExButton>
-  <ExButton type="primary" loading>
-    <template #loading>
-      <ex-icon icon="loader-4-line" spin />
-    </template>
-    自定义加载图标
-  </ExButton>
-</template>
-```
+:::
 
 ## 块级按钮
 
-`block` 属性将使按钮适合其父宽度。
-
-<div class="demo-container">
-  <ExButton type="primary" block>块级按钮</ExButton>
+::: raw
+<div class="vp-raw demo-container button-block-demo">
+  <ex-button type="primary" block>保存并继续</ex-button>
 </div>
-
-```vue
-<template>
-  <ExButton type="primary" block>块级按钮</ExButton>
-</template>
-```
+:::
 
 ## API
 
 ### Props
 
-| 参数        | 说明           | 类型    | 可选值                                                                | 默认值  |
-| ----------- | -------------- | ------- | --------------------------------------------------------------------- | ------- |
-| type        | 类型           | string  | primary / secondary / success / warning / danger / info / text / link | primary |
-| size        | 尺寸           | string  | large / medium / small                                                | medium  |
-| shape       | 形状           | string  | default / round / circle                                              | default |
-| plain       | 是否朴素按钮   | boolean | —                                                                     | false   |
-| loading     | 是否加载中状态 | boolean | —                                                                     | false   |
-| disabled    | 是否禁用状态   | boolean | —                                                                     | false   |
-| autofocus   | 是否默认聚焦   | boolean | —                                                                     | false   |
-| native-type | 原生 type 属性 | string  | button / submit / reset                                               | button  |
-| block       | 是否为块级按钮 | boolean | —                                                                     | false   |
-| aria-label  | 无障碍标签     | string  | —                                                                     | —       |
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| `type` | 按钮类型 | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default` |
+| `size` | 尺寸 | `small \| medium \| large` | 继承全局尺寸 |
+| `shape` | 形状 | `default \| round \| circle` | `default` |
+| `plain` | 是否使用朴素样式 | `boolean` | `false` |
+| `glow` | 是否启用统一光效 | `boolean` | `true` |
+| `disabled` | 是否禁用 | `boolean` | `false` |
+| `loading` | 是否加载中 | `boolean` | `false` |
+| `block` | 是否占满父容器宽度 | `boolean` | `false` |
+| `nativeType` | 原生按钮类型 | `button \| submit \| reset` | `button` |
+| `autofocus` | 是否自动聚焦 | `boolean` | `false` |
+| `ariaLabel` | 无障碍名称 | `string` | — |
 
 ### Events
 
-| 事件名 | 说明       | 回调参数            |
-| ------ | ---------- | ------------------- |
-| click  | 点击时触发 | (event: MouseEvent) |
-| focus  | 聚焦时触发 | (event: FocusEvent) |
-| blur   | 失焦时触发 | (event: FocusEvent) |
-
-### Methods
-
-| 方法名 | 说明           | 参数 |
-| ------ | -------------- | ---- |
-| focus  | 使按钮获取焦点 | —    |
-| blur   | 使按钮失去焦点 | —    |
+| 事件名 | 参数 |
+| --- | --- |
+| `click` | `(event: MouseEvent)` |
+| `focus` | `(event: FocusEvent)` |
+| `blur` | `(event: FocusEvent)` |
 
 ### Slots
 
-| 插槽名  | 说明             |
-| ------- | ---------------- |
-| default | 按钮内容         |
-| prefix  | 前缀图标         |
-| suffix  | 后缀图标         |
-| loading | 自定义加载中图标 |
+| 名称 | 说明 |
+| --- | --- |
+| `default` | 按钮内容 |
+| `prefix` | 前置图标 |
+| `suffix` | 后置图标 |
+| `loading` | 自定义加载图标 |
+
+### Exposes
+
+| 方法 | 类型 |
+| --- | --- |
+| `focus` | `() => void` |
+| `blur` | `() => void` |
+| `getElement` | `() => HTMLButtonElement \| null` |
 
 <style scoped>
-.demo-container {
-  padding: 16px;
-  background: var(--ex-color-bg-secondary);
-  border-radius: var(--ex-radius-base);
-  margin: 16px 0;
+.button-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
+}
+
+.button-row--center {
   align-items: center;
 }
 
-.demo-container .ex-button {
-  margin: 0;
+.button-block-demo {
+  max-width: 480px;
 }
 </style>

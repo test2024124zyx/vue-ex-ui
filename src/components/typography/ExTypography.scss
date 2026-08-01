@@ -1,9 +1,4 @@
-// ExTypography 组件样式
-// Typography Component Styles
-
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use 'sass:map';
 
 .ex-typography {
   margin: 0;
@@ -12,7 +7,7 @@
   font-family: var(--ex-font-secondary);
   line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
-  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
   // ============================================================================
   // 变体样式 (Variant Styles)
@@ -65,17 +60,33 @@
   // 尺寸样式 (Size Styles)
   // ============================================================================
 
-  &--xs { font-size: var(--ex-text-xs); }
-  &--sm { font-size: var(--ex-text-sm); }
-  &--md { font-size: var(--ex-text-base); }
-  &--lg { font-size: var(--ex-text-lg); }
-  &--xl { font-size: var(--ex-text-xl); }
-  &--2xl { font-size: var(--ex-text-2xl); }
-  &--3xl { font-size: var(--ex-text-3xl); }
-  &--4xl { font-size: var(--ex-text-4xl); }
+  &--xs {
+    font-size: var(--ex-text-xs);
+  }
+  &--sm {
+    font-size: var(--ex-text-sm);
+  }
+  &--md {
+    font-size: var(--ex-text-base);
+  }
+  &--lg {
+    font-size: var(--ex-text-lg);
+  }
+  &--xl {
+    font-size: var(--ex-text-xl);
+  }
+  &--2xl {
+    font-size: var(--ex-text-2xl);
+  }
+  &--3xl {
+    font-size: var(--ex-text-3xl);
+  }
+  &--4xl {
+    font-size: var(--ex-text-4xl);
+  }
 
   // ============================================================================
-  // 修饰符样�?(Modifier Styles)
+  // 文本效果与排版变体相互独立，可应用于任意标签和文字层级。
   // ============================================================================
 
   &--truncate {
@@ -85,17 +96,22 @@
   }
 
   &--gradient {
-    background: var(--ex-gradient-primary);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: transparent;
+    background-image: var(
+      --ex-typography-gradient,
+      linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary))
+    );
+    background-repeat: no-repeat;
+    background-position: 0% 50%;
     background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     animation: gradient-shift 3s ease-in-out infinite;
   }
 
   &--glow {
-    @include neon-glow(var(--ex-color-primary), 0.8);
-    text-shadow: 
+    text-shadow:
       0 0 5px currentColor,
       0 0 10px currentColor,
       0 0 15px currentColor;
@@ -121,25 +137,25 @@
   }
 
   // ============================================================================
-  // 响应式设�?(Responsive Design)
+  // 响应式排版。
   // ============================================================================
 
   @include respond-to(xs) {
     &--display {
       font-size: var(--ex-text-3xl);
     }
-    
+
     &--heading {
       font-size: var(--ex-text-2xl);
     }
-    
+
     &--title {
       font-size: var(--ex-text-lg);
     }
   }
 
   // ============================================================================
-  // 无障碍支�?(Accessibility)
+  // 减少动态效果与高对比度回退。
   // ============================================================================
 
   @media (prefers-reduced-motion: reduce) {
@@ -151,25 +167,21 @@
   // 高对比度模式
   @media (prefers-contrast: high) {
     &--gradient {
-      background: none;
-      -webkit-text-fill-color: unset;
       color: var(--ex-color-text-primary);
+      background-image: none;
+      -webkit-text-fill-color: unset;
     }
-    
+
     &--glow {
       text-shadow: none;
-      box-shadow: none;
     }
   }
 }
 
 // ============================================================================
-// 动画定义 (Animation Definitions)
-// ============================================================================
-
-// 渐变动画
 @keyframes gradient-shift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {

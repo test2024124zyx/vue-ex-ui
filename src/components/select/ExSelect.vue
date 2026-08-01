@@ -1,5 +1,9 @@
 <template>
-  <div ref="selectRef" :class="selectClasses" :style="selectStyles">
+  <div
+    ref="selectRef"
+    :class="selectClasses"
+    :style="selectStyles"
+  >
     <!-- 选择器触发器 -->
     <div
       ref="triggerRef"
@@ -17,7 +21,11 @@
       <div class="ex-select__value">
         <!-- 多选：标签 -->
         <template v-if="multiple">
-          <span v-for="tag in displayTags" :key="tag.value" class="ex-select__tag">
+          <span
+            v-for="tag in displayTags"
+            :key="tag.value"
+            class="ex-select__tag"
+          >
             <span class="ex-select__tag-label">{{ tag.label }}</span>
             <span
               v-if="!disabled"
@@ -28,7 +36,10 @@
               ×
             </span>
           </span>
-          <span v-if="collapsedCount > 0" class="ex-select__tag ex-select__tag--count">
+          <span
+            v-if="collapsedCount > 0"
+            class="ex-select__tag ex-select__tag--count"
+          >
             +{{ collapsedCount }}
           </span>
           <input
@@ -44,14 +55,20 @@
             @input="handleSearch"
             @keydown="handleKeydown"
           />
-          <span v-else-if="selectedValues.length === 0" class="ex-select__placeholder">
+          <span
+            v-else-if="selectedValues.length === 0"
+            class="ex-select__placeholder"
+          >
             {{ placeholder }}
           </span>
         </template>
 
         <!-- 单选 -->
         <template v-else>
-          <span v-if="selectedOption" class="ex-select__label">
+          <span
+            v-if="selectedOption"
+            class="ex-select__label"
+          >
             {{ selectedOption.label }}
           </span>
           <input
@@ -67,7 +84,10 @@
             @input="handleSearch"
             @keydown="handleKeydown"
           />
-          <span v-else class="ex-select__placeholder">
+          <span
+            v-else
+            class="ex-select__placeholder"
+          >
             {{ placeholder }}
           </span>
         </template>
@@ -76,18 +96,36 @@
       <!-- 右侧图标 -->
       <div class="ex-select__suffix">
         <!-- 清空按钮 -->
-        <span v-if="showClearIcon" class="ex-select__clear" @click.stop="handleClear">
-          <svg viewBox="0 0 1024 1024" width="14" height="14">
+        <button
+          v-if="showClearIcon"
+          type="button"
+          class="ex-select__clear"
+          :aria-label="t('clear')"
+          @mousedown.prevent
+          @click.stop="handleClear"
+        >
+          <svg
+            viewBox="0 0 1024 1024"
+            width="14"
+            height="14"
+          >
             <path
               d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm165.4 618.2l-66-.3L512 563.4l-99.3 118.4-66.1.3c-4.4 0-8-3.5-8-8 0-1.9.7-3.7 1.9-5.2l130.1-155L340.5 359a8.32 8.32 0 01-1.9-5.2c0-4.4 3.6-8 8-8l66.1.3L512 464.6l99.3-118.4 66-.3c4.4 0 8 3.5 8 8 0 1.9-.7 3.7-1.9 5.2L553.5 514l130 155c1.2 1.5 1.9 3.3 1.9 5.2 0 4.4-3.6 8-8 8z"
               fill="currentColor"
             />
           </svg>
-        </span>
+        </button>
 
         <!-- 下拉箭头 -->
-        <span class="ex-select__arrow" :class="{ 'is-reverse': dropdownVisible }">
-          <svg viewBox="0 0 1024 1024" width="14" height="14">
+        <span
+          class="ex-select__arrow"
+          :class="{ 'is-reverse': dropdownVisible }"
+        >
+          <svg
+            viewBox="0 0 1024 1024"
+            width="14"
+            height="14"
+          >
             <path
               d="M884 256h-75c-5.1 0-9.9 2.5-12.9 6.6L512 654.2 227.9 262.6c-3-4.1-7.8-6.6-12.9-6.6h-75c-6.5 0-10.3 7.4-6.5 12.7l352.6 486.1c12.8 17.6 39 17.6 51.7 0l352.6-486.1c3.9-5.3.1-12.7-6.4-12.7z"
               fill="currentColor"
@@ -139,10 +177,20 @@
             </template>
           </ExVirtualList>
 
-          <ul v-else class="ex-select__options" role="listbox">
-            <template v-for="(item, index) in filteredOptions" :key="index">
+          <ul
+            v-else
+            class="ex-select__options"
+            role="listbox"
+          >
+            <template
+              v-for="(item, index) in filteredOptions"
+              :key="index"
+            >
               <!-- 分组标题 -->
-              <li v-if="isGroup(item)" class="ex-select__group">
+              <li
+                v-if="isGroup(item)"
+                class="ex-select__group"
+              >
                 {{ item.label }}
               </li>
 
@@ -187,12 +235,18 @@
             </template>
 
             <!-- 加载中（远程搜索） -->
-            <li v-if="loading" class="ex-select__loading">
+            <li
+              v-if="loading"
+              class="ex-select__loading"
+            >
               {{ t('loading') }}
             </li>
 
             <!-- 无数据 -->
-            <li v-else-if="filteredOptions.length === 0" class="ex-select__empty">
+            <li
+              v-else-if="filteredOptions.length === 0"
+              class="ex-select__empty"
+            >
               {{ t('noData') }}
             </li>
           </ul>
@@ -359,7 +413,8 @@ const collapsedCount = computed(() => selectedOptions.value.length - displayTags
 // 显示清空图标
 const showClearIcon = computed(() => {
   if (!props.clearable || props.disabled) return false;
-  return props.multiple ? selectedValues.value.length > 0 : props.modelValue != null;
+  // 只有界面上存在真实选中内容时才显示清空入口，避免空值或失效值出现假操作。
+  return props.multiple ? selectedOptions.value.length > 0 : selectedOption.value !== null;
 });
 
 // 工具函数

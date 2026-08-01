@@ -1,364 +1,245 @@
-# Select 选择器
+# Select 下拉选择器
 
-当选项过多时，使用下拉菜单展示并选择内容。
-
-## 基础用法
-
-基础的选择器用法。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value1"
-    :options="basicOptions"
-    placeholder="请选择"
-  />
-</div>
-
-```vue
-<template>
-  <ExSelect v-model="value" :options="options" placeholder="请选择" />
-</template>
+用于从选项集合中选择一个或多个值。
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 
-const value = ref('');
-const options = [
-  { value: 'option1', label: '选项一' },
-  { value: 'option2', label: '选项二' },
-  { value: 'option3', label: '选项三' },
-  { value: 'option4', label: '选项四' },
-];
+const department = ref(null)
+const selectedStatus = ref('active')
+const members = ref(['lin', 'zhou'])
+const searchable = ref(null)
+const longValue = ref(null)
+const remoteValue = ref(null)
+const virtualValue = ref(null)
+
+const departmentOptions = [
+  { value: 'product', label: '产品中心', keywords: ['chanpin'] },
+  { value: 'design', label: '设计中心', keywords: ['sheji'] },
+  { value: 'engineering', label: '研发中心', keywords: ['yanfa'] },
+  { value: 'sales', label: '销售中心', keywords: ['xiaoshou'] },
+  { value: 'finance', label: '财务中心', disabled: true }
+]
+
+const statusOptions = [
+  { value: 'active', label: '进行中' },
+  { value: 'pending', label: '待审核' },
+  { value: 'closed', label: '已结束' }
+]
+
+const memberOptions = [
+  { value: 'lin', label: '林知远' },
+  { value: 'zhou', label: '周予安' },
+  { value: 'chen', label: '陈嘉树' },
+  { value: 'xu', label: '许清和' },
+  { value: 'song', label: '宋时雨' }
+]
+
+const longOptions = Array.from({ length: 36 }, (_, index) => ({
+  value: index + 1,
+  label: `第 ${String(index + 1).padStart(2, '0')} 个服务区域`
+}))
+
+const remoteSource = [
+  { value: 'shanghai', label: '上海客户成功中心' },
+  { value: 'shenzhen', label: '深圳交付中心' },
+  { value: 'hangzhou', label: '杭州研发中心' },
+  { value: 'chengdu', label: '成都运营中心' }
+]
+const remoteOptions = ref(remoteSource)
+const handleRemoteSearch = query => {
+  const keyword = query.trim().toLowerCase()
+  remoteOptions.value = keyword
+    ? remoteSource.filter(option => option.label.toLowerCase().includes(keyword))
+    : remoteSource
+}
+
+const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
+  value: index,
+  label: `客户档案 ${String(index + 1).padStart(4, '0')}`
+}))
 </script>
-```
 
-## 不同尺寸
+## 基础选择
 
-提供三种尺寸：small、medium（默认）、large。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value2"
-    :options="basicOptions"
-    size="small"
-    placeholder="小型选择器"
+::: raw
+<div class="vp-raw demo-container select-row">
+  <ex-select
+    v-model="department"
+    :options="departmentOptions"
+    placeholder="选择所属部门"
   />
-  <ExSelect
-    v-model="value3"
-    :options="basicOptions"
-    size="medium"
-    placeholder="中型选择器"
-  />
-  <ExSelect
-    v-model="value4"
-    :options="basicOptions"
-    size="large"
-    placeholder="大型选择器"
-  />
-</div>
-
-```vue
-<template>
-  <ExSelect size="small" placeholder="小型" />
-  <ExSelect size="medium" placeholder="中型" />
-  <ExSelect size="large" placeholder="大型" />
-</template>
-```
-
-## 可清空
-
-包含清空按钮，可将选择器清空为初始状态。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value5"
-    :options="basicOptions"
+  <ex-select
+    v-model="selectedStatus"
+    :options="statusOptions"
+    placeholder="选择状态"
     clearable
-    placeholder="可清空的选择器"
   />
 </div>
+:::
+
+清空按钮只在存在有效选中项时显示。
 
 ```vue
-<template>
-  <ExSelect v-model="value" :options="options" clearable placeholder="可清空的选择器" />
-</template>
+<ex-select v-model="department" :options="departmentOptions" placeholder="选择所属部门" />
+<ex-select v-model="status" :options="statusOptions" clearable />
 ```
 
-## 可搜索
+## 搜索与尺寸
 
-可以利用搜索功能快速查找选项。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value6"
-    :options="searchOptions"
+::: raw
+<div class="vp-raw demo-container select-row select-row--center">
+  <ex-select
+    v-model="searchable"
+    :options="departmentOptions"
     searchable
-    placeholder="可搜索的选择器"
+    clearable
+    placeholder="输入部门名称"
   />
+  <ex-select :options="statusOptions" size="small" placeholder="小型" />
+  <ex-select :options="statusOptions" size="large" placeholder="大型" />
+  <ex-select :options="statusOptions" disabled placeholder="不可选择" />
 </div>
-
-```vue
-<template>
-  <ExSelect v-model="value" :options="searchOptions" searchable placeholder="可搜索的选择器" />
-</template>
-```
-
-## 分组
-
-使用分组把选项进行分类。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value7"
-    :options="groupOptions"
-    placeholder="分组选择器"
-  />
-</div>
-
-```vue
-<template>
-  <ExSelect v-model="value" :options="groupOptions" placeholder="分组选择器" />
-</template>
-```
-
-## 禁用状态
-
-禁用整个选择器或单个选项。
-
-<div class="demo-container">
-  <ExSelect
-    v-model="value8"
-    :options="basicOptions"
-    disabled
-    placeholder="禁用的选择器"
-  />
-  <ExSelect
-    v-model="value9"
-    :options="disabledOptions"
-    placeholder="部分选项禁用"
-  />
-</div>
-
-```vue
-<template>
-  <!-- 禁用整个选择器 -->
-  <ExSelect disabled placeholder="禁用的选择器" />
-
-  <!-- 禁用部分选项 -->
-  <ExSelect v-model="value" :options="disabledOptions" placeholder="部分选项禁用" />
-</template>
-```
+:::
 
 ## 多选
 
-设置 `multiple` 开启多选，此时绑定值为数组。选中项以可移除标签的形式展示，
-下拉中已选项右侧显示对勾，选择后下拉保持打开。
+::: raw
+<div class="vp-raw demo-container select-column">
+  <ex-select
+    v-model="members"
+    :options="memberOptions"
+    multiple
+    clearable
+    placeholder="选择项目成员"
+  />
+  <ex-select
+    v-model="members"
+    :options="memberOptions"
+    multiple
+    collapse-tags
+    :multiple-limit="4"
+    placeholder="最多选择四人"
+  />
+</div>
+:::
 
-```vue
-<script setup lang="ts">
-import { ref } from 'vue';
-const value = ref<Array<string | number>>(['option1']);
-const options = [
-  { value: 'option1', label: '选项一' },
-  { value: 'option2', label: '选项二' },
-  { value: 'option3', label: '选项三' },
-];
-</script>
+## 长列表滚动
 
-<template>
-  <ExSelect v-model="value" :options="options" multiple clearable />
-</template>
-```
+横向内容被限制在下拉面板内；纵向滚动条只在选项超过可视区域时出现。
 
-- `multiple-limit` 限制最多可选数量（`0` 不限制）。
-- `collapse-tags` 仅展示第一个标签，其余折叠为 `+N`。
-- 多选支持搜索：同时设置 `searchable` 即可。
+::: raw
+<div class="vp-raw demo-container">
+  <ex-select
+    v-model="longValue"
+    :options="longOptions"
+    searchable
+    clearable
+    placeholder="选择服务区域"
+  />
+</div>
+:::
 
 ## 远程搜索
 
-设置 `remote` 并配合 `searchable`，输入时会（防抖后）调用 `remote-method`，由你在
-回调里请求接口并更新 `options`；组件不再做本地过滤。用 `loading` 控制加载态。
-
-```vue
-<script setup lang="ts">
-import { ref } from 'vue';
-const value = ref<string | number | null>(null);
-const options = ref<{ value: number; label: string }[]>([]);
-const loading = ref(false);
-
-const remoteSearch = async (query: string) => {
-  if (!query) {
-    options.value = [];
-    return;
-  }
-  loading.value = true;
-  try {
-    // 用你的接口替换：const res = await api.search(query)
-    await new Promise(r => setTimeout(r, 300));
-    options.value = Array.from({ length: 5 }, (_, i) => ({
-      value: i,
-      label: `${query} - 结果 ${i + 1}`,
-    }));
-  } finally {
-    loading.value = false;
-  }
-};
-</script>
-
-<template>
-  <ExSelect
-    v-model="value"
-    :options="options"
-    :loading="loading"
-    :remote-method="remoteSearch"
+::: raw
+<div class="vp-raw demo-container">
+  <ex-select
+    v-model="remoteValue"
+    :options="remoteOptions"
     remote
     searchable
     clearable
-    placeholder="输入以远程搜索"
+    :remote-method="handleRemoteSearch"
+    :remote-debounce="150"
+    placeholder="搜索交付中心"
   />
-</template>
+</div>
+:::
+
+```vue
+<ex-select
+  v-model="value"
+  :options="remoteOptions"
+  remote
+  searchable
+  :remote-method="searchOptions"
+/>
 ```
 
-- `remote-debounce` 调整防抖间隔（毫秒，默认 `300`）。
-- 远程模式下本地过滤被关闭，`options` 即为下拉展示内容。
+## 虚拟滚动
+
+::: raw
+<div class="vp-raw demo-container">
+  <ex-select
+    v-model="virtualValue"
+    :options="virtualOptions"
+    virtual
+    searchable
+    clearable
+    placeholder="在 1000 条档案中选择"
+  />
+</div>
+:::
 
 ## API
 
 ### Props
 
-| 参数                 | 说明                         | 类型                    | 可选值                 | 默认值     |
-| -------------------- | ---------------------------- | ----------------------- | ---------------------- | ---------- |
-| modelValue / v-model | 绑定值（多选时为数组）       | string / number / array | —                      | —          |
-| options              | 选项数据                     | SelectOptions           | —                      | []         |
-| placeholder          | 占位文本                     | string                  | —                      | '请选择'   |
-| size                 | 尺寸                         | SelectSize              | small / medium / large | medium     |
-| disabled             | 是否禁用                     | boolean                 | —                      | false      |
-| clearable            | 是否可清空                   | boolean                 | —                      | false      |
-| searchable           | 是否可搜索                   | boolean                 | —                      | false      |
-| remote               | 是否远程搜索（关闭本地过滤） | boolean                 | —                      | false      |
-| remote-method        | 远程搜索回调                 | (query: string) => void | —                      | —          |
-| loading              | 加载中（远程时由父级控制）   | boolean                 | —                      | false      |
-| remote-debounce      | 远程搜索防抖（毫秒）         | number                  | —                      | 300        |
-| multiple             | 是否多选                     | boolean                 | —                      | false      |
-| multiple-limit       | 多选时最多可选数量（0 不限） | number                  | —                      | 0          |
-| collapse-tags        | 多选时折叠多余标签为 +N      | boolean                 | —                      | false      |
-| searchPlaceholder    | 搜索框占位文本               | string                  | —                      | '搜索...'  |
-| noDataText           | 无数据时的文本               | string                  | —                      | '暂无数据' |
-| popperClass          | 下拉框的类名                 | string                  | —                      | —          |
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| `modelValue` | 单选值或多选值数组 | `string \| number \| null \| (string \| number)[]` | `null` |
+| `options` | 选项或选项分组 | `SelectOptions` | `[]` |
+| `placeholder` | 占位文本 | `string` | `''` |
+| `size` | 尺寸 | `small \| medium \| large` | 继承全局尺寸 |
+| `disabled` | 是否禁用 | `boolean` | `false` |
+| `clearable` | 是否可清空 | `boolean` | `false` |
+| `searchable` | 是否可搜索 | `boolean` | `false` |
+| `remote` | 是否关闭本地过滤并启用远程搜索 | `boolean` | `false` |
+| `remoteMethod` | 远程查询回调 | `(query: string) => void` | — |
+| `loading` | 是否显示加载状态 | `boolean` | `false` |
+| `remoteDebounce` | 远程查询防抖时间 | `number` | `300` |
+| `multiple` | 是否多选 | `boolean` | `false` |
+| `multipleLimit` | 多选数量上限，`0` 表示不限 | `number` | `0` |
+| `collapseTags` | 是否折叠多选标签 | `boolean` | `false` |
+| `virtual` | 是否启用扁平选项虚拟滚动 | `boolean` | `false` |
+| `optionHeight` | 虚拟选项固定高度 | `number` | `34` |
 
 ### Events
 
-| 事件名            | 说明                  | 回调参数                           |
-| ----------------- | --------------------- | ---------------------------------- |
-| update:modelValue | 值变化时触发          | (value: string \| number \| array) |
-| change            | 选中值发生变化时触发  | (value, option \| options)         |
-| remove-tag        | 多选时移除标签触发    | (value: string \| number)          |
-| visible-change    | 下拉框出现/隐藏时触发 | (visible: boolean)                 |
-| clear             | 点击清空按钮时触发    | —                                  |
-| blur              | 失去焦点时触发        | (event: FocusEvent)                |
-| focus             | 获得焦点时触发        | (event: FocusEvent)                |
+| 事件名 | 参数 |
+| --- | --- |
+| `update:modelValue` | `(value: SelectValue)` |
+| `change` | `(value: SelectValue, option: SelectOption \| SelectOption[] \| null)` |
+| `remove-tag` | `(value: string \| number)` |
+| `clear` | `()` |
+| `focus` | `(event: FocusEvent)` |
+| `blur` | `(event: FocusEvent)` |
+| `visible-change` | `(visible: boolean)` |
 
 ### Exposes
 
-| 方法名 | 说明             | 参数 |
-| ------ | ---------------- | ---- |
-| focus  | 使选择器获得焦点 | —    |
-| blur   | 使选择器失去焦点 | —    |
-
-### Types
-
-```typescript
-type SelectSize = 'small' | 'medium' | 'large';
-
-interface SelectOption {
-  value: string | number;
-  label: string;
-  disabled?: boolean;
-  keywords?: string[];
-}
-
-interface SelectOptionGroup {
-  label: string;
-  options: SelectOption[];
-}
-
-type SelectOptions = (SelectOption | SelectOptionGroup)[];
-```
-
-<script setup>
-import { ref } from 'vue';
-
-// 基础选项
-const basicOptions = [
-  { value: 'option1', label: '选项一' },
-  { value: 'option2', label: '选项二' },
-  { value: 'option3', label: '选项三' },
-  { value: 'option4', label: '选项四' },
-  { value: 'option5', label: '选项五' },
-];
-
-// 搜索选项
-const searchOptions = [
-  { value: 'beijing', label: '北京', keywords: ['BJ', 'Beijing', 'Capital'] },
-  { value: 'shanghai', label: '上海', keywords: ['SH', 'Shanghai'] },
-  { value: 'guangzhou', label: '广州', keywords: ['GZ', 'Guangzhou'] },
-  { value: 'shenzhen', label: '深圳', keywords: ['SZ', 'Shenzhen'] },
-  { value: 'chengdu', label: '成都', keywords: ['CD', 'Chengdu'] },
-  { value: 'hangzhou', label: '杭州', keywords: ['HZ', 'Hangzhou'] },
-];
-
-// 分组选项
-const groupOptions = [
-  {
-    label: '热门城市',
-    options: [
-      { value: 'beijing', label: '北京' },
-      { value: 'shanghai', label: '上海' },
-      { value: 'guangzhou', label: '广州' },
-      { value: 'shenzhen', label: '深圳' },
-    ],
-  },
-  {
-    label: '其他城市',
-    options: [
-      { value: 'chengdu', label: '成都' },
-      { value: 'hangzhou', label: '杭州' },
-      { value: 'wuhan', label: '武汉' },
-      { value: 'xian', label: '西安' },
-    ],
-  },
-];
-
-// 禁用选项
-const disabledOptions = [
-  { value: 'option1', label: '选项一' },
-  { value: 'option2', label: '选项二（禁用）', disabled: true },
-  { value: 'option3', label: '选项三' },
-  { value: 'option4', label: '选项四（禁用）', disabled: true },
-  { value: 'option5', label: '选项五' },
-];
-
-// 绑定值
-const value1 = ref('');
-const value2 = ref('');
-const value3 = ref('');
-const value4 = ref('');
-const value5 = ref('');
-const value6 = ref('');
-const value7 = ref('');
-const value8 = ref('option1');
-const value9 = ref('');
-</script>
+| 方法 | 类型 |
+| --- | --- |
+| `focus` | `() => void` |
+| `blur` | `() => void` |
+| `showDropdown` | `() => void` |
+| `hideDropdown` | `() => void` |
 
 <style scoped>
-.demo-container {
-  padding: 16px;
-  background: var(--vp-c-bg-soft);
-  border-radius: 8px;
-  margin: 16px 0;
+.select-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
+}
+
+.select-row--center {
   align-items: center;
+}
+
+.select-column {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
 }
 </style>

@@ -1,5 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExEmpty from '../../../src/components/empty/ExEmpty.vue';
 import ExIcon from '../../../src/components/icon/ExIcon.vue';
@@ -25,6 +27,16 @@ describe('ExList', () => {
     expect(rows[0]?.attributes('role')).toBeUndefined();
     expect(rows[0]?.attributes('tabindex')).toBeUndefined();
     expect(wrapper.attributes('aria-busy')).toBe('false');
+  });
+
+  it('列表容器和列表项显式移除宿主样式注入的 marker', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/list/ExList.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toMatch(/\.ex-list__items[\s\S]*?::marker\s*\{[\s\S]*?content:\s*['"]{2}/);
+    expect(stylesheet).toMatch(/\.ex-list__item[\s\S]*?::marker\s*\{[\s\S]*?content:\s*['"]{2}/);
   });
 
   it('默认点击不发事件，clickable=true 时使用不会提交表单的原生按钮', async () => {

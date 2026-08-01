@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExSelect from '../../../src/components/select/ExSelect.vue';
 import type { SelectOptions } from '../../../src/components/select/types';
 
@@ -169,6 +171,33 @@ describe('ExSelect', () => {
       });
 
       await nextTick();
+      const clear = wrapper.get('.ex-select__clear');
+      expect(clear.element.tagName).toBe('BUTTON');
+      expect(clear.attributes('type')).toBe('button');
+      expect(clear.attributes('aria-label')).toBeTruthy();
+    });
+
+    it.each([
+      ['', basicOptions],
+      ['missing', basicOptions],
+      [null, basicOptions],
+    ])('没有可见选中内容时不显示清空按钮（modelValue=%s）', (modelValue, options) => {
+      const wrapper = mount(ExSelect, {
+        props: { modelValue, options, clearable: true },
+      });
+
+      expect(wrapper.find('.ex-select__clear').exists()).toBe(false);
+    });
+
+    it('数值零作为真实选项值时仍显示清空按钮', () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          modelValue: 0,
+          options: [{ value: 0, label: '零' }],
+          clearable: true,
+        },
+      });
+
       expect(wrapper.find('.ex-select__clear').exists()).toBe(true);
     });
 
@@ -190,6 +219,18 @@ describe('ExSelect', () => {
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([null]);
       expect(wrapper.emitted('clear')).toBeTruthy();
     });
+  });
+
+  it('选项容器禁止水平滚动，纵向仅在内容溢出时自动出现', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/select/ExSelect.scss'),
+      'utf8'
+    );
+    const optionsBlock = stylesheet.match(/&__options\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+
+    expect(optionsBlock).toContain('overflow-x: hidden');
+    expect(optionsBlock).toContain('overflow-y: auto');
+    expect(optionsBlock).not.toContain('overflow-y: scroll');
   });
 
   describe('可搜索', () => {

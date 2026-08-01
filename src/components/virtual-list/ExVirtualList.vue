@@ -1,5 +1,9 @@
 <template>
-  <div ref="containerRef" :class="containerClasses" :style="containerStyles">
+  <div
+    ref="containerRef"
+    :class="containerClasses"
+    :style="containerStyles"
+  >
     <div
       ref="listRef"
       class="ex-virtual-list__wrapper"
@@ -9,23 +13,29 @@
       @scroll.passive="handleScroll"
     >
       <!-- 占位元素 -->
-      <div class="ex-virtual-list__spacer" :style="{ height: `${totalHeight}px` }" />
+      <div
+        class="ex-virtual-list__spacer"
+        :style="{ height: `${totalHeight}px` }"
+      ></div>
 
       <!-- 可见项目 -->
       <div
         class="ex-virtual-list__items"
-        :class="{ 'is-scrolling': isScrollingState }"
-        :style="{ transform: `translateY(${offsetY}px)` }"
+        :style="{ transform: `translate3d(0, ${offsetY}px, 0)` }"
       >
         <div
           v-for="item in visibleData"
           :key="getItemKey(item)"
           :ref="el => setItemRef(el as HTMLElement, item.index)"
           class="ex-virtual-list__item"
+          :class="{ 'is-last': item.index === dataSource.length - 1 }"
           :style="itemStyle(item.index)"
           @click="handleItemClick(item)"
         >
-          <slot :item="item.data" :index="item.index">
+          <slot
+            :item="item.data"
+            :index="item.index"
+          >
             {{ item.data }}
           </slot>
         </div>
@@ -63,7 +73,6 @@ const listRef = ref<HTMLElement>();
 const startIndex = shallowRef(0);
 const endIndex = shallowRef(0);
 const offsetY = shallowRef(0);
-const isScrollingState = shallowRef(false);
 
 // 高度缓存 - 用于动态高度优化
 const heightCache = new Map<number, number>();
@@ -367,7 +376,6 @@ const itemStyle = (index: number): CSSProperties => {
 
 // 滚动处理 - 使用 passive 监听器和 RAF 优化
 let rafId: number | null = null;
-let scrollEndTimer: number | null = null;
 // 边沿检测：避免 reach-top/reach-bottom/load-more 每帧重复 emit
 let prevAtTop = false;
 let prevAtBottom = false;
@@ -377,24 +385,14 @@ const handleScroll = () => {
   const listEl = listRef.value;
   if (!listEl) return;
 
-  // 标记正在滚动
-  if (!isScrollingState.value) {
-    isScrollingState.value = true;
-  }
-
   // 清除之前的 RAF
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
   }
 
-  // 清除滚动结束定时器
-  if (scrollEndTimer !== null) {
-    clearTimeout(scrollEndTimer);
-  }
-
   rafId = requestAnimationFrame(() => {
     if (!listRef.value) {
-      isScrollingState.value = false;
+      rafId = null;
       return;
     }
 
@@ -431,12 +429,6 @@ const handleScroll = () => {
 
     rafId = null;
   });
-
-  // 滚动结束后 150ms 标记为非滚动状态
-  scrollEndTimer = window.setTimeout(() => {
-    isScrollingState.value = false;
-    scrollEndTimer = null;
-  }, 150);
 };
 
 // 项目点击
@@ -593,11 +585,6 @@ onBeforeUnmount(() => {
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
-  }
-
-  if (scrollEndTimer !== null) {
-    clearTimeout(scrollEndTimer);
-    scrollEndTimer = null;
   }
 
   // 清理 ResizeObserver

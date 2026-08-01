@@ -22,7 +22,7 @@
   &:hover {
     transform: translateY(-2px) scale(1.05);
     border-color: var(--ex-color-primary);
-    box-shadow: 
+    box-shadow:
       0 8px 25px var(--ex-color-primary-alpha-20),
       0 0 20px var(--ex-color-primary-alpha-30);
   }
@@ -127,8 +127,20 @@
 
   // 图标样式
   &__icon {
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
     font-size: 60%;
+    line-height: 1;
     @include transition((color, transform));
+
+    :deep(.ex-icon),
+    :deep(svg),
+    :deep(img) {
+      flex: none;
+    }
 
     .ex-avatar--small & {
       font-size: 50%;
@@ -145,11 +157,7 @@
     line-height: 1;
     text-align: center;
     white-space: nowrap;
-    transform-origin: center;
-    @include transition(transform);
   }
-
-
 
   // 游戏主题特效
   &::before {
@@ -159,8 +167,9 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, 
-      var(--ex-color-primary-alpha-30), 
+    background: linear-gradient(
+      45deg,
+      var(--ex-color-primary-alpha-30),
       var(--ex-color-secondary-alpha-30),
       var(--ex-color-primary-alpha-30)
     );
@@ -244,7 +253,7 @@
   }
 
   // RTL 支持
-  [dir="rtl"] & {
+  [dir='rtl'] & {
     // RTL 下的特殊处理
   }
 }

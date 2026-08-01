@@ -3,6 +3,10 @@
   min-width: 0;
   list-style: none;
 
+  &::marker {
+    content: '';
+  }
+
   &__action {
     box-sizing: border-box;
     display: block;
@@ -103,6 +107,27 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  &--horizontal {
+    display: flex;
+    align-items: stretch;
+  }
+
+  &--horizontal &__action {
+    height: 100%;
+  }
+
+  &--horizontal &__content {
+    min-height: 40px;
+    padding-block: var(--ex-spacing-2);
+  }
+
+  &--horizontal &__indicator {
+    inset: auto var(--ex-spacing-3) 0;
+    width: auto;
+    height: 2px;
+    border-radius: var(--ex-radius-full) var(--ex-radius-full) 0 0;
   }
 }
 

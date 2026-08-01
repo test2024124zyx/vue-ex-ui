@@ -1,194 +1,143 @@
 # List 列表
 
-<script setup lang="ts">
-import { ref } from 'vue'
+用于连续展示结构相近的数据项。
 
-const selected = ref('')
-const loading = ref(false)
-const records = [
-  { key: 1, title: '任务中心', description: '查看当前任务', extra: '3 项' },
-  { key: 2, title: '角色仓库', description: '管理角色与装备', extra: '12 件' },
-  { key: 3, title: '赛季奖励', description: '完成排位后领取', disabled: true },
+<script setup>
+const projectItems = [
+  {
+    key: 'aurora',
+    title: 'Aurora 数据中台',
+    description: '核心指标体系已完成验收',
+    extra: '今天 16:20'
+  },
+  {
+    key: 'atlas',
+    title: 'Atlas 客户平台',
+    description: '正在进行第二阶段灰度发布',
+    extra: '昨天 11:45'
+  },
+  {
+    key: 'nova',
+    title: 'Nova 营销增长',
+    description: '等待业务负责人确认排期',
+    extra: '7 月 8 日'
+  }
 ]
 
-const selectRecord = (item: { title?: string }) => {
-  selected.value = item.title ?? ''
-}
+const memberItems = [
+  { key: 'lin', title: '林知远', description: '产品负责人', status: '在线' },
+  { key: 'zhou', title: '周予安', description: '交互设计师', status: '会议中' },
+  { key: 'chen', title: '陈嘉树', description: '前端工程师', status: '在线' },
+  { key: 'xu', title: '许清和', description: '客户成功经理', status: '外出' }
+]
 </script>
 
-## 基础用法
+## 基础列表
 
-<ExList :data="records" bordered />
+::: raw
+<div class="vp-raw demo-container">
+  <ex-list :data="projectItems" item-key="key" bordered />
+</div>
+:::
 
 ```vue
-<template>
-  <ExList
-    :data="records"
-    bordered
-  />
-</template>
-
-<script setup lang="ts">
-const records = [
-  { key: 1, title: '任务中心', description: '查看当前任务', extra: '3 项' },
-  { key: 2, title: '角色仓库', description: '管理角色与装备', extra: '12 件' },
-];
-</script>
+<ex-list :data="projectItems" item-key="key" bordered />
 ```
 
-## 可点击列表
+## 可点击与自定义内容
 
-`clickable` 开启后，每项使用原生 `button type="button"`。禁用项不会发送事件。
-
-<ExList
-:data="records"
-clickable
-hoverable
-bordered
-@item-click="selectRecord"
-/>
-
-<p v-if="selected">当前选择：{{ selected }}</p>
-
-```vue
-<ExList :data="records" clickable hoverable @item-click="handleItemClick" />
-```
-
-可点击项的内容不应包含嵌套按钮或链接；需要独立操作控件时保持 `clickable="false"` 并使用 `item` 插槽。
-
-## 尺寸与外观
+::: raw
+<div class="vp-raw demo-container">
+  <ex-list :data="memberItems" item-key="key" clickable hoverable bordered>
+    <template #icon="{ index }">
+      <ex-avatar :text="memberItems[index].title" :size="40" />
+    </template>
+    <template #extra="{ item }">
+      <ex-tag size="small" :type="item.status === '在线' ? 'success' : 'info'">
+        {{ item.status }}
+      </ex-tag>
+    </template>
+  </ex-list>
+</div>
+:::
 
 ```vue
-<ExList :data="records" size="small" />
-<ExList :data="records" size="medium" bordered />
-<ExList :data="records" size="large" :split="false" />
+<ex-list :data="members" clickable hoverable>
+  <template #icon="{ item }"><ex-avatar :text="item.title" /></template>
+  <template #extra="{ item }"><ex-tag>{{ item.status }}</ex-tag></template>
+</ex-list>
 ```
 
 ## 响应式网格
 
-<ExList
-  :data="records"
-  :grid="{ gutter: 12, column: 3, xs: 1, sm: 2, lg: 3 }"
-  bordered
-/>
+::: raw
+<div class="vp-raw demo-container">
+  <ex-list
+    :data="memberItems"
+    :grid="{ gutter: 16, xs: 1, sm: 2, lg: 4 }"
+    item-key="key"
+    bordered
+    hoverable
+  />
+</div>
+:::
 
-```vue
-<ExList
-  :data="records"
-  :grid="{
-    gutter: 16,
-    column: 4,
-    xs: 1,
-    sm: 2,
-    md: 3,
-    lg: 4,
-  }"
-/>
-```
+## 空状态与加载状态
 
-## 自定义内容
-
-```vue
-<ExList :data="records">
-  <template #icon="{ item }">
-    <ExAvatar :text="item.title?.slice(0, 1)" />
-  </template>
-  <template #title="{ item }">
-    <strong>{{ item.title }}</strong>
-  </template>
-  <template #extra="{ item, index }">
-    {{ index + 1 }} · {{ item.extra }}
-  </template>
-</ExList>
-```
-
-`item` 插槽会完整替换单项的内置内容。
-
-```vue
-<ExList :data="records">
-  <template #item="{ item }">
-    <article>{{ item.title }}</article>
-  </template>
-</ExList>
-```
-
-## 空态与加载态
-
-```vue
-<ExList :data="[]" empty-text="没有匹配记录" />
-
-<ExList :data="records" :loading="loading" loading-text="刷新列表" />
-
-<ExList :data="[]">
-  <template #empty>
-    <ExEmpty description="当前分类为空" />
-  </template>
-</ExList>
-```
-
-大数据窗口化使用独立的 `ExVirtualList`。
+::: raw
+<div class="vp-raw demo-container list-state-grid">
+  <ex-list :data="[]" empty-text="暂无待处理事项" bordered />
+  <ex-list :data="projectItems" loading loading-text="正在同步项目" bordered />
+</div>
+:::
 
 ## API
 
 ### Props
 
-| 参数         | 类型                                               | 默认值     |
-| ------------ | -------------------------------------------------- | ---------- |
-| data         | `readonly ListItem[]`                              | `[]`       |
-| size         | `'small' \| 'medium' \| 'large'`                   | 全局尺寸   |
-| bordered     | `boolean`                                          | `false`    |
-| split        | `boolean`                                          | `true`     |
-| hoverable    | `boolean`                                          | `false`    |
-| loading      | `boolean`                                          | `false`    |
-| loading-text | `string`                                           | 本地化文案 |
-| empty-text   | `string`                                           | 本地化文案 |
-| item-key     | `string \| ((item, index) => PropertyKey \| null)` | `'key'`    |
-| grid         | `ListGrid`                                         | —          |
-| clickable    | `boolean`                                          | `false`    |
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| `data` | 列表数据 | `readonly ListItem[]` | `[]` |
+| `size` | 尺寸 | `small \| medium \| large` | 继承全局尺寸 |
+| `bordered` | 是否显示外边框 | `boolean` | `false` |
+| `split` | 是否显示分割线 | `boolean` | `true` |
+| `hoverable` | 是否显示悬停反馈 | `boolean` | `false` |
+| `loading` | 是否加载中 | `boolean` | `false` |
+| `loadingText` | 加载文案 | `string` | 本地化文案 |
+| `emptyText` | 空状态文案 | `string` | 本地化文案 |
+| `itemKey` | 唯一键字段或解析函数 | `string \| ((item, index) => PropertyKey)` | `key` |
+| `grid` | 响应式网格配置 | `ListGrid` | — |
+| `clickable` | 是否将列表项渲染为原生按钮 | `boolean` | `false` |
 
-原生 `class`、`style`、`aria-*` 与 `data-*` 属性会透传到根元素。
-
-### ListGrid
-
-| 字段                         | 类型     | 默认值       |
-| ---------------------------- | -------- | ------------ |
-| gutter                       | `number` | `0`          |
-| column                       | `number` | `4`          |
-| xs / sm / md / lg / xl / xxl | `number` | 继承较小断点 |
-
-列数规范为 1 至 24 的整数；非法断点继承最近有效列数。
-
-### ListItem
-
-| 字段        | 类型          |
-| ----------- | ------------- |
-| key         | `PropertyKey` |
-| title       | `string`      |
-| description | `string`      |
-| icon        | `string`      |
-| avatar      | `string`      |
-| extra       | `string`      |
-| disabled    | `boolean`     |
+`ListItem` 支持 `key`、`title`、`description`、`icon`、`avatar`、`extra` 和 `disabled` 字段。
 
 ### Events
 
-| 事件名     | 参数                                                         |
-| ---------- | ------------------------------------------------------------ |
-| item-click | `(item: ListItem, index: number, event: MouseEvent) => void` |
+| 事件名 | 参数 |
+| --- | --- |
+| `item-click` | `(item: ListItem, index: number, event: MouseEvent)` |
 
 ### Slots
 
-| 插槽名      | 参数                                |
-| ----------- | ----------------------------------- |
-| item        | `{ item: ListItem, index: number }` |
-| icon        | `{ item: ListItem, index: number }` |
-| title       | `{ item: ListItem, index: number }` |
-| description | `{ item: ListItem, index: number }` |
-| extra       | `{ item: ListItem, index: number }` |
-| empty       | —                                   |
+| 名称 | 参数 |
+| --- | --- |
+| `item` | `{ item, index }` |
+| `icon` | `{ item, index }` |
+| `title` | `{ item, index }` |
+| `description` | `{ item, index }` |
+| `extra` | `{ item, index }` |
+| `empty` | — |
 
 ### Exposes
 
-| 方法名     | 返回值                   |
-| ---------- | ------------------------ |
-| getElement | `HTMLDivElement \| null` |
+| 方法 | 类型 |
+| --- | --- |
+| `getElement` | `() => HTMLDivElement \| null` |
+
+<style scoped>
+.list-state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+</style>

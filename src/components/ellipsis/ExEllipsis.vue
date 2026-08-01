@@ -12,11 +12,11 @@
       :style="contentStyle"
       :title="tooltipText"
     >
-      <slot />
+      <slot></slot>
     </div>
 
     <div
-      v-if="showActions"
+      v-if="showActions && normalizedExpandControl === 'button'"
       class="ex-ellipsis__actions"
     >
       <button
@@ -35,23 +35,34 @@
           :class="{ 'is-expanded': isExpanded }"
           aria-hidden="true"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            focusable="false"
-          >
-            <path
-              d="M7 10l5 5 5-5"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <ExIcon
+            icon="arrow-down-s-line"
+            :size="16"
+          />
         </span>
       </button>
     </div>
+
+    <button
+      v-else-if="showActions"
+      class="ex-ellipsis__inline-control"
+      type="button"
+      :aria-controls="contentId"
+      :aria-expanded="isExpanded"
+      :aria-label="isExpanded ? t('ellipsis.collapse') : t('ellipsis.expand')"
+      @click="toggle"
+    >
+      <span
+        class="ex-ellipsis__btn-icon"
+        :class="{ 'is-expanded': isExpanded }"
+        aria-hidden="true"
+      >
+        <ExIcon
+          icon="arrow-down-s-line"
+          :size="16"
+        />
+      </span>
+    </button>
   </div>
 </template>
 
@@ -59,6 +70,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import { useI18n } from '../../locale';
+import ExIcon from '../icon/ExIcon.vue';
 import type { ExEllipsisEmits, ExEllipsisExposed, ExEllipsisProps } from './types';
 
 defineOptions({ name: 'ExEllipsis' });
@@ -66,6 +78,7 @@ defineOptions({ name: 'ExEllipsis' });
 const props = withDefaults(defineProps<ExEllipsisProps>(), {
   lines: 1,
   expandable: false,
+  expandControl: 'button',
   tooltip: true,
   ariaLabel: undefined,
   expanded: undefined,
@@ -86,6 +99,9 @@ const normalizedLines = computed(() => {
   if (!Number.isFinite(props.lines) || props.lines <= 0) return 1;
   return Math.max(1, Math.trunc(props.lines));
 });
+const normalizedExpandControl = computed(() =>
+  props.expandControl === 'inline' ? 'inline' : 'button'
+);
 const isControlled = computed(() => props.expanded !== undefined);
 const requestedExpanded = computed(() => props.expanded ?? internalExpanded.value);
 const isExpanded = computed(() => props.expandable && requestedExpanded.value);
@@ -102,9 +118,11 @@ const tooltipText = computed(() =>
 
 const ellipsisClasses = computed(() => [
   'ex-ellipsis',
+  `ex-ellipsis--control-${normalizedExpandControl.value}`,
   {
     'ex-ellipsis--expanded': isExpanded.value,
     'ex-ellipsis--expandable': props.expandable,
+    'ex-ellipsis--has-control': showActions.value,
   },
 ]);
 const contentClasses = computed(() => [

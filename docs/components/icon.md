@@ -1,172 +1,152 @@
 # Icon 图标
 
-统一渲染内置 SVG、自定义 SVG、图片或字体图标。未提供有效来源时不生成替代图形。
+支持内置 SVG、图片地址、字体图标和自定义插槽。
 
 <script setup>
-const featuredIcons = [
-  'search-line',
-  'check-line',
-  'close-line',
-  'delete-bin-line',
-  'calendar-line',
-  'star-line',
-  'heart-fill',
-  'settings-line'
-]
+import { ref } from 'vue'
+
+const iconClicks = ref(0)
+const maskIcon = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M12 2 15 9l7 .8-5.2 4.8 1.5 7.1L12 17l-6.3 3.7 1.5-7.1L2 9.8 9 9z"/></svg>'
+)}`
 </script>
 
 ## 内置图标
 
-内置注册表无网络依赖，图形使用 `currentColor` 着色。
-
-<div class="demo-container icon-list">
-  <span v-for="name in featuredIcons" :key="name" class="icon-item">
-    <ExIcon :icon="name" :size="24" />
-    <code>{{ name }}</code>
-  </span>
+::: raw
+<div class="vp-raw demo-container icon-grid">
+  <span class="icon-item"><ex-icon icon="search-line" :size="24" /><span>搜索</span></span>
+  <span class="icon-item"><ex-icon icon="user-line" :size="24" /><span>用户</span></span>
+  <span class="icon-item"><ex-icon icon="calendar-line" :size="24" /><span>日历</span></span>
+  <span class="icon-item"><ex-icon icon="folder-line" :size="24" /><span>文件夹</span></span>
+  <span class="icon-item"><ex-icon icon="dashboard-line" :size="24" /><span>工作台</span></span>
+  <span class="icon-item"><ex-icon icon="notification-line" :size="24" /><span>通知</span></span>
 </div>
+:::
 
 ```vue
-<ExIcon icon="search-line" />
-<ExIcon icon="check-line" :size="20" color="var(--ex-color-success)" />
-<ExIcon icon="star-line" size="1.5rem" />
+<ex-icon icon="search-line" :size="24" />
+<ex-icon icon="user-line" :size="24" />
+<ex-icon icon="calendar-line" :size="24" />
 ```
 
-未知的 `icon` 不会回退成其他图形；如果同时提供 `src` 或 `name`，组件会继续使用后续有效来源。
+## 尺寸、颜色与旋转
 
-## 自定义 SVG
+::: raw
+<div class="vp-raw demo-container icon-row">
+  <ex-icon icon="star-fill" :size="16" color="#f59e0b" />
+  <ex-icon icon="star-fill" :size="24" color="#8b5cf6" />
+  <ex-icon icon="arrow-right-line" :size="28" :rotate="90" color="var(--ex-color-primary)" />
+  <ex-icon icon="loader-4-line" :size="28" spin color="var(--ex-color-success)" />
+</div>
+:::
 
-默认插槽优先于其他来源。空白或注释插槽不会遮蔽后续来源。
+## 图片蒙版与自定义 SVG
+
+为图片地址同时设置 `color` 时，图片按单色蒙版渲染。
+
+::: raw
+<div class="vp-raw demo-container icon-row">
+  <ex-icon :src="maskIcon" color="#06b6d4" :size="30" alt="青色星标" />
+  <ex-icon :size="30" color="#ec4899" aria-label="自定义菱形">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 2 22 12 12 22 2 12z" />
+    </svg>
+  </ex-icon>
+</div>
+:::
 
 ```vue
-<ExIcon aria-label="完成">
-  <svg viewBox="0 0 24 24">
-    <path fill="currentColor" d="M5 12l4 4L19 6" />
+<ex-icon src="/icons/star.svg" color="#06b6d4" :size="30" alt="青色星标" />
+<ex-icon :size="30" color="#ec4899" aria-label="自定义菱形">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path fill="currentColor" d="M12 2 22 12 12 22 2 12z" />
   </svg>
-</ExIcon>
+</ex-icon>
 ```
-
-## 图片与单色着色
-
-`src` 渲染图片；同时设置 `color` 时改用 CSS mask，适合单色 SVG 或透明位图。
-
-```vue
-<ExIcon src="/brand-mark.png" alt="品牌标志" :size="32" />
-<ExIcon src="/icons/home.svg" alt="首页" color="#29abe2" :size="24" />
-```
-
-## 字体图标
-
-项目加载相应字体样式后，可通过 `name` 和 `prefix` 生成字体类名。
-
-```vue
-<ExIcon name="star" prefix="fas" />
-<ExIcon name="icon-home" />
-```
-
-名称和前缀必须是单个有效 CSS 类名；包含空白的异常值不会被拼接。
-
-## 旋转
-
-静态角度与持续旋转作用在独立图形层，不会被按钮的 hover/active 变换覆盖。
-
-```vue
-<ExIcon icon="arrow-up-line" :rotate="90" />
-<ExIcon icon="refresh-line" :rotate="45" spin />
-```
-
-系统启用“减少动态效果”时，`spin` 动画会停止并保留静态角度。
 
 ## 交互图标
 
-`clickable` 将根元素渲染为 `type="button"` 的原生按钮，并提供至少 44 × 44 像素的命中区域；图形仍保持 `size` 指定的尺寸。
+`clickable` 使用原生按钮语义；禁用状态不会触发点击事件。
+
+::: raw
+<div class="vp-raw demo-container icon-row">
+  <ex-icon
+    icon="add-line"
+    :size="24"
+    clickable
+    aria-label="新增记录"
+    @click="iconClicks += 1"
+  />
+  <ex-icon icon="delete-bin-line" :size="24" clickable disabled aria-label="删除记录" />
+  <span class="icon-counter">已点击 {{ iconClicks }} 次</span>
+</div>
+:::
+
+## 字体图标
 
 ```vue
-<ExIcon icon="search-line" clickable aria-label="搜索" @click="openSearch" />
-
-<ExIcon icon="delete-bin-line" clickable disabled aria-label="删除" />
+<ex-icon name="fa-user" prefix="fas" aria-label="用户" />
 ```
 
-交互图标应显式提供 `aria-label` 或 `alt`。缺少名称时，内置图标名或字体图标名仅作为最后兜底。
+字体样式表由应用自行加载。`name` 和 `prefix` 只组合类名，不会发起网络请求。
 
 ## API
 
 ### Props
 
-| 属性           | 说明                                     | 类型               | 默认值       |
-| -------------- | ---------------------------------------- | ------------------ | ------------ |
-| `icon`         | 内置 SVG 注册名                          | `string`           | —            |
-| `name`         | 字体图标类名                             | `string`           | —            |
-| `prefix`       | 字体图标前缀                             | `string`           | —            |
-| `src`          | 图片地址                                 | `string`           | —            |
-| `alt`          | 图片或交互图标的可访问文本               | `string`           | —            |
-| `aria-label`   | 根元素的显式无障碍名称                   | `string`           | —            |
-| `size`         | 非负像素数值或 CSS 长度                  | `number \| string` | `16`         |
-| `color`        | 图标颜色；图片来源会切换为单色 mask      | `string`           | 继承文本颜色 |
-| `rotate`       | 静态旋转角度                             | `number`           | `0`          |
-| `spin`         | 持续旋转                                 | `boolean`          | `false`      |
-| `clickable`    | 渲染为原生按钮                           | `boolean`          | `false`      |
-| `disabled`     | 禁用交互按钮                             | `boolean`          | `false`      |
-| `custom-class` | 兼容性附加类名，新代码可直接使用 `class` | `string`           | —            |
-
-图形来源优先级为：有效默认插槽、已注册 `icon`、`src`、有效字体类名。没有有效来源时，根元素保留尺寸但内容为空。
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| `icon` | 内置 SVG 注册名 | `string` | — |
+| `name` | 字体图标类名 | `string` | — |
+| `prefix` | 字体图标前缀 | `string` | — |
+| `src` | 图片地址 | `string` | — |
+| `alt` | 图片或交互图标的可访问文本 | `string` | — |
+| `ariaLabel` | 根元素的可访问名称 | `string` | — |
+| `size` | 图标尺寸 | `number \| string` | `16` |
+| `color` | 图标颜色；与 `src` 同用时启用蒙版 | `string` | `currentColor` |
+| `rotate` | 静态旋转角度 | `number` | `0` |
+| `spin` | 是否持续旋转 | `boolean` | `false` |
+| `clickable` | 是否使用原生按钮 | `boolean` | `false` |
+| `disabled` | 是否禁用交互按钮 | `boolean` | `false` |
+| `customClass` | 兼容性附加类名 | `string` | — |
 
 ### Events
 
-| 事件    | 说明                       | 类型                          |
-| ------- | -------------------------- | ----------------------------- |
-| `click` | 仅交互按钮被原生激活时触发 | `(event: MouseEvent) => void` |
+| 事件名 | 参数 |
+| --- | --- |
+| `click` | `(event: MouseEvent)` |
 
 ### Slots
 
-| 插槽      | 说明                       |
-| --------- | -------------------------- |
-| `default` | 自定义图形内容，通常为 SVG |
-
-### 注册表导出
-
-```ts
-import { ICONS, getBuiltinIcon, isBuiltinIcon, type BuiltinIconName } from 'vue-ex-ui';
-```
-
-| 导出             | 类型                                        | 说明                                    |
-| ---------------- | ------------------------------------------- | --------------------------------------- |
-| `ICONS`          | `Readonly<Record<BuiltinIconName, string>>` | 冻结的内置 SVG 注册表                   |
-| `isBuiltinIcon`  | `(name: string) => name is BuiltinIconName` | 判断自身注册键                          |
-| `getBuiltinIcon` | `(name: string) => string`                  | 获取静态 SVG 内容，未知名称返回空字符串 |
-
-## 无障碍
-
-- 无名称的非交互图标默认从无障碍树隐藏。
-- 带 `aria-label` 或 `alt` 的非交互图标使用 `role="img"`。
-- 交互图标使用原生按钮语义，支持 `Enter`、`Space` 和原生禁用行为。
-- 内部 SVG、图片和字体节点始终隐藏，避免重复朗读。
+| 名称 | 说明 |
+| --- | --- |
+| `default` | 自定义图标内容 |
 
 <style scoped>
-.demo-container {
-  padding: 24px;
-  margin: 16px 0;
-  background: var(--ex-color-bg-primary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
-}
-
-.icon-list {
+.icon-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 20px;
 }
 
 .icon-item {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
 }
 
-.icon-item code {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+
+.icon-counter {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
 }
 </style>

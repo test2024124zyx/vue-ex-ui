@@ -6,35 +6,54 @@
     :type="nativeType"
     :disabled="disabled || loading"
     :autofocus="autofocus"
-    :aria-label="ariaLabel"
+    :aria-label="resolvedAriaLabel"
     :aria-busy="loading || undefined"
     @click="handleClick"
     @focus="handleFocus"
     @blur="handleBlur"
   >
-    <span v-if="loading" class="ex-button__loading-icon">
+    <span
+      v-if="loading"
+      class="ex-button__loading-icon"
+      aria-hidden="true"
+    >
       <slot name="loading">
-        <span class="ex-button__loading-spinner" aria-hidden="true" />
+        <span
+          class="ex-button__loading-spinner"
+          aria-hidden="true"
+        ></span>
       </slot>
     </span>
 
-    <span v-if="$slots.prefix && !loading" class="ex-button__icon ex-button__icon--left">
-      <slot name="prefix" />
+    <span
+      v-if="$slots.prefix && !loading"
+      class="ex-button__icon ex-button__icon--left"
+    >
+      <slot name="prefix"></slot>
     </span>
 
-    <span v-if="$slots.default" class="ex-button__content">
-      <slot />
+    <span
+      v-if="showDefaultContent"
+      class="ex-button__content"
+    >
+      <template v-if="circleSlotText !== undefined">{{ circleDisplayText }}</template>
+      <slot v-else></slot>
     </span>
 
-    <span v-if="$slots.suffix && !loading" class="ex-button__icon ex-button__icon--right">
-      <slot name="suffix" />
+    <span
+      v-if="$slots.suffix && !loading"
+      class="ex-button__icon ex-button__icon--right"
+    >
+      <slot name="suffix"></slot>
     </span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref } from 'vue';
+import { computed, ref, useSlots } from 'vue';
+import { getFirstGrapheme } from '../../utils/text';
+import { getPlainTextContent } from '../../utils/vnode';
 import type { ExButtonProps, ExButtonEmits, ExButtonExposed } from './types';
 
 import { useComponentSize } from '../config-provider/composables';
@@ -44,10 +63,11 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExButtonProps>(), {
-  type: 'primary',
-  size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
+  type: 'default',
+  size: undefined,
   shape: 'default',
   plain: false,
+  glow: true,
   disabled: false,
   loading: false,
   block: false,
@@ -56,11 +76,26 @@ const props = withDefaults(defineProps<ExButtonProps>(), {
 });
 
 const emit = defineEmits<ExButtonEmits>();
+const slots = useSlots();
 
 const buttonRef = ref<HTMLButtonElement>();
 
-// 使用全局尺寸配置
+// 显式尺寸优先，否则继承 ConfigProvider。
 const componentSize = useComponentSize(computed(() => props.size));
+
+const plainSlotText = computed(() => getPlainTextContent(slots.default?.({})));
+const circleSlotText = computed(() =>
+  props.shape === 'circle' && plainSlotText.value !== undefined
+    ? plainSlotText.value.trim()
+    : undefined
+);
+const circleDisplayText = computed(() => getFirstGrapheme(circleSlotText.value ?? ''));
+const resolvedAriaLabel = computed(
+  () => props.ariaLabel || (circleSlotText.value ? circleSlotText.value : undefined)
+);
+const showDefaultContent = computed(
+  () => Boolean(slots.default) && !(props.shape === 'circle' && props.loading)
+);
 
 // 计算属性
 const buttonClasses = computed(() => {
@@ -72,6 +107,7 @@ const buttonClasses = computed(() => {
   ];
 
   if (props.plain) classes.push('ex-button--plain');
+  if (props.glow) classes.push('ex-button--glow');
   if (props.disabled) classes.push('ex-button--disabled');
   if (props.loading) classes.push('ex-button--loading');
   if (props.block) classes.push('ex-button--block');

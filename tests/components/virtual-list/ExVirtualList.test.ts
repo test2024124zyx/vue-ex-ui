@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExVirtualList from '../../../src/components/virtual-list/ExVirtualList.vue';
 
 describe('ExVirtualList', () => {
@@ -185,6 +187,40 @@ describe('ExVirtualList', () => {
 
     await nextTick();
     expect(wrapper.exists()).toBe(true);
+  });
+
+  it('虚拟窗口末项不会被误认为数据末项，只有真实末项移除分隔线', async () => {
+    const virtual = mount(ExVirtualList, {
+      props: { dataSource: mockData, height: 400, itemHeight: 50 },
+    });
+    const complete = mount(ExVirtualList, {
+      props: { dataSource: smallData, height: 400, itemHeight: 50 },
+    });
+    await nextTick();
+    await flushPromises();
+
+    const virtualItems = virtual.findAll('.ex-virtual-list__item');
+    const completeItems = complete.findAll('.ex-virtual-list__item');
+    expect(virtualItems.length).toBeGreaterThan(0);
+    expect(completeItems.length).toBe(smallData.length);
+    expect(virtualItems.at(-1)!.classes()).not.toContain('is-last');
+    expect(completeItems.at(-1)!.classes()).toContain('is-last');
+  });
+
+  it('可见窗口使用稳定 3D 合成层，项目样式不再过渡全部属性', () => {
+    const wrapper = mount(ExVirtualList, {
+      props: { dataSource: mockData, height: 400, itemHeight: 50 },
+    });
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/virtual-list/ExVirtualList.scss'),
+      'utf8'
+    );
+
+    expect(wrapper.get('.ex-virtual-list__items').attributes('style')).toContain(
+      'translate3d(0, 0px, 0)'
+    );
+    expect(stylesheet).not.toMatch(/\.ex-virtual-list__item[\s\S]*?@include transition\(all\)/);
+    expect(stylesheet).not.toContain('&:last-child');
   });
 
   // ============================================================================

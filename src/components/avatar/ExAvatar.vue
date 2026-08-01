@@ -35,23 +35,31 @@
     </button>
 
     <!-- 图标头像插槽 -->
-    <div v-else-if="$slots.icon" class="ex-avatar__icon">
-      <slot name="icon" />
+    <div
+      v-else-if="hasIconSlot"
+      class="ex-avatar__icon"
+    >
+      <slot name="icon"></slot>
     </div>
 
     <!-- 文字头像 -->
-    <span v-else-if="displayText" ref="textRef" class="ex-avatar__text" :style="textStyles">
+    <span
+      v-else-if="displayText"
+      class="ex-avatar__text"
+    >
       {{ displayText }}
     </span>
 
     <!-- 默认插槽 -->
-    <slot v-else />
+    <slot v-else></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue';
+import { computed, ref, useSlots, watch } from 'vue';
+import { getFirstGrapheme } from '../../utils/text';
+import { hasRenderableContent } from '../../utils/vnode';
 import type { ExAvatarProps, ExAvatarEmits, ExAvatarExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -64,7 +72,6 @@ const props = withDefaults(defineProps<ExAvatarProps>(), {
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
   shape: 'circle',
   draggable: false,
-  gap: 4,
 });
 
 const emit = defineEmits<ExAvatarEmits>();
@@ -77,10 +84,7 @@ const componentSize = useComponentSize(
 );
 
 const avatarRef = ref<HTMLElement>();
-const textRef = ref<HTMLElement>();
 const imageError = ref(false);
-const textScale = ref(1);
-let resizeObserver: ResizeObserver | null = null;
 
 // 计算属性
 const showImage = computed(() => {
@@ -88,11 +92,9 @@ const showImage = computed(() => {
 });
 
 const displayText = computed(() => {
-  if (props.text) {
-    return props.text;
-  }
-  return '';
+  return getFirstGrapheme(props.text ?? '');
 });
+const hasIconSlot = computed(() => hasRenderableContent(slots.icon?.({})));
 
 // 国际化计算属性
 const computedAlt = computed(() => {
@@ -103,7 +105,7 @@ const computedAriaLabel = computed(() => {
   if (props.ariaLabel) return props.ariaLabel;
 
   if (showImage.value) return t('avatar.imageAvatar');
-  if (slots.icon) return t('avatar.iconAvatar');
+  if (hasIconSlot.value) return t('avatar.iconAvatar');
   if (displayText.value) return t('avatar.textAvatar');
 
   return t('avatar.userAvatar');
@@ -127,7 +129,7 @@ const avatarClasses = computed(() => {
   ];
 
   if (showImage.value) classes.push('ex-avatar--image');
-  else if (slots.icon) classes.push('ex-avatar--icon');
+  else if (hasIconSlot.value) classes.push('ex-avatar--icon');
   else if (displayText.value) classes.push('ex-avatar--text');
 
   classes.push(...normalizeCustomClass(props.class));
@@ -169,42 +171,6 @@ const avatarStyles = computed(() => {
   return styles;
 });
 
-const textStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  if (textScale.value !== 1) {
-    styles.transform = `scale(${textScale.value})`;
-  }
-
-  if (props.gap) {
-    styles.marginLeft = `${props.gap}px`;
-    styles.marginRight = `${props.gap}px`;
-  }
-
-  return styles;
-});
-
-// 计算文字缩放
-const calculateTextScale = async () => {
-  await nextTick();
-
-  if (!displayText.value) return;
-  const textElement = textRef.value;
-  const avatarElement = avatarRef.value;
-
-  if (!textElement || !avatarElement) return;
-
-  const textWidth = textElement.scrollWidth;
-  const avatarWidth = avatarElement.offsetWidth;
-  const maxWidth = Math.max(0, avatarWidth - props.gap * 2);
-
-  if (textWidth > maxWidth) {
-    textScale.value = Math.max(0, Math.min(1, maxWidth / textWidth));
-  } else {
-    textScale.value = 1;
-  }
-};
-
 // 事件处理
 const handleLoad = (event: Event) => {
   imageError.value = false;
@@ -236,28 +202,6 @@ watch(
     imageError.value = false;
   }
 );
-
-// 监听文字变化，重新计算缩放
-watch(
-  [displayText, () => props.size, componentSize, () => props.gap],
-  () => {
-    calculateTextScale();
-  },
-  { flush: 'post' }
-);
-
-onMounted(() => {
-  void calculateTextScale();
-  if (typeof ResizeObserver !== 'undefined' && avatarRef.value) {
-    resizeObserver = new ResizeObserver(() => void calculateTextScale());
-    resizeObserver.observe(avatarRef.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  resizeObserver = null;
-});
 
 defineExpose<ExAvatarExposed>({
   getElement,

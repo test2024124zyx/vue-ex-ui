@@ -22,6 +22,11 @@
   padding: 0;
   list-style: none;
 
+  // 文档站等宿主环境可能为列表重新注入 marker，组件必须在自身边界内显式清除。
+  &::marker {
+    content: '';
+  }
+
   &--grid {
     display: grid;
     grid-template-columns: repeat(var(--ex-list-grid-columns-xs), minmax(0, 1fr));
@@ -33,6 +38,11 @@
   min-width: 0;
   margin: 0;
   padding: 0;
+  list-style: none;
+
+  &::marker {
+    content: '';
+  }
 
   &--disabled {
     opacity: 0.5;

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { enableAutoUnmount, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExCascader from '../../../src/components/cascader/ExCascader.vue';
 import type { CascaderOption } from '../../../src/components/cascader/types';
 
@@ -33,6 +35,19 @@ describe('ExCascader', () => {
 
   beforeEach(() => {
     document.body.innerHTML = '';
+  });
+
+  it('默认保持行内控件宽度，同时允许外部样式扩展为块级宽度', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/cascader/ExCascader.scss'),
+      'utf8',
+    );
+
+    const rootDeclaration = stylesheet.match(/\.ex-cascader\s*\{([\s\S]*?)font-family:/)?.[1];
+    expect(rootDeclaration).toMatch(/display:\s*inline-block/);
+    expect(rootDeclaration).toMatch(/width:\s*240px/);
+    expect(rootDeclaration).toMatch(/max-width:\s*100%/);
+    expect(rootDeclaration).not.toMatch(/\n\s*width:\s*100%/);
   });
 
   describe('基础渲染与无障碍', () => {

@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent, h, nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExMenu from '../../../src/components/menu/ExMenu.vue';
 import ExMenuItem from '../../../src/components/menu/ExMenuItem.vue';
 import ExSubMenu from '../../../src/components/menu/ExSubMenu.vue';
@@ -61,6 +63,21 @@ describe('ExSubMenu', () => {
     expect(collapse.attributes('aria-hidden')).toBeUndefined();
 
     await wrapper.get('.ex-submenu__title').trigger('click');
+    expect(wrapper.emitted('open-change')).toEqual([[true], [false]]);
+  });
+
+  it('点击父级箭头可以关闭子菜单', async () => {
+    const wrapper = track(
+      mount(ExSubMenu, {
+        props: { itemKey: 'group', title: '分组' },
+        slots: { default: submenuSlot },
+      })
+    );
+
+    await wrapper.get('.ex-submenu__title').trigger('click');
+    expect(wrapper.classes()).toContain('ex-submenu--open');
+    await wrapper.get('.ex-submenu__arrow').trigger('click');
+    expect(wrapper.classes()).not.toContain('ex-submenu--open');
     expect(wrapper.emitted('open-change')).toEqual([[true], [false]]);
   });
 
@@ -150,6 +167,17 @@ describe('ExSubMenu', () => {
     expect(popup?.querySelectorAll('[role="menu"]')).toHaveLength(0);
     expect(wrapper.get('.ex-submenu__title').text()).toBe('分组');
     expect(wrapper.get('.ex-submenu__title').attributes('aria-controls')).toBe(popup?.id);
+    expect(wrapper.get('.ex-submenu').classes()).toContain('ex-submenu--horizontal');
+  });
+
+  it('父级打开样式只控制自身直接箭头，不污染嵌套子菜单', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExSubMenu.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).not.toContain('&--open &__arrow');
+    expect(stylesheet).toContain('&__arrow.is-open');
   });
 
   it('ArrowDown 打开并聚焦首项，Escape 关闭并恢复标题焦点', async () => {

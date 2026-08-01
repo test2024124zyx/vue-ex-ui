@@ -65,6 +65,35 @@ describe('ExEllipsis', () => {
     expect(content().attributes('title')).toBe('很长的完整文本');
   });
 
+  it('inline 模式在最后一行预留区显示动态图标而不是底部按钮', async () => {
+    mountEllipsis({ expandable: true, expandControl: 'inline', lines: 2 }, '很长的完整文本');
+    setMetrics({ scrollHeight: 80, clientHeight: 40 });
+    exposed().checkOverflow();
+    await nextTick();
+
+    const control = wrapper!.get<HTMLButtonElement>('.ex-ellipsis__inline-control');
+    expect(wrapper!.classes()).toContain('ex-ellipsis--control-inline');
+    expect(wrapper!.find('.ex-ellipsis__actions').exists()).toBe(false);
+    expect(control.attributes('aria-controls')).toBe(content().element.id);
+    expect(control.attributes('aria-expanded')).toBe('false');
+
+    await control.trigger('click');
+    expect(content().classes()).toContain('is-expanded');
+    expect(control.attributes('aria-expanded')).toBe('true');
+    expect(control.get('.ex-ellipsis__btn-icon').classes()).toContain('is-expanded');
+  });
+
+  it('button 是兼容默认模式，非法运行时值同样安全回退', async () => {
+    mountEllipsis({ expandable: true, expandControl: 'unknown' });
+    setMetrics({ scrollHeight: 80, clientHeight: 20 });
+    exposed().checkOverflow();
+    await nextTick();
+
+    expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
+    expect(wrapper!.find('.ex-ellipsis__inline-control').exists()).toBe(false);
+    expect(wrapper!.classes()).toContain('ex-ellipsis--control-button');
+  });
+
   it('单行水平溢出同样可被检测', async () => {
     mountEllipsis({ expandable: true });
     setMetrics({ scrollWidth: 180, clientWidth: 100 });

@@ -207,11 +207,25 @@ const getMenuItems = (): HTMLElement[] => {
   return unique;
 };
 
+/** 只调整菜单自身滚动位置，避免 scrollIntoView 连带滚动页面和触发器。 */
+const scrollMenuItemIntoView = (item: HTMLElement): void => {
+  const menu = menuRef.value;
+  if (!menu) return;
+
+  const menuRect = menu.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  if (itemRect.top < menuRect.top) {
+    menu.scrollTop -= menuRect.top - itemRect.top;
+  } else if (itemRect.bottom > menuRect.bottom) {
+    menu.scrollTop += itemRect.bottom - menuRect.bottom;
+  }
+};
+
 const activateItem = (itemId: string) => {
   activeItemId.value = itemId;
   nextTick(() => {
     const item = document.getElementById(itemId);
-    item?.scrollIntoView?.({ block: 'nearest' });
+    if (item) scrollMenuItemIntoView(item);
   });
 };
 

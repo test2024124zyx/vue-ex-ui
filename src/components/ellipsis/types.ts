@@ -1,9 +1,13 @@
+export type EllipsisExpandControl = 'button' | 'inline';
+
 /** 文本省略属性。 */
 export interface ExEllipsisProps {
   /** 折叠状态最多显示的正整数行数。 */
   lines?: number;
   /** 是否允许展开和收起。 */
   expandable?: boolean;
+  /** 展开控件样式：底部文字按钮或最后一行行内动态图标。 */
+  expandControl?: EllipsisExpandControl;
   /** 真实溢出时是否用原生 title 展示完整文本。 */
   tooltip?: boolean;
   /** 根分组的无障碍名称。 */

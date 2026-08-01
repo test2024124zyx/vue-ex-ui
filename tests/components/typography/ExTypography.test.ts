@@ -116,6 +116,32 @@ describe('ExTypography', () => {
     expect(wrapper.classes()).toContain('ex-typography--underline')
   })
 
+  it.each([
+    ['body', 'p'],
+    ['caption', 'span'],
+    ['overline', 'label'],
+  ] as const)('渐变是独立文本效果，可应用于 %s 文本和自定义标签', (variant, tag) => {
+    const wrapper = mount(ExTypography, {
+      props: { variant, tag, gradient: true, color: 'danger' },
+      slots: { default: '渐变正文' },
+    })
+
+    expect(wrapper.element.tagName).toBe(tag.toUpperCase())
+    expect(wrapper.classes()).toContain('ex-typography--gradient')
+    expect(wrapper.attributes('style') ?? '').not.toContain('--ex-color-danger')
+  })
+
+  it('渐变效果在未注册主题渐变变量时仍有语义色回退', () => {
+    const wrapper = mount(ExTypography, {
+      props: { gradient: true },
+      slots: { default: '渐变文本' },
+    })
+
+    expect(wrapper.attributes('style')).toContain(
+      '--ex-typography-gradient: var(--ex-gradient-primary, linear-gradient(135deg, var(--ex-color-primary), var(--ex-color-secondary)))'
+    )
+  })
+
   // 自定义样式测试
   it('applies custom styles correctly', () => {
     const customStyle = {

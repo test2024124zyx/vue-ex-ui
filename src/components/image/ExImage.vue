@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useSlots, watch, type CSSProperties } from 'vue';
+import { computed, nextTick, onMounted, ref, useSlots, watch, type CSSProperties } from 'vue';
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
@@ -82,6 +82,22 @@ function openPreview(): void {
   previewVisible.value = true;
 }
 
+/**
+ * SSR 水合或命中内存缓存时，原生 load/error 事件可能早于 Vue 监听器绑定。
+ * 通过原生完成状态补发事件，统一走既有事件处理链并保留对外事件语义。
+ */
+function reconcileMainImageStatus(source?: string): void {
+  const image = mainImageRef.value;
+  if (!source || source !== props.src || status.value !== 'loading' || !image?.complete) return;
+
+  image.dispatchEvent(new Event(image.naturalWidth > 0 ? 'load' : 'error'));
+}
+
+onMounted(async () => {
+  await nextTick();
+  reconcileMainImageStatus(props.src);
+});
+
 useOverlay({
   active: () => previewVisible.value,
   container: overlayRef,
@@ -92,9 +108,13 @@ useOverlay({
 
 watch(
   () => props.src,
-  source => {
+  async source => {
     status.value = source ? 'loading' : 'idle';
     closePreview();
+
+    if (!source) return;
+    await nextTick();
+    reconcileMainImageStatus(source);
   }
 );
 

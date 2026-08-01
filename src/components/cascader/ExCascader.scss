@@ -3,7 +3,8 @@
 .ex-cascader {
   position: relative;
   display: inline-block;
-  width: 100%;
+  width: 240px;
+  max-width: 100%;
   font-family: var(--ex-font-secondary);
 
   // 输入框包装器
@@ -13,7 +14,7 @@
     align-items: center;
   }
 
-  // 输入�?
+  // 输入框
   &__input {
     width: 100%;
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
@@ -241,7 +242,7 @@
     }
   }
 
-  // 禁用状�?
+  // 禁用状态
   &--disabled {
     cursor: not-allowed;
 
@@ -250,7 +251,7 @@
     }
   }
 
-  // 响应�?
+  // 响应式布局
   @media (max-width: 768px) {
     &__dropdown {
       position: fixed;
@@ -271,7 +272,7 @@
     }
   }
 
-  // 无障碍支�?
+  // 减少动态效果
   @media (prefers-reduced-motion: reduce) {
     .ex-cascader__input,
     .ex-cascader__option,

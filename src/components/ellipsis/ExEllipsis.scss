@@ -8,6 +8,7 @@
   color: var(--ex-color-text-primary);
 
   &__content {
+    box-sizing: border-box;
     line-height: var(--ex-leading-relaxed);
     overflow-wrap: anywhere;
 
@@ -30,6 +31,39 @@
     display: flex;
     justify-content: flex-start;
     margin-top: var(--ex-spacing-2);
+  }
+
+  &--control-inline.ex-ellipsis--has-control &__content {
+    // 行内按钮占用最后一行尾部空间，使浏览器生成的省略号不会被按钮覆盖。
+    padding-inline-end: calc(24px + var(--ex-spacing-1));
+  }
+
+  &__inline-control {
+    position: absolute;
+    inset-inline-end: 0;
+    bottom: 0;
+    display: inline-flex;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--ex-color-primary);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-primary-alpha-30);
+    border-radius: var(--ex-radius-full);
+    cursor: pointer;
+    transition:
+      color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
   }
 
   &__btn {
@@ -83,7 +117,8 @@
     height: 16px;
     transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
 
-    svg {
+    svg,
+    :deep(.ex-icon) {
       display: block;
       width: 100%;
       height: 100%;
@@ -105,11 +140,30 @@
       width: 18px;
       height: 18px;
     }
+
+    &--control-inline.ex-ellipsis--has-control .ex-ellipsis__content {
+      padding-inline-end: calc(28px + var(--ex-spacing-1));
+    }
+
+    &__inline-control {
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+@media (hover: hover) {
+  .ex-ellipsis__inline-control:hover {
+    color: var(--ex-color-primary-hover);
+    background: var(--ex-color-primary-alpha-10);
+    border-color: var(--ex-color-primary);
+    box-shadow: 0 0 10px var(--ex-color-primary-alpha-30);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ex-ellipsis__btn,
+  .ex-ellipsis__inline-control,
   .ex-ellipsis__btn-icon {
     transition: none;
   }
@@ -120,7 +174,8 @@
 }
 
 @media (prefers-contrast: high) {
-  .ex-ellipsis__btn {
+  .ex-ellipsis__btn,
+  .ex-ellipsis__inline-control {
     border-width: 2px;
   }
 }

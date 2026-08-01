@@ -195,7 +195,8 @@
 }
 
 .ex-input--neon {
-  --ex-input-border-color: var(--ex-color-neon-blue-500);
+  // 视觉强调跟随当前主题主色，避免粉色、浅色等主题仍固定显示蓝色边框。
+  --ex-input-border-color: var(--ex-color-primary);
   --ex-input-background: linear-gradient(
     135deg,
     var(--ex-color-bg-secondary-alpha-80),

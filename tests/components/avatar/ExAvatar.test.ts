@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
 import ExAvatar from '../../../src/components/avatar/ExAvatar.vue';
 
 // Mock ExIcon component
@@ -36,35 +35,36 @@ describe('ExAvatar', () => {
     expect(wrapper.classes()).toContain('ex-avatar--image');
   });
 
-  it('renders icon avatar correctly (slot + Iconify)', () => {
+  it('图标头像使用独立居中容器承载图标插槽', () => {
     const wrapper = mount(ExAvatar, {
       slots: {
-        default: '<ex-icon src="https://api.iconify.design/ri/user-3-line.svg"></ex-icon>',
+        icon: '<ex-icon src="/user.svg"></ex-icon>',
       },
       global: {
         components: {
           'ex-icon': {
             name: 'ex-icon',
             props: ['src'],
-            template: '<i class="ex-avatar__icon ex-icon" :src="src"></i>',
+            template: '<i class="ex-icon" :src="src"></i>',
           },
         },
       },
     });
 
-    expect(wrapper.find('.ex-avatar__icon').exists()).toBe(true);
+    expect(wrapper.find('.ex-avatar__icon > .ex-icon').exists()).toBe(true);
+    expect(wrapper.classes()).toContain('ex-avatar--icon');
   });
 
-  it('renders text avatar correctly', () => {
+  it('文字头像只显示首个完整字素', () => {
     const wrapper = mount(ExAvatar, {
       props: {
-        text: 'AB',
+        text: '👩‍💻开发者',
       },
     });
 
     const textSpan = wrapper.find('.ex-avatar__text');
     expect(textSpan.exists()).toBe(true);
-    expect(textSpan.text()).toBe('AB');
+    expect(textSpan.text()).toBe('👩‍💻');
     expect(wrapper.classes()).toContain('ex-avatar--text');
   });
 
@@ -176,18 +176,6 @@ describe('ExAvatar', () => {
 
     await retry.trigger('click');
     expect(wrapper.find('img').attributes('src')).toBe('https://example.com/retry.jpg');
-  });
-
-  it('calculates text scale after the initial mount', async () => {
-    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(100);
-    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(40);
-    const wrapper = mount(ExAvatar, { props: { text: 'LONG', gap: 4 } });
-
-    await nextTick();
-    await nextTick();
-
-    expect(wrapper.find('.ex-avatar__text').attributes('style')).toContain('scale(0.32)');
-    vi.restoreAllMocks();
   });
 
   it('handles click event', async () => {

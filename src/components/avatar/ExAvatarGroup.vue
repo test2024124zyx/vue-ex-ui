@@ -1,8 +1,22 @@
 <template>
-  <div :class="groupClasses" :style="groupStyles">
-    <template v-for="(vnode, index) in displayAvatars" :key="vnode.key ?? index">
-      <slot name="avatar" :vnode="vnode" :index="index">
-        <AvatarGroupItem :vnode="vnode" :size="size" :shape="shape" />
+  <div
+    :class="groupClasses"
+    :style="groupStyles"
+  >
+    <template
+      v-for="(vnode, index) in displayAvatars"
+      :key="vnode.key ?? index"
+    >
+      <slot
+        name="avatar"
+        :vnode="vnode"
+        :index="index"
+      >
+        <AvatarGroupItem
+          :vnode="vnode"
+          :size="size"
+          :shape="shape"
+        />
       </slot>
     </template>
 
@@ -18,10 +32,11 @@
         :size="size"
         :shape="shape"
         :style="maxStyle"
-        :text="overflowText"
         aria-hidden="true"
         class="ex-avatar-group__overflow-avatar"
-      />
+      >
+        <span class="ex-avatar-group__overflow-count">{{ overflowText }}</span>
+      </ExAvatar>
     </button>
   </div>
 </template>

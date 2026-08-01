@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExImage from '../../../src/components/image/ExImage.vue';
@@ -40,6 +40,7 @@ describe('ExImage', () => {
     wrappers.splice(0).forEach(wrapper => wrapper.unmount());
     hosts.splice(0).forEach(host => host.remove());
     document.querySelectorAll('.ex-image-preview').forEach(node => node.remove());
+    vi.restoreAllMocks();
   });
 
   it('只由原生图片提供图像语义，不重复创建 role=img', () => {
@@ -99,6 +100,33 @@ describe('ExImage', () => {
     expect(wrapper.find('.ex-image__placeholder').exists()).toBe(false);
     expect(wrapper.find('.caption').exists()).toBe(true);
     expect(wrapper.classes()).toContain('ex-image--loaded');
+  });
+
+  it('挂载时会补偿已经完成加载的缓存图片，避免永久停留在加载态', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(80);
+
+    const wrapper = mountImage();
+    await nextTick();
+    await nextTick();
+
+    expect(wrapper.find('.ex-image__placeholder').exists()).toBe(false);
+    expect(wrapper.classes()).toContain('ex-image--loaded');
+    expect(wrapper.emitted('load')?.[0]?.[0]).toBeInstanceOf(Event);
+  });
+
+  it('挂载时会识别已经加载失败的缓存图片并进入错误态', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+
+    const wrapper = mountImage();
+    await nextTick();
+    await nextTick();
+
+    expect(wrapper.find('img').exists()).toBe(false);
+    expect(wrapper.find('.ex-image__error').exists()).toBe(true);
+    expect(wrapper.classes()).toContain('ex-image--error');
+    expect(wrapper.emitted('error')?.[0]?.[0]).toBeInstanceOf(Event);
   });
 
   it('加载失败后发出事件、移除破损图片，并提供稳定错误区域', async () => {

@@ -19,6 +19,7 @@
           v-bind="{ ...actionAttrs, ...triggerProps }"
           type="button"
           class="ex-submenu__title"
+          :class="{ 'is-open': isOpen }"
           :disabled="props.disabled"
           role="menuitem"
           aria-haspopup="menu"
@@ -42,6 +43,7 @@
             </span>
             <span
               class="ex-submenu__arrow"
+              :class="{ 'is-open': isOpen }"
               aria-hidden="true"
             >
               <svg
@@ -83,6 +85,7 @@
         v-bind="actionAttrs"
         type="button"
         class="ex-submenu__title"
+        :class="{ 'is-open': isOpen }"
         :disabled="props.disabled"
         role="menuitem"
         aria-haspopup="menu"
@@ -107,6 +110,7 @@
           </span>
           <span
             class="ex-submenu__arrow"
+            :class="{ 'is-open': isOpen }"
             aria-hidden="true"
           >
             <svg
@@ -203,6 +207,7 @@ const subMenuClasses = computed(() => [
     'ex-submenu--disabled': props.disabled,
     'ex-submenu--collapsed': menuContext?.collapsed.value === true,
     'ex-submenu--has-icon': hasIcon.value,
+    'ex-submenu--horizontal': isHorizontal.value,
   },
 ]);
 

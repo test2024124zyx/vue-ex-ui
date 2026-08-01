@@ -284,7 +284,7 @@ describe('ExDropdown', () => {
     expect(triggerButton().attributes('aria-expanded')).toBe('true');
   });
 
-  it('自定义 ExDropdownItem 选择后关闭，图标保持装饰性语义', async () => {
+  it('自定义 ExDropdownItem 选择后关闭，图标使用可继承主题色的遮罩渲染', async () => {
     const onClick = vi.fn();
     mountDropdown(
       { items: [] },
@@ -304,7 +304,36 @@ describe('ExDropdown', () => {
     await flushPromises();
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(wrapper!.emitted('update:visible')?.at(-1)).toEqual([false]);
-    expect(document.querySelector('.ex-dropdown-item__icon')?.getAttribute('alt')).toBe('');
+    expect(document.querySelector('.ex-dropdown-item__icon.ex-icon')).not.toBeNull();
+    expect(document.querySelector('.ex-dropdown-item__icon .ex-icon__image-mask')).not.toBeNull();
+    expect(document.querySelector('.ex-dropdown-item__icon')?.getAttribute('aria-hidden')).toBe(
+      'true'
+    );
+  });
+
+  it('鼠标高亮菜单项只滚动菜单容器，不调用会带动页面的 scrollIntoView', async () => {
+    const original = HTMLElement.prototype.scrollIntoView;
+    const pageScroll = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      writable: true,
+      value: pageScroll,
+    });
+
+    try {
+      mountDropdown();
+      await triggerButton().trigger('click');
+      await flushPromises();
+
+      menuItems()[0]?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+      await flushPromises();
+
+      expect(pageScroll).not.toHaveBeenCalled();
+      expect(menuElement().getAttribute('aria-activedescendant')).toBe(menuItems()[0]?.id);
+    } finally {
+      if (original) HTMLElement.prototype.scrollIntoView = original;
+      else delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+    }
   });
 
   it('hideOnClick=false 时选择项不会关闭菜单', async () => {

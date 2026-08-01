@@ -28,7 +28,7 @@ export interface ExAvatarProps {
   /** 图片alt属性 */
   alt?: string;
 
-  /** 文字内容（当没有图片和图标时显示） */
+  /** 文字内容（当没有图片和图标时显示首个完整字素） */
   text?: string;
   /** 背景颜色 */
   backgroundColor?: string;
@@ -38,8 +38,6 @@ export interface ExAvatarProps {
   draggable?: boolean;
   /** 跨域设置 */
   crossOrigin?: 'anonymous' | 'use-credentials' | '';
-  /** 文字间距 */
-  gap?: number;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */

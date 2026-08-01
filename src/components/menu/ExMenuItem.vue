@@ -95,6 +95,7 @@ const itemClasses = computed(() => [
     'ex-menu-item--disabled': effectiveDisabled.value,
     'ex-menu-item--collapsed': menuContext?.collapsed.value === true,
     'ex-menu-item--has-icon': hasIcon.value,
+    'ex-menu-item--horizontal': menuContext?.mode.value === 'horizontal',
   },
 ]);
 

@@ -3,7 +3,7 @@
     v-if="divided"
     class="ex-dropdown-item__divider"
     role="separator"
-  />
+  ></div>
   <div
     v-bind="$attrs"
     :id="itemId"
@@ -14,14 +14,14 @@
     @mouseenter="handleMouseEnter"
     @click="handleClick"
   >
-    <!-- prettier-ignore -->
-    <img
+    <ExIcon
       v-if="icon"
       :src="icon"
-      alt=""
+      color="currentColor"
+      :size="16"
       class="ex-dropdown-item__icon"
       aria-hidden="true"
-    >
+    />
     <span class="ex-dropdown-item__label">
       <slot>{{ label }}</slot>
     </span>
@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { computed, inject, useId } from 'vue';
+import ExIcon from '../icon/ExIcon.vue';
 import { DROPDOWN_INJECTION_KEY } from './context';
 import type { ExDropdownItemEmits, ExDropdownItemProps } from './types';
 

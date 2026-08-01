@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { mount, type ComponentMountingOptions, type VueWrapper } from '@vue/test-utils';
 import ExInput from '../../../src/components/input/ExInput.vue';
 import type {
@@ -175,6 +177,17 @@ describe('ExInput', () => {
     ['filled', 'ex-input--filled'],
   ])('variant=%s 应用确定的变体类', (variant, className) => {
     expect(mountInput({ props: { variant } }).classes()).toContain(className);
+  });
+
+  it('neon 变体使用当前主题主色而不是固定蓝色令牌', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/input/ExInput.scss'),
+      'utf8'
+    );
+    const neonBlock = stylesheet.match(/\.ex-input--neon\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+
+    expect(neonBlock).toContain('--ex-input-border-color: var(--ex-color-primary)');
+    expect(neonBlock).not.toContain('--ex-color-neon-blue-500');
   });
 
   it.each<[InputStatus, string]>([
