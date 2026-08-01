@@ -40,7 +40,7 @@
     font-size: var(--ex-text-xs);
   }
 
-  @media (max-width: 575px) {
+  @include mobile {
     padding-left: var(--ex-spacing-2);
 
     .ex-anchor-link {

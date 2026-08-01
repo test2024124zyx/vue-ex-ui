@@ -10,7 +10,7 @@
     @click="handleClick"
   >
     <!-- 触发元素 -->
-    <slot />
+    <slot></slot>
 
     <!-- Tooltip 内容 -->
     <Teleport to="body">
@@ -20,6 +20,7 @@
           :id="popperId"
           ref="popperRef"
           :class="tooltipClasses"
+          :data-theme="configTheme"
           :style="tooltipStyles"
           role="tooltip"
           :aria-label="ariaLabel"
@@ -27,7 +28,7 @@
           @mouseleave="handlePopperLeave"
         >
           <!-- 霓虹边框效果 -->
-          <div class="ex-tooltip__border" />
+          <div class="ex-tooltip__border"></div>
 
           <!-- 内容 -->
           <div class="ex-tooltip__content">
@@ -37,7 +38,11 @@
           </div>
 
           <!-- 箭头 -->
-          <div v-if="showArrow" class="ex-tooltip__arrow" :style="arrowStyle" />
+          <div
+            v-if="showArrow"
+            class="ex-tooltip__arrow"
+            :style="arrowStyle"
+          ></div>
         </div>
       </Transition>
     </Teleport>
@@ -49,6 +54,7 @@ import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
+import { useConfigTheme } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExTooltip',
@@ -74,6 +80,7 @@ const visible = ref(false);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
 const popperId = `ex-tooltip-${generateId()}`;
+const configTheme = useConfigTheme();
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 

@@ -1,4 +1,5 @@
 @use '../../styles/tokens' as *;
+@use '../../styles/mixins' as *;
 
 .ex-file-list {
   display: flex;
@@ -412,7 +413,7 @@
     }
   }
 
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__toolbar {
       align-items: stretch;
       flex-direction: column;

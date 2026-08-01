@@ -9,6 +9,7 @@
         ref="loadingRef"
         v-bind="rootAttrs"
         :class="loadingClasses"
+        :data-theme="configTheme"
         :style="loadingStyles"
         role="status"
         aria-live="polite"
@@ -100,6 +101,7 @@
 import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useSlots, watch } from 'vue';
 import { lockDocumentScroll, unlockDocumentScroll } from '../../composables/overlay-manager';
 import { useI18n } from '../../locale';
+import { useConfigTheme } from '../config-provider/composables';
 import {
   acquireLoadingTargetPosition,
   normalizeLoadingColor,
@@ -128,6 +130,7 @@ const emit = defineEmits<ExLoadingEmits>();
 const attrs = useAttrs();
 const slots = useSlots();
 const { t } = useI18n();
+const configTheme = useConfigTheme();
 
 const OBSOLETE_ATTRS = new Set([
   'loading',

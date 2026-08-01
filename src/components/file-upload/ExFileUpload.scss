@@ -448,7 +448,7 @@
     transform: scale(0.9);
   }
 
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__drag {
       min-height: 150px;
       padding: var(--ex-spacing-6);

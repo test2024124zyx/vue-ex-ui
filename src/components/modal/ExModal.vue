@@ -12,6 +12,7 @@
         v-show="visible"
         class="ex-modal-root"
         :class="rootClasses"
+        :data-theme="configTheme"
         :style="rootStyles"
       >
         <div
@@ -115,7 +116,12 @@ import { computed, ref, useAttrs, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { useAnimation, useNeonEffect, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndex,
+} from '../config-provider/composables';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
@@ -158,6 +164,7 @@ const emit = defineEmits<ExModalEmits>();
 const attrs = useAttrs();
 const { t } = useLocale('dialog');
 const baseZIndex = useZIndex(50);
+const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const modalRef = ref<HTMLDivElement>();

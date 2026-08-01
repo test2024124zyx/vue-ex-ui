@@ -1,10 +1,11 @@
 // Mobile Responsive Styles
 // 移动端响应式样式
 
+@use 'sass:map';
 @use '../_tokens' as tokens;
 
-// 移动端专用样式 (0px - 575px)
-@media (max-width: 575px) {
+// 移动端专用样式（小于 sm 断点）
+@media (max-width: #{map.get(tokens.$breakpoints, sm) - 1px}) {
   .ex-typography {
     // 移动端字体大小调整
     &--display {
@@ -68,8 +69,8 @@
   }
 }
 
-// 小屏手机优化 (0px - 374px)
-@media (max-width: 374px) {
+// 小屏手机优化（小于 micro 断点）
+@media (max-width: #{map.get(tokens.$breakpoints, micro) - 1px}) {
   .ex-typography {
     &--display {
       font-size: clamp(1.5rem, 10vw, 2.5rem);

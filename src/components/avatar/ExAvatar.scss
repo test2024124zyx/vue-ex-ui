@@ -196,7 +196,7 @@
   }
 
   // 响应式设计
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     // 移动端稍微增大尺寸以便触摸
     &--small {
       width: calc(var(--ex-avatar-size-small) + 4px);

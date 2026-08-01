@@ -142,6 +142,7 @@
           v-if="dropdownVisible"
           ref="dropdownRef"
           class="ex-select__dropdown"
+          :data-theme="configTheme"
           :class="{ 'ex-select__dropdown--multiple': multiple }"
           :style="dropdownStyles"
         >
@@ -269,7 +270,7 @@ import type {
 } from './types';
 import { useLocale } from '../../locale';
 import { debounce } from '../../utils/debounce';
-import { useComponentSize } from '../config-provider/composables';
+import { useComponentSize, useConfigTheme } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { generateId } from '../../utils/id';
 import ExVirtualList from '../virtual-list/ExVirtualList.vue';
@@ -318,6 +319,7 @@ const dropdownVisible = ref(false);
 const searchQuery = ref('');
 const hoverIndex = ref(-1);
 const dropdownStyles = ref<Record<string, string>>({});
+const configTheme = useConfigTheme();
 
 // 唯一 id 前缀：用于 option id 与 aria-activedescendant 关联（屏幕阅读器播报高亮项）
 const baseId = generateId('ex-select');

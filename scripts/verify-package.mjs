@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -19,6 +19,14 @@ const requiredFiles = [
   'es/index.js',
   'es/assets/style-base.css',
   'es/assets/style-font.css',
+];
+
+const requiredStyleMarkers = [
+  { name: '全局颜色 Token', pattern: /--ex-color-primary\s*:/ },
+  { name: '全局背景 Token', pattern: /--ex-color-bg-primary\s*:/ },
+  { name: '应用级基础样式作用域', pattern: /\.ex-app(?:\s|\{|:)/ },
+  { name: '亮色主题选择器', pattern: /\[data-theme=['"]?light['"]?\]/ },
+  { name: '赛博扫描线关键帧', pattern: /@keyframes\s+ex-cyber-scanline/ },
 ];
 
 const isRenderableComponent = value => {
@@ -59,6 +67,14 @@ const publicComponentNames = module =>
 try {
   for (const file of requiredFiles) {
     await access(join(distRoot, file));
+  }
+
+  const fullStyle = await readFile(join(distRoot, 'ex-ui.css'), 'utf8');
+  const missingStyleMarkers = requiredStyleMarkers
+    .filter(({ pattern }) => !pattern.test(fullStyle))
+    .map(({ name }) => name);
+  if (missingStyleMarkers.length > 0) {
+    throw new Error(`整包样式缺少全局契约：${missingStyleMarkers.join('、')}`);
   }
 
   const esmModule = await import(`${pathToFileURL(join(distRoot, 'ex-ui.js')).href}?verify=1`);

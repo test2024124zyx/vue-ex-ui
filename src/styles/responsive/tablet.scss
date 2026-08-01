@@ -1,10 +1,11 @@
 // Tablet Responsive Styles
 // 平板端响应式样式
 
+@use 'sass:map';
 @use '../_tokens' as tokens;
 
-// 平板端样式 (576px - 991px)
-@media (min-width: 576px) and (max-width: 991px) {
+// 平板端样式（sm 至 lg 之间）
+@media (min-width: map.get(tokens.$breakpoints, sm)) and (max-width: #{map.get(tokens.$breakpoints, lg) - 1px}) {
   .ex-typography {
     // 平板端字体大小
     &--display {
@@ -51,7 +52,7 @@
 }
 
 // 平板横屏优化
-@media (min-width: 768px) and (max-width: 991px) and (orientation: landscape) {
+@media (min-width: map.get(tokens.$breakpoints, md)) and (max-width: #{map.get(tokens.$breakpoints, lg) - 1px}) and (orientation: landscape) {
   .ex-typography {
     &--display,
     &--h1,

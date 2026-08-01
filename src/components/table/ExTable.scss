@@ -529,7 +529,7 @@
 }
 
 // 超小屏幕（<375px）
-@media (max-width: 374px) {
+@include desktop-first(micro) {
   .ex-table__main {
     min-width: 500px; // 更小的最小宽度
   }

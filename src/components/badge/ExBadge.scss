@@ -336,7 +336,7 @@
   }
 
   // 响应式设计
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__sup--count {
       &.ex-badge__sup--small {
         min-width: 16px;

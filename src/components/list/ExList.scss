@@ -1,4 +1,5 @@
 @use '../../styles/performance' as *;
+@use '../../styles/mixins' as *;
 
 .ex-list {
   position: relative;
@@ -202,31 +203,31 @@ button.ex-list__item-surface {
   }
 }
 
-@media (min-width: 480px) {
+@include respond-to(sm) {
   .ex-list__items--grid {
     grid-template-columns: repeat(var(--ex-list-grid-columns-sm), minmax(0, 1fr));
   }
 }
 
-@media (min-width: 768px) {
+@include respond-to(md) {
   .ex-list__items--grid {
     grid-template-columns: repeat(var(--ex-list-grid-columns-md), minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+@include respond-to(lg) {
   .ex-list__items--grid {
     grid-template-columns: repeat(var(--ex-list-grid-columns-lg), minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1280px) {
+@include respond-to(xl) {
   .ex-list__items--grid {
     grid-template-columns: repeat(var(--ex-list-grid-columns-xl), minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1536px) {
+@include respond-to(2xl) {
   .ex-list__items--grid {
     grid-template-columns: repeat(var(--ex-list-grid-columns-xxl), minmax(0, 1fr));
   }

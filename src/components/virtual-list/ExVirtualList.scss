@@ -385,21 +385,23 @@
 // 性能优化 - 低端设备
 // ============================================================================
 
-@media (max-width: 768px) and (max-height: 1024px) {
-  .ex-virtual-list {
-    backdrop-filter: none;
-    background: var(--ex-color-bg-secondary);
-    box-shadow: none;
-
-    &:hover {
+@include desktop-first(md) {
+  @media (max-height: 1024px) {
+    .ex-virtual-list {
+      backdrop-filter: none;
+      background: var(--ex-color-bg-secondary);
       box-shadow: none;
+
+      &:hover {
+        box-shadow: none;
+      }
     }
-  }
 
-  .ex-virtual-list__item {
-    &:hover::before,
-    &:active::before {
-      box-shadow: none;
+    .ex-virtual-list__item {
+      &:hover::before,
+      &:active::before {
+        box-shadow: none;
+      }
     }
   }
 }

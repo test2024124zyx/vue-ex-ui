@@ -6,6 +6,7 @@
     <button
       type="button"
       class="ex-sider__mask"
+      :data-theme="configTheme"
       :class="{ 'is-no-animation': !globalAnimation }"
       :aria-label="locale.collapse"
       @click="requestCollapsed(true, 'mask')"
@@ -72,7 +73,7 @@ import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
-import { useAnimation, useNeonEffect } from '../config-provider/composables';
+import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
 import { layoutContextKey } from './context';
 import {
   getSiderBreakpointQuery,
@@ -109,6 +110,7 @@ const layoutContext = inject(layoutContextKey, null);
 const { t } = useLocale('layout');
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
+const configTheme = useConfigTheme();
 
 // 未传 collapsed 时由内部状态管理；受控模式只向外请求变更。
 const collapsedState = useControllableState<boolean>({

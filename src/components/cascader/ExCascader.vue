@@ -1,7 +1,15 @@
 <template>
-  <div ref="cascaderRef" :class="cascaderClasses" :style="cascaderStyles">
+  <div
+    ref="cascaderRef"
+    :class="cascaderClasses"
+    :style="cascaderStyles"
+  >
     <!-- 输入框 -->
-    <div ref="triggerRef" class="ex-cascader__input-wrapper" @click="handleTriggerClick">
+    <div
+      ref="triggerRef"
+      class="ex-cascader__input-wrapper"
+      @click="handleTriggerClick"
+    >
       <input
         ref="inputRef"
         :value="inputDisplayValue"
@@ -28,26 +36,46 @@
           :aria-label="t('common.clear')"
           @click.stop="handleClear"
         >
-          <ExIcon icon="close-line" :size="14" aria-hidden="true" />
+          <ExIcon
+            icon="close-line"
+            :size="14"
+            aria-hidden="true"
+          />
         </button>
-        <span v-else class="ex-cascader__arrow" :class="{ 'ex-cascader__arrow--open': visible }">
-          <ExIcon icon="arrow-down-s-line" :size="16" aria-hidden="true" />
+        <span
+          v-else
+          class="ex-cascader__arrow"
+          :class="{ 'ex-cascader__arrow--open': visible }"
+        >
+          <ExIcon
+            icon="arrow-down-s-line"
+            :size="16"
+            aria-hidden="true"
+          />
         </span>
       </div>
     </div>
 
     <!-- 下拉面板（Teleport 到 body，避免被祖先 overflow:hidden 裁剪 / z-index 影响） -->
-    <Teleport to="body" :disabled="!teleported">
+    <Teleport
+      to="body"
+      :disabled="!teleported"
+    >
       <transition name="ex-cascader-dropdown">
         <div
           v-if="visible"
           :id="dropdownId"
           ref="dropdownRef"
           class="ex-cascader__dropdown"
+          :data-theme="configTheme"
           :style="dropdownStyle"
         >
           <!-- 搜索结果（filterable 且有输入时） -->
-          <div v-if="filterable && searchQuery" class="ex-cascader__search-results" role="listbox">
+          <div
+            v-if="filterable && searchQuery"
+            class="ex-cascader__search-results"
+            role="listbox"
+          >
             <button
               v-for="result in searchResults"
               :key="result.values.join('/')"
@@ -63,12 +91,18 @@
             >
               <span class="ex-cascader__option-label">{{ result.labels.join(separator) }}</span>
             </button>
-            <div v-if="searchResults.length === 0" class="ex-cascader__empty">
+            <div
+              v-if="searchResults.length === 0"
+              class="ex-cascader__empty"
+            >
               {{ t('cascader.noData') }}
             </div>
           </div>
 
-          <div v-else class="ex-cascader__menus">
+          <div
+            v-else
+            class="ex-cascader__menus"
+          >
             <div
               v-for="(menu, index) in menus"
               :key="index"
@@ -100,7 +134,11 @@
                   v-if="option.children && option.children.length"
                   class="ex-cascader__option-arrow"
                 >
-                  <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
+                  <ExIcon
+                    icon="arrow-right-s-line"
+                    :size="16"
+                    aria-hidden="true"
+                  />
                 </span>
               </button>
             </div>
@@ -117,7 +155,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, useId } from 'vue';
 import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
+import { useComponentSize, useConfigTheme } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
@@ -157,6 +195,7 @@ const visible = ref(false);
 const dropdownId = `ex-cascader-${useId()}`;
 // 下拉面板定位样式（Teleport 到 body 后用 fixed 坐标定位）
 const dropdownStyle = ref<Record<string, string>>({});
+const configTheme = useConfigTheme();
 const selectedPath = ref<(string | number)[]>([...props.modelValue]);
 const activePath = ref<(string | number)[]>([...props.modelValue]);
 const menus = ref<CascaderOption[][]>([]);

@@ -323,7 +323,7 @@
     }
   }
 
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__toolbar {
       align-items: flex-start;
       min-height: 56px;

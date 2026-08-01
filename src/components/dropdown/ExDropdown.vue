@@ -27,6 +27,7 @@
           :id="menuId"
           ref="menuRef"
           :class="menuClasses"
+          :data-theme="configTheme"
           :style="menuStyles"
           role="menu"
           tabindex="-1"
@@ -60,7 +61,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, provide, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
-import { useZIndex } from '../config-provider/composables';
+import { useConfigTheme, useZIndex } from '../config-provider/composables';
 import { useOverlay } from '../../composables/useOverlay';
 import { computeFloatingPosition } from '../../utils/floating';
 import type { FloatingRect } from '../../utils/floating';
@@ -128,6 +129,7 @@ const isVisible = ref(props.visible ?? false);
 const activeItemId = ref<string | null>(null);
 const actualPlacement = ref<DropdownPlacement>('bottom-start');
 const menuStyles = ref<CSSProperties>({});
+const configTheme = useConfigTheme();
 const contextPoint = ref<{ x: number; y: number } | null>(null);
 let hoverTimer: number | undefined;
 let positionFrame: number | undefined;

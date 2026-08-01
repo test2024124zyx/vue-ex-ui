@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-image-compress {
   box-sizing: border-box;
   display: flex;
@@ -168,7 +170,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-image-compress {
     gap: var(--ex-spacing-4);
     padding: var(--ex-spacing-4);
@@ -193,7 +195,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@include desktop-first(sm) {
   .ex-image-compress__control-buttons {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -1,5 +1,10 @@
 <template>
-  <div ref="rootRef" v-bind="$attrs" :class="rootClasses" :style="rootStyle">
+  <div
+    ref="rootRef"
+    v-bind="$attrs"
+    :class="rootClasses"
+    :style="rootStyle"
+  >
     <!-- 触发器保持原生按钮语义所需的键盘与 ARIA 行为。 -->
     <button
       ref="triggerRef"
@@ -19,7 +24,10 @@
       @blur="handleBlur"
     >
       <div class="ex-color-picker__swatch">
-        <div class="ex-color-picker__swatch-inner" :style="previewStyle" />
+        <div
+          class="ex-color-picker__swatch-inner"
+          :style="previewStyle"
+        ></div>
       </div>
       <ExIcon
         class="ex-color-picker__arrow"
@@ -29,13 +37,17 @@
       />
     </button>
 
-    <Teleport to="body" :disabled="!teleported">
+    <Teleport
+      to="body"
+      :disabled="!teleported"
+    >
       <Transition name="ex-color-picker-dropdown">
         <div
           v-if="visible"
           :id="panelId"
           ref="panelRef"
           class="ex-color-picker__panel"
+          :data-theme="configTheme"
           :class="popperClass"
           :style="panelStyle"
           role="dialog"
@@ -53,9 +65,12 @@
             @pointerdown="onSVDown"
             @keydown="handleSVKeydown"
           >
-            <div class="ex-color-picker__sv-white" />
-            <div class="ex-color-picker__sv-black" />
-            <div class="ex-color-picker__sv-thumb" :style="svThumbStyle" />
+            <div class="ex-color-picker__sv-white"></div>
+            <div class="ex-color-picker__sv-black"></div>
+            <div
+              class="ex-color-picker__sv-thumb"
+              :style="svThumbStyle"
+            ></div>
           </div>
 
           <div class="ex-color-picker__sliders">
@@ -73,7 +88,10 @@
                 @pointerdown="onHueDown"
                 @keydown="handleHueKeydown"
               >
-                <div class="ex-color-picker__slider-thumb" :style="hueThumbStyle" />
+                <div
+                  class="ex-color-picker__slider-thumb"
+                  :style="hueThumbStyle"
+                ></div>
               </div>
 
               <div
@@ -90,18 +108,35 @@
                 @pointerdown="onAlphaDown"
                 @keydown="handleAlphaKeydown"
               >
-                <div class="ex-color-picker__alpha-bar" :style="alphaBarStyle" />
-                <div class="ex-color-picker__slider-thumb" :style="alphaThumbStyle" />
+                <div
+                  class="ex-color-picker__alpha-bar"
+                  :style="alphaBarStyle"
+                ></div>
+                <div
+                  class="ex-color-picker__slider-thumb"
+                  :style="alphaThumbStyle"
+                ></div>
               </div>
             </div>
 
-            <div class="ex-color-picker__current" aria-hidden="true">
-              <div class="ex-color-picker__current-inner" :style="previewStyle" />
+            <div
+              class="ex-color-picker__current"
+              aria-hidden="true"
+            >
+              <div
+                class="ex-color-picker__current-inner"
+                :style="previewStyle"
+              ></div>
             </div>
           </div>
 
           <div class="ex-color-picker__controls">
-            <label :for="inputId" class="ex-color-picker__label">{{ t('hex') }}</label>
+            <label
+              :for="inputId"
+              class="ex-color-picker__label"
+            >
+              {{ t('hex') }}
+            </label>
             <input
               :id="inputId"
               v-model="hexInput"
@@ -113,7 +148,10 @@
             />
           </div>
 
-          <div v-if="predefine?.length" class="ex-color-picker__predefine">
+          <div
+            v-if="predefine?.length"
+            class="ex-color-picker__predefine"
+          >
             <button
               v-for="(color, index) in predefine"
               :key="`${color}-${index}`"
@@ -123,7 +161,10 @@
               :aria-label="`${t('selectColor')} ${color}`"
               @click="selectPredefine(color)"
             >
-              <span class="ex-color-picker__predefine-inner" :style="{ backgroundColor: color }" />
+              <span
+                class="ex-color-picker__predefine-inner"
+                :style="{ backgroundColor: color }"
+              ></span>
             </button>
           </div>
 
@@ -156,7 +197,7 @@ import type { ExColorPickerEmits, ExColorPickerExposed, ExColorPickerProps } fro
 import { clamp, formatColor, hsvToRgb, opaqueRgb, parseColor, rgbToHsv } from './utils';
 import type { RGBA } from './utils';
 import { useLocale } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
+import { useComponentSize, useConfigTheme } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
@@ -194,6 +235,7 @@ const alphaRef = ref<HTMLElement>();
 
 const visible = ref(false);
 const panelStyle = ref<Record<string, string>>({});
+const configTheme = useConfigTheme();
 const hasValue = ref(false);
 const hexInput = ref('');
 const hsva = reactive({ h: 0, s: 1, v: 1, a: 1 });

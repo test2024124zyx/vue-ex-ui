@@ -186,7 +186,7 @@
 }
 
 // 响应式设�?
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-tooltip__popper {
     max-width: calc(100vw - 32px);
     font-size: var(--ex-text-xs);

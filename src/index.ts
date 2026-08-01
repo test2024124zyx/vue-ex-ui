@@ -87,7 +87,8 @@ import ExTreeSelect from './components/tree-select';
 import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 
 // 导入样式（全局导入时自动引入）
-import './style-base';
+// 整包构建必须从公共入口直接声明全局样式，避免 CSS-only 中间入口被 Rollup 错误裁剪。
+import './styles/index.scss';
 
 // v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
 const publicComponents = [

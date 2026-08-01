@@ -11,6 +11,7 @@
         ref="wrapperRef"
         class="ex-drawer-wrapper"
         :class="wrapperClasses"
+        :data-theme="configTheme"
         :style="wrapperStyles"
         v-bind="$attrs"
       >
@@ -20,7 +21,7 @@
             v-show="visible"
             class="ex-drawer-mask"
             @click="handleMaskClick"
-          />
+          ></div>
         </Transition>
 
         <Transition :name="`ex-drawer-slide-${placement}`">
@@ -39,7 +40,7 @@
             <div
               class="ex-drawer__border"
               aria-hidden="true"
-            />
+            ></div>
 
             <div
               v-if="showHeader"
@@ -48,7 +49,7 @@
               <slot
                 v-if="$slots.header"
                 name="header"
-              />
+              ></slot>
               <div
                 v-else-if="hasTitle"
                 :id="titleId"
@@ -75,7 +76,7 @@
             </div>
 
             <div class="ex-drawer__body">
-              <slot />
+              <slot></slot>
             </div>
 
             <div
@@ -111,7 +112,7 @@ import { computed, ref, useId, useSlots } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { useZIndex } from '../config-provider/composables';
+import { useConfigTheme, useZIndex } from '../config-provider/composables';
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
@@ -144,6 +145,7 @@ const emit = defineEmits<ExDrawerEmits>();
 const slots = useSlots();
 const { t } = useLocale('drawer');
 const baseZIndex = useZIndex(50);
+const configTheme = useConfigTheme();
 const wrapperRef = ref<HTMLDivElement>();
 const panelRef = ref<HTMLDivElement>();
 const titleId = `ex-drawer-title-${useId()}`;

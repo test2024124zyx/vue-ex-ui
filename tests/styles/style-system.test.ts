@@ -149,6 +149,18 @@ describe('v2 样式系统边界', () => {
     expect(css).toContain('--ex-color-neon-blue-300: #5a9be7');
   });
 
+  it('响应式入口统一使用 Token 断点，避免全局边界漂移', () => {
+    const mobileCss = compile("@use 'src/styles/responsive/mobile';");
+    const tabletCss = compile("@use 'src/styles/responsive/tablet';");
+    const desktopCss = compile("@use 'src/styles/responsive/desktop';");
+
+    expect(mobileCss).toContain('@media (max-width: 479px)');
+    expect(mobileCss).toContain('@media (max-width: 374px)');
+    expect(tabletCss).toContain('@media (min-width: 480px) and (max-width: 1023px)');
+    expect(desktopCss).toContain('@media (min-width: 1024px)');
+    expect(desktopCss).toContain('@media (min-width: 1400px)');
+  });
+
   it('首屏初始化脚本与组件样式只识别两个主题', () => {
     const themeInit = readFileSync(join(root, 'public/theme-init.js'), 'utf8');
     const virtualListStyles = readFileSync(

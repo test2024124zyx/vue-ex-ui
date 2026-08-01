@@ -256,7 +256,7 @@
   }
 
   // 响应式布局
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__dropdown {
       position: fixed;
       top: auto;

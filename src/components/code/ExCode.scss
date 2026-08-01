@@ -201,7 +201,7 @@
   }
 
   &__copy-text {
-    @media (max-width: 576px) {
+    @include desktop-first(sm) {
       display: none;
     }
   }
@@ -423,7 +423,7 @@
   }
 
   // ── 响应式 ────────────────────────────────────────────────────────
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     --ex-code-font-size: var(--ex-text-xs);
     --ex-code-padding-y: var(--ex-spacing-2);
     --ex-code-padding-x: var(--ex-spacing-3);

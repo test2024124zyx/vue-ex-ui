@@ -14,6 +14,7 @@
         ref="dialogRef"
         class="ex-dialog-wrapper"
         :class="wrapperClasses"
+        :data-theme="configTheme"
         :style="wrapperStyles"
         v-bind="$attrs"
         @click.self="handleMaskClick"
@@ -23,7 +24,7 @@
           class="ex-dialog-modal"
           :class="modalClass"
           @click="handleMaskClick"
-        />
+        ></div>
 
         <Transition name="ex-dialog-zoom">
           <div
@@ -46,7 +47,7 @@
                 v-if="$slots.icon"
                 class="ex-dialog__icon"
               >
-                <slot name="icon" />
+                <slot name="icon"></slot>
               </div>
 
               <div
@@ -81,7 +82,7 @@
             </div>
 
             <div class="ex-dialog__body">
-              <slot />
+              <slot></slot>
             </div>
 
             <div
@@ -123,7 +124,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
 import { useOverlay } from '../../composables/useOverlay';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useZIndex } from '../config-provider/composables';
+import { useConfigTheme, useZIndex } from '../config-provider/composables';
 import type { ExDialogEmits, ExDialogExposed, ExDialogProps } from './types';
 
 defineOptions({
@@ -156,6 +157,7 @@ const emit = defineEmits<ExDialogEmits>();
 const slots = useSlots();
 const { t } = useLocale('dialog');
 const baseZIndex = useZIndex(50);
+const configTheme = useConfigTheme();
 const dialogRef = ref<HTMLDivElement>();
 const dialogContainerRef = ref<HTMLDivElement>();
 const titleId = `ex-dialog-title-${useId()}`;

@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-empty {
   display: flex;
   flex-direction: column;
@@ -79,7 +81,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-empty {
     min-block-size: 160px;
     padding: var(--ex-spacing-6) var(--ex-spacing-2);

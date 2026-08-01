@@ -5,6 +5,7 @@
         v-if="visible"
         ref="previewRef"
         class="ex-file-preview"
+        :data-theme="configTheme"
         role="dialog"
         aria-modal="true"
         :aria-label="dialogLabel"
@@ -340,7 +341,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { useZIndex } from '../config-provider/composables';
+import { useConfigTheme, useZIndex } from '../config-provider/composables';
 import { useControllableState } from '../../composables/useControllableState';
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
@@ -394,6 +395,7 @@ defineSlots<ExFilePreviewSlots>();
 
 const { t } = useLocale('filePreview');
 const baseZIndex = useZIndex(50);
+const configTheme = useConfigTheme();
 const previewRef = ref<HTMLDivElement>();
 const { files: fileList, sourceFailure } = usePreviewSources(
   () => props.file,

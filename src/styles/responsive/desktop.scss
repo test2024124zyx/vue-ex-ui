@@ -1,10 +1,11 @@
 // Desktop Responsive Styles
 // 桌面端响应式样式
 
+@use 'sass:map';
 @use '../_tokens' as tokens;
 
-// 桌面端样式 (992px+)
-@media (min-width: 992px) {
+// 桌面端样式（lg 及以上）
+@media (min-width: map.get(tokens.$breakpoints, lg)) {
   .ex-typography {
     // 桌面端字体大小
     &--display {
@@ -61,8 +62,8 @@
   }
 }
 
-// 大屏桌面优化 (1400px+)
-@media (min-width: 1400px) {
+// 大屏桌面优化（wide 及以上）
+@media (min-width: map.get(tokens.$breakpoints, wide)) {
   .ex-typography {
     &--display {
       font-size: clamp(5rem, 4vw, 7rem);

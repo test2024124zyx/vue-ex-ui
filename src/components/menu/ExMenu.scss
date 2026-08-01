@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-menu {
   position: relative;
   box-sizing: border-box;
@@ -72,7 +74,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-menu--vertical,
   .ex-menu--inline {
     width: 100%;

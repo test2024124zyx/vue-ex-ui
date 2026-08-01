@@ -12,7 +12,7 @@
     @click="handleClick"
   >
     <!-- 触发元素 -->
-    <slot />
+    <slot></slot>
 
     <!-- Popover 内容 -->
     <Teleport to="body">
@@ -22,6 +22,7 @@
           :id="popperId"
           ref="popperRef"
           :class="popoverClasses"
+          :data-theme="configTheme"
           :style="popoverStyles"
           role="dialog"
           :aria-label="ariaLabel"
@@ -30,10 +31,13 @@
           @click.stop
         >
           <!-- 霓虹边框效果 -->
-          <div class="ex-popover__border" />
+          <div class="ex-popover__border"></div>
 
           <!-- 标题 -->
-          <div v-if="title || $slots.title" class="ex-popover__title">
+          <div
+            v-if="title || $slots.title"
+            class="ex-popover__title"
+          >
             <slot name="title">
               {{ title }}
             </slot>
@@ -47,7 +51,10 @@
           </div>
 
           <!-- 箭头 -->
-          <div v-if="showArrow" class="ex-popover__arrow" />
+          <div
+            v-if="showArrow"
+            class="ex-popover__arrow"
+          ></div>
         </div>
       </Transition>
     </Teleport>
@@ -59,6 +66,7 @@ import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
+import { useConfigTheme } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExPopover',
@@ -84,6 +92,7 @@ const visible = ref(false);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
 const popperId = `ex-popover-${generateId()}`;
+const configTheme = useConfigTheme();
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 

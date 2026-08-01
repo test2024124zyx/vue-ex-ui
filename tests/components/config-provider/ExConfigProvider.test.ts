@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { h, nextTick } from 'vue';
 import type { Component } from 'vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import ExModal from '../../../src/components/modal/ExModal.vue';
 import {
   useConfig,
   useConfigTheme,
@@ -142,6 +143,27 @@ describe('ExConfigProvider', () => {
 
     expect(wrapper.attributes('data-theme')).toBe('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('neon-blue');
+  });
+
+  it('keeps the provider theme on body-teleported overlays', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      props: {
+        theme: 'light',
+      },
+      slots: {
+        default: () => h(ExModal, { modelValue: true, title: '主题浮层' }),
+      },
+    });
+
+    await nextTick();
+
+    expect(document.body.querySelector('.ex-modal-root')?.getAttribute('data-theme')).toBe('light');
+
+    await wrapper.setProps({ theme: 'dark' });
+    await nextTick();
+    expect(document.body.querySelector('.ex-modal-root')?.getAttribute('data-theme')).toBe('dark');
+
+    wrapper.unmount();
   });
 
   it('does not leak animation or theme configuration to the document root', () => {

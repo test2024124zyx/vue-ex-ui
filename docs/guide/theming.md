@@ -124,7 +124,7 @@ setTheme('light');
 
 ```scss
 --ex-font-primary: 'Audiowide', 'Orbitron', 'Rajdhani', sans-serif;
---ex-font-secondary: 'Rajdhani', 'Inter', sans-serif;
+--ex-font-secondary: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 --ex-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
 --ex-text-xs: 12px;

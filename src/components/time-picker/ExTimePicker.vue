@@ -1,5 +1,9 @@
 <template>
-  <div ref="rootRef" :class="rootClasses" :style="rootStyle">
+  <div
+    ref="rootRef"
+    :class="rootClasses"
+    :style="rootStyle"
+  >
     <!-- 触发器 -->
     <div
       ref="triggerRef"
@@ -14,9 +18,24 @@
       @focus="handleFocus"
       @blur="handleBlur"
     >
-      <ExIcon icon="time-line" class="ex-time-picker__prefix" :size="16" aria-hidden="true" />
-      <span v-if="modelValue" class="ex-time-picker__text">{{ modelValue }}</span>
-      <span v-else class="ex-time-picker__placeholder">{{ placeholder || t('selectTime') }}</span>
+      <ExIcon
+        icon="time-line"
+        class="ex-time-picker__prefix"
+        :size="16"
+        aria-hidden="true"
+      />
+      <span
+        v-if="modelValue"
+        class="ex-time-picker__text"
+      >
+        {{ modelValue }}
+      </span>
+      <span
+        v-else
+        class="ex-time-picker__placeholder"
+      >
+        {{ placeholder || t('selectTime') }}
+      </span>
 
       <span
         v-if="showClear"
@@ -24,22 +43,35 @@
         :aria-label="t('clear')"
         @click.stop="handleClear"
       >
-        <ExIcon icon="close-circle-line" :size="16" aria-hidden="true" />
+        <ExIcon
+          icon="close-circle-line"
+          :size="16"
+          aria-hidden="true"
+        />
       </span>
     </div>
 
     <!-- 下拉面板 -->
-    <Teleport to="body" :disabled="!teleported">
+    <Teleport
+      to="body"
+      :disabled="!teleported"
+    >
       <Transition name="ex-time-picker-dropdown">
         <div
           v-if="visible"
           ref="panelRef"
           class="ex-time-picker__panel"
+          :data-theme="configTheme"
           :class="popperClass"
           :style="panelStyle"
         >
           <div class="ex-time-picker__columns">
-            <div v-if="showHour" ref="hourColRef" class="ex-time-picker__column" role="listbox">
+            <div
+              v-if="showHour"
+              ref="hourColRef"
+              class="ex-time-picker__column"
+              role="listbox"
+            >
               <div
                 v-for="h in hours"
                 :key="`h-${h.value}`"
@@ -53,7 +85,12 @@
               </div>
             </div>
 
-            <div v-if="showMinute" ref="minuteColRef" class="ex-time-picker__column" role="listbox">
+            <div
+              v-if="showMinute"
+              ref="minuteColRef"
+              class="ex-time-picker__column"
+              role="listbox"
+            >
               <div
                 v-for="m in minutes"
                 :key="`m-${m.value}`"
@@ -67,7 +104,12 @@
               </div>
             </div>
 
-            <div v-if="showSecond" ref="secondColRef" class="ex-time-picker__column" role="listbox">
+            <div
+              v-if="showSecond"
+              ref="secondColRef"
+              class="ex-time-picker__column"
+              role="listbox"
+            >
               <div
                 v-for="s in seconds"
                 :key="`s-${s.value}`"
@@ -83,10 +125,18 @@
           </div>
 
           <div class="ex-time-picker__footer">
-            <button type="button" class="ex-time-picker__now" @click="selectNow">
+            <button
+              type="button"
+              class="ex-time-picker__now"
+              @click="selectNow"
+            >
               {{ t('now') }}
             </button>
-            <button type="button" class="ex-time-picker__confirm" @click="handleConfirm">
+            <button
+              type="button"
+              class="ex-time-picker__confirm"
+              @click="handleConfirm"
+            >
               {{ t('confirm') }}
             </button>
           </div>
@@ -100,7 +150,7 @@
 import { computed, ref, reactive, watch, nextTick, onUnmounted } from 'vue';
 import type { ExTimePickerProps, ExTimePickerEmits, ExTimePickerExposed } from './types';
 import { useLocale } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
+import { useComponentSize, useConfigTheme } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
@@ -138,6 +188,7 @@ const secondColRef = ref<HTMLElement>();
 
 const visible = ref(false);
 const panelStyle = ref<Record<string, string>>({});
+const configTheme = useConfigTheme();
 
 // 当前编辑中的时分秒
 const draft = reactive<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });

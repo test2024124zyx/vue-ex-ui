@@ -147,6 +147,7 @@
         :id="tooltipId"
         ref="tooltipRef"
         :class="['ex-heatmap__tooltip', `ex-heatmap__tooltip--${theme}`]"
+        :data-theme="configTheme"
         :data-placement="tooltipPlacement"
         :style="tooltipStyle"
         role="tooltip"
@@ -180,6 +181,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useLocale } from '../../locale';
 import { computeFloatingPosition, type FloatingPlacement } from '../../utils/floating';
 import { generateId } from '../../utils/id';
+import { useConfigTheme } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import {
   createHeatmapCalendar,
@@ -220,6 +222,7 @@ const props = withDefaults(defineProps<ExHeatmapProps>(), {
 });
 
 const emit = defineEmits<ExHeatmapEmits>();
+const configTheme = useConfigTheme();
 const { t, locale } = useLocale('heatmap');
 const heatmapRef = ref<HTMLDivElement>();
 const tooltipRef = ref<HTMLDivElement>();

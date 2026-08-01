@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref, useSlots, watch, type CSSProperties
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
+import { useConfigTheme } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import { normalizeImageDimension, normalizeImageRadius } from './image-utils';
 import type { ExImageEmits, ExImageExposed, ExImageProps } from './types';
@@ -22,6 +23,7 @@ const props = withDefaults(defineProps<ExImageProps>(), {
 const emit = defineEmits<ExImageEmits>();
 const slots = useSlots();
 const { t } = useLocale('image');
+const configTheme = useConfigTheme();
 
 const rootRef = ref<HTMLDivElement>();
 const mainImageRef = ref<HTMLImageElement>();
@@ -243,6 +245,7 @@ defineExpose<ExImageExposed>({
           v-if="previewVisible"
           ref="overlayRef"
           class="ex-image-preview"
+          :data-theme="configTheme"
           role="dialog"
           aria-modal="true"
           :aria-label="previewDialogLabel"

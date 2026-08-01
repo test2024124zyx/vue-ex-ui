@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-menu-item {
   position: relative;
   min-width: 0;
@@ -143,7 +145,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-menu-item__content {
     min-height: 44px;
     padding-inline: var(--ex-spacing-3);

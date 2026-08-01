@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .ex-submenu {
   position: relative;
   min-width: 0;
@@ -185,7 +187,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-submenu__content {
     min-height: 44px;
     padding-inline-start: var(--ex-spacing-3);

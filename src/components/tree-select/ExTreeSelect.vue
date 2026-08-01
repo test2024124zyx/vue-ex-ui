@@ -101,6 +101,7 @@
           :id="panelId"
           ref="panelRef"
           class="ex-tree-select__panel"
+          :data-theme="configTheme"
           :class="popperClass"
           :style="panelStyle"
         >
@@ -191,7 +192,7 @@ import type {
   TreeSelectNode,
 } from './types';
 import { useLocale } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
+import { useComponentSize, useConfigTheme } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
@@ -232,6 +233,7 @@ const nodeRefs = new Map<string | number, HTMLElement>();
 
 const visible = ref(false);
 const panelStyle = ref<Record<string, string>>({});
+const configTheme = useConfigTheme();
 const searchQuery = ref('');
 const expandedKeys = ref<Set<string | number>>(new Set());
 

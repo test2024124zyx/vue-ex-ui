@@ -318,7 +318,7 @@
 
 
   // 响应式设
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &--line {
       .ex-progress__text-outside {
         min-width: 40px;

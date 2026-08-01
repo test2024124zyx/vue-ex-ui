@@ -6,6 +6,7 @@
         ref="rootRef"
         type="button"
         :class="rootClasses"
+        :data-theme="configTheme"
         :style="rootStyle"
         :aria-label="resolvedAriaLabel"
         @click="handleClick"
@@ -17,7 +18,13 @@
           viewBox="0 0 48 48"
           aria-hidden="true"
         >
-          <circle class="ex-back-top__ring-track" cx="24" cy="24" r="21" fill="none" />
+          <circle
+            class="ex-back-top__ring-track"
+            cx="24"
+            cy="24"
+            r="21"
+            fill="none"
+          />
           <circle
             class="ex-back-top__ring-bar"
             cx="24"
@@ -36,14 +43,20 @@
           class="ex-back-top__line"
           aria-hidden="true"
         >
-          <span class="ex-back-top__line-fill" :style="{ width: `${scrollInfo.scrollPercent}%` }" />
+          <span
+            class="ex-back-top__line-fill"
+            :style="{ width: `${scrollInfo.scrollPercent}%` }"
+          ></span>
         </span>
 
         <span class="ex-back-top__content">
           <slot :percent="scrollInfo.scrollPercent">
             <span class="ex-back-top__icon">
               <slot name="icon">
-                <component :is="icon" v-if="iconIsComponent" />
+                <component
+                  :is="icon"
+                  v-if="iconIsComponent"
+                />
                 <ExIcon
                   v-else
                   :icon="typeof icon === 'string' ? icon : 'arrow-up-line'"
@@ -52,8 +65,16 @@
                 />
               </slot>
             </span>
-            <span v-if="text" class="ex-back-top__text">{{ text }}</span>
-            <span v-if="showPercent" class="ex-back-top__percent">
+            <span
+              v-if="text"
+              class="ex-back-top__text"
+            >
+              {{ text }}
+            </span>
+            <span
+              v-if="showPercent"
+              class="ex-back-top__percent"
+            >
               {{ Math.round(scrollInfo.scrollPercent) }}%
             </span>
           </slot>
@@ -66,6 +87,7 @@
 <script setup lang="ts">
 import { computed, isVNode, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useConfigTheme } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import type { ExBackTopProps, ExBackTopEmits, ExBackTopExposed, BackTopScrollInfo } from './types';
 import { resolveTarget, getScrollInfo, scrollToPosition, getPositionStyle } from './utils';
@@ -99,6 +121,7 @@ const props = withDefaults(defineProps<ExBackTopProps>(), {
   class: undefined,
   style: undefined,
 });
+const configTheme = useConfigTheme();
 
 const emit = defineEmits<ExBackTopEmits>();
 

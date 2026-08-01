@@ -661,21 +661,21 @@
 
 // 移动端响应式 mixin
 @mixin mobile {
-  @media (max-width: 575px) {
+  @media (max-width: #{map.get($breakpoints, sm) - 1px}) {
     @content;
   }
 }
 
 // 平板端响应式 mixin
 @mixin tablet {
-  @media (min-width: 576px) and (max-width: 991px) {
+  @media (min-width: map.get($breakpoints, sm)) and (max-width: #{map.get($breakpoints, lg) - 1px}) {
     @content;
   }
 }
 
 // 桌面端响应式 mixin
 @mixin desktop {
-  @media (min-width: 992px) {
+  @media (min-width: map.get($breakpoints, lg)) {
     @content;
   }
 }
