@@ -1,35 +1,69 @@
 @use '../../styles/bem' as *;
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
 
 @include b(tag) {
+  --ex-tag-color: var(--ex-color-neon-blue-500);
+  --ex-tag-hover-color: var(--ex-color-neon-blue-600);
+  --ex-tag-default-text-color: var(--ex-tag-color);
+  --ex-tag-default-bg-color: var(--ex-color-bg-surface);
+  --ex-tag-default-border-color: var(--ex-tag-color);
+  --ex-tag-hover-text-color: var(--ex-tag-hover-color);
+  --ex-tag-hover-bg-color: var(--ex-color-bg-hover);
+  --ex-tag-hover-border-color: var(--ex-tag-hover-color);
+  --ex-tag-close-size: var(--ex-tag-close-size-md);
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
   box-sizing: border-box;
-  border: var(--ex-tag-border-width) solid;
+  white-space: nowrap;
+  border: var(--ex-tag-border-width) solid
+    var(--ex-tag-border-color, var(--ex-tag-default-border-color));
   border-radius: var(--ex-tag-radius);
-  @include transition(all);
-  line-height: 1;
+  background-color: var(--ex-tag-bg-color, var(--ex-tag-default-bg-color));
+  color: var(--ex-tag-text-color, var(--ex-tag-default-text-color));
   font-weight: var(--ex-font-medium);
+  line-height: var(--ex-leading-tight);
+  @include transition((background-color, border-color, color, transform, filter, box-shadow));
 
-  // Default to medium size
-  height: var(--ex-tag-height-md);
-  padding: 0 var(--ex-tag-padding-x-md);
-  font-size: var(--ex-tag-font-size-md);
-
-  // 赛博朋克切角（圆形标签 is-round 除外）
+  // 默认保留组件库的赛博朋克切角，聚焦时暂时解除切角以保证焦点环完整可见。
   &:not(.is-round) {
     @include chamfer(var(--ex-chamfer-sm));
   }
 
+  // 默认尺寸为 medium，实际尺寸由 ConfigProvider 或 size 属性决定。
+  height: var(--ex-tag-height-md);
+  padding: 0 var(--ex-tag-padding-x-md);
+  font-size: var(--ex-tag-font-size-md);
+
   &.is-clickable {
     cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
 
     &:focus-visible {
-      outline: none;
-      @include focus-ring;
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+      clip-path: none;
+      border-radius: var(--ex-tag-radius);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  // 关闭按钮聚焦时同样解除切角，避免父级 clip-path 裁剪子元素的焦点提示。
+  &.is-closable:not(.is-round):focus-within {
+    clip-path: none;
+    border-radius: var(--ex-tag-radius);
+  }
+
+  @media (hover: hover) {
+    &.is-clickable:hover {
+      background-color: var(--ex-tag-bg-color, var(--ex-tag-hover-bg-color));
+      border-color: var(--ex-tag-border-color, var(--ex-tag-hover-border-color));
+      color: var(--ex-tag-text-color, var(--ex-tag-hover-text-color));
     }
   }
 
@@ -39,125 +73,133 @@
 
   // --- Sizes ---
   @include m(small) {
+    --ex-tag-close-size: var(--ex-tag-close-size-sm);
+
     height: var(--ex-tag-height-sm);
     padding: 0 var(--ex-tag-padding-x-sm);
     font-size: var(--ex-tag-font-size-sm);
-    border-radius: var(--ex-radius-sm);
   }
 
   @include m(large) {
+    --ex-tag-close-size: var(--ex-tag-close-size-lg);
+
     height: var(--ex-tag-height-lg);
     padding: 0 var(--ex-tag-padding-x-lg);
     font-size: var(--ex-tag-font-size-lg);
-    border-radius: var(--ex-radius-md);
   }
 
-  // --- Effects & Types ---
+  // --- Semantic Types ---
   @each $type in (primary, success, warning, danger, info) {
     @include m($type) {
-      // Default: light effect
-      background-color: var(--ex-color-bg-surface);
-      border-color: var(--ex-color-#{$type});
-      color: var(--ex-color-#{$type});
-
-      // Special handling for primary to use neon colors
       @if $type == 'primary' {
-        border-color: var(--ex-color-neon-blue-500);
-        color: var(--ex-color-neon-blue-500);
-      }
-      // Alias danger to error
-      @if $type == 'danger' {
-        border-color: var(--ex-color-error);
-        color: var(--ex-color-error);
+        --ex-tag-color: var(--ex-color-neon-blue-500);
+        --ex-tag-hover-color: var(--ex-color-neon-blue-600);
+      } @else if $type == 'danger' {
+        --ex-tag-color: var(--ex-color-error);
+        --ex-tag-hover-color: var(--ex-color-danger-hover);
+      } @else {
+        --ex-tag-color: var(--ex-color-#{$type});
+        --ex-tag-hover-color: var(--ex-color-#{$type}-hover);
       }
     }
   }
 
+  // dark 与 type 使用组合选择器，确保运行时的两个独立 class 能正确匹配。
   @include m(dark) {
     @each $type in (primary, success, warning, danger, info) {
-      @include m($type) {
-        background-color: var(--ex-color-#{$type});
-        border-color: var(--ex-color-#{$type});
-        color: var(--ex-color-text-inverse);
-        
+      &.ex-tag--#{$type} {
+        --ex-tag-default-bg-color: var(--ex-tag-color);
+        --ex-tag-default-border-color: var(--ex-tag-color);
+        --ex-tag-default-text-color: var(--ex-color-text-inverse);
+        --ex-tag-hover-bg-color: var(--ex-tag-hover-color);
+        --ex-tag-hover-border-color: var(--ex-tag-hover-color);
+        --ex-tag-hover-text-color: var(--ex-color-text-inverse);
+
         @if $type == 'primary' {
-            background-color: var(--ex-color-neon-blue-500);
-            border-color: var(--ex-color-neon-blue-500);
-            @include neon-glow('blue', 'sm');
-        } @else if $type == 'danger' {
-            background-color: var(--ex-color-error);
-            border-color: var(--ex-color-error);
-        } @else {
-            // Add a subtle glow for other dark tags
-            text-shadow: 0 0 6px var(--ex-color-#{$type});
+          @include chamfer-glow('blue', 'sm');
         }
       }
     }
   }
 
+  // plain 只保留语义边框和文字颜色，背景支持通过 bgColor 显式覆盖。
   @include m(plain) {
     @each $type in (primary, success, warning, danger, info) {
-      @include m($type) {
-        background-color: transparent;
-        border-color: var(--ex-color-#{$type});
-        color: var(--ex-color-#{$type});
-        
-        @if $type == 'primary' {
-            border-color: var(--ex-color-neon-blue-500);
-            color: var(--ex-color-neon-blue-500);
-        }
-        @if $type == 'danger' {
-            border-color: var(--ex-color-error);
-            color: var(--ex-color-error);
-        }
+      &.ex-tag--#{$type} {
+        --ex-tag-default-bg-color: transparent;
+        --ex-tag-hover-bg-color: var(--ex-color-bg-hover);
       }
     }
   }
 
-  // --- Modifiers ---
   @include when(round) {
     border-radius: var(--ex-radius-full);
   }
 
   // --- Elements ---
+  @include e(body) {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+
+    &:focus-visible {
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
+  }
+
   @include e(prefix) {
     display: inline-flex;
+    flex: none;
     align-items: center;
     margin-right: var(--ex-spacing-1);
   }
 
   @include e(content) {
-    // empty
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @include e(close) {
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
-    width: 12px;
-    min-width: 12px;
-    height: 12px;
-    min-height: 12px;
-    padding: 16px;
-    margin: -16px;
-    margin-left: calc(var(--ex-spacing-1) - 16px);
+    box-sizing: border-box;
+    width: var(--ex-tag-close-size);
+    min-width: var(--ex-tag-close-size);
+    height: var(--ex-tag-close-size);
+    min-height: var(--ex-tag-close-size);
+    margin-left: var(--ex-spacing-1);
+    padding: 0;
     border: 0;
+    border-radius: var(--ex-radius-full);
     background: transparent;
+    color: inherit;
     font: inherit;
     cursor: pointer;
-    font-size: 1.2em;
-    border-radius: 50%;
-    padding: 2px;
-    color: inherit;
-    @include transition(background-color);
+    touch-action: manipulation;
+    @include transition((background-color, color, box-shadow, transform));
 
     &:hover {
       background-color: var(--ex-color-white-alpha-20);
     }
 
+    &:active {
+      transform: translateY(1px);
+    }
+
     &:focus-visible {
-      outline: none;
-      @include focus-ring;
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 1px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &.is-clickable:active,
+    &__close:active {
+      transform: none;
     }
   }
 }

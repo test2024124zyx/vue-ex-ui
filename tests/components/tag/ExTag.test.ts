@@ -63,6 +63,31 @@ describe('ExTag.vue', () => {
     expect(wrapper.emitted().close).toBeTruthy();
   });
 
+  it('keeps the close control separate from the keyboard target', async () => {
+    const wrapper = mount(ExTag, {
+      props: { clickable: true, closable: true },
+    });
+
+    const body = wrapper.find('.ex-tag__body');
+    const closeButton = wrapper.find('.ex-tag__close');
+
+    expect(wrapper.attributes('role')).toBeUndefined();
+    expect(body.attributes('role')).toBe('button');
+    expect(body.attributes('tabindex')).toBe('0');
+    expect(closeButton.attributes('aria-label')).toBe('Remove tag');
+
+    await body.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted().click).toHaveLength(1);
+  });
+
+  it('uses the custom accessible name for the close control', () => {
+    const wrapper = mount(ExTag, {
+      props: { closable: true, closeAriaLabel: 'Remove status tag' },
+    });
+
+    expect(wrapper.find('.ex-tag__close').attributes('aria-label')).toBe('Remove status tag');
+  });
+
   it('emits click event', async () => {
     const wrapper = mount(ExTag);
     await wrapper.trigger('click');

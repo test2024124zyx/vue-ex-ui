@@ -290,4 +290,13 @@
   --ex-tag-font-size-lg: var(--ex-text-base);
   --ex-tag-radius: var(--ex-radius-sm);
   --ex-tag-border-width: 1px;
+  --ex-tag-close-size-sm: 20px;
+  --ex-tag-close-size-md: 22px;
+  --ex-tag-close-size-lg: 28px;
+
+  // 标签输入组件
+  --ex-tag-input-action-size: var(--ex-button-touch-target);
+  --ex-tag-input-input-min-width-sm: 80px;
+  --ex-tag-input-input-min-width-md: 100px;
+  --ex-tag-input-input-min-width-lg: 120px;
 }

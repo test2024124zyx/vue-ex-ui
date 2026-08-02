@@ -16,6 +16,7 @@
   </button>
   <span
     v-else
+    ref="wrapperRef"
     class="ex-tag-input__wrapper"
   >
     <input
@@ -26,14 +27,15 @@
       :placeholder="placeholderComputed"
       :maxlength="maxlength"
       @blur="handleBlur"
-      @keyup.enter="handleConfirm"
-      @keyup.esc="handleCancel"
+      @keydown.enter.prevent="handleConfirm"
+      @keydown.esc.prevent="handleCancel"
     />
     <button
       type="button"
       class="ex-tag-input__action ex-tag-input__action--confirm"
       :aria-label="t('tag.confirm')"
       :title="t('tag.confirm')"
+      @mousedown.prevent
       @click="handleConfirm"
     >
       <ExIcon
@@ -46,6 +48,7 @@
       class="ex-tag-input__action ex-tag-input__action--cancel"
       :aria-label="t('tag.cancel')"
       :title="t('tag.cancel')"
+      @mousedown.prevent
       @click="handleCancel"
     >
       <ExIcon
@@ -58,7 +61,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
-import type { TagSize } from './types';
+import type { ExTagInputEmits, ExTagInputProps } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useComponentSize } from '../config-provider/composables';
 import { useI18n } from '../../locale';
@@ -67,42 +70,26 @@ defineOptions({
   name: 'ExTagInput',
 });
 
-export interface ExTagInputProps {
-  /** 按钮文本 */
-  buttonText?: string;
-  /** 输入框占位符 */
-  placeholder?: string;
-  /** 尺寸 */
-  size?: TagSize;
-  /** 最大长度 */
-  maxlength?: number;
-  /** 已存在的标签列表，用于验证重复 */
-  existingTags?: string[];
-  /** 是否验证重复 */
-  validateDuplicate?: boolean;
-}
-
 const props = withDefaults(defineProps<ExTagInputProps>(), {
-  buttonText: undefined,
-  placeholder: undefined,
-  size: undefined,
   maxlength: 20,
   existingTags: () => [],
   validateDuplicate: true,
 });
 
-const emit = defineEmits<{
-  confirm: [value: string];
-  cancel: [];
-  duplicate: [value: string];
-}>();
+const emit = defineEmits<ExTagInputEmits>();
 
 const { t } = useI18n();
 
+const INPUT_ICON_SIZES = {
+  large: 16,
+  medium: 14,
+  small: 12,
+} as const;
+
 const inputRef = ref<HTMLInputElement>();
+const wrapperRef = ref<HTMLElement>();
 const isEditing = ref(false);
 const inputValue = ref('');
-const BLUR_CANCEL_DELAY = 200;
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
@@ -111,14 +98,7 @@ const componentSize = useComponentSize(computed(() => props.size));
 const buttonTextComputed = computed(() => props.buttonText || t('tag.addTagButton'));
 const placeholderComputed = computed(() => props.placeholder || t('tag.inputPlaceholder'));
 
-const iconSize = computed(() => {
-  const sizeMap = {
-    large: 16,
-    medium: 14,
-    small: 12,
-  };
-  return sizeMap[componentSize.value as keyof typeof sizeMap] || 14;
-});
+const iconSize = computed(() => INPUT_ICON_SIZES[componentSize.value]);
 
 const buttonClasses = computed(() => [
   'ex-tag-input__button',
@@ -162,13 +142,16 @@ const handleCancel = () => {
   emit('cancel');
 };
 
-const handleBlur = () => {
-  // 延迟处理，让点击确认/取消按钮的事件先触发
-  setTimeout(() => {
-    if (isEditing.value) {
-      handleCancel();
-    }
-  }, BLUR_CANCEL_DELAY);
+const handleBlur = (event: FocusEvent) => {
+  const nextTarget = event.relatedTarget;
+
+  if (nextTarget instanceof Node && wrapperRef.value?.contains(nextTarget)) {
+    return;
+  }
+
+  if (isEditing.value) {
+    handleCancel();
+  }
 };
 </script>
 
@@ -179,9 +162,10 @@ const handleBlur = () => {
   &__button {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    min-height: 44px;
+    box-sizing: border-box;
+    gap: var(--ex-spacing-1);
+    padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    min-height: var(--ex-button-touch-target);
     background: var(--ex-color-bg-secondary);
     border: 1px dashed var(--ex-color-border-primary);
     border-radius: var(--ex-radius-md);
@@ -189,34 +173,38 @@ const handleBlur = () => {
     font-size: var(--ex-text-sm);
     font-family: inherit;
     cursor: pointer;
-    transition-property: color, background-color, border-color, box-shadow, transform;
-    transition-duration: var(--ex-motion-duration-base);
-    transition-timing-function: var(--ex-motion-ease-in-out);
+    touch-action: manipulation;
     user-select: none;
+    @include transition((color, background-color, border-color, box-shadow, transform));
+
+    &:focus-visible {
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
 
     &:hover {
       color: var(--ex-color-neon-blue-500);
       border-color: var(--ex-color-neon-blue-500);
       background: var(--ex-color-bg-hover);
-      box-shadow: 0 0 10px rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
+      box-shadow: 0 0 10px var(--ex-color-primary-alpha-20);
     }
 
     &:active {
-      transform: scale(0.98);
+      transform: translateY(1px);
     }
 
     &--large {
-      padding: 6px 16px;
+      padding: var(--ex-spacing-2) var(--ex-spacing-4);
       font-size: var(--ex-text-base);
     }
 
     &--medium {
-      padding: 4px 12px;
+      padding: var(--ex-spacing-1) var(--ex-spacing-3);
       font-size: var(--ex-text-sm);
     }
 
     &--small {
-      padding: 2px 8px;
+      padding: 0 var(--ex-spacing-2);
       font-size: var(--ex-text-xs);
     }
   }
@@ -228,21 +216,30 @@ const handleBlur = () => {
   &__wrapper {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    box-sizing: border-box;
+    gap: var(--ex-spacing-1);
     padding: 2px;
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-md);
+    @include transition((background-color, border-color, box-shadow));
+
+    &:focus-within {
+      border-color: var(--ex-color-border-focus);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-30);
+    }
   }
 
   &__input {
-    padding: 4px 8px;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--ex-color-text-primary);
     font-size: var(--ex-text-sm);
+    font-family: inherit;
+    line-height: var(--ex-leading-normal);
     outline: none;
-    min-width: 100px;
+    min-width: var(--ex-tag-input-input-min-width-md);
     flex: 1;
 
     &::placeholder {
@@ -250,21 +247,21 @@ const handleBlur = () => {
     }
 
     &--large {
-      padding: 6px 12px;
+      padding: var(--ex-spacing-2) var(--ex-spacing-3);
       font-size: var(--ex-text-base);
-      min-width: 120px;
+      min-width: var(--ex-tag-input-input-min-width-lg);
     }
 
     &--medium {
-      padding: 4px 8px;
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
       font-size: var(--ex-text-sm);
-      min-width: 100px;
+      min-width: var(--ex-tag-input-input-min-width-md);
     }
 
     &--small {
-      padding: 2px 6px;
+      padding: 0 var(--ex-spacing-1);
       font-size: var(--ex-text-xs);
-      min-width: 80px;
+      min-width: var(--ex-tag-input-input-min-width-sm);
     }
   }
 
@@ -272,49 +269,49 @@ const handleBlur = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    box-sizing: border-box;
+    width: var(--ex-tag-input-action-size);
+    height: var(--ex-tag-input-action-size);
     padding: 0;
     border: 0;
     font: inherit;
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition-property: color, background-color, box-shadow, transform;
-    transition-duration: var(--ex-motion-duration-base);
-    transition-timing-function: var(--ex-motion-ease-in-out);
+    touch-action: manipulation;
     flex-shrink: 0;
+    @include transition((color, background-color, box-shadow, transform));
 
     &:hover {
-      transform: scale(1.15);
+      transform: translateY(-1px);
     }
 
     &:active {
-      transform: scale(0.9);
+      transform: translateY(1px);
     }
 
     &:focus-visible {
-      outline: none;
-      @include focus-ring;
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
     }
 
     &--confirm {
       color: var(--ex-color-success);
-      background: rgba(var(--ex-color-success-rgb), 0.1);
+      background: var(--ex-color-success-alpha-10);
 
       &:hover {
-        background: rgba(var(--ex-color-success-rgb), 0.2);
-        box-shadow: 0 0 8px rgba(var(--ex-color-success-rgb), 0.4);
+        background: var(--ex-color-success-alpha-20);
+        box-shadow: 0 0 8px var(--ex-color-success-alpha-40);
       }
     }
 
     &--cancel {
       color: var(--ex-color-text-secondary);
-      background: rgba(var(--ex-color-white-rgb), 0.05);
+      background: var(--ex-color-white-alpha-05);
 
       &:hover {
         color: var(--ex-color-error);
-        background: rgba(var(--ex-color-error-rgb), 0.1);
-        box-shadow: 0 0 8px rgba(var(--ex-color-error-rgb), 0.4);
+        background: var(--ex-color-error-alpha-10);
+        box-shadow: 0 0 8px var(--ex-color-error-alpha-40);
       }
     }
   }
@@ -324,11 +321,12 @@ const handleBlur = () => {
 @media (prefers-contrast: high) {
   .ex-tag-input {
     &__button {
-      border-width: 2px;
+      border-width: var(--ex-input-focus-ring-width);
     }
 
     &__input {
-      border-width: 2px;
+      border-color: currentColor;
+      border-width: var(--ex-input-focus-ring-width);
     }
   }
 }
