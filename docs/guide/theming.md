@@ -123,9 +123,9 @@ setTheme('light');
 ### 字体变量
 
 ```scss
---ex-font-primary: 'Orbitron', 'Audiowide', 'Rajdhani', sans-serif;
---ex-font-secondary: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
---ex-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+--ex-font-primary: 'Orbitron', 'Audiowide', 'Rajdhani', 'Noto Sans SC', sans-serif;
+--ex-font-secondary: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Noto Sans SC', monospace;
+--ex-font-mono: 'JetBrains Mono', 'Fira Code', 'Noto Sans SC', monospace;
 
 --ex-text-xs: 12px;
 --ex-text-sm: 14px;

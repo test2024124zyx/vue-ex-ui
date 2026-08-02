@@ -15,9 +15,10 @@
   .ex-config-provider,
   [data-theme='neon-blue'],
   [data-theme='light'] {
-    --ex-font-primary: system-ui, -apple-system, sans-serif;
-    --ex-font-secondary: system-ui, -apple-system, sans-serif;
-    --ex-font-mono: 'Courier New', monospace;
+    // 低数据模式仍保留随包 CJK 字体，避免中文重新落到平台默认字体。
+    --ex-font-primary: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    --ex-font-secondary: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    --ex-font-mono: 'Noto Sans SC', 'Courier New', monospace;
   }
 }
 

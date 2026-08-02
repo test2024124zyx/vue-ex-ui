@@ -89,10 +89,11 @@ $colors: (
 
 $typography: (
   // 字体族
-  font-primary: ('Orbitron', 'Audiowide', 'Rajdhani', sans-serif),
-  font-secondary: ('JetBrains Mono', 'Fira Code', 'Consolas', monospace),
-  font-mono: ('JetBrains Mono', 'Fira Code', monospace),
-  font-label: ('Share Tech Mono', 'JetBrains Mono', monospace),
+  // 拉丁字符优先使用品牌字体，中文字符由随包的 Noto Sans SC 接管，避免平台字体漂移。
+  font-primary: ('Orbitron', 'Audiowide', 'Rajdhani', 'Noto Sans SC', sans-serif),
+  font-secondary: ('JetBrains Mono', 'Fira Code', 'Consolas', 'Noto Sans SC', monospace),
+  font-mono: ('JetBrains Mono', 'Fira Code', 'Noto Sans SC', monospace),
+  font-label: ('Share Tech Mono', 'JetBrains Mono', 'Noto Sans SC', monospace),
   
   // 字体大小 (移动端优先)
   text-xs: 12px,     // 0.75rem

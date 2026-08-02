@@ -40,6 +40,7 @@ const entries = Object.fromEntries(
 );
 
 export default defineConfig({
+  base: './',
   plugins: [
     vue(),
     libInjectCss(),

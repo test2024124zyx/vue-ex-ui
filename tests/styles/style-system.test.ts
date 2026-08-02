@@ -63,11 +63,17 @@ describe('v2 样式系统边界', () => {
     expect(baseCss).not.toContain('@font-face');
     expect(fontCss).toContain('@font-face');
     expect(fontCss).toContain('font-family: "Audiowide"');
+    expect(fontCss).toContain('font-family: "Noto Sans SC"');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-400-normal.woff2?no-inline');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-500-normal.woff2?no-inline');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-700-normal.woff2?no-inline');
+    expect(fontCss).not.toContain('.woff)');
   });
 
   it('整包入口默认加载完整赛博字体，按需入口保留独立字体资源', () => {
     const indexSource = readFileSync(join(root, 'src/index.ts'), 'utf8');
     const fontEntrySource = readFileSync(join(root, 'src/style-font.ts'), 'utf8');
+    const variablesCss = compile("@use 'src/styles/variables';");
 
     expect(indexSource).toContain('@fontsource/orbitron/latin-700.css');
     expect(indexSource).toContain('@fontsource/jetbrains-mono/latin-400.css');
@@ -76,6 +82,13 @@ describe('v2 样式系统边界', () => {
     expect(fontEntrySource).toContain('@fontsource/orbitron/latin-700.css');
     expect(fontEntrySource).toContain('@fontsource/jetbrains-mono/latin-400.css');
     expect(fontEntrySource).toContain('@fontsource/share-tech-mono/latin-400.css');
+    expect(fontEntrySource).toContain("import './styles/font.scss';");
+    expect(variablesCss).toContain(
+      '--ex-font-primary: Orbitron, Audiowide, Rajdhani, Noto Sans SC, sans-serif;'
+    );
+    expect(variablesCss).toContain(
+      '--ex-font-secondary: JetBrains Mono, Fira Code, Consolas, Noto Sans SC, monospace;'
+    );
   });
 
   it('Button 声明的每一种类型都生成实际样式选择器', () => {

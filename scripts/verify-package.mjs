@@ -15,10 +15,16 @@ const requiredFiles = [
   'ex-ui.js',
   'ex-ui.cjs',
   'ex-ui.css',
+  'noto-sans-sc-chinese-simplified-400-normal.woff2',
+  'noto-sans-sc-chinese-simplified-500-normal.woff2',
+  'noto-sans-sc-chinese-simplified-700-normal.woff2',
   'es/index.d.ts',
   'es/index.js',
   'es/assets/style-base.css',
   'es/assets/style-font.css',
+  'es/assets/noto-sans-sc-chinese-simplified-400-normal.woff2',
+  'es/assets/noto-sans-sc-chinese-simplified-500-normal.woff2',
+  'es/assets/noto-sans-sc-chinese-simplified-700-normal.woff2',
 ];
 
 const requiredStyleMarkers = [
@@ -70,6 +76,20 @@ try {
   }
 
   const fullStyle = await readFile(join(distRoot, 'ex-ui.css'), 'utf8');
+  const fontStyle = await readFile(join(distRoot, 'es/assets/style-font.css'), 'utf8');
+  // 中文字体文件和 CSS 引用必须同时存在，避免发布后重新落到系统回退字体。
+  const requiredFontFiles = [
+    'noto-sans-sc-chinese-simplified-400-normal.woff2',
+    'noto-sans-sc-chinese-simplified-500-normal.woff2',
+    'noto-sans-sc-chinese-simplified-700-normal.woff2',
+  ];
+  for (const fontFile of requiredFontFiles) {
+    const marker = `./${fontFile}`;
+    if (!fullStyle.includes(marker) || !fontStyle.includes(marker)) {
+      throw new Error(`中文字体引用缺失：${fontFile}`);
+    }
+  }
+
   const missingStyleMarkers = requiredStyleMarkers
     .filter(({ pattern }) => !pattern.test(fullStyle))
     .map(({ name }) => name);

@@ -33,7 +33,7 @@ app.use(ExUI);
 app.mount('#app');
 ```
 
-完整入口的 `vue-ex-ui/style.css` 会默认包含本地品牌字体资源。若使用按需入口 `vue-ex-ui/base.css`，再额外引入 `vue-ex-ui/font.css` 即可启用同一套赛博朋克字体。
+完整入口的 `vue-ex-ui/style.css` 会默认包含本地品牌字体资源和简体中文 Noto Sans SC 字体切片。若使用按需入口 `vue-ex-ui/base.css`，再额外引入 `vue-ex-ui/font.css` 即可启用同一套赛博朋克字体和中文字体。
 
 ## 按需引入（推荐）
 

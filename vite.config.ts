@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 /// <reference types="vitest" />
 
 export default defineConfig({
+  base: './',
   plugins: [
     vue(),
     dts({
