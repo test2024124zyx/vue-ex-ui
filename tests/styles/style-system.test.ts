@@ -221,6 +221,11 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('--ex-color-cyber-magenta');
     expect(typographyCss).toContain('.ex-typography--terminal');
     expect(typographyCss).toContain('.ex-typography__terminal-overlay');
+    expect(typographyCss).toContain('var(--ex-color-cyber-green, #14fdce)');
+    expect(typographyCss).toContain('var(--ex-color-cyber-green-rgb, 20, 253, 206)');
+    expect(typographyCss).toContain('var(--ex-color-bg-primary, #031e11)');
+    expect(typographyCss).toContain('--ex-typography-terminal-font-family');
+    expect(typographyCss).toContain('padding: 0.2em 0.65em');
     expect(typographyCss).toContain('background-size: 100% 0.3rem');
     expect(typographyCss).toContain('@keyframes ex-typography-terminal-flicker');
     expect(typographyCss).toContain('@keyframes ex-typography-terminal-glow');

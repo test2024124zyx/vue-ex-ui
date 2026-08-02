@@ -13,12 +13,25 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   --ex-typography-chromatic-left: rgba(var(--ex-color-cyber-magenta-rgb), 0.52);
   --ex-typography-chromatic-right: rgba(var(--ex-color-cyber-cyan-rgb), 0.52);
   --ex-typography-chromatic-opacity: 0.18;
-  --ex-typography-terminal-color: var(--ex-color-terminal-text, var(--ex-color-cyber-green));
+  // 终端效果必须在只引入组件样式时仍然可见，因此保留独立的本地回退值。
+  --ex-typography-terminal-color: var(
+    --ex-color-terminal-text,
+    var(--ex-color-cyber-green, #14fdce)
+  );
   --ex-typography-terminal-color-rgb: var(
     --ex-color-terminal-text-rgb,
-    var(--ex-color-cyber-green-rgb)
+    var(--ex-color-cyber-green-rgb, 20, 253, 206)
   );
-  --ex-typography-terminal-background: var(--ex-color-terminal-bg, var(--ex-color-bg-primary));
+  --ex-typography-terminal-background: var(
+    --ex-color-terminal-bg,
+    var(--ex-color-bg-primary, #031e11)
+  );
+  --ex-typography-terminal-font-family: var(
+    --ex-font-label,
+    'Share Tech Mono',
+    'JetBrains Mono',
+    monospace
+  );
   --ex-typography-terminal-scanline-opacity: 0.26;
   --ex-typography-terminal-glow-opacity: 0.16;
 
@@ -235,16 +248,22 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   &--terminal {
     position: relative;
     isolation: isolate;
+    display: inline-block;
     max-inline-size: 100%;
+    padding: 0.2em 0.65em;
+    overflow: hidden;
     border: 1px solid rgba(var(--ex-typography-terminal-color-rgb), 0.55);
+    border-radius: 0.25rem;
     background-color: var(--ex-typography-terminal-background);
     box-shadow:
       inset 0 0 1.5em rgba(var(--ex-typography-terminal-color-rgb), 0.14),
-      0 0 1em rgba(var(--ex-typography-terminal-color-rgb), var(--ex-typography-terminal-glow-opacity));
-    font-family: var(--ex-font-label);
-    font-weight: var(--ex-font-normal);
-    line-height: var(--ex-leading-normal);
-    letter-spacing: var(--ex-tracking-wide);
+      0 0 1em
+        rgba(var(--ex-typography-terminal-color-rgb), var(--ex-typography-terminal-glow-opacity));
+    font-family: var(--ex-typography-terminal-font-family);
+    font-size: var(--ex-typography-size, var(--ex-text-base, 1rem));
+    font-weight: var(--ex-font-normal, 400);
+    line-height: var(--ex-leading-normal, 1.2);
+    letter-spacing: var(--ex-tracking-wide, 0.04em);
     font-variant-ligatures: none;
     text-rendering: optimizeSpeed;
     -webkit-font-smoothing: none;
@@ -255,7 +274,6 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   }
 
   &--terminal:not(.ex-typography--gradient) {
-    display: inline-block;
     vertical-align: baseline;
     color: var(--ex-typography-terminal-color);
     background-image: linear-gradient(
