@@ -87,6 +87,16 @@
     filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
   }
 
+  &--no-neon {
+    &::before {
+      opacity: 0;
+    }
+
+    &:focus-visible {
+      filter: none;
+    }
+  }
+
   &:active:not(:disabled):not(.ex-button--loading) {
     color: var(--ex-button-fg-hover);
     background: var(--ex-button-bg-active);
@@ -126,6 +136,31 @@
       left: 50%;
       pointer-events: none;
       transform: translate(-50%, -50%);
+    }
+  }
+
+  &--no-animation {
+    transition: none !important;
+
+    &::before {
+      transition: none !important;
+    }
+
+    &:hover,
+    &:active {
+      transform: none !important;
+    }
+
+    &:hover .ex-button__content {
+      animation: none !important;
+    }
+
+    &.ex-button--glow:hover::before {
+      transform: translateX(-140%) !important;
+    }
+
+    .ex-button__loading-spinner {
+      animation: none !important;
     }
   }
 

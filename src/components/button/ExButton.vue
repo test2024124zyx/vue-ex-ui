@@ -53,12 +53,12 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, useSlots } from 'vue';
+import { computed, onMounted, ref, useAttrs, useSlots, watch } from 'vue';
 import { getFirstGrapheme } from '../../utils/text';
 import { getPlainTextContent } from '../../utils/vnode';
 import type { ExButtonProps, ExButtonEmits, ExButtonExposed } from './types';
 
-import { useComponentSize } from '../config-provider/composables';
+import { useAnimation, useComponentSize, useNeonEffect } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExButton',
@@ -87,13 +87,18 @@ const props = withDefaults(defineProps<ExButtonProps>(), {
 });
 
 const emit = defineEmits<ExButtonEmits>();
+const attrs = useAttrs();
 const slots = useSlots();
 
 const buttonRef = ref<HTMLButtonElement>();
 
 // 显式尺寸优先，否则继承 ConfigProvider。
 const componentSize = useComponentSize(computed(() => props.size));
-const glowEnabled = computed(() => props.glow ?? defaultGlowTypes.has(props.type));
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const glowEnabled = computed(
+  () => neonEffect.value && (props.glow ?? defaultGlowTypes.has(props.type))
+);
 
 const plainSlotText = computed(() => getPlainTextContent(slots.default?.({})));
 const circleSlotText = computed(() =>
@@ -102,8 +107,12 @@ const circleSlotText = computed(() =>
     : undefined
 );
 const circleDisplayText = computed(() => getFirstGrapheme(circleSlotText.value ?? ''));
+const nativeAriaLabel = computed(() => {
+  const value = attrs['aria-label'];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+});
 const resolvedAriaLabel = computed(() => {
-  const explicitLabel = props.ariaLabel?.trim();
+  const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
   if (explicitLabel) return explicitLabel;
 
   if (circleSlotText.value) return circleSlotText.value;
@@ -117,6 +126,33 @@ const showDefaultContent = computed(
 );
 
 // 计算属性
+// 仅在开发环境提示缺少可访问名称的图标按钮，避免生产环境增加运行时开销。
+const warnIfMissingAccessibleName = () => {
+  if (!import.meta.env.DEV) return;
+
+  const button = buttonRef.value;
+  if (!button) return;
+
+  const contentText = button.querySelector('.ex-button__content')?.textContent?.trim();
+  const hasAccessibleName = Boolean(
+    resolvedAriaLabel.value ||
+      contentText ||
+      button.getAttribute('aria-labelledby')?.trim() ||
+      button.getAttribute('title')?.trim()
+  );
+
+  if (!hasAccessibleName) {
+    console.warn(
+      '[ExButton] 图标或空按钮必须提供 ariaLabel（模板属性可使用 aria-label），以保证可访问名称。'
+    );
+  }
+};
+
+onMounted(warnIfMissingAccessibleName);
+watch([resolvedAriaLabel, () => props.loading], warnIfMissingAccessibleName, {
+  flush: 'post',
+});
+
 const buttonClasses = computed(() => {
   const classes = [
     'ex-button',
@@ -127,6 +163,8 @@ const buttonClasses = computed(() => {
 
   if (props.plain) classes.push('ex-button--plain');
   if (glowEnabled.value) classes.push('ex-button--glow');
+  if (!neonEffect.value) classes.push('ex-button--no-neon');
+  if (!animation.value) classes.push('ex-button--no-animation');
   if (props.disabled) classes.push('ex-button--disabled');
   if (props.loading) classes.push('ex-button--loading');
   if (props.block) classes.push('ex-button--block');
