@@ -1,16 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExButton from '../../../src/components/button/ExButton.vue';
-import type { ExButtonProps } from '../../../src/components/button/types';
-
-// Mock ExIcon component
-vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
-  default: {
-    name: 'ExIcon',
-    props: ['name', 'spin'],
-    template: '<span class="ex-icon" :class="{ spin }">{{ name }}</span>',
-  },
-}));
+import type { ExButtonExposed, ExButtonProps } from '../../../src/components/button/types';
 
 describe('ExButton', () => {
   it('renders correctly with default props', () => {
@@ -86,6 +77,24 @@ describe('ExButton', () => {
     expect(wrapper.classes()).toContain('ex-button--loading');
     expect(button.attributes('aria-busy')).toBe('true');
     expect(wrapper.find('.ex-button__loading-spinner').exists()).toBe(true);
+  });
+
+  it('keeps loading content layout and exposes its text as the accessible name', () => {
+    const wrapper = mount(ExButton, {
+      props: { loading: true },
+      slots: {
+        default: 'Save',
+        prefix: '<span>+</span>',
+        suffix: '<span>→</span>',
+      },
+    });
+
+    expect(wrapper.find('.ex-button__content').exists()).toBe(true);
+    expect(wrapper.find('.ex-button__icon--left').exists()).toBe(true);
+    expect(wrapper.find('.ex-button__icon--right').exists()).toBe(true);
+    expect(wrapper.find('.ex-button__icon--left').attributes('aria-hidden')).toBe('true');
+    expect(wrapper.find('.ex-button__icon--right').attributes('aria-hidden')).toBe('true');
+    expect(wrapper.attributes('aria-label')).toBe('Save');
   });
 
   it('renders with icon (slot + Iconify, prefix)', () => {
@@ -220,10 +229,21 @@ describe('ExButton', () => {
       slots: { default: 'Button' },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExButtonExposed;
+    const button = wrapper.find('button').element;
+    const focusSpy = vi.spyOn(button, 'focus');
+    const blurSpy = vi.spyOn(button, 'blur');
+
     expect(typeof vm.focus).toBe('function');
     expect(typeof vm.blur).toBe('function');
     expect(typeof vm.getElement).toBe('function');
+
+    vm.focus();
+    expect(focusSpy).toHaveBeenCalled();
+    expect(vm.getElement()).toBe(button);
+
+    vm.blur();
+    expect(blurSpy).toHaveBeenCalled();
   });
 
   it('renders with different shapes', () => {
@@ -295,6 +315,15 @@ describe('ExButton', () => {
     const wrapper = mount(ExButton, {
       props: { ariaLabel: 'Close dialog' },
       slots: { default: 'X' },
+    });
+
+    expect(wrapper.find('button').attributes('aria-label')).toBe('Close dialog');
+  });
+
+  it('trims explicit aria-label', () => {
+    const wrapper = mount(ExButton, {
+      props: { ariaLabel: '  Close dialog  ' },
+      slots: { default: 'Close' },
     });
 
     expect(wrapper.find('button').attributes('aria-label')).toBe('Close dialog');

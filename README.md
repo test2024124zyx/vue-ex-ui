@@ -619,8 +619,8 @@ const handleBreakpoint = broken => {
 <!-- 霓虹卡片 -->
 <ex-card type="neon" hoverable />
 
-<!-- 渐变按钮 -->
-<ex-button type="primary" gradient />
+<!-- 主按钮与光效开关 -->
+<ex-button type="primary" :glow="false">执行操作</ex-button>
 ```
 
 ---

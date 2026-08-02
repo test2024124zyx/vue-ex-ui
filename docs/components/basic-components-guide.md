@@ -22,9 +22,19 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 ```vue
 <template>
-  <ex-typography variant="heading" size="xl">游戏标题</ex-typography>
+  <ex-typography
+    variant="heading"
+    size="xl"
+  >
+    游戏标题
+  </ex-typography>
 
-  <ex-typography variant="body" color="text-secondary">这是一段描述文本</ex-typography>
+  <ex-typography
+    variant="body"
+    color="text-secondary"
+  >
+    这是一段描述文本
+  </ex-typography>
 </template>
 ```
 
@@ -64,7 +74,11 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 ```vue
 <template>
-  <ex-ellipsis :lines="3" :expandable="true" :tooltip="true">
+  <ex-ellipsis
+    :lines="3"
+    :expandable="true"
+    :tooltip="true"
+  >
     这是一段很长的游戏介绍文本，当内容超过3行时会自动截断，
     并显示展开按钮。用户可以点击按钮查看完整内容。
   </ex-ellipsis>
@@ -103,13 +117,21 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-icon>
 
   <!-- 字体图标 -->
-  <ex-icon name="ri:home-line" prefix="ri" />
+  <ex-icon
+    name="ri:home-line"
+    prefix="ri"
+  />
 
   <!-- 图片图标 -->
   <ex-icon src="/path/to/icon.png" />
 
   <!-- 可点击图标 -->
-  <ex-icon :clickable="true" :size="24" color="#00f0ff" @click="handleClick" />
+  <ex-icon
+    :clickable="true"
+    :size="24"
+    color="#00f0ff"
+    @click="handleClick"
+  />
 </template>
 ```
 
@@ -138,7 +160,12 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 ```vue
 <template>
   <!-- 主要按钮 -->
-  <ex-button type="primary" size="large">开始游戏</ex-button>
+  <ex-button
+    type="primary"
+    size="large"
+  >
+    开始游戏
+  </ex-button>
 
   <!-- 带图标按钮 -->
   <ex-button type="success">
@@ -149,35 +176,48 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-button>
 
   <!-- 圆形按钮 -->
-  <ex-button shape="circle" type="primary">
+  <ex-button
+    shape="circle"
+    type="primary"
+    aria-label="添加"
+  >
     <template #prefix>
-      <ex-icon name="ri:add-line" />
+      <ex-icon icon="add-line" />
     </template>
   </ex-button>
 
   <!-- 加载状态 -->
-  <ex-button :loading="true" type="primary">加载中...</ex-button>
+  <ex-button
+    :loading="true"
+    type="primary"
+  >
+    加载中...
+  </ex-button>
 </template>
 ```
 
 #### Props
 
-| 属性     | 类型                                                                                           | 默认值      | 说明     |
-| -------- | ---------------------------------------------------------------------------------------------- | ----------- | -------- |
-| type     | `'primary' \| 'secondary' \| 'success' \| 'warning' \| 'danger' \| 'info' \| 'text' \| 'link'` | `'primary'` | 按钮类型 |
-| size     | `'small' \| 'medium' \| 'large'`                                                               | `'medium'`  | 按钮大小 |
-| shape    | `'default' \| 'round' \| 'circle'`                                                             | `'default'` | 按钮形状 |
-| plain    | `boolean`                                                                                      | `false`     | 朴素按钮 |
-| disabled | `boolean`                                                                                      | `false`     | 禁用状态 |
-| loading  | `boolean`                                                                                      | `false`     | 加载状态 |
-| block    | `boolean`                                                                                      | `false`     | 块级按钮 |
+| 属性       | 类型                                                                                                                              | 默认值       | 说明                 |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------- |
+| type       | `'default' \| 'primary' \| 'secondary' \| 'success' \| 'warning' \| 'danger' \| 'error' \| 'info' \| 'text' \| 'link' \| 'ghost'` | `'default'`  | 按钮类型             |
+| size       | `'small' \| 'medium' \| 'large'`                                                                                                  | 继承全局尺寸 | 按钮大小             |
+| shape      | `'default' \| 'round' \| 'circle'`                                                                                                | `'default'`  | 按钮形状             |
+| plain      | `boolean`                                                                                                                         | `false`      | 朴素按钮             |
+| glow       | `boolean`                                                                                                                         | `true`       | 是否启用统一发光效果 |
+| disabled   | `boolean`                                                                                                                         | `false`      | 禁用状态             |
+| loading    | `boolean`                                                                                                                         | `false`      | 加载状态             |
+| block      | `boolean`                                                                                                                         | `false`      | 块级按钮             |
+| nativeType | `'button' \| 'submit' \| 'reset'`                                                                                                 | `'button'`   | 原生按钮类型         |
+| autofocus  | `boolean`                                                                                                                         | `false`      | 是否自动聚焦         |
+| ariaLabel  | `string`                                                                                                                          | —            | 无障碍名称           |
 
 #### 特性
 
-- ✅ 霓虹蓝紫渐变背景
-- ✅ 发光效果 (hover/active)
-- ✅ 流光动画
-- ✅ 完整的类型系统
+- ✅ 主题 token 驱动的填充、描边和文本变体
+- ✅ 可选发光与悬停流光反馈
+- ✅ loading、disabled 和原生表单行为
+- ✅ 触控尺寸与无障碍命名支持
 
 ---
 
@@ -195,12 +235,18 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-badge>
 
   <!-- 状态点 -->
-  <ex-badge :dot="true" type="danger">
+  <ex-badge
+    :dot="true"
+    type="danger"
+  >
     <ex-avatar src="/avatar.jpg" />
   </ex-badge>
 
   <!-- 状态徽标 -->
-  <ex-badge status="success" text="在线" />
+  <ex-badge
+    status="success"
+    text="在线"
+  />
 </template>
 ```
 
@@ -228,7 +274,13 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 ```vue
 <template>
   <!-- 基础图片 -->
-  <ex-image src="/path/to/image.jpg" alt="游戏截图" :width="300" :height="200" fit="cover" />
+  <ex-image
+    src="/path/to/image.jpg"
+    alt="游戏截图"
+    :width="300"
+    :height="200"
+    fit="cover"
+  />
 
   <!-- 懒加载 + 预览 -->
   <ex-image
@@ -247,7 +299,13 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-image>
 
   <!-- 圆形图片 -->
-  <ex-image src="/avatar.jpg" alt="用户头像" :width="100" :height="100" radius="50%" />
+  <ex-image
+    src="/avatar.jpg"
+    alt="用户头像"
+    :width="100"
+    :height="100"
+    radius="50%"
+  />
 </template>
 ```
 
@@ -285,7 +343,10 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   <ex-link href="https://example.com">访问官网</ex-link>
 
   <!-- 带图标链接 -->
-  <ex-link type="primary" size="large">
+  <ex-link
+    type="primary"
+    size="large"
+  >
     <template #prefix>
       <ex-icon name="ri:link" />
     </template>
@@ -293,13 +354,24 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-link>
 
   <!-- 外部链接 -->
-  <ex-link href="https://external.com" target="_blank" :show-external-icon="true">外部链接</ex-link>
+  <ex-link
+    href="https://external.com"
+    target="_blank"
+    :show-external-icon="true"
+  >
+    外部链接
+  </ex-link>
 
   <!-- 站内链接使用解析后的原生地址 -->
   <ex-link href="/game/detail">游戏详情</ex-link>
 
   <!-- 无 href 时是不会提交表单的动作按钮 -->
-  <ex-link type="primary" @click="openGame">打开游戏</ex-link>
+  <ex-link
+    type="primary"
+    @click="openGame"
+  >
+    打开游戏
+  </ex-link>
 </template>
 ```
 
@@ -333,10 +405,16 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 ```vue
 <template>
   <!-- 图片头像 -->
-  <ex-avatar src="/avatar.jpg" alt="用户头像" />
+  <ex-avatar
+    src="/avatar.jpg"
+    alt="用户头像"
+  />
 
   <!-- 文字头像 -->
-  <ex-avatar text="张三" size="large" />
+  <ex-avatar
+    text="张三"
+    size="large"
+  />
 
   <!-- 图标头像 -->
   <ex-avatar>
@@ -346,7 +424,11 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   </ex-avatar>
 
   <!-- 自定义颜色 -->
-  <ex-avatar text="VIP" background-color="#ff007f" text-color="#ffffff" />
+  <ex-avatar
+    text="VIP"
+    background-color="#ff007f"
+    text-color="#ffffff"
+  />
 </template>
 ```
 
@@ -418,7 +500,14 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 ```vue
 <template>
-  <ex-watermark text="ExUI" :font-size="16" :opacity="0.15" :rotate="-22" :gap-x="100" :gap-y="100">
+  <ex-watermark
+    text="ExUI"
+    :font-size="16"
+    :opacity="0.15"
+    :rotate="-22"
+    :gap-x="100"
+    :gap-y="100"
+  >
     <div class="content">
       <!-- 需要添加水印的内容 -->
     </div>
@@ -497,7 +586,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 ```vue
 <!-- 移动端自动优化 -->
 <ex-button size="medium">
-  <!-- 移动端自动调整为 44px 高度 -->
+  <!-- 默认保留至少 44px 触控高度 -->
   按钮
 </ex-button>
 ```
@@ -543,16 +632,33 @@ setLocale('en-US'); // 英文
 ```vue
 <template>
   <ex-card>
-    <ex-space direction="vertical" :size="16">
+    <ex-space
+      direction="vertical"
+      :size="16"
+    >
       <ex-typography variant="heading">游戏标题</ex-typography>
 
       <ex-divider />
 
-      <ex-image src="/game.jpg" alt="游戏封面" :preview="true" />
+      <ex-image
+        src="/game.jpg"
+        alt="游戏封面"
+        :preview="true"
+      />
 
-      <ex-ellipsis :lines="3" :expandable="true">游戏介绍文本...</ex-ellipsis>
+      <ex-ellipsis
+        :lines="3"
+        :expandable="true"
+      >
+        游戏介绍文本...
+      </ex-ellipsis>
 
-      <ex-button type="primary" block>立即购买</ex-button>
+      <ex-button
+        type="primary"
+        block
+      >
+        立即购买
+      </ex-button>
     </ex-space>
   </ex-card>
 </template>
@@ -574,7 +680,13 @@ setLocale('en-US'); // 英文
 
 ```vue
 <template>
-  <ex-button type="primary" class="custom-button" :style="{ width: '200px' }">自定义按钮</ex-button>
+  <ex-button
+    type="primary"
+    class="custom-button"
+    :style="{ width: '200px' }"
+  >
+    自定义按钮
+  </ex-button>
 </template>
 
 <style scoped>

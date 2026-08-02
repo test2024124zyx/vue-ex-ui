@@ -2,7 +2,7 @@
   <button
     ref="buttonRef"
     :class="buttonClasses"
-    :style="buttonStyles"
+    :style="props.style"
     :type="nativeType"
     :disabled="disabled || loading"
     :autofocus="autofocus"
@@ -26,8 +26,9 @@
     </span>
 
     <span
-      v-if="$slots.prefix && !loading"
+      v-if="$slots.prefix"
       class="ex-button__icon ex-button__icon--left"
+      aria-hidden="true"
     >
       <slot name="prefix"></slot>
     </span>
@@ -41,8 +42,9 @@
     </span>
 
     <span
-      v-if="$slots.suffix && !loading"
+      v-if="$slots.suffix"
       class="ex-button__icon ex-button__icon--right"
+      aria-hidden="true"
     >
       <slot name="suffix"></slot>
     </span>
@@ -90,9 +92,16 @@ const circleSlotText = computed(() =>
     : undefined
 );
 const circleDisplayText = computed(() => getFirstGrapheme(circleSlotText.value ?? ''));
-const resolvedAriaLabel = computed(
-  () => props.ariaLabel || (circleSlotText.value ? circleSlotText.value : undefined)
-);
+const resolvedAriaLabel = computed(() => {
+  const explicitLabel = props.ariaLabel?.trim();
+  if (explicitLabel) return explicitLabel;
+
+  if (circleSlotText.value) return circleSlotText.value;
+
+  if (props.loading) return plainSlotText.value?.trim() || undefined;
+
+  return undefined;
+});
 const showDefaultContent = computed(
   () => Boolean(slots.default) && !(props.shape === 'circle' && props.loading)
 );
@@ -114,16 +123,6 @@ const buttonClasses = computed(() => {
   classes.push(...normalizeCustomClass(props.class));
 
   return classes;
-});
-
-const buttonStyles = computed(() => {
-  if (!props.style) return undefined;
-
-  if (typeof props.style === 'string') {
-    return props.style;
-  }
-
-  return props.style;
 });
 
 // 事件处理

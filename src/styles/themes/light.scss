@@ -80,6 +80,14 @@
   // ========== 填充按钮墨色：本主题用白字 ==========
   --ex-button-ink-on-bright: #ffffff;
 
+  // 浅色主题状态透明色与语义色保持一致
+  --ex-color-success-alpha-15: rgba(24, 121, 78, 0.15);
+  --ex-color-success-alpha-40: rgba(24, 121, 78, 0.4);
+  --ex-color-warning-alpha-15: rgba(173, 87, 0, 0.15);
+  --ex-color-warning-alpha-40: rgba(173, 87, 0, 0.4);
+  --ex-color-error-alpha-15: rgba(203, 42, 42, 0.15);
+  --ex-color-error-alpha-40: rgba(203, 42, 42, 0.4);
+
   // ========== 渐变定义 ==========
   --ex-gradient-primary: linear-gradient(135deg, #1668dc 0%, #6645c9 100%);
   --ex-gradient-secondary: linear-gradient(135deg, #6645c9 0%, #c2298a 100%);

@@ -6,6 +6,7 @@
   --ex-button-bg-active: var(--ex-color-primary-alpha-20);
   --ex-button-fg: var(--ex-color-text-primary);
   --ex-button-fg-hover: var(--ex-color-text-primary);
+  --ex-button-disabled-fg: var(--ex-color-text-tertiary);
   --ex-button-border: var(--ex-color-primary);
   --ex-button-border-hover: var(--ex-color-primary);
   --ex-button-accent: var(--ex-color-primary);
@@ -20,6 +21,7 @@
   gap: var(--ex-spacing-2);
   margin: 0;
   padding: var(--ex-spacing-2) var(--ex-spacing-4);
+  min-height: var(--ex-button-touch-target);
   overflow: hidden;
   border: 2px solid var(--ex-button-border);
   border-radius: var(--ex-button-radius);
@@ -34,7 +36,8 @@
   text-align: center;
   text-transform: uppercase;
   text-decoration: none;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
@@ -42,7 +45,6 @@
     color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
-    box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
@@ -92,14 +94,12 @@
     transform: translateY(0);
   }
 
-  &:disabled,
-  &--disabled {
-    color: var(--ex-color-text-disabled);
+  &:disabled:not(.ex-button--loading),
+  &--disabled:not(.ex-button--loading) {
+    color: var(--ex-button-disabled-fg);
     background: var(--ex-color-bg-tertiary);
     border-color: var(--ex-color-border-secondary);
-    box-shadow: none;
     filter: grayscale(0.35);
-    opacity: 0.66;
     cursor: not-allowed;
     transform: none;
 
@@ -110,6 +110,23 @@
 
   &--loading {
     cursor: wait;
+
+    &::before {
+      display: none;
+    }
+
+    .ex-button__content,
+    .ex-button__icon {
+      opacity: 0;
+    }
+
+    .ex-button__loading-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
   }
 
   &--block {
@@ -284,12 +301,6 @@
     &.ex-button--text {
       padding: var(--ex-spacing-1) var(--ex-spacing-2);
     }
-
-    &.ex-button--circle {
-      width: 44px;
-      height: 44px;
-      padding: 0;
-    }
   }
 
   &--medium {
@@ -298,12 +309,6 @@
 
     &.ex-button--text {
       padding: var(--ex-spacing-1) var(--ex-spacing-3);
-    }
-
-    &.ex-button--circle {
-      width: 44px;
-      height: 44px;
-      padding: 0;
     }
   }
 
@@ -314,12 +319,6 @@
     &.ex-button--text {
       padding: var(--ex-spacing-2) var(--ex-spacing-4);
     }
-
-    &.ex-button--circle {
-      width: 44px;
-      height: 44px;
-      padding: 0;
-    }
   }
 
   &--round {
@@ -327,8 +326,8 @@
   }
 
   &--circle {
-    width: 44px;
-    height: 44px;
+    width: var(--ex-button-touch-target);
+    height: var(--ex-button-touch-target);
     flex: none;
     padding: 0;
     border-radius: 50%;
@@ -372,20 +371,6 @@
   // 主行动按钮只在用户悬停时触发低频色差，避免页面持续闪烁
   .ex-button--primary:hover .ex-button__content {
     animation: ex-cyber-glitch 2.4s steps(1, end) infinite;
-  }
-}
-
-@include desktop-first(md) {
-  .ex-button:not(.ex-button--circle) {
-    min-height: 44px;
-  }
-
-  .ex-button--small:not(.ex-button--circle) {
-    min-height: 36px;
-  }
-
-  .ex-button--large:not(.ex-button--circle) {
-    min-height: 52px;
   }
 }
 

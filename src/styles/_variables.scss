@@ -149,6 +149,7 @@
   --ex-button-padding-x-xl: var(--ex-spacing-8);
   // 与输入框/选择器统一的交互圆角（统一三档圆角语言：交互 lg / 容器 lg / 浮层 xl）
   --ex-button-radius: var(--ex-radius-lg);
+  --ex-button-touch-target: 44px;
   --ex-button-font-weight: var(--ex-font-medium);
   // 亮色填充按钮上的文字「墨色」——深色油墨保证 WCAG AA 对比度（霓虹灯管式）
   --ex-button-ink-on-bright: #0a0f16;
