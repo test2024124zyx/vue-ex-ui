@@ -58,9 +58,9 @@
 
 ## 光效
 
-主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。发光只用于主要操作、状态反馈和焦点提示，避免所有按钮同时产生高亮。
+主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。桌面悬停发光按钮时，会由伪元素复制当前可见文字，再通过 `clip-path: inset(...)` 分片、青/洋红色差和离散位移完成一次性撕裂；它不是持续抖动，也不会改变按钮真实内容。
 
-在 `ExConfigProvider` 中设置 `neonEffect="false"` 会统一关闭按钮发光与扫光；设置 `animation="false"` 会关闭悬停位移、glitch、扫光过渡和加载旋转。
+在 `ExConfigProvider` 中设置 `neonEffect="false"` 会统一关闭按钮发光、扫光与撕裂层；设置 `animation="false"` 会关闭悬停位移、撕裂、扫光过渡和加载旋转。系统启用 `prefers-reduced-motion` 或高对比度模式时，也会自动隐藏撕裂层。
 
 ::: raw
 
@@ -79,6 +79,35 @@
 <ex-button type="primary" :glow="false">主按钮关闭光效</ex-button>
 <ex-button type="secondary">次要按钮无默认光效</ex-button>
 <ex-button type="secondary" :glow="true">次要按钮显式发光</ex-button>
+```
+
+:::
+
+## 赛博朋克边框形态
+
+`default` 使用现有的左上/右下切角；`slice`、`slant`、`bracket`、`hex` 和 `notched` 提供不同的切面、括号、六边形与侧边凹口轮廓。它们只改变边框形态，不改变 `type` 的语义和发光策略。
+
+::: raw
+
+<div class="vp-raw demo-container button-row">
+  <ex-button type="primary" shape="default">默认切角</ex-button>
+  <ex-button type="primary" shape="slice">单侧斜切</ex-button>
+  <ex-button type="secondary" shape="slant">平行斜面</ex-button>
+  <ex-button type="success" shape="bracket">括号八边形</ex-button>
+  <ex-button type="warning" shape="hex">六边形</ex-button>
+  <ex-button type="danger" shape="notched">两侧凹口</ex-button>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-button type="primary" shape="default">默认切角</ex-button>
+<ex-button type="primary" shape="slice">单侧斜切</ex-button>
+<ex-button type="secondary" shape="slant">平行斜面</ex-button>
+<ex-button type="success" shape="bracket">括号八边形</ex-button>
+<ex-button type="warning" shape="hex">六边形</ex-button>
+<ex-button type="danger" shape="notched">两侧凹口</ex-button>
 ```
 
 :::
@@ -212,7 +241,7 @@
 | -------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------ |
 | `type`                     | 按钮类型                                   | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default`    |
 | `size`                     | 尺寸                                       | `small \| medium \| large`                                                                                  | 继承全局尺寸 |
-| `shape`                    | 形状                                       | `default \| round \| circle`                                                                                | `default`    |
+| `shape`                    | 形态                                       | `default \| round \| circle \| slice \| slant \| bracket \| hex \| notched`                                 | `default`    |
 | `plain`                    | 是否使用朴素样式                           | `boolean`                                                                                                   | `false`      |
 | `glow`                     | 是否启用强调发光（显式传值可覆盖默认策略） | `boolean`                                                                                                   | 按变体策略   |
 | `disabled`                 | 是否禁用                                   | `boolean`                                                                                                   | `false`      |

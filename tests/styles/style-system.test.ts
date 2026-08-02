@@ -247,7 +247,11 @@ describe('v2 样式系统边界', () => {
     const inputCss = compile("@use 'src/components/input/ExInput';");
 
     expect(buttonCss).toContain('border: 2px solid var(--ex-button-border)');
-    expect(buttonCss).toContain('animation: ex-cyber-glitch 2.4s steps(1, end) infinite');
+    expect(buttonCss).toContain('content: attr(data-ex-button-glitch-text)');
+    expect(buttonCss).toContain('clip-path: var(--ex-button-glitch-slice-1)');
+    expect(buttonCss).toContain('animation: ex-button-glitch-slices 1s steps(2, end) forwards');
+    expect(buttonCss).toContain('.ex-button--shape-slice');
+    expect(buttonCss).toContain('.ex-button--shape-notched');
     expect(cardCss).toContain('clip-path: polygon(');
     expect(cardCss).toContain('.ex-card.ex-terminal');
     expect(inputCss).toContain('content: ">"');

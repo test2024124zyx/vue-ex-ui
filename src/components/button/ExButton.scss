@@ -12,6 +12,17 @@
   --ex-button-accent: var(--ex-color-primary);
   --ex-button-soft-bg: var(--ex-color-primary-alpha-10);
   --ex-button-glow-color: var(--ex-color-primary-alpha-30);
+  --ex-button-shape-cut: var(--ex-chamfer-sm);
+  --ex-button-glitch-edge: var(--ex-chamfer-sm);
+  --ex-button-glitch-shift-sm: var(--ex-chamfer-sm);
+  --ex-button-glitch-shift-md: var(--ex-chamfer-md);
+  --ex-button-glitch-shift-lg: calc(var(--ex-chamfer-md) * 2);
+  --ex-button-glitch-slice-0: inset(50% 50% 50% 50%);
+  --ex-button-glitch-slice-1: inset(80% calc(-1 * var(--ex-button-glitch-edge)) 0 0);
+  --ex-button-glitch-slice-2: inset(50% calc(-1 * var(--ex-button-glitch-edge)) 30% 0);
+  --ex-button-glitch-slice-3: inset(10% calc(-1 * var(--ex-button-glitch-edge)) 85% 0);
+  --ex-button-glitch-slice-4: inset(40% calc(-1 * var(--ex-button-glitch-edge)) 43% 0);
+  --ex-button-glitch-slice-5: inset(80% calc(-1 * var(--ex-button-glitch-edge)) 5% 0);
 
   position: relative;
   display: inline-flex;
@@ -48,8 +59,8 @@
     filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
-  // 默认轮廓保留组件库的切角语言，圆角与圆形按钮使用各自轮廓。
-  &:not(.ex-button--round):not(.ex-button--circle):not(.ex-button--text):not(.ex-button--link) {
+  // 默认形态保留组件库的切角语言，其他形态由独立 shape 类控制。
+  &--shape-default:not(.ex-button--text):not(.ex-button--link) {
     @include chamfer(var(--ex-chamfer-sm));
   }
 
@@ -81,46 +92,36 @@
     opacity: 0.6;
   }
 
-  // 发光按钮保留低强度色差切片，悬停时再放大为短促的撕裂效果。
-  &--glow:not(.ex-button--text):not(.ex-button--link)::after {
+  // 撕裂层复制可见文字，再用 inset 分片和离散位移制造真实的色差断层。
+  &--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(.ex-button--link)::after {
     position: absolute;
     inset: 0;
-    z-index: 1;
-    content: '';
+    z-index: 3;
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: inherit;
+    content: attr(data-ex-button-glitch-text);
+    color: var(--ex-button-fg);
     background: linear-gradient(
-      90deg,
-      transparent 0 14%,
-      var(--ex-color-cyber-magenta) 14% 20%,
-      transparent 20% 62%,
-      var(--ex-color-cyber-cyan) 62% 70%,
-      transparent 70% 100%
+      45deg,
+      transparent 3%,
+      var(--ex-color-cyber-cyan) 3% 5%,
+      var(--ex-color-cyber-magenta) 5%
     );
-    clip-path: polygon(
-      0 8%,
-      100% 8%,
-      100% 18%,
-      48% 18%,
-      48% 28%,
-      100% 28%,
-      100% 37%,
-      0 37%,
-      0 48%,
-      72% 48%,
-      72% 58%,
-      0 58%,
-      0 70%,
-      100% 70%,
-      100% 82%,
-      34% 82%,
-      34% 92%,
-      0 92%
-    );
-    opacity: 0.24;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    text-shadow:
+      -2px -2px 0 var(--ex-color-bg-primary),
+      2px 2px 0 var(--ex-color-cyber-cyan);
+    text-transform: inherit;
+    clip-path: var(--ex-button-glitch-slice-0);
+    opacity: 0;
     pointer-events: none;
-    transform: translateX(-3px);
-    transition:
-      opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
-      transform var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+    transform: translate(0, 0);
   }
 
   &:focus-visible {
@@ -209,8 +210,8 @@
     }
 
     &.ex-button--glow:hover::after {
-      opacity: 0.24 !important;
-      transform: translateX(-3px) !important;
+      opacity: 0 !important;
+      transform: translate(0, 0) !important;
       animation: none !important;
     }
 
@@ -411,11 +412,13 @@
     }
   }
 
-  &--round {
+  &--round,
+  &--shape-round {
     border-radius: var(--ex-radius-full);
   }
 
-  &--circle {
+  &--circle,
+  &--shape-circle {
     width: var(--ex-button-touch-target);
     height: var(--ex-button-touch-target);
     flex: none;
@@ -429,6 +432,80 @@
       line-height: 1;
       white-space: nowrap;
     }
+  }
+
+  // 斜切形态对应经典赛博朋克按钮的单侧断面。
+  &--shape-slice:not(.ex-button--text):not(.ex-button--link) {
+    --ex-button-shape-cut: var(--ex-chamfer-md);
+
+    clip-path: polygon(
+      0 var(--ex-button-shape-cut),
+      var(--ex-button-shape-cut) 0,
+      100% 0,
+      100% calc(100% - var(--ex-button-shape-cut)),
+      calc(100% - var(--ex-button-shape-cut)) 100%,
+      0 100%
+    );
+  }
+
+  // 平行四边形形态让按钮拥有明显的高速切入方向。
+  &--shape-slant:not(.ex-button--text):not(.ex-button--link) {
+    --ex-button-shape-cut: var(--ex-chamfer-md);
+
+    clip-path: polygon(
+      var(--ex-button-shape-cut) 0,
+      100% 0,
+      calc(100% - var(--ex-button-shape-cut)) 100%,
+      0 100%
+    );
+  }
+
+  // 八边形括号形态适合状态按钮和 HUD 工具栏。
+  &--shape-bracket:not(.ex-button--text):not(.ex-button--link) {
+    --ex-button-shape-cut: var(--ex-chamfer-sm);
+
+    clip-path: polygon(
+      var(--ex-button-shape-cut) 0,
+      calc(100% - var(--ex-button-shape-cut)) 0,
+      100% var(--ex-button-shape-cut),
+      100% calc(100% - var(--ex-button-shape-cut)),
+      calc(100% - var(--ex-button-shape-cut)) 100%,
+      var(--ex-button-shape-cut) 100%,
+      0 calc(100% - var(--ex-button-shape-cut)),
+      0 var(--ex-button-shape-cut)
+    );
+  }
+
+  // 六边形形态保留中轴对称，适合短标签或紧凑操作。
+  &--shape-hex:not(.ex-button--text):not(.ex-button--link) {
+    --ex-button-shape-cut: var(--ex-chamfer-md);
+
+    clip-path: polygon(
+      var(--ex-button-shape-cut) 0,
+      calc(100% - var(--ex-button-shape-cut)) 0,
+      100% 50%,
+      calc(100% - var(--ex-button-shape-cut)) 100%,
+      var(--ex-button-shape-cut) 100%,
+      0 50%
+    );
+  }
+
+  // 两侧凹口形态模拟票据式断面，避免所有边框都只使用外凸切角。
+  &--shape-notched:not(.ex-button--text):not(.ex-button--link) {
+    --ex-button-shape-cut: var(--ex-chamfer-sm);
+
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(50% - var(--ex-button-shape-cut)),
+      calc(100% - var(--ex-button-shape-cut)) 50%,
+      100% calc(50% + var(--ex-button-shape-cut)),
+      100% 100%,
+      0 100%,
+      0 calc(50% + var(--ex-button-shape-cut)),
+      var(--ex-button-shape-cut) 50%,
+      0 calc(50% - var(--ex-button-shape-cut))
+    );
   }
 }
 
@@ -453,19 +530,15 @@
     transform: translateX(140%);
   }
 
-  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
-    opacity: 0.92;
-    animation: ex-button-glitch-slices 1.35s steps(1, end) infinite;
+  .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
+      .ex-button--link
+    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    animation: ex-button-glitch-slices 1s steps(2, end) forwards;
   }
 
   .ex-button--glow.ex-button--text:hover,
   .ex-button--glow.ex-button--link:hover {
     text-shadow: 0 0 10px var(--ex-button-glow-color);
-  }
-
-  // 主行动按钮只在用户悬停时触发低频色差，避免页面持续闪烁
-  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading) .ex-button__content {
-    animation: ex-button-glitch-text 1.35s steps(1, end) infinite;
   }
 }
 
@@ -485,13 +558,11 @@
     animation: none;
   }
 
-  .ex-button--glow:hover .ex-button__content {
-    animation: none;
-  }
-
-  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
-    opacity: 0.24;
-    transform: translateX(-3px);
+  .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
+      .ex-button--link
+    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    opacity: 0;
+    transform: translate(0, 0);
     animation: none;
   }
 }
@@ -500,6 +571,10 @@
   .ex-button {
     border-width: 2px;
     filter: none;
+  }
+
+  .ex-button::after {
+    display: none;
   }
 
   .ex-button:focus-visible {
@@ -520,112 +595,73 @@
   }
 }
 
-@keyframes ex-button-glitch-text {
-  0%,
-  74%,
-  100% {
-    text-shadow: none;
-    transform: translate3d(0, 0, 0);
-  }
-
-  75% {
-    text-shadow:
-      -2px 0 var(--ex-color-cyber-magenta),
-      2px 0 var(--ex-color-cyber-cyan);
-    transform: translate3d(-2px, 0, 0) skewX(-2deg);
-  }
-
-  77% {
-    text-shadow:
-      2px 0 var(--ex-color-cyber-magenta),
-      -2px 0 var(--ex-color-cyber-cyan);
-    transform: translate3d(3px, 0, 0) skewX(2deg);
-  }
-
-  79% {
-    text-shadow:
-      -1px 0 var(--ex-color-cyber-magenta),
-      1px 0 var(--ex-color-cyber-cyan);
-    transform: translate3d(-1px, 0, 0);
-  }
-}
-
 @keyframes ex-button-glitch-slices {
-  0%,
-  74%,
+  0% {
+    clip-path: var(--ex-button-glitch-slice-1);
+    opacity: 1;
+    transform: translate(
+      calc(-1 * var(--ex-button-glitch-shift-lg)),
+      calc(-1 * var(--ex-button-glitch-shift-md))
+    );
+  }
+
+  10% {
+    clip-path: var(--ex-button-glitch-slice-3);
+    transform: translate(var(--ex-button-glitch-shift-md), var(--ex-button-glitch-shift-md));
+  }
+
+  20% {
+    clip-path: var(--ex-button-glitch-slice-1);
+    transform: translate(
+      calc(-1 * var(--ex-button-glitch-shift-md)),
+      var(--ex-button-glitch-shift-md)
+    );
+  }
+
+  30% {
+    clip-path: var(--ex-button-glitch-slice-3);
+    transform: translate(0, var(--ex-button-glitch-shift-sm));
+  }
+
+  40% {
+    clip-path: var(--ex-button-glitch-slice-2);
+    transform: translate(calc(-1 * var(--ex-button-glitch-shift-sm)), 0);
+  }
+
+  50% {
+    clip-path: var(--ex-button-glitch-slice-3);
+    transform: translate(var(--ex-button-glitch-shift-sm), 0);
+  }
+
+  60% {
+    clip-path: var(--ex-button-glitch-slice-4);
+    transform: translate(var(--ex-button-glitch-shift-sm), var(--ex-button-glitch-shift-md));
+  }
+
+  70% {
+    clip-path: var(--ex-button-glitch-slice-2);
+    transform: translate(
+      calc(-1 * var(--ex-button-glitch-shift-md)),
+      var(--ex-button-glitch-shift-md)
+    );
+  }
+
+  80% {
+    clip-path: var(--ex-button-glitch-slice-5);
+    transform: translate(
+      var(--ex-button-glitch-shift-lg),
+      calc(-1 * var(--ex-button-glitch-shift-md))
+    );
+  }
+
+  90% {
+    clip-path: var(--ex-button-glitch-slice-1);
+    transform: translate(calc(-1 * var(--ex-button-glitch-shift-md)), 0);
+  }
+
   100% {
-    clip-path: polygon(
-      0 8%,
-      100% 8%,
-      100% 18%,
-      48% 18%,
-      48% 28%,
-      100% 28%,
-      100% 37%,
-      0 37%,
-      0 48%,
-      72% 48%,
-      72% 58%,
-      0 58%,
-      0 70%,
-      100% 70%,
-      100% 82%,
-      34% 82%,
-      34% 92%,
-      0 92%
-    );
-    transform: translateX(-3px) skewX(0);
-  }
-
-  75% {
-    clip-path: polygon(
-      8% 6%,
-      92% 6%,
-      92% 15%,
-      30% 15%,
-      30% 25%,
-      100% 25%,
-      100% 34%,
-      15% 34%,
-      15% 46%,
-      78% 46%,
-      78% 57%,
-      0 57%,
-      0 68%,
-      86% 68%,
-      86% 80%,
-      42% 80%,
-      42% 91%,
-      8% 91%
-    );
-    transform: translateX(5px) skewX(-4deg);
-  }
-
-  77% {
-    clip-path: polygon(
-      0 11%,
-      82% 11%,
-      82% 21%,
-      55% 21%,
-      55% 31%,
-      100% 31%,
-      100% 40%,
-      6% 40%,
-      6% 51%,
-      64% 51%,
-      64% 61%,
-      16% 61%,
-      16% 73%,
-      94% 73%,
-      94% 85%,
-      26% 85%,
-      26% 94%,
-      0 94%
-    );
-    transform: translateX(-6px) skewX(3deg);
-  }
-
-  79% {
-    transform: translateX(2px) skewX(-2deg);
+    clip-path: var(--ex-button-glitch-slice-0);
+    opacity: 0;
+    transform: translate(0, 0);
   }
 }

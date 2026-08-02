@@ -3,6 +3,7 @@
     ref="buttonRef"
     :class="buttonClasses"
     :style="props.style"
+    :data-ex-button-glitch-text="glitchText || undefined"
     :type="nativeType"
     :disabled="disabled || loading"
     :autofocus="autofocus"
@@ -107,6 +108,16 @@ const circleSlotText = computed(() =>
     : undefined
 );
 const circleDisplayText = computed(() => getFirstGrapheme(circleSlotText.value ?? ''));
+const glitchText = computed(() => {
+  if (!glowEnabled.value || props.loading || props.disabled) return undefined;
+
+  const text =
+    props.shape === 'circle'
+      ? circleDisplayText.value
+      : plainSlotText.value?.replace(/\s+/g, ' ').trim();
+
+  return text || undefined;
+});
 const nativeAriaLabel = computed(() => {
   const value = attrs['aria-label'];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -163,6 +174,7 @@ const buttonClasses = computed(() => {
     `ex-button--${props.type}`,
     `ex-button--${componentSize.value}`,
     `ex-button--${props.shape}`,
+    `ex-button--shape-${props.shape}`,
   ];
 
   if (props.plain) classes.push('ex-button--plain');

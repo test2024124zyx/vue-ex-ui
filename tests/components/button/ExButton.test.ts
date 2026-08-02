@@ -247,7 +247,16 @@ describe('ExButton', () => {
   });
 
   it('renders with different shapes', () => {
-    const shapes: ExButtonProps['shape'][] = ['default', 'round', 'circle'];
+    const shapes: ExButtonProps['shape'][] = [
+      'default',
+      'round',
+      'circle',
+      'slice',
+      'slant',
+      'bracket',
+      'hex',
+      'notched',
+    ];
 
     shapes.forEach(shape => {
       const wrapper = mount(ExButton, {
@@ -255,6 +264,7 @@ describe('ExButton', () => {
         slots: { default: 'Button' },
       });
       expect(wrapper.classes()).toContain(`ex-button--${shape}`);
+      expect(wrapper.classes()).toContain(`ex-button--shape-${shape}`);
     });
   });
 
@@ -315,6 +325,20 @@ describe('ExButton', () => {
 
     expect(explicit.classes()).toContain('ex-button--glow');
     expect(disabled.classes()).not.toContain('ex-button--glow');
+  });
+
+  it('为发光纯文本按钮提供撕裂层所需的可见文字副本', () => {
+    const glowing = mount(ExButton, {
+      props: { type: 'primary' },
+      slots: { default: 'AVAILABLE NOW' },
+    });
+    const restrained = mount(ExButton, {
+      props: { type: 'default' },
+      slots: { default: 'DEFAULT ACTION' },
+    });
+
+    expect(glowing.attributes('data-ex-button-glitch-text')).toBe('AVAILABLE NOW');
+    expect(restrained.attributes('data-ex-button-glitch-text')).toBeUndefined();
   });
 
   it('renders as plain button', () => {
