@@ -81,6 +81,48 @@
     opacity: 0.6;
   }
 
+  // 发光按钮保留低强度色差切片，悬停时再放大为短促的撕裂效果。
+  &--glow:not(.ex-button--text):not(.ex-button--link)::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    content: '';
+    background: linear-gradient(
+      90deg,
+      transparent 0 14%,
+      var(--ex-color-cyber-magenta) 14% 20%,
+      transparent 20% 62%,
+      var(--ex-color-cyber-cyan) 62% 70%,
+      transparent 70% 100%
+    );
+    clip-path: polygon(
+      0 8%,
+      100% 8%,
+      100% 18%,
+      48% 18%,
+      48% 28%,
+      100% 28%,
+      100% 37%,
+      0 37%,
+      0 48%,
+      72% 48%,
+      72% 58%,
+      0 58%,
+      0 70%,
+      100% 70%,
+      100% 82%,
+      34% 82%,
+      34% 92%,
+      0 92%
+    );
+    opacity: 0.24;
+    pointer-events: none;
+    transform: translateX(-3px);
+    transition:
+      opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      transform var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+  }
+
   &:focus-visible {
     outline: 2px solid var(--ex-color-border-focus);
     outline-offset: 2px;
@@ -88,7 +130,8 @@
   }
 
   &--no-neon {
-    &::before {
+    &::before,
+    &::after {
       opacity: 0;
     }
 
@@ -113,7 +156,8 @@
     cursor: not-allowed;
     transform: none;
 
-    &::before {
+    &::before,
+    &::after {
       display: none;
     }
   }
@@ -121,7 +165,8 @@
   &--loading {
     cursor: wait;
 
-    &::before {
+    &::before,
+    &::after {
       display: none;
     }
 
@@ -146,6 +191,10 @@
       transition: none !important;
     }
 
+    &::after {
+      transition: none !important;
+    }
+
     &:hover,
     &:active {
       transform: none !important;
@@ -157,6 +206,12 @@
 
     &.ex-button--glow:hover::before {
       transform: translateX(-140%) !important;
+    }
+
+    &.ex-button--glow:hover::after {
+      opacity: 0.24 !important;
+      transform: translateX(-3px) !important;
+      animation: none !important;
     }
 
     .ex-button__loading-spinner {
@@ -173,7 +228,7 @@
   &__icon,
   &__loading-icon {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -398,20 +453,26 @@
     transform: translateX(140%);
   }
 
+  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    opacity: 0.92;
+    animation: ex-button-glitch-slices 1.35s steps(1, end) infinite;
+  }
+
   .ex-button--glow.ex-button--text:hover,
   .ex-button--glow.ex-button--link:hover {
     text-shadow: 0 0 10px var(--ex-button-glow-color);
   }
 
   // 主行动按钮只在用户悬停时触发低频色差，避免页面持续闪烁
-  .ex-button--primary:hover .ex-button__content {
-    animation: ex-cyber-glitch 2.4s steps(1, end) infinite;
+  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading) .ex-button__content {
+    animation: ex-button-glitch-text 1.35s steps(1, end) infinite;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ex-button,
-  .ex-button::before {
+  .ex-button::before,
+  .ex-button::after {
     transition: none;
   }
 
@@ -424,7 +485,13 @@
     animation: none;
   }
 
-  .ex-button--primary:hover .ex-button__content {
+  .ex-button--glow:hover .ex-button__content {
+    animation: none;
+  }
+
+  .ex-button--glow:hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    opacity: 0.24;
+    transform: translateX(-3px);
     animation: none;
   }
 }
@@ -450,5 +517,115 @@
 @keyframes ex-button-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes ex-button-glitch-text {
+  0%,
+  74%,
+  100% {
+    text-shadow: none;
+    transform: translate3d(0, 0, 0);
+  }
+
+  75% {
+    text-shadow:
+      -2px 0 var(--ex-color-cyber-magenta),
+      2px 0 var(--ex-color-cyber-cyan);
+    transform: translate3d(-2px, 0, 0) skewX(-2deg);
+  }
+
+  77% {
+    text-shadow:
+      2px 0 var(--ex-color-cyber-magenta),
+      -2px 0 var(--ex-color-cyber-cyan);
+    transform: translate3d(3px, 0, 0) skewX(2deg);
+  }
+
+  79% {
+    text-shadow:
+      -1px 0 var(--ex-color-cyber-magenta),
+      1px 0 var(--ex-color-cyber-cyan);
+    transform: translate3d(-1px, 0, 0);
+  }
+}
+
+@keyframes ex-button-glitch-slices {
+  0%,
+  74%,
+  100% {
+    clip-path: polygon(
+      0 8%,
+      100% 8%,
+      100% 18%,
+      48% 18%,
+      48% 28%,
+      100% 28%,
+      100% 37%,
+      0 37%,
+      0 48%,
+      72% 48%,
+      72% 58%,
+      0 58%,
+      0 70%,
+      100% 70%,
+      100% 82%,
+      34% 82%,
+      34% 92%,
+      0 92%
+    );
+    transform: translateX(-3px) skewX(0);
+  }
+
+  75% {
+    clip-path: polygon(
+      8% 6%,
+      92% 6%,
+      92% 15%,
+      30% 15%,
+      30% 25%,
+      100% 25%,
+      100% 34%,
+      15% 34%,
+      15% 46%,
+      78% 46%,
+      78% 57%,
+      0 57%,
+      0 68%,
+      86% 68%,
+      86% 80%,
+      42% 80%,
+      42% 91%,
+      8% 91%
+    );
+    transform: translateX(5px) skewX(-4deg);
+  }
+
+  77% {
+    clip-path: polygon(
+      0 11%,
+      82% 11%,
+      82% 21%,
+      55% 21%,
+      55% 31%,
+      100% 31%,
+      100% 40%,
+      6% 40%,
+      6% 51%,
+      64% 51%,
+      64% 61%,
+      16% 61%,
+      16% 73%,
+      94% 73%,
+      94% 85%,
+      26% 85%,
+      26% 94%,
+      0 94%
+    );
+    transform: translateX(-6px) skewX(3deg);
+  }
+
+  79% {
+    transform: translateX(2px) skewX(-2deg);
   }
 }
