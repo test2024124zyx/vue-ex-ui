@@ -146,7 +146,12 @@ describe('ExTypography', () => {
 
     expect(wrapper.classes()).toContain('ex-typography--terminal');
     expect(wrapper.element.style.color).toBe('var(--ex-typography-terminal-color)');
+    expect(wrapper.find('.ex-typography__terminal-output').text()).toBe('终端输出：ONLINE');
+    expect(wrapper.find('.ex-typography__terminal-scanlines').attributes('aria-hidden')).toBe(
+      'true'
+    );
     expect(wrapper.find('.ex-typography__terminal-overlay').attributes('aria-hidden')).toBe('true');
+    expect(wrapper.find('.ex-typography__terminal-frame').attributes('aria-hidden')).toBe('true');
   });
 
   it('终端效果保留显式语义颜色', () => {
@@ -167,7 +172,10 @@ describe('ExTypography', () => {
       expect.arrayContaining(['ex-typography--terminal', 'ex-typography--gradient'])
     );
     expect(wrapper.element.style.color).toBe('');
+    expect(wrapper.find('.ex-typography__terminal-output').exists()).toBe(true);
+    expect(wrapper.find('.ex-typography__terminal-scanlines').exists()).toBe(true);
     expect(wrapper.find('.ex-typography__terminal-overlay').exists()).toBe(true);
+    expect(wrapper.find('.ex-typography__terminal-frame').exists()).toBe(true);
   });
 
   it.each([

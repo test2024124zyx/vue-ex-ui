@@ -32,8 +32,10 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     'JetBrains Mono',
     monospace
   );
+  --ex-typography-terminal-glow-rgb: 27, 212, 89;
   --ex-typography-terminal-scanline-opacity: 0.26;
-  --ex-typography-terminal-glow-opacity: 0.16;
+  --ex-typography-terminal-scanline-shadow-opacity: 0.6;
+  --ex-typography-terminal-glow-opacity: 0.15;
 
   margin: 0;
   padding: 0;
@@ -244,21 +246,25 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     animation: ex-cyber-glitch 4s steps(1, end) infinite;
   }
 
-  // CRT 終端效果保持為顯式修飾符，不改變一般 Typography 的排版與語義色。
+  // CRT 终端屏幕由输出内容和三层装饰层组成，保持插槽文本的语义不变。
   &--terminal {
     position: relative;
     isolation: isolate;
-    display: inline-block;
+    display: block;
+    inline-size: 100%;
     max-inline-size: 100%;
-    padding: 0.2em 0.65em;
-    overflow: hidden;
-    border: 1px solid rgba(var(--ex-typography-terminal-color-rgb), 0.55);
-    border-radius: 0.25rem;
+    min-block-size: 12rem;
+    box-sizing: border-box;
+    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+    overflow: auto;
+    border: none;
+    border-radius: 2rem;
     background-color: var(--ex-typography-terminal-background);
     box-shadow:
-      inset 0 0 1.5em rgba(var(--ex-typography-terminal-color-rgb), 0.14),
-      0 0 1em
-        rgba(var(--ex-typography-terminal-color-rgb), var(--ex-typography-terminal-glow-opacity));
+      inset 0 0 18rem #000,
+      inset 0 0 3rem #000,
+      0 0 10rem #000;
+    color: var(--ex-typography-terminal-color);
     font-family: var(--ex-typography-terminal-font-family);
     font-size: var(--ex-typography-size, var(--ex-text-base, 1rem));
     font-weight: var(--ex-font-normal, 400);
@@ -269,23 +275,59 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: grayscale;
     text-shadow:
-      0 0 0.3em var(--ex-typography-terminal-color),
-      0 0 0.8em rgba(var(--ex-typography-terminal-color-rgb), 0.3);
+      0 0.2em 1em rgba(var(--ex-typography-terminal-color-rgb), 0.6),
+      0 0 0.3em var(--ex-typography-terminal-color);
   }
 
-  &--terminal:not(.ex-typography--gradient) {
-    vertical-align: baseline;
+  &--terminal .ex-typography__terminal-output {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-inline-size: 100%;
+    color: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &--terminal.ex-typography--gradient {
     color: var(--ex-typography-terminal-color);
-    background-image: linear-gradient(
-      to bottom,
-      transparent,
-      transparent 50%,
-      rgba(0, 0, 0, var(--ex-typography-terminal-scanline-opacity)) 70%,
-      rgba(0, 0, 0, var(--ex-typography-terminal-scanline-opacity))
+    background-image: none;
+    background-clip: border-box;
+    -webkit-background-clip: border-box;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  &--terminal.ex-typography--gradient .ex-typography__terminal-output {
+    color: transparent;
+    background-image: var(
+      --ex-typography-gradient,
+      linear-gradient(
+        90deg,
+        var(--ex-color-primary),
+        var(--ex-color-cyber-cyan),
+        var(--ex-color-secondary),
+        var(--ex-color-accent)
+      )
     );
-    background-position: 0 0;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  &--terminal .ex-typography__terminal-scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0) 50%,
+      rgba(0, 0, 0, var(--ex-typography-terminal-scanline-opacity)) 70%,
+      rgba(0, 0, 0, var(--ex-typography-terminal-scanline-shadow-opacity))
+    );
     background-size: 100% 0.3rem;
-    background-repeat: repeat;
+    pointer-events: none;
   }
 
   &--terminal:not(.ex-typography--cyberpunk):not(.ex-typography--display):not(
@@ -301,14 +343,33 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     border-radius: inherit;
     background: radial-gradient(
       circle at center,
-      rgba(var(--ex-typography-terminal-color-rgb), 0.2) 0%,
-      rgba(var(--ex-typography-terminal-color-rgb), 0.08) 58%,
-      transparent 100%
+      rgba(var(--ex-typography-terminal-glow-rgb), 1) 0%,
+      rgba(var(--ex-typography-terminal-glow-rgb), 0.88) 58%,
+      rgba(var(--ex-typography-terminal-glow-rgb), 0.57) 80%,
+      rgba(19, 94, 29, 0.27) 93%,
+      rgba(10, 23, 12, 0) 100%
     );
-    opacity: 0.15;
+    opacity: var(--ex-typography-terminal-glow-opacity);
     pointer-events: none;
     mix-blend-mode: screen;
     animation: ex-typography-terminal-glow 60s ease-in-out infinite;
+  }
+
+  &--terminal .ex-typography__terminal-frame {
+    position: absolute;
+    inset: 2%;
+    z-index: 3;
+    border: 1rem solid;
+    border-top-color: #020202;
+    border-right-color: #080808;
+    border-bottom-color: #121212;
+    border-left-color: #080808;
+    border-radius: 2rem;
+    box-shadow:
+      inset 0 0 18rem #000,
+      inset 0 0 3rem #000,
+      0 0 10rem #000;
+    pointer-events: none;
   }
 
   &--terminal::selection {
@@ -518,12 +579,13 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     }
 
     &--terminal {
-      background-image: none;
       box-shadow: none;
       text-shadow: none;
     }
 
-    &--terminal .ex-typography__terminal-overlay {
+    &--terminal .ex-typography__terminal-scanlines,
+    &--terminal .ex-typography__terminal-overlay,
+    &--terminal .ex-typography__terminal-frame {
       display: none;
     }
   }
@@ -553,7 +615,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     }
 
     &--terminal {
-      border-color: CanvasText;
+      border: 1px solid CanvasText;
       background-color: Canvas;
       background-image: none;
       box-shadow: none;
@@ -562,7 +624,15 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
       -webkit-text-fill-color: CanvasText;
     }
 
-    &--terminal .ex-typography__terminal-overlay {
+    &--terminal .ex-typography__terminal-output {
+      background-image: none;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+
+    &--terminal .ex-typography__terminal-scanlines,
+    &--terminal .ex-typography__terminal-overlay,
+    &--terminal .ex-typography__terminal-frame {
       display: none;
     }
   }
@@ -575,6 +645,11 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     &--heading,
     &--title {
       text-rendering: optimizeLegibility;
+    }
+
+    &--terminal {
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: grayscale;
     }
   }
 }

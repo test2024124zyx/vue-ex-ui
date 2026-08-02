@@ -249,8 +249,11 @@
 ::: raw
 
 <div class="vp-raw demo-container typography-stack terminal-typography-demo">
+  <ex-typography terminal tag="div" variant="body">
+    <strong class="terminal-screen-title">SYSTEM ASSAULT</strong>
+    <span class="terminal-screen-copy">wonton soup lights denim free-market BASE jump smart- bicycle Chiba semiotics realism franchise RAF. human free-market marketing towards alcohol alcohol nano- courier market cartel monofilament boy Legba construct. geodesic systemic katana advert man human chrome engine receding meta- Chiba tower construct media. towards denim drone nano- sensory gang paranoid Legba woman media corrupted film skyscraper saturation point. fluidity youtube carbon digital systema rebar ablative neon refrigerator sensory market face forwards alcohol free-market. neural sentient narrative camera crypto- singularity pre- ablative Legba Tokyo DIY RAF sensory carbon.</span>
+  </ex-typography>
   <ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
-  <ex-typography terminal>输入指令：HELP_</ex-typography>
   <ex-typography
     terminal
     :custom-style="{
@@ -267,8 +270,11 @@
 ::: details 查看示例代码
 
 ```vue
+<ex-typography terminal tag="div" variant="body">
+  <strong class="terminal-screen-title">SYSTEM ASSAULT</strong>
+  <span class="terminal-screen-copy">wonton soup lights denim free-market BASE jump smart- bicycle Chiba semiotics realism franchise RAF. human free-market marketing towards alcohol alcohol nano- courier market cartel monofilament boy Legba construct. geodesic systemic katana advert man human chrome engine receding meta- Chiba tower construct media. towards denim drone nano- sensory gang paranoid Legba woman media corrupted film skyscraper saturation point. fluidity youtube carbon digital systema rebar ablative neon refrigerator sensory market face forwards alcohol free-market. neural sentient narrative camera crypto- singularity pre- ablative Legba Tokyo DIY RAF sensory carbon.</span>
+</ex-typography>
 <ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
-<ex-typography terminal>输入指令：HELP_</ex-typography>
 <ex-typography
   terminal
   :custom-style="{
@@ -321,6 +327,36 @@
 .typography-stack {
   display: grid;
   gap: 12px;
+}
+
+.terminal-typography-demo {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.terminal-typography-demo > .ex-typography {
+  width: 100%;
+}
+
+.terminal-screen-title {
+  display: block;
+  color: inherit;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: var(--ex-font-normal);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.terminal-screen-copy {
+  display: block;
+  margin-top: 1rem;
+  color: inherit;
+  font-size: clamp(1rem, 1.4vw, 1.5rem);
+  line-height: 1.2;
 }
 
 .typography-truncate {

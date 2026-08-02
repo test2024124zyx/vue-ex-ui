@@ -27,12 +27,26 @@
     :title="truncationTitle"
     v-bind="$attrs"
   >
-    <slot>{{ props.text }}</slot>
-    <span
-      v-if="props.terminal"
-      class="ex-typography__terminal-overlay"
-      aria-hidden="true"
-    ></span>
+    <template v-if="props.terminal">
+      <span class="ex-typography__terminal-output">
+        <slot>{{ props.text }}</slot>
+      </span>
+      <span
+        class="ex-typography__terminal-scanlines"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="ex-typography__terminal-overlay"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="ex-typography__terminal-frame"
+        aria-hidden="true"
+      ></span>
+    </template>
+    <slot v-else>
+      {{ props.text }}
+    </slot>
   </component>
 </template>
 
