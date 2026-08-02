@@ -229,6 +229,9 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('var(--ex-color-bg-primary, #031e11)');
     expect(typographyCss).toContain('--ex-typography-terminal-font-family');
     expect(typographyCss).toContain('--ex-typography-terminal-glow-rgb');
+    expect(typographyCss).toContain('--ex-typography-terminal-text-scanline-size');
+    expect(typographyCss).toContain('--ex-typography-terminal-text-scanline-image');
+    expect(typographyCss).toContain('background-clip: text');
     expect(typographyCss).toContain('min-block-size: 12rem');
     expect(typographyCss).toContain('padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem)');
     expect(typographyCss).toContain('border: 1rem solid');
