@@ -26,6 +26,11 @@ export type BadgeStatus = 'success' | 'processing' | 'default' | 'error' | 'warn
 export type BadgePosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 
 /**
+ * 徽章形状
+ */
+export type BadgeShape = 'default' | 'round' | 'circle';
+
+/**
  * 徽章组件属性接口
  */
 export interface ExBadgeProps {
@@ -53,6 +58,8 @@ export interface ExBadgeProps {
   color?: string;
   /** 徽章位置 */
   position?: BadgePosition;
+  /** 徽章形状，仅对数字/文本徽章生效 */
+  shape?: BadgeShape;
   /** 鼠标悬停时显示的文字 */
   title?: string;
   /** 徽章的无障碍名称 */

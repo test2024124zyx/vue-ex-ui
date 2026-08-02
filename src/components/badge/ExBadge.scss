@@ -126,6 +126,28 @@
         border-radius: var(--ex-badge-lg-border-radius);
         font-size: var(--ex-badge-lg-font-size);
       }
+
+      // 圆角形状适合多字符计数，圆形形状适合单字符计数。
+      &.ex-badge__sup--shape-round {
+        border-radius: var(--ex-radius-full);
+      }
+
+      &.ex-badge__sup--shape-circle {
+        width: var(--ex-badge-height);
+        min-width: var(--ex-badge-height);
+        padding: 0;
+        border-radius: 50%;
+      }
+
+      &.ex-badge__sup--small.ex-badge__sup--shape-circle {
+        width: var(--ex-badge-sm-height);
+        min-width: var(--ex-badge-sm-height);
+      }
+
+      &.ex-badge__sup--large.ex-badge__sup--shape-circle {
+        width: var(--ex-badge-lg-height);
+        min-width: var(--ex-badge-lg-height);
+      }
     }
 
     // 点状徽章

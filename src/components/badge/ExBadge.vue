@@ -49,6 +49,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, useSlots } from 'vue';
 import type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed } from './types';
 import { hasRenderableContent } from '../../utils/vnode';
+import { getFirstGrapheme } from '../../utils/text';
 import { useLocale } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 
@@ -65,6 +66,7 @@ const props = withDefaults(defineProps<ExBadgeProps>(), {
   showZero: false,
   dot: false,
   position: 'top-right',
+  shape: 'default',
   clickable: false,
 });
 
@@ -131,6 +133,14 @@ const normalizedShape = computed(() => {
   return 'count';
 });
 
+const normalizedVisualShape = computed(() => {
+  if (normalizedShape.value !== 'count') return undefined;
+  if (props.shape !== 'circle') return props.shape;
+
+  const countText = String(displayCount.value ?? '');
+  return getFirstGrapheme(countText) === countText ? 'circle' : 'round';
+});
+
 const badgeClasses = computed(() => {
   const classes = ['ex-badge'];
 
@@ -162,6 +172,11 @@ const badgeSupClasses = computed(() => {
 
   // 形状样式
   classes.push(`ex-badge__sup--${normalizedShape.value}`);
+
+  // 视觉形状
+  if (normalizedVisualShape.value && normalizedVisualShape.value !== 'default') {
+    classes.push(`ex-badge__sup--shape-${normalizedVisualShape.value}`);
+  }
 
   // 位置样式
   if (normalizedPosition.value) classes.push(`ex-badge__sup--${normalizedPosition.value}`);
