@@ -99,6 +99,19 @@ describe('v2 样式系统边界', () => {
     }
   });
 
+  it('Button 的幽灵和文本变体保持不同的视觉契约', () => {
+    const css = compile("@use 'src/components/button/ExButton';");
+    const ghostBlock = css.match(/\.ex-button--ghost\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+    const textBlock =
+      css.match(/\.ex-button--text,\s*\.ex-button--link\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+
+    expect(ghostBlock).toContain('--ex-button-bg: var(--ex-color-primary-alpha-05)');
+    expect(ghostBlock).toContain('--ex-button-border: var(--ex-color-primary-alpha-40)');
+    expect(ghostBlock).not.toContain('border-width: 0');
+    expect(textBlock).toContain('overflow: visible');
+    expect(textBlock).toContain('border-width: 0');
+  });
+
   it('Divider 的颜色、粗细和响应式间距始终由同一组变量驱动', () => {
     const css = compile("@use 'src/components/divider/ExDivider';");
 

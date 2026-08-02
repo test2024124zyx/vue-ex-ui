@@ -340,13 +340,16 @@
   }
 
   &--ghost {
-    --ex-button-bg: transparent;
-    --ex-button-bg-hover: var(--ex-color-primary-alpha-10);
+    // 幽灵按钮保留可见的切角边框，避免与无边框文本按钮退化为同一种样式。
+    --ex-button-bg: var(--ex-color-primary-alpha-05);
+    --ex-button-bg-hover: var(--ex-color-primary-alpha-15);
     --ex-button-bg-active: var(--ex-color-primary-alpha-20);
     --ex-button-fg: var(--ex-color-text-secondary);
     --ex-button-fg-hover: var(--ex-color-primary);
-    --ex-button-border: transparent;
-    --ex-button-border-hover: transparent;
+    --ex-button-border: var(--ex-color-primary-alpha-40);
+    --ex-button-border-hover: var(--ex-color-primary);
+    --ex-button-accent: var(--ex-color-primary);
+    --ex-button-soft-bg: var(--ex-color-primary-alpha-10);
   }
 
   &--text,
@@ -364,6 +367,9 @@
   }
 
   &--text {
+    // 文本按钮只保留轻量的文字级反馈，不绘制按钮边框或切角轮廓。
+    --ex-button-bg-hover: var(--ex-color-primary-alpha-05);
+    --ex-button-bg-active: var(--ex-color-primary-alpha-10);
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
   }
 
