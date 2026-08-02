@@ -60,6 +60,8 @@
 
 主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。发光只用于主要操作、状态反馈和焦点提示，避免所有按钮同时产生高亮。
 
+在 `ExConfigProvider` 中设置 `neonEffect="false"` 会统一关闭按钮发光与扫光；设置 `animation="false"` 会关闭悬停位移、glitch、扫光过渡和加载旋转。
+
 ::: raw
 
 <div class="vp-raw demo-container button-row">
@@ -119,7 +121,7 @@
   <ex-button shape="round">圆角按钮</ex-button>
   <ex-button shape="circle">发</ex-button>
   <ex-button shape="circle">审批</ex-button>
-  <ex-button shape="circle" aria-label="搜索">
+  <ex-button shape="circle" ariaLabel="搜索">
     <ex-icon icon="search-line" />
   </ex-button>
 </div>
@@ -134,7 +136,7 @@
 <ex-button shape="round">圆角按钮</ex-button>
 <ex-button shape="circle">发</ex-button>
 <ex-button shape="circle">审批</ex-button>
-<ex-button shape="circle" aria-label="搜索">
+<ex-button shape="circle" ariaLabel="搜索">
   <ex-icon icon="search-line" />
 </ex-button>
 ```
@@ -197,7 +199,8 @@
 
 - 按钮始终使用原生 `<button>`，`nativeType` 默认值为 `button`；需要页面跳转时应使用 `ExLink`，不要用 `type="link"` 代替真实链接。
 - 所有尺寸的按钮都保留至少 `44px` 的触控高度；圆形按钮保持 `44px × 44px`，`size` 只影响其中的文字和图标比例。
-- 圆形图标按钮没有可读文本时，必须提供 `ariaLabel`；前置和后置插槽被视为装饰性图标，不承担按钮名称。
+- 所有仅包含图标或没有内容的按钮都必须提供 `ariaLabel`；模板中也可以使用标准属性 `aria-label`。前置和后置插槽被视为装饰性图标，不承担按钮名称。
+- 开发环境会提示缺少可访问名称的图标按钮；生产环境不会增加额外运行时开销。
 - `loading` 会同时设置原生 `disabled` 和 `aria-busy="true"`，并保留按钮原有内容布局，避免加载图标切换造成尺寸跳动。图标按钮进入 loading 时请继续提供 `ariaLabel`。
 - `class` 与 `style` 支持直接传入自定义类名和内联样式；组件仍会保留自己的状态类名。
 
@@ -205,19 +208,19 @@
 
 ### Props
 
-| 参数         | 说明                                       | 类型                                                                                                        | 默认值       |
-| ------------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------ |
-| `type`       | 按钮类型                                   | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default`    |
-| `size`       | 尺寸                                       | `small \| medium \| large`                                                                                  | 继承全局尺寸 |
-| `shape`      | 形状                                       | `default \| round \| circle`                                                                                | `default`    |
-| `plain`      | 是否使用朴素样式                           | `boolean`                                                                                                   | `false`      |
-| `glow`       | 是否启用强调发光（显式传值可覆盖默认策略） | `boolean`                                                                                                   | 按变体策略   |
-| `disabled`   | 是否禁用                                   | `boolean`                                                                                                   | `false`      |
-| `loading`    | 是否加载中                                 | `boolean`                                                                                                   | `false`      |
-| `block`      | 是否占满父容器宽度                         | `boolean`                                                                                                   | `false`      |
-| `nativeType` | 原生按钮类型                               | `button \| submit \| reset`                                                                                 | `button`     |
-| `autofocus`  | 是否自动聚焦                               | `boolean`                                                                                                   | `false`      |
-| `ariaLabel`  | 无障碍名称                                 | `string`                                                                                                    | —            |
+| 参数                       | 说明                                       | 类型                                                                                                        | 默认值       |
+| -------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------ |
+| `type`                     | 按钮类型                                   | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default`    |
+| `size`                     | 尺寸                                       | `small \| medium \| large`                                                                                  | 继承全局尺寸 |
+| `shape`                    | 形状                                       | `default \| round \| circle`                                                                                | `default`    |
+| `plain`                    | 是否使用朴素样式                           | `boolean`                                                                                                   | `false`      |
+| `glow`                     | 是否启用强调发光（显式传值可覆盖默认策略） | `boolean`                                                                                                   | 按变体策略   |
+| `disabled`                 | 是否禁用                                   | `boolean`                                                                                                   | `false`      |
+| `loading`                  | 是否加载中                                 | `boolean`                                                                                                   | `false`      |
+| `block`                    | 是否占满父容器宽度                         | `boolean`                                                                                                   | `false`      |
+| `nativeType`               | 原生按钮类型                               | `button \| submit \| reset`                                                                                 | `button`     |
+| `autofocus`                | 是否自动聚焦                               | `boolean`                                                                                                   | `false`      |
+| `ariaLabel` / `aria-label` | 无障碍名称；图标按钮或空按钮必须提供       | `string`                                                                                                    | —            |
 
 ### 其他属性
 

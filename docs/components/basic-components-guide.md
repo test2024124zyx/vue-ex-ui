@@ -179,7 +179,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
   <ex-button
     shape="circle"
     type="primary"
-    aria-label="添加"
+    ariaLabel="添加"
   >
     <template #prefix>
       <ex-icon icon="add-line" />
