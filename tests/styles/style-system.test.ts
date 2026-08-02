@@ -229,13 +229,20 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('var(--ex-color-bg-primary, #031e11)');
     expect(typographyCss).toContain('--ex-typography-terminal-font-family');
     expect(typographyCss).toContain('--ex-typography-terminal-glow-rgb');
-    expect(typographyCss).toContain('--ex-typography-terminal-text-scanline-size');
-    expect(typographyCss).toContain('--ex-typography-terminal-text-scanline-image');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-size');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-image');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-opacity: 0.2');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-shadow-opacity: 0.6');
     expect(typographyCss).toContain('background-clip: text');
     expect(typographyCss).toContain('min-block-size: 12rem');
     expect(typographyCss).toContain('padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem)');
     expect(typographyCss).toContain('border: 1rem solid');
-    expect(typographyCss).toContain('background-size: 100% 0.3rem');
+    expect(typographyCss).toContain(
+      'background-size: 100% var(--ex-typography-terminal-scanline-size)'
+    );
+    expect(typographyCss).toContain('background-repeat: repeat');
+    expect(typographyCss).toContain('z-index: 2');
+    expect(typographyCss).toContain('pointer-events: none');
     expect(typographyCss).toContain('@keyframes ex-typography-terminal-flicker');
     expect(typographyCss).toContain('@keyframes ex-typography-terminal-glow');
     expect(typographyCss).toContain('.ex-typography--gradient-animated');

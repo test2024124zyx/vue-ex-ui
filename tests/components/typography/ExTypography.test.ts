@@ -154,6 +154,21 @@ describe('ExTypography', () => {
     expect(wrapper.find('.ex-typography__terminal-frame').attributes('aria-hidden')).toBe('true');
   });
 
+  it('将扫描线作为输出之后的独立覆盖层，兼容嵌套插槽文字', () => {
+    const wrapper = mount(ExTypography, {
+      props: { terminal: true },
+      slots: {
+        default: () => h('strong', 'SYSTEM STATUS: ONLINE'),
+      },
+    });
+    const output = wrapper.find('.ex-typography__terminal-output').element;
+    const scanlines = wrapper.find('.ex-typography__terminal-scanlines').element;
+
+    expect(output.textContent).toBe('SYSTEM STATUS: ONLINE');
+    expect(output.nextElementSibling).toBe(scanlines);
+    expect(scanlines.textContent).toBe('');
+  });
+
   it('终端效果保留显式语义颜色', () => {
     const wrapper = mount(ExTypography, {
       props: { terminal: true, color: 'warning' },
