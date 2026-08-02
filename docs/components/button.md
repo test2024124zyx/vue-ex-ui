@@ -15,13 +15,19 @@
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
 <ex-button type="default">默认操作</ex-button>
 <ex-button type="primary">主要操作</ex-button>
 <ex-button type="secondary">次要操作</ex-button>
 ```
 
-## 状态类型
+:::
+
+## 类型与状态
+
+不同 `type` 用于表达操作优先级、结果状态或弱强调交互。
 
 ::: raw
 
@@ -34,6 +40,20 @@
   <ex-button type="text">文本按钮</ex-button>
   <ex-button type="link">链接按钮</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-button type="success">通过</ex-button>
+<ex-button type="warning">待确认</ex-button>
+<ex-button type="danger">删除</ex-button>
+<ex-button type="info">详情</ex-button>
+<ex-button type="ghost">幽灵按钮</ex-button>
+<ex-button type="text">文本按钮</ex-button>
+<ex-button type="link">链接按钮</ex-button>
+```
+
 :::
 
 ## 光效
@@ -50,11 +70,16 @@
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
 <ex-button type="primary">主按钮默认光效</ex-button>
 <ex-button type="primary" :glow="false">主按钮关闭光效</ex-button>
+<ex-button type="secondary">次要按钮无默认光效</ex-button>
 <ex-button type="secondary" :glow="true">次要按钮显式发光</ex-button>
 ```
+
+:::
 
 ## 朴素按钮
 
@@ -67,6 +92,18 @@
   <ex-button type="warning" plain>警告</ex-button>
   <ex-button type="danger" plain>危险</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-button type="primary" plain>主要</ex-button>
+<ex-button type="secondary" plain>次要</ex-button>
+<ex-button type="success" plain>成功</ex-button>
+<ex-button type="warning" plain>警告</ex-button>
+<ex-button type="danger" plain>危险</ex-button>
+```
+
 :::
 
 ## 尺寸与形状
@@ -88,12 +125,21 @@
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
+<ex-button size="small">小型</ex-button>
+<ex-button size="medium">中型</ex-button>
+<ex-button size="large">大型</ex-button>
+<ex-button shape="round">圆角按钮</ex-button>
+<ex-button shape="circle">发</ex-button>
 <ex-button shape="circle">审批</ex-button>
 <ex-button shape="circle" aria-label="搜索">
   <ex-icon icon="search-line" />
 </ex-button>
 ```
+
+:::
 
 ## 图标、加载与禁用
 
@@ -113,6 +159,23 @@
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<ex-button type="primary">
+  <template #prefix><ex-icon icon="add-line" /></template>
+  新建客户
+</ex-button>
+<ex-button type="secondary">
+  导出报表
+  <template #suffix><ex-icon icon="download-2-line" /></template>
+</ex-button>
+<ex-button loading>正在提交</ex-button>
+<ex-button disabled>不可操作</ex-button>
+```
+
+:::
+
 ## 块级按钮
 
 ::: raw
@@ -120,6 +183,14 @@
 <div class="vp-raw demo-container button-block-demo">
   <ex-button type="primary" block>保存并继续</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-button type="primary" block>保存并继续</ex-button>
+```
+
 :::
 
 ## 无障碍与交互约定
