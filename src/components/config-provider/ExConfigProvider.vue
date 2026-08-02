@@ -124,6 +124,12 @@ defineExpose({
     transition: none !important;
     animation: none !important;
   }
+
+  // 伪元素撕裂层不继承宿主节点的 animation 属性，需要单独关闭。
+  :deep(.ex-typography--glitch::before),
+  :deep(.ex-typography--glitch::after) {
+    animation: none !important;
+  }
 }
 
 // 尊重用户的动画偏好
@@ -132,6 +138,11 @@ defineExpose({
     :deep([class^='ex-']),
     :deep([class*=' ex-']) {
       transition: none !important;
+      animation: none !important;
+    }
+
+    :deep(.ex-typography--glitch::before),
+    :deep(.ex-typography--glitch::after) {
       animation: none !important;
     }
   }

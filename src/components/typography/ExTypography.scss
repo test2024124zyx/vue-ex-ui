@@ -12,6 +12,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   --ex-typography-variant-size: var(--ex-text-base);
   --ex-typography-chromatic-left: rgba(var(--ex-color-cyber-magenta-rgb), 0.52);
   --ex-typography-chromatic-right: rgba(var(--ex-color-cyber-cyan-rgb), 0.52);
+  --ex-typography-chromatic-opacity: 0.18;
 
   margin: 0;
   padding: 0;
@@ -25,6 +26,10 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
   letter-spacing: var(--ex-tracking-wide);
   font-variant-ligatures: contextual;
   text-rendering: optimizeLegibility;
+  // 所有文本层级共享低强度静态色差，保证正文也属于同一套赛博朋克视觉语言。
+  text-shadow:
+    -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), var(--ex-typography-chromatic-opacity)),
+    1px 0 rgba(var(--ex-color-cyber-cyan-rgb), var(--ex-typography-chromatic-opacity));
   transition:
     color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     text-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
@@ -218,6 +223,53 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     animation: ex-cyber-glitch 4s steps(1, end) infinite;
   }
 
+  // 撕裂层只复制纯文本，不复制插槽节点，避免重复交互内容和无障碍语义。
+  &--glitch {
+    position: relative;
+    isolation: isolate;
+  }
+
+  &--glitch::before,
+  &--glitch::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    content: attr(data-ex-typography-text);
+    pointer-events: none;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    text-transform: inherit;
+    white-space: inherit;
+    color: transparent;
+    opacity: 0.72;
+    -webkit-text-fill-color: transparent;
+  }
+
+  &--glitch::before {
+    text-shadow: -2px 0 var(--ex-color-cyber-magenta);
+    transform: translate3d(-1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: ex-typography-glitch-before 4s steps(1, end) infinite;
+  }
+
+  &--glitch::after {
+    text-shadow: 2px 0 var(--ex-color-cyber-cyan);
+    transform: translate3d(1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: ex-typography-glitch-after 4s steps(1, end) infinite;
+  }
+
+  // 不支持文字切片的浏览器保留原始文本，避免伪元素整段叠加造成重影。
+  @supports not (clip-path: inset(0)) {
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
+    }
+  }
+
   &--glow {
     text-shadow:
       0 0 5px var(--ex-typography-glow-color, currentColor),
@@ -345,14 +397,25 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     &--gradient-animated {
       animation: none;
     }
+
+    &--glitch::before,
+    &--glitch::after {
+      animation: none;
+    }
   }
 
   @media (prefers-contrast: high) {
     // 高对比度偏好只移除装饰性霓虹色差，保留静态渐变本身。
+    &,
     &--cyberpunk,
     &--display,
     &--heading {
       text-shadow: none;
+    }
+
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
     }
   }
 
@@ -364,6 +427,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
       -webkit-text-fill-color: CanvasText;
     }
 
+    &,
     &--glow {
       text-shadow: none;
     }
@@ -372,6 +436,11 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     &--display,
     &--heading {
       text-shadow: none;
+    }
+
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
     }
   }
 
@@ -395,5 +464,62 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
   50% {
     background-position: 100% 50%;
+  }
+}
+
+// 撕裂动画保持绝大多数时间静止，只在短暂窗口内切出不同高度的信号片段。
+@keyframes ex-typography-glitch-before {
+  0%,
+  90%,
+  100% {
+    transform: translate3d(-1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+  }
+
+  92% {
+    transform: translate3d(-3px, 1px, 0) skewX(-2deg);
+    clip-path: inset(12% 0 62% 0);
+  }
+
+  93% {
+    transform: translate3d(2px, -1px, 0) skewX(1deg);
+    clip-path: inset(58% 0 24% 0);
+  }
+
+  94% {
+    transform: translate3d(-2px, 0, 0) skewX(-1deg);
+    clip-path: inset(28% 0 46% 0);
+  }
+
+  95% {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+@keyframes ex-typography-glitch-after {
+  0%,
+  90%,
+  100% {
+    transform: translate3d(1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+  }
+
+  92% {
+    transform: translate3d(3px, -1px, 0) skewX(2deg);
+    clip-path: inset(36% 0 42% 0);
+  }
+
+  93% {
+    transform: translate3d(-2px, 1px, 0) skewX(-1deg);
+    clip-path: inset(72% 0 10% 0);
+  }
+
+  94% {
+    transform: translate3d(2px, 0, 0) skewX(1deg);
+    clip-path: inset(18% 0 68% 0);
+  }
+
+  95% {
+    clip-path: inset(100% 0 0 0);
   }
 }

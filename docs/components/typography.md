@@ -125,7 +125,7 @@
 
 ## 赛博朋克字体基线与增强效果
 
-默认的 `display` / `heading` 已使用 Orbitron 展示字体、宽字距、静态 RGB 色差和低频 glitch；`body` / `caption` 使用 JetBrains Mono / Share Tech Mono 等终端字体，优先保证长文本可读。`cyberpunk` 用于把任意变体提升为更强的霓虹色差和展示字体效果，不是基础风格的开关。
+所有 Typography 层级默认共享赛博朋克基线：标题使用 Orbitron，正文使用 JetBrains Mono，说明文字使用 Share Tech Mono，并统一保留终端字距与低强度静态 RGB 色差。`display` / `heading` 默认启用低频撕裂层；`body` / `caption` 保持稳定可读，但不会退回普通字体或普通视觉。`cyberpunk` 用于把任意变体提升为更强的霓虹色差、展示字体和撕裂效果。
 
 ::: raw
 

@@ -179,6 +179,13 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-wide)');
     expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-widest)');
     expect(typographyCss).toContain('font-variant-ligatures: contextual');
+    expect(typographyCss).toContain('--ex-typography-chromatic-opacity: 0.18');
+    expect(typographyCss).toContain('.ex-typography--glitch::before');
+    expect(typographyCss).toContain('.ex-typography--glitch::after');
+    expect(typographyCss).toContain('content: attr(data-ex-typography-text)');
+    expect(typographyCss).toContain('clip-path: inset(');
+    expect(typographyCss).toContain('@keyframes ex-typography-glitch-before');
+    expect(typographyCss).toContain('@keyframes ex-typography-glitch-after');
     expect(typographyCss).toContain('animation: ex-cyber-glitch 4s steps(1, end) infinite');
     expect(typographyCss).toContain('font-family: var(--ex-font-label)');
     expect(typographyCss).toContain('text-wrap: balance');

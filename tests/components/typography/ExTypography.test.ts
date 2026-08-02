@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { h } from 'vue';
+import { h, nextTick } from 'vue';
 import ExTypography from '../../../src/components/typography/ExTypography.vue';
 import type { ExTypographyProps } from '../../../src/components/typography/types';
 
@@ -76,6 +76,25 @@ describe('ExTypography', () => {
     expect(wrapper.classes()).toContain(expectedClass);
   });
 
+  it('默认标题启用撕裂层，正文保留静态赛博朋克基线', () => {
+    const displayWrapper = mount(ExTypography, {
+      props: { variant: 'display' },
+      slots: { default: '默认展示标题' },
+    });
+    const headingWrapper = mount(ExTypography, {
+      props: { variant: 'heading' },
+      slots: { default: '默认区块标题' },
+    });
+    const bodyWrapper = mount(ExTypography, {
+      props: { variant: 'body' },
+      slots: { default: '稳定正文' },
+    });
+
+    expect(displayWrapper.classes()).toContain('ex-typography--glitch');
+    expect(headingWrapper.classes()).toContain('ex-typography--glitch');
+    expect(bodyWrapper.classes()).not.toContain('ex-typography--glitch');
+  });
+
   // 尺寸样式测试
   it.each([
     ['xs', 'ex-typography--xs'],
@@ -101,6 +120,7 @@ describe('ExTypography', () => {
         truncate: true,
         gradient: true,
         glow: true,
+        cyberpunk: true,
         center: true,
         bold: true,
         italic: true,
@@ -110,6 +130,7 @@ describe('ExTypography', () => {
 
     expect(wrapper.classes()).toContain('ex-typography--truncate');
     expect(wrapper.classes()).toContain('ex-typography--gradient');
+    expect(wrapper.classes()).toContain('ex-typography--glitch');
     expect(wrapper.classes()).toContain('ex-typography--glow');
     expect(wrapper.classes()).toContain('ex-typography--center');
     expect(wrapper.classes()).toContain('ex-typography--bold');
@@ -200,6 +221,17 @@ describe('ExTypography', () => {
     expect(wrapper.attributes('style')).toContain(
       '--ex-typography-glow-color: var(--ex-color-primary)'
     );
+  });
+
+  it('为撕裂层同步插槽文本而不重复渲染插槽节点', async () => {
+    const wrapper = mount(ExTypography, {
+      props: { variant: 'heading' },
+      slots: { default: '系统状态：ONLINE' },
+    });
+
+    await nextTick();
+
+    expect(wrapper.attributes('data-ex-typography-text')).toBe('系统状态：ONLINE');
   });
 
   // 自定义样式测试

@@ -1,6 +1,7 @@
 <template>
   <component
     :is="actualTag"
+    ref="rootRef"
     :class="[
       'ex-typography',
       `ex-typography--${props.variant}`,
@@ -12,6 +13,7 @@
         'ex-typography--gradient': props.gradient,
         'ex-typography--gradient-animated': props.gradient && props.gradientAnimated,
         'ex-typography--cyberpunk': props.cyberpunk,
+        'ex-typography--glitch': isGlitchEnabled,
         'ex-typography--glow': props.glow,
         'ex-typography--center': props.center,
         'ex-typography--bold': props.bold,
@@ -19,6 +21,7 @@
         'ex-typography--underline': props.underline,
       },
     ]"
+    :data-ex-typography-text="isGlitchEnabled ? glitchText : undefined"
     :style="computedStyle"
     :title="truncationTitle"
     v-bind="$attrs"
@@ -28,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs, useSlots, type CSSProperties } from 'vue';
+import { computed, onMounted, onUpdated, ref, useAttrs, useSlots, type CSSProperties } from 'vue';
 import type { ExTypographyProps, TypographyTag, TypographyVariant } from './types';
 
 defineOptions({
@@ -84,6 +87,8 @@ const DEFAULT_TAG_BY_VARIANT: Record<TypographyVariant, TypographyTag> = {
 
 const attrs = useAttrs();
 const slots = useSlots();
+const rootRef = ref<HTMLElement>();
+const glitchText = ref(props.text ?? '');
 
 // 将异常的行数输入收敛为浏览器 line-clamp 可以稳定处理的正整数。
 const normalizedMaxLines = computed(() => {
@@ -100,6 +105,22 @@ const isMultiLineTruncate = computed(
   () => props.truncate && normalizedMaxLines.value >= MIN_MULTILINE_LINES
 );
 const isSingleLineTruncate = computed(() => props.truncate && !isMultiLineTruncate.value);
+const isGlitchEnabled = computed(
+  () => props.cyberpunk || props.variant === 'display' || props.variant === 'heading'
+);
+
+// 撕裂层是装饰性副本，需要同步插槽最终渲染出的纯文本，避免重复渲染插槽节点。
+const syncGlitchText = (): void => {
+  const renderedText = rootRef.value?.textContent ?? props.text ?? '';
+  const normalizedText = renderedText.replace(/\s+/g, ' ').trim();
+
+  if (normalizedText !== glitchText.value) {
+    glitchText.value = normalizedText;
+  }
+};
+
+onMounted(syncGlitchText);
+onUpdated(syncGlitchText);
 
 const isThemeColor = (color: string): boolean => THEME_COLOR_TOKENS.has(color.toLowerCase());
 
