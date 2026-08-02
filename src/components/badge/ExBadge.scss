@@ -73,6 +73,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    appearance: none;
     box-sizing: border-box;
     margin: 0;
     font: inherit;
@@ -84,7 +85,7 @@
     border: var(--ex-badge-border-width) solid var(--ex-badge-start);
     border-radius: var(--ex-badge-border-radius);
     background: linear-gradient(135deg, var(--ex-badge-start) 0%, var(--ex-badge-end) 100%);
-    color: var(--ex-color-white);
+    color: var(--ex-color-text-inverse);
     box-shadow:
       0 0 10px rgba(var(--ex-badge-glow-rgb), 0.3),
       inset 0 1px 0 var(--ex-color-white-alpha-20);

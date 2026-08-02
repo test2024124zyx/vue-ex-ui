@@ -355,7 +355,7 @@ const handleDotClick = (event) => {
 
 ## 自定义颜色
 
-可以通过 `color` 自定义徽章的填充色，组件会同步更新边框颜色。
+可以通过 `color` 自定义徽章的填充色，组件会同步更新边框颜色。自定义颜色时请确保背景与文字保持足够的对比度。
 
 <div class="vp-raw demo-container">
   <ExBadge :count="5" color="#f50">
@@ -527,6 +527,19 @@ const handleDotClick = event => {
 
 对于没有可见文本的红点或状态点，组件会提供默认的无障碍名称；业务场景需要更明确的描述时，可传入 `aria-label`。
 
+```vue
+<template>
+  <ExBadge
+    dot
+    aria-label="有未读消息"
+  />
+  <ExBadge
+    status="processing"
+    aria-label="正在同步"
+  />
+</template>
+```
+
 ## API
 
 ### Props
@@ -535,16 +548,18 @@ const handleDotClick = event => {
 | ------------- | ------------------------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------------------- | --------- |
 | count         | 展示的数字，大于 overflowCount 时显示为 `${overflowCount}+`，为 0 时隐藏 | number \| string                     | —                                                                 | —         |
 | dot           | 不展示数字，只有一个小红点                                               | boolean                              | —                                                                 | false     |
+| clickable     | 使用原生 button 语义并启用键盘交互                                       | boolean                              | —                                                                 | false     |
 | type          | 徽章类型                                                                 | string                               | default / primary / secondary / success / warning / danger / info | primary   |
 | size          | 徽章尺寸                                                                 | string                               | small / medium / large                                            | medium    |
 | status        | 设置 Badge 为状态点                                                      | string                               | success / processing / default / error / warning                  | —         |
 | text          | 在设置了 status 的前提下有效，设置状态点的文本                           | string                               | —                                                                 | —         |
 | overflowCount | 展示封顶的数字值                                                         | number                               | —                                                                 | 99        |
 | showZero      | 当数值为 0 时，是否展示 Badge                                            | boolean                              | —                                                                 | false     |
-| offset        | 设置状态点的位置偏移，格式为 [x, y]                                      | [number \| string, number \| string] | —                                                                 | —         |
-| color         | 自定义小圆点的颜色                                                       | string                               | —                                                                 | —         |
+| offset        | 设置徽章相对插槽内容的位置偏移，格式为 [x, y]                            | [number \| string, number \| string] | —                                                                 | —         |
+| color         | 自定义徽章填充色，并同步设置边框颜色                                     | string                               | —                                                                 | —         |
 | position      | 徽章位置                                                                 | string                               | top-right / top-left / bottom-right / bottom-left                 | top-right |
-| title         | 设置鼠标放在状态点上时显示的文字                                         | string                               | —                                                                 | —         |
+| title         | 设置徽章的原生 title 文本                                                | string                               | —                                                                 | —         |
+| ariaLabel     | 设置徽章的无障碍名称，模板中也可以使用 aria-label                        | string                               | —                                                                 | —         |
 | badgeStyle    | 设置徽章的样式                                                           | string \| object                     | —                                                                 | —         |
 
 ### Events
@@ -574,57 +589,51 @@ Badge 组件使用以下 CSS 变量，可以进行主题定制：
   /* 徽章基础样式 */
   --ex-badge-z-index: 10;
   --ex-badge-font-weight: 500;
-  --ex-badge-transition: all 0.2s ease;
+  --ex-badge-transition:
+    background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease,
+    transform 0.2s ease, box-shadow 0.2s ease;
 
   /* 徽章尺寸 - 中等 */
-  --ex-badge-height: 20px;
-  --ex-badge-min-width: 20px;
+  --ex-badge-height: 18px;
+  --ex-badge-min-width: 18px;
   --ex-badge-padding-x: 6px;
-  --ex-badge-border-radius: 10px;
+  --ex-badge-border-radius: 0;
   --ex-badge-font-size: 12px;
-  --ex-badge-border-width: 1px;
+  --ex-badge-border-width: 2px;
 
   /* 徽章尺寸 - 小型 */
-  --ex-badge-sm-height: 16px;
-  --ex-badge-sm-min-width: 16px;
+  --ex-badge-sm-height: 14px;
+  --ex-badge-sm-min-width: 14px;
   --ex-badge-sm-padding-x: 4px;
-  --ex-badge-sm-border-radius: 8px;
-  --ex-badge-sm-font-size: 10px;
+  --ex-badge-sm-border-radius: 0;
+  --ex-badge-sm-font-size: 12px;
 
   /* 徽章尺寸 - 大型 */
-  --ex-badge-lg-height: 24px;
-  --ex-badge-lg-min-width: 24px;
+  --ex-badge-lg-height: 22px;
+  --ex-badge-lg-min-width: 22px;
   --ex-badge-lg-padding-x: 8px;
-  --ex-badge-lg-border-radius: 12px;
+  --ex-badge-lg-border-radius: 0;
   --ex-badge-lg-font-size: 14px;
 
   /* 点状徽章尺寸 */
-  --ex-badge-sm-dot-size: 6px;
-  --ex-badge-md-dot-size: 8px;
-  --ex-badge-lg-dot-size: 10px;
+  --ex-badge-dot-size: 10px;
+  --ex-badge-sm-dot-size: 8px;
+  --ex-badge-lg-dot-size: 12px;
+  --ex-badge-status-dot-size: 6px;
+  --ex-badge-status-dot-ring-width: 1px;
 }
 ```
 
 <style scoped>
 .demo-container {
-  padding: 16px;
-  background: var(--vp-c-bg-soft);
-  border-radius: 8px;
-  margin: 16px 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
   align-items: center;
-}
-
-.demo-container .ex-badge {
-  margin: 0;
-}
-
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .demo-container {
-    gap: 12px;
-  }
+  gap: 12px;
+  margin: 16px 0;
+  padding: 24px;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-color-bg-secondary);
 }
 </style>

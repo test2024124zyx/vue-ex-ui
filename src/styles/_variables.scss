@@ -233,7 +233,7 @@
   --ex-badge-font-weight: var(--ex-font-medium);
   --ex-badge-border-width: 2px;
   --ex-badge-border-radius: var(--ex-radius-none);
-  --ex-badge-transition: background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+  --ex-badge-transition: background var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
     border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
     color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
     opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
