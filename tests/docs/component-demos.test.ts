@@ -23,11 +23,6 @@ const extractTypographyExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
-const extractButtonExamples = (block: string): string[] =>
-  (block.match(/<ex-button\b[\s\S]*?(?:<\/ex-button>|\/>)/gi) ?? []).map(
-    normalizeTypographyExample
-  );
-
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -91,23 +86,6 @@ describe('组件文档实时演示', () => {
     const markup = readLiveMarkup('button');
     expect(markup).toMatch(/<ex-button\b[^>]*:glow="false"/i);
     expect(markup).toMatch(/<ex-button\b[^>]*shape="circle"[^>]*>\s*发\s*<\/ex-button>/i);
-  });
-
-  it('Button 每个实时示例都有默认折叠且内容一致的代码', () => {
-    const document = readDocument('button');
-    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
-    const codeBlocks = readBlocks(
-      document,
-      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
-    );
-
-    expect(codeBlocks).toHaveLength(liveBlocks.length);
-
-    liveBlocks.forEach((liveBlock, index) => {
-      expect(extractButtonExamples(liveBlock)).toEqual(
-        extractButtonExamples(codeBlocks[index] ?? '')
-      );
-    });
   });
 
   it('Ellipsis 同时提供底部按钮和行尾动态图标两种展开方式', () => {

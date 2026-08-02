@@ -58,9 +58,9 @@
 
 ## 光效
 
-主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。发光按钮默认保留低强度的青/洋红色差切片，桌面悬停时会出现短促的横向撕裂与文字错位，用于保留组件库的赛博朋克识别度。发光只用于主要操作、状态反馈和焦点提示，避免所有按钮同时产生高亮。
+主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。发光只用于主要操作、状态反馈和焦点提示，避免所有按钮同时产生高亮。
 
-在 `ExConfigProvider` 中设置 `neonEffect="false"` 会统一关闭按钮发光、色差切片与扫光；设置 `animation="false"` 会关闭悬停位移、色差撕裂、扫光过渡和加载旋转，但保留按钮的静态结构与层级。系统启用 `prefers-reduced-motion` 时也会自动关闭撕裂动画。
+在 `ExConfigProvider` 中设置 `neonEffect="false"` 会统一关闭按钮发光与扫光；设置 `animation="false"` 会关闭悬停位移、glitch、扫光过渡和加载旋转。
 
 ::: raw
 
