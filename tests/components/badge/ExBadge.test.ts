@@ -57,6 +57,28 @@ describe('ExBadge', () => {
     });
   });
 
+  it('renders round and circle count shapes', () => {
+    const roundWrapper = mount(ExBadge, {
+      props: { count: 25, shape: 'round' },
+    });
+    const circleWrapper = mount(ExBadge, {
+      props: { count: 5, shape: 'circle' },
+    });
+
+    expect(roundWrapper.find('.ex-badge__sup--shape-round').exists()).toBe(true);
+    expect(circleWrapper.find('.ex-badge__sup--shape-circle').exists()).toBe(true);
+  });
+
+  it('falls back to a round shape when a circle cannot contain the count', () => {
+    const wrapper = mount(ExBadge, {
+      props: { count: 99, shape: 'circle' },
+    });
+
+    expect(wrapper.find('.ex-badge__sup--shape-round').exists()).toBe(true);
+    expect(wrapper.find('.ex-badge__sup--shape-circle').exists()).toBe(false);
+    expect(wrapper.text()).toContain('99');
+  });
+
   it('renders dot badge correctly', () => {
     const wrapper = mount(ExBadge, {
       props: { dot: true },
