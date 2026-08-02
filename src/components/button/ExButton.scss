@@ -502,6 +502,10 @@
     filter: none;
   }
 
+  .ex-button::after {
+    display: none;
+  }
+
   .ex-button:focus-visible {
     outline-width: 3px;
     outline-color: currentColor;
