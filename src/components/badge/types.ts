@@ -33,6 +33,8 @@ export interface ExBadgeProps {
   count?: number | string;
   /** 是否显示为小红点 */
   dot?: boolean;
+  /** 是否启用徽章的按钮语义与键盘交互 */
+  clickable?: boolean;
   /** 徽章类型 */
   type?: BadgeType;
   /** 徽章尺寸 */
@@ -53,6 +55,8 @@ export interface ExBadgeProps {
   position?: BadgePosition;
   /** 鼠标悬停时显示的文字 */
   title?: string;
+  /** 徽章的无障碍名称 */
+  ariaLabel?: string;
   /** 自定义徽章样式 */
   badgeStyle?: string | Record<string, string | number>;
   /** 自定义CSS类名 */

@@ -248,19 +248,15 @@
   --ex-badge-sm-border-radius: var(--ex-radius-none);
   --ex-badge-sm-dot-size: 8px;
   
-  --ex-badge-md-min-width: 18px;
-  --ex-badge-md-height: 18px;
-  --ex-badge-md-padding-x: 6px;
-  --ex-badge-md-font-size: var(--ex-text-xs);
-  --ex-badge-md-border-radius: var(--ex-radius-none);
-  --ex-badge-md-dot-size: 10px;
-  
   --ex-badge-lg-min-width: 22px;
   --ex-badge-lg-height: 22px;
   --ex-badge-lg-padding-x: 8px;
   --ex-badge-lg-font-size: var(--ex-text-sm);
   --ex-badge-lg-border-radius: var(--ex-radius-none);
   --ex-badge-lg-dot-size: 12px;
+  --ex-badge-dot-size: 10px;
+  --ex-badge-status-dot-size: 6px;
+  --ex-badge-status-dot-ring-width: 1px;
   
   // 分割线组件
   --ex-divider-color: #{map.get($components, divider, color)};

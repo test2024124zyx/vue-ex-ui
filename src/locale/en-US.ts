@@ -200,6 +200,8 @@ export default {
   // Badge
   badge: {
     more: '{count}+',
+    dot: 'Notification indicator',
+    status: 'Status indicator',
   },
 
   // Card

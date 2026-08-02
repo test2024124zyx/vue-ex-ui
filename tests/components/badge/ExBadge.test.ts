@@ -145,7 +145,7 @@ describe('ExBadge', () => {
 
     const badge = wrapper.find('.ex-badge__sup');
     const element = badge.element as HTMLElement;
-    expect(element.style.backgroundColor).toBe('rgb(255, 0, 0)');
+    expect(element.style.background).toContain('rgb(255, 0, 0)');
     expect(element.style.borderColor).toBe('rgb(255, 0, 0)');
   });
 
@@ -189,12 +189,19 @@ describe('ExBadge', () => {
   it('handles click events', async () => {
     const onClick = vi.fn();
     const wrapper = mount(ExBadge, {
-      props: { count: 1 },
+      props: { count: 1, clickable: true },
       attrs: { onClick },
     });
 
     await wrapper.find('.ex-badge__sup').trigger('click');
     expect(onClick).toHaveBeenCalledTimes(1);
+    expect(wrapper.find('button.ex-badge__sup').attributes('type')).toBe('button');
+  });
+
+  it('provides an accessible label for dot badges', () => {
+    const wrapper = mount(ExBadge, { props: { dot: true } });
+
+    expect(wrapper.find('.ex-badge__sup').attributes('aria-label')).toBe('Notification indicator');
   });
 
   it('applies custom class correctly', () => {
@@ -288,5 +295,29 @@ describe('ExBadge', () => {
 
     expect(wrapper.find('.ex-badge__status-dot').exists()).toBe(true);
     expect(wrapper.find('.ex-badge__status-text').exists()).toBe(false);
+    expect(wrapper.find('.ex-badge__sup').attributes('aria-label')).toBe('Status indicator');
+  });
+
+  it('keeps a valid count badge when status is combined with content', () => {
+    const wrapper = mount(ExBadge, {
+      props: { status: 'success', count: 5 },
+      slots: { default: '<button>Content</button>' },
+    });
+
+    const badge = wrapper.find('.ex-badge__sup');
+    expect(badge.classes()).toContain('ex-badge__sup--primary');
+    expect(badge.classes()).toContain('ex-badge__sup--count');
+    expect(badge.classes()).not.toContain('ex-badge__sup--status-success');
+    expect(wrapper.text()).toContain('5');
+  });
+
+  it('does not treat an empty default slot as content', () => {
+    const wrapper = mount(ExBadge, {
+      props: { count: 5 },
+      slots: { default: () => [] },
+    });
+
+    expect(wrapper.classes()).not.toContain('ex-badge--with-content');
+    expect(wrapper.find('.ex-badge__sup').classes()).not.toContain('ex-badge__sup--top-right');
   });
 });

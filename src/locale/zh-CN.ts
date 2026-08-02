@@ -200,6 +200,8 @@ export default {
   // 徽章
   badge: {
     more: '{count}+',
+    dot: '通知提示',
+    status: '状态提示',
   },
 
   // 卡片
