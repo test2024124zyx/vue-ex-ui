@@ -135,7 +135,7 @@ const warnIfMissingAccessibleName = () => {
 
   const contentText = button.querySelector('.ex-button__content')?.textContent?.trim();
   const hasAccessibleName = Boolean(
-    resolvedAriaLabel.value ||
+    button.getAttribute('aria-label')?.trim() ||
       contentText ||
       button.getAttribute('aria-labelledby')?.trim() ||
       button.getAttribute('title')?.trim()
@@ -149,9 +149,13 @@ const warnIfMissingAccessibleName = () => {
 };
 
 onMounted(warnIfMissingAccessibleName);
-watch([resolvedAriaLabel, () => props.loading], warnIfMissingAccessibleName, {
-  flush: 'post',
-});
+watch(
+  [() => props.ariaLabel, () => props.loading, () => props.shape],
+  warnIfMissingAccessibleName,
+  {
+    flush: 'post',
+  }
+);
 
 const buttonClasses = computed(() => {
   const classes = [
