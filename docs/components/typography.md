@@ -258,7 +258,9 @@
       '--ex-typography-terminal-background': '#031e11',
       '--ex-typography-terminal-color-rgb': '20, 253, 206',
     }"
-  >可通过 customStyle 覆盖终端主题色</ex-typography>
+  >
+    可通过 customStyle 覆盖终端主题色
+  </ex-typography>
 </div>
 :::
 
