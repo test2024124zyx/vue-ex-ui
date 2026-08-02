@@ -64,12 +64,21 @@ defineOptions({
   name: 'ExButton',
 });
 
+const defaultGlowTypes = new Set<NonNullable<ExButtonProps['type']>>([
+  'primary',
+  'success',
+  'warning',
+  'danger',
+  'error',
+  'info',
+]);
+
 const props = withDefaults(defineProps<ExButtonProps>(), {
   type: 'default',
   size: undefined,
   shape: 'default',
   plain: false,
-  glow: true,
+  glow: undefined,
   disabled: false,
   loading: false,
   block: false,
@@ -84,6 +93,7 @@ const buttonRef = ref<HTMLButtonElement>();
 
 // 显式尺寸优先，否则继承 ConfigProvider。
 const componentSize = useComponentSize(computed(() => props.size));
+const glowEnabled = computed(() => props.glow ?? defaultGlowTypes.has(props.type));
 
 const plainSlotText = computed(() => getPlainTextContent(slots.default?.({})));
 const circleSlotText = computed(() =>
@@ -116,7 +126,7 @@ const buttonClasses = computed(() => {
   ];
 
   if (props.plain) classes.push('ex-button--plain');
-  if (props.glow) classes.push('ex-button--glow');
+  if (glowEnabled.value) classes.push('ex-button--glow');
   if (props.disabled) classes.push('ex-button--disabled');
   if (props.loading) classes.push('ex-button--loading');
   if (props.block) classes.push('ex-button--block');

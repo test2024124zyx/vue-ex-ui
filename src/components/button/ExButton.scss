@@ -403,6 +403,7 @@
   .ex-button:focus-visible {
     outline-width: 3px;
     outline-color: currentColor;
+    filter: none;
   }
 
   .ex-button--text,

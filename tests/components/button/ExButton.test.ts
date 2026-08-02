@@ -16,7 +16,7 @@ describe('ExButton', () => {
     expect(wrapper.classes()).toContain('ex-button');
     expect(wrapper.classes()).toContain('ex-button--default');
     expect(wrapper.classes()).toContain('ex-button--medium');
-    expect(wrapper.classes()).toContain('ex-button--glow');
+    expect(wrapper.classes()).not.toContain('ex-button--glow');
   });
 
   it('renders different button types', () => {
@@ -282,14 +282,38 @@ describe('ExButton', () => {
     expect(wrapper.attributes('aria-busy')).toBe('true');
   });
 
-  it('发光效果默认开启，并允许显式关闭', () => {
-    const enabled = mount(ExButton, { slots: { default: '默认发光' } });
+  it('按语义变体决定默认发光，并允许显式覆盖', () => {
+    const glowingTypes = ['primary', 'success', 'warning', 'danger', 'error', 'info'] as const;
+    const restrainedTypes = ['default', 'secondary', 'ghost', 'text', 'link'] as const;
+
+    glowingTypes.forEach(type => {
+      const wrapper = mount(ExButton, {
+        props: { type },
+        slots: { default: `${type} 操作` },
+      });
+
+      expect(wrapper.classes()).toContain('ex-button--glow');
+    });
+
+    restrainedTypes.forEach(type => {
+      const wrapper = mount(ExButton, {
+        props: { type },
+        slots: { default: `${type} 操作` },
+      });
+
+      expect(wrapper.classes()).not.toContain('ex-button--glow');
+    });
+
+    const explicit = mount(ExButton, {
+      props: { type: 'secondary', glow: true },
+      slots: { default: '强调次要操作' },
+    });
     const disabled = mount(ExButton, {
-      props: { glow: false },
+      props: { type: 'primary', glow: false },
       slots: { default: '关闭发光' },
     });
 
-    expect(enabled.classes()).toContain('ex-button--glow');
+    expect(explicit.classes()).toContain('ex-button--glow');
     expect(disabled.classes()).not.toContain('ex-button--glow');
   });
 

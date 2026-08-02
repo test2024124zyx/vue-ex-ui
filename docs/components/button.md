@@ -38,21 +38,22 @@
 
 ## 光效
 
-光效默认开启。设置 `:glow="false"` 后，悬停只保留颜色和位移反馈。
+主按钮和状态按钮默认使用发光反馈；`default`、`secondary`、`ghost`、`text`、`link` 保持克制。设置 `:glow="true"` 可对任意变体显式启用，设置 `:glow="false"` 可关闭。发光只用于主要操作、状态反馈和焦点提示，避免所有按钮同时产生高亮。
 
 ::: raw
 
 <div class="vp-raw demo-container button-row">
-  <ex-button type="primary">默认光效</ex-button>
-  <ex-button type="primary" :glow="false">关闭光效</ex-button>
-  <ex-button type="secondary">次要按钮光效</ex-button>
-  <ex-button type="secondary" :glow="false">次要按钮无光效</ex-button>
+  <ex-button type="primary">主按钮默认光效</ex-button>
+  <ex-button type="primary" :glow="false">主按钮关闭光效</ex-button>
+  <ex-button type="secondary">次要按钮无默认光效</ex-button>
+  <ex-button type="secondary" :glow="true">次要按钮显式发光</ex-button>
 </div>
 :::
 
 ```vue
-<ex-button type="primary">默认光效</ex-button>
-<ex-button type="primary" :glow="false">关闭光效</ex-button>
+<ex-button type="primary">主按钮默认光效</ex-button>
+<ex-button type="primary" :glow="false">主按钮关闭光效</ex-button>
+<ex-button type="secondary" :glow="true">次要按钮显式发光</ex-button>
 ```
 
 ## 朴素按钮
@@ -133,19 +134,19 @@
 
 ### Props
 
-| 参数         | 说明               | 类型                                                                                                        | 默认值       |
-| ------------ | ------------------ | ----------------------------------------------------------------------------------------------------------- | ------------ |
-| `type`       | 按钮类型           | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default`    |
-| `size`       | 尺寸               | `small \| medium \| large`                                                                                  | 继承全局尺寸 |
-| `shape`      | 形状               | `default \| round \| circle`                                                                                | `default`    |
-| `plain`      | 是否使用朴素样式   | `boolean`                                                                                                   | `false`      |
-| `glow`       | 是否启用统一光效   | `boolean`                                                                                                   | `true`       |
-| `disabled`   | 是否禁用           | `boolean`                                                                                                   | `false`      |
-| `loading`    | 是否加载中         | `boolean`                                                                                                   | `false`      |
-| `block`      | 是否占满父容器宽度 | `boolean`                                                                                                   | `false`      |
-| `nativeType` | 原生按钮类型       | `button \| submit \| reset`                                                                                 | `button`     |
-| `autofocus`  | 是否自动聚焦       | `boolean`                                                                                                   | `false`      |
-| `ariaLabel`  | 无障碍名称         | `string`                                                                                                    | —            |
+| 参数         | 说明                                       | 类型                                                                                                        | 默认值       |
+| ------------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------ |
+| `type`       | 按钮类型                                   | `default \| primary \| secondary \| success \| warning \| danger \| error \| info \| text \| link \| ghost` | `default`    |
+| `size`       | 尺寸                                       | `small \| medium \| large`                                                                                  | 继承全局尺寸 |
+| `shape`      | 形状                                       | `default \| round \| circle`                                                                                | `default`    |
+| `plain`      | 是否使用朴素样式                           | `boolean`                                                                                                   | `false`      |
+| `glow`       | 是否启用强调发光（显式传值可覆盖默认策略） | `boolean`                                                                                                   | 按变体策略   |
+| `disabled`   | 是否禁用                                   | `boolean`                                                                                                   | `false`      |
+| `loading`    | 是否加载中                                 | `boolean`                                                                                                   | `false`      |
+| `block`      | 是否占满父容器宽度                         | `boolean`                                                                                                   | `false`      |
+| `nativeType` | 原生按钮类型                               | `button \| submit \| reset`                                                                                 | `button`     |
+| `autofocus`  | 是否自动聚焦                               | `boolean`                                                                                                   | `false`      |
+| `ariaLabel`  | 无障碍名称                                 | `string`                                                                                                    | —            |
 
 ### 其他属性
 

@@ -41,7 +41,7 @@ export interface ExButtonProps {
   shape?: ButtonShape;
   /** 是否为朴素按钮 */
   plain?: boolean;
-  /** 是否启用统一发光效果，默认开启 */
+  /** 是否启用强调发光，未显式设置时按按钮语义决定 */
   glow?: boolean;
   /** 是否禁用 */
   disabled?: boolean;

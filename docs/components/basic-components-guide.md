@@ -198,19 +198,19 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性       | 类型                                                                                                                              | 默认值       | 说明                 |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------- |
-| type       | `'default' \| 'primary' \| 'secondary' \| 'success' \| 'warning' \| 'danger' \| 'error' \| 'info' \| 'text' \| 'link' \| 'ghost'` | `'default'`  | 按钮类型             |
-| size       | `'small' \| 'medium' \| 'large'`                                                                                                  | 继承全局尺寸 | 按钮大小             |
-| shape      | `'default' \| 'round' \| 'circle'`                                                                                                | `'default'`  | 按钮形状             |
-| plain      | `boolean`                                                                                                                         | `false`      | 朴素按钮             |
-| glow       | `boolean`                                                                                                                         | `true`       | 是否启用统一发光效果 |
-| disabled   | `boolean`                                                                                                                         | `false`      | 禁用状态             |
-| loading    | `boolean`                                                                                                                         | `false`      | 加载状态             |
-| block      | `boolean`                                                                                                                         | `false`      | 块级按钮             |
-| nativeType | `'button' \| 'submit' \| 'reset'`                                                                                                 | `'button'`   | 原生按钮类型         |
-| autofocus  | `boolean`                                                                                                                         | `false`      | 是否自动聚焦         |
-| ariaLabel  | `string`                                                                                                                          | —            | 无障碍名称           |
+| 属性       | 类型                                                                                                                              | 默认值       | 说明                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------ |
+| type       | `'default' \| 'primary' \| 'secondary' \| 'success' \| 'warning' \| 'danger' \| 'error' \| 'info' \| 'text' \| 'link' \| 'ghost'` | `'default'`  | 按钮类型                                   |
+| size       | `'small' \| 'medium' \| 'large'`                                                                                                  | 继承全局尺寸 | 按钮大小                                   |
+| shape      | `'default' \| 'round' \| 'circle'`                                                                                                | `'default'`  | 按钮形状                                   |
+| plain      | `boolean`                                                                                                                         | `false`      | 朴素按钮                                   |
+| glow       | `boolean`                                                                                                                         | 按变体策略   | 是否启用强调发光（显式传值可覆盖默认策略） |
+| disabled   | `boolean`                                                                                                                         | `false`      | 禁用状态                                   |
+| loading    | `boolean`                                                                                                                         | `false`      | 加载状态                                   |
+| block      | `boolean`                                                                                                                         | `false`      | 块级按钮                                   |
+| nativeType | `'button' \| 'submit' \| 'reset'`                                                                                                 | `'button'`   | 原生按钮类型                               |
+| autofocus  | `boolean`                                                                                                                         | `false`      | 是否自动聚焦                               |
+| ariaLabel  | `string`                                                                                                                          | —            | 无障碍名称                                 |
 
 #### 特性
 
