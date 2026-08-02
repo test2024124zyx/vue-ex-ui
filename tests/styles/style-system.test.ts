@@ -186,6 +186,11 @@ describe('v2 样式系统边界', () => {
       '@supports not ((background-clip: text) or (-webkit-background-clip: text))'
     );
     expect(typographyCss).toContain('background-size: 100% 100%');
+    expect(typographyCss).toContain('display: inline-block');
+    expect(typographyCss).toContain('inline-size: fit-content');
+    expect(typographyCss).toContain('max-inline-size: 100%');
+    expect(typographyCss).toContain('.ex-typography--gradient.ex-typography--center');
+    expect(typographyCss).toContain('.ex-typography--gradient.ex-typography--truncate-multiline');
     expect(typographyCss).toContain('background-clip: text');
     expect(typographyCss).toContain('-webkit-background-clip: text');
     expect(typographyCss).toContain('background-size: 220% 100%');
