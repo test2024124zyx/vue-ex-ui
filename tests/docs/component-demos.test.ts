@@ -61,7 +61,7 @@ describe('组件文档实时演示', () => {
       /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
     );
 
-    expect(liveBlocks).toHaveLength(7);
+    expect(liveBlocks).toHaveLength(8);
     expect(codeBlocks).toHaveLength(liveBlocks.length);
 
     liveBlocks.forEach((liveBlock, index) => {
