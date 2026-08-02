@@ -344,6 +344,36 @@ describe('ExButton', () => {
     expect(wrapper.find('button').attributes('aria-label')).toBe('Close dialog');
   });
 
+  it('accepts the native aria-label attribute for icon-only buttons', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      const wrapper = mount(ExButton, {
+        attrs: { 'aria-label': 'Search' },
+        slots: { default: '<span class="icon" aria-hidden="true"></span>' },
+      });
+
+      expect(wrapper.find('button').attributes('aria-label')).toBe('Search');
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('warns about an unnamed icon-only button in development', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      mount(ExButton, {
+        slots: { default: '<span class="icon" aria-hidden="true"></span>' },
+      });
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('ariaLabel'));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('trims explicit aria-label', () => {
     const wrapper = mount(ExButton, {
       props: { ariaLabel: '  Close dialog  ' },
