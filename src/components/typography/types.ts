@@ -23,6 +23,8 @@ export interface ExTypographyProps {
   gradientAnimated?: boolean;
   /** 是否启用强化赛博朋克文字风格（基础赛博字体与标题色差默认开启） */
   cyberpunk?: boolean;
+  /** 是否启用 CRT 终端文字效果（等宽字体、扫描线、屏幕辉光与轻微闪烁） */
+  terminal?: boolean;
   /** 是否使用霓虹发光效果 */
   glow?: boolean;
   /** 是否居中对齐 */

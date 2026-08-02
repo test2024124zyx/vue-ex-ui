@@ -242,6 +242,47 @@
 
 :::
 
+## CRT 终端文字效果
+
+设置 `terminal` 后，Typography 会使用终端等宽字体、墨绿屏幕底色、扫描线、低强度屏幕辉光和轻微 CRT 闪烁。效果默认关闭，不会改变普通文本的排版；`prefers-reduced-motion`、高对比度和强制颜色模式会自动关闭装饰动画。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack terminal-typography-demo">
+  <ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
+  <ex-typography terminal>输入指令：HELP_</ex-typography>
+  <ex-typography
+    terminal
+    :custom-style="{
+      '--ex-typography-terminal-color': '#14fdce',
+      '--ex-typography-terminal-background': '#031e11',
+      '--ex-typography-terminal-color-rgb': '20, 253, 206',
+    }"
+  >可通过 customStyle 覆盖终端主题色</ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
+<ex-typography terminal>输入指令：HELP_</ex-typography>
+<ex-typography
+  terminal
+  :custom-style="{
+    '--ex-typography-terminal-color': '#14fdce',
+    '--ex-typography-terminal-background': '#031e11',
+    '--ex-typography-terminal-color-rgb': '20, 253, 206',
+  }"
+>
+  可通过 customStyle 覆盖终端主题色
+</ex-typography>
+```
+
+:::
+
+终端模式下 `text-primary` 会映射为终端青绿色；显式传入 `color` 或启用 `gradient` 时仍保留原有优先级。
+
 ## API
 
 ### Props
@@ -258,6 +299,7 @@
 | `gradient`         | 是否启用渐变文本效果                        | `boolean`                                                       | `false`             |
 | `gradientAnimated` | 是否启用渐变背景动态位移（需要 `gradient`） | `boolean`                                                       | `false`             |
 | `cyberpunk`        | 是否启用强化赛博朋克文字效果                | `boolean`                                                       | `false`             |
+| `terminal`         | 是否启用 CRT 终端文字效果                   | `boolean`                                                       | `false`             |
 | `glow`             | 是否启用发光效果                            | `boolean`                                                       | `false`             |
 | `center`           | 是否居中                                    | `boolean`                                                       | `false`             |
 | `bold`             | 是否加粗                                    | `boolean`                                                       | `false`             |
@@ -265,7 +307,7 @@
 | `underline`        | 是否显示下划线                              | `boolean`                                                       | `false`             |
 | `customStyle`      | 合并到根元素的样式                          | `CSSProperties`                                                 | —                   |
 
-在 Vue 模板中，驼峰属性使用 kebab-case：`max-lines`、`gradient-animated` 和 `custom-style`。
+在 Vue 模板中，驼峰属性使用 kebab-case：`max-lines`、`gradient-animated` 和 `custom-style`。`terminal` 可直接写为布尔属性。
 
 ### Slots
 

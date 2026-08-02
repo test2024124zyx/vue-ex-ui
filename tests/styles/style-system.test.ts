@@ -132,6 +132,8 @@ describe('v2 样式系统边界', () => {
     const css = compile("@use 'src/styles/index';");
 
     expect(css).toContain('--ex-color-cyber-green: #00ff88');
+    expect(css).toContain('--ex-color-terminal-text: #14fdce');
+    expect(css).toContain('--ex-color-terminal-bg: #031e11');
     expect(css).toContain('--ex-cyber-grid-size: 48px');
     expect(css).toContain('.ex-app::after');
     expect(css).toContain('@keyframes ex-cyber-scanline');
@@ -217,6 +219,11 @@ describe('v2 样式系统边界', () => {
     expect(typographyCss).toContain('.ex-typography--cyberpunk');
     expect(typographyCss).toContain('--ex-typography-chromatic-left');
     expect(typographyCss).toContain('--ex-color-cyber-magenta');
+    expect(typographyCss).toContain('.ex-typography--terminal');
+    expect(typographyCss).toContain('.ex-typography__terminal-overlay');
+    expect(typographyCss).toContain('background-size: 100% 0.3rem');
+    expect(typographyCss).toContain('@keyframes ex-typography-terminal-flicker');
+    expect(typographyCss).toContain('@keyframes ex-typography-terminal-glow');
     expect(typographyCss).toContain('.ex-typography--gradient-animated');
     expect(typographyCss).toContain(
       'animation: ex-typography-gradient-shift 3s ease-in-out infinite'

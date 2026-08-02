@@ -138,6 +138,38 @@ describe('ExTypography', () => {
     expect(wrapper.classes()).toContain('ex-typography--underline');
   });
 
+  it('支持显式开启 CRT 终端文字效果并渲染装饰层', () => {
+    const wrapper = mount(ExTypography, {
+      props: { terminal: true },
+      slots: { default: '终端输出：ONLINE' },
+    });
+
+    expect(wrapper.classes()).toContain('ex-typography--terminal');
+    expect(wrapper.element.style.color).toBe('var(--ex-typography-terminal-color)');
+    expect(wrapper.find('.ex-typography__terminal-overlay').attributes('aria-hidden')).toBe('true');
+  });
+
+  it('终端效果保留显式语义颜色', () => {
+    const wrapper = mount(ExTypography, {
+      props: { terminal: true, color: 'warning' },
+    });
+
+    expect(wrapper.element.style.color).toBe('var(--ex-color-warning)');
+  });
+
+  it('终端效果与渐变组合时保留渐变文字契约', () => {
+    const wrapper = mount(ExTypography, {
+      props: { terminal: true, gradient: true },
+      slots: { default: '渐变终端输出' },
+    });
+
+    expect(wrapper.classes()).toEqual(
+      expect.arrayContaining(['ex-typography--terminal', 'ex-typography--gradient'])
+    );
+    expect(wrapper.element.style.color).toBe('');
+    expect(wrapper.find('.ex-typography__terminal-overlay').exists()).toBe(true);
+  });
+
   it.each([
     ['body', 'p'],
     ['caption', 'span'],

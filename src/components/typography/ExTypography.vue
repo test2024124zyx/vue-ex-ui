@@ -13,6 +13,7 @@
         'ex-typography--gradient': props.gradient,
         'ex-typography--gradient-animated': props.gradient && props.gradientAnimated,
         'ex-typography--cyberpunk': props.cyberpunk,
+        'ex-typography--terminal': props.terminal,
         'ex-typography--glitch': isGlitchEnabled,
         'ex-typography--glow': props.glow,
         'ex-typography--center': props.center,
@@ -27,6 +28,11 @@
     v-bind="$attrs"
   >
     <slot>{{ props.text }}</slot>
+    <span
+      v-if="props.terminal"
+      class="ex-typography__terminal-overlay"
+      aria-hidden="true"
+    ></span>
   </component>
 </template>
 
@@ -47,6 +53,7 @@ const props = withDefaults(defineProps<ExTypographyProps>(), {
   gradient: false,
   gradientAnimated: false,
   cyberpunk: false,
+  terminal: false,
   glow: false,
   center: false,
   bold: false,
@@ -141,12 +148,15 @@ const computedStyle = computed<CSSProperties>(() => {
   // 仅将已注册的语义色映射为主题变量，其余交给浏览器解析为原始 CSS 颜色。
   if (props.color && !props.gradient) {
     const color = props.color.trim();
+    const normalizedColor = color.toLowerCase();
     const resolvedColor =
-      props.cyberpunk && color.toLowerCase() === 'text-primary'
-        ? 'var(--ex-color-cyber-cyan)'
-        : isThemeColor(color)
-          ? `var(--ex-color-${color.toLowerCase()})`
-          : color;
+      props.terminal && normalizedColor === 'text-primary'
+        ? 'var(--ex-typography-terminal-color)'
+        : props.cyberpunk && normalizedColor === 'text-primary'
+          ? 'var(--ex-color-cyber-cyan)'
+          : isThemeColor(color)
+            ? `var(--ex-color-${normalizedColor})`
+            : color;
     style.color = resolvedColor;
   }
 

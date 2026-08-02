@@ -42,6 +42,10 @@
   --ex-color-cyber-green-rgb: 0, 255, 136;
   --ex-color-cyber-magenta-rgb: 255, 0, 255;
   --ex-color-cyber-cyan-rgb: 0, 212, 255;
+  // 終端文字效果使用獨立的墨綠背景與青綠文字，避免改變一般語義色。
+  --ex-color-terminal-text: #14fdce;
+  --ex-color-terminal-text-rgb: 20, 253, 206;
+  --ex-color-terminal-bg: #031e11;
   --ex-cyber-grid-size: 48px;
   --ex-cyber-grid-opacity: 0.06;
   --ex-cyber-scanline-opacity: 0.045;
