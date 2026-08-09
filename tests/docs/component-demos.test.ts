@@ -58,6 +58,12 @@ const extractInputExamples = (block: string): string[] =>
 const extractSelectExamples = (block: string): string[] =>
   (block.match(/<ex-select\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
 
+const extractTagExamples = (block: string): string[] =>
+  [
+    ...(block.match(/<ex-tag\b[\s\S]*?<\/ex-tag>/gi) ?? []),
+    ...(block.match(/<ex-tag-input\b[^>]*\/>/gi) ?? []),
+  ].map(normalizeTypographyExample);
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -146,6 +152,24 @@ describe('组件文档实时演示', () => {
       expect(extractTypographyExamples(liveBlock)).toEqual(
         extractTypographyExamples(codeBlocks[index] ?? '')
       );
+    });
+  });
+
+  it('Tag 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('tag');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+    const codeFenceCount = document.match(/```vue/g)?.length ?? 0;
+
+    expect(liveBlocks).toHaveLength(8);
+    expect(codeBlocks).toHaveLength(codeFenceCount);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractTagExamples(liveBlock)).toEqual(extractTagExamples(codeBlocks[index] ?? ''));
     });
   });
 

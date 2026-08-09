@@ -42,155 +42,133 @@ const handleDuplicate = (value: string) => {
 
 ## 基础用法
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag>标签一</ex-tag>
-    <ex-tag type="success">标签二</ex-tag>
-    <ex-tag type="info">标签三</ex-tag>
-    <ex-tag type="warning">标签四</ex-tag>
-    <ex-tag type="danger">标签五</ex-tag>
-  </div>
+  <ex-tag>标签一</ex-tag>
+  <ex-tag type="success">标签二</ex-tag>
+  <ex-tag type="info">标签三</ex-tag>
+  <ex-tag type="warning">标签四</ex-tag>
+  <ex-tag type="danger">标签五</ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag>标签一</ex-tag>
-    <ex-tag type="success">标签二</ex-tag>
-    <ex-tag type="info">标签三</ex-tag>
-    <ex-tag type="warning">标签四</ex-tag>
-    <ex-tag type="danger">标签五</ex-tag>
-  </div>
-</template>
+<ex-tag>标签一</ex-tag>
+<ex-tag type="success">标签二</ex-tag>
+<ex-tag type="info">标签三</ex-tag>
+<ex-tag type="warning">标签四</ex-tag>
+<ex-tag type="danger">标签五</ex-tag>
 ```
+
+:::
 
 ## 不同主题
 
 通过 `effect` 属性可以设置不同的主题：`dark`、`light` 和 `plain`。
 
- <div class="vp-raw demo-container tag-demo">
-    <ex-tag effect="dark">Dark</ex-tag>
-    <ex-tag effect="dark" type="success">Dark Success</ex-tag>
-    <ex-tag effect="light">Light</ex-tag>
-    <ex-tag effect="light" type="success">Light Success</ex-tag>
-    <ex-tag effect="plain">Plain</ex-tag>
-    <ex-tag effect="plain" type="success">Plain Success</ex-tag>
-  </div>
+::: raw
+
+<div class="vp-raw demo-container tag-demo">
+  <ex-tag effect="dark">Dark</ex-tag>
+  <ex-tag effect="dark" type="success">Dark Success</ex-tag>
+  <ex-tag effect="light">Light</ex-tag>
+  <ex-tag effect="light" type="success">Light Success</ex-tag>
+  <ex-tag effect="plain">Plain</ex-tag>
+  <ex-tag effect="plain" type="success">Plain Success</ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag effect="dark">Dark</ex-tag>
-    <ex-tag
-      effect="dark"
-      type="success"
-    >
-      Dark Success
-    </ex-tag>
-    <ex-tag effect="light">Light</ex-tag>
-    <ex-tag
-      effect="light"
-      type="success"
-    >
-      Light Success
-    </ex-tag>
-    <ex-tag effect="plain">Plain</ex-tag>
-    <ex-tag
-      effect="plain"
-      type="success"
-    >
-      Plain Success
-    </ex-tag>
-  </div>
-</template>
+<ex-tag effect="dark">Dark</ex-tag>
+<ex-tag effect="dark" type="success">Dark Success</ex-tag>
+<ex-tag effect="light">Light</ex-tag>
+<ex-tag effect="light" type="success">Light Success</ex-tag>
+<ex-tag effect="plain">Plain</ex-tag>
+<ex-tag effect="plain" type="success">Plain Success</ex-tag>
 ```
+
+:::
 
 ## 可交互标签
 
 设置 `clickable` 后，标签会获得键盘可操作的按钮语义；鼠标点击仍会触发 `click` 事件。
+
+::: raw
 
 <div class="vp-raw demo-container tag-demo">
   <ex-tag clickable @click="handleClick">可键盘操作</ex-tag>
   <ex-tag clickable closable close-aria-label="移除可关闭标签">带关闭操作</ex-tag>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<template>
-  <div>
-    <ex-tag
-      clickable
-      @click="handleClick"
-    >
-      可键盘操作
-    </ex-tag>
-    <ex-tag
-      clickable
-      closable
-      close-aria-label="移除可关闭标签"
-    >
-      带关闭操作
-    </ex-tag>
-  </div>
-</template>
+<ex-tag clickable @click="handleClick">可键盘操作</ex-tag>
+<ex-tag clickable closable close-aria-label="移除可关闭标签">带关闭操作</ex-tag>
 ```
+
+:::
 
 ## 自定义颜色
 
 你可以通过 `color`、`bgColor` 和 `borderColor` 属性来自定义标签的颜色。
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag color="#e6f0ff" bg-color="#0f1720" border-color="#29abe2">霓虹蓝标签</ex-tag>
-    <ex-tag color="#ffcf70" border-color="#f59e0b" effect="plain">警告边框</ex-tag>
-    <ex-tag color="#8ff0c0" bg-color="#062218" border-color="#10b981">自定义组合</ex-tag>
-  </div>
+  <ex-tag color="#e6f0ff" bg-color="#0f1720" border-color="#29abe2">霓虹蓝标签</ex-tag>
+  <ex-tag color="#ffcf70" border-color="#f59e0b" effect="plain">警告边框</ex-tag>
+  <ex-tag color="#8ff0c0" bg-color="#062218" border-color="#10b981">自定义组合</ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag
-      color="#e6f0ff"
-      bg-color="#0f1720"
-      border-color="#29abe2"
-    >
-      霓虹蓝标签
-    </ex-tag>
-    <ex-tag
-      color="#ffcf70"
-      border-color="#f59e0b"
-      effect="plain"
-    >
-      警告边框
-    </ex-tag>
-    <ex-tag
-      color="#8ff0c0"
-      bg-color="#062218"
-      border-color="#10b981"
-    >
-      自定义组合
-    </ex-tag>
-  </div>
-</template>
+<ex-tag color="#e6f0ff" bg-color="#0f1720" border-color="#29abe2">霓虹蓝标签</ex-tag>
+<ex-tag color="#ffcf70" border-color="#f59e0b" effect="plain">警告边框</ex-tag>
+<ex-tag color="#8ff0c0" bg-color="#062218" border-color="#10b981">自定义组合</ex-tag>
 ```
+
+:::
 
 ## 动态编辑标签
 
 结合 `ExTagInput` 组件可以实现动态添加和删除标签。
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag 
-      v-for="tag in dynamicTags" 
-      :key="tag.name" 
-      closable 
-      :type="tag.type" 
-      :close-aria-label="'移除 ' + tag.name"
-      @close="handleClose(tag)"
-    >
-      {{ tag.name }}
-    </ex-tag>
-    <ExTagInput 
-      :existing-tags="dynamicTags.map(t => t.name)"
-      @confirm="handleAdd"
-      @duplicate="handleDuplicate"
-    />
-  </div>
+  <ex-tag
+    v-for="tag in dynamicTags"
+    :key="tag.name"
+    closable
+    :type="tag.type"
+    :close-aria-label="'移除 ' + tag.name"
+    @close="handleClose(tag)"
+  >
+    {{ tag.name }}
+  </ex-tag>
+  <ExTagInput
+    :existing-tags="dynamicTags.map(t => t.name)"
+    @confirm="handleAdd"
+    @duplicate="handleDuplicate"
+  />
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -239,144 +217,129 @@ const handleDuplicate = value => {
 </script>
 ```
 
+:::
+
 ## 不同尺寸
 
 支持 `large`、`medium`、`small` 三种尺寸。
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag size="large">大号标签</ex-tag>
-    <ex-tag size="medium">中号标签</ex-tag>
-    <ex-tag size="small">小号标签</ex-tag>
-  </div>
+  <ex-tag size="large">大号标签</ex-tag>
+  <ex-tag size="medium">中号标签</ex-tag>
+  <ex-tag size="small">小号标签</ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag size="large">大号标签</ex-tag>
-    <ex-tag size="medium">中号标签</ex-tag>
-    <ex-tag size="small">小号标签</ex-tag>
-  </div>
-</template>
+<ex-tag size="large">大号标签</ex-tag>
+<ex-tag size="medium">中号标签</ex-tag>
+<ex-tag size="small">小号标签</ex-tag>
 ```
+
+:::
 
 ## 带图标的标签
 
 使用 `prefix` 插槽可以添加前置图标。
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag size="large">
-      <template #prefix>
-        <ExIcon icon="star-fill" :size="16" />
-      </template>
-      大号标签
-    </ex-tag>
-    <ex-tag size="medium">
-      <template #prefix>
-        <ExIcon icon="star-line" :size="14" />
-      </template>
-      中号标签
-    </ex-tag>
-    <ex-tag size="small" round>
-      <template #prefix>
-        <ExIcon icon="checkbox-circle-fill" :size="12" />
-      </template>
-      小号圆形
-    </ex-tag>
-  </div>
+  <ex-tag size="large">
+    <template #prefix>
+      <ExIcon icon="star-fill" :size="16" />
+    </template>
+    大号标签
+  </ex-tag>
+  <ex-tag size="medium">
+    <template #prefix>
+      <ExIcon icon="star-line" :size="14" />
+    </template>
+    中号标签
+  </ex-tag>
+  <ex-tag size="small" round>
+    <template #prefix>
+      <ExIcon icon="checkbox-circle-fill" :size="12" />
+    </template>
+    小号圆形
+  </ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag size="large">
-      <template #prefix>
-        <ExIcon
-          icon="star-fill"
-          :size="16"
-        />
-      </template>
-      大号标签
-    </ex-tag>
-    <ex-tag size="medium">
-      <template #prefix>
-        <ExIcon
-          icon="star-line"
-          :size="14"
-        />
-      </template>
-      中号标签
-    </ex-tag>
-    <ex-tag
-      size="small"
-      round
-    >
-      <template #prefix>
-        <ExIcon
-          icon="checkbox-circle-fill"
-          :size="12"
-        />
-      </template>
-      小号圆形
-    </ex-tag>
-  </div>
-</template>
+<ex-tag size="large">
+  <template #prefix>
+    <ExIcon icon="star-fill" :size="16" />
+  </template>
+  大号标签
+</ex-tag>
+<ex-tag size="medium">
+  <template #prefix>
+    <ExIcon icon="star-line" :size="14" />
+  </template>
+  中号标签
+</ex-tag>
+<ex-tag size="small" round>
+  <template #prefix>
+    <ExIcon icon="checkbox-circle-fill" :size="12" />
+  </template>
+  小号圆形
+</ex-tag>
 ```
+
+:::
 
 ## 自定义关闭图标
 
 通过 `close` 插槽可以自定义关闭图标。
 
+::: raw
+
 <div class="vp-raw demo-container tag-demo">
-    <ex-tag closable type="primary">默认关闭图标</ex-tag>
-    <ex-tag closable type="success">
-      <template #close>
-        <ExIcon icon="delete-bin-line" :size="12" />
-      </template>
-      自定义删除图标
-    </ex-tag>
-    <ex-tag closable type="warning">
-      <template #close>
-        <ExIcon icon="close-circle-line" :size="12" />
-      </template>
-      圆形关闭图标
-    </ex-tag>
-  </div>
+  <ex-tag closable type="primary">默认关闭图标</ex-tag>
+  <ex-tag closable type="success">
+    <template #close>
+      <ExIcon icon="delete-bin-line" :size="12" />
+    </template>
+    自定义删除图标
+  </ex-tag>
+  <ex-tag closable type="warning">
+    <template #close>
+      <ExIcon icon="close-circle-line" :size="12" />
+    </template>
+    圆形关闭图标
+  </ex-tag>
+</div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <div>
-    <ex-tag
-      closable
-      type="primary"
-    >
-      默认关闭图标
-    </ex-tag>
-    <ex-tag
-      closable
-      type="success"
-    >
-      <template #close>
-        <ExIcon
-          icon="delete-bin-line"
-          :size="12"
-        />
-      </template>
-      自定义删除图标
-    </ex-tag>
-    <ex-tag
-      closable
-      type="warning"
-    >
-      <template #close>
-        <ExIcon
-          icon="close-circle-line"
-          :size="12"
-        />
-      </template>
-      圆形关闭图标
-    </ex-tag>
-  </div>
-</template>
+<ex-tag closable type="primary">默认关闭图标</ex-tag>
+<ex-tag closable type="success">
+  <template #close>
+    <ExIcon icon="delete-bin-line" :size="12" />
+  </template>
+  自定义删除图标
+</ex-tag>
+<ex-tag closable type="warning">
+  <template #close>
+    <ExIcon icon="close-circle-line" :size="12" />
+  </template>
+  圆形关闭图标
+</ex-tag>
 ```
+
+:::
 
 ## Tag API
 
@@ -453,6 +416,8 @@ const handleDuplicate = value => {
 
 Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 组件：
 
+::: details 查看示例代码
+
 ```vue
 <!-- ✅ 推荐：使用 ExIcon 组件 + 插槽 -->
 <ex-tag>
@@ -474,6 +439,8 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 <ex-tag icon="star">标签</ex-tag>
 ```
 
+:::
+
 ### 动态标签最佳实践
 
 使用 `ExTagInput` 组件时的建议：
@@ -482,6 +449,8 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 2. **错误提示**：监听 `duplicate` 事件，给用户友好的提示
 3. **尺寸统一**：TagInput 的 `size` 控制文字、图标和输入宽度；操作按钮保留 44px 触控目标
 4. **数据管理**：使用响应式数据管理标签列表
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -525,6 +494,8 @@ const handleDuplicate = value => {
 };
 </script>
 ```
+
+:::
 
 ## 无障碍与布局约定
 
