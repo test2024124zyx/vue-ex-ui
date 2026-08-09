@@ -280,6 +280,19 @@ describe('ExInput', () => {
     );
   });
 
+  it('重置基础表单样式，避免原生焦点阴影在前缀图标后形成竖线', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/input/ExInput.scss'),
+      'utf8'
+    );
+    const controlBlock =
+      stylesheet.match(/\.ex-input__control\s*\{([\s\S]*?)\n\n {2}&::placeholder/)?.[1] ?? '';
+
+    expect(controlBlock).toContain('border: 0;');
+    expect(controlBlock).toContain('outline: 0;');
+    expect(controlBlock).toContain('box-shadow: none;');
+  });
+
   it.each<[InputStatus, string]>([
     ['success', 'ex-input--success'],
     ['warning', 'ex-input--warning'],
