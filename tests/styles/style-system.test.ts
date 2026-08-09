@@ -334,7 +334,8 @@ describe('v2 样式系统边界', () => {
     expect(buttonCss).toContain('.ex-button--shape-notched');
     expect(cardCss).toContain('clip-path: polygon(');
     expect(cardCss).toContain('.ex-card.ex-terminal');
-    expect(inputCss).toContain('content: ">"');
+    expect(inputCss).toContain('.ex-input__prompt');
+    expect(inputCss).not.toContain('content: ">"');
     expect(inputCss).toContain('clip-path: polygon(');
   });
 

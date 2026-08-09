@@ -29,6 +29,14 @@
       </div>
 
       <div class="ex-input__inner">
+        <span
+          v-if="shouldShowPrompt"
+          class="ex-input__prompt"
+          aria-hidden="true"
+        >
+          {{ prompt }}
+        </span>
+
         <div
           v-if="hasPrefix"
           class="ex-input__prefix"
@@ -258,6 +266,8 @@ const props = withDefaults(defineProps<ExInputProps>(), {
   size: undefined,
   status: 'default',
   variant: 'neon',
+  prompt: '>',
+  showPrompt: true,
   disabled: false,
   readonly: false,
   clearable: false,
@@ -324,6 +334,9 @@ const hasHelpSlot = computed(() => hasRenderableContent(slots.help?.({})));
 const hasErrorSlot = computed(() => hasRenderableContent(slots.error?.({})));
 
 const hasLabel = computed(() => Boolean(props.label) || hasLabelSlot.value);
+const shouldShowPrompt = computed(
+  () => props.variant === 'neon' && props.showPrompt && props.prompt.length > 0 && !hasPrefix.value
+);
 const hasPrepend = computed(() => Boolean(props.prepend) || hasPrependSlot.value);
 const hasAppend = computed(() => Boolean(props.append) || hasAppendSlot.value);
 const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));

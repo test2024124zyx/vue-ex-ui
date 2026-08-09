@@ -62,12 +62,11 @@
     filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 }
 
-// Neon 输入框默认采用终端提示符，已有 prefix slot 时不重复添加
-.ex-input--neon:not(:has(.ex-input__prefix)) .ex-input__inner::before {
+// Neon 输入框默认采用终端提示符，显示逻辑由组件根据 prompt/show-prompt 控制。
+.ex-input__prompt {
   flex: none;
   margin-inline-start: var(--ex-spacing-3);
   color: var(--ex-color-primary);
-  content: '>';
   font-family: var(--ex-font-mono);
   font-weight: var(--ex-font-bold);
   text-shadow: 0 0 6px var(--ex-color-primary-alpha-30);

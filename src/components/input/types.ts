@@ -38,6 +38,10 @@ export interface ExInputProps {
   size?: InputSize;
   status?: InputStatus;
   variant?: InputVariant;
+  /** neon 变体的终端提示符文本。 */
+  prompt?: string;
+  /** 是否显示 neon 变体的终端提示符；存在 prefix 插槽时不重复显示。 */
+  showPrompt?: boolean;
   /** 支持字符串或数字初值；未使用 number 修饰符时编辑模型仍返回字符串。 */
   modelValue?: InputModelValue;
   /** Vue v-model 支持的 trim、number 与 lazy 修饰符。 */

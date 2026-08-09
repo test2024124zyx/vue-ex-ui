@@ -52,6 +52,7 @@ describe('ExInput', () => {
     );
     expect(inputWrapper.attributes('style')).toContain('max-width: 20rem');
     expect(inputWrapper.get('input').attributes('type')).toBe('text');
+    expect(inputWrapper.get('.ex-input__prompt').text()).toBe('>');
   });
 
   it('把原生输入属性和事件转发给真实控件，而不是错误地落到外层容器', async () => {
@@ -308,6 +309,43 @@ describe('ExInput', () => {
     expect(stylesheet).toContain(
       '.ex-input--with-prepend .ex-input__inner,\n.ex-input--with-append .ex-input__inner {\n  clip-path: none;\n}'
     );
+  });
+
+  it('支持控制终端提示符的内容与显隐，并由 prefix 插槽优先', async () => {
+    const inputWrapper = mountInput({
+      props: {
+        prompt: '$',
+      },
+    });
+
+    expect(inputWrapper.get('.ex-input__prompt').text()).toBe('$');
+
+    await inputWrapper.setProps({ showPrompt: false });
+    expect(inputWrapper.find('.ex-input__prompt').exists()).toBe(false);
+
+    const emptyPromptWrapper = mountInput({ props: { prompt: '' } });
+    expect(emptyPromptWrapper.find('.ex-input__prompt').exists()).toBe(false);
+
+    const ghostWrapper = mountInput({ props: { prompt: '$', variant: 'ghost' } });
+    expect(ghostWrapper.find('.ex-input__prompt').exists()).toBe(false);
+
+    const prefixWrapper = mountInput({
+      slots: {
+        prefix: '<span class="custom-prefix">$</span>',
+      },
+    });
+    expect(prefixWrapper.find('.ex-input__prompt').exists()).toBe(false);
+    expect(prefixWrapper.find('.custom-prefix').exists()).toBe(true);
+  });
+
+  it('通过真实提示符节点渲染可控文本，而不是依赖硬编码伪元素', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/input/ExInput.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toContain('.ex-input__prompt');
+    expect(stylesheet).not.toContain("content: '>';");
   });
 
   it.each<[InputStatus, string]>([
