@@ -376,9 +376,24 @@ describe('v2 样式系统边界', () => {
     const variablesCss = compile("@use 'src/styles/variables';");
 
     expect(tagCss).not.toContain('.ex-tag + .ex-tag');
+    expect(tagCss).toContain(
+      '.ex-tag.is-closable:not(.is-round):has(> .ex-tag__close:focus-visible)'
+    );
+    expect(tagCss).not.toContain('.ex-tag.is-closable:not(.is-round):focus-within');
     expect(tagCss).toContain('border-color: CanvasText !important;');
     expect(tagCss).toContain('(forced-colors: active)');
     expect(variablesCss).toContain('--ex-tag-close-size-sm: 24px;');
     expect(variablesCss).toContain('--ex-tag-close-size-md: 24px;');
+  });
+
+  it('TagInput 将编辑容器设为无边框，并让输入框与操作按钮共享触控高度', () => {
+    const tagInputCss = compile("@use 'src/components/tag/ExTagInput';");
+    const wrapperCss = tagInputCss.match(/\.ex-tag-input__wrapper \{[\s\S]*?\n\}/)?.[0] ?? '';
+    const inputCss = tagInputCss.match(/\.ex-tag-input__input \{[\s\S]*?\n\}/)?.[0] ?? '';
+
+    expect(wrapperCss).toContain('border: 0;');
+    expect(wrapperCss).toContain('background: transparent;');
+    expect(inputCss).toContain('height: var(--ex-tag-input-action-size);');
+    expect(inputCss).toContain('border: 1px solid var(--ex-color-border-primary);');
   });
 });

@@ -1,0 +1,249 @@
+@use '../../styles/mixins' as *;
+
+.ex-tag-input {
+  &__editing {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: var(--ex-button-touch-target);
+    min-height: var(--ex-button-touch-target);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ex-radius-md);
+    color: var(--ex-color-text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    @include transition((color, transform));
+
+    &:focus-visible {
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
+
+    &:hover {
+      .ex-tag-input__button-content {
+        color: var(--ex-color-neon-blue-500);
+        border-color: var(--ex-color-neon-blue-500);
+        background: var(--ex-color-bg-hover);
+        box-shadow: 0 0 10px var(--ex-color-primary-alpha-20);
+      }
+    }
+
+    &:active {
+      .ex-tag-input__button-content {
+        transform: translateY(1px);
+      }
+    }
+
+    &--large {
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-lg);
+        padding: 0 var(--ex-tag-padding-x-lg);
+        font-size: var(--ex-tag-font-size-lg);
+      }
+    }
+
+    &--medium {
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-md);
+        padding: 0 var(--ex-tag-padding-x-md);
+        font-size: var(--ex-tag-font-size-md);
+      }
+    }
+
+    &--small {
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-sm);
+        padding: 0 var(--ex-tag-padding-x-sm);
+        font-size: var(--ex-tag-font-size-sm);
+      }
+    }
+  }
+
+  // 外层保留触控命中区，内层视觉表面与 Tag 的尺寸契约保持一致。
+  &__button-content {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    gap: var(--ex-spacing-1);
+    height: var(--ex-tag-height-md);
+    padding: 0 var(--ex-tag-padding-x-md);
+    background: var(--ex-color-bg-secondary);
+    border: 1px dashed var(--ex-color-border-primary);
+    border-radius: var(--ex-tag-radius);
+    color: inherit;
+    font-size: var(--ex-tag-font-size-md);
+    font-family: inherit;
+    line-height: var(--ex-leading-tight);
+    white-space: nowrap;
+    @include transition((color, background-color, border-color, box-shadow, transform));
+  }
+
+  &__text {
+    line-height: 1;
+  }
+
+  &__wrapper {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    gap: var(--ex-spacing-1);
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  &__feedback {
+    flex-basis: 100%;
+    margin-top: var(--ex-spacing-1);
+    color: var(--ex-color-error);
+    font-size: var(--ex-text-xs);
+    line-height: var(--ex-leading-normal);
+  }
+
+  &__input {
+    box-sizing: border-box;
+    height: var(--ex-tag-input-action-size);
+    padding: 0 var(--ex-spacing-2);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    font-family: inherit;
+    line-height: var(--ex-leading-normal);
+    outline: none;
+    min-width: var(--ex-tag-input-input-min-width-md);
+    flex: 1;
+    @include transition((border-color, box-shadow));
+
+    &:focus {
+      border-color: var(--ex-color-border-focus);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-30);
+    }
+
+    &::placeholder {
+      color: var(--ex-color-text-disabled);
+    }
+
+    &--large {
+      padding: var(--ex-spacing-2) var(--ex-spacing-3);
+      font-size: var(--ex-text-base);
+      min-width: var(--ex-tag-input-input-min-width-lg);
+    }
+
+    &--medium {
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+      font-size: var(--ex-text-sm);
+      min-width: var(--ex-tag-input-input-min-width-md);
+    }
+
+    &--small {
+      padding: 0 var(--ex-spacing-1);
+      font-size: var(--ex-text-xs);
+      min-width: var(--ex-tag-input-input-min-width-sm);
+    }
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: var(--ex-tag-input-action-size);
+    height: var(--ex-tag-input-action-size);
+    padding: 0;
+    border: 0;
+    font: inherit;
+    border-radius: var(--ex-radius-sm);
+    cursor: pointer;
+    touch-action: manipulation;
+    flex-shrink: 0;
+    @include transition((color, background-color, box-shadow, transform));
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+
+    &:focus-visible {
+      outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
+
+    &--confirm {
+      color: var(--ex-color-success);
+      background: var(--ex-color-success-alpha-10);
+
+      &:hover {
+        background: var(--ex-color-success-alpha-20);
+        box-shadow: 0 0 8px var(--ex-color-success-alpha-40);
+      }
+    }
+
+    &--cancel {
+      color: var(--ex-color-text-secondary);
+      background: var(--ex-color-white-alpha-05);
+
+      &:hover {
+        color: var(--ex-color-error);
+        background: var(--ex-color-error-alpha-10);
+        box-shadow: 0 0 8px var(--ex-color-error-alpha-40);
+      }
+    }
+  }
+}
+
+// 高对比度模式
+@media (prefers-contrast: high), (prefers-contrast: more), (forced-colors: active) {
+  .ex-tag-input {
+    &__button {
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    &__button-content {
+      border-width: var(--ex-input-focus-ring-width);
+      border-color: CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: none;
+    }
+
+    &__input {
+      border-color: currentColor;
+      border-width: var(--ex-input-focus-ring-width);
+    }
+
+    &__wrapper {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    &__action {
+      border: 1px solid CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: none;
+    }
+
+    &__feedback {
+      color: CanvasText;
+    }
+  }
+}

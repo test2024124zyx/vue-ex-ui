@@ -26,7 +26,7 @@
   line-height: var(--ex-leading-tight);
   @include transition((background-color, border-color, color, transform, filter, box-shadow));
 
-  // 默认保留组件库的赛博朋克切角，聚焦时暂时解除切角以保证焦点环完整可见。
+  // 默认保留组件库的赛博朋克切角，键盘聚焦时暂时解除切角以保证焦点环完整可见。
   &:not(.is-round) {
     @include chamfer(var(--ex-chamfer-sm));
   }
@@ -53,8 +53,8 @@
     }
   }
 
-  // 关闭按钮聚焦时同样解除切角，避免父级 clip-path 裁剪子元素的焦点提示。
-  &.is-closable:not(.is-round):focus-within {
+  // 仅键盘聚焦关闭按钮时解除切角，避免鼠标点击后把标签变成完整边框。
+  &.is-closable:not(.is-round):has(> .ex-tag__close:focus-visible) {
     clip-path: none;
     border-radius: var(--ex-tag-radius);
   }

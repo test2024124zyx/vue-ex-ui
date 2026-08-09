@@ -20,6 +20,19 @@ describe('ExTagInput.vue', () => {
     expect(button.find('.ex-tag-input__button-content').exists()).toBe(true);
   });
 
+  it('uses a single editing surface for the input and action controls', async () => {
+    const wrapper = mount(ExTagInput);
+
+    await startEditing(wrapper);
+
+    const editingWrapper = wrapper.find('.ex-tag-input__wrapper');
+
+    expect(editingWrapper.exists()).toBe(true);
+    expect(editingWrapper.find('input').exists()).toBe(true);
+    expect(editingWrapper.findAll('.ex-tag-input__action')).toHaveLength(2);
+    expect(wrapper.find('.ex-tag-input__button').exists()).toBe(false);
+  });
+
   it('enters editing mode and focuses the input', async () => {
     const wrapper = mount(ExTagInput, { attachTo: document.body });
 
