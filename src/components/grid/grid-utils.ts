@@ -5,13 +5,14 @@ import type {
   GridSpan,
   ResponsiveValue,
 } from './types';
+import { SPACING_PRESETS } from '../../utils/spacing';
 
 export const GRID_GUTTER_PRESETS: Record<GridGutterPreset, number> = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  xs: SPACING_PRESETS.xs,
+  sm: SPACING_PRESETS.sm,
+  md: SPACING_PRESETS.md,
+  lg: SPACING_PRESETS.lg,
+  xl: SPACING_PRESETS.xl,
 };
 
 export const GRID_BREAKPOINTS = ['xs', 'sm', 'md', 'lg', 'xl', 'xxl'] as const;

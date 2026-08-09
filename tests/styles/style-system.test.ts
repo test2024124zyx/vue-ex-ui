@@ -139,6 +139,15 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('transition-property: all');
   });
 
+  it('Space 使用公共间距 Token 并保留可收缩的 Flex 容器边界', () => {
+    const css = compile("@use 'src/components/space/ExSpace';");
+
+    expect(css).toContain('display: flex');
+    expect(css).toContain('min-width: 0');
+    expect(css).toContain('var(--ex-space-gap, var(--ex-spacing-4, 16px))');
+    expect(css).not.toContain('transition: none');
+  });
+
   it('Empty 的图片尺寸由组件变量驱动且不执行无休止装饰动画', () => {
     const css = compile("@use 'src/components/empty/ExEmpty';");
 

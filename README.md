@@ -397,13 +397,17 @@ const playerAvatar = ref('/avatar.jpg');
 ### 📏 间距系统
 
 ```scss
---ex-space-xs: 4px; // 极小间距
---ex-space-sm: 8px; // 小间距
---ex-space-md: 16px; // 中等间距
---ex-space-lg: 24px; // 大间距
---ex-space-xl: 32px; // 超大间距
---ex-space-xxl: 48px; // 巨大间距
+--ex-spacing-1: 4px;
+--ex-spacing-2: 8px;
+--ex-spacing-3: 12px;
+--ex-spacing-4: 16px;
+--ex-spacing-5: 20px;
+--ex-spacing-6: 24px;
+--ex-spacing-8: 32px;
+--ex-spacing-12: 48px;
 ```
+
+`Space`、`Flex` 和 `Grid` 共用上述数字刻度；Space 的 `small`、`medium`、`large` 分别对应 `8px`、`16px`、`24px`。
 
 ### 🎭 动画系统
 

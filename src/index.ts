@@ -395,6 +395,8 @@ export type * from './components/select/types';
 export type * from './components/skeleton/types';
 export type * from './components/slider/types';
 export type * from './components/space/types';
+export { SPACE_SIZE_PRESETS, resolveSpaceGap } from './components/space/space-utils';
+export type { SpaceGap, SpaceSizePreset } from './components/space/space-utils';
 export type * from './components/steps/types';
 export type * from './components/switch/types';
 export type * from './components/table/types';

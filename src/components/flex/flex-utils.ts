@@ -1,25 +1,19 @@
-export const FLEX_GAP_PRESETS = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-} as const;
+import {
+  SPACING_PRESETS,
+  resolveSpacing,
+  type SpacingLength,
+  type SpacingPreset,
+} from '../../utils/spacing';
 
-export type FlexGapPreset = keyof typeof FLEX_GAP_PRESETS;
-export type FlexLength = number | string;
+/** Flex 间距预设沿用公共 spacing 刻度，避免与其他布局组件漂移。 */
+export const FLEX_GAP_PRESETS = SPACING_PRESETS;
+
+export type FlexGapPreset = SpacingPreset;
+export type FlexLength = SpacingLength;
 
 /** 把间距值规范为可用 CSS 长度，避免输出 NaN/Infinity。 */
 export function resolveFlexGap(value?: FlexLength): string | undefined {
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return undefined;
-    return `${Math.max(0, value)}px`;
-  }
-  if (typeof value !== 'string') return undefined;
-  const normalized = value.trim();
-  if (!normalized) return undefined;
-  const preset = FLEX_GAP_PRESETS[normalized as FlexGapPreset];
-  return preset === undefined ? normalized : `${preset}px`;
+  return resolveSpacing(value);
 }
 
 /** grow/shrink 不能为负数；非法值使用调用方默认值。 */
