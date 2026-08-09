@@ -16,55 +16,70 @@
   </button>
   <span
     v-else
-    ref="wrapperRef"
-    class="ex-tag-input__wrapper"
+    class="ex-tag-input__editing"
   >
-    <input
-      ref="inputRef"
-      v-model="inputValue"
-      :class="inputClasses"
-      :aria-label="placeholderComputed"
-      :placeholder="placeholderComputed"
-      :maxlength="maxlength"
-      @blur="handleBlur"
-      @keydown.enter.prevent="handleConfirm"
-      @keydown.esc.prevent="handleCancel"
-    />
-    <button
-      type="button"
-      class="ex-tag-input__action ex-tag-input__action--confirm"
-      :aria-label="t('tag.confirm')"
-      :title="t('tag.confirm')"
-      @mousedown.prevent
-      @click="handleConfirm"
+    <span
+      ref="wrapperRef"
+      class="ex-tag-input__wrapper"
     >
-      <ExIcon
-        icon="check-line"
-        :size="14"
+      <input
+        ref="inputRef"
+        v-model="inputValue"
+        :class="inputClasses"
+        :aria-label="placeholderComputed"
+        :aria-invalid="duplicateMessage ? 'true' : undefined"
+        :aria-describedby="duplicateMessage ? duplicateFeedbackId : undefined"
+        :placeholder="placeholderComputed"
+        :maxlength="maxlength"
+        @blur="handleBlur"
+        @keydown.enter.prevent="handleConfirm"
+        @keydown.esc.prevent="handleCancel"
       />
-    </button>
-    <button
-      type="button"
-      class="ex-tag-input__action ex-tag-input__action--cancel"
-      :aria-label="t('tag.cancel')"
-      :title="t('tag.cancel')"
-      @mousedown.prevent
-      @click="handleCancel"
+      <button
+        type="button"
+        class="ex-tag-input__action ex-tag-input__action--confirm"
+        :aria-label="t('confirm')"
+        :title="t('confirm')"
+        @pointerdown.prevent
+        @click="handleConfirm"
+      >
+        <ExIcon
+          icon="check-line"
+          :size="iconSize"
+        />
+      </button>
+      <button
+        type="button"
+        class="ex-tag-input__action ex-tag-input__action--cancel"
+        :aria-label="t('cancel')"
+        :title="t('cancel')"
+        @pointerdown.prevent
+        @click="handleCancel"
+      >
+        <ExIcon
+          icon="close-line"
+          :size="iconSize"
+        />
+      </button>
+    </span>
+    <span
+      v-if="duplicateMessage"
+      :id="duplicateFeedbackId"
+      class="ex-tag-input__feedback"
+      role="alert"
     >
-      <ExIcon
-        icon="close-line"
-        :size="14"
-      />
-    </button>
+      {{ duplicateMessage }}
+    </span>
   </span>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import type { ExTagInputEmits, ExTagInputProps } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useComponentSize } from '../config-provider/composables';
-import { useI18n } from '../../locale';
+import { useLocale } from '../../locale';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExTagInput',
@@ -78,7 +93,7 @@ const props = withDefaults(defineProps<ExTagInputProps>(), {
 
 const emit = defineEmits<ExTagInputEmits>();
 
-const { t } = useI18n();
+const { t } = useLocale('tag');
 
 const INPUT_ICON_SIZES = {
   large: 16,
@@ -90,13 +105,18 @@ const inputRef = ref<HTMLInputElement>();
 const wrapperRef = ref<HTMLElement>();
 const isEditing = ref(false);
 const inputValue = ref('');
+const duplicateValue = ref('');
+const duplicateFeedbackId = generateId('ex-tag-input-feedback');
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
 // 多语言支持
-const buttonTextComputed = computed(() => props.buttonText || t('tag.addTagButton'));
-const placeholderComputed = computed(() => props.placeholder || t('tag.inputPlaceholder'));
+const buttonTextComputed = computed(() => props.buttonText || t('addTagButton'));
+const placeholderComputed = computed(() => props.placeholder || t('inputPlaceholder'));
+const duplicateMessage = computed(() =>
+  duplicateValue.value ? t('duplicate', { value: duplicateValue.value }) : ''
+);
 
 const iconSize = computed(() => INPUT_ICON_SIZES[componentSize.value]);
 
@@ -110,8 +130,14 @@ const inputClasses = computed(() => [
   `ex-tag-input__input--${componentSize.value}`,
 ]);
 
+// 输入内容变化后清除上一次重复提示。
+watch(inputValue, () => {
+  duplicateValue.value = '';
+});
+
 const startEdit = () => {
   isEditing.value = true;
+  duplicateValue.value = '';
   nextTick(() => {
     inputRef.value?.focus();
   });
@@ -126,18 +152,22 @@ const handleConfirm = () => {
   }
 
   // 验证重复
-  if (props.validateDuplicate && props.existingTags?.includes(value)) {
+  const isDuplicate = props.existingTags?.some(existingTag => existingTag.trim() === value);
+  if (props.validateDuplicate && isDuplicate) {
+    duplicateValue.value = value;
     emit('duplicate', value);
     return;
   }
 
   emit('confirm', value);
   inputValue.value = '';
+  duplicateValue.value = '';
   isEditing.value = false;
 };
 
 const handleCancel = () => {
   inputValue.value = '';
+  duplicateValue.value = '';
   isEditing.value = false;
   emit('cancel');
 };
@@ -159,6 +189,13 @@ const handleBlur = (event: FocusEvent) => {
 @use '../../styles/mixins' as *;
 
 .ex-tag-input {
+  &__editing {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: 100%;
+  }
+
   &__button {
     display: inline-flex;
     align-items: center;
@@ -228,6 +265,14 @@ const handleBlur = (event: FocusEvent) => {
       border-color: var(--ex-color-border-focus);
       box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-30);
     }
+  }
+
+  &__feedback {
+    flex-basis: 100%;
+    margin-top: var(--ex-spacing-1);
+    color: var(--ex-color-error);
+    font-size: var(--ex-text-xs);
+    line-height: var(--ex-leading-normal);
   }
 
   &__input {
@@ -318,7 +363,7 @@ const handleBlur = (event: FocusEvent) => {
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: high), (prefers-contrast: more), (forced-colors: active) {
   .ex-tag-input {
     &__button {
       border-width: var(--ex-input-focus-ring-width);
@@ -327,6 +372,22 @@ const handleBlur = (event: FocusEvent) => {
     &__input {
       border-color: currentColor;
       border-width: var(--ex-input-focus-ring-width);
+    }
+
+    &__wrapper {
+      border-color: CanvasText;
+      box-shadow: none;
+    }
+
+    &__action {
+      border: 1px solid CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: none;
+    }
+
+    &__feedback {
+      color: CanvasText;
     }
   }
 }

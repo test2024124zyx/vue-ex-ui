@@ -641,11 +641,12 @@ export default {
   // Tag
   tag: {
     addTag: 'New Tag',
-    addTagButton: '+ New Tag',
+    addTagButton: 'New Tag',
     inputPlaceholder: 'Enter tag name',
     confirm: 'Confirm',
     cancel: 'Cancel',
     close: 'Remove tag',
+    duplicate: 'Tag "{value}" already exists',
   },
 
   // Chart

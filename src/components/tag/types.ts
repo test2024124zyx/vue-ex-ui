@@ -7,6 +7,8 @@ export interface TagProps {
   closable?: boolean;
   /** 是否将标签作为可键盘操作的交互控件。 */
   clickable?: boolean;
+  /** 交互标签缺少可见文本时的无障碍名称。 */
+  ariaLabel?: string;
   /** 关闭按钮的无障碍名称。 */
   closeAriaLabel?: string;
   round?: boolean;

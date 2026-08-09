@@ -57,7 +57,7 @@ describe('ExTagInput.vue', () => {
 
   it('emits duplicate and keeps editing when the value already exists', async () => {
     const wrapper = mount(ExTagInput, {
-      props: { existingTags: ['New status'] },
+      props: { existingTags: [' New status '] },
     });
 
     await startEditing(wrapper);
@@ -66,7 +66,13 @@ describe('ExTagInput.vue', () => {
 
     expect(wrapper.emitted('duplicate')).toEqual([['New status']]);
     expect(wrapper.emitted('confirm')).toBeUndefined();
+    expect(wrapper.find('input').attributes('aria-invalid')).toBe('true');
+    expect(wrapper.find('[role="alert"]').text()).toBe('Tag "New status" already exists');
     expect(wrapper.find('input').exists()).toBe(true);
+
+    await wrapper.find('input').setValue('Another status');
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.find('input').attributes('aria-invalid')).toBeUndefined();
   });
 
   it('confirms from the action button without losing the value to blur', async () => {

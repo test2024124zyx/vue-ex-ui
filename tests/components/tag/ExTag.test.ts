@@ -88,6 +88,18 @@ describe('ExTag.vue', () => {
     expect(wrapper.find('.ex-tag__close').attributes('aria-label')).toBe('Remove status tag');
   });
 
+  it('uses the custom accessible name on the interactive tag target', () => {
+    const standaloneWrapper = mount(ExTag, {
+      props: { clickable: true, ariaLabel: 'Open status' },
+    });
+    const splitTargetWrapper = mount(ExTag, {
+      props: { clickable: true, closable: true, ariaLabel: 'Open status' },
+    });
+
+    expect(standaloneWrapper.attributes('aria-label')).toBe('Open status');
+    expect(splitTargetWrapper.find('.ex-tag__body').attributes('aria-label')).toBe('Open status');
+  });
+
   it('emits click event', async () => {
     const wrapper = mount(ExTag);
     await wrapper.trigger('click');

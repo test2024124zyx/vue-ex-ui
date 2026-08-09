@@ -641,11 +641,12 @@ export default {
   // 标签
   tag: {
     addTag: '新标签',
-    addTagButton: '+ 新标签',
+    addTagButton: '新标签',
     inputPlaceholder: '请输入标签名称',
     confirm: '确认',
     cancel: '取消',
     close: '移除标签',
+    duplicate: '标签“{value}”已存在',
   },
 
   // 图表

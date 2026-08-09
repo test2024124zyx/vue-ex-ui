@@ -370,4 +370,15 @@ describe('v2 样式系统边界', () => {
     expect(css).toContain('filter: drop-shadow(0 0 8px var(--ex-color-neon-pink-alpha-30))');
     expect(css).not.toContain('box-shadow: 0 0 10px var(--ex-color-neon-pink-alpha-30)');
   });
+
+  it('Tag 将间距交给父级布局，并为关闭目标提供高对比度与最小触控尺寸', () => {
+    const tagCss = compile("@use 'src/components/tag/ExTag';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(tagCss).not.toContain('.ex-tag + .ex-tag');
+    expect(tagCss).toContain('border-color: CanvasText !important;');
+    expect(tagCss).toContain('(forced-colors: active)');
+    expect(variablesCss).toContain('--ex-tag-close-size-sm: 24px;');
+    expect(variablesCss).toContain('--ex-tag-close-size-md: 24px;');
+  });
 });

@@ -67,9 +67,7 @@
     }
   }
 
-  & + & {
-    margin-left: var(--ex-spacing-2);
-  }
+  // 标签间距由父级布局容器统一管理，避免与 gap 或 ExSpace 重复计算。
 
   // --- Sizes ---
   @include m(small) {
@@ -193,6 +191,31 @@
     &:focus-visible {
       outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
       outline-offset: 1px;
+    }
+  }
+
+  // 高对比度与强制颜色模式下优先使用系统色，避免自定义颜色或霓虹效果降低可读性。
+  @media (prefers-contrast: high), (prefers-contrast: more), (forced-colors: active) {
+    border-width: 2px;
+    border-color: CanvasText !important;
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    box-shadow: none !important;
+    filter: none !important;
+
+    &__close {
+      border: 1px solid CanvasText;
+      background-color: Canvas !important;
+      color: CanvasText !important;
+
+      &:hover {
+        background-color: Highlight !important;
+        color: HighlightText !important;
+      }
+
+      &:focus-visible {
+        outline-color: Highlight;
+      }
     }
   }
 

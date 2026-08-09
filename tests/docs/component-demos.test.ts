@@ -79,6 +79,7 @@ describe('组件文档实时演示', () => {
     ['heatmap', 'ex-heatmap', 3],
     ['menu', 'ex-menu', 3],
     ['dropdown', 'ex-dropdown', 4],
+    ['tag', 'ex-tag', 20],
   ])('%s 在代码围栏之外挂载足量的 %s', (name, component, minimum) => {
     expect(countLiveComponent(name, component)).toBeGreaterThanOrEqual(minimum as number);
   });

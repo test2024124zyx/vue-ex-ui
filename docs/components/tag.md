@@ -1,6 +1,6 @@
 # Tag 标签
 
-用于标记和选择。
+用于状态标记、标签展示和触发与标签相关的动作。
 
 <script setup lang="ts">
 import { ref } from 'vue';
@@ -42,7 +42,7 @@ const handleDuplicate = (value: string) => {
 
 ## 基础用法
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag>标签一</ex-tag>
     <ex-tag type="success">标签二</ex-tag>
     <ex-tag type="info">标签三</ex-tag>
@@ -66,7 +66,7 @@ const handleDuplicate = (value: string) => {
 
 通过 `effect` 属性可以设置不同的主题：`dark`、`light` 和 `plain`。
 
- <div class="vp-raw demo-container">
+ <div class="vp-raw demo-container tag-demo">
     <ex-tag effect="dark">Dark</ex-tag>
     <ex-tag effect="dark" type="success">Dark Success</ex-tag>
     <ex-tag effect="light">Light</ex-tag>
@@ -107,7 +107,7 @@ const handleDuplicate = (value: string) => {
 
 设置 `clickable` 后，标签会获得键盘可操作的按钮语义；鼠标点击仍会触发 `click` 事件。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
   <ex-tag clickable @click="handleClick">可键盘操作</ex-tag>
   <ex-tag clickable closable close-aria-label="移除可关闭标签">带关闭操作</ex-tag>
 </div>
@@ -136,7 +136,7 @@ const handleDuplicate = (value: string) => {
 
 你可以通过 `color`、`bgColor` 和 `borderColor` 属性来自定义标签的颜色。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag color="#e6f0ff" bg-color="#0f1720" border-color="#29abe2">霓虹蓝标签</ex-tag>
     <ex-tag color="#ffcf70" border-color="#f59e0b" effect="plain">警告边框</ex-tag>
     <ex-tag color="#8ff0c0" bg-color="#062218" border-color="#10b981">自定义组合</ex-tag>
@@ -174,7 +174,7 @@ const handleDuplicate = (value: string) => {
 
 结合 `ExTagInput` 组件可以实现动态添加和删除标签。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag 
       v-for="tag in dynamicTags" 
       :key="tag.name" 
@@ -243,7 +243,7 @@ const handleDuplicate = value => {
 
 支持 `large`、`medium`、`small` 三种尺寸。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag size="large">大号标签</ex-tag>
     <ex-tag size="medium">中号标签</ex-tag>
     <ex-tag size="small">小号标签</ex-tag>
@@ -263,7 +263,7 @@ const handleDuplicate = value => {
 
 使用 `prefix` 插槽可以添加前置图标。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag size="large">
       <template #prefix>
         <ExIcon icon="star-fill" :size="16" />
@@ -325,7 +325,7 @@ const handleDuplicate = value => {
 
 通过 `close` 插槽可以自定义关闭图标。
 
-<div class="vp-raw demo-container">
+<div class="vp-raw demo-container tag-demo">
     <ex-tag closable type="primary">默认关闭图标</ex-tag>
     <ex-tag closable type="success">
       <template #close>
@@ -388,6 +388,7 @@ const handleDuplicate = value => {
 | effect           | 主题                  | `string`  | `dark / light / plain`                        | `light`                  |
 | closable         | 是否可关闭            | `boolean` | —                                             | `false`                  |
 | clickable        | 是否启用键盘/按钮语义 | `boolean` | —                                             | `false`                  |
+| aria-label       | 交互标签的无障碍名称  | `string`  | —                                             | —                        |
 | close-aria-label | 关闭按钮的无障碍名称  | `string`  | —                                             | 当前语言的“移除标签”文案 |
 | round            | 是否为圆形            | `boolean` | —                                             | `false`                  |
 | size             | 尺寸                  | `string`  | `large / medium / small`                      | `medium`                 |
@@ -434,11 +435,11 @@ const handleDuplicate = value => {
 
 ### TagInput Events
 
-| 事件名    | 说明           | 回调参数          |
-| --------- | -------------- | ----------------- |
-| confirm   | 确认添加标签   | `(value: string)` |
-| cancel    | 取消添加       | `()`              |
-| duplicate | 标签重复时触发 | `(value: string)` |
+| 事件名    | 说明                                             | 回调参数          |
+| --------- | ------------------------------------------------ | ----------------- |
+| confirm   | 确认添加标签                                     | `(value: string)` |
+| cancel    | 取消添加                                         | `()`              |
+| duplicate | 标签重复时触发，并显示可被辅助技术播报的重复提示 | `(value: string)` |
 
 ### TagInput Slots
 
@@ -477,7 +478,7 @@ Tag 组件中的所有图标都应该使用插槽形式，推荐使用 `ExIcon` 
 
 使用 `ExTagInput` 组件时的建议：
 
-1. **验证重复**：传入 `existing-tags` 属性，自动验证重复标签
+1. **验证重复**：传入 `existing-tags` 属性，按去除首尾空白后的字符串进行精确匹配
 2. **错误提示**：监听 `duplicate` 事件，给用户友好的提示
 3. **尺寸统一**：TagInput 的 `size` 控制文字、图标和输入宽度；操作按钮保留 44px 触控目标
 4. **数据管理**：使用响应式数据管理标签列表
@@ -528,5 +529,16 @@ const handleDuplicate = value => {
 ## 无障碍与布局约定
 
 - 标签的状态语义应同时通过文字或图标表达，不要只依赖颜色。
+- 当前 Tag 不内置 `selected` 选择态；如果业务需要筛选或选择语义，应由上层状态组件承担并提供对应的选择控件语义。
 - 可关闭标签建议使用 `close-aria-label` 指明具体标签名称，避免多个“移除标签”按钮无法区分。
-- `TagInput` 的确认和取消按钮保留 44px 触控目标；`size` 只调整内容比例和输入宽度。
+- `TagInput` 的确认和取消按钮保留 44px 触控目标；Tag 关闭按钮至少保留 24px 目标区域；`size` 调整内容比例、图标和输入宽度。
+- 标签之间的间距由父级布局容器通过 `gap` 或 `ExSpace` 管理，Tag 本身不再自动添加兄弟间距。
+
+<style scoped>
+.tag-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ex-spacing-2);
+}
+</style>

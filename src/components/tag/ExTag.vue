@@ -4,6 +4,7 @@
     :style="styles"
     :role="clickable && !closable ? 'button' : undefined"
     :tabindex="clickable && !closable ? 0 : undefined"
+    :aria-label="clickable && !closable ? accessibleLabel : undefined"
     @click="handleClick"
     @keydown.enter="handleKeydown"
     @keydown.space.prevent="handleKeydown"
@@ -12,6 +13,7 @@
       class="ex-tag__body"
       :role="clickable && closable ? 'button' : undefined"
       :tabindex="clickable && closable ? 0 : undefined"
+      :aria-label="clickable && closable ? accessibleLabel : undefined"
       @keydown.enter.stop="handleKeydown"
       @keydown.space.stop.prevent="handleKeydown"
     >
@@ -31,7 +33,7 @@
       v-if="closable"
       type="button"
       class="ex-tag__close"
-      :aria-label="closeAriaLabel || t('tag.close')"
+      :aria-label="closeAccessibleLabel"
       @click.stop="handleClose"
       @keydown.stop
     >
@@ -50,7 +52,7 @@ import { computed } from 'vue';
 import type { TagProps } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useComponentSize } from '../config-provider/composables';
-import { useI18n } from '../../locale';
+import { useLocale } from '../../locale';
 
 const props = withDefaults(defineProps<TagProps>(), {
   type: 'primary',
@@ -65,7 +67,7 @@ const emit = defineEmits<{
   close: [event: MouseEvent];
 }>();
 
-const { t } = useI18n();
+const { t } = useLocale('tag');
 
 const CLOSE_ICON_SIZES = {
   large: 14,
@@ -77,6 +79,9 @@ const CLOSE_ICON_SIZES = {
 const componentSize = useComponentSize(computed(() => props.size));
 
 const closeIconSize = computed(() => CLOSE_ICON_SIZES[componentSize.value]);
+
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
+const closeAccessibleLabel = computed(() => props.closeAriaLabel?.trim() || t('close'));
 
 const classes = computed(() => [
   'ex-tag',
