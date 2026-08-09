@@ -249,6 +249,15 @@ describe('ExSelect', () => {
 
     const optionBlock = stylesheet.match(/&__option\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
     expect(optionBlock).toContain('var(--ex-select-option-height, #{$select-option-height})');
+
+    const multipleValueBlock =
+      stylesheet.match(/&--multiple &__value\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+    expect(multipleValueBlock).toContain('overflow-x: auto');
+    expect(multipleValueBlock).toContain('scrollbar-width: none');
+    expect(multipleValueBlock).toContain('-ms-overflow-style: none');
+    expect(multipleValueBlock).not.toContain('scrollbar-width: thin');
+    expect(stylesheet).toContain('&--multiple &__value::-webkit-scrollbar');
+    expect(stylesheet).toContain('display: none');
   });
 
   describe('可搜索', () => {

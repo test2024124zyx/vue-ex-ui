@@ -121,7 +121,13 @@ $select-touch-target: 44px;
     padding: 2px 0;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
+    // 保留横向滚动能力，但隐藏原生滚动条避免破坏标签布局
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  &--multiple &__value::-webkit-scrollbar {
+    display: none;
   }
 
   &--multiple &__trigger {
