@@ -62,6 +62,8 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 
 ## 基础选择
 
+清空按钮只在存在有效选中项时显示。
+
 ::: raw
 
 <div class="vp-raw demo-container select-row">
@@ -79,12 +81,14 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 </div>
 :::
 
-清空按钮只在存在有效选中项时显示。
+::: details 查看示例代码
 
 ```vue
 <ex-select v-model="department" :options="departmentOptions" placeholder="选择所属部门" />
-<ex-select v-model="selectedStatus" :options="statusOptions" clearable />
+<ex-select v-model="selectedStatus" :options="statusOptions" placeholder="选择状态" clearable />
 ```
+
+:::
 
 ## 搜索与尺寸
 
@@ -104,7 +108,26 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<ex-select
+  v-model="searchable"
+  :options="departmentOptions"
+  searchable
+  clearable
+  placeholder="输入部门名称"
+/>
+<ex-select :options="statusOptions" size="small" placeholder="小型" />
+<ex-select :options="statusOptions" size="large" placeholder="大型" />
+<ex-select :options="statusOptions" disabled placeholder="不可选择" />
+```
+
+:::
+
 ## 多选
+
+多选标签在触发器内横向滚动，滚动条不会占用可视布局，也不会因标签数量或长文本溢出覆盖其他控件。关闭标签是可键盘聚焦的按钮；`collapse-tags` 适合需要保持触发器紧凑的场景。
 
 ::: raw
 
@@ -127,7 +150,27 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 </div>
 :::
 
-多选标签在触发器内横向滚动，不会因标签数量或长文本溢出覆盖其他控件。关闭标签是可键盘聚焦的按钮；`collapse-tags` 适合需要保持触发器紧凑的场景。
+::: details 查看示例代码
+
+```vue
+<ex-select
+  v-model="members"
+  :options="memberOptions"
+  multiple
+  clearable
+  placeholder="选择项目成员"
+/>
+<ex-select
+  v-model="members"
+  :options="memberOptions"
+  multiple
+  collapse-tags
+  :multiple-limit="4"
+  placeholder="最多选择四人"
+/>
+```
+
+:::
 
 ## 长列表滚动
 
@@ -146,7 +189,23 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<ex-select
+  v-model="longValue"
+  :options="longOptions"
+  searchable
+  clearable
+  placeholder="选择服务区域"
+/>
+```
+
+:::
+
 ## 远程搜索
+
+远程模式由父组件控制 `options`。组件会缓存已经见过的选项，因此当前值不在最新查询结果中时仍能显示正确标签。
 
 ::: raw
 
@@ -164,6 +223,8 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
 <ex-select
   v-model="remoteValue"
@@ -177,7 +238,7 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 />
 ```
 
-远程模式由父组件控制 `options`。组件会缓存已经见过的选项，因此当前值不在最新查询结果中时仍能显示正确标签。
+:::
 
 ## 虚拟滚动
 
@@ -193,6 +254,21 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
     placeholder="在 1000 条档案中选择"
   />
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-select
+  v-model="virtualValue"
+  :options="virtualOptions"
+  virtual
+  searchable
+  clearable
+  placeholder="在 1000 条档案中选择"
+/>
+```
+
 :::
 
 ## 键盘与无障碍

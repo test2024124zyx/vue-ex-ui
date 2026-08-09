@@ -55,6 +55,9 @@ const extractInputExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
+const extractSelectExamples = (block: string): string[] =>
+  (block.match(/<ex-select\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -159,6 +162,24 @@ describe('组件文档实时演示', () => {
     liveBlocks.forEach((liveBlock, index) => {
       expect(extractInputExamples(liveBlock)).toEqual(
         extractInputExamples(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it('Select 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('select');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(6);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractSelectExamples(liveBlock)).toEqual(
+        extractSelectExamples(codeBlocks[index] ?? '')
       );
     });
   });
