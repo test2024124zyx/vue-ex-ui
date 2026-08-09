@@ -28,6 +28,9 @@ const extractButtonExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
+const extractSpaceExamples = (block: string): string[] =>
+  (block.match(/<ex-space\b[\s\S]*?<\/ex-space>/gi) ?? []).map(normalizeTypographyExample);
+
 const extractIconExamples = (block: string): string[] =>
   (block.match(/<ex-icon\b[^>]*\/>|<ex-icon\b[\s\S]*?<\/ex-icon>/gi) ?? []).map(
     normalizeTypographyExample
@@ -45,7 +48,7 @@ describe('组件文档实时演示', () => {
     ['image', 'ex-image', 3],
     ['link', 'ex-link', 4],
     ['avatar', 'ex-avatar', 4],
-    ['space', 'ex-space', 4],
+    ['space', 'ex-space', 5],
     ['card', 'ex-card', 4],
     ['ellipsis', 'ex-ellipsis', 3],
     ['input', 'ex-input', 4],
@@ -142,6 +145,24 @@ describe('组件文档实时演示', () => {
     liveBlocks.forEach((liveBlock, index) => {
       expect(extractButtonExamples(liveBlock)).toEqual(
         extractButtonExamples(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it('Space 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('space');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(5);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractSpaceExamples(liveBlock)).toEqual(
+        extractSpaceExamples(codeBlocks[index] ?? '')
       );
     });
   });
