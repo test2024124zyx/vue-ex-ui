@@ -48,7 +48,7 @@ describe('ExEllipsis', () => {
     expect(content().attributes('style')).toContain('--ex-ellipsis-lines: 1');
     expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(false);
     expect(content().attributes('title')).toBeUndefined();
-    expect(wrapper!.attributes('role')).toBe('group');
+    expect(wrapper!.attributes('role')).toBeUndefined();
     expect(wrapper!.attributes('aria-label')).toBeUndefined();
   });
 
@@ -62,12 +62,12 @@ describe('ExEllipsis', () => {
     expect(content().attributes('style')).toContain('--ex-ellipsis-lines: 2');
   });
 
-  it('高度溢出时才显示展开按钮和可聚焦 Tooltip', async () => {
-    mountEllipsis({ expandable: true, tooltip: true }, '很长的完整文本');
+  it('不可展开内容溢出时才显示可聚焦 Tooltip', async () => {
+    mountEllipsis({ tooltip: true }, '很长的完整文本');
     setMetrics({ scrollHeight: 80, clientHeight: 40 });
     exposed().checkOverflow();
     await nextTick();
-    expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
+    expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(false);
     expect(content().attributes('title')).toBeUndefined();
 
     const tooltip = wrapper!.get('.ex-ellipsis__tooltip');
@@ -75,6 +75,16 @@ describe('ExEllipsis', () => {
     await tooltip.trigger('focusin');
     await nextTick();
     expect(document.querySelector('.ex-tooltip__popper')?.textContent).toContain('很长的完整文本');
+  });
+
+  it('可展开内容使用原生按钮作为键盘入口，不增加重复 Tooltip 停止点', async () => {
+    mountEllipsis({ expandable: true, tooltip: true }, '很长的完整文本');
+    setMetrics({ scrollHeight: 80, clientHeight: 40 });
+    exposed().checkOverflow();
+    await nextTick();
+
+    expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
+    expect(wrapper!.get('.ex-ellipsis__tooltip').attributes('tabindex')).toBeUndefined();
   });
 
   it('inline 模式在最后一行预留区显示动态图标而不是底部按钮', async () => {
@@ -138,8 +148,9 @@ describe('ExEllipsis', () => {
     exposed().checkOverflow();
     await nextTick();
     expect(wrapper!.attributes('aria-label')).toBe('文章摘要');
+    expect(wrapper!.attributes('role')).toBe('group');
     expect(content().attributes('title')).toBeUndefined();
-    expect(wrapper!.get('.ex-ellipsis__tooltip').attributes('tabindex')).toBe('0');
+    expect(wrapper!.get('.ex-ellipsis__tooltip').attributes('tabindex')).toBeUndefined();
   });
 
   it('普通不可展开内容且无显式名称时不添加冗余 group 角色', () => {
@@ -237,7 +248,12 @@ describe('ExEllipsis', () => {
 
     expect(observe).toHaveBeenCalledWith(
       content().element,
-      expect.objectContaining({ childList: true, characterData: true, subtree: true })
+      expect.objectContaining({
+        childList: true,
+        characterData: true,
+        attributes: true,
+        subtree: true,
+      })
     );
     expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
     wrapper!.unmount();

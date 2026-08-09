@@ -127,16 +127,17 @@ const isControlled = computed(() => props.expanded !== undefined);
 const requestedExpanded = computed(() => props.expanded ?? internalExpanded.value);
 const isExpanded = computed(() => props.expandable && requestedExpanded.value);
 const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
-const groupRole = computed(() =>
-  props.expandable || accessibleLabel.value ? ('group' as const) : undefined
-);
+const groupRole = computed(() => (accessibleLabel.value ? ('group' as const) : undefined));
 const showActions = computed(() => props.expandable && (isOverflowing.value || isExpanded.value));
 const tooltipText = computed(() =>
   props.tooltip && isOverflowing.value && !isExpanded.value && fullText.value
     ? fullText.value
     : undefined
 );
-const tooltipTabIndex = computed(() => (tooltipText.value ? 0 : undefined));
+const tooltipTabIndex = computed(() => {
+  // 可展开模式由原生按钮承担键盘入口，避免 Tooltip 与按钮形成重复 Tab 停止点。
+  return tooltipText.value && !props.expandable ? 0 : undefined;
+});
 
 const ellipsisClasses = computed(() => [
   'ex-ellipsis',
@@ -233,6 +234,7 @@ onMounted(() => {
     mutationObserver.observe(contentRef.value, {
       childList: true,
       characterData: true,
+      attributes: true,
       subtree: true,
     });
   }

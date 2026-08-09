@@ -88,21 +88,21 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性            | 类型               | 默认值   | 说明                                       |
-| --------------- | ------------------ | -------- | ------------------------------------------ |
-| lines           | `number`           | `1`      | 折叠状态保留的正整数行数，非法值回退为 `1` |
-| expandable      | `boolean`          | `false`  | 是否可展开                                 |
-| expandControl   | `button \| inline` | `button` | 展开控制样式                               |
-| tooltip         | `boolean`          | `true`   | 真实溢出时启用可悬停、可聚焦的完整内容提示 |
-| ariaLabel       | `string`           | -        | 根分组的无障碍名称                         |
-| expanded        | `boolean`          | -        | 受控展开状态                               |
-| defaultExpanded | `boolean`          | `false`  | 非受控初始展开状态                         |
+| 属性            | 类型               | 默认值   | 说明                                               |
+| --------------- | ------------------ | -------- | -------------------------------------------------- |
+| lines           | `number`           | `1`      | 折叠状态保留的正整数行数，非法值回退为 `1`         |
+| expandable      | `boolean`          | `false`  | 是否可展开                                         |
+| expandControl   | `button \| inline` | `button` | 展开控制样式                                       |
+| tooltip         | `boolean`          | `true`   | 真实溢出时启用完整内容提示；不可展开时支持键盘聚焦 |
+| ariaLabel       | `string`           | -        | 根分组的无障碍名称                                 |
+| expanded        | `boolean`          | -        | 受控展开状态                                       |
+| defaultExpanded | `boolean`          | `false`  | 非受控初始展开状态                                 |
 
 #### 特性
 
 - ✅ 真实溢出后才显示展开控制
 - ✅ 支持底部按钮和行尾动态图标两种模式
-- ✅ Tooltip 支持悬停和键盘焦点触发
+- ✅ 不可展开 Tooltip 支持悬停和键盘焦点，展开模式由原生按钮负责键盘操作
 - ✅ 移动端保留完整触控命中区
 
 ---
