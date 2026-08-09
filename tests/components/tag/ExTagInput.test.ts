@@ -13,10 +13,11 @@ describe('ExTagInput.vue', () => {
       props: { size: 'large', buttonText: 'Add status' },
     });
 
-    expect(wrapper.find('.ex-tag-input__button').classes()).toContain(
-      'ex-tag-input__button--large'
-    );
-    expect(wrapper.find('.ex-tag-input__button').attributes('aria-label')).toBe('Add status');
+    const button = wrapper.find('.ex-tag-input__button');
+
+    expect(button.classes()).toContain('ex-tag-input__button--large');
+    expect(button.attributes('aria-label')).toBe('Add status');
+    expect(button.find('.ex-tag-input__button-content').exists()).toBe(true);
   });
 
   it('enters editing mode and focuses the input', async () => {

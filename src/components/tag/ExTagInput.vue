@@ -6,13 +6,15 @@
     :aria-label="buttonTextComputed"
     @click="startEdit"
   >
-    <slot name="icon">
-      <ExIcon
-        icon="add-line"
-        :size="iconSize"
-      />
-    </slot>
-    <span class="ex-tag-input__text">{{ buttonTextComputed }}</span>
+    <span class="ex-tag-input__button-content">
+      <slot name="icon">
+        <ExIcon
+          icon="add-line"
+          :size="iconSize"
+        />
+      </slot>
+      <span class="ex-tag-input__text">{{ buttonTextComputed }}</span>
+    </span>
   </button>
   <span
     v-else
@@ -199,20 +201,20 @@ const handleBlur = (event: FocusEvent) => {
   &__button {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     box-sizing: border-box;
-    gap: var(--ex-spacing-1);
-    padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    min-width: var(--ex-button-touch-target);
     min-height: var(--ex-button-touch-target);
-    background: var(--ex-color-bg-secondary);
-    border: 1px dashed var(--ex-color-border-primary);
+    padding: 0;
+    background: transparent;
+    border: 0;
     border-radius: var(--ex-radius-md);
     color: var(--ex-color-text-secondary);
-    font-size: var(--ex-text-sm);
     font-family: inherit;
     cursor: pointer;
     touch-action: manipulation;
     user-select: none;
-    @include transition((color, background-color, border-color, box-shadow, transform));
+    @include transition((color, transform));
 
     &:focus-visible {
       outline: var(--ex-input-focus-ring-width) solid var(--ex-color-border-focus);
@@ -220,30 +222,62 @@ const handleBlur = (event: FocusEvent) => {
     }
 
     &:hover {
-      color: var(--ex-color-neon-blue-500);
-      border-color: var(--ex-color-neon-blue-500);
-      background: var(--ex-color-bg-hover);
-      box-shadow: 0 0 10px var(--ex-color-primary-alpha-20);
+      .ex-tag-input__button-content {
+        color: var(--ex-color-neon-blue-500);
+        border-color: var(--ex-color-neon-blue-500);
+        background: var(--ex-color-bg-hover);
+        box-shadow: 0 0 10px var(--ex-color-primary-alpha-20);
+      }
     }
 
     &:active {
-      transform: translateY(1px);
+      .ex-tag-input__button-content {
+        transform: translateY(1px);
+      }
     }
 
     &--large {
-      padding: var(--ex-spacing-2) var(--ex-spacing-4);
-      font-size: var(--ex-text-base);
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-lg);
+        padding: 0 var(--ex-tag-padding-x-lg);
+        font-size: var(--ex-tag-font-size-lg);
+      }
     }
 
     &--medium {
-      padding: var(--ex-spacing-1) var(--ex-spacing-3);
-      font-size: var(--ex-text-sm);
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-md);
+        padding: 0 var(--ex-tag-padding-x-md);
+        font-size: var(--ex-tag-font-size-md);
+      }
     }
 
     &--small {
-      padding: 0 var(--ex-spacing-2);
-      font-size: var(--ex-text-xs);
+      .ex-tag-input__button-content {
+        height: var(--ex-tag-height-sm);
+        padding: 0 var(--ex-tag-padding-x-sm);
+        font-size: var(--ex-tag-font-size-sm);
+      }
     }
+  }
+
+  // 外层保留触控命中区，内层视觉表面与 Tag 的尺寸契约保持一致。
+  &__button-content {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    gap: var(--ex-spacing-1);
+    height: var(--ex-tag-height-md);
+    padding: 0 var(--ex-tag-padding-x-md);
+    background: var(--ex-color-bg-secondary);
+    border: 1px dashed var(--ex-color-border-primary);
+    border-radius: var(--ex-tag-radius);
+    color: inherit;
+    font-size: var(--ex-tag-font-size-md);
+    font-family: inherit;
+    line-height: var(--ex-leading-tight);
+    white-space: nowrap;
+    @include transition((color, background-color, border-color, box-shadow, transform));
   }
 
   &__text {
@@ -366,7 +400,16 @@ const handleBlur = (event: FocusEvent) => {
 @media (prefers-contrast: high), (prefers-contrast: more), (forced-colors: active) {
   .ex-tag-input {
     &__button {
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    &__button-content {
       border-width: var(--ex-input-focus-ring-width);
+      border-color: CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: none;
     }
 
     &__input {
