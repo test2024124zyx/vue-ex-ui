@@ -73,15 +73,22 @@ const value = ref('');
 
 霓虹输入框默认显示 `>` 提示符。可以通过 `prompt` 修改提示符文本，或通过 `show-prompt` 隐藏提示符；`prefix` 插槽存在时会优先使用插槽内容。
 
-<div class="demo-container">
+::: raw
+
+<div class="vp-raw demo-container">
   <ex-input v-model="basic" prompt="$" placeholder="自定义提示符" />
   <ex-input v-model="basic" :show-prompt="false" placeholder="隐藏提示符" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExInput v-model="value" prompt="$" />
-<ExInput v-model="value" :show-prompt="false" />
+<ex-input v-model="basic" prompt="$" placeholder="自定义提示符" />
+<ex-input v-model="basic" :show-prompt="false" placeholder="隐藏提示符" />
 ```
+
+:::
 
 ## 清空与密码
 

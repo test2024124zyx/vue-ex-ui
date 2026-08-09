@@ -40,6 +40,9 @@ const extractIconExamples = (block: string): string[] =>
 const extractEllipsisExamples = (block: string): string[] =>
   (block.match(/<ex-ellipsis\b[\s\S]*?<\/ex-ellipsis>/gi) ?? []).map(normalizeTypographyExample);
 
+const extractInputExamples = (block: string): string[] =>
+  (block.match(/<ex-input\b[\s\S]*?(?:<\/ex-input>|\/>)/gi) ?? []).map(normalizeTypographyExample);
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -93,6 +96,21 @@ describe('组件文档实时演示', () => {
         extractTypographyExamples(codeBlocks[index] ?? '')
       );
     });
+  });
+
+  it('Input 终端提示符控制示例与示例代码保持一致', () => {
+    const document = readDocument('input');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(1);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(extractInputExamples(liveBlocks[0] ?? '')).toEqual(
+      extractInputExamples(codeBlocks[0] ?? '')
+    );
   });
 
   it('Typography 将渐变作为正文也可用的独立文本效果演示', () => {
