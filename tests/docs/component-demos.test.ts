@@ -99,6 +99,17 @@ describe('组件文档实时演示', () => {
     });
   });
 
+  it('Icon 内置目录直接由 ICONS 注册表驱动，避免手写清单遗漏', () => {
+    const document = readDocument('icon');
+    const liveMarkup = readLiveMarkup('icon');
+
+    expect(document).toContain("import { ICONS } from '../../src/components/icon'");
+    expect(document).toContain('const builtinIcons = Object.keys(ICONS)');
+    expect(liveMarkup).toMatch(
+      /<span\b(?=[^>]*v-for="icon in builtinIcons")(?=[^>]*class="icon-item")[\s\S]*?<ex-icon\b(?=[^>]*:icon="icon")/i
+    );
+  });
+
   it('Typography 文档默认展示赛博朋克基线并提供可控增强模式', () => {
     const markup = readLiveMarkup('typography');
     expect(markup).toMatch(

@@ -4,38 +4,62 @@
 
 <script setup>
 import { ref } from 'vue'
+import { ICONS } from '../../src/components/icon'
 
 const iconClicks = ref(0)
+const builtinIcons = Object.keys(ICONS)
 const maskIcon = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M12 2 15 9l7 .8-5.2 4.8 1.5 7.1L12 17l-6.3 3.7 1.5-7.1L2 9.8 9 9z"/></svg>'
 )}`
 </script>
 
-## 内置图标
+## 内置图标目录
 
-`icon` 使用组件内冻结的 SVG 注册表；未知名称不会伪造替代图形。
+`icon` 使用组件内冻结的 SVG 注册表；未知名称不会伪造替代图形。下面的目录直接读取 `ICONS`，会完整展示当前注册表中的全部内置图标。
 
 ::: raw
 
 <div class="vp-raw demo-container icon-grid">
-  <span class="icon-item"><ex-icon icon="search-line" :size="24" /><span>搜索</span></span>
-  <span class="icon-item"><ex-icon icon="user-line" :size="24" /><span>用户</span></span>
-  <span class="icon-item"><ex-icon icon="calendar-line" :size="24" /><span>日历</span></span>
-  <span class="icon-item"><ex-icon icon="folder-line" :size="24" /><span>文件夹</span></span>
-  <span class="icon-item"><ex-icon icon="dashboard-line" :size="24" /><span>工作台</span></span>
-  <span class="icon-item"><ex-icon icon="notification-line" :size="24" /><span>通知</span></span>
+  <span
+    v-for="icon in builtinIcons"
+    :key="icon"
+    class="icon-item"
+  >
+    <ex-icon
+      :icon="icon"
+      :size="24"
+      color="var(--ex-color-primary)"
+      aria-hidden="true"
+    />
+    <span class="icon-name">{{ icon }}</span>
+  </span>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ex-icon icon="search-line" :size="24" />
-<ex-icon icon="user-line" :size="24" />
-<ex-icon icon="calendar-line" :size="24" />
-<ex-icon icon="folder-line" :size="24" />
-<ex-icon icon="dashboard-line" :size="24" />
-<ex-icon icon="notification-line" :size="24" />
+<script setup>
+import { ICONS } from '../../src/components/icon';
+
+const builtinIcons = Object.keys(ICONS);
+</script>
+
+<div class="icon-grid">
+  <span
+    v-for="icon in builtinIcons"
+    :key="icon"
+    class="icon-item"
+  >
+    <ex-icon
+      :icon="icon"
+      :size="24"
+      color="var(--ex-color-primary)"
+      aria-hidden="true"
+    />
+    <span class="icon-name">{{ icon }}</span>
+  </span>
+</div>
 ```
 
 :::
@@ -186,20 +210,28 @@ const maskIcon = `data:image/svg+xml,${encodeURIComponent(
 <style scoped>
 .icon-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: var(--ex-spacing-5);
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: var(--ex-spacing-3);
 }
 
 .icon-item {
   display: grid;
   gap: var(--ex-spacing-2);
   place-items: center;
+  min-block-size: 6rem;
   padding: var(--ex-spacing-4);
   border: 1px solid var(--ex-color-border-secondary);
   border-radius: var(--ex-radius-lg);
   background: var(--ex-color-bg-secondary);
+}
+
+.icon-name {
   color: var(--ex-color-text-secondary);
-  font-size: var(--ex-text-sm);
+  font-family: var(--ex-font-secondary);
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-normal);
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .icon-row {
