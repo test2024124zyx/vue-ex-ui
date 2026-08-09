@@ -5,15 +5,24 @@
     :role="groupRole"
     :aria-label="accessibleLabel"
   >
-    <div
-      :id="contentId"
-      ref="contentRef"
-      :class="contentClasses"
-      :style="contentStyle"
-      :title="tooltipText"
+    <EllipsisTooltip
+      ref="tooltipRef"
+      class="ex-ellipsis__tooltip"
+      :content="tooltipText"
+      :disabled="!tooltipText"
+      trigger="hover-focus"
+      :close-delay="0"
+      :tabindex="tooltipTabIndex"
     >
-      <slot></slot>
-    </div>
+      <div
+        :id="contentId"
+        ref="contentRef"
+        :class="contentClasses"
+        :style="contentStyle"
+      >
+        <slot></slot>
+      </div>
+    </EllipsisTooltip>
 
     <div
       v-if="showActions && normalizedExpandControl === 'button'"
@@ -68,12 +77,17 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue';
-import type { CSSProperties } from 'vue';
+import type { Component, CSSProperties } from 'vue';
 import { useI18n } from '../../locale';
 import ExIcon from '../icon/ExIcon.vue';
+import ExTooltip from '../tooltip/ExTooltip.vue';
+import type { ExTooltipExposed } from '../tooltip/types';
 import type { ExEllipsisEmits, ExEllipsisExposed, ExEllipsisProps } from './types';
 
 defineOptions({ name: 'ExEllipsis' });
+
+// 将内部 Tooltip 的完整组件泛型收窄，避免生成声明时泄漏 Vue 全局组件注册表类型。
+const EllipsisTooltip = ExTooltip as Component;
 
 const props = withDefaults(defineProps<ExEllipsisProps>(), {
   lines: 1,
@@ -88,12 +102,19 @@ const emit = defineEmits<ExEllipsisEmits>();
 const { t } = useI18n();
 const rootRef = ref<HTMLElement>();
 const contentRef = ref<HTMLElement>();
+const tooltipRef = ref<ExTooltipExposed>();
 const contentId = `ex-ellipsis-content-${useId()}`;
 const internalExpanded = ref(props.defaultExpanded);
 const isOverflowing = ref(false);
 const fullText = ref('');
 let resizeObserver: ResizeObserver | null = null;
+let mutationObserver: MutationObserver | null = null;
 let measureFrame: number | undefined;
+let usesWindowResizeFallback = false;
+let isUnmounted = false;
+
+// 允许浏览器存在极小的布局舍入误差，不把它误判为真实溢出。
+const OVERFLOW_TOLERANCE_PX = 1;
 
 const normalizedLines = computed(() => {
   if (!Number.isFinite(props.lines) || props.lines <= 0) return 1;
@@ -115,6 +136,7 @@ const tooltipText = computed(() =>
     ? fullText.value
     : undefined
 );
+const tooltipTabIndex = computed(() => (tooltipText.value ? 0 : undefined));
 
 const ellipsisClasses = computed(() => [
   'ex-ellipsis',
@@ -137,7 +159,9 @@ const contentStyle = computed<CSSProperties>(() => ({
 const checkOverflow = () => {
   const element = contentRef.value;
   if (!element) return;
-  fullText.value = element.textContent?.trim() || '';
+
+  // Tooltip 需要可读的纯文本，去除模板缩进和插槽节点之间多余的空白。
+  fullText.value = element.textContent?.replace(/\s+/g, ' ').trim() || '';
   if (isExpanded.value) return;
 
   const measurable =
@@ -147,11 +171,12 @@ const checkOverflow = () => {
     element.clientWidth > 0;
   isOverflowing.value =
     measurable &&
-    (element.scrollHeight > element.clientHeight + 1 ||
-      element.scrollWidth > element.clientWidth + 1);
+    (element.scrollHeight > element.clientHeight + OVERFLOW_TOLERANCE_PX ||
+      element.scrollWidth > element.clientWidth + OVERFLOW_TOLERANCE_PX);
 };
 
 const queueMeasurement = () => {
+  if (isUnmounted) return;
   if (typeof requestAnimationFrame === 'undefined') {
     nextTick(checkOverflow);
     return;
@@ -174,6 +199,10 @@ const collapse = () => requestExpanded(false);
 const toggle = () => requestExpanded(!isExpanded.value);
 const getElement = () => rootRef.value ?? null;
 
+watch(tooltipText, text => {
+  if (!text) tooltipRef.value?.hide();
+});
+
 watch(
   isExpanded,
   expanded => {
@@ -186,18 +215,50 @@ watch(
 watch(normalizedLines, queueMeasurement);
 
 onMounted(() => {
-  queueMeasurement();
-  if (typeof ResizeObserver === 'undefined') return;
-  resizeObserver = new ResizeObserver(queueMeasurement);
-  if (rootRef.value) resizeObserver.observe(rootRef.value);
-  if (contentRef.value) resizeObserver.observe(contentRef.value);
+  // 首次挂载直接在下一轮 Vue 更新中测量，尽量避免按钮晚一帧出现造成布局跳动。
+  void nextTick(checkOverflow);
+
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(queueMeasurement);
+    if (rootRef.value) resizeObserver.observe(rootRef.value);
+    if (contentRef.value) resizeObserver.observe(contentRef.value);
+  } else if (typeof window !== 'undefined') {
+    // 不支持 ResizeObserver 的浏览器至少可以在窗口尺寸变化时重新计算。
+    window.addEventListener('resize', queueMeasurement, { passive: true });
+    usesWindowResizeFallback = true;
+  }
+
+  if (typeof MutationObserver !== 'undefined' && contentRef.value) {
+    mutationObserver = new MutationObserver(queueMeasurement);
+    mutationObserver.observe(contentRef.value, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  }
+
+  // 字体加载完成后字宽可能改变；重新测量避免省略状态停留在旧结果。
+  const fontSet =
+    typeof document !== 'undefined' && 'fonts' in document ? document.fonts : undefined;
+  if (fontSet) {
+    void fontSet.ready.then(() => {
+      if (!isUnmounted) queueMeasurement();
+    });
+  }
 });
 
 onUpdated(queueMeasurement);
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   resizeObserver?.disconnect();
   resizeObserver = null;
+  mutationObserver?.disconnect();
+  mutationObserver = null;
+  if (usesWindowResizeFallback && typeof window !== 'undefined') {
+    window.removeEventListener('resize', queueMeasurement);
+  }
+  usesWindowResizeFallback = false;
   if (measureFrame !== undefined) cancelAnimationFrame(measureFrame);
   measureFrame = undefined;
 });

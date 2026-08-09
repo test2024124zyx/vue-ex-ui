@@ -8,7 +8,7 @@ export interface ExEllipsisProps {
   expandable?: boolean;
   /** 展开控件样式：底部文字按钮或最后一行行内动态图标。 */
   expandControl?: EllipsisExpandControl;
-  /** 真实溢出时是否用原生 title 展示完整文本。 */
+  /** 真实溢出时是否通过可悬停、可聚焦的 Tooltip 展示完整文本。 */
   tooltip?: boolean;
   /** 根分组的无障碍名称。 */
   ariaLabel?: string;

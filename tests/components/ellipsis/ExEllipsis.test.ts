@@ -12,10 +12,16 @@ describe('ExEllipsis', () => {
     wrapper = null;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+    document.body.innerHTML = '';
   });
 
   const mountEllipsis = (props: Record<string, unknown> = {}, text = '完整文本') => {
-    wrapper = mount(ExEllipsis, { props, slots: { default: text } });
+    wrapper = mount(ExEllipsis, {
+      props,
+      slots: { default: text },
+      attachTo: document.body,
+    });
     return wrapper;
   };
 
@@ -56,13 +62,19 @@ describe('ExEllipsis', () => {
     expect(content().attributes('style')).toContain('--ex-ellipsis-lines: 2');
   });
 
-  it('高度溢出时才显示展开按钮和完整文本 title', async () => {
+  it('高度溢出时才显示展开按钮和可聚焦 Tooltip', async () => {
     mountEllipsis({ expandable: true, tooltip: true }, '很长的完整文本');
     setMetrics({ scrollHeight: 80, clientHeight: 40 });
     exposed().checkOverflow();
     await nextTick();
     expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
-    expect(content().attributes('title')).toBe('很长的完整文本');
+    expect(content().attributes('title')).toBeUndefined();
+
+    const tooltip = wrapper!.get('.ex-ellipsis__tooltip');
+    expect(tooltip.attributes('tabindex')).toBe('0');
+    await tooltip.trigger('focusin');
+    await nextTick();
+    expect(document.querySelector('.ex-tooltip__popper')?.textContent).toContain('很长的完整文本');
   });
 
   it('inline 模式在最后一行预留区显示动态图标而不是底部按钮', async () => {
@@ -117,15 +129,17 @@ describe('ExEllipsis', () => {
     exposed().checkOverflow();
     await nextTick();
     expect(content().attributes('title')).toBeUndefined();
+    expect(wrapper!.get('.ex-ellipsis__tooltip').attributes('tabindex')).toBeUndefined();
   });
 
-  it('ariaLabel 只命名分组，不会篡改原生 tooltip 全文', async () => {
+  it('ariaLabel 只命名分组，不会覆盖 Tooltip 的完整文本', async () => {
     mountEllipsis({ ariaLabel: '文章摘要', expandable: true }, '真实全文');
     setMetrics({ scrollHeight: 80, clientHeight: 20 });
     exposed().checkOverflow();
     await nextTick();
     expect(wrapper!.attributes('aria-label')).toBe('文章摘要');
-    expect(content().attributes('title')).toBe('真实全文');
+    expect(content().attributes('title')).toBeUndefined();
+    expect(wrapper!.get('.ex-ellipsis__tooltip').attributes('tabindex')).toBe('0');
   });
 
   it('普通不可展开内容且无显式名称时不添加冗余 group 角色', () => {
@@ -198,9 +212,44 @@ describe('ExEllipsis', () => {
     expect(exposed().isExpanded()).toBe(true);
   });
 
-  it('卸载时释放 ResizeObserver 与待执行测量', () => {
+  it('插槽内容变更时通过 MutationObserver 重新测量溢出', async () => {
+    let notifyMutation: (() => void) | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'MutationObserver',
+      class {
+        observe = observe;
+        disconnect = disconnect;
+
+        constructor(callback: () => void) {
+          notifyMutation = callback;
+        }
+      }
+    );
+    vi.useFakeTimers();
+
+    mountEllipsis({ expandable: true });
+    setMetrics({ scrollHeight: 80, clientHeight: 20 });
+    notifyMutation?.();
+    vi.advanceTimersByTime(20);
+    await nextTick();
+
+    expect(observe).toHaveBeenCalledWith(
+      content().element,
+      expect.objectContaining({ childList: true, characterData: true, subtree: true })
+    );
+    expect(wrapper!.find('.ex-ellipsis__btn').exists()).toBe(true);
+    wrapper!.unmount();
+    wrapper = null;
+    expect(disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('卸载时释放 ResizeObserver、MutationObserver 与待执行测量', () => {
     const disconnect = vi.fn();
     const observe = vi.fn();
+    const mutationDisconnect = vi.fn();
+    const mutationObserve = vi.fn();
     vi.stubGlobal(
       'ResizeObserver',
       class {
@@ -208,11 +257,20 @@ describe('ExEllipsis', () => {
         disconnect = disconnect;
       }
     );
+    vi.stubGlobal(
+      'MutationObserver',
+      class {
+        observe = mutationObserve;
+        disconnect = mutationDisconnect;
+      }
+    );
     mountEllipsis();
     expect(observe).toHaveBeenCalled();
+    expect(mutationObserve).toHaveBeenCalled();
     wrapper!.unmount();
     wrapper = null;
     expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(mutationDisconnect).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
   });
 

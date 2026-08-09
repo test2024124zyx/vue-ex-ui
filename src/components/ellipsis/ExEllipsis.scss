@@ -1,11 +1,25 @@
 @use '../../styles/mixins' as *;
 
 .ex-ellipsis {
+  --ex-ellipsis-control-hit-size: var(--ex-button-touch-target, 44px);
+  --ex-ellipsis-control-visual-inset: 10px;
+
   position: relative;
   width: 100%;
   min-width: 0;
-  font-family: var(--ex-font-secondary);
+  font-family: var(--ex-ellipsis-font-family, var(--ex-font-secondary));
   color: var(--ex-color-text-primary);
+
+  :deep(.ex-ellipsis__tooltip) {
+    display: block;
+    width: 100%;
+  }
+
+  :deep(.ex-ellipsis__tooltip:focus-visible) {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
+    border-radius: var(--ex-radius-base);
+  }
 
   &__content {
     box-sizing: border-box;
@@ -34,8 +48,8 @@
   }
 
   &--control-inline.ex-ellipsis--has-control &__content {
-    // 行内按钮占用最后一行尾部空间，使浏览器生成的省略号不会被按钮覆盖。
-    padding-inline-end: calc(24px + var(--ex-spacing-1));
+    // 为最后一行的可操作区域预留完整命中区，避免文字与按钮发生重叠。
+    padding-inline-end: calc(var(--ex-ellipsis-control-hit-size) + var(--ex-spacing-1));
   }
 
   &__inline-control {
@@ -44,21 +58,44 @@
     bottom: 0;
     display: inline-flex;
     box-sizing: border-box;
-    width: 24px;
-    height: 24px;
+    width: var(--ex-ellipsis-control-hit-size);
+    height: var(--ex-ellipsis-control-hit-size);
+    min-width: var(--ex-ellipsis-control-hit-size);
+    min-height: var(--ex-ellipsis-control-hit-size);
     align-items: center;
     justify-content: center;
     padding: 0;
     color: var(--ex-color-primary);
-    background: var(--ex-color-bg-secondary);
-    border: 1px solid var(--ex-color-primary-alpha-30);
+    background: transparent;
+    border: 0;
     border-radius: var(--ex-radius-full);
     cursor: pointer;
+    touch-action: manipulation;
+    isolation: isolate;
     transition:
       color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
-      background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
-      border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
-      box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+      transform var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+
+    &::before {
+      position: absolute;
+      inset: var(--ex-ellipsis-control-visual-inset);
+      z-index: 0;
+      box-sizing: border-box;
+      content: '';
+      background: var(--ex-color-bg-secondary);
+      border: 1px solid var(--ex-color-primary-alpha-30);
+      border-radius: var(--ex-radius-full);
+      pointer-events: none;
+      transition:
+        background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+        border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+        box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+    }
+
+    .ex-ellipsis__btn-icon {
+      position: relative;
+      z-index: 1;
+    }
 
     &:focus-visible {
       outline: 2px solid var(--ex-color-border-focus);
@@ -70,6 +107,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--ex-spacing-1);
+    min-width: var(--ex-button-touch-target, 44px);
+    min-height: var(--ex-button-touch-target, 44px);
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
     font-size: var(--ex-text-sm);
     font-weight: var(--ex-font-medium);
@@ -80,18 +119,12 @@
     border-radius: var(--ex-radius-base);
     outline: none;
     box-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-20);
+    touch-action: manipulation;
     transition:
       color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
       border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
       box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out),
       transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
-
-    &:hover {
-      color: var(--ex-color-neon-pink-500);
-      border-color: var(--ex-color-neon-pink-500);
-      box-shadow: 0 0 12px var(--ex-color-neon-pink-alpha-30);
-      transform: translateY(-1px);
-    }
 
     &:active {
       transform: translateY(0);
@@ -130,8 +163,9 @@
   }
 
   @include mobile {
+    --ex-ellipsis-control-visual-inset: 8px;
+
     &__btn {
-      min-height: 36px;
       padding: var(--ex-spacing-2) var(--ex-spacing-4);
       font-size: var(--ex-text-base);
     }
@@ -142,19 +176,25 @@
     }
 
     &--control-inline.ex-ellipsis--has-control .ex-ellipsis__content {
-      padding-inline-end: calc(28px + var(--ex-spacing-1));
-    }
-
-    &__inline-control {
-      width: 28px;
-      height: 28px;
+      padding-inline-end: calc(var(--ex-ellipsis-control-hit-size) + var(--ex-spacing-1));
     }
   }
 }
 
 @media (hover: hover) {
+  .ex-ellipsis__btn:hover {
+    color: var(--ex-color-neon-pink-500);
+    border-color: var(--ex-color-neon-pink-500);
+    box-shadow: 0 0 12px var(--ex-color-neon-pink-alpha-30);
+    transform: translateY(-1px);
+  }
+
   .ex-ellipsis__inline-control:hover {
     color: var(--ex-color-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .ex-ellipsis__inline-control:hover::before {
     background: var(--ex-color-primary-alpha-10);
     border-color: var(--ex-color-primary);
     box-shadow: 0 0 10px var(--ex-color-primary-alpha-30);
@@ -164,18 +204,34 @@
 @media (prefers-reduced-motion: reduce) {
   .ex-ellipsis__btn,
   .ex-ellipsis__inline-control,
-  .ex-ellipsis__btn-icon {
+  .ex-ellipsis__btn-icon,
+  .ex-ellipsis__inline-control::before {
     transition: none;
   }
 
-  .ex-ellipsis__btn:hover {
+  .ex-ellipsis__btn:hover,
+  .ex-ellipsis__inline-control:hover {
     transform: none;
   }
 }
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: high), (forced-colors: active) {
   .ex-ellipsis__btn,
-  .ex-ellipsis__inline-control {
+  .ex-ellipsis__inline-control::before {
     border-width: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .ex-ellipsis__btn {
+    color: ButtonText;
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .ex-ellipsis__inline-control::before {
+    background: ButtonFace;
+    border-color: ButtonText;
+    box-shadow: none;
   }
 }

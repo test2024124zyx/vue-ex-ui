@@ -33,6 +33,10 @@ const extractIconExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
+// Ellipsis 的示例文本本身就是溢出测量依据，实时内容和代码内容必须保持一致。
+const extractEllipsisExamples = (block: string): string[] =>
+  (block.match(/<ex-ellipsis\b[\s\S]*?<\/ex-ellipsis>/gi) ?? []).map(normalizeTypographyExample);
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -146,6 +150,24 @@ describe('组件文档实时演示', () => {
     const markup = readLiveMarkup('ellipsis');
     expect(markup).toMatch(/expand-control="button"/i);
     expect(markup).toMatch(/expand-control="inline"/i);
+  });
+
+  it('Ellipsis 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('ellipsis');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(3);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractEllipsisExamples(liveBlock)).toEqual(
+        extractEllipsisExamples(codeBlocks[index] ?? '')
+      );
+    });
   });
 
   it('Cascader 同时演示默认行内宽度与显式块级宽度', () => {

@@ -68,7 +68,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 ### 2. ExEllipsis - 文本省略组件
 
-支持多行文本截断和展开/收起功能。
+支持单行或多行文本截断、真实溢出提示和展开/收起功能。
 
 #### 基础用法
 
@@ -76,8 +76,9 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 <template>
   <ex-ellipsis
     :lines="3"
-    :expandable="true"
-    :tooltip="true"
+    expandable
+    tooltip
+    aria-label="查看完整游戏介绍"
   >
     这是一段很长的游戏介绍文本，当内容超过3行时会自动截断，
     并显示展开按钮。用户可以点击按钮查看完整内容。
@@ -87,19 +88,22 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性       | 类型      | 默认值  | 说明            |
-| ---------- | --------- | ------- | --------------- |
-| lines      | `number`  | `1`     | 显示行数        |
-| expandable | `boolean` | `false` | 是否可展开      |
-| tooltip    | `boolean` | `false` | 是否显示tooltip |
-| ariaLabel  | `string`  | -       | 无障碍标签      |
+| 属性            | 类型               | 默认值   | 说明                                       |
+| --------------- | ------------------ | -------- | ------------------------------------------ |
+| lines           | `number`           | `1`      | 折叠状态保留的正整数行数，非法值回退为 `1` |
+| expandable      | `boolean`          | `false`  | 是否可展开                                 |
+| expandControl   | `button \| inline` | `button` | 展开控制样式                               |
+| tooltip         | `boolean`          | `true`   | 真实溢出时启用可悬停、可聚焦的完整内容提示 |
+| ariaLabel       | `string`           | -        | 根分组的无障碍名称                         |
+| expanded        | `boolean`          | -        | 受控展开状态                               |
+| defaultExpanded | `boolean`          | `false`  | 非受控初始展开状态                         |
 
 #### 特性
 
-- ✅ 霓虹蓝紫渐变按钮
-- ✅ 发光效果动画
-- ✅ 展开/收起图标旋转
-- ✅ 移动端触摸优化
+- ✅ 真实溢出后才显示展开控制
+- ✅ 支持底部按钮和行尾动态图标两种模式
+- ✅ Tooltip 支持悬停和键盘焦点触发
+- ✅ 移动端保留完整触控命中区
 
 ---
 
