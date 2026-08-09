@@ -241,8 +241,8 @@
             role="presentation"
           >
             <template
-              v-for="(item, index) in filteredOptions"
-              :key="index"
+              v-for="item in filteredOptions"
+              :key="getOptionKey(item)"
             >
               <!-- 分组标题 -->
               <li
@@ -591,6 +591,11 @@ const showClearIcon = computed(() => {
 const isGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup => {
   return 'options' in item;
 };
+
+const getOptionKey = (item: SelectOption | SelectOptionGroup): string =>
+  isGroup(item)
+    ? `group:${item.label}:${item.options.map(option => `${typeof option.value}:${String(option.value)}`).join('|')}`
+    : `option:${typeof item.value}:${String(item.value)}`;
 
 // 远程搜索结果通常只保留当前查询页；缓存已见选项，保证已选标签不会因换页丢失。
 const optionCache = ref(new Map<string | number, SelectOption>());

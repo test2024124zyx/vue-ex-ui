@@ -106,9 +106,10 @@ $select-touch-target: 44px;
 
   // 值显示区域
   &__value {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
+    min-width: 0;
     min-height: 20px;
     overflow: hidden;
   }
@@ -130,11 +131,15 @@ $select-touch-target: 44px;
   // 多选标签
   &__tag {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 4px;
+    box-sizing: border-box;
+    min-width: 0;
     max-width: 100%;
     padding: 0 6px;
-    height: 22px;
+    height: 24px;
+    min-height: 24px;
     font-size: var(--ex-text-sm);
     color: var(--ex-color-primary);
     background: var(--ex-color-primary-alpha-10);
@@ -150,6 +155,9 @@ $select-touch-target: 44px;
   }
 
   &__tag-label {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -167,6 +175,7 @@ $select-touch-target: 44px;
     border-radius: var(--ex-radius-sm);
     color: inherit;
     cursor: pointer;
+    flex-shrink: 0;
     font-size: 14px;
     line-height: 1;
     opacity: 0.7;
@@ -299,7 +308,7 @@ $select-touch-target: 44px;
     backdrop-filter: blur(12px);
     @include neon-glow('pink', 'lg');
     overflow: hidden;
-    max-height: var(--ex-select-dropdown-max-height);
+    max-height: var(--ex-select-dropdown-max-height, 300px);
   }
 
   // 选项列表
@@ -327,8 +336,8 @@ $select-touch-target: 44px;
     display: flex;
     align-items: center;
     box-sizing: border-box;
-    height: var(--ex-select-option-height);
-    min-height: var(--ex-select-option-height);
+    height: var(--ex-select-option-height, #{$select-option-height});
+    min-height: var(--ex-select-option-height, #{$select-option-height});
     padding: 0 16px;
     cursor: pointer;
     color: var(--ex-color-text-primary);
@@ -462,6 +471,11 @@ $select-touch-target: 44px;
     &__tag-close {
       width: $select-touch-target;
       height: $select-touch-target;
+    }
+
+    &__tag {
+      height: $select-touch-target;
+      min-height: $select-touch-target;
     }
 
     &__dropdown {

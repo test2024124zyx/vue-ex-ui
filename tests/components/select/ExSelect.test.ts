@@ -246,6 +246,9 @@ describe('ExSelect', () => {
     expect(optionsBlock).toContain('overflow-x: hidden');
     expect(optionsBlock).toContain('overflow-y: auto');
     expect(optionsBlock).not.toContain('overflow-y: scroll');
+
+    const optionBlock = stylesheet.match(/&__option\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+    expect(optionBlock).toContain('var(--ex-select-option-height, #{$select-option-height})');
   });
 
   describe('可搜索', () => {
@@ -590,6 +593,23 @@ describe('ExSelect', () => {
       expect(tags.length).toBe(2);
       expect(tags[0].text()).toContain('选项一');
       expect(tags[1].text()).toContain('选项二');
+    });
+
+    it('长标签应保留关闭按钮并允许标签文本收缩', () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          multiple: true,
+          modelValue: ['long'],
+          options: [{ value: 'long', label: '这是一个很长的项目成员名称' }],
+        },
+      });
+
+      const tag = wrapper.get('.ex-select__tag');
+      const label = wrapper.get('.ex-select__tag-label');
+      const close = wrapper.get('.ex-select__tag-close');
+      expect(tag.classes()).toContain('ex-select__tag');
+      expect(label.text()).toContain('很长的项目成员名称');
+      expect(close.attributes('type')).toBe('button');
     });
 
     it('选择选项应累加且保持下拉打开', async () => {
