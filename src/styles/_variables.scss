@@ -204,7 +204,39 @@
   --ex-avatar-text-color: var(--ex-color-text-primary);
   --ex-avatar-border-color: var(--ex-color-border-primary);
   --ex-avatar-z-index: 10;
-  
+
+  // 图片组件
+  --ex-image-spinner-size: #{map.get($components, image, spinner-size)};
+  --ex-image-spinner-size-mobile: #{map.get($components, image, spinner-size-mobile)};
+  --ex-image-spinner-size-compact: #{map.get($components, image, spinner-size-compact)};
+  --ex-image-spinner-border-width: #{map.get($components, image, spinner-border-width)};
+  --ex-image-spinner-border-width-mobile: #{map.get($components, image, spinner-border-width-mobile)};
+  --ex-image-spinner-border-width-compact: #{map.get($components, image, spinner-border-width-compact)};
+  --ex-image-error-min-width: #{map.get($components, image, error-min-width)};
+  --ex-image-error-min-height: #{map.get($components, image, error-min-height)};
+  --ex-image-error-icon-size: #{map.get($components, image, error-icon-size)};
+  --ex-image-error-icon-size-compact: #{map.get($components, image, error-icon-size-compact)};
+  --ex-image-error-icon-opacity: #{map.get($components, image, error-icon-opacity)};
+  --ex-image-error-text-color: #{map.get($components, image, error-text-color)};
+  --ex-image-error-compact-padding: #{map.get($components, image, error-compact-padding)};
+  --ex-image-retry-min-size: #{map.get($components, image, retry-min-size)};
+  --ex-image-retry-padding-x: #{map.get($components, image, retry-padding-x)};
+  --ex-image-retry-padding-y: #{map.get($components, image, retry-padding-y)};
+  --ex-image-retry-font-size: #{map.get($components, image, retry-font-size)};
+  --ex-image-preview-trigger-min-size: #{map.get($components, image, preview-trigger-min-size)};
+  --ex-image-preview-hint-size: #{map.get($components, image, preview-hint-size)};
+  --ex-image-preview-hint-size-compact: #{map.get($components, image, preview-hint-size-compact)};
+  --ex-image-preview-hint-icon-size: #{map.get($components, image, preview-hint-icon-size)};
+  --ex-image-preview-hint-icon-size-compact: #{map.get($components, image, preview-hint-icon-size-compact)};
+  --ex-image-preview-hint-opacity: #{map.get($components, image, preview-hint-opacity)};
+  --ex-image-preview-hint-initial-scale: #{map.get($components, image, preview-hint-initial-scale)};
+  --ex-image-preview-hint-active-scale: #{map.get($components, image, preview-hint-active-scale)};
+  --ex-image-preview-close-icon-size: #{map.get($components, image, preview-close-icon-size)};
+  --ex-image-preview-fade-duration: #{map.get($components, image, preview-fade-duration)};
+  --ex-image-preview-backdrop-blur: #{map.get($components, image, preview-backdrop-blur)};
+  --ex-image-preview-hover-translate-y: #{map.get($components, image, preview-hover-translate-y)};
+  --ex-image-preview-hover-scale: #{map.get($components, image, preview-hover-scale)};
+
   // 导航组件
   --ex-nav-height: 64px;
   --ex-nav-padding-x: var(--ex-spacing-4);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  normalizeImageAspectRatio,
   normalizeImageDimension,
   normalizeImageRadius,
 } from '../../../src/components/image/image-utils';
@@ -37,5 +38,22 @@ describe('image utilities', () => {
     expect(normalizeImageRadius('var(--ex-radius-lg)')).toBe('var(--ex-radius-lg)');
     expect(normalizeImageRadius('auto')).toBeUndefined();
     expect(normalizeImageRadius(-1)).toBeUndefined();
+  });
+
+  it('宽高比保留合法比值语义，不把数字转换为像素', () => {
+    expect(normalizeImageAspectRatio(16 / 9)).toBe(String(16 / 9));
+    expect(normalizeImageAspectRatio('16 / 9')).toBe('16 / 9');
+    expect(normalizeImageAspectRatio('1.5')).toBe('1.5');
+    expect(normalizeImageAspectRatio('var(--image-ratio)')).toBe('var(--image-ratio)');
+    expect(normalizeImageAspectRatio('auto')).toBe('auto');
+  });
+
+  it('宽高比拒绝零值、负值、无效语法和危险声明', () => {
+    expect(normalizeImageAspectRatio(0)).toBeUndefined();
+    expect(normalizeImageAspectRatio(-1)).toBeUndefined();
+    expect(normalizeImageAspectRatio('0 / 16')).toBeUndefined();
+    expect(normalizeImageAspectRatio('16 / 0')).toBeUndefined();
+    expect(normalizeImageAspectRatio('16px / 9px')).toBeUndefined();
+    expect(normalizeImageAspectRatio('16 / 9; color: red')).toBeUndefined();
   });
 });

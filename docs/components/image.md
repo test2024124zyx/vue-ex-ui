@@ -1,6 +1,6 @@
 # Image 图片
 
-支持裁切、加载状态、错误状态和全屏预览。
+支持响应式资源、布局占位、裁切、加载状态、错误恢复和全屏预览。
 
 <script setup>
 const demoImage = `data:image/svg+xml,${encodeURIComponent(`
@@ -26,8 +26,14 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 ## 基础用法
 
 ::: raw
+
 <div class="vp-raw demo-container image-row">
-  <ex-image :src="demoImage" alt="蓝色商业数据平台封面" width="320" />
+  <ex-image
+    :src="demoImage"
+    alt="蓝色商业数据平台封面"
+    width="320"
+    aspect-ratio="16 / 9"
+  />
 </div>
 :::
 
@@ -38,6 +44,7 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 ## 裁切与圆角
 
 ::: raw
+
 <div class="vp-raw demo-container image-row">
   <ex-image :src="demoImage" alt="Cover 裁切" width="240" height="150" fit="cover" />
   <ex-image :src="demoImage" alt="Contain 裁切" width="240" height="150" fit="contain" radius="12" />
@@ -53,8 +60,15 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 ## 加载与错误状态
 
 ::: raw
+
 <div class="vp-raw demo-container image-row">
-  <ex-image :src="brokenImage" alt="无法加载的示例图片" width="240" height="150">
+  <ex-image
+    :src="brokenImage"
+    alt="无法加载的示例图片"
+    width="240"
+    height="150"
+    retry
+  >
     <template #placeholder>
       <span class="image-status">正在读取图片</span>
     </template>
@@ -66,15 +80,18 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 :::
 
 ```vue
-<ex-image src="/photo.jpg" alt="照片">
+<ex-image src="/photo.jpg" alt="照片" retry>
   <template #placeholder>正在读取图片</template>
   <template #error>图片暂时不可用</template>
 </ex-image>
 ```
 
+未提供 `error` 插槽时，`retry` 会在错误区域显示内置重试按钮；自定义错误插槽也会保留该按钮。
+
 ## 预览与叠加内容
 
 ::: raw
+
 <div class="vp-raw demo-container image-row">
   <ex-image
     :src="demoImage"
@@ -101,44 +118,57 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 />
 ```
 
+预览触发器在主图加载成功后才可用，并会显示缩放提示；预览图命中浏览器缓存时也会自动完成状态同步。
+
 ## API
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `src` | 图片地址 | `string` | 必填 |
-| `alt` | 原生替代文本 | `string` | 必填 |
-| `title` | 原生提示文本 | `string` | — |
-| `width` | 宽度；数字和纯数字字符串按像素处理 | `string \| number` | 图片固有宽度 |
-| `height` | 高度；数字和纯数字字符串按像素处理 | `string \| number` | 图片固有高度 |
-| `fit` | 原生 `object-fit` | `contain \| cover \| fill \| none \| scale-down` | `cover` |
-| `radius` | 圆角；数字按像素处理 | `string \| number` | 主题圆角 |
-| `lazy` | 是否使用原生懒加载 | `boolean` | `true` |
-| `preview` | 是否启用全屏预览 | `boolean` | `false` |
-| `previewSrc` | 高清预览地址 | `string` | `src` |
+| 参数            | 说明                                | 类型                                             | 默认值       |
+| --------------- | ----------------------------------- | ------------------------------------------------ | ------------ |
+| `src`           | 图片地址                            | `string`                                         | 必填         |
+| `alt`           | 原生替代文本                        | `string`                                         | 必填         |
+| `title`         | 原生提示文本                        | `string`                                         | —            |
+| `srcset`        | 响应式候选图片地址                  | `string`                                         | —            |
+| `sizes`         | 响应式候选图片尺寸提示              | `string`                                         | —            |
+| `fetchPriority` | 原生资源调度优先级                  | `'high' \| 'low' \| 'auto'`                      | —            |
+| `width`         | 宽度；数字和纯数字字符串按像素处理  | `string \| number`                               | 图片固有宽度 |
+| `height`        | 高度；数字和纯数字字符串按像素处理  | `string \| number`                               | 图片固有高度 |
+| `aspectRatio`   | 预留布局空间的宽高比，例如 `16 / 9` | `string \| number`                               | —            |
+| `fit`           | 原生 `object-fit`                   | `contain \| cover \| fill \| none \| scale-down` | `cover`      |
+| `radius`        | 圆角；数字按像素处理                | `string \| number`                               | 主题圆角     |
+| `lazy`          | 是否使用原生懒加载                  | `boolean`                                        | `true`       |
+| `preview`       | 是否启用全屏预览                    | `boolean`                                        | `false`      |
+| `previewSrc`    | 高清预览地址                        | `string`                                         | `src`        |
+| `retry`         | 主图失败后显示内置重试按钮          | `boolean`                                        | `false`      |
 
 ### Events
 
-| 事件名 | 参数 |
-| --- | --- |
-| `load` | `(event: Event)` |
-| `error` | `(event: Event)` |
-| `preview` | `()` |
+| 事件名         | 参数             |
+| -------------- | ---------------- |
+| `load`         | `(event: Event)` |
+| `error`        | `(event: Event)` |
+| `preview`      | `()`             |
+| `previewLoad`  | `(event: Event)` |
+| `previewError` | `(event: Event)` |
+| `retry`        | `()`             |
 
 ### Slots
 
-| 名称 | 说明 |
-| --- | --- |
-| `placeholder` | 加载中内容 |
-| `error` | 加载失败内容 |
-| `default` | 加载成功后的非交互叠加内容 |
+| 名称          | 说明                       |
+| ------------- | -------------------------- |
+| `placeholder` | 加载中内容                 |
+| `error`       | 加载失败内容               |
+| `default`     | 加载成功后的非交互叠加内容 |
 
 ### Exposes
 
-| 方法 | 类型 |
-| --- | --- |
+| 方法         | 类型                           |
+| ------------ | ------------------------------ |
 | `getElement` | `() => HTMLDivElement \| null` |
+| `reload`     | `() => void`                   |
+
+`reload` 会重新创建主图节点并重新发起加载；无论是调用该方法还是点击内置重试按钮，都会触发 `retry` 事件。
 
 <style scoped>
 .image-row {
@@ -155,12 +185,12 @@ const brokenImage = 'data:image/png;base64,invalid-image-data'
 
 .image-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 4px 9px;
+  top: var(--ex-spacing-3);
+  right: var(--ex-spacing-3);
+  padding: var(--ex-spacing-1) var(--ex-spacing-2);
   border-radius: var(--ex-radius-full);
-  color: #fff;
-  font-size: 12px;
-  background: rgba(15, 23, 42, 0.76);
+  color: var(--ex-color-white);
+  font-size: var(--ex-text-xs);
+  background: var(--ex-color-black-alpha-70);
 }
 </style>

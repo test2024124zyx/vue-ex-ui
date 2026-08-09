@@ -224,6 +224,7 @@ export default {
     previewLoading: '预览图加载中...',
     previewError: '预览图加载失败',
     closePreview: '关闭预览',
+    retry: '重试',
     alt: '图片',
   },
 

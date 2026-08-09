@@ -148,6 +148,20 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('transition: none');
   });
 
+  it('Image 使用组件 token 处理缓存占位、紧凑尺寸和安全预览层', () => {
+    const css = compile("@use 'src/components/image/ExImage';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('container: ex-image/inline-size');
+    expect(css).toContain('width: var(--ex-image-spinner-size)');
+    expect(css).toContain('@container ex-image (max-width: 63px)');
+    expect(css).toContain('env(safe-area-inset-top');
+    expect(css).toContain('var(--ex-image-preview-fade-duration)');
+    expect(css).not.toContain('transition: opacity 160ms ease');
+    expect(variablesCss).toContain('--ex-image-error-text-color: var(--ex-color-text-secondary)');
+    expect(variablesCss).toContain('--ex-image-preview-trigger-min-size: 44px');
+  });
+
   it('Empty 的图片尺寸由组件变量驱动且不执行无休止装饰动画', () => {
     const css = compile("@use 'src/components/empty/ExEmpty';");
 

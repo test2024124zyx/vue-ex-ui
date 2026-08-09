@@ -271,7 +271,7 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 ### 6. ExImage - 图片组件
 
-支持懒加载、预览、错误处理的图片组件。
+支持响应式资源、懒加载、布局占位、预览、错误处理和重试的图片组件。
 
 #### 基础用法
 
@@ -292,6 +292,8 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
     alt="游戏角色"
     :lazy="true"
     :preview="true"
+    preview-src="/path/to/original.jpg"
+    :aspect-ratio="16 / 9"
     @preview="handlePreview"
   >
     <template #placeholder>
@@ -315,23 +317,30 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性    | 类型                                                       | 默认值    | 说明     |
-| ------- | ---------------------------------------------------------- | --------- | -------- |
-| src     | `string`                                                   | -         | 图片地址 |
-| alt     | `string`                                                   | -         | 图片描述 |
-| width   | `number \| string`                                         | -         | 图片宽度 |
-| height  | `number \| string`                                         | -         | 图片高度 |
-| fit     | `'fill' \| 'contain' \| 'cover' \| 'none' \| 'scale-down'` | `'cover'` | 填充模式 |
-| lazy    | `boolean`                                                  | `true`    | 懒加载   |
-| preview | `boolean`                                                  | `false`   | 预览模式 |
-| radius  | `string`                                                   | -         | 圆角大小 |
+| 属性          | 类型                                                       | 默认值    | 说明                   |
+| ------------- | ---------------------------------------------------------- | --------- | ---------------------- |
+| src           | `string`                                                   | -         | 图片地址               |
+| alt           | `string`                                                   | -         | 图片描述               |
+| title         | `string`                                                   | -         | 原生提示文本           |
+| srcset        | `string`                                                   | -         | 响应式候选图片地址     |
+| sizes         | `string`                                                   | -         | 响应式候选图片尺寸提示 |
+| fetchPriority | `'high' \| 'low' \| 'auto'`                                | -         | 原生资源调度优先级     |
+| width         | `number \| string`                                         | -         | 图片宽度               |
+| height        | `number \| string`                                         | -         | 图片高度               |
+| aspectRatio   | `number \| string`                                         | -         | 预留布局空间的宽高比   |
+| fit           | `'fill' \| 'contain' \| 'cover' \| 'none' \| 'scale-down'` | `'cover'` | 填充模式               |
+| lazy          | `boolean`                                                  | `true`    | 懒加载                 |
+| preview       | `boolean`                                                  | `false`   | 预览模式               |
+| previewSrc    | `string`                                                   | -         | 高清预览地址           |
+| retry         | `boolean`                                                  | `false`   | 显示内置重试按钮       |
+| radius        | `number \| string`                                         | -         | 圆角大小               |
 
 #### 特性
 
-- ✅ 霓虹边框渐变
-- ✅ 加载动画 + 发光
+- ✅ 响应式 `srcset` / `sizes` 与布局宽高比占位
+- ✅ 加载动画与缓存完成状态补偿
 - ✅ 错误状态提示
-- ✅ hover 缩放效果
+- ✅ 可选重试、全屏预览与触控提示
 
 ---
 

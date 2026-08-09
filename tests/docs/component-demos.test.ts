@@ -65,6 +65,18 @@ describe('组件文档实时演示', () => {
     expect(countLiveComponent(name, component)).toBeGreaterThanOrEqual(minimum as number);
   });
 
+  it('Image 文档同步公开资源优化、恢复和预览事件契约', () => {
+    const imageDocument = readDocument('image');
+    const guideDocument = readDocument('basic-components-guide');
+
+    expect(imageDocument).toContain('`srcset`');
+    expect(imageDocument).toContain('`aspectRatio`');
+    expect(imageDocument).toContain('`previewLoad`');
+    expect(imageDocument).toContain('`previewError`');
+    expect(imageDocument).toContain('`reload`');
+    expect(guideDocument).not.toContain('霓虹边框渐变');
+  });
+
   it('Typography 每个实时示例都有默认折叠且内容一致的代码', () => {
     const document = readDocument('typography');
     const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);

@@ -224,6 +224,7 @@ export default {
     previewLoading: 'Loading preview...',
     previewError: 'Preview failed to load',
     closePreview: 'Close preview',
+    retry: 'Retry',
     alt: 'Image',
   },
 

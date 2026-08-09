@@ -3,9 +3,13 @@ import { computed, nextTick, onMounted, ref, useSlots, watch, type CSSProperties
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
-import { useConfigTheme } from '../config-provider/composables';
+import { useConfigTheme, useZIndex } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
-import { normalizeImageDimension, normalizeImageRadius } from './image-utils';
+import {
+  normalizeImageAspectRatio,
+  normalizeImageDimension,
+  normalizeImageRadius,
+} from './image-utils';
 import type { ExImageEmits, ExImageExposed, ExImageProps } from './types';
 
 defineOptions({
@@ -15,20 +19,26 @@ defineOptions({
 
 type ImageStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
+// 预览层与默认 modal token 的层级差保持一致，同时通过配置注入支持自定义基础层级。
+const IMAGE_PREVIEW_Z_INDEX_OFFSET = 50;
+
 const props = withDefaults(defineProps<ExImageProps>(), {
   fit: 'cover',
   lazy: true,
   preview: false,
+  retry: false,
 });
 const emit = defineEmits<ExImageEmits>();
 const slots = useSlots();
 const { t } = useLocale('image');
 const configTheme = useConfigTheme();
+const previewZIndex = useZIndex(IMAGE_PREVIEW_Z_INDEX_OFFSET);
 
 const rootRef = ref<HTMLDivElement>();
 const mainImageRef = ref<HTMLImageElement>();
 const overlayRef = ref<HTMLDivElement>();
 const previewImageRef = ref<HTMLImageElement>();
+const mainImageRevision = ref(0);
 const status = ref<ImageStatus>(props.src ? 'loading' : 'idle');
 const previewVisible = ref(false);
 const previewStatus = ref<ImageStatus>('idle');
@@ -43,7 +53,9 @@ const hasDefaultSlot = computed(() => hasRenderableContent(slots.default?.({})))
 
 const normalizedWidth = computed(() => normalizeImageDimension(props.width));
 const normalizedHeight = computed(() => normalizeImageDimension(props.height));
+const normalizedAspectRatio = computed(() => normalizeImageAspectRatio(props.aspectRatio));
 const normalizedRadius = computed(() => normalizeImageRadius(props.radius));
+const mainImageKey = computed(() => `${props.src}::${mainImageRevision.value}`);
 
 const imageClasses = computed(() => [
   'ex-image',
@@ -60,10 +72,12 @@ const imageStyles = computed<CSSProperties>(
     ({
       width: normalizedWidth.value,
       height: normalizedHeight.value,
+      aspectRatio: normalizedAspectRatio.value,
       borderRadius: normalizedRadius.value,
       '--ex-image-fit': props.fit,
     }) as CSSProperties
 );
+const previewStyles = computed<CSSProperties>(() => ({ zIndex: previewZIndex.value }));
 
 const previewTriggerLabel = computed(() =>
   props.alt ? t('openPreview', { alt: props.alt }) : t('preview')
@@ -82,6 +96,7 @@ function openPreview(): void {
   previewStatus.value = 'loading';
   emit('preview');
   previewVisible.value = true;
+  void nextTick(() => reconcilePreviewImageStatus(previewSource.value));
 }
 
 /**
@@ -91,6 +106,21 @@ function openPreview(): void {
 function reconcileMainImageStatus(source?: string): void {
   const image = mainImageRef.value;
   if (!source || source !== props.src || status.value !== 'loading' || !image?.complete) return;
+
+  image.dispatchEvent(new Event(image.naturalWidth > 0 ? 'load' : 'error'));
+}
+
+/** 预览图也可能在监听器绑定前完成，必须与主图使用相同的缓存补偿语义。 */
+function reconcilePreviewImageStatus(source?: string): void {
+  const image = previewImageRef.value;
+  if (
+    !source ||
+    source !== previewSource.value ||
+    previewStatus.value !== 'loading' ||
+    !image?.complete
+  ) {
+    return;
+  }
 
   image.dispatchEvent(new Event(image.naturalWidth > 0 ? 'load' : 'error'));
 }
@@ -130,6 +160,7 @@ watch(
 watch(previewSource, () => {
   if (!previewVisible.value) return;
   previewStatus.value = 'loading';
+  void nextTick(() => reconcilePreviewImageStatus(previewSource.value));
 });
 
 function handleLoad(event: Event): void {
@@ -145,17 +176,35 @@ function handleError(event: Event): void {
 }
 
 function handlePreviewLoad(event: Event): void {
-  if (event.currentTarget === previewImageRef.value) previewStatus.value = 'loaded';
+  if (event.currentTarget !== previewImageRef.value) return;
+  previewStatus.value = 'loaded';
+  emit('previewLoad', event);
 }
 
 function handlePreviewError(event: Event): void {
-  if (event.currentTarget === previewImageRef.value) previewStatus.value = 'error';
+  if (event.currentTarget !== previewImageRef.value) return;
+  previewStatus.value = 'error';
+  emit('previewError', event);
+}
+
+function reload(): void {
+  if (!props.src) {
+    status.value = 'idle';
+    return;
+  }
+
+  mainImageRevision.value += 1;
+  status.value = 'loading';
+  closePreview();
+  emit('retry');
+  void nextTick(() => reconcileMainImageStatus(props.src));
 }
 
 const getElement = () => rootRef.value ?? null;
 
 defineExpose<ExImageExposed>({
   getElement,
+  reload,
 });
 </script>
 
@@ -169,13 +218,16 @@ defineExpose<ExImageExposed>({
   >
     <img
       v-if="src && status !== 'error'"
-      :key="src"
+      :key="mainImageKey"
       ref="mainImageRef"
       class="ex-image__img"
       :src="src"
+      :srcset="srcset"
+      :sizes="sizes"
       :alt="alt"
       :title="title"
       :loading="lazy ? 'lazy' : 'eager'"
+      :fetchpriority="fetchPriority"
       decoding="async"
       :draggable="false"
       @load="handleLoad"
@@ -214,11 +266,19 @@ defineExpose<ExImageExposed>({
         <ExIcon
           class="ex-image__error-icon"
           icon="error-warning-line"
-          :size="48"
           aria-hidden="true"
         />
         <span class="ex-image__error-text">{{ t('error') }}</span>
       </template>
+      <button
+        v-if="retry"
+        type="button"
+        class="ex-image__retry"
+        :aria-label="t('retry')"
+        @click.stop="reload"
+      >
+        {{ t('retry') }}
+      </button>
     </div>
 
     <div
@@ -236,8 +296,20 @@ defineExpose<ExImageExposed>({
       :aria-label="previewTriggerLabel"
       aria-haspopup="dialog"
       :aria-expanded="previewVisible"
-      @click="openPreview"
-    ></button>
+      @click.stop="openPreview"
+    >
+      <span
+        v-if="canPreview"
+        class="ex-image__preview-hint"
+        aria-hidden="true"
+      >
+        <ExIcon
+          class="ex-image__preview-hint-icon"
+          icon="zoom-in-line"
+          aria-hidden="true"
+        />
+      </span>
+    </button>
 
     <Teleport to="body">
       <Transition name="ex-image-preview-fade">
@@ -245,6 +317,7 @@ defineExpose<ExImageExposed>({
           v-if="previewVisible"
           ref="overlayRef"
           class="ex-image-preview"
+          :style="previewStyles"
           :data-theme="configTheme"
           role="dialog"
           aria-modal="true"
@@ -259,8 +332,8 @@ defineExpose<ExImageExposed>({
             @click="closePreview"
           >
             <ExIcon
+              class="ex-image-preview__close-icon"
               icon="close-line"
-              :size="24"
               aria-hidden="true"
             />
           </button>
@@ -296,8 +369,8 @@ defineExpose<ExImageExposed>({
             role="alert"
           >
             <ExIcon
+              class="ex-image-preview__error-icon"
               icon="error-warning-line"
-              :size="48"
               aria-hidden="true"
             />
             <span>{{ t('previewError') }}</span>

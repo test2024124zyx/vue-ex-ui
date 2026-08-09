@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExImage from '../../../src/components/image/ExImage.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import { setLocale } from '../../../src/locale';
 import type { ExImageProps } from '../../../src/components/image/types';
 
@@ -64,9 +65,22 @@ describe('ExImage', () => {
     expect(image.attributes('decoding')).toBe('async');
   });
 
+  it('将响应式资源提示和资源调度优先级传给原生图片', () => {
+    const wrapper = mountImage({
+      srcset: '/image-small.png 480w, /image-large.png 960w',
+      sizes: '(max-width: 640px) 100vw, 640px',
+      fetchPriority: 'high',
+    });
+    const image = wrapper.find('img');
+
+    expect(image.attributes('srcset')).toBe('/image-small.png 480w, /image-large.png 960w');
+    expect(image.attributes('sizes')).toBe('(max-width: 640px) 100vw, 640px');
+    expect(image.attributes('fetchpriority')).toBe('high');
+  });
+
   it('规范宽高和圆角，同时可靠合并根 class/style attrs', () => {
     const wrapper = mountImage(
-      { width: '300', height: 200, radius: 12 },
+      { width: '300', height: 200, aspectRatio: '16 / 9', radius: 12 },
       {},
       { class: 'gallery-image', style: { opacity: '0.8' }, 'data-id': 'cover' }
     );
@@ -75,6 +89,7 @@ describe('ExImage', () => {
     expect(wrapper.attributes('data-id')).toBe('cover');
     expect(wrapper.attributes('style')).toContain('width: 300px');
     expect(wrapper.attributes('style')).toContain('height: 200px');
+    expect(wrapper.attributes('style')).toContain('aspect-ratio: 16 / 9');
     expect(wrapper.attributes('style')).toContain('border-radius: 12px');
     expect(wrapper.attributes('style')).toContain('opacity: 0.8');
   });
@@ -141,6 +156,20 @@ describe('ExImage', () => {
     expect(wrapper.classes()).toContain('ex-image--error');
   });
 
+  it('内置重试按钮会重新创建主图节点并发出 retry 事件', async () => {
+    const wrapper = mountImage({ retry: true });
+    const firstImage = wrapper.find('img').element;
+
+    await wrapper.find('img').trigger('error');
+    expect(wrapper.find('.ex-image__retry').attributes('aria-label')).toBe('Retry');
+
+    await wrapper.find('.ex-image__retry').trigger('click');
+
+    expect(wrapper.emitted('retry')).toHaveLength(1);
+    expect(wrapper.find('img').element).not.toBe(firstImage);
+    expect(wrapper.attributes('aria-busy')).toBe('true');
+  });
+
   it('src 更新会替换原生图片，旧节点的迟到事件不能污染新状态', async () => {
     const wrapper = mountImage({ src: '/first.png' });
     const staleImage = wrapper.find('img').element;
@@ -182,6 +211,16 @@ describe('ExImage', () => {
     await wrapper.find('img').trigger('load');
     expect(trigger.attributes('disabled')).toBeUndefined();
     expect(wrapper.classes()).toContain('ex-image--preview-ready');
+  });
+
+  it('预览按钮阻止冒泡，避免透明触发层触发外部卡片行为', async () => {
+    const onClick = vi.fn();
+    const wrapper = mountImage({ preview: true }, {}, { onClick });
+
+    await wrapper.find('img').trigger('load');
+    await wrapper.find('.ex-image__preview-trigger').trigger('click');
+
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it('打开高清预览会发出事件、锁定滚动，并可通过 Escape 关闭', async () => {
@@ -227,6 +266,35 @@ describe('ExImage', () => {
     expect(document.body.querySelector('.ex-image-preview')).toBeNull();
   });
 
+  it('预览图命中缓存时会补发成功事件并清除加载态', async () => {
+    const wrapper = mountImage({ preview: true });
+    await wrapper.find('img').trigger('load');
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(640);
+
+    await wrapper.find('.ex-image__preview-trigger').trigger('click');
+    await nextTick();
+    await nextTick();
+
+    expect(document.body.querySelector('.ex-image-preview')?.getAttribute('aria-busy')).toBeNull();
+    expect(document.body.querySelector('.ex-image-preview__loading')).toBeNull();
+    expect(wrapper.emitted('previewLoad')).toHaveLength(1);
+  });
+
+  it('预览图命中缓存失败时进入错误态并发出 previewError 事件', async () => {
+    const wrapper = mountImage({ preview: true });
+    await wrapper.find('img').trigger('load');
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+
+    await wrapper.find('.ex-image__preview-trigger').trigger('click');
+    await nextTick();
+    await nextTick();
+
+    expect(document.body.querySelector('.ex-image-preview__error')).not.toBeNull();
+    expect(wrapper.emitted('previewError')).toHaveLength(1);
+  });
+
   it('预览源加载失败时显示独立错误状态', async () => {
     const wrapper = mountImage({ preview: true, previewSrc: '/broken-full.png' });
     await wrapper.find('img').trigger('load');
@@ -241,6 +309,7 @@ describe('ExImage', () => {
     expect(document.body.querySelector('.ex-image-preview__error')?.getAttribute('role')).toBe(
       'alert'
     );
+    expect(wrapper.emitted('previewError')).toHaveLength(1);
   });
 
   it('预览源加载成功后清除 busy，地址变化时重新进入加载状态', async () => {
@@ -254,6 +323,7 @@ describe('ExImage', () => {
     await nextTick();
     expect(document.body.querySelector('.ex-image-preview')?.getAttribute('aria-busy')).toBeNull();
     expect(document.body.querySelector('.ex-image-preview__loading')).toBeNull();
+    expect(wrapper.emitted('previewLoad')).toHaveLength(1);
 
     await wrapper.setProps({ previewSrc: '/full-2.png' });
     expect(document.body.querySelector('.ex-image-preview')?.getAttribute('aria-busy')).toBe(
@@ -279,9 +349,44 @@ describe('ExImage', () => {
     expect(document.body.querySelector('.ex-image-preview')).toBeNull();
   });
 
+  it('预览层 z-index 跟随 ConfigProvider 的基础层级并保留 modal 层差值', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    hosts.push(host);
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: host,
+      props: { zIndex: 2000 },
+      slots: {
+        default: () =>
+          h(ExImage, {
+            src: '/image.png',
+            alt: '示例图片',
+            preview: true,
+          }),
+      },
+    });
+    wrappers.push(wrapper);
+    const image = wrapper.findComponent(ExImage);
+
+    await image.find('img').trigger('load');
+    await image.find('.ex-image__preview-trigger').trigger('click');
+    await nextTick();
+
+    expect(document.body.querySelector<HTMLElement>('.ex-image-preview')?.style.zIndex).toBe(
+      '2050'
+    );
+  });
+
   it('暴露真实根元素', () => {
     const wrapper = mountImage();
-    const exposed = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
+    const exposed = wrapper.vm as unknown as {
+      getElement: () => HTMLElement | null;
+      reload: () => void;
+    };
     expect(exposed.getElement()).toBe(wrapper.find('.ex-image').element);
+
+    exposed.reload();
+    expect(wrapper.emitted('retry')).toHaveLength(1);
+    expect(wrapper.attributes('aria-busy')).toBe('true');
   });
 });
