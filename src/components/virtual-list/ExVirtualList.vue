@@ -8,8 +8,8 @@
       ref="listRef"
       class="ex-virtual-list__wrapper"
       :style="wrapperStyles"
-      tabindex="0"
-      role="list"
+      :tabindex="props.wrapperTabindex"
+      :role="props.wrapperRole"
       @scroll.passive="handleScroll"
     >
       <!-- 占位元素 -->
@@ -61,6 +61,8 @@ const props = withDefaults(defineProps<ExVirtualListProps>(), {
   threshold: 100,
   virtual: true,
   loadMoreThreshold: 50,
+  wrapperRole: 'list',
+  wrapperTabindex: 0,
 });
 
 const emit = defineEmits<ExVirtualListEmits>();

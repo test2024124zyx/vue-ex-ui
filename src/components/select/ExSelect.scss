@@ -1,12 +1,18 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
 
+$select-option-height: 44px;
+$select-clear-target: 32px;
+$select-touch-target: 44px;
+
 .ex-select {
   position: relative;
   display: inline-block;
   width: 240px;
   font-family: var(--ex-font-secondary);
   color: var(--ex-color-text-primary);
+  --ex-select-option-height: #{$select-option-height};
+  --ex-select-dropdown-max-height: 300px;
 
   // 尺寸变体
   &--small {
@@ -51,6 +57,33 @@
     }
   }
 
+  // FormItem 校验状态直接反映到 Select 触发器，保证脱离原生 input 也有明确反馈。
+  &.is-success .ex-select__trigger {
+    border-color: var(--ex-color-success);
+  }
+
+  &.is-warning .ex-select__trigger {
+    border-color: var(--ex-color-warning);
+  }
+
+  &.is-error .ex-select__trigger {
+    border-color: var(--ex-color-error);
+    @include neon-glow('pink', 'sm');
+  }
+
+  // 触发器禁用状态由根节点承载，不能在触发器自身上判断 is-disabled。
+  &:not(.is-disabled):not(.is-readonly) {
+    .ex-select__trigger:hover {
+      border-color: var(--ex-color-neon-pink-400);
+      @include neon-glow('pink', 'sm');
+      transform: translateY(-1px);
+    }
+
+    .ex-select__trigger:active {
+      transform: translateY(0);
+    }
+  }
+
   // 触发器
   &__trigger {
     position: relative;
@@ -69,16 +102,6 @@
     backdrop-filter: blur(8px);
     @include transition(all);
     @include neon-glow('blue', 'sm');
-
-    &:hover:not(.is-disabled) {
-      border-color: var(--ex-color-neon-pink-400);
-      @include neon-glow('pink', 'sm');
-      transform: translateY(-1px);
-    }
-
-    &:active:not(.is-disabled) {
-      transform: translateY(0);
-    }
   }
 
   // 值显示区域
@@ -90,12 +113,18 @@
     overflow: hidden;
   }
 
-  // 多选：值区域换行排列标签
+  // 多选：值区域横向滚动排列标签
   &--multiple &__value {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
     padding: 2px 0;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  &--multiple &__trigger {
+    min-height: 40px;
   }
 
   // 多选标签
@@ -126,14 +155,31 @@
   }
 
   &__tag-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ex-radius-sm);
+    color: inherit;
     cursor: pointer;
     font-size: 14px;
     line-height: 1;
     opacity: 0.7;
-    transition: opacity var(--ex-motion-duration-fast) ease-out;
+    @include transition(opacity, background-color);
 
     &:hover {
       opacity: 1;
+      background: var(--ex-color-primary-alpha-10);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-pink-500);
+      outline-offset: 1px;
     }
   }
 
@@ -149,7 +195,9 @@
 
   // 搜索输入框
   &__input {
-    width: 100%;
+    flex: 1 1 96px;
+    min-width: 48px;
+    width: auto;
     background: transparent;
     border: none;
     outline: none;
@@ -159,8 +207,14 @@
     font-weight: 500;
 
     &::placeholder {
-      color: var(--ex-color-text-tertiary);
+      color: var(--ex-color-text-secondary);
       font-weight: 400;
+    }
+
+    &.is-value-placeholder::placeholder {
+      color: var(--ex-color-text-primary);
+      font-weight: 500;
+      opacity: 1;
     }
 
     &:disabled {
@@ -170,7 +224,7 @@
 
   // 占位符
   &__placeholder {
-    color: var(--ex-color-text-tertiary);
+    color: var(--ex-color-text-secondary);
     font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
@@ -191,8 +245,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: $select-clear-target;
+    height: $select-clear-target;
     padding: 0;
     appearance: none;
     background: transparent;
@@ -235,7 +289,6 @@
   &__dropdown {
     position: fixed;
     z-index: var(--ex-z-dropdown);
-    margin-top: 4px;
     background: linear-gradient(
       135deg,
       rgba(var(--ex-color-bg-primary-rgb), 0.95) 0%,
@@ -246,7 +299,7 @@
     backdrop-filter: blur(12px);
     @include neon-glow('pink', 'lg');
     overflow: hidden;
-    max-height: 300px;
+    max-height: var(--ex-select-dropdown-max-height);
   }
 
   // 选项列表
@@ -254,7 +307,7 @@
     list-style: none;
     padding: 8px 0;
     margin: 0;
-    max-height: 280px;
+    max-height: var(--ex-select-options-max-height, 280px);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -271,12 +324,25 @@
   // 选项
   &__option {
     position: relative;
-    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--ex-select-option-height);
+    min-height: var(--ex-select-option-height);
+    padding: 0 16px;
     cursor: pointer;
     color: var(--ex-color-text-primary);
     font-weight: 500;
-    overflow-wrap: anywhere;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     @include transition(all);
+
+    &--virtual {
+      height: 100%;
+      min-height: 0;
+    }
 
     &::before {
       content: '';
@@ -304,7 +370,7 @@
     }
 
     &.is-selected {
-      color: var(--ex-color-neon-pink-400);
+      color: var(--ex-color-neon-pink-500);
       background: rgba(var(--ex-color-neon-pink-500-rgb), 0.15);
       font-weight: 600;
       text-shadow: 0 0 8px rgba(var(--ex-color-neon-pink-500-rgb), 0.6);
@@ -367,7 +433,7 @@
   // 无数据
   &__empty {
     padding: 24px 16px;
-    color: var(--ex-color-text-tertiary);
+    color: var(--ex-color-text-secondary);
     text-align: center;
     font-size: var(--ex-text-sm);
     font-style: italic;
@@ -385,7 +451,17 @@
     width: 100%;
 
     &__trigger {
-      min-height: 44px; // 移动端触摸友好
+      min-height: $select-touch-target; // 移动端触摸友好
+    }
+
+    &__clear {
+      width: $select-touch-target;
+      height: $select-touch-target;
+    }
+
+    &__tag-close {
+      width: $select-touch-target;
+      height: $select-touch-target;
     }
 
     &__dropdown {
@@ -396,6 +472,11 @@
   // 无障碍支持
   &__trigger:focus-visible {
     outline: none;
+    border-color: var(--ex-color-neon-pink-500);
+    @include neon-glow('pink', 'md');
+  }
+
+  &__trigger:focus-within {
     border-color: var(--ex-color-neon-pink-500);
     @include neon-glow('pink', 'md');
   }
@@ -446,9 +527,11 @@
     @include transition(opacity);
   }
 
-  &:hover::before {
-    opacity: 0.3;
-    animation: border-flow 2s linear infinite;
+  .ex-select:not(.is-disabled):not(.is-readonly) & {
+    &:hover::before {
+      opacity: 0.3;
+      animation: border-flow 2s linear infinite;
+    }
   }
 }
 
@@ -469,6 +552,20 @@
   animation: option-fade-in 0.2s ease-out;
 }
 
+// Teleport 到 body 后不再处于 ConfigProvider 的 DOM 子树，需显式继承全局效果开关。
+.ex-select__dropdown.ex-no-neon,
+.ex-select__dropdown.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-select__dropdown.ex-no-animation,
+.ex-select__dropdown.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
+}
+
 @keyframes option-fade-in {
   from {
     opacity: 0;
@@ -477,5 +574,17 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-select__trigger,
+  .ex-select__trigger::before,
+  .ex-select__option,
+  .ex-select__dropdown,
+  .ex-select-dropdown-enter-active,
+  .ex-select-dropdown-leave-active {
+    transition: none !important;
+    animation: none !important;
   }
 }

@@ -6,16 +6,27 @@
   >
     <!-- 选择器触发器 -->
     <div
+      :id="searchable ? undefined : controlId"
       ref="triggerRef"
       class="ex-select__trigger"
-      role="combobox"
-      aria-haspopup="listbox"
+      v-bind="searchable ? undefined : triggerAttrs"
+      :role="searchable ? undefined : 'combobox'"
+      :aria-label="searchable ? undefined : accessibleLabel"
+      :aria-labelledby="searchable ? undefined : labelledBy"
+      :aria-describedby="searchable ? undefined : describedBy"
+      :aria-errormessage="searchable ? undefined : errorMessageId"
+      :aria-invalid="searchable ? undefined : ariaInvalid"
+      :aria-readonly="searchable ? undefined : effectiveReadonly"
+      :aria-haspopup="searchable ? undefined : 'listbox'"
       :aria-expanded="dropdownVisible"
-      :aria-disabled="disabled"
+      :aria-controls="searchable ? undefined : dropdownId"
+      :aria-disabled="effectiveDisabled"
       :aria-activedescendant="activeDescendantId"
-      :tabindex="disabled || searchable ? undefined : 0"
+      :tabindex="effectiveDisabled || searchable ? undefined : 0"
       @click="handleTriggerClick"
       @keydown="handleKeydown"
+      @focus="handleFocus"
+      @blur="handleBlur"
     >
       <!-- 选中的值显示 -->
       <div class="ex-select__value">
@@ -27,14 +38,16 @@
             class="ex-select__tag"
           >
             <span class="ex-select__tag-label">{{ tag.label }}</span>
-            <span
-              v-if="!disabled"
+            <button
+              v-if="!effectiveDisabled && !effectiveReadonly"
+              type="button"
               class="ex-select__tag-close"
               :aria-label="t('removeTagAria', { label: tag.label })"
+              @keydown.stop
               @click.stop="removeTag(tag.value)"
             >
               ×
-            </span>
+            </button>
           </span>
           <span
             v-if="collapsedCount > 0"
@@ -44,51 +57,86 @@
           </span>
           <input
             v-if="searchable"
+            :id="controlId"
             ref="inputRef"
             v-model="searchQuery"
             class="ex-select__input"
+            v-bind="triggerAttrs"
+            role="combobox"
+            aria-haspopup="listbox"
+            aria-autocomplete="list"
+            :aria-label="accessibleLabel"
+            :aria-labelledby="labelledBy"
+            :aria-describedby="describedBy"
+            :aria-errormessage="errorMessageId"
+            :aria-invalid="ariaInvalid"
+            :aria-readonly="effectiveReadonly"
+            :aria-expanded="dropdownVisible"
+            :aria-controls="dropdownId"
             :aria-activedescendant="activeDescendantId"
-            :placeholder="selectedValues.length ? '' : placeholder"
-            :disabled="disabled"
+            :placeholder="selectedValues.length ? '' : currentPlaceholder"
+            :disabled="effectiveDisabled"
+            :readonly="effectiveReadonly"
+            @click.stop="handleInputClick"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleSearch"
-            @keydown="handleKeydown"
+            @keydown.stop="handleKeydown"
           />
           <span
             v-else-if="selectedValues.length === 0"
             class="ex-select__placeholder"
           >
-            {{ placeholder }}
+            {{ currentPlaceholder }}
           </span>
         </template>
 
         <!-- 单选 -->
         <template v-else>
+          <input
+            v-if="searchable"
+            :id="controlId"
+            ref="inputRef"
+            v-model="searchQuery"
+            class="ex-select__input"
+            v-bind="triggerAttrs"
+            role="combobox"
+            aria-haspopup="listbox"
+            aria-autocomplete="list"
+            :aria-label="accessibleLabel"
+            :aria-labelledby="labelledBy"
+            :aria-describedby="describedBy"
+            :aria-errormessage="errorMessageId"
+            :aria-invalid="ariaInvalid"
+            :aria-readonly="effectiveReadonly"
+            :aria-expanded="dropdownVisible"
+            :aria-controls="dropdownId"
+            :aria-activedescendant="activeDescendantId"
+            :placeholder="
+              selectedOption && !searchQuery && !dropdownVisible
+                ? selectedOption.label
+                : currentPlaceholder
+            "
+            :class="{ 'is-value-placeholder': selectedOption && !searchQuery && !dropdownVisible }"
+            :disabled="effectiveDisabled"
+            :readonly="effectiveReadonly"
+            @click.stop="handleInputClick"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @input="handleSearch"
+            @keydown.stop="handleKeydown"
+          />
           <span
-            v-if="selectedOption"
+            v-else-if="selectedOption"
             class="ex-select__label"
           >
             {{ selectedOption.label }}
           </span>
-          <input
-            v-else-if="searchable"
-            ref="inputRef"
-            v-model="searchQuery"
-            class="ex-select__input"
-            :aria-activedescendant="activeDescendantId"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            @focus="handleFocus"
-            @blur="handleBlur"
-            @input="handleSearch"
-            @keydown="handleKeydown"
-          />
           <span
             v-else
             class="ex-select__placeholder"
           >
-            {{ placeholder }}
+            {{ currentPlaceholder }}
           </span>
         </template>
       </div>
@@ -101,7 +149,9 @@
           type="button"
           class="ex-select__clear"
           :aria-label="t('clear')"
+          :disabled="effectiveReadonly"
           @mousedown.prevent
+          @keydown.stop
           @click.stop="handleClear"
         >
           <svg
@@ -140,10 +190,14 @@
       <Transition name="ex-select-dropdown">
         <div
           v-if="dropdownVisible"
+          :id="dropdownId"
           ref="dropdownRef"
           class="ex-select__dropdown"
           :data-theme="configTheme"
-          :class="{ 'ex-select__dropdown--multiple': multiple }"
+          :class="dropdownClasses"
+          role="listbox"
+          :aria-labelledby="controlId"
+          :aria-multiselectable="multiple || undefined"
           :style="dropdownStyles"
         >
           <!-- 虚拟滚动：仅在 virtual 开启且为扁平（非分组）选项时启用，适配上千选项 -->
@@ -151,10 +205,11 @@
             v-if="useVirtual"
             ref="virtualListRef"
             class="ex-select__options ex-select__options--virtual"
-            role="listbox"
+            wrapper-role="presentation"
+            :wrapper-tabindex="-1"
             :data-source="flatFilteredOptions"
             :height="virtualHeight"
-            :item-height="optionHeight"
+            :item-height="normalizedOptionHeight"
             item-key="value"
             :threshold="0"
             :buffer="6"
@@ -164,12 +219,14 @@
                 :id="getOptionId(getOptionIndex(item as SelectOption))"
                 class="ex-select__option"
                 :class="{
+                  'ex-select__option--virtual': true,
                   'is-selected': isSelected(item as SelectOption),
                   'is-disabled': (item as SelectOption).disabled,
                   'is-hover': hoverIndex === getOptionIndex(item as SelectOption),
                 }"
                 role="option"
                 :aria-selected="isSelected(item as SelectOption)"
+                :aria-disabled="(item as SelectOption).disabled || undefined"
                 @click="handleSelect(item as SelectOption)"
                 @mouseenter="hoverIndex = getOptionIndex(item as SelectOption)"
               >
@@ -181,7 +238,7 @@
           <ul
             v-else
             class="ex-select__options"
-            role="listbox"
+            role="presentation"
           >
             <template
               v-for="(item, index) in filteredOptions"
@@ -191,6 +248,7 @@
               <li
                 v-if="isGroup(item)"
                 class="ex-select__group"
+                role="presentation"
               >
                 {{ item.label }}
               </li>
@@ -209,6 +267,7 @@
                   }"
                   role="option"
                   :aria-selected="isSelected(option)"
+                  :aria-disabled="option.disabled || undefined"
                   @click="handleSelect(option)"
                   @mouseenter="hoverIndex = getOptionIndex(option)"
                 >
@@ -228,6 +287,7 @@
                 }"
                 role="option"
                 :aria-selected="isSelected(item)"
+                :aria-disabled="item.disabled || undefined"
                 @click="handleSelect(item)"
                 @mouseenter="hoverIndex = getOptionIndex(item)"
               >
@@ -259,7 +319,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onUnmounted, useAttrs } from 'vue';
 import type {
   ExSelectProps,
   ExSelectEmits,
@@ -270,13 +330,27 @@ import type {
 } from './types';
 import { useLocale } from '../../locale';
 import { debounce } from '../../utils/debounce';
-import { useComponentSize, useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndex,
+} from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { generateId } from '../../utils/id';
 import ExVirtualList from '../virtual-list/ExVirtualList.vue';
+import {
+  SELECT_DEFAULT_OPTION_HEIGHT,
+  SELECT_DEFAULT_REMOTE_DEBOUNCE,
+  SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT,
+  SELECT_DROPDOWN_Z_INDEX_OFFSET,
+} from './constants';
+import { calculateSelectDropdownPosition } from './position';
 
 defineOptions({
   name: 'ExSelect',
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<ExSelectProps>(), {
@@ -289,23 +363,24 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
   searchable: false,
   remote: false,
   loading: false,
-  remoteDebounce: 300,
+  remoteDebounce: SELECT_DEFAULT_REMOTE_DEBOUNCE,
   multiple: false,
   multipleLimit: 0,
   collapseTags: false,
   virtual: false,
-  optionHeight: 34,
+  optionHeight: SELECT_DEFAULT_OPTION_HEIGHT,
 });
 
 const emit = defineEmits<ExSelectEmits>();
+const attrs = useAttrs();
 
 const { t } = useLocale('selector');
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
-
 // 所在 FormItem 的字段上下文（用于 blur/change 自动校验）
 const formItem = useFormItem();
+
+// 使用组件自身、FormItem 与 ConfigProvider 的尺寸继承链。
+const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
 
 // Refs
 const selectRef = ref<HTMLElement>();
@@ -320,20 +395,115 @@ const searchQuery = ref('');
 const hoverIndex = ref(-1);
 const dropdownStyles = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const dropdownZIndex = useZIndex(SELECT_DROPDOWN_Z_INDEX_OFFSET);
+const availableDropdownHeight = ref(SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT);
 
 // 唯一 id 前缀：用于 option id 与 aria-activedescendant 关联（屏幕阅读器播报高亮项）
 const baseId = generateId('ex-select');
+const controlId = computed(() => props.id?.trim() || baseId);
+const dropdownId = computed(() => `${controlId.value}-dropdown`);
 const getOptionId = (index: number) => `${baseId}-opt-${index}`;
 const activeDescendantId = computed(() =>
   hoverIndex.value >= 0 ? getOptionId(hoverIndex.value) : undefined
 );
+
+// 合并外部与 FormItem 提供的可访问性 ID，避免重复引用同一个节点。
+const mergeAriaIds = (...values: Array<string | undefined>): string | undefined => {
+  const ids = values.flatMap(value => value?.split(/\s+/) ?? []).filter(Boolean);
+  return ids.length > 0 ? Array.from(new Set(ids)).join(' ') : undefined;
+};
+
+const readAttr = (name: string): string | undefined => {
+  const value = attrs[name];
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (value === true) return 'true';
+  if (value === false) return 'false';
+  return undefined;
+};
+
+// 仅把未被组件显式处理的属性转发给真正的交互节点。
+const triggerAttrs = computed<Record<string, unknown>>(() => {
+  const forwarded = { ...attrs };
+  delete forwarded.class;
+  delete forwarded.style;
+  return forwarded;
+});
+
+const externalAriaLabel = computed(() => readAttr('aria-label'));
+const labelledBy = computed(() =>
+  mergeAriaIds(
+    readAttr('aria-labelledby'),
+    externalAriaLabel.value ? undefined : formItem?.labelId?.value
+  )
+);
+const describedBy = computed(() =>
+  mergeAriaIds(readAttr('aria-describedby'), formItem?.describedBy?.value)
+);
+const errorMessageId = computed(() => {
+  const externalId = readAttr('aria-errormessage');
+  if (externalId) return externalId;
+  if (formItem?.status?.value === 'error' && formItem.errorMessage?.value) {
+    return formItem.describedBy?.value;
+  }
+  return undefined;
+});
+type AriaInvalidValue = 'true' | 'false' | 'grammar' | 'spelling';
+
+const ariaInvalid = computed<AriaInvalidValue | undefined>(() => {
+  const externalValue = readAttr('aria-invalid');
+  if (
+    externalValue === 'true' ||
+    externalValue === 'false' ||
+    externalValue === 'grammar' ||
+    externalValue === 'spelling'
+  ) {
+    return externalValue;
+  }
+  return formItem?.status?.value === 'error' ? 'true' : undefined;
+});
+
+const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
+const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
+const inheritedStatus = computed(() => formItem?.status?.value || '');
+const currentPlaceholder = computed(
+  () => props.placeholder || (props.searchable ? t('searchPlaceholder') : t('placeholder'))
+);
+const accessibleLabel = computed(
+  () => externalAriaLabel.value || (labelledBy.value ? undefined : currentPlaceholder.value)
+);
+const normalizedOptionHeight = computed(() => {
+  const value = Number(props.optionHeight);
+  return Number.isFinite(value) && value >= SELECT_DEFAULT_OPTION_HEIGHT
+    ? value
+    : SELECT_DEFAULT_OPTION_HEIGHT;
+});
+const normalizedMultipleLimit = computed(() => {
+  const value = Number(props.multipleLimit);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+});
+const normalizedRemoteDebounce = computed(() => {
+  const value = Number(props.remoteDebounce);
+  return Number.isFinite(value) && value >= 0 ? value : SELECT_DEFAULT_REMOTE_DEBOUNCE;
+});
+
+const dropdownClasses = computed(() => [
+  {
+    'is-multiple': props.multiple,
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
+  },
+]);
 
 // 计算属性
 const selectClasses = computed(() => {
   const classes = ['ex-select', `ex-select--${componentSize.value}`];
 
   if (props.multiple) classes.push('ex-select--multiple');
-  if (props.disabled) classes.push('is-disabled');
+  if (effectiveDisabled.value) classes.push('is-disabled');
+  if (effectiveReadonly.value) classes.push('is-readonly');
+  if (inheritedStatus.value) classes.push(`is-${inheritedStatus.value}`);
   if (dropdownVisible.value) classes.push('is-focus');
 
   classes.push(...normalizeCustomClass(props.class));
@@ -391,7 +561,7 @@ const filteredOptions = computed(() => {
 
 // 选中的选项（单选）
 const selectedOption = computed(() => {
-  return flatOptions.value.find(opt => opt.value === props.modelValue) || null;
+  return getOptionByValue(props.modelValue as string | number) || null;
 });
 
 // 多选：已选值数组
@@ -401,9 +571,7 @@ const selectedValues = computed<Array<string | number>>(() =>
 
 // 多选：已选选项（按选中顺序），用于渲染标签
 const selectedOptions = computed<SelectOption[]>(() =>
-  selectedValues.value
-    .map(v => flatOptions.value.find(opt => opt.value === v))
-    .filter((opt): opt is SelectOption => !!opt)
+  selectedValues.value.map(getOptionByValue).filter((opt): opt is SelectOption => !!opt)
 );
 
 // 折叠标签时实际展示的标签与被折叠数量
@@ -414,7 +582,7 @@ const collapsedCount = computed(() => selectedOptions.value.length - displayTags
 
 // 显示清空图标
 const showClearIcon = computed(() => {
-  if (!props.clearable || props.disabled) return false;
+  if (!props.clearable || effectiveDisabled.value || effectiveReadonly.value) return false;
   // 只有界面上存在真实选中内容时才显示清空入口，避免空值或失效值出现假操作。
   return props.multiple ? selectedOptions.value.length > 0 : selectedOption.value !== null;
 });
@@ -423,6 +591,26 @@ const showClearIcon = computed(() => {
 const isGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup => {
   return 'options' in item;
 };
+
+// 远程搜索结果通常只保留当前查询页；缓存已见选项，保证已选标签不会因换页丢失。
+const optionCache = ref(new Map<string | number, SelectOption>());
+
+const getOptionByValue = (value: string | number): SelectOption | undefined => {
+  return (
+    flatOptions.value.find(option => option.value === value) ||
+    (props.remote ? optionCache.value.get(value) : undefined)
+  );
+};
+
+watch(
+  flatOptions,
+  options => {
+    const nextCache = new Map(optionCache.value);
+    options.forEach(option => nextCache.set(option.value, option));
+    optionCache.value = nextCache;
+  },
+  { immediate: true }
+);
 
 const matchOption = (option: SelectOption, query: string): boolean => {
   const labelMatch = option.label.toLowerCase().includes(query);
@@ -464,9 +652,8 @@ const useVirtual = computed(
 
 // 虚拟滚动容器高度：按选项数量自适应，最高不超过下拉的可视高度
 const virtualHeight = computed(() => {
-  const padding = 16; // 与 __options 的上下 padding 对齐
-  const contentHeight = flatFilteredOptions.value.length * props.optionHeight + padding;
-  return Math.min(contentHeight, 280);
+  const contentHeight = flatFilteredOptions.value.length * normalizedOptionHeight.value;
+  return Math.min(contentHeight, SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT, availableDropdownHeight.value);
 });
 
 // 键盘导航后将高亮项滚动进可视区域（虚拟滚动时按索引滚动）
@@ -494,33 +681,41 @@ const updateDropdownPosition = () => {
   if (!triggerRef.value || !dropdownRef.value) return;
 
   const triggerRect = triggerRef.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
   const dropdownHeight = dropdownRef.value.offsetHeight;
-  const spaceBelow = window.innerHeight - triggerRect.bottom;
-  const spaceAbove = triggerRect.top;
+  const position = calculateSelectDropdownPosition(
+    triggerRect,
+    dropdownHeight,
+    viewportWidth,
+    viewportHeight
+  );
 
-  let top: number;
-  const left = triggerRect.left;
-  const width = triggerRect.width;
-
-  // 判断下拉方向
-  if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
-    // 向上展开
-    top = triggerRect.top - dropdownHeight - 4;
-  } else {
-    // 向下展开
-    top = triggerRect.bottom + 4;
-  }
+  // 同时限制浮层和列表高度，避免小视口中内容溢出或虚拟列表行高失配。
+  availableDropdownHeight.value = position.optionsMaxHeight;
 
   dropdownStyles.value = {
-    top: `${top}px`,
-    left: `${left}px`,
-    minWidth: `${width}px`,
+    top: `${position.top}px`,
+    left: `${position.left}px`,
+    minWidth: `${position.width}px`,
+    maxWidth: `${position.maxWidth}px`,
+    maxHeight: `${position.maxHeight}px`,
+    zIndex: String(dropdownZIndex.value),
+    '--ex-select-options-max-height': `${position.optionsMaxHeight}px`,
   };
+};
+
+// 视口变化后先恢复完整内容高度，再在下一帧重新测量，避免重复定位产生高度振荡。
+const handleViewportChange = () => {
+  availableDropdownHeight.value = SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT;
+  dropdownRef.value?.style.removeProperty('max-height');
+  dropdownRef.value?.style.removeProperty('--ex-select-options-max-height');
+  void nextTick(updateDropdownPosition);
 };
 
 // 事件处理
 const handleTriggerClick = () => {
-  if (props.disabled) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   if (dropdownVisible.value) {
     hideDropdown();
@@ -530,8 +725,10 @@ const handleTriggerClick = () => {
 };
 
 const showDropdown = () => {
-  if (props.disabled) return;
+  if (effectiveDisabled.value || effectiveReadonly.value || dropdownVisible.value) return;
 
+  availableDropdownHeight.value = SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT;
+  dropdownStyles.value = {};
   dropdownVisible.value = true;
   emit('visible-change', true);
 
@@ -544,14 +741,24 @@ const showDropdown = () => {
 };
 
 const hideDropdown = () => {
+  if (!dropdownVisible.value) {
+    searchQuery.value = '';
+    hoverIndex.value = -1;
+    return;
+  }
   dropdownVisible.value = false;
   emit('visible-change', false);
   searchQuery.value = '';
   hoverIndex.value = -1;
 };
 
+const handleInputClick = () => {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
+  if (!dropdownVisible.value) showDropdown();
+};
+
 const handleSelect = (option: SelectOption) => {
-  if (option.disabled) return;
+  if (option.disabled || effectiveDisabled.value || effectiveReadonly.value) return;
 
   if (props.multiple) {
     const current = selectedValues.value;
@@ -561,16 +768,16 @@ const handleSelect = (option: SelectOption) => {
       next = current.filter(v => v !== option.value);
     } else {
       // 达到上限则忽略新增
-      if (props.multipleLimit > 0 && current.length >= props.multipleLimit) return;
+      if (normalizedMultipleLimit.value > 0 && current.length >= normalizedMultipleLimit.value) {
+        return;
+      }
       next = [...current, option.value];
     }
     emit('update:modelValue', next);
     emit(
       'change',
       next,
-      next
-        .map(v => flatOptions.value.find(o => o.value === v))
-        .filter((o): o is SelectOption => !!o)
+      next.map(getOptionByValue).filter((o): o is SelectOption => !!o)
     );
     formItem?.onFieldChange();
     // 多选保持下拉打开；清空搜索词以便继续筛选
@@ -586,19 +793,20 @@ const handleSelect = (option: SelectOption) => {
 
 // 多选：移除某个标签
 const removeTag = (value: string | number) => {
-  if (props.disabled) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
   const next = selectedValues.value.filter(v => v !== value);
   emit('update:modelValue', next);
   emit(
     'change',
     next,
-    next.map(v => flatOptions.value.find(o => o.value === v)).filter((o): o is SelectOption => !!o)
+    next.map(getOptionByValue).filter((o): o is SelectOption => !!o)
   );
   emit('remove-tag', value);
   formItem?.onFieldChange();
 };
 
 const handleClear = () => {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
   const cleared: SelectValue = props.multiple ? [] : null;
   emit('update:modelValue', cleared);
   emit('change', cleared, props.multiple ? [] : null);
@@ -617,11 +825,19 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 // 远程搜索：防抖触发父级的 remoteMethod
-const triggerRemote = debounce((query: string) => {
+let triggerRemote = debounce((query: string) => {
   props.remoteMethod?.(query);
-}, props.remoteDebounce);
+}, normalizedRemoteDebounce.value);
+
+watch(normalizedRemoteDebounce, delay => {
+  triggerRemote.cancel();
+  triggerRemote = debounce((query: string) => {
+    props.remoteMethod?.(query);
+  }, delay);
+});
 
 const handleSearch = () => {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
   // 过滤结果变化后重置高亮，避免索引指向已被过滤掉的选项
   hoverIndex.value = -1;
   if (!dropdownVisible.value) {
@@ -633,13 +849,15 @@ const handleSearch = () => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault();
       if (!dropdownVisible.value) {
+        hoverIndex.value = findEnabledIndex(-1, 1);
         showDropdown();
+        scrollHoverIntoView();
       } else {
         hoverIndex.value = findEnabledIndex(hoverIndex.value, 1);
         scrollHoverIntoView();
@@ -649,7 +867,9 @@ const handleKeydown = (event: KeyboardEvent) => {
     case 'ArrowUp':
       event.preventDefault();
       if (!dropdownVisible.value) {
+        hoverIndex.value = findEnabledIndex(flatFilteredOptions.value.length, -1);
         showDropdown();
+        scrollHoverIntoView();
       } else {
         hoverIndex.value = findEnabledIndex(
           hoverIndex.value < 0 ? flatFilteredOptions.value.length : hoverIndex.value,
@@ -657,6 +877,20 @@ const handleKeydown = (event: KeyboardEvent) => {
         );
         scrollHoverIntoView();
       }
+      break;
+
+    case 'Home':
+      if (!dropdownVisible.value) return;
+      event.preventDefault();
+      hoverIndex.value = findEnabledIndex(-1, 1);
+      scrollHoverIntoView();
+      break;
+
+    case 'End':
+      if (!dropdownVisible.value) return;
+      event.preventDefault();
+      hoverIndex.value = findEnabledIndex(flatFilteredOptions.value.length, -1);
+      scrollHoverIntoView();
       break;
 
     case 'Enter':
@@ -706,25 +940,26 @@ watch(dropdownVisible, visible => {
     nextTick(() => {
       updateDropdownPosition();
       // 设置初始 hover 索引为选中项
-      if (selectedOption.value) {
-        hoverIndex.value = getOptionIndex(selectedOption.value);
+      const initialOption = selectedOption.value || selectedOptions.value[0];
+      if (hoverIndex.value < 0 && initialOption) {
+        hoverIndex.value = getOptionIndex(initialOption);
       }
     });
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', updateDropdownPosition);
-    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', updateDropdownPosition);
-    window.removeEventListener('scroll', updateDropdownPosition, true);
+    window.removeEventListener('resize', handleViewportChange);
+    window.removeEventListener('scroll', handleViewportChange, true);
   }
 });
 
 // 生命周期：卸载时兜底清理
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', updateDropdownPosition);
-  window.removeEventListener('scroll', updateDropdownPosition, true);
+  window.removeEventListener('resize', handleViewportChange);
+  window.removeEventListener('scroll', handleViewportChange, true);
   // 清理远程搜索防抖待执行的定时器
   triggerRemote.cancel();
 });

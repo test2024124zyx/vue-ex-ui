@@ -40,6 +40,7 @@ const handleScroll = info => {
 ## 固定高度
 
 ::: raw
+
 <div class="vp-raw demo-container">
   <ex-virtual-list
     ref="listRef"
@@ -70,12 +71,7 @@ const handleScroll = info => {
 :::
 
 ```vue
-<ex-virtual-list
-  :data-source="records"
-  :height="360"
-  :item-height="64"
-  item-key="id"
->
+<ex-virtual-list :data-source="records" :height="360" :item-height="64" item-key="id">
   <template #default="{ item }">{{ item.name }}</template>
 </ex-virtual-list>
 ```
@@ -85,6 +81,7 @@ const handleScroll = info => {
 ## 动态高度
 
 ::: raw
+
 <div class="vp-raw demo-container">
   <ex-virtual-list
     :data-source="dynamicRecords"
@@ -106,6 +103,7 @@ const handleScroll = info => {
 ## 滚动控制
 
 ::: raw
+
 <div class="vp-raw demo-container virtual-controls">
   <ex-space wrap>
     <ex-button size="small" type="default" @click="listRef?.scrollToTop('smooth')">回到顶部</ex-button>
@@ -119,47 +117,49 @@ const handleScroll = info => {
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `dataSource` | 数据源 | `unknown[]` | 必填 |
-| `height` | 滚动容器高度 | `number \| string` | 必填 |
-| `itemHeight` | 固定高度或高度计算函数 | `number \| ((index, item) => number)` | 必填 |
-| `buffer` | 可视区上下额外渲染项数 | `number` | `3` |
-| `itemKey` | 唯一键字段或解析函数 | `string \| ((item, index) => string \| number)` | — |
-| `className` | 附加类名 | `string` | — |
-| `style` | 根元素样式 | `CSSProperties` | — |
-| `wrapStyle` | 滚动容器样式 | `CSSProperties` | — |
-| `threshold` | 启用虚拟滚动的最小数据量 | `number` | `100` |
-| `virtual` | 是否启用虚拟滚动 | `boolean` | `true` |
-| `loadMoreThreshold` | 距底部多少像素触发加载更多 | `number` | `50` |
+| 参数                | 说明                       | 类型                                            | 默认值 |
+| ------------------- | -------------------------- | ----------------------------------------------- | ------ |
+| `dataSource`        | 数据源                     | `unknown[]`                                     | 必填   |
+| `height`            | 滚动容器高度               | `number \| string`                              | 必填   |
+| `itemHeight`        | 固定高度或高度计算函数     | `number \| ((index, item) => number)`           | 必填   |
+| `buffer`            | 可视区上下额外渲染项数     | `number`                                        | `3`    |
+| `itemKey`           | 唯一键字段或解析函数       | `string \| ((item, index) => string \| number)` | —      |
+| `className`         | 附加类名                   | `string`                                        | —      |
+| `style`             | 根元素样式                 | `CSSProperties`                                 | —      |
+| `wrapStyle`         | 滚动容器样式               | `CSSProperties`                                 | —      |
+| `threshold`         | 启用虚拟滚动的最小数据量   | `number`                                        | `100`  |
+| `virtual`           | 是否启用虚拟滚动           | `boolean`                                       | `true` |
+| `loadMoreThreshold` | 距底部多少像素触发加载更多 | `number`                                        | `50`   |
+| `wrapperRole`       | 滚动包装器的 ARIA role     | `string`                                        | `list` |
+| `wrapperTabindex`   | 滚动包装器的键盘焦点顺序   | `number \| string`                              | `0`    |
 
 ### Events
 
-| 事件名 | 参数 |
-| --- | --- |
-| `scroll` | `(info: ScrollInfo)` |
-| `item-click` | `(item: unknown, index: number)` |
-| `reach-top` | `()` |
-| `reach-bottom` | `()` |
-| `load-more` | `()` |
+| 事件名         | 参数                             |
+| -------------- | -------------------------------- |
+| `scroll`       | `(info: ScrollInfo)`             |
+| `item-click`   | `(item: unknown, index: number)` |
+| `reach-top`    | `()`                             |
+| `reach-bottom` | `()`                             |
+| `load-more`    | `()`                             |
 
 ### Slots
 
-| 名称 | 参数 |
-| --- | --- |
+| 名称      | 参数              |
+| --------- | ----------------- |
 | `default` | `{ item, index }` |
 
 ### Exposes
 
-| 方法 | 类型 |
-| --- | --- |
-| `scrollToIndex` | `(index: number, behavior?: ScrollBehavior) => void` |
-| `scrollTo` | `(offset: number, behavior?: ScrollBehavior) => void` |
-| `scrollToTop` | `(behavior?: ScrollBehavior) => void` |
-| `scrollToBottom` | `(behavior?: ScrollBehavior) => void` |
-| `getScrollInfo` | `() => ScrollInfo` |
-| `getVisibleRange` | `() => VisibleRange` |
-| `refresh` | `() => void` |
+| 方法              | 类型                                                  |
+| ----------------- | ----------------------------------------------------- |
+| `scrollToIndex`   | `(index: number, behavior?: ScrollBehavior) => void`  |
+| `scrollTo`        | `(offset: number, behavior?: ScrollBehavior) => void` |
+| `scrollToTop`     | `(behavior?: ScrollBehavior) => void`                 |
+| `scrollToBottom`  | `(behavior?: ScrollBehavior) => void`                 |
+| `getScrollInfo`   | `() => ScrollInfo`                                    |
+| `getVisibleRange` | `() => VisibleRange`                                  |
+| `refresh`         | `() => void`                                          |
 
 <style scoped>
 .virtual-record {

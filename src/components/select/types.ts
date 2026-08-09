@@ -37,10 +37,14 @@ export interface ExSelectProps {
   options?: SelectOptions;
   /** 占位符 */
   placeholder?: string;
+  /** 原生控件标识；会绑定到实际可交互的触发器或搜索输入框 */
+  id?: string;
   /** 尺寸 */
   size?: SelectSize;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读；只读状态仍可获得焦点，但不会打开或改变选项 */
+  readonly?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
   /** 是否可搜索 */
@@ -68,14 +72,14 @@ export interface ExSelectProps {
    * 适用于上千选项的大列表，避免一次性渲染全部 DOM 导致卡顿。默认 false。
    */
   virtual?: boolean;
-  /** 虚拟滚动时单个选项的固定高度（像素），默认 34 */
+  /** 虚拟滚动时单个选项的固定高度（像素），默认 44；自定义值必须与实际行高一致 */
   optionHeight?: number;
 }
 
 export interface ExSelectEmits {
   /** 值变化事件 */
   (e: 'update:modelValue', value: SelectValue): void;
-  /** 选择变化事件（多选时 value 为数组，option 为本次切换的选项） */
+  /** 选择变化事件（多选时 value 为数组，option 为当前已选选项数组） */
   (e: 'change', value: SelectValue, option: SelectOption | SelectOption[] | null): void;
   /** 多选时移除标签 */
   (e: 'remove-tag', value: string | number): void;

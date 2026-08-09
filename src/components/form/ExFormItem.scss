@@ -233,7 +233,8 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger) {
         border-color: var(--ex-color-success);
         @include optimized-neon-glow('blue', 'sm');
       }
@@ -248,7 +249,8 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger) {
         border-color: var(--ex-color-warning);
       }
     }
@@ -262,7 +264,8 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger) {
         border-color: var(--ex-color-error);
         @include optimized-neon-glow('pink', 'sm');
       }
@@ -368,4 +371,3 @@
     }
   }
 }
-

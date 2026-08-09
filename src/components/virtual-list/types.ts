@@ -94,6 +94,10 @@ export interface ExVirtualListProps {
   virtual?: boolean;
   /** 触发加载更多的距离阈值（距离底部多少像素时触发） */
   loadMoreThreshold?: number;
+  /** 滚动包装器的 ARIA role；无障碍复合控件可将其设为 presentation */
+  wrapperRole?: string;
+  /** 滚动包装器的键盘焦点顺序；设为 -1 可避免抢占控件焦点 */
+  wrapperTabindex?: number | string;
 }
 
 /**

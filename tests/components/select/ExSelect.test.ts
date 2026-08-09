@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick, reactive } from 'vue';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ExSelect from '../../../src/components/select/ExSelect.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import ExForm from '../../../src/components/form/ExForm.vue';
+import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import type { SelectOptions } from '../../../src/components/select/types';
 
 describe('ExSelect', () => {
@@ -158,6 +161,18 @@ describe('ExSelect', () => {
       const options = document.querySelectorAll('.ex-select__option');
       expect(options[1].classList.contains('is-disabled')).toBe(true);
     });
+
+    it('只读状态可聚焦但不会打开下拉菜单', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { options: basicOptions, readonly: true },
+      });
+
+      const trigger = wrapper.get('.ex-select__trigger');
+      expect(trigger.attributes('tabindex')).toBe('0');
+      expect(trigger.attributes('aria-readonly')).toBe('true');
+      await trigger.trigger('click');
+      expect(document.querySelector('.ex-select__dropdown')).toBeNull();
+    });
   });
 
   describe('可清空', () => {
@@ -292,6 +307,41 @@ describe('ExSelect', () => {
       expect(options.length).toBe(1);
       expect(options[0].textContent).toContain('北京');
     });
+
+    it('已有单选值时仍保留搜索输入，并且输入点击只打开一次', async () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          modelValue: 'option1',
+          options: basicOptions,
+          searchable: true,
+        },
+      });
+
+      const input = wrapper.get('.ex-select__input');
+      expect(input.exists()).toBe(true);
+      expect(input.attributes('placeholder')).toBe('选项一');
+
+      await input.trigger('click');
+      await nextTick();
+      expect(wrapper.emitted('visible-change')).toEqual([[true]]);
+
+      await input.trigger('click');
+      expect(wrapper.emitted('visible-change')).toEqual([[true]]);
+    });
+
+    it('搜索输入的键盘事件不会冒泡导致重复导航', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { options: basicOptions, searchable: true },
+      });
+
+      const input = wrapper.get('.ex-select__input');
+      await input.trigger('keydown', { key: 'ArrowDown' });
+      await nextTick();
+
+      const activeId = input.attributes('aria-activedescendant');
+      expect(activeId).toBeTruthy();
+      expect(document.getElementById(activeId as string)?.textContent).toContain('选项一');
+    });
   });
 
   describe('分组', () => {
@@ -330,6 +380,16 @@ describe('ExSelect', () => {
   });
 
   describe('事件', () => {
+    it('非搜索触发器应发出 focus 和 blur 事件', async () => {
+      const wrapper = mount(ExSelect, { props: { options: basicOptions } });
+      const trigger = wrapper.get('.ex-select__trigger');
+
+      await trigger.trigger('focus');
+      await trigger.trigger('blur');
+      expect(wrapper.emitted('focus')).toHaveLength(1);
+      expect(wrapper.emitted('blur')).toHaveLength(1);
+    });
+
     it('应该触发 change 事件', async () => {
       const wrapper = mount(ExSelect, {
         props: {
@@ -359,6 +419,39 @@ describe('ExSelect', () => {
       await nextTick();
 
       expect(wrapper.emitted('visible-change')?.[0]).toEqual([true]);
+    });
+
+    it('下拉定位应限制在视口内并保留触发器与面板间距', async () => {
+      const originalWidth = window.innerWidth;
+      const originalHeight = window.innerHeight;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 500 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 360 });
+
+      const wrapper = mount(ExSelect, { props: { options: basicOptions } });
+      const trigger = wrapper.get('.ex-select__trigger');
+      trigger.element.getBoundingClientRect = () =>
+        ({
+          top: 300,
+          bottom: 340,
+          left: 480,
+          right: 580,
+          width: 100,
+          height: 40,
+        }) as DOMRect;
+
+      await trigger.trigger('click');
+      await nextTick();
+      const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
+      Object.defineProperty(dropdown, 'offsetHeight', { configurable: true, value: 320 });
+      window.dispatchEvent(new Event('resize'));
+      await nextTick();
+
+      expect(parseFloat(dropdown.style.top)).toBeGreaterThanOrEqual(8);
+      expect(parseFloat(dropdown.style.left)).toBeGreaterThanOrEqual(8);
+      expect(parseFloat(dropdown.style.left)).toBeLessThanOrEqual(392);
+
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: originalHeight });
     });
 
     it('应该暴露 focus 和 blur 方法', () => {
@@ -429,6 +522,57 @@ describe('ExSelect', () => {
       const dropdown = document.querySelector('.ex-select__dropdown');
       expect(dropdown).toBeTruthy();
     });
+
+    it('应将 combobox 语义绑定到可交互节点及下拉列表', async () => {
+      const wrapper = mount(ExSelect, {
+        attrs: { 'aria-label': '部门', 'aria-describedby': 'department-help' },
+        props: { id: 'department-select', options: basicOptions },
+      });
+
+      const trigger = wrapper.get('.ex-select__trigger');
+      expect(trigger.attributes('id')).toBe('department-select');
+      expect(trigger.attributes('role')).toBe('combobox');
+      expect(trigger.attributes('aria-haspopup')).toBe('listbox');
+      expect(trigger.attributes('aria-label')).toBe('部门');
+      expect(trigger.attributes('aria-describedby')).toBe('department-help');
+
+      await trigger.trigger('click');
+      await nextTick();
+      const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
+      expect(trigger.attributes('aria-controls')).toBe(dropdown.id);
+      expect(dropdown.getAttribute('role')).toBe('listbox');
+      expect(dropdown.querySelectorAll('[role="listbox"]').length).toBe(0);
+      expect(dropdown.querySelector('.ex-select__option')?.getAttribute('aria-disabled')).toBe(
+        null
+      );
+    });
+
+    it('搜索模式将 combobox 语义放在输入框上', () => {
+      const wrapper = mount(ExSelect, {
+        props: { id: 'search-select', searchable: true, options: basicOptions },
+      });
+
+      const trigger = wrapper.get('.ex-select__trigger');
+      const input = wrapper.get('.ex-select__input');
+      expect(trigger.attributes('role')).toBeUndefined();
+      expect(input.attributes('role')).toBe('combobox');
+      expect(input.attributes('id')).toBe('search-select');
+      expect(input.attributes('aria-controls')).toContain('search-select-dropdown');
+    });
+
+    it('禁用选项应暴露 aria-disabled', async () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          options: [{ value: 'disabled', label: '不可选', disabled: true }],
+        },
+      });
+
+      await wrapper.get('.ex-select__trigger').trigger('click');
+      await nextTick();
+      expect(document.querySelector('.ex-select__option')?.getAttribute('aria-disabled')).toBe(
+        'true'
+      );
+    });
   });
 
   describe('多选', () => {
@@ -485,6 +629,18 @@ describe('ExSelect', () => {
       await nextTick();
       expect(wrapper.emitted('remove-tag')?.[0]).toEqual(['option1']);
       expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['option2']);
+      expect(wrapper.get('.ex-select__tag-close').element.tagName).toBe('BUTTON');
+    });
+
+    it('多选 change 的 option 与当前已选值保持一致', async () => {
+      const wrapper = mount(ExSelect, {
+        props: { multiple: true, modelValue: [], options: basicOptions },
+      });
+      const options = await openDropdown(wrapper);
+
+      (options[0] as HTMLElement).click();
+      await nextTick();
+      expect(wrapper.emitted('change')?.[0]?.[1]).toEqual([basicOptions[0]]);
     });
 
     it('应遵守 multipleLimit', async () => {
@@ -583,6 +739,101 @@ describe('ExSelect', () => {
       await nextTick();
       expect(document.querySelector('.ex-select__loading')).toBeTruthy();
       expect(document.querySelector('.ex-select__empty')).toBeFalsy();
+    });
+
+    it('远程结果换页后仍保留已选项的标签和清空入口', async () => {
+      const wrapper = mount(ExSelect, {
+        props: {
+          remote: true,
+          clearable: true,
+          modelValue: 1,
+          options: [{ value: 1, label: '已选部门' }],
+        },
+      });
+
+      await wrapper.setProps({ options: [{ value: 2, label: '新结果' }] });
+      await nextTick();
+      expect(wrapper.find('.ex-select__label').text()).toBe('已选部门');
+      expect(wrapper.find('.ex-select__clear').exists()).toBe(true);
+    });
+  });
+
+  describe('FormItem 集成与全局配置', () => {
+    it('继承 FormItem 的禁用、标签关联和校验状态', async () => {
+      const model = reactive({ department: '' });
+      const wrapper = mount(ExForm, {
+        props: {
+          model,
+          disabled: true,
+          rules: { department: { required: true, trigger: 'blur', message: '请选择部门' } },
+        },
+        slots: {
+          default: () =>
+            h(
+              ExFormItem,
+              {
+                prop: 'department',
+                label: '部门',
+                validateStatus: 'error',
+                error: '请选择部门',
+              },
+              {
+                default: () => h(ExSelect, { options: basicOptions }),
+              }
+            ),
+        },
+      });
+
+      const select = wrapper.get('.ex-select');
+      const trigger = wrapper.get('.ex-select__trigger');
+      expect(select.classes()).toContain('is-disabled');
+      expect(select.classes()).toContain('is-error');
+      expect(trigger.attributes('aria-disabled')).toBe('true');
+      expect(trigger.attributes('aria-invalid')).toBe('true');
+      expect(trigger.attributes('aria-labelledby')).toContain('ex-form-item-');
+    });
+
+    it('非搜索触发器失焦时触发 FormItem 的 blur 校验', async () => {
+      const model = reactive({ department: '' });
+      const wrapper = mount(ExForm, {
+        props: {
+          model,
+          rules: { department: { required: true, trigger: 'blur', message: '请选择部门' } },
+        },
+        slots: {
+          default: () =>
+            h(
+              ExFormItem,
+              { prop: 'department', label: '部门' },
+              {
+                default: () => h(ExSelect, { options: basicOptions }),
+              }
+            ),
+        },
+      });
+
+      const trigger = wrapper.get('.ex-select__trigger');
+      await trigger.trigger('focus');
+      await trigger.trigger('blur');
+      await nextTick();
+      await nextTick();
+      expect(wrapper.find('.ex-form-item__error').text()).toContain('请选择部门');
+    });
+
+    it('Teleport 下拉菜单继承 ConfigProvider 的层级和效果开关', async () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { zIndex: 2000, neonEffect: false, animation: false },
+        slots: {
+          default: () => h(ExSelect, { options: basicOptions }),
+        },
+      });
+
+      await wrapper.get('.ex-select__trigger').trigger('click');
+      await nextTick();
+      const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
+      expect(dropdown.classList.contains('ex-no-neon')).toBe(true);
+      expect(dropdown.classList.contains('ex-no-animation')).toBe(true);
+      expect(dropdown.style.zIndex).toBe('2020');
     });
   });
 });
