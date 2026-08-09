@@ -291,6 +291,9 @@ describe('ExInput', () => {
     expect(controlBlock).toContain('border: 0;');
     expect(controlBlock).toContain('outline: 0;');
     expect(controlBlock).toContain('box-shadow: none;');
+    expect(stylesheet).toContain(
+      '  &:focus {\n    border: 0;\n    outline: 0;\n    box-shadow: none;\n  }'
+    );
   });
 
   it.each<[InputStatus, string]>([

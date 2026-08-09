@@ -91,6 +91,13 @@
   font-weight: var(--ex-font-normal);
   line-height: 1.5;
 
+  // 基础表单样式使用 `.ex-app input:focus`，需要在聚焦态显式覆盖其边框与阴影。
+  &:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+  }
+
   &::placeholder {
     color: var(--ex-color-text-tertiary);
     opacity: 1;
