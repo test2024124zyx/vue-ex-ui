@@ -28,6 +28,11 @@ const extractButtonExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
+const extractIconExamples = (block: string): string[] =>
+  (block.match(/<ex-icon\b[^>]*\/>|<ex-icon\b[\s\S]*?<\/ex-icon>/gi) ?? []).map(
+    normalizeTypographyExample
+  );
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -76,6 +81,22 @@ describe('组件文档实时演示', () => {
     expect(markup).toMatch(
       /<ex-typography\b(?=[^>]*\bgradient\b)(?=[^>]*variant="(?:body|caption)")/i
     );
+  });
+
+  it('Icon 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('icon');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(5);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractIconExamples(liveBlock)).toEqual(extractIconExamples(codeBlocks[index] ?? ''));
+    });
   });
 
   it('Typography 文档默认展示赛博朋克基线并提供可控增强模式', () => {

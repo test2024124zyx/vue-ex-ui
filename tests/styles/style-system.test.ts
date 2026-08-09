@@ -99,6 +99,22 @@ describe('v2 样式系统边界', () => {
     }
   });
 
+  it('Icon 交互状态使用语义色、共享触控尺寸和统一动效 token', () => {
+    const css = compile("@use 'src/components/icon/ExIcon';");
+
+    expect(css).toContain('width: max(var(--ex-icon-size), var(--ex-button-touch-target))');
+    expect(css).toContain('min-width: var(--ex-button-touch-target)');
+    expect(css).toContain('color: var(--ex-color-primary-hover)');
+    expect(css).toContain('color: var(--ex-color-primary-active)');
+    expect(css).toContain(
+      'animation: ex-icon-spin var(--ex-motion-duration-slower) var(--ex-motion-ease-linear) infinite'
+    );
+    expect(css).toContain('outline: 3px solid currentColor');
+    expect(css).toContain('box-shadow: none');
+    expect(css).not.toContain('--ex-color-neon-blue');
+    expect(css).not.toContain('--ex-color-neon-pink');
+  });
+
   it('Button 的幽灵和文本变体保持不同的视觉契约', () => {
     const css = compile("@use 'src/components/button/ExButton';");
     const ghostBlock = css.match(/\.ex-button--ghost\s*\{([\s\S]*?)\}/)?.[1] ?? '';
