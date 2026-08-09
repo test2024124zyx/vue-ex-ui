@@ -241,11 +241,6 @@
   .ex-input__append {
     border-color: var(--ex-color-primary);
   }
-
-  .ex-input__inner {
-    filter: drop-shadow(0 0 4px var(--ex-color-primary-alpha-20))
-      drop-shadow(0 0 12px var(--ex-color-primary-alpha-20));
-  }
 }
 
 .ex-input--success {

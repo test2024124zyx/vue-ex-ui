@@ -267,6 +267,19 @@ describe('ExInput', () => {
     expect(neonBlock).not.toContain('--ex-color-neon-blue-500');
   });
 
+  it('聚焦态只使用外层边框，不再绘制内部重复轮廓', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/input/ExInput.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toContain('.ex-input--focused');
+    expect(stylesheet).toContain('border-color: var(--ex-color-primary);');
+    expect(stylesheet).not.toContain(
+      'filter: drop-shadow(0 0 4px var(--ex-color-primary-alpha-20))'
+    );
+  });
+
   it.each<[InputStatus, string]>([
     ['success', 'ex-input--success'],
     ['warning', 'ex-input--warning'],
