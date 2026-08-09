@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { enableAutoUnmount, mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ExCascader from '../../../src/components/cascader/ExCascader.vue';
 import type { CascaderOption } from '../../../src/components/cascader/types';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
 enableAutoUnmount(afterEach);
 
@@ -40,7 +42,7 @@ describe('ExCascader', () => {
   it('默认保持行内控件宽度，同时允许外部样式扩展为块级宽度', () => {
     const stylesheet = readFileSync(
       resolve(process.cwd(), 'src/components/cascader/ExCascader.scss'),
-      'utf8',
+      'utf8'
     );
 
     const rootDeclaration = stylesheet.match(/\.ex-cascader\s*\{([\s\S]*?)font-family:/)?.[1];
@@ -64,6 +66,29 @@ describe('ExCascader', () => {
       expect(input.attributes('aria-expanded')).toBe('false');
       await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
       expect(wrapper.find('.ex-cascader__input').attributes('aria-expanded')).toBe('true');
+    });
+
+    it('应将 id 和 aria-label 绑定到真实 combobox 输入控件', () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, id: 'region', 'aria-label': 'Region', tabindex: -1 },
+      });
+      const input = wrapper.find('.ex-cascader__input');
+
+      expect(input.attributes('id')).toBe('region');
+      expect(input.attributes('aria-label')).toBe('Region');
+      expect(input.attributes('tabindex')).toBe('-1');
+      expect(wrapper.find('.ex-cascader').attributes('id')).toBeUndefined();
+    });
+
+    it('应支持 ConfigProvider 的局部语言', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { locale: 'zh-CN' },
+        slots: {
+          default: () => h(ExCascader, { options }),
+        },
+      });
+
+      expect(wrapper.find('.ex-cascader__input').attributes('placeholder')).toBe('请选择');
     });
   });
 
@@ -136,6 +161,25 @@ describe('ExCascader', () => {
       await result.trigger('click');
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
+
+    it('搜索结果应支持键盘高亮并提交完整路径', async () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, filterable: true, teleported: false },
+      });
+      const input = wrapper.find('.ex-cascader__input');
+
+      await input.setValue('西湖');
+      await input.trigger('keydown', { key: 'ArrowDown' });
+
+      const activeId = input.attributes('aria-activedescendant');
+      expect(activeId).toBeTruthy();
+      expect(wrapper.find(`[id="${activeId}"]`).exists()).toBe(true);
+
+      await input.trigger('keydown', { key: 'Enter' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+        ['zhejiang', 'hangzhou', 'xihu'],
+      ]);
+    });
   });
 
   describe('动态属性', () => {
@@ -168,6 +212,51 @@ describe('ExCascader', () => {
 
       expect(wrapper.emitted('visible-change')).toBeUndefined();
     });
+
+    it('Tab 离开输入框时应关闭面板', async () => {
+      const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+      const input = wrapper.find('.ex-cascader__input');
+
+      await input.trigger('keydown', { key: 'ArrowDown' });
+      await input.trigger('keydown', { key: 'Tab' });
+
+      expect(input.attributes('aria-expanded')).toBe('false');
+    });
+
+    it('就地渲染时不应写入 Teleport 专用的 fixed 定位样式', async () => {
+      const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+      await nextTick();
+
+      expect(wrapper.find('.ex-cascader__dropdown').attributes('style') || '').not.toContain(
+        'position: fixed'
+      );
+    });
+
+    it('选择变化和清空时应通知 FormItem 触发 change 校验', async () => {
+      const onFieldChange = vi.fn();
+      const formItemContext = {
+        onFieldBlur: vi.fn(),
+        onFieldChange,
+      };
+      const wrapper = mount(ExCascader, {
+        props: { options, changeOnSelect: true, modelValue: ['zhejiang'], teleported: false },
+        global: {
+          provide: {
+            [FORM_ITEM_INJECTION_KEY as symbol]: formItemContext,
+          },
+        },
+      });
+
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+      await nextTick();
+      await wrapper.find('.ex-cascader__option').trigger('click');
+      expect(onFieldChange).toHaveBeenCalled();
+
+      await wrapper.find('.ex-cascader__clear').trigger('click');
+      expect(onFieldChange.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   describe('键盘导航', () => {
@@ -186,6 +275,22 @@ describe('ExCascader', () => {
       await nextTick();
       // 现在应有两列
       expect(wrapper.findAll('.ex-cascader__menu').length).toBe(2);
+    });
+
+    it('鼠标悬停切换列后 aria-activedescendant 应跟随当前列', async () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, trigger: 'hover', teleported: false },
+      });
+      const input = wrapper.find('.ex-cascader__input');
+
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+      await wrapper.findAll('.ex-cascader__option')[0].trigger('mouseenter');
+      await nextTick();
+      const secondColumn = wrapper.findAll('.ex-cascader__menu')[1];
+      await secondColumn.findAll('.ex-cascader__option')[0].trigger('mouseenter');
+
+      const activeId = input.attributes('aria-activedescendant');
+      expect(activeId).toBe(secondColumn.find('.ex-cascader__option').attributes('id'));
     });
 
     it('Escape 应关闭面板', async () => {

@@ -60,6 +60,7 @@ const regionOptions = [
 ## 默认行内宽度
 
 ::: raw
+
 <div class="vp-raw demo-container">
   <ex-cascader
     v-model="inlineValue"
@@ -79,6 +80,7 @@ const regionOptions = [
 需要占满表单容器时显式设置宽度。
 
 ::: raw
+
 <div class="vp-raw demo-container cascader-block-demo">
   <ex-cascader
     v-model="blockValue"
@@ -96,6 +98,7 @@ const regionOptions = [
 ## 搜索与触发方式
 
 ::: raw
+
 <div class="vp-raw demo-container cascader-row">
   <ex-cascader
     v-model="searchableValue"
@@ -116,36 +119,44 @@ const regionOptions = [
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `modelValue` | 当前选中路径 | `(string \| number)[]` | `[]` |
-| `options` | 层级选项 | `CascaderOption[]` | `[]` |
-| `placeholder` | 占位文本 | `string` | `''` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `clearable` | 是否可清空 | `boolean` | `false` |
-| `filterable` | 是否可搜索 | `boolean` | `false` |
-| `trigger` | 子级展开方式 | `click \| hover` | `click` |
-| `size` | 尺寸 | `small \| medium \| large` | `medium` |
-| `separator` | 路径分隔符 | `string` | `' / '` |
-| `showAllLevels` | 是否显示完整路径 | `boolean` | `true` |
-| `changeOnSelect` | 是否允许选择非叶节点 | `boolean` | `false` |
-| `teleported` | 是否将面板传送到 `body` | `boolean` | `true` |
+| 参数             | 说明                    | 类型                       | 默认值   |
+| ---------------- | ----------------------- | -------------------------- | -------- |
+| `modelValue`     | 当前选中路径            | `(string \| number)[]`     | `[]`     |
+| `id`             | 真实输入控件的标识      | `string`                   | -        |
+| `options`        | 层级选项                | `CascaderOption[]`         | `[]`     |
+| `placeholder`    | 占位文本                | `string`                   | `''`     |
+| `disabled`       | 是否禁用                | `boolean`                  | `false`  |
+| `readonly`       | 是否只读                | `boolean`                  | `false`  |
+| `clearable`      | 是否可清空              | `boolean`                  | `true`   |
+| `filterable`     | 是否可搜索              | `boolean`                  | `false`  |
+| `trigger`        | 子级展开方式            | `click \| hover`           | `click`  |
+| `size`           | 尺寸                    | `small \| medium \| large` | `medium` |
+| `separator`      | 路径分隔符              | `string`                   | `' / '`  |
+| `showAllLevels`  | 是否显示完整路径        | `boolean`                  | `true`   |
+| `changeOnSelect` | 是否允许选择非叶节点    | `boolean`                  | `false`  |
+| `teleported`     | 是否将面板传送到 `body` | `boolean`                  | `true`   |
 
 ### Events
 
-| 事件名 | 参数 |
-| --- | --- |
+| 事件名              | 参数                            |
+| ------------------- | ------------------------------- |
 | `update:modelValue` | `(value: (string \| number)[])` |
-| `change` | `(value, selectedOptions)` |
-| `visible-change` | `(visible: boolean)` |
-| `clear` | `()` |
+| `change`            | `(value, selectedOptions)`      |
+| `visible-change`    | `(visible: boolean)`            |
+| `clear`             | `()`                            |
+| `focus`             | `(event: FocusEvent)`           |
+| `blur`              | `(event: FocusEvent)`           |
 
 ### Exposes
 
-| 方法 | 类型 |
-| --- | --- |
-| `getCheckedNodes` | `() => CascaderOption[]` |
-| `getElement` | `() => HTMLDivElement \| null` |
+| 方法              | 类型                           |
+| ----------------- | ------------------------------ |
+| `getCheckedNodes` | `() => CascaderOption[]`       |
+| `getElement`      | `() => HTMLDivElement \| null` |
+| `focus`           | `() => void`                   |
+| `blur`            | `() => void`                   |
+| `show`            | `() => void`                   |
+| `hide`            | `() => void`                   |
 
 <style scoped>
 .cascader-block-demo {

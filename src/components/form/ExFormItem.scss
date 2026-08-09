@@ -234,7 +234,8 @@
       input,
       textarea,
       select,
-      :deep(.ex-select__trigger) {
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-success);
         @include optimized-neon-glow('blue', 'sm');
       }
@@ -250,7 +251,8 @@
       input,
       textarea,
       select,
-      :deep(.ex-select__trigger) {
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-warning);
       }
     }
@@ -265,7 +267,8 @@
       input,
       textarea,
       select,
-      :deep(.ex-select__trigger) {
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-error);
         @include optimized-neon-glow('pink', 'sm');
       }

@@ -504,6 +504,9 @@ export default {
     placeholder: 'Please select',
     noData: 'No Data',
     loading: 'Loading...',
+    panel: 'Cascader options',
+    searchResults: 'Search results',
+    level: 'Level {level}',
   },
 
   // File Management

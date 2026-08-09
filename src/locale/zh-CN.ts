@@ -504,6 +504,9 @@ export default {
     placeholder: '请选择',
     noData: '暂无数据',
     loading: '加载中...',
+    panel: '级联选项',
+    searchResults: '搜索结果',
+    level: '第 {level} 级',
   },
 
   // 文件管理

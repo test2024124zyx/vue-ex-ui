@@ -28,12 +28,16 @@ export type CascaderSize = 'small' | 'medium' | 'large';
 export interface ExCascaderProps {
   /** 当前选中值 */
   modelValue?: (string | number)[];
+  /** 真实输入控件的标识 */
+  id?: string;
   /** 选项数据 */
   options?: CascaderOption[];
   /** 占位文本 */
   placeholder?: string;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读；只读状态仍可聚焦，但不会打开或改变选项 */
+  readonly?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
   /** 是否可搜索 */
@@ -68,6 +72,10 @@ export interface ExCascaderEmits {
   'visible-change': [visible: boolean];
   /** 清空事件 */
   clear: [];
+  /** 聚焦事件 */
+  focus: [event: FocusEvent];
+  /** 失焦事件 */
+  blur: [event: FocusEvent];
 }
 
 /**
@@ -78,4 +86,12 @@ export interface ExCascaderExposed {
   getCheckedNodes: () => CascaderOption[];
   /** 获取组件DOM元素 */
   getElement: () => HTMLDivElement | null;
+  /** 使真实输入控件获得焦点 */
+  focus: () => void;
+  /** 使真实输入控件失去焦点 */
+  blur: () => void;
+  /** 显示下拉面板 */
+  show: () => void;
+  /** 隐藏下拉面板 */
+  hide: () => void;
 }
