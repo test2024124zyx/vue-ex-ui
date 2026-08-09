@@ -423,6 +423,13 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
     alt="用户头像"
   />
 
+  <!-- 需要点击交互时显式启用 clickable -->
+  <ex-avatar
+    src="/avatar.jpg"
+    alt="可编辑头像"
+    clickable
+  />
+
   <!-- 文字头像 -->
   <ex-avatar
     text="张三"
@@ -447,15 +454,23 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性            | 类型                                       | 默认值     | 说明     |
-| --------------- | ------------------------------------------ | ---------- | -------- |
-| src             | `string`                                   | -          | 图片地址 |
-| text            | `string`                                   | -          | 文字内容 |
-| size            | `'small' \| 'medium' \| 'large' \| number` | `'medium'` | 头像大小 |
-| shape           | `'circle' \| 'square'`                     | `'circle'` | 头像形状 |
-| backgroundColor | `string`                                   | -          | 背景颜色 |
-| textColor       | `string`                                   | -          | 文字颜色 |
-| gap             | `number`                                   | `4`        | 文字间距 |
+| 属性            | 类型                                       | 默认值           | 说明                                       |
+| --------------- | ------------------------------------------ | ---------------- | ------------------------------------------ |
+| src             | `string`                                   | -                | 图片地址                                   |
+| alt             | `string`                                   | 当前语言的“头像” | 图片替代文本；传入空字符串可标记为装饰图片 |
+| text            | `string`                                   | -                | 文字内容                                   |
+| size            | `'small' \| 'medium' \| 'large' \| number` | `'medium'`       | 头像大小                                   |
+| shape           | `'circle' \| 'square'`                     | `'circle'`       | 头像形状                                   |
+| clickable       | `boolean`                                  | `false`          | 启用原生按钮交互和键盘操作                 |
+| srcset          | `string`                                   | -                | 响应式图片候选集                           |
+| sizes           | `string`                                   | -                | 响应式图片尺寸描述                         |
+| loading         | `'eager' \| 'lazy'`                        | `'eager'`        | 图片加载策略                               |
+| decoding        | `'sync' \| 'async' \| 'auto'`              | `'async'`        | 图片解码策略                               |
+| referrerPolicy  | `ReferrerPolicy`                           | -                | 图片引用策略                               |
+| backgroundColor | `string`                                   | -                | 背景颜色                                   |
+| textColor       | `string`                                   | -                | 文字颜色                                   |
+| ariaLabel       | `string`                                   | -                | 无障碍名称                                 |
+| title           | `string`                                   | -                | 原生提示文本                               |
 
 ---
 

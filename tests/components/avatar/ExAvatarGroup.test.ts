@@ -18,6 +18,16 @@ describe('ExAvatarGroup', () => {
     const wrapper = mount(ExAvatarGroup);
 
     expect(wrapper.classes()).toContain('ex-avatar-group');
+    expect(wrapper.attributes('role')).toBe('group');
+    expect(wrapper.attributes('aria-label')).toBe('Avatar group');
+  });
+
+  it('supports a custom accessible group name', () => {
+    const wrapper = mount(ExAvatarGroup, {
+      props: { ariaLabel: '项目成员' },
+    });
+
+    expect(wrapper.attributes('aria-label')).toBe('项目成员');
   });
 
   it('applies custom class correctly', () => {
@@ -60,7 +70,7 @@ describe('ExAvatarGroup', () => {
     });
 
     const style = wrapper.attributes('style');
-    expect(style).toContain('--ex-avatar-overlap: 12px');
+    expect(style).toContain('--ex-avatar-spacing: 12px');
   });
 
   it('applies string spacing correctly', () => {
@@ -71,7 +81,19 @@ describe('ExAvatarGroup', () => {
     });
 
     const style = wrapper.attributes('style');
-    expect(style).toContain('--ex-avatar-overlap: 1rem');
+    expect(style).toContain('--ex-avatar-spacing: 1rem');
+  });
+
+  it('保留负间距作为头像重叠配置，并回退无效数字', () => {
+    const overlapping = mount(ExAvatarGroup, {
+      props: { spacing: -10 },
+    });
+    const invalid = mount(ExAvatarGroup, {
+      props: { spacing: Number.NaN },
+    });
+
+    expect(overlapping.attributes('style')).toContain('--ex-avatar-spacing: -10px');
+    expect(invalid.attributes('style')).toContain('--ex-avatar-spacing: 8px');
   });
 
   it('applies custom style object correctly', () => {
@@ -110,18 +132,19 @@ describe('ExAvatarGroup', () => {
     expect(wrapper.classes()).toContain('ex-avatar-group');
   });
 
-  it('emits overflowClick event when overflow avatar is clicked', async () => {
+  it('点击溢出头像时触发 overflowClick 事件', async () => {
     const wrapper = mount(ExAvatarGroup, {
       props: {
-        maxCount: 2,
+        maxCount: 1,
+      },
+      slots: {
+        default: () => [h(ExAvatar, { text: 'A' }), h(ExAvatar, { text: 'B' })],
       },
     });
 
-    // Simulate having overflow by manually calling the handler
-    const vm = wrapper.vm as any;
-    vm.handleOverflowClick();
+    await wrapper.find('.ex-avatar-group__overflow').trigger('click');
 
-    expect(wrapper.emitted('overflowClick')).toBeTruthy();
+    expect(wrapper.emitted('overflowClick')?.[0]).toEqual([1]);
   });
 
   it('handles maxStyle prop correctly', () => {
@@ -130,11 +153,18 @@ describe('ExAvatarGroup', () => {
         maxCount: 2,
         maxStyle: { backgroundColor: 'red', color: 'white' },
       },
+      slots: {
+        default: () => [
+          h(ExAvatar, { text: 'A' }),
+          h(ExAvatar, { text: 'B' }),
+          h(ExAvatar, { text: 'C' }),
+        ],
+      },
     });
 
-    // The maxStyle should be passed to overflow avatar
-    // This is tested indirectly through the component structure
-    expect(wrapper.exists()).toBe(true);
+    const overflowAvatar = wrapper.find('.ex-avatar-group__overflow').findComponent(ExAvatar);
+    expect(overflowAvatar.attributes('style')).toContain('background-color: red');
+    expect(overflowAvatar.attributes('style')).toContain('color: white');
   });
 
   it('passes size prop to child avatars', () => {
@@ -155,7 +185,9 @@ describe('ExAvatarGroup', () => {
       },
     });
 
-    expect(wrapper.exists()).toBe(true);
+    const avatars = wrapper.findAllComponents(ExAvatar);
+    expect(avatars).toHaveLength(2);
+    avatars.forEach(avatar => expect(avatar.props('size')).toBe('large'));
   });
 
   it('passes shape prop to child avatars', () => {
@@ -176,7 +208,9 @@ describe('ExAvatarGroup', () => {
       },
     });
 
-    expect(wrapper.exists()).toBe(true);
+    const avatars = wrapper.findAllComponents(ExAvatar);
+    expect(avatars).toHaveLength(2);
+    avatars.forEach(avatar => expect(avatar.props('shape')).toBe('square'));
   });
 
   it('flattens fragments, clones real avatar vnodes and renders an accurate overflow', () => {
@@ -213,6 +247,7 @@ describe('ExAvatarGroup', () => {
     const overflow = wrapper.find('.ex-avatar-group__overflow');
     expect(wrapper.findAllComponents(ExAvatar)).toHaveLength(1);
     expect(overflow.element.tagName).toBe('BUTTON');
+    expect(overflow.attributes('aria-label')).toBe('2 more');
     expect(overflow.text()).toContain('+2');
 
     await overflow.trigger('click');

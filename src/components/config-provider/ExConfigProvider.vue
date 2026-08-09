@@ -115,6 +115,11 @@ defineExpose({
     text-shadow: none !important;
     filter: none !important;
   }
+
+  // 头像的渐变伪元素不属于阴影，需要显式关闭霓虹层。
+  :deep(.ex-avatar--clickable::before) {
+    display: none !important;
+  }
 }
 
 // 禁用动画
@@ -129,6 +134,15 @@ defineExpose({
   :deep(.ex-typography--glitch::before),
   :deep(.ex-typography--glitch::after) {
     animation: none !important;
+  }
+
+  // 全局关闭动画时同时移除头像和头像组的状态变换。
+  :deep(.ex-avatar--clickable:hover),
+  :deep(.ex-avatar--clickable:active),
+  :deep(.ex-avatar--clickable > .ex-avatar__image:hover),
+  :deep(.ex-avatar-group__overflow:hover),
+  :deep(.ex-avatar-group__overflow:active) {
+    transform: none !important;
   }
 }
 

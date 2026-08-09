@@ -115,6 +115,26 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('--ex-color-neon-pink');
   });
 
+  it('Avatar 仅为显式交互实例提供悬停、键盘和触控反馈', () => {
+    const css = compile("@use 'src/components/avatar/ExAvatar';");
+    const groupCss = compile("@use 'src/components/avatar/ExAvatarGroup';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('box-sizing: border-box;');
+    expect(css).toContain('.ex-avatar--clickable');
+    expect(css).toContain('min-width: var(--ex-button-touch-target, 44px);');
+    expect(css).toContain('@media (hover: hover)');
+    expect(css).toContain('outline: 3px solid var(--ex-color-primary);');
+    expect(css).not.toContain('.ex-avatar:hover');
+    expect(groupCss).toContain('margin-left: var(--ex-avatar-spacing, 8px);');
+    expect(groupCss).toContain('var(--ex-color-primary-alpha-20)');
+    expect(groupCss).toContain('var(--ex-color-accent-alpha-20)');
+    expect(groupCss).not.toContain('rgba(var(--ex-color-neon-');
+    expect(variablesCss).toContain('--ex-avatar-spacing: 8px;');
+    expect(variablesCss).toContain('--ex-avatar-bg-icon: var(--ex-color-primary-alpha-10);');
+    expect(variablesCss).toContain('--ex-avatar-group-border-color: var(--ex-color-bg-primary);');
+  });
+
   it('Button 的幽灵和文本变体保持不同的视觉契约', () => {
     const css = compile("@use 'src/components/button/ExButton';");
     const ghostBlock = css.match(/\.ex-button--ghost\s*\{([\s\S]*?)\}/)?.[1] ?? '';

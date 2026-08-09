@@ -197,22 +197,25 @@
   --ex-modal-shadow: #{map.get($components, modal, shadow)};
 
   // 头像组件
-  --ex-avatar-size-small: 32px;
-  --ex-avatar-size-medium: 40px;
-  --ex-avatar-size-large: 48px;
-  --ex-avatar-font-size-small: 14px;
-  --ex-avatar-font-size-medium: 16px;
-  --ex-avatar-font-size-large: 20px;
-  --ex-avatar-border-width: 2px;
-  --ex-avatar-overlap: 8px;
-  --ex-avatar-bg-default: var(--ex-color-bg-secondary);
-  --ex-avatar-bg-icon: var(--ex-color-neon-blue-alpha-10);
-  --ex-avatar-bg-icon-hover: var(--ex-color-neon-blue-alpha-20);
-  --ex-avatar-bg-text: var(--ex-color-neon-pink-alpha-10);
-  --ex-avatar-bg-text-hover: var(--ex-color-neon-pink-alpha-20);
-  --ex-avatar-text-color: var(--ex-color-text-primary);
-  --ex-avatar-border-color: var(--ex-color-border-primary);
-  --ex-avatar-z-index: 10;
+  --ex-avatar-size-small: #{map.get($components, avatar, size-small)};
+  --ex-avatar-size-medium: #{map.get($components, avatar, size-medium)};
+  --ex-avatar-size-large: #{map.get($components, avatar, size-large)};
+  --ex-avatar-font-size-small: #{map.get($components, avatar, font-size-small)};
+  --ex-avatar-font-size-medium: #{map.get($components, avatar, font-size-medium)};
+  --ex-avatar-font-size-large: #{map.get($components, avatar, font-size-large)};
+  --ex-avatar-border-width: #{map.get($components, avatar, border-width)};
+  --ex-avatar-spacing: #{map.get($components, avatar, spacing)};
+  // 保留旧变量，避免已有主题在升级后失去间距配置。
+  --ex-avatar-overlap: var(--ex-avatar-spacing);
+  --ex-avatar-bg-default: #{map.get($components, avatar, bg-default)};
+  --ex-avatar-bg-icon: #{map.get($components, avatar, bg-icon)};
+  --ex-avatar-bg-icon-hover: #{map.get($components, avatar, bg-icon-hover)};
+  --ex-avatar-bg-text: #{map.get($components, avatar, bg-text)};
+  --ex-avatar-bg-text-hover: #{map.get($components, avatar, bg-text-hover)};
+  --ex-avatar-text-color: #{map.get($components, avatar, text-color)};
+  --ex-avatar-border-color: #{map.get($components, avatar, border-color)};
+  --ex-avatar-group-border-color: #{map.get($components, avatar, group-border-color)};
+  --ex-avatar-z-index: #{map.get($components, avatar, z-index)};
 
   // 图片组件
   --ex-image-spinner-size: #{map.get($components, image, spinner-size)};

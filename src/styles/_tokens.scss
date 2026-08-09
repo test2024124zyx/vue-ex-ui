@@ -348,7 +348,7 @@ $components: (
     font-size-medium: 16px,
     font-size-large: 20px,
     border-width: 2px,
-    overlap: 8px,
+    spacing: 8px,
     bg-default: var(--ex-color-bg-secondary),
     bg-icon: var(--ex-color-primary-alpha-10),
     bg-icon-hover: var(--ex-color-primary-alpha-20),
@@ -356,6 +356,7 @@ $components: (
     bg-text-hover: var(--ex-color-accent-alpha-20),
     text-color: var(--ex-color-text-primary),
     border-color: var(--ex-color-border),
+    group-border-color: var(--ex-color-bg-primary),
     z-index: 10,
   ),
 

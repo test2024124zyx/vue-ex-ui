@@ -2,6 +2,8 @@
   <div
     :class="groupClasses"
     :style="groupStyles"
+    role="group"
+    :aria-label="groupAriaLabel"
   >
     <template
       v-for="(vnode, index) in displayAvatars"
@@ -52,8 +54,10 @@ import type { ExAvatarGroupEmits, ExAvatarGroupProps } from './types';
 
 defineOptions({ name: 'ExAvatarGroup' });
 
+const DEFAULT_AVATAR_SPACING = '8px';
+
 const props = withDefaults(defineProps<ExAvatarGroupProps>(), {
-  spacing: '8px',
+  spacing: DEFAULT_AVATAR_SPACING,
 });
 const emit = defineEmits<ExAvatarGroupEmits>();
 defineSlots<{
@@ -91,12 +95,23 @@ const overflowCount = computed(() => Math.max(0, avatars.value.length - visibleL
 const hasOverflow = computed(() => overflowCount.value > 0);
 const overflowText = computed(() => `+${overflowCount.value}`);
 const overflowAriaLabel = computed(() => t('avatar.groupMore', { count: overflowCount.value }));
+const groupAriaLabel = computed(() => props.ariaLabel?.trim() || t('avatar.avatarGroup'));
 
 const groupClasses = computed(() => ['ex-avatar-group', ...normalizeCustomClass(props.class)]);
 
+const normalizedSpacing = computed(() => {
+  if (typeof props.spacing === 'number') {
+    return Number.isFinite(props.spacing) ? `${props.spacing}px` : DEFAULT_AVATAR_SPACING;
+  }
+
+  if (typeof props.spacing !== 'string') return DEFAULT_AVATAR_SPACING;
+  const spacing = props.spacing.trim();
+  return spacing || DEFAULT_AVATAR_SPACING;
+});
+
 const groupStyles = computed(() => {
   const styles: Record<string, string | number> = {
-    '--ex-avatar-overlap': typeof props.spacing === 'number' ? `${props.spacing}px` : props.spacing,
+    '--ex-avatar-spacing': normalizedSpacing.value,
   };
 
   if (!props.style) return styles;

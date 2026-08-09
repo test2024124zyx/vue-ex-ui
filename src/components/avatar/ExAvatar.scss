@@ -10,21 +10,35 @@
   height: var(--ex-avatar-size-medium);
   font-size: var(--ex-avatar-font-size-medium);
   font-weight: var(--ex-font-medium);
+  font-family: inherit;
+  line-height: 1;
   color: var(--ex-avatar-text-color);
   background-color: var(--ex-avatar-bg-default);
   border: var(--ex-avatar-border-width) solid var(--ex-avatar-border-color);
-  cursor: pointer;
+  box-sizing: border-box;
+  padding: 0;
+  appearance: none;
+  cursor: default;
   user-select: none;
   overflow: hidden;
+  isolation: isolate;
   @include transition((background-color, border-color, color, transform, box-shadow));
 
-  // 基础悬停效果
-  &:hover {
-    transform: translateY(-2px) scale(1.05);
-    border-color: var(--ex-color-primary);
-    box-shadow:
-      0 8px 25px var(--ex-color-primary-alpha-20),
-      0 0 20px var(--ex-color-primary-alpha-30);
+  // 只有显式启用交互时才显示指针、触摸目标和聚焦反馈。
+  &--clickable {
+    min-width: var(--ex-button-touch-target, 44px);
+    min-height: var(--ex-button-touch-target, 44px);
+    cursor: pointer;
+    touch-action: manipulation;
+
+    &:focus-visible {
+      outline: 3px solid var(--ex-color-primary);
+      outline-offset: 2px;
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
   }
 
   // 形状样式
@@ -62,6 +76,12 @@
     // 自定义尺寸通过内联样式设置
   }
 
+  // 失败后的重试按钮仍然是可操作控件，需要保持最小触控命中区。
+  &--error {
+    min-width: var(--ex-button-touch-target, 44px);
+    min-height: var(--ex-button-touch-target, 44px);
+  }
+
   // 类型样式
   &--image {
     background-color: var(--ex-color-bg-secondary);
@@ -70,26 +90,43 @@
   &--icon {
     background: var(--ex-avatar-bg-icon);
     color: var(--ex-color-primary);
-
-    &:hover {
-      background: var(--ex-avatar-bg-icon-hover);
-      color: var(--ex-color-neon-blue-300);
-    }
   }
 
   &--text {
     background: var(--ex-avatar-bg-text);
     color: var(--ex-avatar-text-color);
+  }
 
-    &:hover {
+  // 仅在设备支持悬停时提供悬停动效，避免触摸设备产生粘滞状态。
+  @media (hover: hover) {
+    &--clickable:hover {
+      transform: translateY(-2px) scale(1.05);
+      border-color: var(--ex-color-primary);
+      box-shadow:
+        0 8px 25px var(--ex-color-primary-alpha-20),
+        0 0 20px var(--ex-color-primary-alpha-30);
+    }
+
+    &--icon.ex-avatar--clickable:hover {
+      background: var(--ex-avatar-bg-icon-hover);
+      color: var(--ex-color-primary-hover);
+    }
+
+    &--text.ex-avatar--clickable:hover {
       background: var(--ex-avatar-bg-text-hover);
+    }
+
+    &--clickable > &__image:hover {
+      transform: scale(1.1);
     }
   }
 
   // 错误状态样式
   &__error {
+    box-sizing: border-box;
     padding: 0;
     font: inherit;
+    line-height: 1;
     border: 0;
     display: flex;
     align-items: center;
@@ -101,12 +138,19 @@
     cursor: pointer;
     @include transition(background-color);
 
-    &:hover {
-      background: var(--ex-color-error-alpha-20);
+    &:focus-visible {
+      outline: 3px solid var(--ex-color-error);
+      outline-offset: -3px;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--ex-color-error-alpha-20);
+      }
     }
 
     &-text {
-      font-size: 0.75em;
+      font-size: max(var(--ex-text-xs, 12px), 0.75em);
       text-align: center;
       line-height: 1.2;
     }
@@ -114,15 +158,14 @@
 
   // 图片样式
   &__image {
+    display: block;
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
+    max-width: 100%;
     object-fit: cover;
     border-radius: inherit;
     @include transition(transform);
-
-    &:hover {
-      transform: scale(1.1);
-    }
   }
 
   // 图标样式
@@ -153,6 +196,7 @@
 
   // 文字样式
   &__text {
+    box-sizing: border-box;
     display: inline-block;
     line-height: 1;
     text-align: center;
@@ -175,13 +219,21 @@
     );
     border-radius: inherit;
     opacity: 0;
-    z-index: -1;
+    z-index: 0;
+    pointer-events: none;
     @include transition(opacity);
   }
 
-  &:hover::before {
-    opacity: 1;
-    animation: glow-pulse 2s ease-in-out infinite alternate;
+  &--clickable > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (hover: hover) {
+    &--clickable:hover::before {
+      opacity: 1;
+      animation: glow-pulse 2s ease-in-out infinite alternate;
+    }
   }
 
   @keyframes glow-pulse {
@@ -195,34 +247,16 @@
     }
   }
 
-  // 响应式设计
-  @include desktop-first(md) {
-    // 移动端稍微增大尺寸以便触摸
-    &--small {
-      width: calc(var(--ex-avatar-size-small) + 4px);
-      height: calc(var(--ex-avatar-size-small) + 4px);
-    }
-
-    &--medium {
-      width: calc(var(--ex-avatar-size-medium) + 4px);
-      height: calc(var(--ex-avatar-size-medium) + 4px);
-    }
-
-    &--large {
-      width: calc(var(--ex-avatar-size-large) + 4px);
-      height: calc(var(--ex-avatar-size-large) + 4px);
-    }
-  }
-
   // 无障碍支持
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 
-    &:hover {
+    &--clickable:hover,
+    &--clickable:active {
       transform: none;
     }
 
-    &__image:hover {
+    &--clickable > &__image:hover {
       transform: none;
     }
 
@@ -232,7 +266,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: high), (forced-colors: active) {
     border-width: 3px;
     border-color: currentColor;
 
@@ -250,10 +284,5 @@
     &::before {
       display: none;
     }
-  }
-
-  // RTL 支持
-  [dir='rtl'] & {
-    // RTL 下的特殊处理
   }
 }

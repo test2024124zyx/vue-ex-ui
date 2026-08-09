@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExAvatar from '../../../src/components/avatar/ExAvatar.vue';
+import type { ExAvatarExposed } from '../../../src/components/avatar/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -18,6 +19,9 @@ describe('ExAvatar', () => {
     expect(wrapper.classes()).toContain('ex-avatar');
     expect(wrapper.classes()).toContain('ex-avatar--circle');
     expect(wrapper.classes()).toContain('ex-avatar--medium');
+    expect(wrapper.element.tagName).toBe('DIV');
+    expect(wrapper.attributes('role')).toBe('img');
+    expect(wrapper.attributes('aria-label')).toBe('User avatar');
   });
 
   it('renders image avatar correctly', () => {
@@ -32,7 +36,23 @@ describe('ExAvatar', () => {
     expect(img.exists()).toBe(true);
     expect(img.attributes('src')).toBe('https://example.com/avatar.jpg');
     expect(img.attributes('alt')).toBe('User Avatar');
+    expect(wrapper.attributes('aria-label')).toBeUndefined();
     expect(wrapper.classes()).toContain('ex-avatar--image');
+  });
+
+  it('保留空 alt，并将显式 ariaLabel 应用到静态图片', () => {
+    const wrapper = mount(ExAvatar, {
+      props: {
+        src: 'https://example.com/decorative.png',
+        alt: '',
+        ariaLabel: '装饰图片名称',
+      },
+    });
+
+    const img = wrapper.find('img');
+    expect(img.attributes('alt')).toBe('');
+    expect(img.attributes('aria-label')).toBe('装饰图片名称');
+    expect(wrapper.attributes('aria-label')).toBeUndefined();
   });
 
   it('图标头像使用独立居中容器承载图标插槽', () => {
@@ -53,6 +73,8 @@ describe('ExAvatar', () => {
 
     expect(wrapper.find('.ex-avatar__icon > .ex-icon').exists()).toBe(true);
     expect(wrapper.classes()).toContain('ex-avatar--icon');
+    expect(wrapper.attributes('role')).toBe('img');
+    expect(wrapper.attributes('aria-label')).toBe('Icon avatar');
   });
 
   it('文字头像只显示首个完整字素', () => {
@@ -66,6 +88,8 @@ describe('ExAvatar', () => {
     expect(textSpan.exists()).toBe(true);
     expect(textSpan.text()).toBe('👩‍💻');
     expect(wrapper.classes()).toContain('ex-avatar--text');
+    expect(wrapper.attributes('role')).toBe('img');
+    expect(wrapper.attributes('aria-label')).toBe('👩‍💻开发者');
   });
 
   it('renders slot content when no props provided', () => {
@@ -152,6 +176,22 @@ describe('ExAvatar', () => {
     expect(wrapper.find('img').exists()).toBe(false);
   });
 
+  it('图片失败时不会在根节点中嵌套可点击头像按钮', async () => {
+    const wrapper = mount(ExAvatar, {
+      props: {
+        src: 'https://example.com/invalid-clickable.jpg',
+        clickable: true,
+      },
+    });
+
+    await wrapper.find('img').trigger('error');
+
+    expect(wrapper.element.tagName).toBe('DIV');
+    expect(wrapper.classes()).toContain('ex-avatar--error');
+    expect(wrapper.findAll('button')).toHaveLength(1);
+    expect(wrapper.find('.ex-avatar__error').attributes('aria-label')).toBe('Retry loading');
+  });
+
   it('resets a previous image error when src changes', async () => {
     const wrapper = mount(ExAvatar, {
       props: { src: 'https://example.com/broken.jpg' },
@@ -178,13 +218,26 @@ describe('ExAvatar', () => {
     expect(wrapper.find('img').attributes('src')).toBe('https://example.com/retry.jpg');
   });
 
-  it('handles click event', async () => {
-    const wrapper = mount(ExAvatar, {
+  it('仅在启用 clickable 时使用原生按钮并触发 click 事件', async () => {
+    const staticWrapper = mount(ExAvatar, {
       props: {
         text: 'AB',
       },
     });
 
+    await staticWrapper.trigger('click');
+    expect(staticWrapper.emitted('click')).toBeUndefined();
+
+    const wrapper = mount(ExAvatar, {
+      props: {
+        text: 'AB',
+        clickable: true,
+      },
+    });
+
+    expect(wrapper.element.tagName).toBe('BUTTON');
+    expect(wrapper.attributes('type')).toBe('button');
+    expect(wrapper.attributes('aria-label')).toBe('AB');
     await wrapper.trigger('click');
     expect(wrapper.emitted('click')).toBeTruthy();
   });
@@ -231,7 +284,7 @@ describe('ExAvatar', () => {
     expect(wrapper.attributes('aria-label')).toBe('User Profile Picture');
   });
 
-  it('falls back to alt for aria-label', () => {
+  it('使用图片 alt 作为图片语义，不在静态容器上重复 aria-label', () => {
     const wrapper = mount(ExAvatar, {
       props: {
         src: 'https://example.com/avatar.jpg',
@@ -239,12 +292,13 @@ describe('ExAvatar', () => {
       },
     });
 
-    expect(wrapper.attributes('aria-label')).toBe('Image avatar');
+    expect(wrapper.find('img').attributes('alt')).toBe('User Avatar');
+    expect(wrapper.attributes('aria-label')).toBeUndefined();
   });
 
   it('exposes getElement method', () => {
     const wrapper = mount(ExAvatar);
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExAvatarExposed;
 
     expect(typeof vm.getElement).toBe('function');
     expect(vm.getElement()).toBe(wrapper.element);
@@ -256,10 +310,10 @@ describe('ExAvatar', () => {
         src: 'https://example.com/avatar.jpg',
       },
     });
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExAvatarExposed;
 
     expect(typeof vm.reload).toBe('function');
-    // Should not throw error when called
+    // 调用公开方法时不应抛出异常。
     expect(() => vm.reload()).not.toThrow();
   });
 
@@ -297,5 +351,23 @@ describe('ExAvatar', () => {
 
     const img = wrapper.find('img');
     expect(img.attributes('srcset')).toBe('https://example.com/avatar-2x.jpg 2x');
+  });
+
+  it('转发响应式图片和加载策略属性', () => {
+    const wrapper = mount(ExAvatar, {
+      props: {
+        src: 'https://example.com/avatar.jpg',
+        sizes: '(max-width: 600px) 32px, 40px',
+        loading: 'lazy',
+        decoding: 'sync',
+        referrerPolicy: 'no-referrer',
+      },
+    });
+
+    const img = wrapper.find('img');
+    expect(img.attributes('sizes')).toBe('(max-width: 600px) 32px, 40px');
+    expect(img.attributes('loading')).toBe('lazy');
+    expect(img.attributes('decoding')).toBe('sync');
+    expect(img.attributes('referrerpolicy')).toBe('no-referrer');
   });
 });

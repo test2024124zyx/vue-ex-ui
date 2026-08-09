@@ -82,6 +82,23 @@ describe('组件文档实时演示', () => {
     expect(guideDocument).not.toContain('霓虹边框渐变');
   });
 
+  it('Avatar 文档示例与当前交互、间距和属性契约一致', () => {
+    const document = readDocument('avatar');
+    const guideDocument = readDocument('basic-components-guide');
+    const avatarGuide = guideDocument.slice(
+      guideDocument.indexOf('### 8. ExAvatar'),
+      guideDocument.indexOf('### 9. ExDivider')
+    );
+
+    expect(document).toContain(':src="avatarImage"');
+    expect(document).not.toContain(':src="avatarUrl"');
+    expect(document).toContain('spacing="-10px"');
+    expect(document).toContain('负值表示头像重叠');
+    expect(document).toContain('`clickable`');
+    expect(avatarGuide).not.toContain('| gap ');
+    expect(avatarGuide).toContain('| clickable');
+  });
+
   it('Typography 每个实时示例都有默认折叠且内容一致的代码', () => {
     const document = readDocument('typography');
     const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
