@@ -296,6 +296,20 @@ describe('ExInput', () => {
     );
   });
 
+  it('带前后置内容时把切角应用在整个组合外框', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/input/ExInput.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toContain(
+      '.ex-input--with-prepend .ex-input__wrapper,\n.ex-input--with-append .ex-input__wrapper {\n  @include chamfer(var(--ex-chamfer-sm));\n}'
+    );
+    expect(stylesheet).toContain(
+      '.ex-input--with-prepend .ex-input__inner,\n.ex-input--with-append .ex-input__inner {\n  clip-path: none;\n}'
+    );
+  });
+
   it.each<[InputStatus, string]>([
     ['success', 'ex-input--success'],
     ['warning', 'ex-input--warning'],

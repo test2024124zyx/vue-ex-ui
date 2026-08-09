@@ -195,6 +195,17 @@
   border-radius: var(--ex-radius-none);
 }
 
+// 带前后置内容时，切角作用于整个组合输入框，避免缺口落入主体输入区。
+.ex-input--with-prepend .ex-input__wrapper,
+.ex-input--with-append .ex-input__wrapper {
+  @include chamfer(var(--ex-chamfer-sm));
+}
+
+.ex-input--with-prepend .ex-input__inner,
+.ex-input--with-append .ex-input__inner {
+  clip-path: none;
+}
+
 .ex-input--with-prepend .ex-input__inner {
   border-start-start-radius: 0;
   border-end-start-radius: 0;
