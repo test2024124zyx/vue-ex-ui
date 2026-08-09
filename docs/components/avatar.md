@@ -41,14 +41,18 @@ const avatarImage = `data:image/svg+xml,${encodeURIComponent(`
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
-<ex-avatar :src="avatarImage" alt="客户经理头像" />
-<ex-avatar :src="avatarImage" alt="可编辑头像" clickable />
-<ex-avatar aria-label="用户图标头像">
-  <template #icon><ex-icon icon="user-line" /></template>
+<ex-avatar :src="avatarImage" alt="客户经理头像" :size="56" />
+<ex-avatar :size="56" aria-label="用户图标头像">
+  <template #icon><ex-icon icon="user-line" :size="26" /></template>
 </ex-avatar>
-<ex-avatar text="王小明" />
+<ex-avatar text="王小明" :size="56" background-color="#2563eb" text-color="#fff" />
+<ex-avatar text="👩‍💻开发者" :size="56" background-color="#7c3aed" text-color="#fff" />
 ```
+
+:::
 
 ## 尺寸与形状
 
@@ -63,6 +67,18 @@ const avatarImage = `data:image/svg+xml,${encodeURIComponent(`
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<ex-avatar text="小" size="small" />
+<ex-avatar text="中" size="medium" />
+<ex-avatar text="大" size="large" />
+<ex-avatar text="64" :size="64" />
+<ex-avatar text="方" shape="square" :size="56" />
+```
+
+:::
+
 ## 加载失败
 
 失败状态提供可点击的重试按钮，也可通过 `error` 插槽替换内容。
@@ -74,6 +90,16 @@ const avatarImage = `data:image/svg+xml,${encodeURIComponent(`
     <template #error><ex-icon icon="refresh-line" :size="22" /></template>
   </ex-avatar>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-avatar src="data:image/png;base64,invalid-avatar" alt="加载失败头像" :size="56">
+  <template #error><ex-icon icon="refresh-line" :size="22" /></template>
+</ex-avatar>
+```
+
 :::
 
 ## 头像组
@@ -95,6 +121,21 @@ const avatarImage = `data:image/svg+xml,${encodeURIComponent(`
     <ex-avatar text="宋" background-color="#dc2626" text-color="#fff" />
   </ex-avatar-group>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-avatar-group :max-count="4" :size="44" spacing="-10px" aria-label="项目成员">
+  <ex-avatar text="林" background-color="#2563eb" text-color="#fff" />
+  <ex-avatar text="周" background-color="#7c3aed" text-color="#fff" />
+  <ex-avatar text="陈" background-color="#0891b2" text-color="#fff" />
+  <ex-avatar text="许" background-color="#059669" text-color="#fff" />
+  <ex-avatar text="顾" background-color="#d97706" text-color="#fff" />
+  <ex-avatar text="宋" background-color="#dc2626" text-color="#fff" />
+</ex-avatar-group>
+```
+
 :::
 
 `spacing` 表示相邻头像之间的实际间距，负值表示头像重叠；头像组会使用 `role="group"` 和可配置的无障碍名称。

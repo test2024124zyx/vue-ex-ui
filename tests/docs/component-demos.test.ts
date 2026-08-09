@@ -16,7 +16,7 @@ const readBlocks = (document: string, marker: RegExp): string[] =>
 
 // 折叠代码中的换行和对象尾逗号只用于排版，比较时统一后验证示例内容本身。
 const normalizeTypographyExample = (example: string): string =>
-  example.replace(/\s+/g, ' ').replace(/,\s*}/g, ' }').trim();
+  example.replace(/\s+/g, ' ').replace(/\s+>/g, '>').replace(/,\s*}/g, ' }').trim();
 
 const extractTypographyExamples = (block: string): string[] =>
   (block.match(/<ex-typography\b[\s\S]*?(?:<\/ex-typography>|\/>)/gi) ?? []).map(
@@ -35,6 +35,16 @@ const extractIconExamples = (block: string): string[] =>
   (block.match(/<ex-icon\b[^>]*\/>|<ex-icon\b[\s\S]*?<\/ex-icon>/gi) ?? []).map(
     normalizeTypographyExample
   );
+
+// 头像组先整体提取，避免组内头像被误判为独立示例。
+const extractAvatarExamples = (block: string): string[] => {
+  const groupPattern = /<ex-avatar-group\b[\s\S]*?<\/ex-avatar-group>/gi;
+  const groups = block.match(groupPattern) ?? [];
+  const avatars =
+    block.replace(groupPattern, '').match(/<ex-avatar\b[\s\S]*?(?:<\/ex-avatar>|\/>)/gi) ?? [];
+
+  return [...groups, ...avatars].map(normalizeTypographyExample);
+};
 
 // Ellipsis 的示例文本本身就是溢出测量依据，实时内容和代码内容必须保持一致。
 const extractEllipsisExamples = (block: string): string[] =>
@@ -97,6 +107,24 @@ describe('组件文档实时演示', () => {
     expect(document).toContain('`clickable`');
     expect(avatarGuide).not.toContain('| gap ');
     expect(avatarGuide).toContain('| clickable');
+  });
+
+  it('Avatar 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('avatar');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(4);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractAvatarExamples(liveBlock)).toEqual(
+        extractAvatarExamples(codeBlocks[index] ?? '')
+      );
+    });
   });
 
   it('Typography 每个实时示例都有默认折叠且内容一致的代码', () => {
