@@ -44,15 +44,18 @@
           class="ex-input__control"
           :value="displayValue"
           :placeholder="placeholder"
-          :disabled="disabled"
-          :readonly="readonly"
+          :disabled="effectiveDisabled"
+          :readonly="effectiveReadonly"
           :minlength="normalizedMinlength"
           :maxlength="normalizedMaxlength"
           :autofocus="autofocus || undefined"
           :autocomplete="autocomplete"
           :rows="normalizedRows"
           :required="required || undefined"
+          :aria-labelledby="controlAriaLabelledby"
           :aria-invalid="controlAriaInvalid"
+          :aria-disabled="effectiveDisabled || undefined"
+          :aria-readonly="effectiveReadonly || undefined"
           :aria-describedby="controlAriaDescribedby"
           :aria-errormessage="controlAriaErrorMessage"
           @input="handleInput"
@@ -74,14 +77,17 @@
           :value="displayValue"
           :type="actualType"
           :placeholder="placeholder"
-          :disabled="disabled"
-          :readonly="readonly"
+          :disabled="effectiveDisabled"
+          :readonly="effectiveReadonly"
           :minlength="normalizedMinlength"
           :maxlength="normalizedMaxlength"
           :autofocus="autofocus || undefined"
           :autocomplete="autocomplete"
           :required="required || undefined"
+          :aria-labelledby="controlAriaLabelledby"
           :aria-invalid="controlAriaInvalid"
+          :aria-disabled="effectiveDisabled || undefined"
+          :aria-readonly="effectiveReadonly || undefined"
           :aria-describedby="controlAriaDescribedby"
           :aria-errormessage="controlAriaErrorMessage"
           @input="handleInput"
@@ -234,7 +240,13 @@ import {
   normalizePositiveInteger,
   resolveTextareaRows,
 } from './input-utils';
-import type { ExInputEmits, ExInputExposed, ExInputProps } from './types';
+import type {
+  ExInputEmits,
+  ExInputExposed,
+  ExInputProps,
+  InputModelValue,
+  InputValidateTrigger,
+} from './types';
 
 defineOptions({
   name: 'ExInput',
@@ -255,6 +267,7 @@ const props = withDefaults(defineProps<ExInputProps>(), {
   required: false,
   rows: 3,
   autosize: false,
+  validateTrigger: 'blur',
 });
 
 const emit = defineEmits<ExInputEmits>();
@@ -262,7 +275,7 @@ const attrs = useAttrs();
 const slots = useSlots();
 const { t } = useI18n();
 const formItem = useFormItem();
-const componentSize = useComponentSize(computed(() => props.size));
+const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
 
 const generatedId = generateId('ex-input');
 const inputRef = ref<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -273,6 +286,18 @@ const validationError = ref<string | null>(null);
 
 const applyFormatter = (value: string): string =>
   props.formatter ? props.formatter(value) : value;
+
+const normalizeModelOutput = (value: string): InputModelValue => {
+  const modifiers = props.modelModifiers;
+  const normalizedValue = modifiers?.trim ? value.trim() : value;
+
+  if (modifiers?.number && normalizedValue !== '') {
+    const numericValue = Number(normalizedValue);
+    if (!Number.isNaN(numericValue)) return numericValue;
+  }
+
+  return normalizedValue;
+};
 
 const initialValue = normalizeInputValue(props.modelValue);
 const rawValue = ref(initialValue);
@@ -301,11 +326,21 @@ const hasErrorSlot = computed(() => hasRenderableContent(slots.error?.({})));
 const hasLabel = computed(() => Boolean(props.label) || hasLabelSlot.value);
 const hasPrepend = computed(() => Boolean(props.prepend) || hasPrependSlot.value);
 const hasAppend = computed(() => Boolean(props.append) || hasAppendSlot.value);
+const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
+const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
 const showClearButton = computed(
-  () => props.clearable && !props.disabled && !props.readonly && rawValue.value.length > 0
+  () =>
+    props.clearable &&
+    !effectiveDisabled.value &&
+    !effectiveReadonly.value &&
+    rawValue.value.length > 0
 );
 const showPasswordToggle = computed(
-  () => props.showPassword && props.type === 'password' && !props.disabled && !props.readonly
+  () =>
+    props.showPassword &&
+    props.type === 'password' &&
+    !effectiveDisabled.value &&
+    !effectiveReadonly.value
 );
 const showWordCounter = computed(
   () => props.showWordLimit && normalizedMaxlength.value !== undefined
@@ -318,7 +353,15 @@ const showSuffix = computed(
     hasSuffixSlot.value
 );
 
-const actualStatus = computed(() => (validationError.value !== null ? 'error' : props.status));
+const inheritedStatus = computed(() => {
+  const status = formItem?.status?.value;
+  return status === 'success' || status === 'warning' || status === 'error' ? status : undefined;
+});
+const actualStatus = computed(() => {
+  if (validationError.value !== null) return 'error';
+  if (props.status !== 'default') return props.status;
+  return inheritedStatus.value ?? 'default';
+});
 const actualErrorMessage = computed(
   () => validationError.value ?? props.errorMessage?.trim() ?? ''
 );
@@ -342,6 +385,10 @@ const messageAriaLive = computed(() => {
   return undefined;
 });
 
+const externalAriaLabelledby = computed(() => {
+  const value = attrs['aria-labelledby'];
+  return typeof value === 'string' ? value : undefined;
+});
 const externalAriaDescribedby = computed(() => {
   const value = attrs['aria-describedby'];
   return typeof value === 'string' ? value : undefined;
@@ -358,15 +405,28 @@ const externalAriaInvalid = computed<AriaAttributes['aria-invalid']>(() => {
   }
   return undefined;
 });
+const controlAriaLabelledby = computed(() =>
+  mergeAriaTokens(
+    externalAriaLabelledby.value,
+    !hasLabel.value ? formItem?.labelId?.value : undefined
+  )
+);
 const controlAriaDescribedby = computed(() =>
-  mergeAriaTokens(externalAriaDescribedby.value, showMessage.value ? messageId.value : undefined)
+  mergeAriaTokens(
+    externalAriaDescribedby.value,
+    showMessage.value ? messageId.value : undefined,
+    formItem?.describedBy?.value
+  )
 );
 const controlAriaErrorMessage = computed(() => {
   if (showErrorMessage.value) return messageId.value;
+  if (inheritedStatus.value === 'error') return formItem?.describedBy?.value;
   return externalAriaErrorMessage.value;
 });
 const controlAriaInvalid = computed<AriaAttributes['aria-invalid']>(() =>
-  actualStatus.value === 'error' ? true : externalAriaInvalid.value
+  actualStatus.value === 'error' || inheritedStatus.value === 'error'
+    ? true
+    : externalAriaInvalid.value
 );
 
 const controlAttrs = computed<Record<string, unknown>>(() => {
@@ -374,6 +434,8 @@ const controlAttrs = computed<Record<string, unknown>>(() => {
   delete forwarded.class;
   delete forwarded.style;
   delete forwarded.id;
+  delete forwarded.modelModifiers;
+  delete forwarded['aria-labelledby'];
   delete forwarded['aria-describedby'];
   delete forwarded['aria-errormessage'];
   delete forwarded['aria-invalid'];
@@ -386,8 +448,8 @@ const rootClasses = computed(() => [
   'ex-input--' + props.variant,
   attrs.class,
   {
-    'ex-input--disabled': props.disabled,
-    'ex-input--readonly': props.readonly,
+    'ex-input--disabled': effectiveDisabled.value,
+    'ex-input--readonly': effectiveReadonly.value,
     'ex-input--focused': isFocused.value,
     'ex-input--error': actualStatus.value === 'error',
     'ex-input--success': actualStatus.value === 'success',
@@ -421,19 +483,70 @@ const validateInput = (value: string): boolean => {
   return true;
 };
 
+const shouldValidate = (trigger: Exclude<InputValidateTrigger, 'manual'>): boolean => {
+  const configuredTriggers = Array.isArray(props.validateTrigger)
+    ? props.validateTrigger
+    : [props.validateTrigger];
+
+  return configuredTriggers.includes(trigger);
+};
+
+// 格式化会改变控件的 value；按格式化前的前缀重新计算光标，避免输入时光标跳到末尾。
+const restoreSelectionAfterFormat = (
+  target: HTMLInputElement | HTMLTextAreaElement,
+  previousValue: string,
+  formattedValue: string,
+  selectionStart: number | null,
+  selectionEnd: number | null
+): void => {
+  if (selectionStart === null || selectionEnd === null || previousValue === formattedValue) return;
+
+  const mapPosition = (position: number): number => {
+    const previousPrefix = previousValue.slice(0, position);
+    const parsedPrefix = props.parser ? props.parser(previousPrefix) : previousPrefix;
+    const formattedPrefix = applyFormatter(parsedPrefix);
+    return Math.min(formattedPrefix.length, formattedValue.length);
+  };
+
+  target.setSelectionRange(mapPosition(selectionStart), mapPosition(selectionEnd));
+};
+
 const commitNativeValue = (event: Event): void => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const previousValue = target.value;
+  const selectionStart = target.selectionStart;
+  const selectionEnd = target.selectionEnd;
   const value = props.parser ? props.parser(target.value) : target.value;
   const formattedValue = applyFormatter(value);
 
   rawValue.value = value;
   displayValue.value = formattedValue;
-  if (target.value !== formattedValue) target.value = formattedValue;
+  if (target.value !== formattedValue) {
+    target.value = formattedValue;
+    restoreSelectionAfterFormat(
+      target,
+      previousValue,
+      formattedValue,
+      selectionStart,
+      selectionEnd
+    );
+  }
 
-  emit('update:modelValue', value);
-  emit('input', value, event);
-  if (props.rules?.length) validateInput(value);
-  formItem?.onFieldChange();
+  const modelValue = normalizeModelOutput(value);
+  if (!props.modelModifiers?.lazy) emit('update:modelValue', modelValue);
+  emit('input', modelValue, event);
+  if (shouldValidate('input')) {
+    validateInput(value);
+  } else if (validationError.value !== null) {
+    // 非实时校验时，用户开始重新编辑后移除过期的本地错误提示。
+    validationError.value = null;
+  }
+  if (!props.modelModifiers?.lazy && formItem?.onFieldInput) {
+    formItem.onFieldInput();
+  } else if (!props.modelModifiers?.lazy) {
+    // 兼容旧版自定义 FormItem 上下文。
+    formItem?.onFieldChange();
+  }
   scheduleTextareaHeight();
 };
 
@@ -470,7 +583,11 @@ const handleInput = (event: Event): void => {
 };
 
 const handleChange = (event: Event): void => {
-  emit('change', rawValue.value, event);
+  const modelValue = normalizeModelOutput(rawValue.value);
+  if (props.modelModifiers?.lazy) emit('update:modelValue', modelValue);
+  emit('change', modelValue, event);
+  if (shouldValidate('change')) validateInput(rawValue.value);
+  formItem?.onFieldChange();
 };
 
 const handleFocus = (event: FocusEvent): void => {
@@ -481,6 +598,7 @@ const handleFocus = (event: FocusEvent): void => {
 const handleBlur = (event: FocusEvent): void => {
   isFocused.value = false;
   emit('blur', event);
+  if (shouldValidate('blur')) validateInput(rawValue.value);
   formItem?.onFieldBlur();
 };
 
@@ -498,11 +616,13 @@ const focus: ExInputExposed['focus'] = options => {
 };
 
 const handleClear = (): void => {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
+
   rawValue.value = '';
   displayValue.value = applyFormatter('');
   emit('update:modelValue', '');
   emit('clear');
-  if (props.rules?.length) validateInput('');
+  if (shouldValidate('input') || shouldValidate('change')) validateInput('');
   formItem?.onFieldChange();
   scheduleTextareaHeight();
 

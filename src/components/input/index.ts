@@ -7,11 +7,13 @@ export type {
   ExInputProps,
   ExInputSlots,
   InputAutosize,
+  InputModelModifiers,
   InputModelValue,
   InputSize,
   InputStatus,
   InputType,
   InputVariant,
+  InputValidateTrigger,
   ValidationResult,
   ValidationRule,
 } from './types';

@@ -2,6 +2,8 @@
 
 用于组织数据录入、字段校验和提交操作。
 
+当 `ExFormItem` 包裹 `ExInput` 时，标签、帮助/错误消息会自动与真实输入控件建立可访问性关联；`Form` 的 `size`、`disabled` 与 `readonly` 也会同步到输入框的原生语义。
+
 <script setup>
 import { reactive, ref } from 'vue'
 

@@ -158,11 +158,20 @@
   --ex-input-height-sm: 32px;
   --ex-input-height-md: 40px;
   --ex-input-height-lg: 48px;
-  --ex-input-padding-x: var(--ex-spacing-3);
+  --ex-input-padding-x-sm: var(--ex-spacing-3);
+  --ex-input-padding-x-md: var(--ex-spacing-4);
+  --ex-input-padding-x-lg: var(--ex-spacing-5);
+  --ex-input-padding-x: var(--ex-input-padding-x-md);
   --ex-input-padding-y: var(--ex-spacing-2);
   --ex-input-radius: var(--ex-radius-md);
   --ex-input-border-width: 1px;
   --ex-input-focus-ring-width: 2px;
+  --ex-input-action-width-sm: 32px;
+  --ex-input-action-width-md: 36px;
+  --ex-input-action-width-lg: 40px;
+  // 输入框操作按钮与移动端控件共用 44px 触控目标。
+  --ex-input-touch-target: var(--ex-button-touch-target);
+  --ex-input-touch-font-size: 16px;
   
   // 卡片组件
   --ex-card-padding-sm: var(--ex-spacing-4);

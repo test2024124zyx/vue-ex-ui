@@ -2,9 +2,9 @@
 
 .ex-input {
   --ex-input-control-height: var(--ex-input-height-md);
-  --ex-input-control-padding: var(--ex-spacing-4);
+  --ex-input-control-padding: var(--ex-input-padding-x-md, var(--ex-spacing-4));
   --ex-input-control-font-size: var(--ex-text-base);
-  --ex-input-action-width: 36px;
+  --ex-input-action-width: var(--ex-input-action-width-md, 36px);
   --ex-input-border-color: var(--ex-color-border-primary);
   --ex-input-background: var(--ex-color-bg-secondary);
 
@@ -52,14 +52,14 @@
   height: var(--ex-input-control-height);
   flex: 1 1 auto;
   align-items: center;
-  border: 1px solid var(--ex-input-border-color);
+  border: var(--ex-input-border-width, 1px) solid var(--ex-input-border-color);
   border-radius: var(--ex-radius-none);
   background: var(--ex-input-background);
   @include chamfer(var(--ex-chamfer-sm));
   transition:
     border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
     background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
-    box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+    filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 }
 
 // Neon 输入框默认采用终端提示符，已有 prefix slot 时不重复添加
@@ -126,7 +126,7 @@
   box-sizing: border-box;
   display: inline-flex;
   width: var(--ex-input-action-width);
-  min-width: 24px;
+  min-width: var(--ex-input-action-min-width, 24px);
   height: 100%;
   align-items: center;
   justify-content: center;
@@ -143,7 +143,7 @@
     background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
   &:focus-visible {
-    outline: 2px solid var(--ex-color-primary);
+    outline: var(--ex-input-focus-ring-width, 2px) solid var(--ex-color-primary);
     outline-offset: -3px;
   }
 }
@@ -166,7 +166,7 @@
   flex: none;
   align-items: center;
   padding: 0 var(--ex-spacing-4);
-  border: 1px solid var(--ex-input-border-color);
+  border: var(--ex-input-border-width, 1px) solid var(--ex-input-border-color);
   border-radius: var(--ex-radius-none);
   background: var(--ex-color-bg-tertiary);
   color: var(--ex-color-text-secondary);
@@ -199,16 +199,16 @@
 
 .ex-input--small {
   --ex-input-control-height: var(--ex-input-height-sm);
-  --ex-input-control-padding: var(--ex-spacing-3);
+  --ex-input-control-padding: var(--ex-input-padding-x-sm, var(--ex-spacing-3));
   --ex-input-control-font-size: var(--ex-text-sm);
-  --ex-input-action-width: 32px;
+  --ex-input-action-width: var(--ex-input-action-width-sm, 32px);
 }
 
 .ex-input--large {
   --ex-input-control-height: var(--ex-input-height-lg);
-  --ex-input-control-padding: var(--ex-spacing-5);
+  --ex-input-control-padding: var(--ex-input-padding-x-lg, var(--ex-spacing-5));
   --ex-input-control-font-size: var(--ex-text-lg);
-  --ex-input-action-width: 40px;
+  --ex-input-action-width: var(--ex-input-action-width-lg, 40px);
 }
 
 .ex-input--neon {
@@ -243,9 +243,8 @@
   }
 
   .ex-input__inner {
-    box-shadow:
-      0 0 0 2px var(--ex-color-primary-alpha-20),
-      0 0 12px var(--ex-color-primary-alpha-20);
+    filter: drop-shadow(0 0 4px var(--ex-color-primary-alpha-20))
+      drop-shadow(0 0 12px var(--ex-color-primary-alpha-20));
   }
 }
 
@@ -273,7 +272,7 @@
   }
 
   .ex-input__inner {
-    box-shadow: 0 0 0 3px var(--ex-color-error-alpha-20);
+    filter: drop-shadow(0 0 4px var(--ex-color-error-alpha-20));
   }
 
   .ex-input__word-limit {
@@ -313,7 +312,7 @@
   .ex-input__control {
     height: auto;
     min-height: var(--ex-input-control-height);
-    padding-block: var(--ex-spacing-3);
+    padding-block: var(--ex-input-padding-y, var(--ex-spacing-3));
     line-height: 1.5;
     resize: vertical;
   }
@@ -391,6 +390,51 @@
   }
 }
 
+// 触控设备上保持控件与操作按钮的最小命中区域，避免小尺寸输入框难以操作。
+@media (pointer: coarse), (max-width: 575px) {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    min-height: var(--ex-input-touch-target, 44px);
+  }
+
+  .ex-input__inner {
+    height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__inner {
+    height: auto;
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__control {
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__prepend,
+  .ex-input--textarea .ex-input__append {
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input__control {
+    font-size: max(var(--ex-input-control-font-size), var(--ex-input-touch-font-size, 16px));
+  }
+
+  .ex-input__suffix {
+    gap: var(--ex-spacing-2);
+  }
+
+  .ex-input__action {
+    width: max(var(--ex-input-action-width), var(--ex-input-touch-target, 44px));
+    min-width: var(--ex-input-touch-target, 44px);
+    min-height: var(--ex-input-touch-target, 44px);
+  }
+
+  .ex-input--textarea .ex-input__action {
+    height: var(--ex-input-touch-target, 44px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ex-input__label,
   .ex-input__inner,
@@ -413,5 +457,16 @@
   .ex-input__action:focus-visible {
     outline-width: 3px;
     outline-color: currentColor;
+  }
+}
+
+@media (forced-colors: active) {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    filter: none;
   }
 }

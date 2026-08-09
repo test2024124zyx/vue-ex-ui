@@ -120,6 +120,48 @@ describe('ExInput', () => {
     expect(inputWrapper.emitted('input')?.[0]?.[1]).toBeInstanceOf(Event);
   });
 
+  it('支持 v-model 的 trim 与 number 修饰符，并不把 modelModifiers 转发到原生控件', async () => {
+    const inputWrapper = mountInput({
+      props: {
+        modelModifiers: { trim: true, number: true },
+      },
+    });
+    const input = inputWrapper.get('input');
+
+    await input.setValue(' 42 ');
+
+    expect(inputWrapper.emitted('update:modelValue')).toEqual([[42]]);
+    expect(inputWrapper.emitted('input')?.[0]?.[0]).toBe(42);
+    expect(input.attributes('modelModifiers')).toBeUndefined();
+  });
+
+  it('lazy 修饰符只在 change 时提交模型，并在提交后通知 FormItem change 链路', async () => {
+    const onFieldChange = vi.fn();
+    const inputWrapper = mountInput({
+      props: {
+        modelModifiers: { lazy: true },
+      },
+      global: {
+        provide: {
+          [FORM_ITEM_INJECTION_KEY as symbol]: {
+            onFieldChange,
+            onFieldBlur: vi.fn(),
+          },
+        },
+      },
+    });
+    const input = inputWrapper.get('input');
+
+    (input.element as HTMLInputElement).value = 'lazy';
+    await input.trigger('input');
+    expect(inputWrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(onFieldChange).not.toHaveBeenCalled();
+
+    await input.trigger('change');
+    expect(inputWrapper.emitted('update:modelValue')).toEqual([['lazy']]);
+    expect(onFieldChange).toHaveBeenCalledOnce();
+  });
+
   it('formatter 只控制显示值，parser 统一控制 input、change 和模型值', async () => {
     const formatter = (value: string) => value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const parser = (value: string) => value.replaceAll(',', '');
@@ -143,10 +185,45 @@ describe('ExInput', () => {
     expect(inputWrapper.emitted('change')?.[0]?.[0]).toBe('2345');
   });
 
+  it('格式化更新显示值后保持编辑位置，不强制把光标移动到末尾', async () => {
+    const inputWrapper = mountInput({
+      props: {
+        formatter: value => value.replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+        parser: value => value.replaceAll(',', ''),
+      },
+    });
+    const input = inputWrapper.get('input').element as HTMLInputElement;
+
+    input.value = '1234';
+    input.setSelectionRange(2, 2);
+    await inputWrapper.get('input').trigger('input');
+
+    expect(input.value).toBe('1,234');
+    expect(input.selectionStart).toBe(2);
+    expect(input.selectionEnd).toBe(2);
+  });
+
+  it('本地规则默认在失焦时校验，实时校验需要显式配置 validateTrigger', async () => {
+    const inputWrapper = mountInput({
+      props: {
+        modelValue: 'valid',
+        rules: [value => Boolean(value) || '内容不能为空'],
+      },
+    });
+    const input = inputWrapper.get('input');
+
+    await input.setValue('');
+    expect(inputWrapper.emitted('validation-error')).toBeUndefined();
+
+    await input.trigger('blur');
+    expect(inputWrapper.emitted('validation-error')).toEqual([['内容不能为空']]);
+  });
+
   it('输入法组合期间不更新模型、不格式化也不校验，结束后只提交一次', async () => {
     const inputWrapper = mountInput({
       props: {
         rules: [value => value.length <= 2 || '内容过长'],
+        validateTrigger: 'input',
       },
     });
     const input = inputWrapper.get('input');
@@ -224,6 +301,7 @@ describe('ExInput', () => {
         modelValue: 'content',
         clearable: true,
         rules: [value => Boolean(value) || '内容不能为空'],
+        validateTrigger: 'change',
       },
     });
     const button = inputWrapper.get('.ex-input__action--clear');
@@ -499,8 +577,9 @@ describe('ExInput', () => {
     expect(disconnect).toHaveBeenCalledOnce();
   });
 
-  it('值提交和清空通知 FormItem 的 change 链路，失焦通知 blur 链路', async () => {
+  it('输入通知 FormItem 的 input 链路，清空通知 change 链路，失焦通知 blur 链路', async () => {
     const onFieldChange = vi.fn();
+    const onFieldInput = vi.fn();
     const onFieldBlur = vi.fn();
     const inputWrapper = mountInput({
       props: {
@@ -511,6 +590,7 @@ describe('ExInput', () => {
         provide: {
           [FORM_ITEM_INJECTION_KEY as symbol]: {
             onFieldChange,
+            onFieldInput,
             onFieldBlur,
           },
         },
@@ -518,14 +598,16 @@ describe('ExInput', () => {
     });
     const input = inputWrapper.get('input');
 
-    await input.setValue('b');
-    expect(onFieldChange).toHaveBeenCalledOnce();
+    (input.element as HTMLInputElement).value = 'b';
+    await input.trigger('input');
+    expect(onFieldInput).toHaveBeenCalledOnce();
+    expect(onFieldChange).not.toHaveBeenCalled();
 
     await input.trigger('blur');
     expect(onFieldBlur).toHaveBeenCalledOnce();
 
     await inputWrapper.get('.ex-input__action--clear').trigger('click');
-    expect(onFieldChange).toHaveBeenCalledTimes(2);
+    expect(onFieldChange).toHaveBeenCalledOnce();
   });
 
   it('完整转发 focus、blur、keydown、keyup、enter 和原生 change 事件', async () => {

@@ -1,7 +1,7 @@
 <template>
   <div :class="formItemClasses" :style="formItemStyles" :data-field="prop">
     <!-- 标签 -->
-    <div v-if="showLabel" :class="labelClasses" :style="labelStyles">
+    <div v-if="showLabel" :id="formItemLabelId" :class="labelClasses" :style="labelStyles">
       <span v-if="label" :class="labelTextClasses">
         {{ label }}
         <span v-if="showColonMark" class="ex-form-item__colon">:</span>
@@ -22,7 +22,11 @@
       </div>
 
       <!-- 帮助文本 -->
-      <div v-if="help && !displayError" class="ex-form-item__help">
+      <div
+        v-if="help && !displayError"
+        :id="formItemMessageId"
+        class="ex-form-item__help"
+      >
         {{ help }}
       </div>
 
@@ -30,6 +34,7 @@
       <transition name="ex-form-item-error">
         <div
           v-if="displayError"
+          :id="formItemMessageId"
           class="ex-form-item__error"
           role="alert"
           :aria-live="validateStatus === 'validating' ? 'polite' : 'assertive'"
@@ -57,6 +62,7 @@ import { provideFormItem } from './use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { deepClone } from '../../utils/clone';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExFormItem',
@@ -88,20 +94,8 @@ const validateMessage = ref('');
 const isValidating = ref(false);
 const initialValue = ref<unknown>(undefined);
 
-// 向子表单控件提供字段上下文：控件 blur/change 时按规则 trigger 自动校验
-provideFormItem({
-  onFieldBlur: () => {
-    if (props.prop && formContext) {
-      void validateFieldMethod('blur');
-    }
-  },
-  onFieldChange: () => {
-    if (props.prop && formContext) {
-      // 等待 v-model 写回 model 后再校验
-      void nextTick(() => validateFieldMethod('change'));
-    }
-  },
-});
+// 使用实例级 ID 建立标签、控件与反馈消息之间的稳定关联。
+const generatedId = generateId('ex-form-item');
 
 // 兜底：直接监听 model 中字段值的变化触发 change 校验，
 // 覆盖未显式接入字段上下文的控件（含程序化赋值）
@@ -180,6 +174,18 @@ const displayError = computed(() => {
   return props.error || (actualValidateStatus.value === 'error' ? validateMessage.value : '');
 });
 
+const formItemLabelId = computed(() => {
+  return showLabel.value ? `${generatedId}-label` : undefined;
+});
+
+const formItemMessageId = computed(() => {
+  return props.help || displayError.value ? `${generatedId}-message` : undefined;
+});
+
+const formItemDisabled = computed(() => Boolean(formContext?.props?.disabled));
+
+const formItemReadonly = computed(() => Boolean(formContext?.props?.readonly));
+
 const feedbackIcon = computed(() => {
   if (!actualHasFeedback.value) return '';
 
@@ -244,6 +250,34 @@ const labelTextClasses = computed(() => {
 
 const feedbackClasses = computed(() => {
   return ['ex-form-item__feedback', `ex-form-item__feedback--${actualValidateStatus.value}`];
+});
+
+// 向子表单控件提供字段上下文：同步传递校验状态、尺寸及可访问性信息。
+provideFormItem({
+  onFieldBlur: () => {
+    if (props.prop && formContext) {
+      void validateFieldMethod('blur');
+    }
+  },
+  onFieldChange: () => {
+    if (props.prop && formContext) {
+      // 等待 v-model 写回 model 后再校验。
+      void nextTick(() => validateFieldMethod('change'));
+    }
+  },
+  onFieldInput: () => {
+    if (props.prop && formContext) {
+      // 输入事件需要在当前模型值写回后再执行规则校验。
+      void nextTick(() => validateFieldMethod('input'));
+    }
+  },
+  labelId: formItemLabelId,
+  describedBy: formItemMessageId,
+  status: actualValidateStatus,
+  errorMessage: displayError,
+  size: actualSize,
+  disabled: formItemDisabled,
+  readonly: formItemReadonly,
 });
 
 // 表单项上下文

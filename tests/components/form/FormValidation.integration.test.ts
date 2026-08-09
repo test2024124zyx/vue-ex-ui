@@ -90,4 +90,95 @@ describe('Form validation integration', () => {
     const { wrapper } = createForm();
     expect(wrapper.find('.ex-form-item.is-required').exists()).toBe(true);
   });
+
+  it('FormItem 标签、反馈消息与 ExInput 建立可访问性关联，并同步校验状态', async () => {
+    const { wrapper } = createForm();
+    const input = wrapper.find('input');
+    const label = wrapper.find('.ex-form-item__label');
+
+    expect(label.attributes('id')).toBeDefined();
+    expect(input.attributes('aria-labelledby')).toBe(label.attributes('id'));
+
+    await input.trigger('blur');
+    await flushValidation();
+
+    const error = wrapper.find('.ex-form-item__error');
+    expect(error.attributes('id')).toBeDefined();
+    expect(input.attributes('aria-describedby')).toContain(error.attributes('id'));
+    expect(input.attributes('aria-errormessage')).toBe(error.attributes('id'));
+    expect(input.attributes('aria-invalid')).toBe('true');
+    expect(wrapper.find('.ex-input').classes()).toContain('ex-input--error');
+  });
+
+  it('Form 的尺寸、禁用和只读状态同步到原生输入控件', () => {
+    const model = reactive({ name: 'value' });
+    const App = defineComponent({
+      components: { ExForm, ExFormItem, ExInput },
+      setup() {
+        return { model };
+      },
+      template: `
+        <ExForm :model="model" size="large" disabled>
+          <ExFormItem label="Name" prop="name">
+            <ExInput v-model="model.name" />
+          </ExFormItem>
+        </ExForm>
+      `,
+    });
+    const disabledWrapper = mount(App);
+    const disabledInput = disabledWrapper.find('input');
+
+    expect(disabledWrapper.find('.ex-input').classes()).toContain('ex-input--large');
+    expect(disabledInput.attributes('disabled')).toBeDefined();
+    expect(disabledInput.attributes('aria-disabled')).toBe('true');
+
+    disabledWrapper.unmount();
+
+    const readonlyApp = defineComponent({
+      components: { ExForm, ExFormItem, ExInput },
+      setup() {
+        return { model };
+      },
+      template: `
+        <ExForm :model="model" readonly>
+          <ExFormItem label="Name" prop="name">
+            <ExInput v-model="model.name" />
+          </ExFormItem>
+        </ExForm>
+      `,
+    });
+    const readonlyWrapper = mount(readonlyApp);
+
+    expect(readonlyWrapper.find('input').attributes('readonly')).toBeDefined();
+    expect(readonlyWrapper.find('input').attributes('aria-readonly')).toBe('true');
+    readonlyWrapper.unmount();
+  });
+
+  it('FormItem 的 input trigger 会在输入后执行对应规则', async () => {
+    const model = reactive({ name: '' });
+    const rules = {
+      name: [{ required: true, message: 'name is required', trigger: 'input' as const }],
+    };
+    const App = defineComponent({
+      components: { ExForm, ExFormItem, ExInput },
+      setup() {
+        return { model, rules };
+      },
+      template: `
+        <ExForm :model="model" :rules="rules">
+          <ExFormItem label="Name" prop="name">
+            <ExInput v-model="model.name" />
+          </ExFormItem>
+        </ExForm>
+      `,
+    });
+    const wrapper = mount(App);
+    const input = wrapper.find('input');
+
+    await input.setValue('');
+    await flushValidation();
+
+    expect(wrapper.find('.ex-form-item__error').text()).toContain('name is required');
+    wrapper.unmount();
+  });
 });

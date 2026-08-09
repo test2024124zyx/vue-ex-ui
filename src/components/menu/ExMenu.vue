@@ -50,6 +50,7 @@ import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
 import ExIcon from '../icon/ExIcon.vue';
 import ExInput from '../input/ExInput.vue';
+import type { InputModelValue } from '../input/types';
 import { MENU_INJECTION_KEY } from './context';
 import ExMenuNode from './ExMenuNode.vue';
 import {
@@ -198,7 +199,8 @@ const handleOpenChange = (key: string, open: boolean): void => {
   if (!arraysEqual(nextKeys, openKeys.value)) openState.request(nextKeys);
 };
 
-const handleSearch = (query: string): void => {
+const handleSearch = (value: InputModelValue): void => {
+  const query = typeof value === 'string' ? value : String(value);
   searchQuery.value = query;
   emit('search', query);
 };

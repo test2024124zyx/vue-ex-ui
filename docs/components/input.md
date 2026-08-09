@@ -151,6 +151,8 @@ const amount = ref('1234567');
 
 ## 标签、提示与校验
 
+独立使用时，请通过 `label`、`label` 插槽或 `aria-label` / `aria-labelledby` 提供可访问名称。`rules` 默认在失焦时校验，只有需要边输入边反馈时才配置 `validate-trigger="input"`；也可以使用 `change` 或 `manual`（仅由 `validate()` 触发）。组件同时支持 `v-model.trim`、`v-model.number` 与 `v-model.lazy`。
+
 <div class="demo-container">
   <ex-input
     v-model="email"
@@ -193,6 +195,7 @@ const emailRules: ValidationRule[] = [
 | 参数                  | 类型                                                                    | 默认值     |
 | --------------------- | ----------------------------------------------------------------------- | ---------- |
 | model-value / v-model | string \| number                                                        | —          |
+| v-model 修饰符        | trim \| number \| lazy                                                  | —          |
 | id                    | string                                                                  | 自动生成   |
 | type                  | text \| password \| email \| number \| tel \| url \| search \| textarea | text       |
 | size                  | small \| medium \| large                                                | medium     |
@@ -215,6 +218,7 @@ const emailRules: ValidationRule[] = [
 | help-text             | string                                                                  | —          |
 | error-message         | string                                                                  | —          |
 | rules                 | ValidationRule[]                                                        | —          |
+| validate-trigger      | input \| change \| blur \| manual \| Array                              | blur       |
 | rows                  | number                                                                  | 3          |
 | autosize              | boolean \| { minRows?: number; maxRows?: number }                       | false      |
 | formatter             | (value: string) => string                                               | —          |
@@ -224,18 +228,18 @@ const emailRules: ValidationRule[] = [
 
 ## Events
 
-| 事件               | 参数                          |
-| ------------------ | ----------------------------- |
-| update:model-value | (value: string)               |
-| input              | (value: string, event: Event) |
-| change             | (value: string, event: Event) |
-| focus              | (event: FocusEvent)           |
-| blur               | (event: FocusEvent)           |
-| clear              | ()                            |
-| keydown            | (event: KeyboardEvent)        |
-| keyup              | (event: KeyboardEvent)        |
-| enter              | (event: KeyboardEvent)        |
-| validation-error   | (error: string)               |
+| 事件               | 参数                                    |
+| ------------------ | --------------------------------------- |
+| update:model-value | (value: string \| number)               |
+| input              | (value: string \| number, event: Event) |
+| change             | (value: string \| number, event: Event) |
+| focus              | (event: FocusEvent)                     |
+| blur               | (event: FocusEvent)                     |
+| clear              | ()                                      |
+| keydown            | (event: KeyboardEvent)                  |
+| keyup              | (event: KeyboardEvent)                  |
+| enter              | (event: KeyboardEvent)                  |
+| validation-error   | (error: string)                         |
 
 ## Slots
 

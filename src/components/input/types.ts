@@ -15,6 +15,13 @@ export type InputSize = 'small' | 'medium' | 'large';
 export type InputStatus = 'default' | 'success' | 'warning' | 'error';
 export type InputVariant = 'neon' | 'ghost' | 'filled';
 export type InputModelValue = string | number;
+export type InputValidateTrigger = 'input' | 'change' | 'blur' | 'manual';
+
+export interface InputModelModifiers {
+  number?: boolean;
+  trim?: boolean;
+  lazy?: boolean;
+}
 
 /** 文本域自动高度配置；最大行数小于最小行数时按最小行数处理。 */
 export type InputAutosize =
@@ -31,8 +38,10 @@ export interface ExInputProps {
   size?: InputSize;
   status?: InputStatus;
   variant?: InputVariant;
-  /** 数字仅作为初值兼容；用户编辑事件始终返回字符串。 */
+  /** 支持字符串或数字初值；未使用 number 修饰符时编辑模型仍返回字符串。 */
   modelValue?: InputModelValue;
+  /** Vue v-model 支持的 trim、number 与 lazy 修饰符。 */
+  modelModifiers?: InputModelModifiers;
   placeholder?: string;
   disabled?: boolean;
   readonly?: boolean;
@@ -47,6 +56,8 @@ export interface ExInputProps {
   autofocus?: boolean;
   autocomplete?: string;
   rules?: ValidationRule[];
+  /** 本地 rules 的校验时机，默认失焦校验，manual 仅通过 exposed.validate 触发。 */
+  validateTrigger?: InputValidateTrigger | InputValidateTrigger[];
   errorMessage?: string;
   helpText?: string;
   label?: string;
@@ -60,9 +71,9 @@ export interface ExInputProps {
 }
 
 export interface ExInputEmits {
-  'update:modelValue': [value: string];
-  input: [value: string, event: Event];
-  change: [value: string, event: Event];
+  'update:modelValue': [value: InputModelValue];
+  input: [value: InputModelValue, event: Event];
+  change: [value: InputModelValue, event: Event];
   focus: [event: FocusEvent];
   blur: [event: FocusEvent];
   clear: [];
