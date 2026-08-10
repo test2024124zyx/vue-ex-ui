@@ -166,6 +166,8 @@ const currentReadonly = computed(() => {
   return Boolean(props.readonly || formItem?.readonly?.value);
 });
 
+const currentShape = computed(() => props.shape ?? 'square');
+
 const currentErrorMessage = computed(() => {
   return (
     validationErrorMessage.value ||
@@ -217,6 +219,7 @@ const groupClasses = computed(() => {
   const classes = ['ex-checkbox-group'];
 
   if (componentSize.value) classes.push(`ex-checkbox-group--${componentSize.value}`);
+  if (currentShape.value === 'circle') classes.push('ex-checkbox-group--circle');
   if (currentStatus.value) classes.push(`ex-checkbox-group--${currentStatus.value}`);
   if (currentDisabled.value) classes.push('ex-checkbox-group--disabled');
   if (currentReadonly.value) classes.push('ex-checkbox-group--readonly');
@@ -313,6 +316,7 @@ provide(checkboxGroupContextKey, {
   modelValue: computed(() => props.modelValue),
   name: computed(() => props.name),
   size: componentSize,
+  shape: currentShape,
   status: currentStatus,
   disabled: currentDisabled,
   readonly: currentReadonly,

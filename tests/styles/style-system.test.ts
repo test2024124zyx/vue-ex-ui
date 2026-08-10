@@ -120,6 +120,8 @@ describe('v2 样式系统边界', () => {
     const variablesCss = compile("@use 'src/styles/variables';");
 
     expect(css).toContain('.ex-checkbox__input:focus-visible + .ex-checkbox__box');
+    expect(css).toContain('.ex-checkbox--circle .ex-checkbox__box');
+    expect(css).toContain('border-radius: 50%;');
     expect(css).toContain('min-height: var(--ex-checkbox-touch-target);');
     expect(css).toContain('@media (forced-colors: active)');
     expect(css).not.toContain('opacity: 0.5');

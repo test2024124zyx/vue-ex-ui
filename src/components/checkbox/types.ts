@@ -6,6 +6,7 @@ import type { VNode } from 'vue';
 
 export type CheckboxValue = boolean | string | number;
 export type CheckboxSize = 'small' | 'medium' | 'large';
+export type CheckboxShape = 'square' | 'circle';
 export type CheckboxStatus = 'default' | 'success' | 'warning' | 'error';
 
 // ============================================================================
@@ -39,6 +40,8 @@ export interface ExCheckboxProps {
   ariaControls?: string;
   /** 组件大小 */
   size?: CheckboxSize;
+  /** 复选框外观形状 */
+  shape?: CheckboxShape;
   /** 组件状态 */
   status?: CheckboxStatus;
   /** 是否禁用 */
@@ -121,6 +124,8 @@ export interface ExCheckboxGroupProps {
   name?: string;
   /** 组件大小 */
   size?: CheckboxSize;
+  /** 复选框外观形状 */
+  shape?: CheckboxShape;
   /** 组件状态 */
   status?: CheckboxStatus;
   /** 是否禁用 */

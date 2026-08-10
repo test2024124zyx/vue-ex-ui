@@ -12,6 +12,7 @@ import type {
   ExCheckboxGroupInstance,
   CheckboxValue,
   CheckboxSize,
+  CheckboxShape,
   CheckboxStatus,
   CheckboxOption,
 } from './types';
@@ -35,6 +36,7 @@ export type {
   ExCheckboxGroupInstance,
   CheckboxValue,
   CheckboxSize,
+  CheckboxShape,
   CheckboxStatus,
   CheckboxOption,
 };

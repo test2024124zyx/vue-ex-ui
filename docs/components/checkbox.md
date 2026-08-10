@@ -161,6 +161,48 @@ const checked = ref(false);
 
 :::
 
+## 圆形变体
+
+通过 `shape="circle"` 使用圆形勾选框；CheckboxGroup 设置后会传递给组内子项，子项也可以显式覆盖。
+
+::: raw
+
+<div class="demo-block">
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <ExCheckbox v-model="checked" shape="circle">圆形单个选项</ExCheckbox>
+    <ExCheckboxGroup v-model="groupValue" shape="circle" label="圆形复选框组">
+      <ExCheckbox value="apple">苹果</ExCheckbox>
+      <ExCheckbox value="orange">橙子</ExCheckbox>
+    </ExCheckboxGroup>
+  </div>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <ExCheckbox
+      v-model="checked"
+      shape="circle"
+    >
+      圆形单个选项
+    </ExCheckbox>
+    <ExCheckboxGroup
+      v-model="groupValue"
+      shape="circle"
+      label="圆形复选框组"
+    >
+      <ExCheckbox value="apple">苹果</ExCheckbox>
+      <ExCheckbox value="orange">橙子</ExCheckbox>
+    </ExCheckboxGroup>
+  </div>
+</template>
+```
+
+:::
+
 ## 状态
 
 支持 `success`、`warning`、`error` 状态。
@@ -561,6 +603,7 @@ const agreed = ref(false);
 | aria-describedby     | 外部无障碍描述 ID 列表                | `string`                                         | -           |
 | aria-controls        | 半选状态控制的内容区域 ID             | `string`                                         | -           |
 | size                 | 组件大小                              | `'small' \| 'medium' \| 'large'`                 | `'medium'`  |
+| shape                | 复选框外观形状                        | `'square' \| 'circle'`                           | `'square'`  |
 | status               | 组件状态                              | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` |
 | disabled             | 是否禁用                              | `boolean`                                        | `false`     |
 | readonly             | 是否只读                              | `boolean`                                        | `false`     |
@@ -608,6 +651,7 @@ const agreed = ref(false);
 | options              | 选项列表                 | `CheckboxOption[]`                               | -           |
 | name                 | 表单域 name 属性         | `string`                                         | -           |
 | size                 | 组件大小                 | `'small' \| 'medium' \| 'large'`                 | `'medium'`  |
+| shape                | 复选框外观形状           | `'square' \| 'circle'`                           | `'square'`  |
 | status               | 组件状态                 | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` |
 | disabled             | 是否禁用                 | `boolean`                                        | `false`     |
 | readonly             | 是否只读                 | `boolean`                                        | `false`     |

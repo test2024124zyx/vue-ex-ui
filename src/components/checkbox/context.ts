@@ -1,5 +1,5 @@
 import type { ComputedRef, InjectionKey } from 'vue';
-import type { CheckboxSize, CheckboxStatus } from './types';
+import type { CheckboxShape, CheckboxSize, CheckboxStatus } from './types';
 
 export interface CheckboxRegistration {
   getValue: () => string | number | undefined;
@@ -10,6 +10,7 @@ export interface CheckboxGroupContext {
   modelValue: ComputedRef<Array<string | number>>;
   name: ComputedRef<string | undefined>;
   size: ComputedRef<CheckboxSize>;
+  shape: ComputedRef<CheckboxShape>;
   status: ComputedRef<CheckboxStatus>;
   disabled: ComputedRef<boolean>;
   readonly: ComputedRef<boolean>;

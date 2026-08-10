@@ -71,6 +71,26 @@ describe('ExCheckbox', () => {
     });
   });
 
+  // 形状测试
+  describe('Shapes', () => {
+    it('uses square shape by default', () => {
+      const wrapper = mount(ExCheckbox, {
+        slots: { default: 'Checkbox' },
+      });
+
+      expect(wrapper.classes()).not.toContain('ex-checkbox--circle');
+    });
+
+    it('renders circle shape correctly', () => {
+      const wrapper = mount(ExCheckbox, {
+        props: { shape: 'circle' },
+        slots: { default: 'Checkbox' },
+      });
+
+      expect(wrapper.classes()).toContain('ex-checkbox--circle');
+    });
+  });
+
   // 状态测试
   describe('Status', () => {
     const statuses: ExCheckboxProps['status'][] = ['default', 'success', 'warning', 'error'];

@@ -124,6 +124,48 @@ describe('ExCheckboxGroup', () => {
     });
   });
 
+  // 形状测试
+  describe('Shapes', () => {
+    it('passes circle shape from group to child checkboxes', () => {
+      const wrapper = mount(ExCheckboxGroup, {
+        props: { shape: 'circle' },
+        slots: {
+          default: `
+            <ExCheckbox value="one">Option 1</ExCheckbox>
+            <ExCheckbox value="two">Option 2</ExCheckbox>
+          `,
+        },
+        global: {
+          components: { ExCheckbox },
+        },
+      });
+
+      expect(wrapper.classes()).toContain('ex-checkbox-group--circle');
+      wrapper.findAllComponents(ExCheckbox).forEach(checkbox => {
+        expect(checkbox.classes()).toContain('ex-checkbox--circle');
+      });
+    });
+
+    it('allows an individual checkbox to override the group shape', () => {
+      const wrapper = mount(ExCheckboxGroup, {
+        props: { shape: 'circle' },
+        slots: {
+          default: `
+            <ExCheckbox value="one" shape="square">Square</ExCheckbox>
+            <ExCheckbox value="two">Circle</ExCheckbox>
+          `,
+        },
+        global: {
+          components: { ExCheckbox },
+        },
+      });
+
+      const checkboxes = wrapper.findAllComponents(ExCheckbox);
+      expect(checkboxes[0].classes()).not.toContain('ex-checkbox--circle');
+      expect(checkboxes[1].classes()).toContain('ex-checkbox--circle');
+    });
+  });
+
   // 状态测试
   describe('Status', () => {
     const statuses: ExCheckboxGroupProps['status'][] = ['default', 'success', 'warning', 'error'];

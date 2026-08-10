@@ -240,6 +240,11 @@ const currentSize = computed(() => {
   return checkboxGroupContext?.size.value || componentSize.value;
 });
 
+const currentShape = computed(() => {
+  // 优先级：组件自己的 shape prop > CheckboxGroup 的 shape > 默认方形
+  return props.shape ?? checkboxGroupContext?.shape.value ?? 'square';
+});
+
 const currentStatus = computed(() => {
   const formStatus = formItem?.status?.value;
 
@@ -302,6 +307,7 @@ const wrapperClasses = computed(() => {
   const classes = ['ex-checkbox'];
 
   if (currentSize.value) classes.push(`ex-checkbox--${currentSize.value}`);
+  if (currentShape.value === 'circle') classes.push('ex-checkbox--circle');
   if (currentStatus.value) classes.push(`ex-checkbox--${currentStatus.value}`);
   if (currentDisabled.value) classes.push('ex-checkbox--disabled');
   if (currentReadonly.value) classes.push('ex-checkbox--readonly');
