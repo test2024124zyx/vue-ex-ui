@@ -21,11 +21,11 @@
         :name="currentName"
         :value="props.value ?? undefined"
         :tabindex="props.tabindex"
-        :required="required"
-        :aria-label="ariaLabel"
+        :required="props.required"
+        :aria-label="props.ariaLabel"
         :aria-labelledby="ariaLabelledBy"
         :aria-describedby="ariaDescribedBy"
-        :aria-controls="isIndeterminate ? ariaControls : undefined"
+        :aria-controls="isIndeterminate ? props.ariaControls : undefined"
         :aria-invalid="ariaInvalid"
         :aria-readonly="currentReadonly || undefined"
         @click="handleReadonlyGuard"
@@ -46,11 +46,11 @@
         :name="currentName"
         :value="props.value ?? undefined"
         :tabindex="props.tabindex"
-        :required="required"
-        :aria-label="ariaLabel"
+        :required="props.required"
+        :aria-label="props.ariaLabel"
         :aria-labelledby="ariaLabelledBy"
         :aria-describedby="ariaDescribedBy"
-        :aria-controls="isIndeterminate ? ariaControls : undefined"
+        :aria-controls="isIndeterminate ? props.ariaControls : undefined"
         :aria-invalid="ariaInvalid"
         :aria-readonly="currentReadonly || undefined"
         @click="handleReadonlyGuard"
@@ -87,7 +87,7 @@
         class="ex-checkbox__label-text"
       >
         <slot name="label">
-          <slot>{{ label }}</slot>
+          <slot>{{ props.label }}</slot>
         </slot>
       </span>
     </label>
@@ -99,12 +99,12 @@
     >
       <!-- 帮助文本 -->
       <div
-        v-if="helpText || $slots.help"
+        v-if="props.helpText || $slots.help"
         :id="`${checkboxId}-help`"
         class="ex-checkbox__help"
       >
         <slot name="help">
-          {{ helpText }}
+          {{ props.helpText }}
         </slot>
       </div>
 

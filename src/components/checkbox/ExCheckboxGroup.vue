@@ -5,24 +5,24 @@
     :class="groupClasses"
     :style="groupStyles"
     role="group"
-    :aria-label="ariaLabel || undefined"
+    :aria-label="props.ariaLabel || undefined"
     :aria-labelledby="ariaLabelledBy"
     :aria-describedby="ariaDescribedBy"
-    :aria-required="required || undefined"
+    :aria-required="props.required || undefined"
     :aria-invalid="hasErrorState || undefined"
     :aria-disabled="currentDisabled || undefined"
     :aria-readonly="currentReadonly || undefined"
   >
     <!-- 标签 -->
     <div
-      v-if="label || $slots.label"
+      v-if="props.label || $slots.label"
       :id="labelId"
       class="ex-checkbox-group__label"
     >
       <slot name="label">
-        {{ label }}
+        {{ props.label }}
         <span
-          v-if="required"
+          v-if="props.required"
           class="ex-checkbox-group__required"
         >
           *
@@ -32,9 +32,9 @@
 
     <!-- 复选框容器 -->
     <div class="ex-checkbox-group__content">
-      <template v-if="options !== undefined">
+      <template v-if="props.options !== undefined">
         <ExCheckbox
-          v-for="(option, index) in options"
+          v-for="(option, index) in props.options"
           :key="`${typeof option.value}-${option.value}-${index}`"
           :value="option.value"
           :disabled="option.disabled"
@@ -58,12 +58,12 @@
     >
       <!-- 帮助文本 -->
       <div
-        v-if="helpText || $slots.help"
+        v-if="props.helpText || $slots.help"
         :id="`${groupId}-help`"
         class="ex-checkbox-group__help"
       >
         <slot name="help">
-          {{ helpText }}
+          {{ props.helpText }}
         </slot>
       </div>
 

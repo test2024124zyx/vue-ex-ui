@@ -501,6 +501,21 @@ describe('ExCheckbox', () => {
 
   // ARIA 属性测试
   describe('Accessibility', () => {
+    it('does not warn when optional ARIA props are omitted', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      try {
+        mount(ExCheckbox, {
+          props: { indeterminate: true },
+          slots: { default: 'Checkbox' },
+        });
+
+        expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('Property "ariaControls"'));
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
     it('has correct ARIA attributes', () => {
       const wrapper = mount(ExCheckbox, {
         props: {

@@ -615,6 +615,20 @@ describe('ExCheckboxGroup', () => {
 
   // ARIA 属性测试
   describe('Accessibility', () => {
+    it('does not warn when the optional accessible name is omitted', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      try {
+        mount(ExCheckboxGroup, {
+          props: { modelValue: [] },
+        });
+
+        expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('Property "ariaLabel"'));
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
     it('has correct ARIA attributes', () => {
       const wrapper = mount(ExCheckboxGroup, {
         props: {
