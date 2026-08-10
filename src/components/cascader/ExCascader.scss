@@ -127,9 +127,87 @@
     overflow: auto;
   }
 
+  // 浏览上下文：桌面端减少迷失感，移动端作为可点击的返回路径。
+  &__path {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    min-width: 0;
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    border-bottom: 1px solid var(--ex-color-border-primary);
+    color: var(--ex-color-text-tertiary);
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__path-button {
+    flex-shrink: 0;
+    max-width: 180px;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 0;
+    border-radius: var(--ex-radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--ex-text-sm);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--ex-color-bg-hover);
+      color: var(--ex-color-neon-blue-500);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--ex-color-neon-blue-500);
+      outline-offset: -1px;
+    }
+
+    &--current {
+      color: var(--ex-color-neon-blue-500);
+      font-weight: var(--ex-font-medium);
+    }
+  }
+
+  &__path-separator {
+    flex-shrink: 0;
+    color: var(--ex-color-text-tertiary);
+    user-select: none;
+  }
+
   &__search-results {
     max-height: var(--ex-cascader-content-max-height);
     overflow: auto;
+  }
+
+  &__search-result-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ex-spacing-1);
+  }
+
+  &__search-result-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__search-result-path {
+    overflow: hidden;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-normal);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   // 菜单容器
@@ -222,6 +300,28 @@
     }
   }
 
+  &__option-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--ex-spacing-5);
+    width: var(--ex-spacing-5);
+    min-width: var(--ex-spacing-5);
+    color: var(--ex-color-success);
+    opacity: 0;
+  }
+
+  &__option--selected &__option-state {
+    opacity: 1;
+  }
+
+  &__option-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+  }
+
   &__option-label {
     flex: 1;
     overflow: hidden;
@@ -290,13 +390,17 @@
 
   // 响应式布局
   @include desktop-first(md) {
-    &__dropdown--inline {
-      position: fixed;
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 60vh;
+    // Teleport 模式也切换为底部面板，避免小屏幕上被输入框下方空间限制。
+    &__dropdown {
+      position: fixed !important;
+      top: auto !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100%;
+      min-width: 0 !important;
+      max-width: none !important;
+      max-height: 60vh !important;
       border-radius: var(--ex-radius-lg) var(--ex-radius-lg) 0 0;
     }
 
@@ -306,8 +410,36 @@
       max-height: calc(60vh - 40px);
     }
 
+    &__menus {
+      display: block;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+
     &__menu {
+      display: none;
+      width: 100%;
       --ex-cascader-menu-min-width: 150px;
+      border-right: none;
+
+      &:last-child {
+        display: block;
+      }
+    }
+
+    &__path {
+      min-height: var(--ex-input-touch-target, 44px);
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    }
+
+    &__path-button {
+      min-height: var(--ex-input-touch-target, 44px);
+      max-width: 160px;
+    }
+
+    &__option {
+      min-height: var(--ex-input-touch-target, 44px);
     }
   }
 

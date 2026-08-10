@@ -506,6 +506,8 @@ export default {
     loading: 'Loading...',
     panel: 'Cascader options',
     searchResults: 'Search results',
+    currentPath: 'Current path',
+    allOptions: 'All options',
     level: 'Level {level}',
   },
 

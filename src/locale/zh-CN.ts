@@ -506,6 +506,8 @@ export default {
     loading: '加载中...',
     panel: '级联选项',
     searchResults: '搜索结果',
+    currentPath: '当前路径',
+    allOptions: '全部选项',
     level: '第 {level} 级',
   },
 

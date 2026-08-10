@@ -50,6 +50,8 @@ describe('ExCascader', () => {
     expect(rootDeclaration).toMatch(/width:\s*240px/);
     expect(rootDeclaration).toMatch(/max-width:\s*100%/);
     expect(rootDeclaration).not.toMatch(/\n\s*width:\s*100%/);
+    expect(stylesheet).toMatch(/position:\s*fixed\s*!important/);
+    expect(stylesheet).toMatch(/&__menu[\s\S]*display:\s*none[\s\S]*&:last-child/);
   });
 
   describe('基础渲染与无障碍', () => {
@@ -179,6 +181,49 @@ describe('ExCascader', () => {
       expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
         ['zhejiang', 'hangzhou', 'xihu'],
       ]);
+    });
+
+    it('搜索结果应突出叶子标题、祖先路径并显示当前选中状态', async () => {
+      const wrapper = mount(ExCascader, {
+        props: {
+          options,
+          modelValue: ['zhejiang', 'hangzhou', 'xihu'],
+          filterable: true,
+          teleported: false,
+        },
+      });
+      await wrapper.find('.ex-cascader__input').setValue('西湖');
+
+      const result = wrapper.find('.ex-cascader__search-results .ex-cascader__option');
+      expect(result.find('.ex-cascader__search-result-label').text()).toBe('西湖');
+      expect(result.find('.ex-cascader__search-result-path').text()).toBe('浙江 / 杭州');
+      expect(result.find('.ex-cascader__option-state .ex-icon').exists()).toBe(true);
+      expect(result.attributes('aria-label')).toBe('浙江 / 杭州 / 西湖');
+    });
+
+    it('当前路径导航应支持回到根级并恢复根菜单', async () => {
+      const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+      await wrapper.find('.ex-cascader__menu .ex-cascader__option').trigger('click');
+      expect(wrapper.findAll('.ex-cascader__menu')).toHaveLength(2);
+      expect(wrapper.findAll('.ex-cascader__path-button')).toHaveLength(2);
+
+      await wrapper.find('.ex-cascader__path-button').trigger('click');
+
+      expect(wrapper.findAll('.ex-cascader__menu')).toHaveLength(1);
+      expect(wrapper.find('.ex-cascader__path-button').text()).toBe('All options');
+    });
+
+    it('选项应同时表达分支展开状态与已选状态', async () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, modelValue: ['zhejiang', 'hangzhou', 'xihu'], teleported: false },
+      });
+      await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+
+      const firstOption = wrapper.find('.ex-cascader__menu .ex-cascader__option');
+      expect(firstOption.attributes('aria-expanded')).toBe('true');
+      expect(firstOption.attributes('aria-selected')).toBe('true');
+      expect(firstOption.find('.ex-cascader__option-state .ex-icon').exists()).toBe(true);
     });
   });
 

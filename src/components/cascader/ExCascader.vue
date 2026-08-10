@@ -108,10 +108,31 @@
               :disabled="result.disabled"
               :aria-disabled="result.disabled || undefined"
               :aria-selected="isSearchResultSelected(result)"
+              :aria-label="result.labels.join(separator)"
               @mouseenter="searchActiveIndex = resultIndex"
               @click="handleSearchResultClick(result)"
             >
-              <span class="ex-cascader__option-label">{{ result.labels.join(separator) }}</span>
+              <span
+                class="ex-cascader__option-state"
+                aria-hidden="true"
+              >
+                <ExIcon
+                  v-if="isSearchResultSelected(result)"
+                  icon="check-line"
+                  :size="16"
+                />
+              </span>
+              <span class="ex-cascader__search-result-content">
+                <span class="ex-cascader__search-result-label">
+                  {{ result.labels[result.labels.length - 1] }}
+                </span>
+                <span
+                  v-if="result.labels.length > 1"
+                  class="ex-cascader__search-result-path"
+                >
+                  {{ result.labels.slice(0, -1).join(separator) }}
+                </span>
+              </span>
             </button>
             <div
               v-if="searchResults.length === 0"
@@ -123,47 +144,102 @@
 
           <div
             v-else
-            class="ex-cascader__menus"
+            class="ex-cascader__browse"
           >
-            <div
-              v-for="(menu, index) in menus"
-              :key="index"
-              class="ex-cascader__menu"
-              role="listbox"
-              :aria-label="tCascader('level', { level: index + 1 })"
+            <!-- 当前路径既是桌面端上下文提示，也是移动端的返回导航。 -->
+            <nav
+              class="ex-cascader__path"
+              :aria-label="tCascader('currentPath')"
             >
               <button
-                v-for="(option, optIndex) in menu"
-                :id="getOptionId(index, optIndex)"
-                :key="option.value"
-                class="ex-cascader__option"
                 type="button"
-                tabindex="-1"
-                role="option"
-                :disabled="option.disabled"
-                :aria-selected="isSelected(option, index)"
-                :aria-disabled="option.disabled || undefined"
-                :class="{
-                  'ex-cascader__option--active': isActive(option, index),
-                  'ex-cascader__option--disabled': option.disabled,
-                  'ex-cascader__option--selected': isSelected(option, index),
-                  'ex-cascader__option--keyboard': activeCol === index && activeIndex === optIndex,
-                }"
-                @click="handleOptionClick(option, index)"
-                @mouseenter="trigger === 'hover' && handleOptionHover(option, index, optIndex)"
+                class="ex-cascader__path-button"
+                :class="{ 'ex-cascader__path-button--current': activePathLabels.length === 0 }"
+                :aria-current="activePathLabels.length === 0 ? 'step' : undefined"
+                @click="handlePathCrumbClick(-1)"
               >
-                <span class="ex-cascader__option-label">{{ option.label }}</span>
-                <span
-                  v-if="option.children && option.children.length"
-                  class="ex-cascader__option-arrow"
-                >
-                  <ExIcon
-                    icon="arrow-right-s-line"
-                    :size="16"
-                    aria-hidden="true"
-                  />
-                </span>
+                {{ tCascader('allOptions') }}
               </button>
+              <template
+                v-for="(label, pathIndex) in activePathLabels"
+                :key="`${pathIndex}-${label}`"
+              >
+                <span
+                  class="ex-cascader__path-separator"
+                  aria-hidden="true"
+                >
+                  {{ separator }}
+                </span>
+                <button
+                  type="button"
+                  class="ex-cascader__path-button"
+                  :class="{
+                    'ex-cascader__path-button--current': pathIndex === activePathLabels.length - 1,
+                  }"
+                  :aria-current="pathIndex === activePathLabels.length - 1 ? 'step' : undefined"
+                  @click="handlePathCrumbClick(pathIndex)"
+                >
+                  {{ label }}
+                </button>
+              </template>
+            </nav>
+
+            <div class="ex-cascader__menus">
+              <div
+                v-for="(menu, index) in menus"
+                :key="index"
+                class="ex-cascader__menu"
+                role="listbox"
+                :aria-label="tCascader('level', { level: index + 1 })"
+              >
+                <button
+                  v-for="(option, optIndex) in menu"
+                  :id="getOptionId(index, optIndex)"
+                  :key="option.value"
+                  class="ex-cascader__option"
+                  type="button"
+                  tabindex="-1"
+                  role="option"
+                  :disabled="option.disabled"
+                  :aria-selected="isSelected(option, index)"
+                  :aria-expanded="hasChildren(option) ? isActive(option, index) : undefined"
+                  :aria-haspopup="hasChildren(option) ? 'listbox' : undefined"
+                  :aria-disabled="option.disabled || undefined"
+                  :class="{
+                    'ex-cascader__option--active': isActive(option, index),
+                    'ex-cascader__option--disabled': option.disabled,
+                    'ex-cascader__option--selected': isSelected(option, index),
+                    'ex-cascader__option--keyboard':
+                      activeCol === index && activeIndex === optIndex,
+                  }"
+                  @click="handleOptionClick(option, index)"
+                  @mouseenter="trigger === 'hover' && handleOptionHover(option, index, optIndex)"
+                >
+                  <span
+                    class="ex-cascader__option-state"
+                    aria-hidden="true"
+                  >
+                    <ExIcon
+                      v-if="isSelected(option, index)"
+                      icon="check-line"
+                      :size="16"
+                    />
+                  </span>
+                  <span class="ex-cascader__option-content">
+                    <span class="ex-cascader__option-label">{{ option.label }}</span>
+                  </span>
+                  <span
+                    v-if="hasChildren(option)"
+                    class="ex-cascader__option-arrow"
+                    aria-hidden="true"
+                  >
+                    <ExIcon
+                      icon="arrow-right-s-line"
+                      :size="16"
+                    />
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -211,7 +287,6 @@ const componentSize = useComponentSize(computed(() => props.size ?? formItem?.si
 const { t: tCascader } = useLocale('cascader');
 const { t: tCommon } = useLocale('common');
 const attrs = useAttrs();
-
 const currentPlaceholder = computed(() => props.placeholder || tCascader('placeholder'));
 const accessibleLabel = computed(
   () => externalAriaLabel.value || (labelledBy.value ? undefined : currentPlaceholder.value)
@@ -239,7 +314,6 @@ const searchQuery = ref('');
 const activeCol = ref(0);
 const activeIndex = ref(-1);
 const searchActiveIndex = ref(-1);
-
 type AriaInvalidValue = 'true' | 'false' | 'grammar' | 'spelling';
 
 // 这些属性由组件根据真实状态维护，不能被外部 attrs 覆盖。
@@ -351,7 +425,6 @@ const getOptionId = (column: number, index: number) =>
 const getSearchResultId = (index: number) => `${dropdownId.value}-search-${index}`;
 const getPathKey = (values: (string | number)[]) =>
   values.map(value => `${typeof value}:${String(value)}`).join('/');
-
 /** 搜索结果：一条完整的可选路径 */
 interface CascaderSearchResult {
   labels: string[];
@@ -360,7 +433,6 @@ interface CascaderSearchResult {
 }
 
 const hasSearchQuery = computed(() => props.filterable && searchQuery.value.trim().length > 0);
-
 const activeDescendant = computed(() => {
   if (!visible.value) return undefined;
   if (hasSearchQuery.value) {
@@ -377,7 +449,6 @@ const inputDisplayValue = computed(() => {
   }
   return displayValue.value;
 });
-
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
 const allLeafPaths = computed<CascaderSearchResult[]>(() => {
   const results: CascaderSearchResult[] = [];
@@ -404,7 +475,6 @@ const allLeafPaths = computed<CascaderSearchResult[]>(() => {
   walk(props.options, [], [], false);
   return results;
 });
-
 // 搜索结果是一条完整叶子路径，路径中任意一级标签命中即可显示。
 const searchResults = computed<CascaderSearchResult[]>(() => {
   if (!hasSearchQuery.value) return [];
@@ -418,7 +488,6 @@ const searchResults = computed<CascaderSearchResult[]>(() => {
 const isSearchResultSelected = (result: CascaderSearchResult): boolean =>
   selectedPath.value.length === result.values.length &&
   selectedPath.value.every((value, index) => value === result.values[index]);
-
 // 计算属性
 const cascaderClasses = computed(() => {
   const classes = ['ex-cascader', `ex-cascader--${componentSize.value}`];
@@ -429,7 +498,6 @@ const cascaderClasses = computed(() => {
   if (visible.value) classes.push('ex-cascader--open');
 
   classes.push(...normalizeCustomClass(props.class));
-
   return classes;
 });
 
@@ -439,27 +507,32 @@ const cascaderStyles = computed(() => {
   return props.style;
 });
 
-const hasValue = computed(() => {
-  return selectedPath.value.length > 0;
-});
-
+const hasValue = computed(() => selectedPath.value.length > 0);
 const displayValue = computed(() => {
   if (!hasValue.value) return '';
-
   const labels: string[] = [];
   let currentOptions = props.options;
-
   for (const value of selectedPath.value) {
     const option = currentOptions.find(opt => opt.value === value);
     if (!option) break;
-
     labels.push(option.label);
     currentOptions = option.children || [];
   }
 
   return props.showAllLevels ? labels.join(props.separator) : labels[labels.length - 1] || '';
 });
-
+// 当前浏览路径的标签用于面板上下文提示和移动端返回导航。
+const activePathLabels = computed(() => {
+  const labels: string[] = [];
+  let currentOptions = props.options;
+  for (const value of activePath.value) {
+    const option = currentOptions.find(candidate => candidate.value === value);
+    if (!option) break;
+    labels.push(option.label);
+    currentOptions = option.children || [];
+  }
+  return labels;
+});
 // 初始化菜单
 const initMenus = () => {
   menus.value = [props.options];
@@ -481,16 +554,19 @@ const initMenus = () => {
   }
 };
 
+const handlePathCrumbClick = (level: number) => {
+  activePath.value = level < 0 ? [] : activePath.value.slice(0, level + 1);
+  initMenus();
+  initializeMenuActive();
+};
+
 // 判断选项是否激活
-const isActive = (option: CascaderOption, level: number) => {
-  return activePath.value[level] === option.value;
-};
-
+const isActive = (option: CascaderOption, level: number) =>
+  activePath.value[level] === option.value;
+const hasChildren = (option: CascaderOption) => Boolean(option.children?.length);
 // 判断选项是否被选中
-const isSelected = (option: CascaderOption, level: number) => {
-  return selectedPath.value[level] === option.value;
-};
-
+const isSelected = (option: CascaderOption, level: number) =>
+  selectedPath.value[level] === option.value;
 // 更新下拉面板位置；非 Teleport 模式保留 CSS 的就地/底部面板布局。
 const updateDropdownPosition = () => {
   if (!props.teleported) {
