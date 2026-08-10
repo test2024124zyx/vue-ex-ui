@@ -1,6 +1,6 @@
 import { inject, provide } from 'vue';
 import type { ComputedRef, InjectionKey } from 'vue';
-import type { FormSize, FormValidateStatus } from './types';
+import type { FormContext, FormSize, FormValidateStatus } from './types';
 
 /**
  * FormItem 提供给表单控件的字段上下文。
@@ -34,6 +34,9 @@ export interface FormItemFieldContext {
 
 export const FORM_ITEM_INJECTION_KEY: InjectionKey<FormItemFieldContext> =
   Symbol('exFormItemContext');
+
+/** Form 与 FormItem 之间使用独立的注入键，避免与业务层字符串注入发生冲突。 */
+export const FORM_CONTEXT_INJECTION_KEY: InjectionKey<FormContext> = Symbol('exFormContext');
 
 /** FormItem 内部使用：向子控件提供字段上下文 */
 export function provideFormItem(context: FormItemFieldContext): void {

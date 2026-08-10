@@ -22,6 +22,7 @@ export default {
   // 表单校验
   validators: {
     required: '此字段为必填项',
+    type: '字段类型不正确',
     email: '请输入有效的邮箱地址',
     url: '请输入有效的网址',
     number: '请输入有效的数字',
@@ -30,6 +31,7 @@ export default {
     max: '最多允许 {max} 个字符',
     minValue: '值不能小于 {min}',
     maxValue: '值不能大于 {max}',
+    len: '长度必须为 {len} 个字符或项目',
     pattern: '格式不正确',
     enum: '值不在允许的范围内',
   },

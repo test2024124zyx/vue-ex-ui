@@ -12,6 +12,7 @@ import type {
   FormValidateStatus,
   FormValidateResult,
   FormValidateError,
+  FormItemValidateResult,
   FormInstance,
   FormItemInstance,
 } from './types';
@@ -46,6 +47,7 @@ export type {
   FormValidateStatus,
   FormValidateResult,
   FormValidateError,
+  FormItemValidateResult,
   FormInstance,
   FormItemInstance,
 };

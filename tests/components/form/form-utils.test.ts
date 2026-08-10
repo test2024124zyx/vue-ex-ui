@@ -68,6 +68,20 @@ describe('Form 校验工具', () => {
     expect(await runValidator('enum', { enum: ['a', 'b'] }, 'a')).toBeUndefined();
   });
 
+  it('支持声明中的类型和精确长度校验，并可重复使用全局正则', async () => {
+    expect(await runValidator('type', { type: 'string' }, '文本')).toBeUndefined();
+    expect(await runValidator('type', { type: 'string', message: '类型错误' }, 123)).toBe(
+      '类型错误'
+    );
+    expect(await runValidator('type', { type: 'array' }, ['a'])).toBeUndefined();
+    expect(await runValidator('len', { len: 3, message: '长度错误' }, 'ab')).toBe('长度错误');
+    expect(await runValidator('len', { len: 3 }, ['a', 'b', 'c'])).toBeUndefined();
+
+    const reusablePattern = /^ok$/g;
+    expect(await runValidator('pattern', { pattern: reusablePattern }, 'ok')).toBeUndefined();
+    expect(await runValidator('pattern', { pattern: reusablePattern }, 'ok')).toBeUndefined();
+  });
+
   it('支持转换器、自定义校验器和异步校验器', async () => {
     const transformed = await validateField(
       [{ transform: value => String(value).trim(), pattern: /^ok$/, message: '转换失败' }],

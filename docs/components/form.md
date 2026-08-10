@@ -4,6 +4,8 @@
 
 当 `ExFormItem` 包裹 `ExInput` 时，标签、帮助/错误消息会自动与真实输入控件建立可访问性关联；`Form` 的 `size`、`disabled` 与 `readonly` 也会同步到输入框的原生语义。
 
+未显式设置 `size` 时，表单会继承最近的 `ExConfigProvider` 尺寸；未显式设置 `labelPlacement` 时，`vertical` 布局使用顶部标签，`horizontal` 与 `inline` 布局使用左侧标签。单个 `ExFormItem` 的配置优先于表单配置。
+
 <script setup>
 import { reactive, ref } from 'vue'
 
@@ -68,6 +70,7 @@ const statusOptions = [
 ## 基础用法
 
 ::: raw
+
 <div class="vp-raw demo-container form-demo-narrow">
   <ex-form :model="profile" label-width="96px">
     <ex-form-item label="姓名" prop="name">
@@ -121,6 +124,7 @@ const statusOptions = [
 ## 表单校验
 
 ::: raw
+
 <div class="vp-raw demo-container form-demo-narrow">
   <ex-form
     ref="validationFormRef"
@@ -166,6 +170,7 @@ const statusOptions = [
 ## 布局
 
 ::: raw
+
 <div class="vp-raw demo-container form-layout-stack">
   <section>
     <ex-typography variant="title">垂直布局</ex-typography>
@@ -203,6 +208,7 @@ const statusOptions = [
 ## 尺寸与状态
 
 ::: raw
+
 <div class="vp-raw demo-container form-size-grid">
   <ex-form :model="layoutForm" size="small" label-placement="top">
     <ex-form-item label="小型"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
@@ -223,80 +229,82 @@ const statusOptions = [
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model` | 表单数据对象 | `Record<string, unknown>` | `{}` |
-| `rules` | 字段校验规则 | `Record<string, FormRule \| FormRule[]>` | `{}` |
-| `layout` | 布局 | `horizontal \| vertical \| inline` | `vertical` |
-| `size` | 尺寸 | `small \| medium \| large` | `medium` |
-| `labelWidth` | 标签宽度 | `string \| number` | — |
-| `labelAlign` | 标签对齐 | `left \| right \| top` | `left` |
-| `labelPlacement` | 标签位置 | `left \| top` | `left` |
-| `showColon` | 是否显示冒号 | `boolean` | `true` |
-| `hasFeedback` | 是否显示校验反馈图标 | `boolean` | `false` |
-| `disabled` | 是否禁用整表交互 | `boolean` | `false` |
-| `readonly` | 是否只读 | `boolean` | `false` |
-| `name` | 原生表单名称 | `string` | — |
-| `validateOnRuleChange` | 规则变化后是否校验 | `boolean` | `true` |
-| `scrollToError` | 是否滚动到首个错误字段 | `boolean` | `true` |
+| 参数                    | 说明                                      | 类型                                     | 默认值                                   |
+| ----------------------- | ----------------------------------------- | ---------------------------------------- | ---------------------------------------- |
+| `model`                 | 表单数据对象                              | `Record<string, unknown>`                | `{}`                                     |
+| `rules`                 | 字段校验规则                              | `Record<string, FormRule \| FormRule[]>` | `{}`                                     |
+| `layout`                | 布局                                      | `horizontal \| vertical \| inline`       | `vertical`                               |
+| `size`                  | 尺寸                                      | `small \| medium \| large`               | 继承 `ExConfigProvider`（默认 `medium`） |
+| `labelWidth`            | 标签宽度                                  | `string \| number`                       | —                                        |
+| `labelAlign`            | 标签对齐                                  | `left \| right \| top`                   | `left`                                   |
+| `labelPlacement`        | 标签位置                                  | `left \| top`                            | 按 `layout` 推导                         |
+| `showColon`             | 是否显示冒号                              | `boolean`                                | `true`                                   |
+| `hasFeedback`           | 是否显示校验反馈图标                      | `boolean`                                | `false`                                  |
+| `disabled`              | 是否禁用整表交互                          | `boolean`                                | `false`                                  |
+| `readonly`              | 是否只读                                  | `boolean`                                | `false`                                  |
+| `name`                  | 原生表单名称                              | `string`                                 | —                                        |
+| `validateOnRuleChange`  | 规则变化后是否校验                        | `boolean`                                | `true`                                   |
+| `scrollToError`         | 是否滚动到首个错误字段                    | `boolean`                                | `true`                                   |
+| `focusToError`          | 滚动到错误字段后是否聚焦控件              | `boolean`                                | `true`                                   |
+| `scrollIntoViewOptions` | 错误字段的滚动配置；传 `false` 可关闭滚动 | `ScrollIntoViewOptions \| boolean`       | 平滑滚动至居中                           |
 
 ### Events
 
-| 事件名 | 参数 |
-| --- | --- |
-| `submit` | `(event: Event)` |
-| `reset` | `(event: Event)` |
-| `field-change` | `(field: string, value: unknown)` |
+| 事件名           | 参数                                          |
+| ---------------- | --------------------------------------------- |
+| `submit`         | `(event: Event)`                              |
+| `reset`          | `(event: Event)`                              |
+| `field-change`   | `(field: string, value: unknown)`             |
 | `field-validate` | `(field: string, result: FormValidateResult)` |
 
 ### Methods
 
-| 方法 | 类型 |
-| --- | --- |
-| `validate` | `(callback?) => Promise<FormValidateResult>` |
-| `validateField` | `(props: string \| string[], callback?) => Promise<FormValidateResult>` |
-| `resetFields` | `(props?: string \| string[]) => void` |
-| `clearValidate` | `(props?: string \| string[]) => void` |
-| `scrollToField` | `(prop: string) => void` |
-| `getFieldValue` | `(prop: string) => unknown` |
-| `setFieldValue` | `(prop: string, value: unknown) => void` |
-| `getFieldsValue` | `(props?: string[]) => Record<string, unknown>` |
-| `setFieldsValue` | `(values: Record<string, unknown>) => void` |
+| 方法             | 类型                                                                    |
+| ---------------- | ----------------------------------------------------------------------- |
+| `validate`       | `(callback?) => Promise<FormValidateResult>`                            |
+| `validateField`  | `(props: string \| string[], callback?) => Promise<FormValidateResult>` |
+| `resetFields`    | `(props?: string \| string[]) => void`                                  |
+| `clearValidate`  | `(props?: string \| string[]) => void`                                  |
+| `scrollToField`  | `(prop: string, options?: ScrollIntoViewOptions \| boolean) => void`    |
+| `getFieldValue`  | `(prop: string) => unknown`                                             |
+| `setFieldValue`  | `(prop: string, value: unknown) => void`                                |
+| `getFieldsValue` | `(props?: string[]) => Record<string, unknown>`                         |
+| `setFieldsValue` | `(values: Record<string, unknown>) => void`                             |
 
 ## FormItem API
 
 ### Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `prop` | 字段路径 | `string` | — |
-| `label` | 标签文本 | `string` | — |
-| `labelWidth` | 标签宽度 | `string \| number` | 继承 Form |
-| `labelAlign` | 标签对齐 | `left \| right \| top` | 继承 Form |
-| `labelPlacement` | 标签位置 | `left \| top` | 继承 Form |
-| `required` | 是否显示必填标记 | `boolean` | 从规则推导 |
-| `rules` | 局部校验规则 | `FormRule \| FormRule[]` | — |
-| `validateStatus` | 手动校验状态 | `success \| warning \| error \| validating \| ''` | `''` |
-| `help` | 帮助文本 | `string` | — |
-| `error` | 手动错误文本 | `string` | — |
-| `hasFeedback` | 是否显示反馈图标 | `boolean` | 继承 Form |
-| `showColon` | 是否显示冒号 | `boolean` | 继承 Form |
-| `size` | 尺寸 | `small \| medium \| large` | 继承 Form |
+| 参数             | 说明             | 类型                                              | 默认值     |
+| ---------------- | ---------------- | ------------------------------------------------- | ---------- |
+| `prop`           | 字段路径         | `string`                                          | —          |
+| `label`          | 标签文本         | `string`                                          | —          |
+| `labelWidth`     | 标签宽度         | `string \| number`                                | 继承 Form  |
+| `labelAlign`     | 标签对齐         | `left \| right \| top`                            | 继承 Form  |
+| `labelPlacement` | 标签位置         | `left \| top`                                     | 继承 Form  |
+| `required`       | 是否显示必填标记 | `boolean`                                         | 从规则推导 |
+| `rules`          | 局部校验规则     | `FormRule \| FormRule[]`                          | —          |
+| `validateStatus` | 手动校验状态     | `success \| warning \| error \| validating \| ''` | `''`       |
+| `help`           | 帮助文本         | `string`                                          | —          |
+| `error`          | 手动错误文本     | `string`                                          | —          |
+| `hasFeedback`    | 是否显示反馈图标 | `boolean`                                         | 继承 Form  |
+| `showColon`      | 是否显示冒号     | `boolean`                                         | 继承 Form  |
+| `size`           | 尺寸             | `small \| medium \| large`                        | 继承 Form  |
 
 ### Slots
 
-| 名称 | 说明 |
-| --- | --- |
-| `default` | 表单控件 |
-| `label` | 自定义标签 |
+| 名称      | 说明       |
+| --------- | ---------- |
+| `default` | 表单控件   |
+| `label`   | 自定义标签 |
 
 ### Methods
 
-| 方法 | 类型 |
-| --- | --- |
-| `validate` | `(trigger?: string) => Promise<{ valid: boolean; error?: string }>` |
-| `resetField` | `() => void` |
-| `clearValidate` | `() => void` |
+| 方法            | 类型                                                    |
+| --------------- | ------------------------------------------------------- |
+| `validate`      | `(trigger?: string) => Promise<FormItemValidateResult>` |
+| `resetField`    | `() => void`                                            |
+| `clearValidate` | `() => void`                                            |
 
 <style scoped>
 .form-demo-narrow {

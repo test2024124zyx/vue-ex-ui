@@ -22,6 +22,7 @@ export default {
   // Form validators
   validators: {
     required: 'This field is required',
+    type: 'Invalid value type',
     email: 'Please enter a valid email address',
     url: 'Please enter a valid URL',
     number: 'Please enter a valid number',
@@ -30,6 +31,7 @@ export default {
     max: 'No more than {max} characters allowed',
     minValue: 'Value cannot be less than {min}',
     maxValue: 'Value cannot be greater than {max}',
+    len: 'Must be exactly {len} characters or items',
     pattern: 'Invalid format',
     enum: 'Value is not in the allowed set',
   },

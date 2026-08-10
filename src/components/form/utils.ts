@@ -162,6 +162,19 @@ function getBuiltinValidators(rule: FormRule): BuiltinValidatorFn[] {
       case 'float':
         validators.push(builtinValidators.float);
         break;
+      case 'string':
+      case 'boolean':
+      case 'method':
+      case 'regexp':
+      case 'array':
+      case 'object':
+      case 'date':
+      case 'hex':
+        validators.push(builtinValidators.type);
+        break;
+      case 'enum':
+        validators.push(builtinValidators.enum);
+        break;
     }
   }
 
@@ -185,7 +198,11 @@ function getBuiltinValidators(rule: FormRule): BuiltinValidatorFn[] {
     validators.push(builtinValidators.pattern);
   }
 
-  if (rule.enum) {
+  if (rule.len !== undefined) {
+    validators.push(builtinValidators.len);
+  }
+
+  if (rule.enum && rule.type !== 'enum') {
     validators.push(builtinValidators.enum);
   }
 
@@ -207,6 +224,43 @@ export const builtinValidators: BuiltinValidators = {
 
     if (typeof value === 'string' && rule.whitespace !== false && value.trim() === '') {
       callback(rule.message || t('validators.required'));
+      return;
+    }
+
+    callback();
+  },
+
+  type(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+    if (isEmptyValue(value)) {
+      callback();
+      return;
+    }
+
+    const valid = (() => {
+      switch (rule.type) {
+        case 'string':
+          return typeof value === 'string';
+        case 'boolean':
+          return typeof value === 'boolean';
+        case 'method':
+          return typeof value === 'function';
+        case 'regexp':
+          return value instanceof RegExp;
+        case 'array':
+          return Array.isArray(value);
+        case 'object':
+          return typeof value === 'object' && value !== null && !Array.isArray(value);
+        case 'date':
+          return value instanceof Date && !Number.isNaN(value.getTime());
+        case 'hex':
+          return typeof value === 'string' && /^(?:0x)?[0-9a-f]+$/i.test(value);
+        default:
+          return true;
+      }
+    })();
+
+    if (!valid) {
+      callback(rule.message || t('validators.type'));
       return;
     }
 
@@ -248,7 +302,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    if (isNaN(Number(value))) {
+    if (!Number.isFinite(Number(value))) {
       callback(rule.message || t('validators.number'));
       return;
     }
@@ -277,7 +331,7 @@ export const builtinValidators: BuiltinValidators = {
     }
 
     const num = Number(value);
-    if (isNaN(num)) {
+    if (!Number.isFinite(num)) {
       callback(rule.message || t('validators.number'));
       return;
     }
@@ -345,13 +399,31 @@ export const builtinValidators: BuiltinValidators = {
     callback();
   },
 
+  len(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+    if (isEmptyValue(value)) {
+      callback();
+      return;
+    }
+
+    const length = Array.isArray(value) ? value.length : String(value).length;
+    if (length !== rule.len) {
+      callback(rule.message || t('validators.len', { len: rule.len! }));
+      return;
+    }
+
+    callback();
+  },
+
   pattern(rule: FormRule, value: unknown, callback: (error?: string) => void) {
     if (isEmptyValue(value)) {
       callback();
       return;
     }
 
-    if (!rule.pattern!.test(String(value))) {
+    rule.pattern!.lastIndex = 0;
+    const matches = rule.pattern!.test(String(value));
+    rule.pattern!.lastIndex = 0;
+    if (!matches) {
       callback(rule.message || t('validators.pattern'));
       return;
     }
@@ -365,7 +437,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    if (!rule.enum!.includes(value)) {
+    if (!rule.enum || !rule.enum.includes(value)) {
       callback(rule.message || t('validators.enum'));
       return;
     }

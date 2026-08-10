@@ -1,23 +1,53 @@
 <template>
-  <div :class="formItemClasses" :style="formItemStyles" :data-field="prop">
+  <div
+    :class="formItemClasses"
+    :style="formItemStyles"
+    :data-field="prop"
+  >
     <!-- 标签 -->
-    <div v-if="showLabel" :id="formItemLabelId" :class="labelClasses" :style="labelStyles">
-      <span v-if="label" :class="labelTextClasses">
-        {{ label }}
-        <span v-if="showColonMark" class="ex-form-item__colon">:</span>
+    <div
+      v-if="showLabel"
+      :id="formItemLabelId"
+      :class="labelClasses"
+      :style="labelStyles"
+    >
+      <span
+        v-if="showRequiredMark"
+        class="ex-form-item__required-mark"
+        aria-hidden="true"
+      >
+        *
       </span>
-      <slot name="label" />
+      <span
+        v-if="label"
+        :class="labelTextClasses"
+      >
+        {{ label }}
+        <span
+          v-if="showColonMark"
+          class="ex-form-item__colon"
+        >
+          :
+        </span>
+      </span>
+      <slot name="label"></slot>
     </div>
 
     <!-- 内容区域 -->
     <div class="ex-form-item__content">
       <!-- 表单控件 -->
       <div class="ex-form-item__control">
-        <slot />
+        <slot></slot>
 
         <!-- 反馈图标 -->
-        <div v-if="actualHasFeedback && feedbackIcon" :class="feedbackClasses">
-          <ex-icon :icon="feedbackIcon" :size="16" />
+        <div
+          v-if="actualHasFeedback && feedbackIcon"
+          :class="feedbackClasses"
+        >
+          <ex-icon
+            :icon="feedbackIcon"
+            :size="16"
+          />
         </div>
       </div>
 
@@ -37,9 +67,13 @@
           :id="formItemMessageId"
           class="ex-form-item__error"
           role="alert"
-          :aria-live="validateStatus === 'validating' ? 'polite' : 'assertive'"
+          :aria-live="actualValidateStatus === 'validating' ? 'polite' : 'assertive'"
         >
-          <ex-icon icon="error-warning-line" :size="14" class="ex-form-item__error-icon" />
+          <ex-icon
+            icon="error-warning-line"
+            :size="14"
+            class="ex-form-item__error-icon"
+          />
           {{ displayError }}
         </div>
       </transition>
@@ -52,17 +86,18 @@ import { ref, computed, inject, nextTick, onMounted, onUnmounted, watch, useSlot
 import type {
   ExFormItemProps,
   ExFormItemEmits,
-  FormContext,
   FormItemContext,
+  FormItemValidateResult,
   FormValidateStatus,
   FormRule,
 } from './types';
 import { validateField, getFieldValue, setFieldValue } from './utils';
-import { provideFormItem } from './use-form-item';
+import { FORM_CONTEXT_INJECTION_KEY, provideFormItem } from './use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { deepClone } from '../../utils/clone';
 import { generateId } from '../../utils/id';
+import { useComponentSize } from '../config-provider';
 
 defineOptions({
   name: 'ExFormItem',
@@ -86,13 +121,14 @@ const slots = useSlots();
 const { t } = useI18n();
 
 // 注入表单上下文
-const formContext = inject<FormContext | undefined>('exFormContext', undefined);
+const formContext = inject(FORM_CONTEXT_INJECTION_KEY, undefined);
 
 // 响应式状态
 const validateStatus = ref<FormValidateStatus>('');
 const validateMessage = ref('');
 const isValidating = ref(false);
 const initialValue = ref<unknown>(undefined);
+let latestValidationId = 0;
 
 // 使用实例级 ID 建立标签、控件与反馈消息之间的稳定关联。
 const generatedId = generateId('ex-form-item');
@@ -110,16 +146,28 @@ watch(
 );
 
 // 计算属性
-const actualSize = computed(() => {
-  return props.size || formContext?.props?.size || 'medium';
-});
+const actualSize = useComponentSize(computed(() => props.size ?? formContext?.props?.size));
 
 const actualLabelAlign = computed(() => {
-  return props.labelAlign || formContext?.props?.labelAlign || 'left';
+  return props.labelAlign ?? formContext?.props?.labelAlign ?? 'left';
 });
 
 const actualLabelPlacement = computed(() => {
-  return props.labelPlacement || formContext?.props?.labelPlacement || 'left';
+  if (props.labelPlacement !== undefined) {
+    return props.labelPlacement;
+  }
+
+  if (formContext?.props?.labelPlacement !== undefined) {
+    return formContext.props.labelPlacement;
+  }
+
+  if (!formContext) {
+    return 'left';
+  }
+
+  return formContext.props.layout === 'horizontal' || formContext.props.layout === 'inline'
+    ? 'left'
+    : 'top';
 });
 
 const actualShowColon = computed(() => {
@@ -143,15 +191,7 @@ const isRequired = computed(() => {
     return props.required;
   }
 
-  if (props.prop && formContext?.rules?.[props.prop]) {
-    const rules = Array.isArray(formContext.rules[props.prop])
-      ? (formContext.rules[props.prop] as FormRule[])
-      : [formContext.rules[props.prop] as FormRule];
-
-    return rules.some(rule => rule.required);
-  }
-
-  return false;
+  return getRules().some(rule => rule.required);
 });
 
 const showLabel = computed(() => {
@@ -159,7 +199,7 @@ const showLabel = computed(() => {
 });
 
 const showRequiredMark = computed(() => {
-  return isRequired.value && actualLabelPlacement.value !== 'top';
+  return isRequired.value;
 });
 
 const showColonMark = computed(() => {
@@ -167,11 +207,19 @@ const showColonMark = computed(() => {
 });
 
 const actualValidateStatus = computed(() => {
-  return props.validateStatus || validateStatus.value;
+  if (props.validateStatus !== undefined) {
+    return props.validateStatus;
+  }
+
+  return props.error ? 'error' : validateStatus.value;
 });
 
 const displayError = computed(() => {
-  return props.error || (actualValidateStatus.value === 'error' ? validateMessage.value : '');
+  return props.error !== undefined
+    ? props.error
+    : actualValidateStatus.value === 'error'
+      ? validateMessage.value
+      : '';
 });
 
 const formItemLabelId = computed(() => {
@@ -239,13 +287,7 @@ const labelStyles = computed(() => {
 });
 
 const labelTextClasses = computed(() => {
-  const classes = ['ex-form-item__label-text'];
-
-  if (isRequired.value && showRequiredMark.value) {
-    classes.push('is-required');
-  }
-
-  return classes;
+  return ['ex-form-item__label-text'];
 });
 
 const feedbackClasses = computed(() => {
@@ -292,7 +334,7 @@ const formItemContext: FormItemContext = {
 };
 
 // 方法
-async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; error?: string }> {
+async function validateFieldMethod(trigger?: string): Promise<FormItemValidateResult> {
   if (!props.prop || !formContext) {
     return { valid: true };
   }
@@ -315,6 +357,8 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
     return { valid: true };
   }
 
+  const validationId = ++latestValidationId;
+
   const value = getFieldValue(formContext.model, props.prop);
 
   validateStatus.value = 'validating';
@@ -322,6 +366,10 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
 
   try {
     const result = await validateField(filteredRules, value, props.prop);
+
+    if (validationId !== latestValidationId) {
+      return { valid: false, outOfDate: true };
+    }
 
     if (result.valid) {
       validateStatus.value = 'success';
@@ -333,16 +381,28 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
 
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
-    return { valid: result.valid, error: result.error };
+    const validationResult = { valid: result.valid, error: result.error };
+    formContext.notifyFieldValidate(props.prop, validationResult);
+
+    return validationResult;
   } catch (error) {
+    if (validationId !== latestValidationId) {
+      return { valid: false, outOfDate: true };
+    }
+
     validateStatus.value = 'error';
     validateMessage.value = error instanceof Error ? error.message : String(error);
 
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
-    return { valid: false, error: validateMessage.value };
+    const validationResult = { valid: false, error: validateMessage.value };
+    formContext.notifyFieldValidate(props.prop, validationResult);
+
+    return validationResult;
   } finally {
-    isValidating.value = false;
+    if (validationId === latestValidationId) {
+      isValidating.value = false;
+    }
   }
 }
 
@@ -405,22 +465,33 @@ onUnmounted(() => {
 // 监听验证状态变化
 watch(
   () => props.validateStatus,
-  newStatus => {
-    if (newStatus) {
+  (newStatus, oldStatus) => {
+    if (newStatus !== undefined) {
       validateStatus.value = newStatus;
+    } else if (oldStatus !== undefined && props.error === undefined) {
+      validateStatus.value = '';
+      validateMessage.value = '';
     }
-  }
+  },
+  { immediate: true }
 );
 
 // 监听错误消息变化
 watch(
   () => props.error,
-  newError => {
-    if (newError) {
+  (newError, oldError) => {
+    if (newError !== undefined && newError) {
       validateStatus.value = 'error';
       validateMessage.value = newError;
+    } else if (
+      (newError === '' || (newError === undefined && oldError !== undefined)) &&
+      props.validateStatus === undefined
+    ) {
+      validateStatus.value = '';
+      validateMessage.value = '';
     }
-  }
+  },
+  { immediate: true }
 );
 </script>
 

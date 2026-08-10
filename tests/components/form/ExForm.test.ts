@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExForm from '../../../src/components/form/ExForm.vue';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 describe('ExForm', () => {
   describe('Rendering', () => {
@@ -30,12 +31,48 @@ describe('ExForm', () => {
       });
       expect(wrapper.classes()).toContain('ex-form--inline');
     });
+
+    it('derives label placement from layout without overriding item configuration', () => {
+      const vertical = mount(ExForm, {
+        props: { layout: 'vertical' },
+        slots: {
+          default: () => h(ExFormItem, { label: 'Name', prop: 'name' }),
+        },
+      });
+      const horizontal = mount(ExForm, {
+        props: { layout: 'horizontal' },
+        slots: {
+          default: () => h(ExFormItem, { label: 'Name', prop: 'name' }),
+        },
+      });
+      const overridden = mount(ExForm, {
+        props: { layout: 'vertical' },
+        slots: {
+          default: () => h(ExFormItem, { label: 'Name', prop: 'name', labelPlacement: 'left' }),
+        },
+      });
+
+      expect(vertical.findComponent(ExFormItem).classes()).toContain('ex-form-item--top');
+      expect(horizontal.findComponent(ExFormItem).classes()).toContain('ex-form-item--left');
+      expect(overridden.findComponent(ExFormItem).classes()).toContain('ex-form-item--left');
+    });
+
+    it('inherits the global size when Form has no local size', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { size: 'large' },
+        slots: {
+          default: () => h(ExForm),
+        },
+      });
+
+      expect(wrapper.find('.ex-form').classes()).toContain('ex-form--large');
+    });
   });
 
   describe('Sizes', () => {
     const sizes = ['small', 'medium', 'large'] as const;
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExForm, {
           props: { size },
@@ -53,6 +90,7 @@ describe('ExForm', () => {
         },
       });
       expect(wrapper.classes()).toContain('is-disabled');
+      expect(wrapper.find('form').attributes('aria-disabled')).toBe('true');
     });
 
     it('renders readonly state', () => {
@@ -111,10 +149,10 @@ describe('ExForm', () => {
       const wrapper = mount(ExForm);
       const event = new Event('submit');
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
-      
+
       await wrapper.find('form').element.dispatchEvent(event);
       await nextTick();
-      
+
       expect(preventDefaultSpy).toHaveBeenCalled();
     });
   });
@@ -175,6 +213,39 @@ describe('ExForm', () => {
       const wrapper = mount(ExForm);
       const vm = wrapper.vm as any;
       expect(typeof vm.setFieldValue).toBe('function');
+    });
+
+    it('按字段属性精确定位并聚焦错误控件', async () => {
+      const prop = 'name"]';
+      const wrapper = mount(ExForm, {
+        props: {
+          model: { [prop]: '' },
+          rules: { [prop]: { required: true, message: 'Name is required' } },
+        },
+        slots: {
+          default: () =>
+            h(
+              ExFormItem,
+              { label: 'Name', prop },
+              { default: () => h('input', { 'aria-label': 'Name' }) }
+            ),
+        },
+        attachTo: document.body,
+      });
+      const field = wrapper.find('.ex-form-item').element as HTMLElement;
+      const scrollIntoView = vi.fn();
+      Object.defineProperty(field, 'scrollIntoView', { value: scrollIntoView });
+      const vm = wrapper.vm as any;
+
+      vm.scrollToField(prop, { behavior: 'auto', block: 'nearest' });
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'nearest' });
+
+      scrollIntoView.mockClear();
+      const result = await vm.validate();
+      expect(result.valid).toBe(false);
+      expect(document.activeElement).toBe(wrapper.find('input').element);
+      expect(scrollIntoView).toHaveBeenCalled();
+      wrapper.unmount();
     });
   });
 

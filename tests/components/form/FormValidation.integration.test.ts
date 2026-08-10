@@ -181,4 +181,73 @@ describe('Form validation integration', () => {
     expect(wrapper.find('.ex-form-item__error').text()).toContain('name is required');
     wrapper.unmount();
   });
+
+  it('通过 Form 发出字段验证事件，并保持错误字段的注册顺序', async () => {
+    const { wrapper } = createForm();
+    const form = wrapper.findComponent(ExForm);
+
+    const result = await (form.vm as any).validate();
+    const events = form.emitted('field-validate');
+    const latestEvent = events?.at(-1);
+
+    expect(result.valid).toBe(false);
+    expect(latestEvent?.[0]).toBe('name');
+    expect(latestEvent?.[1]).toMatchObject({ valid: false });
+    expect(result.errors[0]?.field).toBe('name');
+    wrapper.unmount();
+  });
+
+  it('异步校验完成顺序变化时不会让过期结果覆盖最新状态', async () => {
+    const model = reactive({ name: 'value' });
+    const pending: Array<(error?: string) => void> = [];
+    const rules = {
+      name: [
+        {
+          asyncValidator: async (
+            _rule: unknown,
+            _value: unknown,
+            callback: (error?: string) => void
+          ) =>
+            new Promise<void>(resolve => {
+              pending.push(error => {
+                callback(error);
+                resolve();
+              });
+            }),
+        },
+      ],
+    };
+    const App = defineComponent({
+      components: { ExForm, ExFormItem, ExInput },
+      setup() {
+        return { model, rules };
+      },
+      template: `
+        <ExForm :model="model" :rules="rules">
+          <ExFormItem label="Name" prop="name">
+            <ExInput v-model="model.name" />
+          </ExFormItem>
+        </ExForm>
+      `,
+    });
+    const wrapper = mount(App);
+    const form = wrapper.findComponent(ExForm);
+
+    const firstValidation = (form.vm as any).validate();
+    await nextTick();
+    const secondValidation = (form.vm as any).validate();
+    await nextTick();
+
+    expect(pending).toHaveLength(2);
+    pending[1]?.('最新校验失败');
+    const latestResult = await secondValidation;
+    pending[0]?.();
+    const staleResult = await firstValidation;
+
+    expect(latestResult).toMatchObject({ valid: false });
+    expect(latestResult.errors[0]?.message).toBe('最新校验失败');
+    expect(staleResult).toMatchObject({ valid: false, outOfDate: true });
+    expect(wrapper.find('.ex-form-item__error').text()).toContain('最新校验失败');
+    wrapper.unmount();
+  });
 });
