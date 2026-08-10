@@ -149,18 +149,6 @@
     box-shadow: 0 0 0 4px var(--ex-color-neon-blue-alpha-20);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    &,
-    &__external-icon {
-      transition: none;
-    }
-
-    &:hover,
-    &--external:hover .ex-link__external-icon {
-      transform: none;
-    }
-  }
-
   @media (prefers-contrast: high) {
     text-decoration-thickness: 2px;
 
@@ -207,6 +195,21 @@
   .ex-link--external:not(.ex-link--disabled):hover .ex-link__external-icon {
     opacity: 1;
     transform: translate(2px, -2px);
+  }
+}
+
+// 减少动态效果必须覆盖更具体的 hover 规则，确保用户偏好始终优先。
+@media (prefers-reduced-motion: reduce) {
+  .ex-link,
+  .ex-link__external-icon {
+    transition: none;
+  }
+
+  .ex-link.ex-link--primary:not(.ex-link--disabled):hover,
+  .ex-link.ex-link--primary:not(.ex-link--disabled):active,
+  .ex-link.ex-link--external:not(.ex-link--disabled):hover,
+  .ex-link.ex-link--external:not(.ex-link--disabled):hover .ex-link__external-icon {
+    transform: none;
   }
 }
 
