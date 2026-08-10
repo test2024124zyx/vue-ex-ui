@@ -76,6 +76,12 @@ const extractTagExamples = (block: string): string[] =>
     ...(block.match(/<ex-tag-input\b[^>]*\/>/gi) ?? []),
   ].map(normalizeTypographyExample);
 
+// 表单示例的外层 vp-raw 容器只负责文档挂载，代码块应完整保留其内部标记。
+const extractFormExampleMarkup = (block: string): string => {
+  const wrapper = block.match(/^\s*<div class="vp-raw[^"]*">\s*([\s\S]*)\s*<\/div>\s*$/);
+  return normalizeTypographyExample(wrapper?.[1] ?? block);
+};
+
 describe('组件文档实时演示', () => {
   it.each([
     ['typography', 'ex-typography', 32],
@@ -392,6 +398,24 @@ describe('组件文档实时演示', () => {
 
   it.each(['form', 'form-examples'])('%s 不使用原生表单控件冒充组件库控件', name => {
     expect(readDocument(name)).not.toMatch(/<(?:input|textarea|select|button)\b/i);
+  });
+
+  it.each(['form', 'form-examples'])('%s 每个实时示例都有默认折叠且代码保持一致', name => {
+    const document = readDocument(name);
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractFormExampleMarkup(liveBlock)).toBe(
+        normalizeTypographyExample(codeBlocks[index] ?? '')
+      );
+    });
   });
 
   it('Menu 文档包含可折叠菜单的实际挂载演示', () => {

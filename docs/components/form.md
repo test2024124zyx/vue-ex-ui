@@ -107,19 +107,44 @@ const statusOptions = [
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
 <ex-form :model="profile" label-width="96px">
   <ex-form-item label="姓名" prop="name">
-    <ex-input v-model="profile.name" />
+    <ex-input v-model="profile.name" placeholder="请输入姓名" clearable />
+  </ex-form-item>
+  <ex-form-item label="邮箱" prop="email">
+    <ex-input v-model="profile.email" type="email" placeholder="name@company.com" clearable />
   </ex-form-item>
   <ex-form-item label="所属部门" prop="department">
-    <ex-select v-model="profile.department" :options="departmentOptions" style="width: 100%" />
+    <ex-select
+      v-model="profile.department"
+      :options="departmentOptions"
+      placeholder="请选择部门"
+      clearable
+      style="width: 100%"
+    />
+  </ex-form-item>
+  <ex-form-item label="成员角色" prop="role">
+    <ex-radio-group v-model="profile.role">
+      <ex-radio value="member">普通成员</ex-radio>
+      <ex-radio value="manager">管理员</ex-radio>
+    </ex-radio-group>
+  </ex-form-item>
+  <ex-form-item label="邮件通知" prop="notice">
+    <ex-switch v-model="profile.notice" />
   </ex-form-item>
   <ex-form-item>
-    <ex-button native-type="submit">保存资料</ex-button>
+    <ex-space>
+      <ex-button type="primary" native-type="submit">保存资料</ex-button>
+      <ex-button type="default" native-type="reset">重置</ex-button>
+    </ex-space>
   </ex-form-item>
 </ex-form>
 ```
+
+:::
 
 ## 表单校验
 
@@ -167,6 +192,51 @@ const statusOptions = [
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<ex-form
+  ref="validationFormRef"
+  :model="validationForm"
+  :rules="validationRules"
+  label-width="100px"
+  has-feedback
+  @submit="handleValidationSubmit"
+>
+  <ex-form-item label="账号" prop="account">
+    <ex-input v-model="validationForm.account" placeholder="3–20 个字符" clearable />
+  </ex-form-item>
+  <ex-form-item label="邮箱" prop="email">
+    <ex-input v-model="validationForm.email" type="email" placeholder="name@company.com" clearable />
+  </ex-form-item>
+  <ex-form-item label="密码" prop="password" help="至少 8 个字符">
+    <ex-input v-model="validationForm.password" type="password" show-password />
+  </ex-form-item>
+  <ex-form-item label="部门" prop="department">
+    <ex-select
+      v-model="validationForm.department"
+      :options="departmentOptions"
+      placeholder="请选择部门"
+      style="width: 100%"
+    />
+  </ex-form-item>
+  <ex-form-item prop="agreement">
+    <ex-checkbox v-model="validationForm.agreement">我已确认服务条款</ex-checkbox>
+  </ex-form-item>
+  <ex-form-item>
+    <ex-space wrap>
+      <ex-button type="primary" native-type="submit">提交校验</ex-button>
+      <ex-button type="default" @click="handleValidationReset">重置字段</ex-button>
+    </ex-space>
+  </ex-form-item>
+</ex-form>
+<ex-typography v-if="validationMessage" variant="caption" color="text-secondary">
+  {{ validationMessage }}
+</ex-typography>
+```
+
+:::
+
 ## 布局
 
 ::: raw
@@ -205,6 +275,43 @@ const statusOptions = [
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<section>
+  <ex-typography variant="title">垂直布局</ex-typography>
+  <ex-form :model="layoutForm" layout="vertical">
+    <ex-form-item label="关键词"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+    <ex-form-item label="状态">
+      <ex-select v-model="layoutForm.status" :options="statusOptions" style="width: 100%" />
+    </ex-form-item>
+  </ex-form>
+</section>
+<section>
+  <ex-typography variant="title">水平布局</ex-typography>
+  <ex-form :model="layoutForm" layout="horizontal" label-width="80px">
+    <ex-form-item label="关键词"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+    <ex-form-item label="状态">
+      <ex-select v-model="layoutForm.status" :options="statusOptions" style="width: 100%" />
+    </ex-form-item>
+  </ex-form>
+</section>
+<section>
+  <ex-typography variant="title">内联布局</ex-typography>
+  <ex-form :model="layoutForm" layout="inline">
+    <ex-form-item label="关键词">
+      <ex-input v-model="layoutForm.keyword" placeholder="搜索项目" />
+    </ex-form-item>
+    <ex-form-item label="状态">
+      <ex-select v-model="layoutForm.status" :options="statusOptions" placeholder="全部状态" />
+    </ex-form-item>
+    <ex-form-item><ex-button type="primary">查询</ex-button></ex-form-item>
+  </ex-form>
+</section>
+```
+
+:::
+
 ## 尺寸与状态
 
 ::: raw
@@ -223,6 +330,25 @@ const statusOptions = [
     <ex-form-item label="禁用表单"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
   </ex-form>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-form :model="layoutForm" size="small" label-placement="top">
+  <ex-form-item label="小型"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+</ex-form>
+<ex-form :model="layoutForm" size="medium" label-placement="top">
+  <ex-form-item label="中型"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+</ex-form>
+<ex-form :model="layoutForm" size="large" label-placement="top">
+  <ex-form-item label="大型"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+</ex-form>
+<ex-form :model="layoutForm" disabled label-placement="top">
+  <ex-form-item label="禁用表单"><ex-input v-model="layoutForm.keyword" /></ex-form-item>
+</ex-form>
+```
+
 :::
 
 ## Form API
