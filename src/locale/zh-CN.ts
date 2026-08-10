@@ -503,6 +503,7 @@ export default {
   cascader: {
     placeholder: '请选择',
     noData: '暂无数据',
+    noSearchResults: '未找到匹配项',
     loading: '加载中...',
     panel: '级联选项',
     searchResults: '搜索结果',

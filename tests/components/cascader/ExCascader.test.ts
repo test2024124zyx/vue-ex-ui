@@ -52,6 +52,7 @@ describe('ExCascader', () => {
     expect(rootDeclaration).not.toMatch(/\n\s*width:\s*100%/);
     expect(stylesheet).toMatch(/position:\s*fixed\s*!important/);
     expect(stylesheet).toMatch(/&__menu[\s\S]*display:\s*none[\s\S]*&:last-child/);
+    expect(stylesheet).toMatch(/&__empty[\s\S]*display:\s*flex[\s\S]*min-height:/);
   });
 
   describe('基础渲染与无障碍', () => {
@@ -199,6 +200,24 @@ describe('ExCascader', () => {
       expect(result.find('.ex-cascader__search-result-path').text()).toBe('浙江 / 杭州');
       expect(result.find('.ex-cascader__option-state .ex-icon').exists()).toBe(true);
       expect(result.attributes('aria-label')).toBe('浙江 / 杭州 / 西湖');
+    });
+
+    it('搜索无结果时应显示稳定且可播报的空状态', async () => {
+      const wrapper = mount(ExCascader, {
+        props: { options, filterable: true, teleported: false },
+      });
+      const input = wrapper.find('.ex-cascader__input');
+
+      await input.setValue('不存在的选项');
+
+      const empty = wrapper.find('.ex-cascader__empty');
+      expect(empty.exists()).toBe(true);
+      expect(empty.attributes('role')).toBe('status');
+      expect(empty.attributes('aria-live')).toBe('polite');
+      expect(empty.text()).toBe('No matching results');
+      expect(empty.find('.ex-icon').exists()).toBe(true);
+      expect(wrapper.find('.ex-cascader__search-results [role="listbox"]').exists()).toBe(false);
+      expect(input.attributes('aria-activedescendant')).toBeUndefined();
     });
 
     it('当前路径导航应支持回到根级并恢复根菜单', async () => {

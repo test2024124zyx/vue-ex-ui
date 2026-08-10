@@ -187,6 +187,22 @@
     overflow: auto;
   }
 
+  // 搜索无结果时保留稳定的面板高度，并给出明确的状态反馈。
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-2);
+    min-height: var(--ex-input-height-md, 40px);
+    padding: var(--ex-spacing-6) var(--ex-spacing-4);
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    line-height: var(--ex-leading-normal, 1.5);
+    text-align: center;
+    user-select: none;
+    box-sizing: border-box;
+  }
+
   &__search-result-content {
     display: flex;
     min-width: 0;
@@ -354,6 +370,11 @@
       padding: var(--ex-spacing-1) var(--ex-spacing-2);
       font-size: var(--ex-text-sm);
     }
+
+    .ex-cascader__empty {
+      min-height: var(--ex-input-height-sm, 32px);
+      padding: var(--ex-spacing-4) var(--ex-spacing-3);
+    }
   }
 
   &--large {
@@ -368,6 +389,11 @@
       min-height: var(--ex-input-height-lg, 48px);
       padding: var(--ex-spacing-3) var(--ex-spacing-4);
       font-size: var(--ex-text-base);
+    }
+
+    .ex-cascader__empty {
+      min-height: var(--ex-input-height-lg, 48px);
+      padding: var(--ex-spacing-6) var(--ex-spacing-4);
     }
   }
 
@@ -439,6 +465,10 @@
     }
 
     &__option {
+      min-height: var(--ex-input-touch-target, 44px);
+    }
+
+    &__empty {
       min-height: var(--ex-input-touch-target, 44px);
     }
   }

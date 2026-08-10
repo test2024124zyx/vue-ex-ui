@@ -89,56 +89,67 @@
           <div
             v-if="hasSearchQuery"
             class="ex-cascader__search-results"
-            role="listbox"
-            :aria-label="tCascader('searchResults')"
           >
-            <button
-              v-for="(result, resultIndex) in searchResults"
-              :id="getSearchResultId(resultIndex)"
-              :key="getPathKey(result.values)"
-              class="ex-cascader__option"
-              :class="{
-                'ex-cascader__option--disabled': result.disabled,
-                'ex-cascader__option--selected': isSearchResultSelected(result),
-                'ex-cascader__option--keyboard': searchActiveIndex === resultIndex,
-              }"
-              type="button"
-              role="option"
-              tabindex="-1"
-              :disabled="result.disabled"
-              :aria-disabled="result.disabled || undefined"
-              :aria-selected="isSearchResultSelected(result)"
-              :aria-label="result.labels.join(separator)"
-              @mouseenter="searchActiveIndex = resultIndex"
-              @click="handleSearchResultClick(result)"
-            >
-              <span
-                class="ex-cascader__option-state"
-                aria-hidden="true"
-              >
-                <ExIcon
-                  v-if="isSearchResultSelected(result)"
-                  icon="check-line"
-                  :size="16"
-                />
-              </span>
-              <span class="ex-cascader__search-result-content">
-                <span class="ex-cascader__search-result-label">
-                  {{ result.labels[result.labels.length - 1] }}
-                </span>
-                <span
-                  v-if="result.labels.length > 1"
-                  class="ex-cascader__search-result-path"
-                >
-                  {{ result.labels.slice(0, -1).join(separator) }}
-                </span>
-              </span>
-            </button>
             <div
               v-if="searchResults.length === 0"
               class="ex-cascader__empty"
+              role="status"
+              aria-live="polite"
             >
-              {{ tCascader('noData') }}
+              <ExIcon
+                icon="search-line"
+                :size="18"
+                aria-hidden="true"
+              />
+              <span>{{ tCascader('noSearchResults') }}</span>
+            </div>
+            <div
+              v-else
+              role="listbox"
+              :aria-label="tCascader('searchResults')"
+            >
+              <button
+                v-for="(result, resultIndex) in searchResults"
+                :id="getSearchResultId(resultIndex)"
+                :key="getPathKey(result.values)"
+                class="ex-cascader__option"
+                :class="{
+                  'ex-cascader__option--disabled': result.disabled,
+                  'ex-cascader__option--selected': isSearchResultSelected(result),
+                  'ex-cascader__option--keyboard': searchActiveIndex === resultIndex,
+                }"
+                type="button"
+                role="option"
+                tabindex="-1"
+                :disabled="result.disabled"
+                :aria-disabled="result.disabled || undefined"
+                :aria-selected="isSearchResultSelected(result)"
+                :aria-label="result.labels.join(separator)"
+                @mouseenter="searchActiveIndex = resultIndex"
+                @click="handleSearchResultClick(result)"
+              >
+                <span
+                  class="ex-cascader__option-state"
+                  aria-hidden="true"
+                >
+                  <ExIcon
+                    v-if="isSearchResultSelected(result)"
+                    icon="check-line"
+                    :size="16"
+                  />
+                </span>
+                <span class="ex-cascader__search-result-content">
+                  <span class="ex-cascader__search-result-label">
+                    {{ result.labels[result.labels.length - 1] }}
+                  </span>
+                  <span
+                    v-if="result.labels.length > 1"
+                    class="ex-cascader__search-result-path"
+                  >
+                    {{ result.labels.slice(0, -1).join(separator) }}
+                  </span>
+                </span>
+              </button>
             </div>
           </div>
 

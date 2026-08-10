@@ -503,6 +503,7 @@ export default {
   cascader: {
     placeholder: 'Please select',
     noData: 'No Data',
+    noSearchResults: 'No matching results',
     loading: 'Loading...',
     panel: 'Cascader options',
     searchResults: 'Search results',
