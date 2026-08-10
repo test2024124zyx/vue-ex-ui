@@ -115,6 +115,18 @@ describe('v2 样式系统边界', () => {
     expect(css).not.toContain('--ex-color-neon-pink');
   });
 
+  it('Checkbox 使用原生键盘焦点、共享触控尺寸和无障碍颜色回退', () => {
+    const css = compile("@use 'src/components/checkbox/ExCheckbox';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('.ex-checkbox__input:focus-visible + .ex-checkbox__box');
+    expect(css).toContain('min-height: var(--ex-checkbox-touch-target);');
+    expect(css).toContain('@media (forced-colors: active)');
+    expect(css).not.toContain('opacity: 0.5');
+    expect(variablesCss).toContain('--ex-checkbox-box-size-sm: 16px;');
+    expect(variablesCss).toContain('--ex-checkbox-focus-ring-offset: 2px;');
+  });
+
   it('Avatar 仅为显式交互实例提供悬停、键盘和触控反馈', () => {
     const css = compile("@use 'src/components/avatar/ExAvatar';");
     const groupCss = compile("@use 'src/components/avatar/ExAvatarGroup';");

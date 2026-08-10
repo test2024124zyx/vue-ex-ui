@@ -1,23 +1,34 @@
 <template>
   <div
+    :id="groupId"
     ref="groupRef"
     :class="groupClasses"
     :style="groupStyles"
     role="group"
-    :aria-labelledby="hasGroupLabel ? labelId : undefined"
+    :aria-label="ariaLabel || undefined"
+    :aria-labelledby="ariaLabelledBy"
     :aria-describedby="ariaDescribedBy"
     :aria-required="required || undefined"
-    :aria-invalid="showErrorMessage"
-    :aria-disabled="disabled || undefined"
-    :aria-readonly="readonly || undefined"
+    :aria-invalid="hasErrorState || undefined"
+    :aria-disabled="currentDisabled || undefined"
+    :aria-readonly="currentReadonly || undefined"
   >
     <!-- 标签 -->
-    <label v-if="label || $slots.label" :id="labelId" class="ex-checkbox-group__label">
+    <div
+      v-if="label || $slots.label"
+      :id="labelId"
+      class="ex-checkbox-group__label"
+    >
       <slot name="label">
         {{ label }}
-        <span v-if="required" class="ex-checkbox-group__required">*</span>
+        <span
+          v-if="required"
+          class="ex-checkbox-group__required"
+        >
+          *
+        </span>
       </slot>
-    </label>
+    </div>
 
     <!-- 复选框容器 -->
     <div class="ex-checkbox-group__content">
@@ -28,18 +39,29 @@
           :value="option.value"
           :disabled="option.disabled"
         >
-          <slot name="option" :option="option" :index="index">
+          <slot
+            name="option"
+            :option="option"
+            :index="index"
+          >
             {{ option.label }}
           </slot>
         </ExCheckbox>
       </template>
-      <slot v-else />
+      <slot v-else></slot>
     </div>
 
     <!-- 底部信息 -->
-    <div v-if="showBottomInfo" class="ex-checkbox-group__bottom">
+    <div
+      v-if="showBottomInfo"
+      class="ex-checkbox-group__bottom"
+    >
       <!-- 帮助文本 -->
-      <div v-if="helpText || $slots.help" :id="`${groupId}-help`" class="ex-checkbox-group__help">
+      <div
+        v-if="helpText || $slots.help"
+        :id="`${groupId}-help`"
+        class="ex-checkbox-group__help"
+      >
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -54,7 +76,11 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon icon="error-warning-line" :size="14" class="ex-checkbox-group__error-icon" />
+          <ex-icon
+            icon="error-warning-line"
+            :size="14"
+            class="ex-checkbox-group__error-icon"
+          />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -65,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, provide, useSlots } from 'vue';
+import { computed, ref, provide, useSlots } from 'vue';
 import type {
   ExCheckboxGroupProps,
   ExCheckboxGroupEmits,
@@ -78,6 +104,7 @@ import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
 import { checkboxGroupContextKey, type CheckboxRegistration } from './context';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExCheckboxGroup',
@@ -86,7 +113,7 @@ defineOptions({
 const props = withDefaults(defineProps<ExCheckboxGroupProps>(), {
   modelValue: () => [],
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
-  status: 'default',
+  status: undefined,
   disabled: false,
   readonly: false,
   vertical: false,
@@ -101,22 +128,59 @@ defineSlots<ExCheckboxGroupSlots>();
 const slots = useSlots();
 const { t } = useI18n();
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
+// 所在 FormItem 的字段上下文，同时承接尺寸、状态和表单校验语义。
+const formItem = useFormItem();
 
-// 生成唯一 ID
-const groupId = generateId('ex-checkbox-group');
-const labelId = `${groupId}-label`;
+// 使用全局尺寸配置；组件显式尺寸和 FormItem 尺寸高于全局默认值。
+const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
+
+// 生成唯一 ID；显式 id 用于外部关联和自动化测试。
+const generatedGroupId = generateId('ex-checkbox-group');
+const groupId = computed(() => props.id?.trim() || generatedGroupId);
+const labelId = computed(() => `${groupId.value}-label`);
 const groupRef = ref<HTMLDivElement>();
 const registrations = new Map<number, CheckboxRegistration>();
 
 // 状态
-const currentErrorMessage = ref('');
+const validationErrorMessage = ref('');
 const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 
 // 计算属性
+const currentStatus = computed(() => {
+  const formStatus = formItem?.status?.value;
+
+  return (
+    props.status ??
+    (formStatus === 'success' || formStatus === 'warning' || formStatus === 'error'
+      ? formStatus
+      : undefined) ??
+    'default'
+  );
+});
+
+const currentDisabled = computed(() => {
+  return Boolean(props.disabled || formItem?.disabled?.value);
+});
+
+const currentReadonly = computed(() => {
+  return Boolean(props.readonly || formItem?.readonly?.value);
+});
+
+const currentErrorMessage = computed(() => {
+  return (
+    validationErrorMessage.value ||
+    props.errorMessage?.trim() ||
+    formItem?.errorMessage?.value ||
+    ''
+  );
+});
+
+const hasErrorState = computed(() => {
+  return currentStatus.value === 'error' || Boolean(currentErrorMessage.value);
+});
+
 const showErrorMessage = computed(() => {
-  return Boolean(currentErrorMessage.value) || props.status === 'error';
+  return hasErrorState.value && (Boolean(currentErrorMessage.value) || Boolean(slots.error));
 });
 
 const showBottomInfo = computed(() => {
@@ -124,17 +188,28 @@ const showBottomInfo = computed(() => {
 });
 
 const ariaDescribedBy = computed(() => {
-  const ids: string[] = [];
+  const ids = new Set<string>();
+  const addIds = (value: string | undefined) => {
+    value
+      ?.trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach(id => ids.add(id));
+  };
 
-  if (props.helpText || slots.help) {
-    ids.push(`${groupId}-help`);
-  }
+  addIds(props.ariaDescribedby);
+  addIds(formItem?.describedBy?.value);
+  if (props.helpText || slots.help) addIds(`${groupId.value}-help`);
+  if (showErrorMessage.value) addIds(`${groupId.value}-error`);
 
-  if (showErrorMessage.value) {
-    ids.push(`${groupId}-error`);
-  }
+  return ids.size > 0 ? Array.from(ids).join(' ') : undefined;
+});
 
-  return ids.length > 0 ? ids.join(' ') : undefined;
+const ariaLabelledBy = computed(() => {
+  if (props.ariaLabelledby) return props.ariaLabelledby;
+  if (hasGroupLabel.value) return labelId.value;
+  if (!props.ariaLabel) return formItem?.labelId?.value;
+  return undefined;
 });
 
 // 样式类
@@ -142,11 +217,11 @@ const groupClasses = computed(() => {
   const classes = ['ex-checkbox-group'];
 
   if (componentSize.value) classes.push(`ex-checkbox-group--${componentSize.value}`);
-  if (props.status) classes.push(`ex-checkbox-group--${props.status}`);
-  if (props.disabled) classes.push('ex-checkbox-group--disabled');
-  if (props.readonly) classes.push('ex-checkbox-group--readonly');
+  if (currentStatus.value) classes.push(`ex-checkbox-group--${currentStatus.value}`);
+  if (currentDisabled.value) classes.push('ex-checkbox-group--disabled');
+  if (currentReadonly.value) classes.push('ex-checkbox-group--readonly');
   if (props.vertical) classes.push('ex-checkbox-group--vertical');
-  if (props.status === 'error' || showErrorMessage.value) {
+  if (hasErrorState.value) {
     classes.push('ex-checkbox-group--error');
   }
   if (props.customClass) classes.push(props.customClass);
@@ -173,11 +248,12 @@ const commitValue = (value: Array<string | number>) => {
   validateGroup(uniqueValue);
   emit('update:modelValue', uniqueValue);
   emit('change', uniqueValue);
+  formItem?.onFieldChange();
 };
 
 // 返回是否接受本次切换，子组件据此恢复原生 checked 状态。
 const updateValue = (value: string | number, checked: boolean): boolean => {
-  if (props.disabled || props.readonly) return false;
+  if (currentDisabled.value || currentReadonly.value) return false;
 
   const newValue = [...props.modelValue];
   const index = newValue.indexOf(value);
@@ -205,31 +281,22 @@ const updateValue = (value: string | number, checked: boolean): boolean => {
 // 验证复选框组
 const validateGroup = (value: Array<string | number>) => {
   if (!props.rules || props.rules.length === 0) {
-    currentErrorMessage.value = '';
+    validationErrorMessage.value = '';
     return true;
   }
 
   for (const rule of props.rules) {
     const result = rule(value);
     if (result !== true) {
-      currentErrorMessage.value = typeof result === 'string' ? result : t('common.validationError');
+      validationErrorMessage.value =
+        typeof result === 'string' ? result : t('common.validationError');
       return false;
     }
   }
 
-  currentErrorMessage.value = '';
+  validationErrorMessage.value = '';
   return true;
 };
-
-// 监听错误信息变化
-watch(
-  () => props.errorMessage,
-  newError => {
-    // 父级清空 errorMessage 时同步清除，避免残留旧错误
-    currentErrorMessage.value = newError || '';
-  },
-  { immediate: true }
-);
 
 // 提供上下文给子 Checkbox 组件。
 // size/status/disabled/readonly 用 getter 暴露，确保子组件读取时建立
@@ -246,9 +313,9 @@ provide(checkboxGroupContextKey, {
   modelValue: computed(() => props.modelValue),
   name: computed(() => props.name),
   size: componentSize,
-  status: computed(() => props.status),
-  disabled: computed(() => props.disabled),
-  readonly: computed(() => props.readonly),
+  status: currentStatus,
+  disabled: currentDisabled,
+  readonly: currentReadonly,
   updateValue,
   registerCheckbox,
   unregisterCheckbox,
@@ -269,7 +336,7 @@ const getAvailableOptions = () => {
 
 // 暴露方法
 const checkAll = () => {
-  if (props.disabled || props.readonly) return;
+  if (currentDisabled.value || currentReadonly.value) return;
 
   const result = [...new Set(props.modelValue)];
   for (const option of getAvailableOptions()) {
@@ -281,7 +348,7 @@ const checkAll = () => {
 };
 
 const uncheckAll = () => {
-  if (props.disabled || props.readonly) return;
+  if (currentDisabled.value || currentReadonly.value) return;
 
   const options = getAvailableOptions();
   const disabledValues = new Set(
@@ -297,7 +364,7 @@ const uncheckAll = () => {
 };
 
 const toggleAll = () => {
-  if (props.disabled || props.readonly) return;
+  if (currentDisabled.value || currentReadonly.value) return;
 
   const enabledValues = getAvailableOptions()
     .filter(option => !option.disabled)

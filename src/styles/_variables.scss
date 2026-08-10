@@ -172,7 +172,17 @@
   // 输入框操作按钮与移动端控件共用 44px 触控目标。
   --ex-input-touch-target: var(--ex-button-touch-target);
   --ex-input-touch-font-size: 16px;
-  
+
+  // 复选框组件：视觉尺寸与触控尺寸分离，避免小尺寸控件牺牲可操作性。
+  --ex-checkbox-box-size-sm: 16px;
+  --ex-checkbox-box-size-md: 18px;
+  --ex-checkbox-box-size-lg: 20px;
+  --ex-checkbox-box-border-width: 2px;
+  --ex-checkbox-label-gap: var(--ex-spacing-2);
+  --ex-checkbox-touch-target: var(--ex-button-touch-target);
+  --ex-checkbox-focus-ring-width: 2px;
+  --ex-checkbox-focus-ring-offset: 2px;
+
   // 卡片组件
   --ex-card-padding-sm: var(--ex-spacing-4);
   --ex-card-padding-md: var(--ex-spacing-6);

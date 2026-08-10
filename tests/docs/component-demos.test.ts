@@ -64,6 +64,12 @@ const extractSelectExamples = (block: string): string[] =>
 const extractCascaderExamples = (block: string): string[] =>
   (block.match(/<ex-cascader\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
 
+const extractCheckboxExamples = (block: string): string[] =>
+  [
+    ...(block.match(/<ex-checkbox-group\b[\s\S]*?<\/ex-checkbox-group>/gi) ?? []),
+    ...(block.match(/<ex-checkbox\b[\s\S]*?(?:<\/ex-checkbox>|\/>)/gi) ?? []),
+  ].map(normalizeTypographyExample);
+
 const extractTagExamples = (block: string): string[] =>
   [
     ...(block.match(/<ex-tag\b[\s\S]*?<\/ex-tag>/gi) ?? []),
@@ -228,6 +234,25 @@ describe('组件文档实时演示', () => {
     liveBlocks.forEach((liveBlock, index) => {
       expect(extractSelectExamples(liveBlock)).toEqual(
         extractSelectExamples(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it('Checkbox 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('checkbox');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(10);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractCheckboxExamples(liveBlock)).toEqual(
+        extractCheckboxExamples(codeBlocks[index] ?? '')
       );
     });
   });

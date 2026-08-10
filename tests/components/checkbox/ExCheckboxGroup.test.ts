@@ -1,11 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { computed } from 'vue';
 import ExCheckboxGroup from '../../../src/components/checkbox/ExCheckboxGroup.vue';
 import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
 import type {
   ExCheckboxGroupInstance,
   ExCheckboxGroupProps,
 } from '../../../src/components/checkbox/types';
+import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -393,6 +395,32 @@ describe('ExCheckboxGroup', () => {
 
       expect(wrapper.emitted('change')).toBeTruthy();
     });
+
+    it('notifies FormItem after a group value change', async () => {
+      const onFieldChange = vi.fn();
+      const wrapper = mount(ExCheckboxGroup, {
+        global: {
+          provide: {
+            [FORM_ITEM_INJECTION_KEY as symbol]: {
+              onFieldChange,
+              onFieldBlur: vi.fn(),
+              size: computed(() => 'medium'),
+              disabled: computed(() => false),
+              readonly: computed(() => false),
+              status: computed(() => ''),
+            },
+          },
+          components: { ExCheckbox },
+        },
+        slots: {
+          default: '<ExCheckbox value="1">Option 1</ExCheckbox>',
+        },
+      });
+
+      await wrapper.find('input[type="checkbox"]').setValue(true);
+
+      expect(onFieldChange).toHaveBeenCalledOnce();
+    });
   });
 
   // 帮助文本和错误信息测试
@@ -456,7 +484,7 @@ describe('ExCheckboxGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxGroupInstance;
       expect(typeof vm.checkAll).toBe('function');
     });
 
@@ -470,7 +498,7 @@ describe('ExCheckboxGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxGroupInstance;
       expect(typeof vm.uncheckAll).toBe('function');
     });
 
@@ -484,7 +512,7 @@ describe('ExCheckboxGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxGroupInstance;
       expect(typeof vm.toggleAll).toBe('function');
     });
 
@@ -570,6 +598,20 @@ describe('ExCheckboxGroup', () => {
 
       expect(wrapper.attributes('aria-labelledby')).toBeUndefined();
       expect(wrapper.attributes('aria-required')).toBe('true');
+    });
+
+    it('支持显式根节点 id 和外部可访问名称', () => {
+      const wrapper = mount(ExCheckboxGroup, {
+        props: {
+          id: 'permission-group',
+          ariaLabel: 'Permissions',
+          ariaLabelledby: 'permissions-title',
+        },
+      });
+
+      expect(wrapper.attributes('id')).toBe('permission-group');
+      expect(wrapper.attributes('aria-label')).toBe('Permissions');
+      expect(wrapper.attributes('aria-labelledby')).toBe('permissions-title');
     });
   });
 });

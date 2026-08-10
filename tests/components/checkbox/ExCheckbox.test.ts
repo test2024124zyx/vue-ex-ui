@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { computed } from 'vue';
 import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
-import type { ExCheckboxProps } from '../../../src/components/checkbox/types';
+import type { ExCheckboxInstance, ExCheckboxProps } from '../../../src/components/checkbox/types';
+import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -41,6 +43,15 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox);
 
       expect(wrapper.find('.ex-checkbox__label-text').exists()).toBe(false);
+    });
+
+    it('renders the named label slot', () => {
+      const wrapper = mount(ExCheckbox, {
+        slots: { label: 'Named label' },
+      });
+
+      expect(wrapper.text()).toContain('Named label');
+      expect(wrapper.find('.ex-checkbox__label-text').exists()).toBe(true);
     });
   });
 
@@ -213,15 +224,20 @@ describe('ExCheckbox', () => {
       expect(wrapper.find('.ex-checkbox__indeterminate-icon').exists()).toBe(true);
     });
 
-    it('同步原生 indeterminate 属性与 mixed ARIA 语义', async () => {
+    it('同步原生 indeterminate 属性并通过 aria-controls 关联控制区域', async () => {
       const wrapper = mount(ExCheckbox, {
-        props: { indeterminate: true },
+        props: { indeterminate: true, ariaControls: 'result-panel' },
         slots: { default: 'Checkbox' },
       });
       const input = wrapper.find('input').element as HTMLInputElement;
 
       expect(input.indeterminate).toBe(true);
-      expect(wrapper.find('input').attributes('aria-checked')).toBe('mixed');
+      expect(wrapper.find('input').attributes('aria-checked')).toBeUndefined();
+      expect(wrapper.find('input').attributes('aria-controls')).toBe('result-panel');
+
+      await wrapper.find('input').setValue(true);
+      expect(input.indeterminate).toBe(false);
+      expect(wrapper.emitted('update:indeterminate')).toEqual([[false]]);
 
       await wrapper.setProps({ indeterminate: false });
       expect(input.indeterminate).toBe(false);
@@ -440,7 +456,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.focus).toBe('function');
     });
 
@@ -449,7 +465,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.blur).toBe('function');
     });
 
@@ -458,7 +474,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.getCheckboxElement).toBe('function');
     });
   });
@@ -477,6 +493,27 @@ describe('ExCheckbox', () => {
       expect(input.attributes('aria-describedby')).toBeTruthy();
     });
 
+    it('forwards native identity and external accessible references', () => {
+      const wrapper = mount(ExCheckbox, {
+        props: {
+          id: 'terms-checkbox',
+          name: 'terms',
+          tabindex: 0,
+          ariaLabel: 'Accept terms',
+          ariaLabelledby: 'terms-title',
+          ariaDescribedby: 'terms-description',
+        },
+      });
+      const input = wrapper.find('input[type="checkbox"]');
+
+      expect(input.attributes('id')).toBe('terms-checkbox');
+      expect(input.attributes('name')).toBe('terms');
+      expect(input.attributes('tabindex')).toBe('0');
+      expect(input.attributes('aria-label')).toBe('Accept terms');
+      expect(input.attributes('aria-labelledby')).toBe('terms-title');
+      expect(input.attributes('aria-describedby')).toBe('terms-description');
+    });
+
     it('sets aria-invalid when error', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
@@ -488,6 +525,35 @@ describe('ExCheckbox', () => {
 
       const input = wrapper.find('input[type="checkbox"]');
       expect(input.attributes('aria-invalid')).toBe('true');
+    });
+
+    it('integrates FormItem size, disabled state and change/blur triggers', async () => {
+      const onFieldChange = vi.fn();
+      const onFieldBlur = vi.fn();
+      const wrapper = mount(ExCheckbox, {
+        global: {
+          provide: {
+            [FORM_ITEM_INJECTION_KEY as symbol]: {
+              onFieldChange,
+              onFieldBlur,
+              size: computed(() => 'large'),
+              disabled: computed(() => false),
+              readonly: computed(() => false),
+              status: computed(() => 'success'),
+            },
+          },
+        },
+      });
+      const input = wrapper.find('input[type="checkbox"]');
+
+      expect(wrapper.classes()).toContain('ex-checkbox--large');
+      expect(wrapper.classes()).toContain('ex-checkbox--success');
+
+      await input.setValue(true);
+      await input.trigger('blur');
+
+      expect(onFieldChange).toHaveBeenCalledOnce();
+      expect(onFieldBlur).toHaveBeenCalledOnce();
     });
   });
 });
