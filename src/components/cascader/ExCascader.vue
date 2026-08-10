@@ -258,6 +258,7 @@ import { useComponentSize, useConfigTheme, useZIndex } from '../config-provider/
 import { useFormItem } from '../form/use-form-item';
 import { CASCADER_DROPDOWN_Z_INDEX_OFFSET } from './constants';
 import { calculateCascaderDropdownPosition } from './position';
+import { useCascaderAria } from './use-cascader-aria';
 
 defineOptions({
   name: 'ExCascader',
@@ -288,10 +289,6 @@ const { t: tCascader } = useLocale('cascader');
 const { t: tCommon } = useLocale('common');
 const attrs = useAttrs();
 const currentPlaceholder = computed(() => props.placeholder || tCascader('placeholder'));
-const accessibleLabel = computed(
-  () => externalAriaLabel.value || (labelledBy.value ? undefined : currentPlaceholder.value)
-);
-
 const emit = defineEmits<ExCascaderEmits>();
 
 const cascaderRef = ref<HTMLDivElement>();
@@ -314,110 +311,23 @@ const searchQuery = ref('');
 const activeCol = ref(0);
 const activeIndex = ref(-1);
 const searchActiveIndex = ref(-1);
-type AriaInvalidValue = 'true' | 'false' | 'grammar' | 'spelling';
-
-// 这些属性由组件根据真实状态维护，不能被外部 attrs 覆盖。
-const CONTROLLED_TRIGGER_ATTRIBUTES = [
-  'class',
-  'style',
-  'id',
-  'value',
-  'placeholder',
-  'disabled',
-  'readonly',
-  'role',
-  'aria-label',
-  'aria-labelledby',
-  'aria-describedby',
-  'aria-errormessage',
-  'aria-invalid',
-  'aria-disabled',
-  'aria-readonly',
-  'aria-autocomplete',
-  'aria-haspopup',
-  'aria-expanded',
-  'aria-controls',
-  'aria-activedescendant',
-] as const;
-
-const readAttr = (name: string): string | undefined => {
-  const value = attrs[name];
-  if (typeof value === 'string' && value.trim()) return value.trim();
-  if (value === true) return 'true';
-  if (value === false) return 'false';
-  return undefined;
-};
-
-// 合并外部与 FormItem 提供的可访问性 ID，保持首次出现顺序并去重。
-const mergeAriaIds = (...values: Array<string | undefined>): string | undefined => {
-  const ids = values.flatMap(value => value?.split(/\s+/) ?? []).filter(Boolean);
-  return ids.length > 0 ? Array.from(new Set(ids)).join(' ') : undefined;
-};
-
-const externalAriaLabel = computed(() => readAttr('aria-label'));
-const labelledBy = computed(() =>
-  mergeAriaIds(
-    readAttr('aria-labelledby'),
-    externalAriaLabel.value ? undefined : formItem?.labelId?.value
-  )
-);
-const describedBy = computed(() =>
-  mergeAriaIds(readAttr('aria-describedby'), formItem?.describedBy?.value)
-);
-const errorMessageId = computed(() => {
-  const externalId = readAttr('aria-errormessage');
-  if (externalId) return externalId;
-  if (formItem?.status?.value === 'error' && formItem.errorMessage?.value) {
-    return formItem.describedBy?.value;
-  }
-  return undefined;
-});
-const ariaInvalid = computed<AriaInvalidValue | undefined>(() => {
-  const externalValue = readAttr('aria-invalid');
-  if (
-    externalValue === 'true' ||
-    externalValue === 'false' ||
-    externalValue === 'grammar' ||
-    externalValue === 'spelling'
-  ) {
-    return externalValue;
-  }
-  return formItem?.status?.value === 'error' ? 'true' : undefined;
-});
-
 const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
 const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
 const inheritedStatus = computed(() => formItem?.status?.value || '');
-
-const rootAttrs = computed<Record<string, unknown>>(() => {
-  const forwarded = { ...attrs };
-  for (const key of Object.keys(forwarded)) {
-    if (
-      key === 'id' ||
-      key === 'name' ||
-      key === 'autocomplete' ||
-      key === 'role' ||
-      key === 'tabindex' ||
-      key.startsWith('aria-') ||
-      key === 'disabled' ||
-      key === 'readonly' ||
-      key === 'value' ||
-      key === 'placeholder'
-    ) {
-      delete forwarded[key];
-    }
-  }
-  delete forwarded.class;
-  delete forwarded.style;
-  return forwarded;
-});
-
-const triggerAttrs = computed<Record<string, unknown>>(() => {
-  const forwarded = { ...attrs };
-  for (const key of CONTROLLED_TRIGGER_ATTRIBUTES) {
-    delete forwarded[key];
-  }
-  return forwarded;
+const {
+  accessibleLabel,
+  labelledBy,
+  describedBy,
+  errorMessageId,
+  ariaInvalid,
+  rootAttrs,
+  triggerAttrs,
+} = useCascaderAria({
+  attrs,
+  formItem,
+  currentPlaceholder,
+  effectiveDisabled,
+  effectiveReadonly,
 });
 
 const getOptionId = (column: number, index: number) =>
