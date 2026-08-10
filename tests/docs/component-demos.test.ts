@@ -58,6 +58,9 @@ const extractInputExamples = (block: string): string[] =>
 const extractSelectExamples = (block: string): string[] =>
   (block.match(/<ex-select\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
 
+const extractCascaderExamples = (block: string): string[] =>
+  (block.match(/<ex-cascader\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
+
 const extractTagExamples = (block: string): string[] =>
   [
     ...(block.match(/<ex-tag\b[\s\S]*?<\/ex-tag>/gi) ?? []),
@@ -77,7 +80,7 @@ describe('组件文档实时演示', () => {
     ['ellipsis', 'ex-ellipsis', 3],
     ['input', 'ex-input', 4],
     ['select', 'ex-select', 4],
-    ['cascader', 'ex-cascader', 2],
+    ['cascader', 'ex-cascader', 5],
     ['form', 'ex-form', 2],
     ['form-examples', 'ex-form', 2],
     ['list', 'ex-list', 3],
@@ -321,6 +324,25 @@ describe('组件文档实时演示', () => {
     const markup = readLiveMarkup('cascader');
     expect(markup).toMatch(/<ex-cascader\b(?![^>]*style=)/i);
     expect(markup).toMatch(/<ex-cascader\b[^>]*style="[^"]*width:\s*100%/i);
+  });
+
+  it('Cascader 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('cascader');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(3);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractCascaderExamples(liveBlock)).toEqual(
+        extractCascaderExamples(codeBlocks[index] ?? '')
+      );
+    });
   });
 
   it.each(['form', 'form-examples'])('%s 不使用原生表单控件冒充组件库控件', name => {

@@ -71,9 +71,18 @@ const regionOptions = [
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
-<ex-cascader v-model="value" :options="options" placeholder="请选择服务区域" clearable />
+<ex-cascader
+  v-model="inlineValue"
+  :options="regionOptions"
+  placeholder="请选择服务区域"
+  clearable
+/>
 ```
+
+:::
 
 ## 块级宽度
 
@@ -91,9 +100,13 @@ const regionOptions = [
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
-<ex-cascader v-model="value" :options="options" style="width: 100%" />
+<ex-cascader v-model="blockValue" :options="regionOptions" style="width: 100%" clearable />
 ```
+
+:::
 
 ## 搜索与触发方式
 
@@ -113,6 +126,16 @@ const regionOptions = [
   />
   <ex-cascader :options="regionOptions" disabled placeholder="不可选择" />
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-cascader v-model="searchableValue" :options="regionOptions" filterable placeholder="搜索区域" />
+<ex-cascader :options="regionOptions" trigger="hover" placeholder="悬停展开" />
+<ex-cascader :options="regionOptions" disabled placeholder="不可选择" />
+```
+
 :::
 
 ## API
