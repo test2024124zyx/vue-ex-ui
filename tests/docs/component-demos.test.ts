@@ -28,6 +28,9 @@ const extractButtonExamples = (block: string): string[] =>
     normalizeTypographyExample
   );
 
+const extractLinkExamples = (block: string): string[] =>
+  (block.match(/<ex-link\b[\s\S]*?<\/ex-link>/gi) ?? []).map(normalizeTypographyExample);
+
 const extractSpaceExamples = (block: string): string[] =>
   (block.match(/<ex-space\b[\s\S]*?<\/ex-space>/gi) ?? []).map(normalizeTypographyExample);
 
@@ -137,6 +140,23 @@ describe('组件文档实时演示', () => {
       expect(extractAvatarExamples(liveBlock)).toEqual(
         extractAvatarExamples(codeBlocks[index] ?? '')
       );
+    });
+  });
+
+  it('Link 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('link');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(6);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractLinkExamples(liveBlock)).toEqual(extractLinkExamples(codeBlocks[index] ?? ''));
     });
   });
 

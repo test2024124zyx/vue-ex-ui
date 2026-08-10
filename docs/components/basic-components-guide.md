@@ -398,13 +398,17 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 | target           | `string`                                                                 | -           | 打开方式         |
 | disabled         | `boolean`                                                                | `false`     | 禁用状态         |
 | underline        | `boolean`                                                                | `true`      | 下划线           |
+| iconPlacement    | `'left' \| 'right'`                                                      | `'left'`    | 通用图标位置     |
 | showExternalIcon | `boolean`                                                                | `true`      | 显示外部链接图标 |
+| rel              | `string`                                                                 | -           | 原生链接关系     |
 
 #### 特性
 
 - ✅ 霓虹文字发光
-- ✅ 下划线动画
+- ✅ 下划线与键盘焦点状态反馈
 - ✅ 外部链接图标
+- ✅ `_blank` 自动补充 `noopener` 和本地化外链提示
+- ✅ 无 `href` 动作保留 44px 触控目标
 - ✅ 完整的类型系统
 
 ---

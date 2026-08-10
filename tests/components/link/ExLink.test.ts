@@ -1,13 +1,14 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExLink from '../../../src/components/link/ExLink.vue';
 import type { ExLinkExposed, LinkSize, LinkType } from '../../../src/components/link/types';
 
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
   default: {
     name: 'ExIcon',
-    props: ['icon'],
-    template: '<i class="ex-icon-stub" :data-icon="icon" />',
+    props: ['icon', 'size'],
+    template: '<i class="ex-icon-stub" :data-icon="icon" :data-size="size" />',
   },
 }));
 
@@ -27,6 +28,7 @@ describe('ExLink', () => {
     expect(wrapper.element.tagName).toBe('BUTTON');
     expect(wrapper.attributes('type')).toBe('button');
     expect(wrapper.text()).toBe('链接内容');
+    expect(wrapper.classes()).toContain('ex-link--action');
     expect(wrapper.classes()).toEqual(
       expect.arrayContaining(['ex-link', 'ex-link--default', 'ex-link--medium'])
     );
@@ -37,8 +39,37 @@ describe('ExLink', () => {
 
     expect(wrapper.element.tagName).toBe('A');
     expect(wrapper.attributes('href')).toBe('/account?tab=profile#name');
+    expect(wrapper.classes()).not.toContain('ex-link--action');
     expect(wrapper.attributes('target')).toBeUndefined();
     expect(wrapper.attributes('rel')).toBeUndefined();
+  });
+
+  it('继承 ConfigProvider 尺寸，并允许显式 size 覆盖', () => {
+    const inherited = mount({
+      components: { ExConfigProvider, ExLink },
+      template:
+        '<ExConfigProvider size="large"><ExLink href="/profile">个人资料</ExLink></ExConfigProvider>',
+    });
+    const explicit = mount({
+      components: { ExConfigProvider, ExLink },
+      template:
+        '<ExConfigProvider size="large"><ExLink href="/profile" size="small">个人资料</ExLink></ExConfigProvider>',
+    });
+
+    expect(inherited.find('.ex-link').classes()).toContain('ex-link--large');
+    expect(explicit.find('.ex-link').classes()).toContain('ex-link--small');
+  });
+
+  it('遵循 ConfigProvider 的光效与动画配置', () => {
+    const wrapper = mount({
+      components: { ExConfigProvider, ExLink },
+      template:
+        '<ExConfigProvider :neon-effect="false" :animation="false"><ExLink href="/profile" type="primary">个人资料</ExLink></ExConfigProvider>',
+    });
+
+    expect(wrapper.find('.ex-link').classes()).toEqual(
+      expect.arrayContaining(['ex-link--no-neon', 'ex-link--no-animation'])
+    );
   });
 
   it.each<LinkType>(['default', 'primary', 'success', 'warning', 'danger', 'info'])(
@@ -164,8 +195,12 @@ describe('ExLink', () => {
     expect(relative.classes()).not.toContain('ex-link--external');
     expect(mail.classes()).not.toContain('ex-link--external');
     expect(absolute.find('.ex-link__external-icon').exists()).toBe(true);
+    expect(absolute.find('.ex-link__external-label').text()).toBe('External Link');
+    expect(absolute.find('.ex-link__external-icon').attributes('aria-hidden')).toBe('true');
     expect(absolute.find('.ex-icon-stub').attributes('data-icon')).toBe('external-link-line');
+    expect(absolute.find('.ex-icon-stub').attributes('data-size')).toBe('var(--ex-link-icon-size)');
     expect(absolute.find('.ex-icon-stub').attributes('aria-hidden')).toBe('true');
+    expect(relative.find('.ex-link__external-label').exists()).toBe(false);
   });
 
   it('允许关闭或替换外链图标', () => {
@@ -176,7 +211,9 @@ describe('ExLink', () => {
     );
 
     expect(hidden.find('.ex-link__external-icon').exists()).toBe(false);
+    expect(hidden.find('.ex-link__external-label').exists()).toBe(true);
     expect(custom.find('.custom-external-icon').exists()).toBe(true);
+    expect(custom.find('.ex-link__external-icon').attributes('aria-hidden')).toBe('true');
   });
 
   it('目标为 _blank 时保留 rel 令牌、去重并强制使用 noopener', () => {
