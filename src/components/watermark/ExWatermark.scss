@@ -1,50 +1,22 @@
-// 水印组件样式
-// 使用项目设计系统的 CSS 变量和混合器
-
-@use '../../styles/mixins' as *;
+// 水印覆盖层只承载装饰图案，不改变插槽内容的排版和颜色。
 
 .ex-watermark {
   position: relative;
-  // overlay 使用绝对定位，容器模式需要父容器相对定位
 }
 
 .ex-watermark__overlay {
   position: absolute;
   inset: 0;
+  z-index: var(--ex-watermark-z-index, var(--ex-z-watermark, 900));
+  color: var(--ex-color-text-primary, rgba(0, 0, 0, 0.8));
+  font-family: var(--ex-font-secondary, system-ui, sans-serif);
+  pointer-events: var(--ex-watermark-pointer-events, none);
+  user-select: var(--ex-watermark-user-select, none);
   background-repeat: repeat;
   background-position: 0 0;
-  pointer-events: var(--wm-pointer-events, none);
-  z-index: var(--wm-z-index, var(--ex-z-watermark, 900));
-  user-select: var(--wm-user-select, none);
-  
-  // 使用项目的过渡系统
-  @include transition(opacity);
-  
-  // 硬件加速优化
-  @include hardware-acceleration;
-  
-  // 赛博朋克风格：添加微弱的霓虹发光效果（可选）
-  &.ex-watermark__overlay--glow {
-    filter: drop-shadow(0 0 2px var(--ex-color-primary-alpha-10));
-  }
 }
 
 .ex-watermark__overlay.is-fixed {
   position: fixed;
   inset: 0;
-}
-
-// 响应式优化：移动端减少性能消耗
-@include mobile {
-  .ex-watermark__overlay {
-    will-change: auto;
-  }
-}
-
-// 尊重用户的动画偏好
-@media (prefers-reduced-motion: reduce) {
-  .ex-watermark__overlay {
-    transition: none;
-    animation: none;
-  }
 }

@@ -533,10 +533,11 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 ```vue
 <template>
   <ex-watermark
+    :full-page="false"
     text="ExUI"
     :font-size="16"
-    :opacity="0.15"
-    :rotate="-22"
+    :opacity="0.3"
+    :angle="-22"
     :gap-x="100"
     :gap-y="100"
   >
@@ -549,19 +550,21 @@ ExUI 采用霓虹蓝紫双色主题，营造沉浸式氛围：
 
 #### Props
 
-| 属性       | 类型      | 默认值               | 说明     |
-| ---------- | --------- | -------------------- | -------- |
-| text       | `string`  | `'EX-UI'`            | 水印文字 |
-| fontSize   | `number`  | `16`                 | 字体大小 |
-| fontFamily | `string`  | -                    | 字体     |
-| fontColor  | `string`  | `'rgba(0,0,0,0.15)'` | 字体颜色 |
-| opacity    | `number`  | `0.15`               | 透明度   |
-| rotate     | `number`  | `-22`                | 旋转角度 |
-| gapX       | `number`  | `100`                | 水平间距 |
-| gapY       | `number`  | `100`                | 垂直间距 |
-| offsetX    | `number`  | `0`                  | 水平偏移 |
-| offsetY    | `number`  | `0`                  | 垂直偏移 |
-| fullPage   | `boolean` | `false`              | 全屏水印 |
+<!-- prettier-ignore -->
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| text | `string \| string[]` | `''` | 水印文字；空字符串使用国际化默认值 |
+| fullPage | `boolean` | `true` | 是否使用固定定位覆盖视口 |
+| fontSize | `number` | `14` | 字体大小 |
+| color | `string` | `''` | 字体颜色；缺省时跟随主题 |
+| opacity | `number` | `0.3` | 覆盖层透明度 |
+| angle | `number` | `-30` | 旋转角度 |
+| gapX | `number` | `120` | 旋转包围盒之间的水平净间距 |
+| gapY | `number` | `120` | 旋转包围盒之间的垂直净间距 |
+| staggered | `boolean` | `true` | 是否使用错位平铺 |
+| antiTamper | `boolean` | `false` | 是否保护覆盖层 DOM 与关键样式 |
+
+完整图片、响应式、事件和实例方法契约参见 [Watermark 水印](/components/watermark)。
 
 ---
 

@@ -64,6 +64,9 @@ const extractSelectExamples = (block: string): string[] =>
 const extractCascaderExamples = (block: string): string[] =>
   (block.match(/<ex-cascader\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
 
+const extractWatermarkExamples = (block: string): string[] =>
+  (block.match(/<ExWatermark\b[\s\S]*?<\/ExWatermark>/g) ?? []).map(normalizeTypographyExample);
+
 const extractCheckboxExamples = (block: string): string[] =>
   [
     ...(block.match(/<ex-checkbox-group\b[\s\S]*?<\/ex-checkbox-group>/gi) ?? []),
@@ -96,6 +99,7 @@ describe('组件文档实时演示', () => {
     ['input', 'ex-input', 4],
     ['select', 'ex-select', 4],
     ['cascader', 'ex-cascader', 5],
+    ['watermark', 'ExWatermark', 8],
     ['form', 'ex-form', 2],
     ['form-examples', 'ex-form', 2],
     ['list', 'ex-list', 3],
@@ -392,6 +396,25 @@ describe('组件文档实时演示', () => {
     liveBlocks.forEach((liveBlock, index) => {
       expect(extractCascaderExamples(liveBlock)).toEqual(
         extractCascaderExamples(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it('Watermark 每个实时示例都有默认折叠且内容一致的代码', () => {
+    const document = readDocument('watermark');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(6);
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(extractWatermarkExamples(liveBlock)).toEqual(
+        extractWatermarkExamples(codeBlocks[index] ?? '')
       );
     });
   });
