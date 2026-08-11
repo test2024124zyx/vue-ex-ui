@@ -32,24 +32,26 @@ const exportDynamicWatermark = () => {
 ::: raw
 
 <div class="watermark-demo">
-  <ExWatermark :full-page="false" text="INTERNAL // EX UI">
+  <ex-watermark :full-page="false" text="INTERNAL // EX UI">
     <div class="watermark-demo__content">
       <strong>受保护的业务内容</strong>
       <span>覆盖层默认不参与鼠标与辅助技术交互。</span>
     </div>
-  </ExWatermark>
+  </ex-watermark>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ExWatermark :full-page="false" text="INTERNAL // EX UI">
-  <div class="watermark-demo__content">
-    <strong>受保护的业务内容</strong>
-    <span>覆盖层默认不参与鼠标与辅助技术交互。</span>
-  </div>
-</ExWatermark>
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="INTERNAL // EX UI">
+    <div class="watermark-demo__content">
+      <strong>受保护的业务内容</strong>
+      <span>覆盖层默认不参与鼠标与辅助技术交互。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
 
 :::
@@ -61,7 +63,7 @@ const exportDynamicWatermark = () => {
 ::: raw
 
 <div class="watermark-demo watermark-demo--tall">
-  <ExWatermark
+  <ex-watermark
     :full-page="false"
     :text="['CONFIDENTIAL', '研发环境 // 2026']"
     :font-size="15"
@@ -74,27 +76,29 @@ const exportDynamicWatermark = () => {
       <strong>多行水印</strong>
       <span>内容尺寸会自动测量，旋转后不会被瓦片边界裁切。</span>
     </div>
-  </ExWatermark>
+  </ex-watermark>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ExWatermark
-  :full-page="false"
-  :text="['CONFIDENTIAL', '研发环境 // 2026']"
-  :font-size="15"
-  :line-height="24"
-  :font-weight="700"
-  font-style="italic"
-  color="#29abe2"
->
-  <div class="watermark-demo__content">
-    <strong>多行水印</strong>
-    <span>内容尺寸会自动测量，旋转后不会被瓦片边界裁切。</span>
-  </div>
-</ExWatermark>
+<div class="watermark-demo watermark-demo--tall">
+  <ex-watermark
+    :full-page="false"
+    :text="['CONFIDENTIAL', '研发环境 // 2026']"
+    :font-size="15"
+    :line-height="24"
+    :font-weight="700"
+    font-style="italic"
+    color="#29abe2"
+  >
+    <div class="watermark-demo__content">
+      <strong>多行水印</strong>
+      <span>内容尺寸会自动测量，旋转后不会被瓦片边界裁切。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
 
 :::
@@ -107,12 +111,12 @@ const exportDynamicWatermark = () => {
 
 <div class="watermark-demo-grid">
   <div class="watermark-demo watermark-demo--compact">
-    <ExWatermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
+    <ex-watermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
       <div class="watermark-demo__content"><strong>错位平铺</strong></div>
-    </ExWatermark>
+    </ex-watermark>
   </div>
   <div class="watermark-demo watermark-demo--compact">
-    <ExWatermark
+    <ex-watermark
       :full-page="false"
       text="ALIGNED"
       :gap-x="36"
@@ -121,7 +125,7 @@ const exportDynamicWatermark = () => {
       :angle="0"
     >
       <div class="watermark-demo__content"><strong>对齐平铺</strong></div>
-    </ExWatermark>
+    </ex-watermark>
   </div>
 </div>
 :::
@@ -129,20 +133,25 @@ const exportDynamicWatermark = () => {
 ::: details 查看示例代码
 
 ```vue
-<ExWatermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
-  <div class="watermark-demo__content"><strong>错位平铺</strong></div>
-</ExWatermark>
-
-<ExWatermark
-  :full-page="false"
-  text="ALIGNED"
-  :gap-x="36"
-  :gap-y="28"
-  :staggered="false"
-  :angle="0"
->
-  <div class="watermark-demo__content"><strong>对齐平铺</strong></div>
-</ExWatermark>
+<div class="watermark-demo-grid">
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
+      <div class="watermark-demo__content"><strong>错位平铺</strong></div>
+    </ex-watermark>
+  </div>
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark
+      :full-page="false"
+      text="ALIGNED"
+      :gap-x="36"
+      :gap-y="28"
+      :staggered="false"
+      :angle="0"
+    >
+      <div class="watermark-demo__content"><strong>对齐平铺</strong></div>
+    </ex-watermark>
+  </div>
+</div>
 ```
 
 :::
@@ -155,7 +164,7 @@ const exportDynamicWatermark = () => {
 
 <div class="watermark-demo-grid">
   <div class="watermark-demo watermark-demo--compact">
-    <ExWatermark
+    <ex-watermark
       :full-page="false"
       type="image"
       text="EX UI"
@@ -166,10 +175,10 @@ const exportDynamicWatermark = () => {
       :gap-y="32"
     >
       <div class="watermark-demo__content"><strong>图片水印</strong></div>
-    </ExWatermark>
+    </ex-watermark>
   </div>
   <div class="watermark-demo watermark-demo--compact">
-    <ExWatermark
+    <ex-watermark
       :full-page="false"
       type="image"
       image-src="/missing-watermark-image.png"
@@ -178,7 +187,7 @@ const exportDynamicWatermark = () => {
       :gap-y="30"
     >
       <div class="watermark-demo__content"><strong>失败后回退文本</strong></div>
-    </ExWatermark>
+    </ex-watermark>
   </div>
 </div>
 :::
@@ -187,33 +196,39 @@ const exportDynamicWatermark = () => {
 
 ```vue
 <script setup lang="ts">
-const logoWatermark = 'data:image/svg+xml,...';
+const logoWatermark =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="56" viewBox="0 0 160 56"%3E%3Crect width="160" height="56" rx="8" fill="%2329abe2"/%3E%3Ctext x="80" y="35" text-anchor="middle" font-family="monospace" font-size="18" font-weight="700" fill="%230b0f14"%3EEX // UI%3C/text%3E%3C/svg%3E';
 </script>
 
 <template>
-  <ExWatermark
-    :full-page="false"
-    type="image"
-    text="EX UI"
-    :image-src="logoWatermark"
-    :image-width="80"
-    :image-height="28"
-    :gap-x="48"
-    :gap-y="32"
-  >
-    <div class="watermark-demo__content"><strong>图片水印</strong></div>
-  </ExWatermark>
-
-  <ExWatermark
-    :full-page="false"
-    type="image"
-    image-src="/missing-watermark-image.png"
-    text="IMAGE FALLBACK"
-    :gap-x="42"
-    :gap-y="30"
-  >
-    <div class="watermark-demo__content"><strong>失败后回退文本</strong></div>
-  </ExWatermark>
+  <div class="watermark-demo-grid">
+    <div class="watermark-demo watermark-demo--compact">
+      <ex-watermark
+        :full-page="false"
+        type="image"
+        text="EX UI"
+        :image-src="logoWatermark"
+        :image-width="80"
+        :image-height="28"
+        :gap-x="48"
+        :gap-y="32"
+      >
+        <div class="watermark-demo__content"><strong>图片水印</strong></div>
+      </ex-watermark>
+    </div>
+    <div class="watermark-demo watermark-demo--compact">
+      <ex-watermark
+        :full-page="false"
+        type="image"
+        image-src="/missing-watermark-image.png"
+        text="IMAGE FALLBACK"
+        :gap-x="42"
+        :gap-y="30"
+      >
+        <div class="watermark-demo__content"><strong>失败后回退文本</strong></div>
+      </ex-watermark>
+    </div>
+  </div>
 </template>
 ```
 
@@ -226,7 +241,7 @@ const logoWatermark = 'data:image/svg+xml,...';
 ::: raw
 
 <div class="watermark-demo">
-  <ExWatermark
+  <ex-watermark
     ref="watermarkRef"
     :full-page="false"
     :text="dynamicText"
@@ -234,22 +249,22 @@ const logoWatermark = 'data:image/svg+xml,...';
     <div class="watermark-demo__content">
       <strong>{{ dynamicText }}</strong>
       <div class="watermark-demo__actions">
-        <ExButton
+        <ex-button
           size="small"
           @click="updateDynamicText"
         >
           更新文本
-        </ExButton>
-        <ExButton
+        </ex-button>
+        <ex-button
           size="small"
           type="secondary"
           @click="exportDynamicWatermark"
         >
           导出瓦片
-        </ExButton>
+        </ex-button>
       </div>
     </div>
-  </ExWatermark>
+  </ex-watermark>
 </div>
 :::
 
@@ -264,33 +279,49 @@ const watermarkRef = ref<{
   refresh: () => Promise<void>;
   toDataURL: () => string;
 } | null>(null);
+
+const updateDynamicText = () => {
+  const current = Number(dynamicText.value.split('//')[1]?.trim() ?? 0);
+  dynamicText.value = `BUILD // ${String(current + 1).padStart(3, '0')}`;
+};
+
+const exportDynamicWatermark = () => {
+  const dataUrl = watermarkRef.value?.toDataURL();
+  if (!dataUrl) return;
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = 'ex-watermark.png';
+  link.click();
+};
 </script>
 
 <template>
-  <ExWatermark
-    ref="watermarkRef"
-    :full-page="false"
-    :text="dynamicText"
-  >
-    <div class="watermark-demo__content">
-      <strong>{{ dynamicText }}</strong>
-      <div class="watermark-demo__actions">
-        <ExButton
-          size="small"
-          @click="updateDynamicText"
-        >
-          更新文本
-        </ExButton>
-        <ExButton
-          size="small"
-          type="secondary"
-          @click="exportDynamicWatermark"
-        >
-          导出瓦片
-        </ExButton>
+  <div class="watermark-demo">
+    <ex-watermark
+      ref="watermarkRef"
+      :full-page="false"
+      :text="dynamicText"
+    >
+      <div class="watermark-demo__content">
+        <strong>{{ dynamicText }}</strong>
+        <div class="watermark-demo__actions">
+          <ex-button
+            size="small"
+            @click="updateDynamicText"
+          >
+            更新文本
+          </ex-button>
+          <ex-button
+            size="small"
+            type="secondary"
+            @click="exportDynamicWatermark"
+          >
+            导出瓦片
+          </ex-button>
+        </div>
       </div>
-    </div>
-  </ExWatermark>
+    </ex-watermark>
+  </div>
 </template>
 ```
 
@@ -303,24 +334,26 @@ const watermarkRef = ref<{
 ::: raw
 
 <div class="watermark-demo">
-  <ExWatermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
+  <ex-watermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
     <div class="watermark-demo__content">
       <strong>防篡改模式</strong>
       <span>在开发者工具中删除或隐藏覆盖层后，组件会恢复它。</span>
     </div>
-  </ExWatermark>
+  </ex-watermark>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ExWatermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
-  <div class="watermark-demo__content">
-    <strong>防篡改模式</strong>
-    <span>在开发者工具中删除或隐藏覆盖层后，组件会恢复它。</span>
-  </div>
-</ExWatermark>
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
+    <div class="watermark-demo__content">
+      <strong>防篡改模式</strong>
+      <span>在开发者工具中删除或隐藏覆盖层后，组件会恢复它。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
 
 :::
@@ -333,14 +366,46 @@ DOM 防篡改只能提高删除水印的成本，无法阻止截屏、重新绘�
 
 `fullPage` 默认为 `true`，覆盖层使用 `position: fixed`。在组件文档或嵌套卡片中通常应显式设置 `:full-page="false"`。`responsive` 开启时会监听窗口尺寸变化并按 `throttleMs` 节流重绘；运行时切换这两个属性会自动重绑监听器。高分屏倍率最多按 4 倍渲染，避免异常 DPR 造成过大的 Canvas。
 
+::: raw
+
+<div class="watermark-demo watermark-demo--responsive">
+  <ex-watermark
+    :full-page="false"
+    text="RESPONSIVE // EX UI"
+    :responsive="true"
+    :dpr-aware="true"
+    :throttle-ms="160"
+  >
+    <div class="watermark-demo__content">
+      <strong>响应式容器水印</strong>
+      <span>调整浏览器宽度时，水印会按节流间隔重新绘制。</span>
+    </div>
+  </ex-watermark>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExWatermark
-  text="FULL PAGE // CONFIDENTIAL"
-  :responsive="true"
-  :dpr-aware="true"
-  :throttle-ms="160"
-/>
+<div class="watermark-demo watermark-demo--responsive">
+  <ex-watermark
+    :full-page="false"
+    text="RESPONSIVE // EX UI"
+    :responsive="true"
+    :dpr-aware="true"
+    :throttle-ms="160"
+  >
+    <div class="watermark-demo__content">
+      <strong>响应式容器水印</strong>
+      <span>调整浏览器宽度时，水印会按节流间隔重新绘制。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
+
+:::
+
+如需覆盖整个页面，移除示例中的 `:full-page="false"` 即可。全屏模式会真实覆盖当前视口，因此文档演示使用容器模式，避免干扰其他示例。
 
 ## API
 

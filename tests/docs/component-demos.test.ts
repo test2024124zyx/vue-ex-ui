@@ -64,8 +64,11 @@ const extractSelectExamples = (block: string): string[] =>
 const extractCascaderExamples = (block: string): string[] =>
   (block.match(/<ex-cascader\b[\s\S]*?\/>/gi) ?? []).map(normalizeTypographyExample);
 
-const extractWatermarkExamples = (block: string): string[] =>
-  (block.match(/<ExWatermark\b[\s\S]*?<\/ExWatermark>/g) ?? []).map(normalizeTypographyExample);
+// Watermark 的布局容器会直接影响演示效果，因此除 script 外必须完整比较实时标记。
+const extractWatermarkExampleMarkup = (block: string): string => {
+  const template = block.match(/<template>\s*([\s\S]*?)\s*<\/template>/i);
+  return normalizeTypographyExample(template?.[1] ?? block);
+};
 
 const extractCheckboxExamples = (block: string): string[] =>
   [
@@ -99,7 +102,7 @@ describe('组件文档实时演示', () => {
     ['input', 'ex-input', 4],
     ['select', 'ex-select', 4],
     ['cascader', 'ex-cascader', 5],
-    ['watermark', 'ExWatermark', 8],
+    ['watermark', 'ex-watermark', 9],
     ['form', 'ex-form', 2],
     ['form-examples', 'ex-form', 2],
     ['list', 'ex-list', 3],
@@ -408,13 +411,18 @@ describe('组件文档实时演示', () => {
       /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
     );
 
-    expect(liveBlocks).toHaveLength(6);
+    expect(liveBlocks).toHaveLength(7);
     expect(codeBlocks).toHaveLength(liveBlocks.length);
     expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+    expect(document).not.toMatch(/<(?:ExWatermark|ExButton)\b/);
+    expect(codeBlocks[3]).toContain('const logoWatermark =');
+    expect(codeBlocks[3]).not.toContain('data:image/svg+xml,...');
+    expect(codeBlocks[4]).toContain('const updateDynamicText =');
+    expect(codeBlocks[4]).toContain('const exportDynamicWatermark =');
 
     liveBlocks.forEach((liveBlock, index) => {
-      expect(extractWatermarkExamples(liveBlock)).toEqual(
-        extractWatermarkExamples(codeBlocks[index] ?? '')
+      expect(extractWatermarkExampleMarkup(liveBlock)).toBe(
+        extractWatermarkExampleMarkup(codeBlocks[index] ?? '')
       );
     });
   });
