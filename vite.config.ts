@@ -1,11 +1,20 @@
 import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 
 /// <reference types="vitest" />
 
 const fullStyleEntryPath = normalizePath(resolve(import.meta.dirname, 'src/index.ts'));
+
+const addVueShimReference = (filePath: string, content: string) => {
+  if (filePath.endsWith('shims-vue.d.ts') || !content.includes('.vue')) return;
+  const shimPath = normalizePath(
+    relative(dirname(filePath), resolve(import.meta.dirname, 'dist/shims-vue.d.ts'))
+  );
+  const referencePath = shimPath.startsWith('.') ? shimPath : `./${shimPath}`;
+  return { content: `/// <reference path="${referencePath}" />\n${content}` };
+};
 
 /** Vite 的模块 ID 可能使用任一平台分隔符并携带查询参数。 */
 export const isFullStyleEntryId = (id: string): boolean => {
@@ -40,7 +49,9 @@ export default defineConfig({
     vue(),
     dts({
       insertTypesEntry: true,
+      copyDtsFiles: true,
       include: ['src/**/*'],
+      beforeWriteFile: addVueShimReference,
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
       afterDiagnostic(diagnostics) {
         // 声明生成错误必须直接阻断发布，不能只打印后继续成功退出。

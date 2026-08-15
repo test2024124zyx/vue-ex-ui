@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { libInjectCss } from 'vite-plugin-lib-inject-css';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { glob } from 'glob';
 
 /**
@@ -17,6 +17,15 @@ import { glob } from 'glob';
  */
 
 const external = ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-javascript'];
+
+const addVueShimReference = (filePath: string, content: string) => {
+  if (filePath.endsWith('shims-vue.d.ts') || !content.includes('.vue')) return;
+  const shimPath = normalizePath(
+    relative(dirname(filePath), resolve(import.meta.dirname, 'dist/shims-vue.d.ts'))
+  );
+  const referencePath = shimPath.startsWith('.') ? shimPath : `./${shimPath}`;
+  return { content: `/// <reference path="${referencePath}" />\n${content}` };
+};
 
 // 入口为「公共 API 出口」：整包 barrel、基础样式、各组件 index、composables、
 // 工具与国际化入口。组件内部的子文件（如 DatePanel.vue）会作为依赖被打进各自
@@ -49,6 +58,7 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
       outDirs: 'dist/es',
       entryRoot: 'src',
+      beforeWriteFile: addVueShimReference,
       afterDiagnostic(diagnostics) {
         // 按需构建的声明错误同样必须阻断发布。
         if (diagnostics.length > 0) {
