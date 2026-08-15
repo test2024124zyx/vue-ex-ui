@@ -33,7 +33,7 @@
   &--neon {
     background: var(--ex-color-bg-primary);
     border: 1px solid var(--ex-color-primary);
-    box-shadow: 
+    box-shadow:
       0 0 10px var(--ex-color-primary-alpha-30),
       inset 0 0 10px var(--ex-color-primary-alpha-10);
 
@@ -42,7 +42,7 @@
     }
 
     &:hover {
-      box-shadow: 
+      box-shadow:
         0 0 15px var(--ex-color-primary-alpha-40),
         inset 0 0 15px var(--ex-color-primary-alpha-15);
     }
@@ -152,7 +152,7 @@
     border-color: var(--ex-color-error);
 
     &.ex-barcode--neon {
-      box-shadow: 
+      box-shadow:
         0 0 10px var(--ex-color-error-alpha-30),
         inset 0 0 10px var(--ex-color-error-alpha-10);
     }
