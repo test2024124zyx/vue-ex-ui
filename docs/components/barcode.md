@@ -464,11 +464,11 @@ const handleDownload = () => {
 
 PNG/JPEG 导出会在写入 Canvas 尺寸前检查浏览器安全像素预算（单轴最大 32768、总像素最大 3200 万）；超过预算时 `toDataURL` 返回空字符串，`download` 不创建下载，并进入稳定错误状态。组件卸载会取消尚未完成的 SVG 解码并回收临时对象 URL。
 
-| 方法名    | 说明                | 参数                                                   |
-| --------- | ------------------- | ------------------------------------------------------ |
-| download  | 下载条码            | (filename?: string)                                    |
-| toDataURL | 异步获取条码数据URL | (type?: 'image/png' / 'image/jpeg') => Promise<string> |
-| refresh   | 刷新条码            | —                                                      |
+| 方法名    | 说明                | 参数                                                     |
+| --------- | ------------------- | -------------------------------------------------------- |
+| download  | 下载条码            | (filename?: string)                                      |
+| toDataURL | 异步获取条码数据URL | `(type?: 'image/png' / 'image/jpeg') => Promise<string>` |
+| refresh   | 刷新条码            | —                                                        |
 
 <style scoped>
 .demo-container {
