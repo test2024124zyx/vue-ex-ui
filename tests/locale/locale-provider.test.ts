@@ -168,4 +168,50 @@ describe('locale provider', () => {
     expect(english.text()).toBe('Anchor navigation|Back to top');
     expect(chinese.text()).toBe('锚点导航|返回顶部');
   });
+
+  it('轻量翻译器应该替换参数并在缺失键或缺失参数时保留可诊断文本', () => {
+    expect(t('pagination.total', { total: 5 })).toContain('5');
+    expect(t('pagination.total')).toContain('{total}');
+    expect(t('pagination.unknown')).toBe('pagination.unknown');
+    expect(t('pagination')).toBe('pagination');
+
+    const scoped = useLocale('pagination');
+    expect(scoped.t('pagination')).toBe('Pagination');
+    expect(scoped.t('missing')).toBe('pagination.missing');
+    expect(useI18n().t('pagination.pagination')).toBe('Pagination');
+  });
+
+  it('全局语言设置遇到未知值时应该保留当前语言', () => {
+    setLocale('zh-CN');
+    setLocale('unknown' as never);
+    expect(getCurrentLocale()).toBe('zh-CN');
+  });
+
+  it('自定义语言包只覆盖已声明键且不改变共享内置对象', async () => {
+    const probe = defineComponent({
+      setup() {
+        const composer = useI18n();
+        return () => h('span', composer.t('pagination.pagination'));
+      },
+    });
+    const wrapper = mount(probe, {
+      global: {
+        plugins: [
+          createLocaleProvider({
+            locale: 'en-US',
+            messages: {
+              pagination: {
+                pagination: 'Custom pagination',
+                unknown: 'ignored',
+              },
+            } as LocaleMessages,
+          }),
+        ],
+      },
+    });
+    await flushLocaleProvider();
+    expect(wrapper.text()).toBe('Custom pagination');
+    expect(enUS.pagination.pagination).toBe('Pagination');
+    wrapper.unmount();
+  });
 });
