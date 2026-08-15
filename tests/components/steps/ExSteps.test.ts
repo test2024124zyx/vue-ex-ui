@@ -108,7 +108,7 @@ describe('ExSteps', () => {
     expect(wrapper.find('.ex-step__icon-number').exists()).toBe(false);
   });
 
-  it('根据步骤状态渲染连接线、图标和自定义颜色', () => {
+  it('根据步骤状态渲染连接线、图标和自定义颜色', async () => {
     const wrapper = mount(ExSteps, {
       props: { current: 1, status: 'error' },
       slots: {
@@ -119,13 +119,14 @@ describe('ExSteps', () => {
         ],
       },
     });
+    await nextTick();
     const rendered = wrapper.findAll('.ex-step');
 
     expect(rendered[0].classes()).toContain('ex-step--finish');
     expect(rendered[1].classes()).toContain('ex-step--error');
     expect(rendered[1].find('.ex-step__line--error').exists()).toBe(false);
     expect(rendered[1].find('.ex-step__line').attributes('style')).toContain(
-      'background-color: #f00'
+      'background-color: rgb(255, 0, 0)'
     );
     expect(rendered[2].classes()).toContain('ex-step--disabled');
     expect(rendered[2].attributes('tabindex')).toBeUndefined();

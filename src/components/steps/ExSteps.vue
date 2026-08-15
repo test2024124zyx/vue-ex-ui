@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, onUpdated, provide, ref } from 'vue';
+import { computed, onMounted, onUpdated, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
 
 defineOptions({
@@ -94,8 +94,17 @@ const syncStepOrder = (): void => {
 
 onUpdated(syncStepOrder);
 
+// 子步骤在同一轮渲染中注册时，首个子步骤可能先缓存步骤总数；挂载后复制数组
+// 触发一次统一的响应式刷新，确保连接线和最后步骤标记反映完整的子步骤集合。
+onMounted(() => {
+  syncStepOrder();
+  stepUids.value = [...stepUids.value];
+});
+
 // 获取步骤当前索引（响应式）
-const getStepIndex = (uid: symbol) => stepUids.value.indexOf(uid);
+const getStepIndex = (uid: symbol) => {
+  return stepUids.value.indexOf(uid);
+};
 
 // 步骤点击事件
 const onStepClick = (index: number, childOverride = false) => {
