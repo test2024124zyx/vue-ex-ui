@@ -30,6 +30,6 @@ ExUI 支持所有现代浏览器：
 
 ## 版本
 
-当前版本：`v1.0.0`
+当前版本：`v1.0.1`
 
 查看 [更新日志](https://github.com/zhuhanxin0308/vue-ex-ui/releases) 了解版本变化。
