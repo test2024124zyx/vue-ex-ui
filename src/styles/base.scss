@@ -82,11 +82,7 @@
   }
 
   &::after {
-    background: repeating-linear-gradient(
-      0deg,
-      transparent 0 2px,
-      rgba(0, 0, 0, 0.9) 2px 4px
-    );
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.9) 2px 4px);
     opacity: var(--ex-cyber-scanline-opacity);
     animation: ex-cyber-scanline var(--ex-cyber-scanline-duration) linear infinite;
   }
