@@ -5,83 +5,82 @@
 
 // 页面级列表样式仅在宿主主动添加 `.ex-app` 时生效，避免污染宿主全局裸元素。
 @mixin base-styles {
+  // ============================================================================
+  // 列表元素
+  // ============================================================================
 
-// ============================================================================
-// 列表元素
-// ============================================================================
-
-ul, ol {
-  margin: 0 0 var(--ex-spacing-4) 0;
-  padding-left: var(--ex-spacing-6);
-  color: var(--ex-color-text-secondary);
-}
-
-li {
-  margin-bottom: var(--ex-spacing-1);
-  line-height: var(--ex-leading-relaxed);
-  
-  &:last-child {
-    margin-bottom: 0;
+  ul,
+  ol {
+    margin: 0 0 var(--ex-spacing-4) 0;
+    padding-left: var(--ex-spacing-6);
+    color: var(--ex-color-text-secondary);
   }
-}
 
-ul {
-  list-style-type: none;
-  
   li {
-    position: relative;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      left: -var(--ex-spacing-4);
-      top: 0.6em;
-      width: 6px;
-      height: 6px;
-      background: var(--ex-color-neon-blue-500);
-      border-radius: 50%;
-      @include neon-glow('blue', 'sm');
+    margin-bottom: var(--ex-spacing-1);
+    line-height: var(--ex-leading-relaxed);
+
+    &:last-child {
+      margin-bottom: 0;
     }
   }
-}
 
-ol {
-  counter-reset: list-counter;
-  
-  li {
-    counter-increment: list-counter;
-    position: relative;
-    
-    &::before {
-      content: counter(list-counter);
-      position: absolute;
-      left: -var(--ex-spacing-6);
-      top: 0;
-      width: var(--ex-spacing-5);
-      height: var(--ex-spacing-5);
-      background: var(--ex-gradient-primary);
-      color: var(--ex-color-text-primary);
-      border-radius: 50%;
-      font-size: var(--ex-text-xs);
-      font-weight: var(--ex-font-bold);
-      @include flex-center;
+  ul {
+    list-style-type: none;
+
+    li {
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -var(--ex-spacing-4);
+        top: 0.6em;
+        width: 6px;
+        height: 6px;
+        background: var(--ex-color-neon-blue-500);
+        border-radius: 50%;
+        @include neon-glow('blue', 'sm');
+      }
     }
   }
-}
 
-dl {
-  margin: var(--ex-spacing-4) 0;
-}
+  ol {
+    counter-reset: list-counter;
 
-dt {
-  font-weight: var(--ex-font-semibold);
-  color: var(--ex-color-text-primary);
-  margin-bottom: var(--ex-spacing-1);
-}
+    li {
+      counter-increment: list-counter;
+      position: relative;
 
-dd {
-  margin: 0 0 var(--ex-spacing-3) var(--ex-spacing-4);
-  color: var(--ex-color-text-secondary);
-}
+      &::before {
+        content: counter(list-counter);
+        position: absolute;
+        left: -var(--ex-spacing-6);
+        top: 0;
+        width: var(--ex-spacing-5);
+        height: var(--ex-spacing-5);
+        background: var(--ex-gradient-primary);
+        color: var(--ex-color-text-primary);
+        border-radius: 50%;
+        font-size: var(--ex-text-xs);
+        font-weight: var(--ex-font-bold);
+        @include flex-center;
+      }
+    }
+  }
 
+  dl {
+    margin: var(--ex-spacing-4) 0;
+  }
+
+  dt {
+    font-weight: var(--ex-font-semibold);
+    color: var(--ex-color-text-primary);
+    margin-bottom: var(--ex-spacing-1);
+  }
+
+  dd {
+    margin: 0 0 var(--ex-spacing-3) var(--ex-spacing-4);
+    color: var(--ex-color-text-secondary);
+  }
 }
