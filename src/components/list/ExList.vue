@@ -19,13 +19,16 @@
         :class="{ 'ex-list__item--disabled': row.item.disabled }"
         :aria-disabled="row.item.disabled || undefined"
       >
-        <component
-          :is="clickable ? 'button' : 'div'"
-          class="ex-list__item-surface"
-          :type="clickable ? 'button' : undefined"
-          :disabled="clickable ? row.item.disabled || loading : undefined"
+        <button
+          v-if="clickable"
+          class="ex-list__item-primary-action"
+          type="button"
+          :disabled="row.item.disabled || loading"
+          :aria-label="getItemActionLabel(row.item, row.index)"
           @click="handleItemClick(row.item, row.index, $event)"
-        >
+        ></button>
+
+        <div class="ex-list__item-surface">
           <slot
             name="item"
             :item="row.item"
@@ -102,7 +105,7 @@
               </div>
             </div>
           </slot>
-        </component>
+        </div>
       </li>
     </ul>
 
@@ -133,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, ref, useAttrs } from 'vue';
-import { useLocale } from '../../locale';
+import { useI18n, useLocale } from '../../locale';
 import ExEmpty from '../empty/ExEmpty.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import ExLoading from '../loading/ExLoading.vue';
@@ -158,6 +161,7 @@ const props = withDefaults(defineProps<ExListProps>(), {
 const emit = defineEmits<ExListEmits>();
 const attrs = useAttrs();
 const { t } = useLocale('list');
+const { t: tGlobal } = useI18n();
 const listRef = ref<HTMLDivElement | null>(null);
 const globalSize = useComponentSize(computed(() => props.size));
 const normalizedSize = computed(() => normalizeListSize(globalSize.value));
@@ -192,6 +196,13 @@ const emptyDescription = computed(() =>
 );
 const loadingDescription = computed(() => props.loadingText ?? t('loading'));
 const iconSize = computed(() => ({ small: 20, medium: 24, large: 28 })[normalizedSize.value]);
+
+const getItemActionLabel = (item: ListItem, index: number): string => {
+  if (typeof item.ariaLabel === 'string' && item.ariaLabel.trim()) return item.ariaLabel;
+  if (typeof item.title === 'string' && item.title.trim()) return item.title;
+  if (typeof item.description === 'string' && item.description.trim()) return item.description;
+  return `${tGlobal('common.more')} ${index + 1}`;
+};
 
 const identityKeys = new WeakMap<ListItem, string>();
 let identitySequence = 0;

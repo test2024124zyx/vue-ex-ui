@@ -1,6 +1,5 @@
 <template>
   <div
-    ref="containerRef"
     :class="containerClasses"
     :style="containerStyles"
   >
@@ -15,7 +14,7 @@
       <!-- 占位元素 -->
       <div
         class="ex-virtual-list__spacer"
-        :style="{ height: `${totalHeight}px` }"
+        :style="spacerStyles"
       ></div>
 
       <!-- 可见项目 -->
@@ -30,7 +29,13 @@
           class="ex-virtual-list__item"
           :class="{ 'is-last': item.index === dataSource.length - 1 }"
           :style="itemStyle(item.index)"
+          :role="itemRole"
+          :tabindex="getItemTabindex(item.index)"
+          :aria-posinset="itemRole ? item.index + 1 : undefined"
+          :aria-setsize="itemRole ? dataSource.length : undefined"
           @click="handleItemClick(item)"
+          @focus="focusedIndex = item.index"
+          @keydown="handleItemKeydown($event, item)"
         >
           <slot
             :item="item.data"
@@ -62,19 +67,32 @@ const props = withDefaults(defineProps<ExVirtualListProps>(), {
   virtual: true,
   loadMoreThreshold: 50,
   wrapperRole: 'list',
-  wrapperTabindex: 0,
+  wrapperTabindex: -1,
 });
 
 const emit = defineEmits<ExVirtualListEmits>();
 
 // Refs
-const containerRef = ref<HTMLElement>();
 const listRef = ref<HTMLElement>();
 
 // State - 使用 shallowRef 优化性能
 const startIndex = shallowRef(0);
 const endIndex = shallowRef(0);
 const offsetY = shallowRef(0);
+const focusedIndex = shallowRef(0);
+
+const DEFAULT_ITEM_HEIGHT_PX = 50;
+const SCROLL_EDGE_TOLERANCE_PX = 1;
+
+const normalizedFixedItemHeight = computed<number | undefined>(() => {
+  if (typeof props.itemHeight === 'function') return undefined;
+  if (Number.isFinite(props.itemHeight) && props.itemHeight > 0) return props.itemHeight;
+
+  logger.warn(
+    `Invalid fixed item height ${String(props.itemHeight)}, using default ${DEFAULT_ITEM_HEIGHT_PX}px`
+  );
+  return DEFAULT_ITEM_HEIGHT_PX;
+});
 
 // 高度缓存 - 用于动态高度优化
 const heightCache = new Map<number, number>();
@@ -90,21 +108,23 @@ const resizeObserver = ref<ResizeObserver | null>(null);
 // 计算属性
 const containerClasses = computed(() => ['ex-virtual-list', props.className]);
 
-const containerStyles = computed(
-  (): CSSProperties => ({
-    height: typeof props.height === 'number' ? `${props.height}px` : props.height,
-    ...props.style,
-  })
-);
+const containerStyles = computed((): CSSProperties => ({
+  height: typeof props.height === 'number' ? `${props.height}px` : props.height,
+  ...props.style,
+}));
 
-const wrapperStyles = computed(
-  (): CSSProperties => ({
-    height: '100%',
-    overflow: 'auto',
-    position: 'relative',
-    ...props.wrapStyle,
-  })
-);
+const wrapperStyles = computed((): CSSProperties => ({
+  height: '100%',
+  overflow: 'auto',
+  position: 'relative',
+  ...props.wrapStyle,
+}));
+
+const spacerStyles = computed((): CSSProperties => ({
+  height: typeof totalHeight.value === 'number' ? `${totalHeight.value}px` : totalHeight.value,
+}));
+
+const itemRole = computed(() => (props.wrapperRole === 'list' ? 'listitem' : undefined));
 
 // 判断是否启用虚拟滚动
 const shouldUseVirtual = computed(() => {
@@ -126,11 +146,13 @@ const getItemHeight = (index: number): number => {
 
       // 验证高度值
       if (typeof height !== 'number' || height <= 0 || !isFinite(height)) {
-        logger.warn(`Invalid height ${height} for item ${index}, using default 50px`);
-        height = 50;
+        logger.warn(
+          `Invalid height ${height} for item ${index}, using default ${DEFAULT_ITEM_HEIGHT_PX}px`
+        );
+        height = DEFAULT_ITEM_HEIGHT_PX;
       }
     } else {
-      height = props.itemHeight;
+      height = normalizedFixedItemHeight.value ?? DEFAULT_ITEM_HEIGHT_PX;
     }
 
     // 缓存高度
@@ -138,9 +160,8 @@ const getItemHeight = (index: number): number => {
     return height;
   } catch (error) {
     logger.error(`Error calculating height for item ${index}:`, error);
-    const defaultHeight = 50;
-    heightCache.set(index, defaultHeight);
-    return defaultHeight;
+    heightCache.set(index, DEFAULT_ITEM_HEIGHT_PX);
+    return DEFAULT_ITEM_HEIGHT_PX;
   }
 };
 
@@ -172,10 +193,9 @@ const buildOffsetCache = () => {
 
 // 获取偏移量 - O(1) 复杂度
 const getOffset = (index: number): number => {
-  if (!shouldUseVirtual.value) return 0;
-
-  if (typeof props.itemHeight === 'number') {
-    return index * props.itemHeight;
+  const fixedItemHeight = normalizedFixedItemHeight.value;
+  if (fixedItemHeight !== undefined) {
+    return index * fixedItemHeight;
   }
 
   // 确保缓存已构建
@@ -192,8 +212,9 @@ const totalHeight = computed(() => {
     return 'auto';
   }
 
-  if (typeof props.itemHeight === 'number') {
-    return props.dataSource.length * props.itemHeight;
+  const fixedItemHeight = normalizedFixedItemHeight.value;
+  if (fixedItemHeight !== undefined) {
+    return props.dataSource.length * fixedItemHeight;
   }
 
   // 动态高度：读取响应式总高度（由 onMounted/watch/测量 维护，避免在 computed 内产生副作用）
@@ -236,14 +257,15 @@ const updateVisibleRange = () => {
   const scrollTop = listEl.scrollTop;
   const clientHeight = listEl.clientHeight;
 
-  let start = 0;
-  let end = 0;
+  let start: number;
+  // 动态高度未找到视口下界时，应渲染到数据末尾。
+  let end = props.dataSource.length;
 
-  if (typeof props.itemHeight === 'number') {
+  const fixedItemHeight = normalizedFixedItemHeight.value;
+  if (fixedItemHeight !== undefined) {
     // 固定高度 - O(1) 复杂度
-    const itemHeight = props.itemHeight;
-    start = Math.floor(scrollTop / itemHeight);
-    end = Math.ceil((scrollTop + clientHeight) / itemHeight);
+    start = Math.floor(scrollTop / fixedItemHeight);
+    end = Math.ceil((scrollTop + clientHeight) / fixedItemHeight);
   } else {
     // 动态高度 - 使用二分查找 O(log n)
     if (offsetCache.value.length === 0) {
@@ -262,10 +284,6 @@ const updateVisibleRange = () => {
         end = i;
         break;
       }
-    }
-
-    if (end === 0) {
-      end = props.dataSource.length;
     }
   }
 
@@ -363,8 +381,9 @@ const measureItemHeight = (index: number, element: HTMLElement) => {
 
 // 项目样式 - 动态高度时不设置固定高度
 const itemStyle = (index: number): CSSProperties => {
-  if (typeof props.itemHeight === 'number') {
-    return { height: `${props.itemHeight}px` };
+  const fixedItemHeight = normalizedFixedItemHeight.value;
+  if (fixedItemHeight !== undefined) {
+    return { height: `${fixedItemHeight}px` };
   }
 
   // 动态高度时，让内容自然撑开，然后测量
@@ -407,12 +426,12 @@ const handleScroll = () => {
       scrollHeight,
       clientHeight,
       isTop: scrollTop <= 0,
-      isBottom: scrollTop + clientHeight >= scrollHeight - 1,
+      isBottom: scrollTop + clientHeight >= scrollHeight - SCROLL_EDGE_TOLERANCE_PX,
     });
 
     // 边沿触发：仅在「进入」对应区域的那一刻 emit 一次，避免每帧重复
     const atTop = scrollTop <= 0;
-    const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - SCROLL_EDGE_TOLERANCE_PX;
     const nearBottom = scrollTop + clientHeight >= scrollHeight - props.loadMoreThreshold;
 
     if (atTop && !prevAtTop) {
@@ -438,6 +457,67 @@ const handleItemClick = (item: { index: number; data: unknown }) => {
   emit('item-click', item.data, item.index);
 };
 
+const getItemTabindex = (index: number): number | undefined => {
+  if (!itemRole.value) return undefined;
+
+  const focusedItemVisible =
+    focusedIndex.value >= startIndex.value && focusedIndex.value < endIndex.value;
+  return focusedIndex.value === index || (!focusedItemVisible && index === startIndex.value)
+    ? 0
+    : -1;
+};
+
+const focusItem = (index: number) => {
+  const boundedIndex = Math.min(Math.max(index, 0), Math.max(props.dataSource.length - 1, 0));
+  focusedIndex.value = boundedIndex;
+  const isRendered = boundedIndex >= startIndex.value && boundedIndex < endIndex.value;
+  if (!isRendered) {
+    scrollToIndex(boundedIndex);
+    // scrollTo 会同步更新 auto 滚动位置；立即重算窗口后，下一帧才能聚焦新节点。
+    updateVisibleRange();
+  }
+  nextTick(() => itemRefs.get(boundedIndex)?.focus());
+};
+
+// 列表项采用 roving tabindex，避免大量数据同时进入 Tab 顺序。
+const handleItemKeydown = (event: KeyboardEvent, item: { index: number; data: unknown }) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleItemClick(item);
+    return;
+  }
+
+  let targetIndex: number | null = null;
+  switch (event.key) {
+    case 'ArrowDown':
+      targetIndex = item.index + 1;
+      break;
+    case 'ArrowUp':
+      targetIndex = item.index - 1;
+      break;
+    case 'Home':
+      targetIndex = 0;
+      break;
+    case 'End':
+      targetIndex = props.dataSource.length - 1;
+      break;
+  }
+
+  if (targetIndex === null) return;
+  event.preventDefault();
+  focusItem(targetIndex);
+};
+
+const checkInitialLoadMore = () => {
+  const listEl = listRef.value;
+  if (!listEl || props.dataSource.length === 0 || listEl.clientHeight <= 0) return;
+
+  const nearBottom =
+    listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - props.loadMoreThreshold;
+  if (nearBottom && !prevNearBottom) emit('load-more');
+  prevNearBottom = nearBottom;
+};
+
 // 定义 ScrollBehavior 类型
 type ScrollBehavior = 'auto' | 'smooth';
 
@@ -458,8 +538,11 @@ const scrollToIndex = (index: number, behavior: ScrollBehavior = 'auto') => {
   const listEl = listRef.value;
   if (!listEl) return;
 
+  const lastIndex = Math.max(props.dataSource.length - 1, 0);
+  const normalizedIndex = Number.isFinite(index) ? Math.trunc(index) : 0;
+  const boundedIndex = Math.min(Math.max(normalizedIndex, 0), lastIndex);
   // 使用缓存的偏移量 - O(1)
-  const offset = getOffset(index);
+  const offset = getOffset(boundedIndex);
 
   listEl.scrollTo({
     top: offset,
@@ -509,7 +592,7 @@ const getScrollInfo = () => {
     scrollHeight,
     clientHeight,
     isTop: scrollTop <= 0,
-    isBottom: scrollTop + clientHeight >= scrollHeight - 1,
+    isBottom: scrollTop + clientHeight >= scrollHeight - SCROLL_EDGE_TOLERANCE_PX,
   };
 };
 
@@ -580,6 +663,7 @@ onMounted(() => {
     }
     updateVisibleRange();
     setupResizeObserver();
+    checkInitialLoadMore();
   });
 });
 
@@ -604,7 +688,10 @@ watch(
   (newLen, oldLen) => {
     // 数据长度变化时，重新构建缓存
     if (newLen !== oldLen) {
+      focusedIndex.value = Math.min(focusedIndex.value, Math.max(newLen - 1, 0));
+      prevNearBottom = false;
       refresh();
+      nextTick(checkInitialLoadMore);
     }
   }
 );

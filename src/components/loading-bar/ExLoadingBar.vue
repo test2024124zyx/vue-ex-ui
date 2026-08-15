@@ -4,7 +4,7 @@
       v-if="props.visible"
       ref="loadingBarRef"
       v-bind="rootAttrs"
-      class="ex-loading-bar"
+      :class="loadingBarClasses"
       :style="rootStyles"
       role="progressbar"
       :aria-label="resolvedAriaLabel"
@@ -12,6 +12,7 @@
       aria-valuemax="100"
       :aria-valuenow="normalizedPercentage"
       :data-status="normalizedStatus"
+      :data-theme="configTheme"
     >
       <div
         class="ex-loading-bar__bar"
@@ -28,6 +29,7 @@
 <script setup lang="ts">
 import { computed, ref, useAttrs } from 'vue';
 import { useLocale } from '../../locale';
+import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
 import {
   normalizeLoadingBarHeight,
   normalizeLoadingBarPercentage,
@@ -53,6 +55,9 @@ const props = withDefaults(defineProps<ExLoadingBarProps>(), {
 
 const attrs = useAttrs();
 const { t } = useLocale('loading');
+const configTheme = useConfigTheme();
+const animationEnabled = useAnimation();
+const neonEnabled = useNeonEffect();
 const loadingBarRef = ref<HTMLDivElement | null>(null);
 const normalizedPercentage = computed(() => normalizeLoadingBarPercentage(props.percentage));
 const normalizedStatus = computed(() => normalizeLoadingBarStatus(props.status));
@@ -61,6 +66,13 @@ const normalizedZIndex = computed(() => normalizeLoadingBarZIndex(props.zIndex))
 const normalizedColor = computed(() =>
   resolveLoadingBarColor(props.color, normalizedPercentage.value)
 );
+const loadingBarClasses = computed(() => [
+  'ex-loading-bar',
+  {
+    'ex-loading-bar--no-animation': !animationEnabled.value,
+    'ex-loading-bar--no-neon': !neonEnabled.value,
+  },
+]);
 
 const OBSOLETE_ATTRS = new Set(['duration', 'animated', 'rounded']);
 const PROTECTED_ATTRS = new Set(['role', 'ariavaluemin', 'ariavaluemax', 'ariavaluenow']);

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExCard from '../../../src/components/card/ExCard.vue';
-import type { ExCardProps } from '../../../src/components/card/types';
+import type { ExCardExposed, ExCardProps } from '../../../src/components/card/types';
 
 describe('ExCard', () => {
   it('renders correctly with default props', () => {
@@ -163,6 +163,24 @@ describe('ExCard', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('内部交互控件点击不会同时触发卡片主操作', async () => {
+    const onClick = vi.fn();
+    const wrapper = mount(ExCard, {
+      props: { onClick },
+      slots: { actions: '<button class="inner-action">Action</button>' },
+    });
+
+    const primaryAction = wrapper.get('.ex-card__primary-action');
+    const innerAction = wrapper.get('.inner-action');
+
+    expect(primaryAction.element.tagName).toBe('BUTTON');
+    expect(innerAction.element.tagName).toBe('BUTTON');
+    expect(primaryAction.element.contains(innerAction.element)).toBe(false);
+    await innerAction.trigger('click');
+
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   it('does not emit click when loading', async () => {
     const onClick = vi.fn();
     const wrapper = mount(ExCard, {
@@ -177,19 +195,21 @@ describe('ExCard', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('有点击监听器时提供按钮语义与键盘触发能力', async () => {
+  it('有点击监听器时提供独立的原生主操作按钮', async () => {
     const onClick = vi.fn();
     const wrapper = mount(ExCard, {
       props: { onClick },
       slots: { default: '可交互卡片' },
     });
 
-    expect(wrapper.attributes('role')).toBe('button');
-    expect(wrapper.attributes('tabindex')).toBe('0');
+    const primaryAction = wrapper.get('.ex-card__primary-action');
 
-    await wrapper.trigger('keydown', { key: 'Enter' });
-    await wrapper.trigger('keydown', { key: ' ' });
-    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(wrapper.attributes('role')).toBeUndefined();
+    expect(primaryAction.element.tagName).toBe('BUTTON');
+    expect(primaryAction.attributes('aria-label')).toBeTruthy();
+
+    await primaryAction.trigger('click');
+    expect(onClick).toHaveBeenCalledTimes(1);
     expect(onClick.mock.calls[0]?.[0]).toBeInstanceOf(MouseEvent);
   });
 
@@ -201,7 +221,7 @@ describe('ExCard', () => {
 
     expect(wrapper.attributes('aria-busy')).toBe('true');
     expect(wrapper.attributes('aria-disabled')).toBe('true');
-    expect(wrapper.attributes('tabindex')).toBe('-1');
+    expect(wrapper.get('.ex-card__primary-action').attributes()).toHaveProperty('disabled');
     expect(wrapper.find('.ex-card__body').attributes()).toHaveProperty('inert');
     expect(wrapper.find('.ex-card__loading').attributes('role')).toBe('status');
   });
@@ -211,6 +231,7 @@ describe('ExCard', () => {
 
     expect(wrapper.attributes('role')).toBeUndefined();
     expect(wrapper.attributes('tabindex')).toBeUndefined();
+    expect(wrapper.find('.ex-card__primary-action').exists()).toBe(false);
   });
 
   it('renders with custom class', () => {
@@ -237,7 +258,7 @@ describe('ExCard', () => {
       slots: { default: 'Card' },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExCardExposed;
     expect(typeof vm.getElement).toBe('function');
   });
 });

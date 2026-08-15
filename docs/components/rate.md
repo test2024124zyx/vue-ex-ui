@@ -19,52 +19,102 @@ const value8 = ref(4)
 
 最简单的用法。
 
+::: raw
+
 <div class="demo-container">
   <ExRate v-model="value1" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExRate v-model="value" />
+  <div class="demo-container">
+    <ExRate v-model="value1" />
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-const value = ref(0);
+const value1 = ref(0);
 </script>
 ```
+
+:::
 
 ## 半星评分
 
 设置 `allow-half` 属性可以允许半星评分。
 
+::: raw
+
 <div class="demo-container">
   <ExRate v-model="value2" allow-half />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExRate v-model="value" allow-half />
+  <div class="demo-container">
+    <ExRate
+      v-model="value2"
+      allow-half
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value2 = ref(3.5);
+</script>
 ```
+
+:::
 
 ## 显示分数
 
 设置 `show-score` 属性可以在右侧显示当前分数。
 
+::: raw
+
 <div class="demo-container">
   <ExRate v-model="value3" show-score />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExRate v-model="value" show-score />
+  <div class="demo-container">
+    <ExRate
+      v-model="value3"
+      show-score
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value3 = ref(4);
+</script>
 ```
+
+:::
 
 ## 不同尺寸
 
 提供三种尺寸：`small`、`medium`（默认）、`large`。
+
+::: raw
 
 <div class="demo-container">
   <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -74,23 +124,53 @@ const value = ref(0);
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExRate v-model="value" size="small" show-score />
-  <ExRate v-model="value" size="medium" show-score />
-  <ExRate v-model="value" size="large" show-score />
+  <div class="demo-container">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <ExRate
+        v-model="value6"
+        size="small"
+        show-score
+      />
+      <ExRate
+        v-model="value6"
+        size="medium"
+        show-score
+      />
+      <ExRate
+        v-model="value6"
+        size="large"
+        show-score
+      />
+    </div>
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value6 = ref(3);
+</script>
 ```
+
+:::
 
 ## 自定义图标
 
 通过 `icon-void` 和 `icon-active` 插槽可以自定义图标。
 
+::: raw
+
 <div class="demo-container">
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <ExRate v-model="value8" show-score>
       <template #icon-void>
-        <ex-icon color="#4a5568"  src="https://api.iconify.design/ri/heart-line.svg" />
+        <ex-icon color="#4a5568" src="https://api.iconify.design/ri/heart-line.svg" />
       </template>
       <template #icon-active>
         <ex-icon color="#00f0ff" src="https://api.iconify.design/ri/heart-fill.svg" />
@@ -107,37 +187,82 @@ const value = ref(0);
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExRate v-model="value" show-score>
-    <template #icon-void>
-      <ex-icon color="#4a5568" src="https://api.iconify.design/ri/heart-line.svg" />
-    </template>
-    <template #icon-active>
-      <ex-icon color="#00f0ff" src="https://api.iconify.design/ri/heart-fill.svg" />
-    </template>
-  </ExRate>
+  <div class="demo-container">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <ExRate
+        v-model="value8"
+        show-score
+      >
+        <template #icon-void>
+          <ex-icon
+            color="#4a5568"
+            src="https://api.iconify.design/ri/heart-line.svg"
+          />
+        </template>
+        <template #icon-active>
+          <ex-icon
+            color="#00f0ff"
+            src="https://api.iconify.design/ri/heart-fill.svg"
+          />
+        </template>
+      </ExRate>
+      <ExRate
+        v-model="value8"
+        show-score
+      >
+        <template #icon-void>
+          <ex-icon
+            color="#4a5568"
+            src="https://api.iconify.design/ri/thumb-up-line.svg"
+          />
+        </template>
+        <template #icon-active>
+          <ex-icon
+            color="#00f0ff"
+            src="https://api.iconify.design/ri/thumb-up-fill.svg"
+          />
+        </template>
+      </ExRate>
+    </div>
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value8 = ref(4);
+</script>
 ```
+
+:::
 
 ## API
 
 ### Props
 
-| 属性                 | 说明           | 类型                             | 默认值      |
-| -------------------- | -------------- | -------------------------------- | ----------- |
-| modelValue / v-model | 绑定值         | `number`                         | `0`         |
-| max                  | 最大分值       | `number`                         | `5`         |
-| disabled             | 是否禁用       | `boolean`                        | `false`     |
-| readonly             | 是否只读       | `boolean`                        | `false`     |
-| allowHalf            | 是否允许半选   | `boolean`                        | `false`     |
-| showScore            | 是否显示分数   | `boolean`                        | `false`     |
-| showText             | 是否显示文字   | `boolean`                        | `false`     |
-| scoreTemplate        | 分数模板       | `string`                         | `'{value}'` |
-| size                 | 尺寸           | `'small' \| 'medium' \| 'large'` | `'medium'`  |
-| color                | 图标颜色       | `string`                         | `'#00f0ff'` |
-| voidColor            | 未选中图标颜色 | `string`                         | `'#4a5568'` |
-| texts                | 显示文字数组   | `string[]`                       | `[]`        |
+| 属性                 | 说明               | 类型                             | 默认值      |
+| -------------------- | ------------------ | -------------------------------- | ----------- |
+| modelValue / v-model | 绑定值             | `number`                         | `0`         |
+| max                  | 最大分值           | `number`                         | `5`         |
+| disabled             | 是否禁用           | `boolean`                        | `false`     |
+| readonly             | 是否只读           | `boolean`                        | `false`     |
+| allowHalf            | 是否允许半选       | `boolean`                        | `false`     |
+| showScore            | 是否显示分数       | `boolean`                        | `false`     |
+| showText             | 是否显示文字       | `boolean`                        | `false`     |
+| scoreTemplate        | 分数模板           | `string`                         | `'{value}'` |
+| size                 | 尺寸               | `'small' \| 'medium' \| 'large'` | `'medium'`  |
+| color                | 图标颜色           | `string`                         | `'#00f0ff'` |
+| voidColor            | 未选中图标颜色     | `string`                         | `'#4a5568'` |
+| texts                | 显示文字数组       | `string[]`                       | `[]`        |
+| id                   | 根元素 ID          | `string`                         | —           |
+| ariaLabel            | 评分控件无障碍名称 | `string`                         | 内置文案    |
+| ariaDescribedby      | 关联描述元素 ID    | `string`                         | —           |
 
 ### Events
 

@@ -1,5 +1,9 @@
 <template>
-  <div ref="linkRef" class="ex-anchor-link" :class="{ 'is-active': isActive }">
+  <div
+    ref="linkRef"
+    class="ex-anchor-link"
+    :class="{ 'is-active': isActive }"
+  >
     <a
       :href="href"
       :class="['ex-anchor-link__title', { 'is-active': isActive }]"

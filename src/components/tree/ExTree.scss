@@ -64,7 +64,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-tree-node--selected > .ex-tree-node__content {
     outline: 2px solid var(--ex-color-primary);
   }

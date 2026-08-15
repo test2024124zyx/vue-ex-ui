@@ -43,6 +43,14 @@ describe('FileDownload 下载工具', () => {
       expect(sanitizeDownloadFilename('   ')).toBeUndefined();
     });
 
+    it('移除会改变文件名视觉顺序的 Unicode 格式控制符', () => {
+      expect(sanitizeDownloadFilename('invoice\u202Efdp.exe')).toBe('invoice_fdp.exe');
+      expect(sanitizeDownloadFilename('safe\u2066name\u2069.txt')).toBe('safe_name_.txt');
+      expect(
+        parseContentDispositionFilename("attachment; filename*=UTF-8''invoice%E2%80%AEfdp.exe")
+      ).toBe('invoice_fdp.exe');
+    });
+
     it('解析 RFC 5987 和普通 Content-Disposition 文件名', () => {
       expect(
         parseContentDispositionFilename("attachment; filename*=UTF-8''%E6%8A%A5%E5%91%8A.pdf")

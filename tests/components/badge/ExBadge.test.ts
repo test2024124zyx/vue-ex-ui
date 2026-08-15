@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExBadge from '../../../src/components/badge/ExBadge.vue';
-import type { ExBadgeProps } from '../../../src/components/badge/types';
+import type { ExBadgeExposed, ExBadgeProps } from '../../../src/components/badge/types';
 
 describe('ExBadge', () => {
   it('renders correctly with default props', () => {
@@ -259,7 +259,7 @@ describe('ExBadge', () => {
       props: { count: 1 },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExBadgeExposed;
     expect(typeof vm.getElement).toBe('function');
     expect(vm.getElement()).toBe(wrapper.element);
   });

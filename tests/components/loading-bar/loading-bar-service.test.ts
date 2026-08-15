@@ -1,7 +1,14 @@
-import { nextTick } from 'vue';
+import { mount } from '@vue/test-utils';
+import { createApp, defineComponent, h, nextTick } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createLoadingBar, loadingBar } from '../../../src/components/loading-bar/loading-bar';
+import {
+  createLoadingBar,
+  loadingBar,
+  useLoadingBarService,
+} from '../../../src/components/loading-bar/loading-bar';
 import type { LoadingBarService } from '../../../src/components/loading-bar/types';
+import ExLoadingBar from '../../../src/components/loading-bar';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 const localServices: LoadingBarService[] = [];
 
@@ -218,6 +225,40 @@ describe('LoadingBar 服务', () => {
     expect(getBar().getAttribute('data-status')).toBe('error');
   });
 
+  it('ConfigProvider 作用域服务继承主题、语言和层级并随作用域销毁', async () => {
+    let scopedService: LoadingBarService | undefined;
+    const Harness = defineComponent({
+      setup() {
+        scopedService = useLoadingBarService();
+        return () => null;
+      },
+    });
+    const wrapper = mount(ExConfigProvider, {
+      props: {
+        theme: 'light',
+        locale: 'zh-CN',
+        animation: false,
+        neonEffect: false,
+        zIndex: 3000,
+      },
+      slots: { default: () => h(Harness) },
+    });
+
+    expect(scopedService).toBeDefined();
+    expect(scopedService).not.toBe(loadingBar);
+    scopedService!.start();
+    await flush();
+
+    expect(getBar().dataset.theme).toBe('light');
+    expect(getBar().getAttribute('aria-label')).toBe('加载中...');
+    expect(getBar().getAttribute('style')).toContain('--ex-loading-bar-z-index: 3100');
+    expect(getBar().classList.contains('ex-loading-bar--no-animation')).toBe(true);
+    expect(getBar().classList.contains('ex-loading-bar--no-neon')).toBe(true);
+
+    wrapper.unmount();
+    expect(document.querySelector('.ex-loading-bar-host')).toBeNull();
+  });
+
   it('无 DOM 的 SSR 环境中安全保持无副作用', () => {
     const service = createLocalService();
     vi.stubGlobal('document', undefined);
@@ -243,6 +284,15 @@ describe('LoadingBar 服务', () => {
       })
     );
     expect(createLoadingBar()).not.toBe(loadingBar);
+  });
+
+  it('组件插件在 App 卸载时注册服务清理', () => {
+    const app = createApp(defineComponent(() => () => null));
+    const onUnmount = vi.spyOn(app, 'onUnmount');
+
+    app.use(ExLoadingBar);
+
+    expect(onUnmount).toHaveBeenCalledOnce();
   });
 
   it('服务方法可安全解构调用', async () => {

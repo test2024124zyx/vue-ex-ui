@@ -3,12 +3,17 @@
     ref="itemRef"
     :class="itemClasses"
     :style="itemStyles"
-    :role="clickable ? 'button' : 'listitem'"
-    :tabindex="clickable ? 0 : undefined"
-    @click="handleClick"
-    @keydown.enter="handleKeydown"
-    @keydown.space.prevent="handleKeydown"
+    role="listitem"
+    @click.self="handleClick"
   >
+    <button
+      v-if="clickable"
+      class="ex-timeline-item__primary-action"
+      type="button"
+      :aria-label="ariaLabel || timestamp || t('common.more')"
+      @click="handleClick"
+    ></button>
+
     <!-- 垂直布局 -->
     <template v-if="direction === 'vertical'">
       <!-- 左侧内容区（alternate 模式） -->
@@ -127,6 +132,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useI18n } from '../../locale';
 import { computed, inject, ref, onMounted, onUpdated } from 'vue';
 import type { ComputedRef } from 'vue';
 import type {
@@ -151,6 +157,7 @@ const props = withDefaults(defineProps<ExTimelineItemProps>(), {
 });
 
 const emit = defineEmits<ExTimelineItemEmits>();
+const { t } = useI18n();
 
 const itemRef = ref<HTMLDivElement>();
 const itemIndex = ref(0);
@@ -230,11 +237,6 @@ const nodeStyle = computed(() => {
 
 // 事件处理
 const handleClick = (event: MouseEvent) => {
-  emit('click', event);
-};
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (!props.clickable) return;
   emit('click', event);
 };
 

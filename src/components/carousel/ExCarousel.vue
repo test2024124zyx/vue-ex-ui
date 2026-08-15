@@ -5,8 +5,11 @@
     :style="carouselStyles"
     role="region"
     :aria-label="ariaLabel || t('carousel.carousel')"
+    tabindex="0"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
+    @focusin="handleFocusIn"
+    @focusout="handleFocusOut"
   >
     <!-- 轮播容器 -->
     <div class="ex-carousel__container">
@@ -26,7 +29,7 @@
       <!-- 前一个按钮 -->
       <button
         v-if="arrow !== 'never'"
-        v-show="arrow === 'always' || (arrow === 'hover' && isHovering)"
+        v-show="arrow === 'always' || (arrow === 'hover' && (isHovering || isFocusWithin))"
         class="ex-carousel__arrow ex-carousel__arrow--prev"
         :class="{ 'ex-carousel__arrow--disabled': !canGoPrev }"
         :disabled="!canGoPrev"
@@ -35,14 +38,18 @@
         @click="prev"
       >
         <slot name="arrow-prev">
-          <ExIcon icon="arrow-left-s-line" :size="24" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-left-s-line"
+            :size="24"
+            aria-hidden="true"
+          />
         </slot>
       </button>
 
       <!-- 下一个按钮 -->
       <button
         v-if="arrow !== 'never'"
-        v-show="arrow === 'always' || (arrow === 'hover' && isHovering)"
+        v-show="arrow === 'always' || (arrow === 'hover' && (isHovering || isFocusWithin))"
         class="ex-carousel__arrow ex-carousel__arrow--next"
         :class="{ 'ex-carousel__arrow--disabled': !canGoNext }"
         :disabled="!canGoNext"
@@ -51,7 +58,11 @@
         @click="next"
       >
         <slot name="arrow-next">
-          <ExIcon icon="arrow-right-s-line" :size="24" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-right-s-line"
+            :size="24"
+            aria-hidden="true"
+          />
         </slot>
       </button>
     </div>
@@ -90,13 +101,17 @@ defineOptions({
   name: 'ExCarousel',
 });
 
+const DEFAULT_AUTOPLAY_INTERVAL = 3000;
+const GESTURE_INTENT_THRESHOLD_PX = 12;
+const SWIPE_TRIGGER_THRESHOLD_PX = 50;
+
 // 注意：布尔类型 prop 未传时 Vue 默认转为 false，因此必须用 withDefaults 显式给出真值默认，
 // 否则 `props.xxx ?? true` 会因 `false ?? true === false` 而失效（导致指示器不显示、循环失效等）
 const props = withDefaults(defineProps<ExCarouselProps>(), {
   modelValue: 0,
   height: '400px',
   autoplay: true,
-  interval: 3000,
+  interval: DEFAULT_AUTOPLAY_INTERVAL,
   loop: true,
   arrow: 'hover',
   indicatorPosition: 'bottom',
@@ -110,7 +125,7 @@ const props = withDefaults(defineProps<ExCarouselProps>(), {
 const modelValue = computed(() => props.modelValue ?? 0);
 const height = computed(() => props.height ?? '400px');
 const autoplay = computed(() => props.autoplay ?? true);
-const interval = computed(() => props.interval ?? 3000);
+const interval = computed(() => props.interval ?? DEFAULT_AUTOPLAY_INTERVAL);
 const loop = computed(() => props.loop ?? true);
 const arrow = computed(() => props.arrow ?? 'hover');
 const indicatorPosition = computed(() => props.indicatorPosition ?? 'bottom');
@@ -129,12 +144,15 @@ const currentIndex = ref(
   Number.isFinite(modelValue.value) ? Math.max(0, Math.trunc(modelValue.value)) : 0
 );
 const isHovering = ref(false);
+const isFocusWithin = ref(false);
+const prefersReducedMotion = ref(false);
 const autoplayTimer = ref<number>();
 const itemCount = ref(0);
 const isTransitioning = ref(false);
 let transitionTimer: number | undefined;
 let mounted = false;
 let itemObserver: MutationObserver | undefined;
+let reducedMotionQuery: MediaQueryList | null = null;
 
 // 触摸相关
 const touchStartX = ref(0);
@@ -142,6 +160,7 @@ const touchStartY = ref(0);
 const touchEndX = ref(0);
 const touchEndY = ref(0);
 const touchActive = ref(false);
+const touchIntent = ref<'carousel' | 'page' | null>(null);
 
 // 子项索引以真实 DOM 顺序为准，保证 keyed 节点重排后语义与视觉顺序一致。
 const itemUids = ref<number[]>([]);
@@ -258,10 +277,14 @@ const trackStyles = computed(() => {
   if (effect.value === 'slide') {
     if (direction.value === 'horizontal') {
       styles.transform = `translateX(-${currentIndex.value * 100}%)`;
-      styles.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      styles.transition = prefersReducedMotion.value
+        ? 'none'
+        : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     } else {
       styles.transform = `translateY(-${currentIndex.value * 100}%)`;
-      styles.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      styles.transition = prefersReducedMotion.value
+        ? 'none'
+        : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     }
   } else if (effect.value === 'fade') {
     // Fade 效果由 CSS 处理，移除 transform
@@ -326,9 +349,19 @@ const prev = () => {
 
 const startAutoplay = () => {
   stopAutoplay();
-  if (!autoplay.value || itemCount.value <= 1) return;
+  if (
+    !autoplay.value ||
+    itemCount.value <= 1 ||
+    prefersReducedMotion.value ||
+    isFocusWithin.value
+  ) {
+    return;
+  }
 
-  const delay = Number.isFinite(interval.value) && interval.value > 0 ? interval.value : 3000;
+  const delay =
+    Number.isFinite(interval.value) && interval.value > 0
+      ? interval.value
+      : DEFAULT_AUTOPLAY_INTERVAL;
   autoplayTimer.value = window.setInterval(() => {
     next();
   }, delay);
@@ -357,6 +390,19 @@ const handleMouseLeave = () => {
   }
 };
 
+const handleFocusIn = () => {
+  isFocusWithin.value = true;
+  stopAutoplay();
+};
+
+const handleFocusOut = (event: FocusEvent) => {
+  if (event.relatedTarget instanceof Node && carouselRef.value?.contains(event.relatedTarget)) {
+    return;
+  }
+  isFocusWithin.value = false;
+  if (autoplay.value && !(isHovering.value && pauseOnHover.value)) startAutoplay();
+};
+
 // 触摸事件处理
 const handleTouchStart = (e: TouchEvent) => {
   const touch = e.touches[0];
@@ -367,6 +413,7 @@ const handleTouchStart = (e: TouchEvent) => {
   touchEndX.value = touch.clientX;
   touchEndY.value = touch.clientY;
   touchActive.value = true;
+  touchIntent.value = null;
 };
 
 const handleTouchMove = (e: TouchEvent) => {
@@ -380,10 +427,13 @@ const handleTouchMove = (e: TouchEvent) => {
   // 滑动方向与轮播方向一致时阻止默认滚动，避免与页面滚动冲突
   const dx = Math.abs(touchEndX.value - touchStartX.value);
   const dy = Math.abs(touchEndY.value - touchStartY.value);
-  if (
-    (direction.value === 'horizontal' && dx > dy) ||
-    (direction.value === 'vertical' && dy > dx)
-  ) {
+  if (touchIntent.value === null && Math.max(dx, dy) >= GESTURE_INTENT_THRESHOLD_PX) {
+    touchIntent.value =
+      (direction.value === 'horizontal' && dx > dy) || (direction.value === 'vertical' && dy > dx)
+        ? 'carousel'
+        : 'page';
+  }
+  if (touchIntent.value === 'carousel') {
     if (e.cancelable) e.preventDefault();
   }
 };
@@ -394,18 +444,22 @@ const resetTouch = () => {
   touchStartY.value = 0;
   touchEndX.value = 0;
   touchEndY.value = 0;
+  touchIntent.value = null;
 };
 
 const handleTouchEnd = () => {
   if (!touchActive.value) return;
 
+  if (touchIntent.value !== 'carousel') {
+    resetTouch();
+    return;
+  }
+
   const deltaX = touchEndX.value - touchStartX.value;
   const deltaY = touchEndY.value - touchStartY.value;
 
-  const threshold = 50;
-
   if (direction.value === 'horizontal') {
-    if (Math.abs(deltaX) > threshold) {
+    if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD_PX) {
       if (deltaX > 0) {
         prev();
       } else {
@@ -413,7 +467,7 @@ const handleTouchEnd = () => {
       }
     }
   } else {
-    if (Math.abs(deltaY) > threshold) {
+    if (Math.abs(deltaY) > SWIPE_TRIGGER_THRESHOLD_PX) {
       if (deltaY > 0) {
         prev();
       } else {
@@ -443,14 +497,25 @@ watch(modelValue, newValue => {
 // 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）
 watch([autoplay, interval, pauseOnHover], () => {
   stopAutoplay();
-  if (!(isHovering.value && pauseOnHover.value)) {
+  if (!(isHovering.value && pauseOnHover.value) && !isFocusWithin.value) {
     startAutoplay();
   }
 });
 
+const handleReducedMotionChange = (event: MediaQueryListEvent): void => {
+  prefersReducedMotion.value = event.matches;
+  if (event.matches) stopAutoplay();
+  else if (!isFocusWithin.value && !(isHovering.value && pauseOnHover.value)) startAutoplay();
+};
+
 // 生命周期
 onMounted(() => {
   mounted = true;
+  if (typeof window.matchMedia === 'function') {
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    prefersReducedMotion.value = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener?.('change', handleReducedMotionChange);
+  }
   syncItemOrder();
   reconcileCurrentIndex(true);
   startAutoplay();
@@ -471,6 +536,8 @@ onBeforeUnmount(() => {
   mounted = false;
   itemObserver?.disconnect();
   itemObserver = undefined;
+  reducedMotionQuery?.removeEventListener?.('change', handleReducedMotionChange);
+  reducedMotionQuery = null;
   stopAutoplay();
   resetTouch();
   if (transitionTimer !== undefined) {

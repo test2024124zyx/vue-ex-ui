@@ -6,13 +6,13 @@
     role="list"
     :aria-label="ariaLabel"
   >
-    <slot />
+    <TimelineContent />
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, provide, ref } from 'vue';
+import { computed, provide, ref, useSlots } from 'vue';
 import type { ExTimelineProps, ExTimelineExposed } from './types';
 import { useI18n } from '../../locale';
 
@@ -30,6 +30,11 @@ const props = withDefaults(defineProps<ExTimelineProps>(), {
 });
 
 const timelineRef = ref<HTMLDivElement>();
+const slots = useSlots();
+const TimelineContent = () => {
+  const nodes = slots.default?.() ?? [];
+  return props.reverse ? [...nodes].reverse() : nodes;
+};
 
 // 提供给子组件的上下文
 provide(

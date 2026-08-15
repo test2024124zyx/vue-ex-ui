@@ -59,8 +59,7 @@
       transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-        hue-rotate(180deg);
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
     }
   }
 
@@ -176,8 +175,7 @@
 
   &__list-item-icon {
     flex: 0 0 auto;
-    filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-      hue-rotate(180deg);
+    filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
   }
 
   &__list-item-name {
@@ -219,8 +217,7 @@
     color: var(--ex-color-text-secondary);
 
     img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-        hue-rotate(180deg);
+      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
     }
 
     &:not(:disabled):hover {
@@ -237,13 +234,11 @@
   }
 
   &__list-item-status-icon.is-success {
-    filter: brightness(0) saturate(100%) invert(60%) sepia(80%) saturate(1600%)
-      hue-rotate(100deg);
+    filter: brightness(0) saturate(100%) invert(60%) sepia(80%) saturate(1600%) hue-rotate(100deg);
   }
 
   &__list-item-status-icon.is-error {
-    filter: brightness(0) saturate(100%) invert(40%) sepia(80%) saturate(1800%)
-      hue-rotate(340deg);
+    filter: brightness(0) saturate(100%) invert(40%) sepia(80%) saturate(1800%) hue-rotate(340deg);
   }
 
   &__list-item-progress-bar {
@@ -389,8 +384,7 @@
 
   &__upload-trigger-icon {
     transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
-    filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%)
-      hue-rotate(180deg);
+    filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
   }
 
   &__upload-trigger-content:not(:disabled):hover &__upload-trigger-icon,

@@ -33,6 +33,8 @@ export interface ListItem {
   avatar?: string;
   extra?: string;
   disabled?: boolean;
+  /** 可点击列表项主操作的无障碍名称。 */
+  ariaLabel?: string;
   [key: string]: unknown;
 }
 

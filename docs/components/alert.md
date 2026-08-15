@@ -14,18 +14,42 @@ const visible2 = ref(true)
 Alert 组件提供四种类型，由 `type` 属性指定。
 
 <div class="demo-container">
-  <ExAlert type="info" title="信息提示" />
-  <ExAlert type="success" title="成功提示" />
-  <ExAlert type="warning" title="警告提示" />
-  <ExAlert type="error" title="错误提示" />
+  <ExAlert
+    type="info"
+    title="信息提示"
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+  />
 </div>
 
 ```vue
 <template>
-  <ExAlert type="info" title="信息提示" />
-  <ExAlert type="success" title="成功提示" />
-  <ExAlert type="warning" title="警告提示" />
-  <ExAlert type="error" title="错误提示" />
+  <ExAlert
+    type="info"
+    title="信息提示"
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+  />
 </template>
 ```
 
@@ -48,7 +72,11 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 
 ```vue
 <template>
-  <ExAlert type="info" title="信息提示的标题" description="这是一段详细的信息描述。" />
+  <ExAlert
+    type="info"
+    title="信息提示的标题"
+    description="这是一段详细的信息描述。"
+  />
 </template>
 ```
 
@@ -70,7 +98,13 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 
 ```vue
 <template>
-  <ExAlert v-if="visible" type="warning" title="可关闭的警告" closable @close="visible = false" />
+  <ExAlert
+    v-if="visible"
+    type="warning"
+    title="可关闭的警告"
+    closable
+    @close="visible = false"
+  />
 </template>
 
 <script setup>
@@ -85,18 +119,50 @@ const visible = ref(true);
 通过设置 `show-icon` 属性来显示图标。
 
 <div class="demo-container">
-  <ExAlert type="info" title="信息提示" show-icon />
-  <ExAlert type="success" title="成功提示" show-icon />
-  <ExAlert type="warning" title="警告提示" show-icon />
-  <ExAlert type="error" title="错误提示" show-icon />
+  <ExAlert
+    type="info"
+    title="信息提示"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+    show-icon
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+    show-icon
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+    show-icon
+  />
 </div>
 
 ```vue
 <template>
-  <ExAlert type="info" title="信息提示" show-icon />
-  <ExAlert type="success" title="成功提示" show-icon />
-  <ExAlert type="warning" title="警告提示" show-icon />
-  <ExAlert type="error" title="错误提示" show-icon />
+  <ExAlert
+    type="info"
+    title="信息提示"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+    show-icon
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+    show-icon
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+    show-icon
+  />
 </template>
 ```
 
@@ -116,7 +182,12 @@ const visible = ref(true);
 
 ```vue
 <template>
-  <ExAlert type="success" title="居中显示的提示" center show-icon />
+  <ExAlert
+    type="success"
+    title="居中显示的提示"
+    center
+    show-icon
+  />
 </template>
 ```
 
@@ -125,7 +196,10 @@ const visible = ref(true);
 通过插槽自定义图标。
 
 <div class="demo-container">
-  <ExAlert type="info" title="自定义图标">
+  <ExAlert
+    type="info"
+    title="自定义图标"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/rocket-line.svg"
@@ -139,9 +213,17 @@ const visible = ref(true);
 
 ```vue
 <template>
-  <ExAlert type="info" title="自定义图标">
+  <ExAlert
+    type="info"
+    title="自定义图标"
+  >
     <template #icon>
-      <img src="https://api.iconify.design/ri/rocket-line.svg" alt="火箭" width="20" height="20" />
+      <img
+        src="https://api.iconify.design/ri/rocket-line.svg"
+        alt="火箭"
+        width="20"
+        height="20"
+      />
     </template>
   </ExAlert>
 </template>
@@ -152,16 +234,46 @@ const visible = ref(true);
 通过 `variant` 设置 `standard`（默认）、`filled`、`outlined` 三种视觉风格。
 
 <div class="demo-container">
-  <ExAlert type="success" variant="standard" title="standard 标准样式" show-icon />
-  <ExAlert type="success" variant="filled" title="filled 实心样式" show-icon />
-  <ExAlert type="success" variant="outlined" title="outlined 描边样式" show-icon />
+  <ExAlert
+    type="success"
+    variant="standard"
+    title="standard 标准样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="filled"
+    title="filled 实心样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="outlined"
+    title="outlined 描边样式"
+    show-icon
+  />
 </div>
 
 ```vue
 <template>
-  <ExAlert type="success" variant="standard" title="standard 标准样式" show-icon />
-  <ExAlert type="success" variant="filled" title="filled 实心样式" show-icon />
-  <ExAlert type="success" variant="outlined" title="outlined 描边样式" show-icon />
+  <ExAlert
+    type="success"
+    variant="standard"
+    title="standard 标准样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="filled"
+    title="filled 实心样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="outlined"
+    title="outlined 描边样式"
+    show-icon
+  />
 </template>
 ```
 
@@ -170,16 +282,46 @@ const visible = ref(true);
 通过 `size` 设置 `small` / `medium`（默认）/ `large`，未设置时跟随 `ExConfigProvider` 全局尺寸。
 
 <div class="demo-container">
-  <ExAlert type="info" size="small" title="小尺寸提示" show-icon />
-  <ExAlert type="info" size="medium" title="中等尺寸提示" show-icon />
-  <ExAlert type="info" size="large" title="大尺寸提示" show-icon />
+  <ExAlert
+    type="info"
+    size="small"
+    title="小尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="medium"
+    title="中等尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="large"
+    title="大尺寸提示"
+    show-icon
+  />
 </div>
 
 ```vue
 <template>
-  <ExAlert type="info" size="small" title="小尺寸提示" show-icon />
-  <ExAlert type="info" size="medium" title="中等尺寸提示" show-icon />
-  <ExAlert type="info" size="large" title="大尺寸提示" show-icon />
+  <ExAlert
+    type="info"
+    size="small"
+    title="小尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="medium"
+    title="中等尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="large"
+    title="大尺寸提示"
+    show-icon
+  />
 </template>
 ```
 
@@ -197,9 +339,19 @@ const visible = ref(true);
 
 ```vue
 <template>
-  <ExAlert type="warning" title="检测到新版本" description="建议立即更新。" show-icon>
+  <ExAlert
+    type="warning"
+    title="检测到新版本"
+    description="建议立即更新。"
+    show-icon
+  >
     <template #action>
-      <ExButton size="small" type="primary">立即更新</ExButton>
+      <ExButton
+        size="small"
+        type="primary"
+      >
+        立即更新
+      </ExButton>
     </template>
   </ExAlert>
 </template>
@@ -211,8 +363,19 @@ const visible = ref(true);
 
 ```vue
 <template>
-  <ExAlert v-if="visible" type="warning" title="可关闭" closable @close="visible = false" />
-  <ExButton v-if="!visible" @click="visible = true">重新显示</ExButton>
+  <ExAlert
+    v-if="visible"
+    type="warning"
+    title="可关闭"
+    closable
+    @close="visible = false"
+  />
+  <ExButton
+    v-if="!visible"
+    @click="visible = true"
+  >
+    重新显示
+  </ExButton>
 </template>
 
 <script setup>

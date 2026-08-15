@@ -366,4 +366,19 @@ describe('ExCascader', () => {
       expect(events![events!.length - 1][0]).toBe(false);
     });
   });
+
+  it('Teleport 面板继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExCascader, { options }) },
+    });
+
+    await wrapper.get('.ex-cascader__input-wrapper').trigger('click');
+    await nextTick();
+    const dropdown = document.querySelector<HTMLElement>('.ex-cascader__dropdown')!;
+    expect(dropdown.style.zIndex).toBe('2400');
+    expect(dropdown.classList).toContain('ex-no-neon');
+    expect(dropdown.classList).toContain('ex-no-animation');
+  });
 });

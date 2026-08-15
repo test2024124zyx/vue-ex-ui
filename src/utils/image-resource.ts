@@ -1,5 +1,17 @@
 export type BrowserImageSource = string | Blob;
 
+export const MAX_BROWSER_IMAGE_SOURCE_BYTES = 64 * 1024 * 1024;
+export const MAX_BROWSER_IMAGE_PIXELS = 32_000_000;
+export const MAX_BROWSER_IMAGE_DIMENSION = 32_768;
+export const MAX_BROWSER_CANVAS_PIXELS = 32_000_000;
+
+export interface BrowserImageResourceLimits {
+  maxSourceBytes?: number;
+  maxPixels?: number;
+  maxDimension?: number;
+  requestInit?: Pick<RequestInit, 'credentials' | 'mode' | 'referrerPolicy'>;
+}
+
 export interface ImageDimension {
   width: number;
   height: number;
@@ -71,7 +83,36 @@ function assertImageLoadingAvailable(): void {
   }
 }
 
-async function resolveSourceBlob(source: BrowserImageSource, signal?: AbortSignal): Promise<Blob> {
+const normalizeLimit = (value: number | undefined, fallback: number): number =>
+  Number.isFinite(value) && (value as number) > 0 ? (value as number) : fallback;
+
+export function assertImagePixelBudget(
+  width: number,
+  height: number,
+  maxPixels = MAX_BROWSER_CANVAS_PIXELS,
+  maxDimension = MAX_BROWSER_IMAGE_DIMENSION
+): void {
+  const pixelLimit = normalizeLimit(maxPixels, MAX_BROWSER_CANVAS_PIXELS);
+  const dimensionLimit = normalizeLimit(maxDimension, MAX_BROWSER_IMAGE_DIMENSION);
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0 ||
+    width > dimensionLimit ||
+    height > dimensionLimit ||
+    width * height > pixelLimit
+  ) {
+    throw new BrowserImageError('INVALID_DIMENSION', '图片尺寸超过浏览器安全处理上限');
+  }
+}
+
+async function resolveSourceBlob(
+  source: BrowserImageSource,
+  signal: AbortSignal | undefined,
+  maxSourceBytes: number,
+  requestInit?: BrowserImageResourceLimits['requestInit']
+): Promise<Blob> {
   throwIfImageOperationAborted(signal);
 
   if (typeof Blob !== 'undefined' && source instanceof Blob) return source;
@@ -83,14 +124,44 @@ async function resolveSourceBlob(source: BrowserImageSource, signal?: AbortSigna
   }
 
   try {
-    const response = await fetch(source, { signal });
+    const response = await fetch(source, { ...(requestInit ?? {}), signal });
     if (!response.ok) {
       throw new BrowserImageError(
         'SOURCE_FETCH_FAILED',
         '图片请求失败，HTTP 状态码 ' + String(response.status)
       );
     }
-    return await response.blob();
+    const declaredSize = Number(response.headers?.get('content-length'));
+    if (Number.isFinite(declaredSize) && declaredSize > maxSourceBytes) {
+      throw new BrowserImageError('INVALID_SOURCE', '图片文件超过安全大小上限');
+    }
+    if (!response.body) {
+      const blob = await response.blob();
+      if (blob.size > maxSourceBytes) {
+        throw new BrowserImageError('INVALID_SOURCE', '图片文件超过安全大小上限');
+      }
+      return blob;
+    }
+
+    const reader = response.body.getReader();
+    const chunks: ArrayBuffer[] = [];
+    let loaded = 0;
+    while (true) {
+      throwIfImageOperationAborted(signal);
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      loaded += value.byteLength;
+      if (loaded > maxSourceBytes) {
+        void reader.cancel();
+        throw new BrowserImageError('INVALID_SOURCE', '图片文件超过安全大小上限');
+      }
+      // ReadableStream 的分片可能由 SharedArrayBuffer 承载，复制后再交给 Blob 保证浏览器类型契约。
+      const chunk = new Uint8Array(value.byteLength);
+      chunk.set(value);
+      chunks.push(chunk.buffer);
+    }
+    return new Blob(chunks, { type: response.headers?.get('content-type') ?? '' });
   } catch (error) {
     throw toBrowserImageError(error, 'SOURCE_FETCH_FAILED', '图片请求失败');
   }
@@ -144,14 +215,21 @@ function decodeObjectUrl(objectUrl: string, signal?: AbortSignal): Promise<HTMLI
  */
 export async function loadBrowserImageResource(
   source: BrowserImageSource,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  limits: BrowserImageResourceLimits = {}
 ): Promise<LoadedBrowserImageResource> {
   assertImageLoadingAvailable();
-  const blob = await resolveSourceBlob(source, signal);
+  const maxSourceBytes = normalizeLimit(limits.maxSourceBytes, MAX_BROWSER_IMAGE_SOURCE_BYTES);
+  const maxPixels = normalizeLimit(limits.maxPixels, MAX_BROWSER_IMAGE_PIXELS);
+  const maxDimension = normalizeLimit(limits.maxDimension, MAX_BROWSER_IMAGE_DIMENSION);
+  const blob = await resolveSourceBlob(source, signal, maxSourceBytes, limits.requestInit);
   throwIfImageOperationAborted(signal);
 
   if (blob.size <= 0 || (blob.type && !blob.type.toLowerCase().startsWith('image/'))) {
     throw new BrowserImageError('INVALID_SOURCE', '来源不是有效图片');
+  }
+  if (blob.size > maxSourceBytes) {
+    throw new BrowserImageError('INVALID_SOURCE', '图片文件超过安全大小上限');
   }
 
   const objectUrl = URL.createObjectURL(blob);
@@ -159,9 +237,7 @@ export async function loadBrowserImageResource(
     const image = await decodeObjectUrl(objectUrl, signal);
     const width = image.naturalWidth;
     const height = image.naturalHeight;
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-      throw new BrowserImageError('INVALID_DIMENSION', '图片尺寸无效');
-    }
+    assertImagePixelBudget(width, height, maxPixels, maxDimension);
 
     let disposed = false;
     return {
@@ -189,9 +265,15 @@ export function encodeCanvasToBlob(
   canvas: HTMLCanvasElement,
   outputType: string,
   quality?: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  maxPixels = MAX_BROWSER_CANVAS_PIXELS
 ): Promise<Blob> {
   throwIfImageOperationAborted(signal);
+  try {
+    assertImagePixelBudget(canvas.width, canvas.height, maxPixels);
+  } catch (error) {
+    return Promise.reject(error);
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;

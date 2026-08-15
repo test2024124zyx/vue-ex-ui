@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExFilePreview from '../../../src/components/file-preview/ExFilePreview.vue';
 import { ExFilePreviewError } from '../../../src/components/file-preview/errors';
 import type { PreviewFile } from '../../../src/components/file-preview/types';
@@ -13,15 +14,29 @@ const imageFiles: PreviewFile[] = [
   { url: 'c.png', name: 'c.png' },
 ];
 
-const response = (body: string, init: { ok?: boolean; status?: number; length?: string } = {}) =>
-  ({
+const response = (body: string, init: { ok?: boolean; status?: number; length?: string } = {}) => {
+  const bytes = new TextEncoder().encode(body);
+  let consumed = false;
+  return {
     ok: init.ok ?? true,
     status: init.status ?? 200,
     headers: {
       get: (name: string) => (name.toLowerCase() === 'content-length' ? init.length : null),
     },
+    body: {
+      getReader: () => ({
+        read: vi.fn(async () => {
+          if (consumed) return { done: true, value: undefined };
+          consumed = true;
+          return { done: false, value: bytes };
+        }),
+        cancel: vi.fn(async () => undefined),
+        releaseLock: vi.fn(),
+      }),
+    },
     text: vi.fn(async () => body),
-  }) as unknown as Response;
+  } as unknown as Response;
+};
 
 describe('ExFilePreview', () => {
   const wrappers: VueWrapper[] = [];
@@ -248,7 +263,7 @@ describe('ExFilePreview', () => {
 
       const wheel = new WheelEvent('wheel', { deltaY: -1, cancelable: true });
       document.querySelector('.ex-file-preview__image-wrapper')?.dispatchEvent(wheel);
-      expect(wheel.defaultPrevented).toBe(true);
+      expect(wheel.defaultPrevented).toBe(false);
     });
 
     it('关闭 zoomable 时滚轮不会阻断页面滚动', async () => {
@@ -440,6 +455,42 @@ describe('ExFilePreview', () => {
       );
     });
 
+    it('响应缺少流和可信长度时拒绝无边界读取', async () => {
+      const text = vi.fn(async () => 'unbounded');
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => ({
+          ok: true,
+          status: 200,
+          headers: { get: () => null },
+          body: null,
+          text,
+        }))
+      );
+      const wrapper = mountPreview({ props: { visible: true, file: 'legacy.txt' } });
+      await flushPromises();
+
+      expect(text).not.toHaveBeenCalled();
+      expect((wrapper.emitted('error')?.[0]?.[0] as ExFilePreviewError).code).toBe(
+        'text-too-large'
+      );
+    });
+
+    it('Content-Length 超限时中止底层请求', async () => {
+      let signal: AbortSignal | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_url: string, init?: RequestInit) => {
+          signal = init?.signal as AbortSignal;
+          return response('large', { length: '100' });
+        })
+      );
+      mountPreview({ props: { visible: true, file: 'large.txt', maxTextBytes: 8 } });
+      await flushPromises();
+
+      expect(signal?.aborted).toBe(true);
+    });
+
     it('网络读取异常统一报告 load-failed 并保留根因', async () => {
       const cause = new TypeError('network failed');
       vi.stubGlobal(
@@ -457,6 +508,81 @@ describe('ExFilePreview', () => {
   });
 
   describe('关闭、下载与键盘', () => {
+    it('Teleport 浮层继承 ConfigProvider 的层级与效果开关', async () => {
+      const wrapper = mount(ExConfigProvider, {
+        attachTo: document.body,
+        props: { zIndex: 2200, animation: false, neonEffect: false },
+        slots: {
+          default: () => h(ExFilePreview, { visible: true, file: 'a.png' }),
+        },
+      });
+      wrappers.push(wrapper);
+      await nextTick();
+
+      const preview = document.body.querySelector<HTMLElement>('.ex-file-preview');
+      expect(preview?.style.zIndex).toBe('2250');
+      expect(preview?.classList.contains('ex-no-animation')).toBe(true);
+      expect(preview?.classList.contains('ex-no-neon')).toBe(true);
+    });
+
+    it('隐藏工具栏时仍独立显示关闭按钮', async () => {
+      mountPreview({
+        props: {
+          visible: true,
+          file: 'a.png',
+          showToolbar: false,
+          showClose: true,
+          maskClosable: false,
+          closeOnEscape: false,
+        },
+      });
+      await nextTick();
+
+      expect(document.querySelector('.ex-file-preview__standalone-close')).toBeTruthy();
+    });
+
+    it('非图片和系统缩放快捷键不会被预览器吞掉', async () => {
+      mountPreview({ props: { visible: true, file: 'note.txt' } });
+      await nextTick();
+      const textDialog = Array.from(document.querySelectorAll('.ex-file-preview')).at(-1)!;
+      const textZoom = new KeyboardEvent('keydown', { key: '+', bubbles: true, cancelable: true });
+      textDialog.dispatchEvent(textZoom);
+      expect(textZoom.defaultPrevented).toBe(false);
+
+      mountPreview({ props: { visible: true, file: 'a.png' } });
+      await nextTick();
+      const browserZoom = new KeyboardEvent('keydown', {
+        key: '+',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      Array.from(document.querySelectorAll('.ex-file-preview')).at(-1)!.dispatchEvent(browserZoom);
+      expect(browserZoom.defaultPrevented).toBe(false);
+    });
+
+    it('图片已到缩放边界时滚轮保持页面默认行为', async () => {
+      mountPreview({ props: { visible: true, file: 'a.png', scale: 5, maxScale: 5 } });
+      await nextTick();
+      const wheel = new WheelEvent('wheel', { deltaY: -1, cancelable: true });
+      document.querySelector('.ex-file-preview__image-wrapper')?.dispatchEvent(wheel);
+
+      expect(wheel.defaultPrevented).toBe(false);
+    });
+
+    it('旧媒体元素的迟到事件不会冒充当前文件 ready', async () => {
+      const wrapper = mountPreview({
+        props: { visible: true, files: imageFiles, currentIndex: 0 },
+      });
+      await nextTick();
+      const staleImage = document.querySelector('.ex-file-preview__image') as HTMLImageElement;
+
+      await wrapper.setProps({ currentIndex: 1 });
+      staleImage.dispatchEvent(new Event('load'));
+      await nextTick();
+
+      expect(wrapper.emitted('ready')).toBeUndefined();
+    });
     it('遮罩与 Escape 使用独立开关并只发出关闭请求', async () => {
       const wrapper = mountPreview({
         props: {

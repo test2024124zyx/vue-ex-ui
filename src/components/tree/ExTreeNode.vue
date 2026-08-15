@@ -4,10 +4,11 @@
     :class="nodeClasses"
     :style="{ paddingLeft: `${level * 24}px`, '--ex-tree-indent': `${level * 24}px` }"
     role="treeitem"
+    :data-node-key="node.key"
     :tabindex="isDisabled ? -1 : activeKey === node.key ? 0 : -1"
     :aria-expanded="hasChildren ? isExpanded : undefined"
     :aria-selected="selectable ? isSelected : undefined"
-    :aria-checked="checkable ? isChecked : undefined"
+    :aria-checked="checkable ? (isHalfChecked ? 'mixed' : isChecked) : undefined"
     :aria-disabled="isDisabled"
     :aria-level="level + 1"
     :draggable="draggable && !isDisabled"
@@ -123,6 +124,7 @@
         @select="(node, selected) => $emit('select', node, selected)"
         @check="(node, checked) => $emit('check', node, checked)"
         @focus-node="node => $emit('focus-node', node)"
+        @navigate="(node, key) => $emit('navigate', node, key)"
         @node-click="(node, event) => $emit('node-click', node, event)"
         @node-contextmenu="(node, event) => $emit('node-contextmenu', node, event)"
         @node-drag-start="(node, event) => $emit('node-drag-start', node, event)"
@@ -174,6 +176,7 @@ interface Emits {
   (e: 'select', node: TreeNode, selected: boolean): void;
   (e: 'check', node: TreeNode, checked: boolean): void;
   (e: 'focus-node', node: TreeNode): void;
+  (e: 'navigate', node: TreeNode, key: 'ArrowDown' | 'ArrowUp' | 'Home' | 'End'): void;
   (e: 'node-click', node: TreeNode, event: MouseEvent): void;
   (e: 'node-contextmenu', node: TreeNode, event: MouseEvent): void;
   (e: 'node-drag-start', node: TreeNode, event: DragEvent): void;
@@ -281,7 +284,6 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.target !== nodeRootRef.value) return;
 
   const key = event.key;
-  const root = nodeRootRef.value?.closest('.ex-tree');
 
   switch (key) {
     case 'ArrowDown':
@@ -289,17 +291,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     case 'Home':
     case 'End': {
       event.preventDefault();
-      if (!root) return;
-      const items = Array.from(
-        root.querySelectorAll<HTMLElement>('.ex-tree-node[role="treeitem"]')
-      ).filter(el => el.getAttribute('aria-disabled') !== 'true');
-      const idx = nodeRootRef.value ? items.indexOf(nodeRootRef.value) : -1;
-      let target: HTMLElement | undefined;
-      if (key === 'ArrowDown') target = items[idx + 1];
-      else if (key === 'ArrowUp') target = items[idx - 1];
-      else if (key === 'Home') target = items[0];
-      else target = items[items.length - 1];
-      target?.focus();
+      emit('navigate', props.node, key);
       break;
     }
     case 'ArrowRight': {

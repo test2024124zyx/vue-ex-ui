@@ -136,10 +136,10 @@
   contain-intrinsic-size: auto 500px; // 估计高度
 }
 
-// 图片懒加载优化
+// 图片延迟渲染优化；网络懒加载必须由原生 loading/decoding 属性负责。
 @mixin lazy-image {
-  loading: lazy;
-  decoding: async;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
 }
 
 // 字体加载优化

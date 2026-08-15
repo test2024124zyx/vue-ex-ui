@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import { createApp, defineComponent, nextTick } from 'vue';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ExLoadingBarComponent from '../../../src/components/loading-bar/ExLoadingBar.vue';
-import { ExLoadingBar } from '../../../src/components/loading-bar';
+import { ExLoadingBar, loadingBar } from '../../../src/components/loading-bar';
 import { setLocale } from '../../../src/locale';
 
 describe('ExLoadingBar', () => {
@@ -145,11 +145,22 @@ describe('ExLoadingBar', () => {
     expect(exposed.getElement()).toBeNull();
   });
 
-  it('按需安装只注册组件，不声明无法保持一致的全局伪服务', () => {
+  it('按需安装注册组件与当前 App 隔离的完整服务', () => {
     const app = createApp(defineComponent(() => () => null));
     app.use(ExLoadingBar);
 
     expect(app.component('ExLoadingBar')).toBe(ExLoadingBar);
-    expect(app.config.globalProperties.$loadingBar).toBeUndefined();
+    expect(app.config.globalProperties.$loadingBar).not.toBe(loadingBar);
+    expect(app.config.globalProperties.$loadingBar).toEqual(
+      expect.objectContaining({
+        config: expect.any(Function),
+        start: expect.any(Function),
+        finish: expect.any(Function),
+        error: expect.any(Function),
+        warning: expect.any(Function),
+        update: expect.any(Function),
+        destroy: expect.any(Function),
+      })
+    );
   });
 });

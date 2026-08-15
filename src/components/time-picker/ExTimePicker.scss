@@ -55,8 +55,12 @@
   &__clear {
     display: inline-flex;
     align-items: center;
+    padding: 0;
     color: var(--ex-color-text-tertiary);
+    font: inherit;
     cursor: pointer;
+    background: transparent;
+    border: 0;
     transition: color 0.2s ease;
 
     &:hover {
@@ -137,6 +141,11 @@
       background 0.15s ease,
       color 0.15s ease;
 
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: -2px;
+    }
+
     &:hover:not(.is-disabled) {
       background: var(--ex-color-bg-hover);
       color: var(--ex-color-text-primary);
@@ -201,4 +210,18 @@
 .ex-time-picker-dropdown-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+// Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-time-picker__panel.ex-no-neon,
+.ex-time-picker__panel.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-time-picker__panel.ex-no-animation,
+.ex-time-picker__panel.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
 }

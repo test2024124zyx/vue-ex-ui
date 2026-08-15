@@ -1,4 +1,4 @@
-export default {
+const enUS = {
   // Common
   common: {
     confirm: 'Confirm',
@@ -133,6 +133,16 @@ export default {
   // Alert
   alert: {
     close: 'Close',
+  },
+
+  // Anchor navigation
+  anchor: {
+    label: 'Anchor navigation',
+  },
+
+  // Back to top
+  backTop: {
+    label: 'Back to top',
   },
 
   // Table
@@ -689,3 +699,7 @@ export default {
     autoSubmit: 'Auto-submitting soon',
   },
 };
+
+export type BuiltInLocale = typeof enUS;
+
+export default enUS;

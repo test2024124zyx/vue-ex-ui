@@ -25,39 +25,61 @@ const handleCrop = result => {
 
 ## 基础用法
 
+::: raw
 <div class="crop-demo">
-  <ExImageCrop :src="demoSource" @crop="handleCrop" />
+  <ex-image-crop :src="demoSource" @crop="handleCrop" />
   <output v-if="latestResult" class="crop-result">
     输出：{{ latestResult.outputSize.width }} × {{ latestResult.outputSize.height }}，
     {{ latestResult.blob.type }}，{{ latestResult.blob.size }} B
   </output>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExImageCrop
-    :src="source"
-    @crop="handleCrop"
-    @error="handleError"
-  />
-</template>
-
 <script setup lang="ts">
-import { ExImageCrop, type CropResult, type ExImageCropError } from 'vue-ex-ui';
+import { ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
 
-const source = '/photo.png';
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
 
+const latestResult = ref<CropResult | null>(null);
 const handleCrop = (result: CropResult) => {
-  const previewUrl = URL.createObjectURL(result.blob);
-  // 使用结束后调用 URL.revokeObjectURL(previewUrl)。
-  console.log(previewUrl, result.sourceArea, result.outputSize);
-};
-
-const handleError = (error: ExImageCropError) => {
-  console.error(error.code, error.message);
+  latestResult.value = result;
 };
 </script>
+
+<template>
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      @crop="handleCrop"
+    />
+    <output
+      v-if="latestResult"
+      class="crop-result"
+    >
+      输出：{{ latestResult.outputSize.width }} × {{ latestResult.outputSize.height }}，
+      {{ latestResult.blob.type }}，{{ latestResult.blob.size }} B
+    </output>
+  </div>
+</template>
 ```
+
+:::
 
 ## 固定比例
 
@@ -113,6 +135,8 @@ const handleError = (error: ExImageCropError) => {
 | aria-label              | `string`                                      | 本地化文本    |
 
 `quality` 仅传递给 JPEG 与 WebP 编码器。圆形裁剪固定为 1:1，并覆盖 `aspect-ratio`。
+
+输入图片限制为 64 MiB、3200 万像素且单边不超过 32768 像素。预览与导出 Canvas 会在分配像素缓冲区前执行同一预算检查，超限时通过 `error` 返回 `INVALID_DIMENSION`。
 
 ### Events
 

@@ -94,7 +94,11 @@
 
     // 选中状- 霓虹蓝渐
     &--checked {
-      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-blue-600)
+      );
       border-color: var(--ex-color-neon-blue-500);
       @include optimized-neon-glow('blue', 'sm');
 
@@ -106,7 +110,11 @@
 
     // 中间状- 霓虹粉渐
     &--indeterminate {
-      background: linear-gradient(135deg, var(--ex-color-neon-pink-500), var(--ex-color-neon-pink-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-pink-500),
+        var(--ex-color-neon-pink-600)
+      );
       border-color: var(--ex-color-neon-pink-500);
       @include optimized-neon-glow('pink', 'sm');
 
@@ -285,8 +293,7 @@
     border-color: var(--ex-color-border-focus);
     outline: var(--ex-checkbox-focus-ring-width) solid var(--ex-color-border-focus);
     outline-offset: var(--ex-checkbox-focus-ring-offset);
-    box-shadow: 0 0 0 var(--ex-checkbox-focus-ring-offset)
-      var(--ex-color-primary-alpha-40);
+    box-shadow: 0 0 0 var(--ex-checkbox-focus-ring-offset) var(--ex-color-primary-alpha-40);
   }
 
   // 悬停效果（仅在非禁用状态）
@@ -388,7 +395,7 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-checkbox {
     &__box {
       border-width: 3px;

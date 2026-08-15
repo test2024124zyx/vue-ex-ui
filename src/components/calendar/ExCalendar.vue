@@ -1,5 +1,10 @@
 <template>
-  <div ref="calendarRef" :class="calendarClasses" :style="calendarStyles" :aria-label="ariaLabel">
+  <div
+    ref="calendarRef"
+    :class="calendarClasses"
+    :style="calendarStyles"
+    :aria-label="ariaLabel"
+  >
     <!-- 日历头部 -->
     <div class="ex-calendar__header">
       <div class="ex-calendar__nav">
@@ -9,7 +14,11 @@
           :aria-label="t('calendar.prevYear')"
           @click="prevYear"
         >
-          <ExIcon icon="arrow-left-double-line" :size="20" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-left-double-line"
+            :size="20"
+            aria-hidden="true"
+          />
         </button>
         <button
           class="ex-calendar__nav-btn"
@@ -17,20 +26,33 @@
           :aria-label="prevPeriodLabel"
           @click="prevPeriod"
         >
-          <ExIcon icon="arrow-left-s-line" :size="20" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-left-s-line"
+            :size="20"
+            aria-hidden="true"
+          />
         </button>
 
         <div class="ex-calendar__current">
           <span class="ex-calendar__year">
             {{ t('calendar.yearFormat', { year: currentYear }) }}
           </span>
-          <span v-if="activeMode !== 'year'" class="ex-calendar__month">
+          <span
+            v-if="activeMode !== 'year'"
+            class="ex-calendar__month"
+          >
             {{ t('calendar.monthFormat', { month: currentMonth }) }}
           </span>
-          <span v-if="activeMode === 'day'" class="ex-calendar__day">
+          <span
+            v-if="activeMode === 'day'"
+            class="ex-calendar__day"
+          >
             {{ t('calendar.dayFormat', { day: currentDay }) }}
           </span>
-          <span v-if="activeMode === 'week'" class="ex-calendar__week">
+          <span
+            v-if="activeMode === 'week'"
+            class="ex-calendar__week"
+          >
             {{ t('calendar.weekFormat', { week: currentWeek }) }}
           </span>
         </div>
@@ -41,7 +63,11 @@
           :aria-label="nextPeriodLabel"
           @click="nextPeriod"
         >
-          <ExIcon icon="arrow-right-s-line" :size="20" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-right-s-line"
+            :size="20"
+            aria-hidden="true"
+          />
         </button>
         <button
           class="ex-calendar__nav-btn"
@@ -49,7 +75,11 @@
           :aria-label="t('calendar.nextYear')"
           @click="nextYear"
         >
-          <ExIcon icon="arrow-right-double-line" :size="20" aria-hidden="true" />
+          <ExIcon
+            icon="arrow-right-double-line"
+            :size="20"
+            aria-hidden="true"
+          />
         </button>
       </div>
 
@@ -63,106 +93,176 @@
               { 'ex-calendar__mode-btn--active': activeMode === m.value },
             ]"
             type="button"
+            :aria-pressed="activeMode === m.value"
             @click="changeMode(m.value)"
           >
             {{ m.label }}
           </button>
         </div>
 
-        <button v-if="showToday" class="ex-calendar__today-btn" type="button" @click="goToday">
+        <button
+          v-if="showToday"
+          class="ex-calendar__today-btn"
+          type="button"
+          @click="goToday"
+        >
           {{ t('common.today') }}
         </button>
       </div>
     </div>
 
     <!-- 日视图 -->
-    <div v-if="activeMode === 'day'" class="ex-calendar__day-view">
+    <div
+      v-if="activeMode === 'day'"
+      class="ex-calendar__day-view"
+    >
       <div class="ex-calendar__day-header">
         <div class="ex-calendar__day-title">
           <span class="ex-calendar__day-weekday">{{ currentWeekday }}</span>
-          <span v-if="currentHoliday" class="ex-calendar__day-holiday">{{ currentHoliday }}</span>
-          <span v-else-if="currentSolarTerm" class="ex-calendar__day-solar-term">
+          <span
+            v-if="currentHoliday"
+            class="ex-calendar__day-holiday"
+          >
+            {{ currentHoliday }}
+          </span>
+          <span
+            v-else-if="currentSolarTerm"
+            class="ex-calendar__day-solar-term"
+          >
             {{ currentSolarTerm }}
           </span>
-          <span v-else-if="showLunar && currentLunar" class="ex-calendar__day-lunar">
+          <span
+            v-else-if="showLunar && currentLunar"
+            class="ex-calendar__day-lunar"
+          >
             {{ currentLunar }}
           </span>
         </div>
       </div>
 
       <div class="ex-calendar__day-content">
-        <div v-if="dayEvents.length > 0" class="ex-calendar__day-events">
-          <div
+        <div
+          v-if="dayEvents.length > 0"
+          class="ex-calendar__day-events"
+        >
+          <button
             v-for="event in dayEvents"
             :key="event.id"
+            type="button"
             :class="[
               'ex-calendar__day-event',
               `ex-calendar__day-event--${event.type || 'primary'}`,
             ]"
             @click="handleEventClick(event, currentDate)"
+            @keydown.enter.prevent="handleEventClick(event, currentDate)"
+            @keydown.space.prevent="handleEventClick(event, currentDate)"
           >
             <div class="ex-calendar__day-event-header">
               <span class="ex-calendar__day-event-title">{{ event.title }}</span>
             </div>
-            <div v-if="event.description" class="ex-calendar__day-event-description">
+            <div
+              v-if="event.description"
+              class="ex-calendar__day-event-description"
+            >
               {{ event.description }}
             </div>
-          </div>
+          </button>
         </div>
-        <div v-else class="ex-calendar__day-empty">
+        <div
+          v-else
+          class="ex-calendar__day-empty"
+        >
           {{ t('calendar.noEvents') }}
         </div>
       </div>
     </div>
 
     <!-- 周视图 -->
-    <div v-else-if="activeMode === 'week'" class="ex-calendar__week-view">
+    <div
+      v-else-if="activeMode === 'week'"
+      class="ex-calendar__week-view"
+    >
       <div class="ex-calendar__weekdays">
-        <div v-for="day in weekdays" :key="day" class="ex-calendar__weekday">
+        <div
+          v-for="day in weekdays"
+          :key="day"
+          class="ex-calendar__weekday"
+        >
           {{ day }}
         </div>
       </div>
 
-      <div class="ex-calendar__week-body">
+      <div
+        class="ex-calendar__week-body ex-calendar__grid"
+        role="grid"
+      >
         <div
           v-for="cell in weekCells"
           :key="cell.date.getTime()"
           :class="getCellClasses(cell)"
-          role="button"
-          :tabindex="cell.disabled ? -1 : 0"
+          role="gridcell"
+          :tabindex="isCellFocusable(cell) ? 0 : -1"
           :aria-selected="isDateSelected(cell.date)"
           :aria-disabled="cell.disabled"
+          :data-date="getDateTimestamp(cell.date)"
           @click="handleDateClick(cell)"
           @keydown="handleCellKeydown(cell, $event)"
         >
           <div class="ex-calendar__date-content">
             <div class="ex-calendar__date-info">
               <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span v-if="cell.holiday" class="ex-calendar__holiday">{{ cell.holiday }}</span>
-              <span v-else-if="cell.solarTerm" class="ex-calendar__solar-term">
+              <span
+                v-if="cell.holiday"
+                class="ex-calendar__holiday"
+              >
+                {{ cell.holiday }}
+              </span>
+              <span
+                v-else-if="cell.solarTerm"
+                class="ex-calendar__solar-term"
+              >
                 {{ cell.solarTerm }}
               </span>
-              <span v-else-if="showLunar && cell.lunar" class="ex-calendar__lunar">
+              <span
+                v-else-if="showLunar && cell.lunar"
+                class="ex-calendar__lunar"
+              >
                 {{ cell.lunar }}
               </span>
             </div>
 
-            <div v-if="cell.checkedIn" class="ex-calendar__check-in">
-              <ExIcon icon="checkbox-circle-fill" :size="16" aria-hidden="true" />
+            <div
+              v-if="cell.checkedIn"
+              class="ex-calendar__check-in"
+            >
+              <ExIcon
+                icon="checkbox-circle-fill"
+                :size="16"
+                aria-hidden="true"
+              />
             </div>
           </div>
 
-          <div v-if="cell.events.length > 0" class="ex-calendar__events">
-            <div
+          <div
+            v-if="cell.events.length > 0"
+            class="ex-calendar__events"
+          >
+            <button
               v-for="event in cell.events.slice(0, 2)"
               :key="event.id"
+              type="button"
               :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
               @click.stop="handleEventClick(event, cell.date)"
+              @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+              @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
             >
               <span class="ex-calendar__event-dot" />
               <span class="ex-calendar__event-title">{{ event.title }}</span>
-            </div>
-            <div v-if="cell.events.length > 2" class="ex-calendar__event-more">
+            </button>
+            <div
+              v-if="cell.events.length > 2"
+              class="ex-calendar__event-more"
+            >
               +{{ cell.events.length - 2 }}
             </div>
           </div>
@@ -171,53 +271,91 @@
     </div>
 
     <!-- 月视图 -->
-    <div v-else-if="activeMode === 'month'" class="ex-calendar__month-view">
+    <div
+      v-else-if="activeMode === 'month'"
+      class="ex-calendar__month-view"
+    >
       <div class="ex-calendar__weekdays">
-        <div v-for="day in weekdays" :key="day" class="ex-calendar__weekday">
+        <div
+          v-for="day in weekdays"
+          :key="day"
+          class="ex-calendar__weekday"
+        >
           {{ day }}
         </div>
       </div>
 
-      <div class="ex-calendar__body">
+      <div
+        class="ex-calendar__body ex-calendar__grid"
+        role="grid"
+      >
         <div
           v-for="cell in calendarCells"
           :key="cell.date.getTime()"
           :class="getCellClasses(cell)"
-          role="button"
-          :tabindex="cell.disabled ? -1 : 0"
+          role="gridcell"
+          :tabindex="isCellFocusable(cell) ? 0 : -1"
           :aria-selected="isDateSelected(cell.date)"
           :aria-disabled="cell.disabled"
+          :data-date="getDateTimestamp(cell.date)"
           @click="handleDateClick(cell)"
           @keydown="handleCellKeydown(cell, $event)"
         >
           <div class="ex-calendar__date-content">
             <div class="ex-calendar__date-info">
               <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span v-if="cell.holiday" class="ex-calendar__holiday">{{ cell.holiday }}</span>
-              <span v-else-if="cell.solarTerm" class="ex-calendar__solar-term">
+              <span
+                v-if="cell.holiday"
+                class="ex-calendar__holiday"
+              >
+                {{ cell.holiday }}
+              </span>
+              <span
+                v-else-if="cell.solarTerm"
+                class="ex-calendar__solar-term"
+              >
                 {{ cell.solarTerm }}
               </span>
-              <span v-else-if="showLunar && cell.lunar" class="ex-calendar__lunar">
+              <span
+                v-else-if="showLunar && cell.lunar"
+                class="ex-calendar__lunar"
+              >
                 {{ cell.lunar }}
               </span>
             </div>
 
-            <div v-if="cell.checkedIn" class="ex-calendar__check-in">
-              <ExIcon icon="checkbox-circle-fill" :size="16" aria-hidden="true" />
+            <div
+              v-if="cell.checkedIn"
+              class="ex-calendar__check-in"
+            >
+              <ExIcon
+                icon="checkbox-circle-fill"
+                :size="16"
+                aria-hidden="true"
+              />
             </div>
           </div>
 
-          <div v-if="cell.events.length > 0" class="ex-calendar__events">
-            <div
+          <div
+            v-if="cell.events.length > 0"
+            class="ex-calendar__events"
+          >
+            <button
               v-for="event in cell.events.slice(0, 3)"
               :key="event.id"
+              type="button"
               :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
               @click.stop="handleEventClick(event, cell.date)"
+              @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+              @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
             >
               <span class="ex-calendar__event-dot" />
               <span class="ex-calendar__event-title">{{ event.title }}</span>
-            </div>
-            <div v-if="cell.events.length > 3" class="ex-calendar__event-more">
+            </button>
+            <div
+              v-if="cell.events.length > 3"
+              class="ex-calendar__event-more"
+            >
               +{{ cell.events.length - 3 }}
             </div>
           </div>
@@ -226,20 +364,29 @@
     </div>
 
     <!-- 年视图 -->
-    <div v-else class="ex-calendar__year-view">
+    <div
+      v-else
+      class="ex-calendar__year-view"
+    >
       <div class="ex-calendar__year-grid">
-        <div
+        <button
           v-for="month in 12"
           :key="month"
           class="ex-calendar__year-month"
+          type="button"
           @click="selectMonth(month)"
+          @keydown.enter.prevent="selectMonth(month)"
+          @keydown.space.prevent="selectMonth(month)"
         >
           <div class="ex-calendar__year-month-title">
             {{ t('calendar.monthFormat', { month }) }}
           </div>
           <div class="ex-calendar__year-month-preview">
             <div class="ex-calendar__year-weekdays">
-              <span v-for="day in weekdays" :key="day">
+              <span
+                v-for="day in weekdays"
+                :key="day"
+              >
                 {{ day }}
               </span>
             </div>
@@ -253,7 +400,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   </div>
@@ -262,7 +409,7 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, shallowRef, onMounted } from 'vue';
+import { computed, ref, watch, shallowRef, onMounted, nextTick } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
@@ -280,6 +427,7 @@ defineOptions({
   name: 'ExCalendar',
 });
 
+const FOCUS_SEARCH_LIMIT_DAYS = 366;
 const props = withDefaults(defineProps<ExCalendarProps>(), {
   mode: 'month',
   events: () => [],
@@ -292,7 +440,6 @@ const props = withDefaults(defineProps<ExCalendarProps>(), {
 });
 
 const emit = defineEmits<ExCalendarEmits>();
-
 const { t } = useI18n();
 
 // 按需加载 lunar-javascript（可选依赖）。加载完成后写入响应式 ref，
@@ -316,8 +463,20 @@ onMounted(ensureLunarLib);
 watch(() => [props.showLunar, props.showSolarTerm], ensureLunarLib);
 
 const calendarRef = ref<HTMLDivElement>();
-const currentDate = ref(new Date());
+const SSR_CALENDAR_ANCHOR = new Date(2000, 0, 1);
+const initialModelDate = props.modelValue instanceof Date ? new Date(props.modelValue) : null;
+const currentDate = ref(initialModelDate ?? new Date(SSR_CALENDAR_ANCHOR));
+const todayDate = ref<Date | null>(null);
 const internalSelectedDate = ref<Date | null>(null);
+const focusedDateTimestamp = ref<number | null>(null);
+
+onMounted(() => {
+  todayDate.value = new Date();
+  if (props.modelValue === undefined) currentDate.value = new Date(todayDate.value);
+  if (focusedDateTimestamp.value === null) {
+    focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
+  }
+});
 
 // undefined 表示非受控；null 是受控的明确清空值。单元格计算直接读取数据源，
 // 避免通过额外版本号驱动视图，确保受控值变化能可靠触发模板更新。
@@ -353,12 +512,14 @@ const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
 const prevPeriodLabel = computed(() => {
   if (activeMode.value === 'day') return t('calendar.prevDay');
   if (activeMode.value === 'week') return t('calendar.prevWeek');
+  if (activeMode.value === 'year') return t('calendar.prevYear');
   return t('calendar.prevMonth');
 });
 
 const nextPeriodLabel = computed(() => {
   if (activeMode.value === 'day') return t('calendar.nextDay');
   if (activeMode.value === 'week') return t('calendar.nextWeek');
+  if (activeMode.value === 'year') return t('calendar.nextYear');
   return t('calendar.nextMonth');
 });
 
@@ -412,6 +573,12 @@ const currentHoliday = computed(() => {
 const getDayTimestamp = (value: Date | string): number | null => {
   const date = parseLocalDate(value);
   if (!date) return null;
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
+const getDateTimestamp = (value: Date): number => {
+  const date = new Date(value);
   date.setHours(0, 0, 0, 0);
   return date.getTime();
 };
@@ -553,14 +720,11 @@ const getHoliday = (date: Date): string => {
 
 // 创建单元格数据
 const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarDateCell => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const cellDate = new Date(date);
   cellDate.setHours(0, 0, 0, 0);
   const dateTime = cellDate.getTime();
 
-  const isToday = dateTime === today.getTime();
+  const isToday = todayDate.value !== null && dateTime === getDateTimestamp(todayDate.value);
   // 获取该日期的事件
   const dateEvents = props.events.filter(event => {
     return getDayTimestamp(event.date) === dateTime;
@@ -603,8 +767,7 @@ const getMonthDays = (month: number) => {
   const lastDayDate = lastDay.getDate();
 
   const days: Array<{ day: number | null; isToday: boolean }> = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = todayDate.value ? getDateTimestamp(todayDate.value) : null;
 
   // 填充空白
   for (let i = 0; i < firstDayWeek; i++) {
@@ -615,7 +778,7 @@ const getMonthDays = (month: number) => {
   for (let day = 1; day <= lastDayDate; day++) {
     const date = new Date(year, month - 1, day);
     date.setHours(0, 0, 0, 0);
-    days.push({ day, isToday: date.getTime() === today.getTime() });
+    days.push({ day, isToday: todayTimestamp !== null && date.getTime() === todayTimestamp });
   }
 
   return days;
@@ -645,10 +808,14 @@ const getCellClasses = (cell: CalendarDateCell) => {
   return classes;
 };
 
+const isCellFocusable = (cell: CalendarDateCell): boolean =>
+  !cell.disabled && getDateTimestamp(cell.date) === focusedDateTimestamp.value;
+
 // 方法
 const handleDateClick = (cell: CalendarDateCell) => {
   if (cell.disabled) return;
 
+  focusedDateTimestamp.value = getDateTimestamp(cell.date);
   internalSelectedDate.value = new Date(cell.date);
   currentDate.value = new Date(cell.date);
   emit('update:modelValue', cell.date);
@@ -660,16 +827,55 @@ const handleEventClick = (event: CalendarEvent, date: Date) => {
   emit('event-click', event, date);
 };
 
-// 日期格键盘支持（Enter/Space 选择）
+const focusCalendarDate = (date: Date): void => {
+  let target = new Date(date);
+  const direction = target.getTime() >= currentDate.value.getTime() ? 1 : -1;
+  let enabledTarget: Date | null = null;
+  for (let attempts = 0; attempts < FOCUS_SEARCH_LIMIT_DAYS; attempts++) {
+    if (!props.disabledDate?.(target)) {
+      enabledTarget = target;
+      break;
+    }
+    target.setDate(target.getDate() + direction);
+  }
+
+  if (!enabledTarget) return;
+
+  focusedDateTimestamp.value = getDateTimestamp(enabledTarget);
+  currentDate.value = new Date(enabledTarget);
+  void nextTick(() => {
+    calendarRef.value
+      ?.querySelector<HTMLElement>(`[data-date="${focusedDateTimestamp.value}"]`)
+      ?.focus();
+  });
+};
+
+// 日期网格支持标准方向键、行首行尾以及翻页导航。
 const handleCellKeydown = (cell: CalendarDateCell, event: KeyboardEvent) => {
   if (cell.disabled) return;
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleDateClick(cell);
+    return;
   }
+
+  const target = new Date(cell.date);
+  if (event.key === 'ArrowLeft') target.setDate(target.getDate() - 1);
+  else if (event.key === 'ArrowRight') target.setDate(target.getDate() + 1);
+  else if (event.key === 'ArrowUp') target.setDate(target.getDate() - 7);
+  else if (event.key === 'ArrowDown') target.setDate(target.getDate() + 7);
+  else if (event.key === 'Home') target.setDate(target.getDate() - target.getDay());
+  else if (event.key === 'End') target.setDate(target.getDate() + (6 - target.getDay()));
+  else if (event.key === 'PageUp') target.setMonth(target.getMonth() - 1);
+  else if (event.key === 'PageDown') target.setMonth(target.getMonth() + 1);
+  else return;
+
+  event.preventDefault();
+  focusCalendarDate(target);
 };
 
 const selectDate = (date: Date) => {
+  focusedDateTimestamp.value = getDateTimestamp(date);
   internalSelectedDate.value = new Date(date);
   currentDate.value = new Date(date);
   emit('update:modelValue', date);
@@ -677,6 +883,8 @@ const selectDate = (date: Date) => {
 
 const goToday = () => {
   const today = new Date();
+  todayDate.value = new Date(today);
+  focusedDateTimestamp.value = getDateTimestamp(today);
   currentDate.value = today;
   internalSelectedDate.value = today;
   emit('update:modelValue', today);
@@ -769,6 +977,9 @@ watch(
   newValue => {
     if (newValue instanceof Date) {
       currentDate.value = new Date(newValue);
+      focusedDateTimestamp.value = getDateTimestamp(newValue);
+    } else if (newValue === null && focusedDateTimestamp.value === null) {
+      focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
     }
   },
   { immediate: true }

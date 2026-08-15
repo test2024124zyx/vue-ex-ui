@@ -29,9 +29,10 @@ const handleDownloadRequest = file => {
 
 ## 基础用法
 
+::: raw
 <div class="demo-container">
-  <ExButton @click="visible = true">打开预览</ExButton>
-  <ExFilePreview
+  <ex-button @click="visible = true">打开预览</ex-button>
+  <ex-file-preview
     v-model:visible="visible"
     v-model:current-index="currentIndex"
     v-model:scale="scale"
@@ -40,21 +41,11 @@ const handleDownloadRequest = file => {
     @download-request="handleDownloadRequest"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExButton @click="visible = true">打开预览</ExButton>
-  <ExFilePreview
-    v-model:visible="visible"
-    v-model:current-index="currentIndex"
-    v-model:scale="scale"
-    v-model:rotate="rotate"
-    :files="files"
-    @download-request="handleDownloadRequest"
-    @error="handlePreviewError"
-  />
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { PreviewFile } from 'vue-ex-ui';
@@ -64,19 +55,39 @@ const currentIndex = ref(0);
 const scale = ref(1);
 const rotate = ref(0);
 const files: PreviewFile[] = [
-  { url: '/files/photo-a.webp', name: 'photo-a.webp' },
-  { url: '/files/photo-b.webp', name: 'photo-b.webp' },
+  {
+    url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200',
+    name: 'arena.jpg',
+    type: 'image',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200',
+    name: 'console.jpg',
+    type: 'image',
+  },
 ];
 
 const handleDownloadRequest = (file: PreviewFile) => {
-  console.log('交给业务下载服务处理', file);
-};
-
-const handlePreviewError = (error: Error) => {
-  console.error(error);
+  console.log('download request', file);
 };
 </script>
+
+<template>
+  <div class="demo-container">
+    <ex-button @click="visible = true">打开预览</ex-button>
+    <ex-file-preview
+      v-model:visible="visible"
+      v-model:current-index="currentIndex"
+      v-model:scale="scale"
+      v-model:rotate="rotate"
+      :files="files"
+      @download-request="handleDownloadRequest"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 `visible`、`currentIndex`、`scale` 和 `rotate` 传入后均为受控状态。用户操作只发出对应更新事件，父级同步前，组件不会提前改变可见状态。只需要内部状态时，可使用 `default-current-index`、`default-scale` 和 `default-rotate`。
 
@@ -142,6 +153,8 @@ const handleChange = (event: Event) => {
 | `0`       | 图片可缩放时请求重置到有效的 100% |
 
 媒体控件、表单控件和可编辑内容不会被图片快捷键接管。多个浮层同时存在时，`Escape` 只作用于最上层浮层。
+
+`show-close` 独立于 `show-toolbar`：隐藏工具栏后仍可保留关闭按钮。远程文本必须提供可流式读取的响应体，组件会在读取过程中执行 `max-text-bytes` 上限；无法流式读取时会拒绝加载，避免先把未知大小内容完整缓冲到内存。
 
 ## API
 

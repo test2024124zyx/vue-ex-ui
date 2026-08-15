@@ -107,6 +107,10 @@ onBeforeUnmount(() => routeLoadingBar.destroy());
 </script>
 ```
 
+安装 `ExLoadingBar` 或完整组件库后，每个 Vue App 会获得独立的 `this.$loadingBar`。在
+ConfigProvider 子树的 `setup()` 中使用 `useLoadingBarService()` 可继承主题和 z-index，
+并在 Provider 卸载时自动销毁；直接导入的 `loadingBar` 是 setup 外的模块级便捷单例。
+
 ## 声明式组件
 
 ```vue

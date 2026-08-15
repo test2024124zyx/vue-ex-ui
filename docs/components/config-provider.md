@@ -1,6 +1,8 @@
 # ConfigProvider 全局配置
 
-为组件提供统一的全局化配置，包括主题、语言、尺寸等。ConfigProvider 使用 Vue 的 provide/inject 机制，为所有子组件提供配置上下文。
+为组件提供统一的主题、语言、尺寸与浮层层级。ConfigProvider 使用 Vue 的
+provide/inject 机制隔离子树配置；默认包装器使用 `display: contents`，不会额外占满父容器
+或改变 Flex/Grid 子项关系。
 
 <script setup>
 import { ref } from 'vue'
@@ -85,12 +87,10 @@ ConfigProvider 会自动将配置传递给所有子组件，无需手动传递 p
 
 ## 国际化（i18n）
 
-ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方式完成初始化。
+ExUI 默认提供轻量中英文翻译。需要 App 级语言状态或自定义文案时，安装
+`createLocaleProvider()`；每个 App 的 composer 相互隔离。
 
-- 推荐方式：使用 ExUI 提供的 `createLocaleProvider`
-- 手动方式：自行创建 `createI18n` 并注入 ExUI 的语言包
-
-### 一、快速开始（推荐）
+### App 级语言插件
 
 ```ts
 import { createApp } from 'vue';
@@ -111,42 +111,46 @@ app.use(i18nProvider);
 app.mount('#app');
 ```
 
-### 二、手动集成 vue-i18n
+未安装可选的 `vue-i18n` 时，上述插件自动保留轻量实现；安装后只会在当前 App 内创建 ExUI
+私有的增强翻译器，不会异步调用 `app.use()`，也不会覆盖另一个 App 或模块级 `setLocale()`
+状态。它不向宿主暴露 vue-i18n 注入；宿主仍须自行 `app.use(i18n)`，并将同一个响应式语言状态
+传给 vue-i18n 与 `ExConfigProvider.locale`。
+
+### 编程式服务继承配置
+
+完整安装 ExUI 或单独安装服务组件后，`app.config.globalProperties` 上的 `$message`、
+`$notification`、`$loadingBar` 都是当前 App 独享的实例。组件 `setup()` 内需要继承最近的
+ConfigProvider（包括主题、语言、z-index）时，使用对应 hook：
 
 ```ts
-import { createApp } from 'vue';
-import App from './App.vue';
-import { createI18n } from 'vue-i18n';
-import { enUS, zhCN } from 'vue-ex-ui';
+import {
+  useLoadingBarService,
+  useLoadingService,
+  useMessageService,
+  useNotificationService,
+} from 'vue-ex-ui';
 
-const app = createApp(App);
-
-const i18n = createI18n({
-  legacy: false,
-  locale: 'zh-CN',
-  messages: {
-    'en-US': enUS,
-    'zh-CN': zhCN,
-  },
-});
-
-app.use(i18n);
-app.mount('#app');
+const message = useMessageService();
+const notification = useNotificationService();
+const loading = useLoadingService();
+const loadingBar = useLoadingBarService();
 ```
+
+这些 hook 在同一 ConfigProvider 内复用服务，并在 Provider 卸载时清理 DOM 与计时器。
+直接导入的 `message` / `notification` / `loadingBar` 是 setup 外使用的模块级便捷单例，不会
+猜测某个 App 的上下文。
 
 ### 组件中使用
 
 ```ts
-// 方式A：vue-i18n 原生 API
-import { useI18n } from 'vue-i18n';
-const { t, locale } = useI18n();
+// ExUI API（未安装 vue-i18n 时自动使用内置翻译）
+import { useI18n as useExI18n, useLocale } from 'vue-ex-ui';
+const exI18n = useExI18n();
+const { t: translateMenu, locale } = useLocale('menu');
 
-// 方式B：ExUI 代理的 useI18n（未安装 vue-i18n 时自动降级到内置翻译）
-import { useI18n as useExI18n } from 'vue-ex-ui';
-const { t: tm } = useExI18n();
-
-// 注意：从 'vue-ex-ui' 导入的 useLocale() 返回的是「当前语言」(ComputedRef<SupportedLocale>)，
-// 见下方 Composables，不是作用域翻译函数。
+// 宿主 API 仅在应用入口已自行 app.use(i18n) 后可用
+import { useI18n as useHostI18n } from 'vue-i18n';
+const hostI18n = useHostI18n();
 ```
 
 ---
@@ -234,7 +238,7 @@ const theme = ref('neon-blue');
       English
     </ExButton>
   </div>
-  
+
   <ExConfigProvider :locale="locale">
     <ExEmpty />
   </ExConfigProvider>
@@ -282,7 +286,7 @@ const locale = ref('zh-CN');
       大尺寸
     </ExButton>
   </div>
-  
+
   <ExConfigProvider :size="customSize">
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">

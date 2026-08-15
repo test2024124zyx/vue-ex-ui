@@ -2,7 +2,7 @@
   <nav
     ref="anchorRef"
     class="ex-anchor"
-    aria-label="页面锚点"
+    :aria-label="resolvedAriaLabel"
   >
     <div
       class="ex-anchor__ink"
@@ -11,16 +11,17 @@
       <span
         class="ex-anchor__ink-ball"
         :style="{ top: `${inkTop}px` }"
-      />
+      ></span>
     </div>
     <div class="ex-anchor__list">
-      <slot />
+      <slot></slot>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, watch } from 'vue';
+import { useLocale } from '../../locale';
 import { ANCHOR_INJECTION_KEY } from './context';
 import type { AnchorItem, ExAnchorEmits, ExAnchorExposed, ExAnchorProps } from './types';
 
@@ -33,6 +34,8 @@ const props = withDefaults(defineProps<ExAnchorProps>(), {
   container: () => window,
 });
 const emit = defineEmits<ExAnchorEmits>();
+const { t } = useLocale('anchor');
+const resolvedAriaLabel = computed(() => props.ariaLabel?.trim() || t('label'));
 
 const anchorRef = ref<HTMLElement>();
 const activeLink = ref('');
@@ -86,6 +89,11 @@ const clearAnimationTimer = (): void => {
   animating = false;
 };
 
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const scrollTo = (href: string): void => {
   if (!scrollContainer) return;
   const target = resolveTarget(href);
@@ -95,7 +103,12 @@ const scrollTo = (href: string): void => {
   animating = true;
   const offset = props.targetOffset ?? props.offsetTop;
   const top = getOffsetTop(target, scrollContainer) - offset;
-  scrollContainer.scrollTo({ top, behavior: 'smooth' });
+  const reduceMotion = prefersReducedMotion();
+  scrollContainer.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
+  if (reduceMotion) {
+    animating = false;
+    return;
+  }
   animationTimer = setTimeout(() => {
     animationTimer = null;
     animating = false;

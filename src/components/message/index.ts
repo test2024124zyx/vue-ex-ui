@@ -5,7 +5,7 @@
 
 import ExMessageComponent from './ExMessage.vue';
 import { withInstall, type InstallableComponent } from '../../utils/install';
-import { message } from './message';
+import { createMessageService, message, MESSAGE_SERVICE_KEY } from './message';
 import type {
   ExMessageProps,
   ExMessageEmits,
@@ -24,11 +24,15 @@ import type {
 export const ExMessage: InstallableComponent<typeof ExMessageComponent> =
   withInstall(ExMessageComponent);
 export { message };
+export { createMessageService, MESSAGE_SERVICE_KEY, useMessageService } from './message';
 
 const installComponent = ExMessage.install;
 ExMessage.install = app => {
   installComponent(app);
-  app.config.globalProperties.$message = message;
+  const service = createMessageService(app._context);
+  app.config.globalProperties.$message = service;
+  app.provide(MESSAGE_SERVICE_KEY, service);
+  app.onUnmount(() => service.closeAll());
 };
 
 // 导出类型

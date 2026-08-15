@@ -45,14 +45,20 @@ const handleBeforeClose = async () => {
 
 Dialog 弹出一个对话框，适合需要定制性更大的场景。
 
+::: raw
+
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible = true">打开对话框</ExButton>
-  
+
   <ExDialog v-model="dialogVisible" title="提示">
     <p>这是一段信息</p>
     <p>这是另一段信息</p>
   </ExDialog>
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -79,13 +85,17 @@ const dialogVisible = ref(false);
 </script>
 ```
 
+:::
+
 ## 自定义标题
 
 通过 `title` 插槽可以自定义标题内容。
 
+::: raw
+
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible2 = true">自定义标题</ExButton>
-  
+
   <ExDialog v-model="dialogVisible2">
     <template #title>
       <span style="color: var(--ex-color-neon-blue-500); font-size: 20px;">
@@ -112,18 +122,28 @@ const dialogVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible2 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible2 = true"
   >
     自定义标题
   </ExButton>
 
-  <ExDialog v-model="dialogVisible">
+  <ExDialog v-model="dialogVisible2">
     <template #title>
-      <span style="color: var(--ex-color-neon-blue-500);">🎮 游戏设置</span>
+      <span style="color: var(--ex-color-neon-blue-500); font-size: 20px;">🎮 游戏设置</span>
     </template>
     <template #icon>
       <img
@@ -133,15 +153,31 @@ const dialogVisible = ref(false);
         height="24"
       />
     </template>
-    <div>画质：超高</div>
-    <div>帧率：144 FPS</div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span>画质：</span>
+        <span style="color: var(--ex-color-neon-blue-500);">超高</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>帧率：</span>
+        <span style="color: var(--ex-color-neon-blue-500);">144 FPS</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>分辨率：</span>
+        <span style="color: var(--ex-color-neon-blue-500);">2560x1440</span>
+      </div>
+    </div>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 不同类型
 
 通过 `type` 属性可以设置不同类型的对话框。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExButton type="primary" @click="dialogVisible3 = true">主要对话框</ExButton>
@@ -174,17 +210,47 @@ const dialogVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible3 = ref(false);
+const dialogVisible4 = ref(false);
+const dialogVisible5 = ref(false);
+const dialogVisible6 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible3 = true"
   >
     主要对话框
   </ExButton>
-
+  <ExButton
+    type="success"
+    @click="dialogVisible4 = true"
+  >
+    成功对话框
+  </ExButton>
+  <ExButton
+    type="warning"
+    @click="dialogVisible5 = true"
+  >
+    警告对话框
+  </ExButton>
+  <ExButton
+    type="danger"
+    @click="dialogVisible6 = true"
+  >
+    危险对话框
+  </ExButton>
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible3"
     title="主要对话框"
     type="primary"
   >
@@ -196,14 +262,63 @@ const dialogVisible = ref(false);
         height="24"
       />
     </template>
-    <p>这是一个主要类型的对话框。</p>
+    <p>这是一个主要类型的对话框，带有霓虹蓝色边框和发光效果。</p>
+  </ExDialog>
+  <ExDialog
+    v-model="dialogVisible4"
+    title="操作成功"
+    type="success"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/checkbox-circle-line.svg"
+        alt="成功"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>您的操作已成功完成！</p>
+  </ExDialog>
+  <ExDialog
+    v-model="dialogVisible5"
+    title="警告提示"
+    type="warning"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/alert-line.svg"
+        alt="警告"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>请注意：此操作可能会影响您的数据。</p>
+  </ExDialog>
+  <ExDialog
+    v-model="dialogVisible6"
+    title="危险操作"
+    type="danger"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/error-warning-line.svg"
+        alt="危险"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>警告：此操作不可撤销，请谨慎操作！</p>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 不同尺寸
 
 通过 `size` 属性可以设置不同尺寸的对话框。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExButton @click="dialogVisible7 = true" size="small">小尺寸</ExButton>
@@ -220,23 +335,64 @@ const dialogVisible = ref(false);
   </ExDialog>
 </div>
 
-```vue
-<template>
-  <ExButton @click="dialogVisible = true">小尺寸</ExButton>
+:::
 
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible7 = ref(false);
+const dialogVisible10 = ref(false);
+const dialogVisible11 = ref(false);
+</script>
+
+<template>
+  <ExButton
+    @click="dialogVisible7 = true"
+    size="small"
+  >
+    小尺寸
+  </ExButton>
+  <ExButton @click="dialogVisible10 = true">中等尺寸</ExButton>
+  <ExButton
+    @click="dialogVisible11 = true"
+    size="large"
+  >
+    大尺寸
+  </ExButton>
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible7"
     title="小尺寸对话框"
     size="small"
   >
-    <p>这是一个小尺寸的对话框。</p>
+    <p>这是一个小尺寸的对话框（400px）。</p>
+  </ExDialog>
+  <ExDialog
+    v-model="dialogVisible10"
+    title="中等尺寸对话框"
+    size="medium"
+  >
+    <p>这是一个中等尺寸的对话框（600px）。</p>
+  </ExDialog>
+  <ExDialog
+    v-model="dialogVisible11"
+    title="大尺寸对话框"
+    size="large"
+  >
+    <p>这是一个大尺寸的对话框（800px）。</p>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 自定义底部
 
 通过 `footer` 插槽可以自定义底部内容。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible8 = true">自定义底部</ExButton>
@@ -255,44 +411,62 @@ const dialogVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible8 = true"
   >
     自定义底部
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible8"
     title="确认操作"
+    type="warning"
     :confirm-loading="confirmLoading"
     @confirm="handleConfirm"
   >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/alert-line.svg"
+        alt="警告"
+        width="24"
+        height="24"
+      />
+    </template>
     <p>您确定要执行此操作吗？</p>
+    <p>此操作将会删除所有相关数据，且不可恢复。</p>
   </ExDialog>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 
-const dialogVisible = ref(false);
+const dialogVisible8 = ref(false);
 const confirmLoading = ref(false);
 
 const handleConfirm = () => {
   confirmLoading.value = true;
   setTimeout(() => {
     confirmLoading.value = false;
-    dialogVisible.value = false;
+    dialogVisible8.value = false;
   }, 2000);
 };
 </script>
 ```
 
+:::
+
 ## 居中显示
 
 设置 `center` 属性可以让对话框内容居中显示。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible9 = true">居中对话框</ExButton>
@@ -312,31 +486,58 @@ const handleConfirm = () => {
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible9 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible9 = true"
   >
     居中对话框
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible9"
     title="居中显示"
     center
   >
-    <div style="text-align: center;">
-      <div style="font-size: 48px;">🏆</div>
-      <div>恭喜获胜！</div>
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/trophy-line.svg"
+        alt="奖杯"
+        width="24"
+        height="24"
+      />
+    </template>
+    <div style="padding: 20px 0;">
+      <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
+      <div
+        style="font-size: 24px; font-weight: bold; color: var(--ex-color-neon-blue-500); margin-bottom: 8px;"
+      >
+        恭喜获胜！
+      </div>
+      <div style="color: var(--ex-color-text-secondary);">您在本场比赛中表现出色</div>
     </div>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 全屏对话框
 
 设置 `fullscreen` 属性可以让对话框全屏显示。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible12 = true">全屏对话框</ExButton>
@@ -350,28 +551,47 @@ const handleConfirm = () => {
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible12 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible12 = true"
   >
     全屏对话框
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible12"
     title="全屏对话框"
     fullscreen
   >
-    <div>全屏内容</div>
+    <div style="height: 100%; display: flex; align-items: center; justify-content: center;">
+      <div style="text-align: center;">
+        <h2 style="color: var(--ex-color-neon-blue-500); margin-bottom: 16px;">全屏内容展示</h2>
+        <p>这是一个全屏对话框，适合展示大量内容或复杂的交互界面。</p>
+      </div>
+    </div>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 嵌套对话框
 
 对话框可以嵌套使用。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible4 = true">打开外层对话框</ExButton>
@@ -384,29 +604,33 @@ const handleConfirm = () => {
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExButton
     type="primary"
-    @click="outerVisible = true"
+    @click="dialogVisible4 = true"
   >
     打开外层对话框
   </ExButton>
 
   <ExDialog
-    v-model="outerVisible"
+    v-model="dialogVisible4"
     title="外层对话框"
   >
     <p>这是外层对话框的内容。</p>
     <ExButton
       type="primary"
-      @click="innerVisible = true"
+      @click="dialogVisible5 = true"
     >
       打开内层对话框
     </ExButton>
 
     <ExDialog
-      v-model="innerVisible"
+      v-model="dialogVisible5"
       title="内层对话框"
       :z-index="1060"
     >
@@ -418,14 +642,18 @@ const handleConfirm = () => {
 <script setup>
 import { ref } from 'vue';
 
-const outerVisible = ref(false);
-const innerVisible = ref(false);
+const dialogVisible4 = ref(false);
+const dialogVisible5 = ref(false);
 </script>
 ```
+
+:::
 
 ## 自定义关闭按钮
 
 通过 `close` 插槽可以自定义关闭按钮。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible13 = true">自定义关闭按钮</ExButton>
@@ -437,17 +665,27 @@ const innerVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible13 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible13 = true"
   >
     自定义关闭按钮
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible13"
     title="自定义关闭"
   >
     <template #close>
@@ -458,14 +696,18 @@ const innerVisible = ref(false);
         height="20"
       />
     </template>
-    <p>自定义关闭按钮</p>
+    <p>这个对话框使用了自定义的关闭按钮图标。</p>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 不显示底部
 
 设置 `:show-footer="false"` 可以隐藏底部操作栏。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="dialogVisible14 = true">无底部对话框</ExButton>
@@ -478,28 +720,52 @@ const innerVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const dialogVisible14 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible = true"
+    @click="dialogVisible14 = true"
   >
     无底部对话框
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible14"
     title="纯内容展示"
     :show-footer="false"
   >
-    <p>这是一个纯内容展示的对话框。</p>
+    <div style="text-align: center; padding: 20px 0;">
+      <img
+        src="https://api.iconify.design/ri/information-line.svg"
+        alt="信息"
+        width="64"
+        height="64"
+        style="margin-bottom: 16px;"
+      />
+      <h3 style="color: var(--ex-color-neon-blue-500); margin-bottom: 8px;">温馨提示</h3>
+      <p>这是一个纯内容展示的对话框，没有底部操作按钮。</p>
+    </div>
   </ExDialog>
 </template>
 ```
 
+:::
+
 ## 关闭前回调
 
 通过 `before-close` 属性可以在关闭前执行回调，返回 `false` 可以阻止关闭。
+
+::: raw
 
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
@@ -524,28 +790,47 @@ const innerVisible = ref(false);
   </ExDialog>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExButton
-    type="primary"
-    @click="dialogVisible = true"
-  >
-    打开对话框
-  </ExButton>
+  <div style="margin-bottom: 16px;">
+    <ExButton
+      type="primary"
+      @click="dialogVisible15 = true"
+    >
+      打开对话框
+    </ExButton>
+    <ExButton
+      @click="hasUnsavedChanges = !hasUnsavedChanges"
+      style="margin-left: 12px;"
+    >
+      {{ hasUnsavedChanges ? '允许关闭' : '阻止关闭' }}
+    </ExButton>
+    <span style="margin-left: 12px; color: var(--ex-color-text-secondary);">
+      当前状态: {{ hasUnsavedChanges ? '有未保存内容（阻止关闭）' : '无未保存内容（允许关闭）' }}
+    </span>
+  </div>
 
   <ExDialog
-    v-model="dialogVisible"
+    v-model="dialogVisible15"
     title="编辑内容"
     :before-close="handleBeforeClose"
   >
-    <p>尝试关闭对话框，如果有未保存内容会被阻止。</p>
+    <p>尝试点击关闭按钮或遮罩层关闭对话框。</p>
+    <p style="color: var(--ex-color-warning);">
+      当有未保存内容时，关闭操作会被阻止（控制台会输出提示）。
+    </p>
+    <p>点击上方按钮切换状态来测试关闭行为。</p>
   </ExDialog>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 
-const dialogVisible = ref(false);
+const dialogVisible15 = ref(false);
 const hasUnsavedChanges = ref(true);
 
 const handleBeforeClose = async () => {
@@ -558,6 +843,8 @@ const handleBeforeClose = async () => {
 };
 </script>
 ```
+
+:::
 
 ## API
 

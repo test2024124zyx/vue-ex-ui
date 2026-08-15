@@ -27,6 +27,19 @@ describe('useTheme', () => {
     expect(VALID_THEMES).toEqual(['neon-blue', 'light']);
   });
 
+  it('导入主题模块不会覆盖宿主根节点已有的主题契约', async () => {
+    document.documentElement.setAttribute('data-theme', 'host-brand');
+    document.documentElement.style.colorScheme = 'normal';
+    document.documentElement.classList.remove('ex-theme-loaded');
+    vi.resetModules();
+
+    await import('../../src/composables/useTheme');
+
+    expect(document.documentElement.dataset.theme).toBe('host-brand');
+    expect(document.documentElement.style.colorScheme).toBe('normal');
+    expect(document.documentElement.classList.contains('ex-theme-loaded')).toBe(false);
+  });
+
   it('同步响应式状态、DOM、颜色模式与统一变化事件', () => {
     const changes: string[] = [];
     const events: CustomEvent[] = [];
@@ -98,20 +111,23 @@ describe('useTheme', () => {
   });
 
   it('系统主题监听会应用初始偏好并完整解绑', () => {
-    const darkListeners = new Set<EventListener>();
-    const createQuery = (matches: boolean, listeners: Set<EventListener>): MediaQueryList =>
+    type MediaQueryListener = (event: MediaQueryListEvent) => void;
+    const darkListeners = new Set<MediaQueryListener>();
+    const createQuery = (matches: boolean, listeners: Set<MediaQueryListener>): MediaQueryList =>
       ({
         matches,
         media: '',
         onchange: null,
-        addEventListener: (_type, listener) => listeners.add(listener as EventListener),
-        removeEventListener: (_type, listener) => listeners.delete(listener as EventListener),
+        addEventListener: (_type: 'change', listener: MediaQueryListener) =>
+          listeners.add(listener),
+        removeEventListener: (_type: 'change', listener: MediaQueryListener) =>
+          listeners.delete(listener),
         addListener: () => undefined,
         removeListener: () => undefined,
         dispatchEvent: () => true,
       }) as MediaQueryList;
 
-    vi.spyOn(window, 'matchMedia').mockImplementation(query => createQuery(true, darkListeners));
+    vi.spyOn(window, 'matchMedia').mockImplementation(_query => createQuery(true, darkListeners));
 
     const stop = useSystemTheme();
     expect(getTheme()).toBe('neon-blue');

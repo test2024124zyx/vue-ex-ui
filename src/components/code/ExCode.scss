@@ -18,9 +18,7 @@
   --ex-code-gutter-pad-x: var(--ex-spacing-3);
   --ex-code-tab-size: 2;
   // 行号栏宽度：位数 × 1ch（等宽字体精确）+ 两侧内边距。
-  --ex-code-gutter-width: calc(
-    var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x)
-  );
+  --ex-code-gutter-width: calc(var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x));
 
   font-family: var(--ex-font-mono);
   font-size: var(--ex-code-font-size);
@@ -363,6 +361,11 @@
     }
   }
 
+  &__content:focus-within {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: -2px;
+  }
+
   // ── 语法高亮 token 配色 ───────────────────────────────────────────
   .ex-token-comment {
     color: var(--ex-color-text-tertiary);
@@ -443,7 +446,7 @@
     }
   }
 
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     border-width: 2px;
 
     .ex-code__copy-btn {

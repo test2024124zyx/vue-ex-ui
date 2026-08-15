@@ -132,17 +132,47 @@ const showInfo = () => {
 
 <div class="demo-container">
   <ex-button @click="showInfo">信息</ex-button>
-  <ex-button type="success" @click="showSuccess">成功</ex-button>
-  <ex-button type="warning" @click="showWarning">警告</ex-button>
-  <ex-button type="danger" @click="showError">错误</ex-button>
+  <ex-button
+    type="success"
+    @click="showSuccess"
+  >
+    成功
+  </ex-button>
+  <ex-button
+    type="warning"
+    @click="showWarning"
+  >
+    警告
+  </ex-button>
+  <ex-button
+    type="danger"
+    @click="showError"
+  >
+    错误
+  </ex-button>
 </div>
 
 ```vue
 <template>
   <ex-button @click="showInfo">信息</ex-button>
-  <ex-button type="success" @click="showSuccess">成功</ex-button>
-  <ex-button type="warning" @click="showWarning">警告</ex-button>
-  <ex-button type="danger" @click="showError">错误</ex-button>
+  <ex-button
+    type="success"
+    @click="showSuccess"
+  >
+    成功
+  </ex-button>
+  <ex-button
+    type="warning"
+    @click="showWarning"
+  >
+    警告
+  </ex-button>
+  <ex-button
+    type="danger"
+    @click="showError"
+  >
+    错误
+  </ex-button>
 </template>
 
 <script setup>
@@ -282,8 +312,19 @@ const showHtml = () => {
 ```
 
 ::: warning 安全提示
-`dangerouslyUseHTMLString` 属性会将 `content` 作为 HTML 片段处理，这可能会导致 XSS 攻击。请确保 `content` 的内容是可信的。
+`dangerouslyUseHTMLString` 会经过内置白名单消毒，但仍应避免传入未经确认的外部 HTML。
+编程式服务的 `content` 类型是 `string | VNode`。需要结构化内容时，优先传入真实 VNode；VNode 不能与
+`dangerouslyUseHTMLString` 同时使用。
 :::
+
+```ts
+import { h, notification } from 'vue-ex-ui';
+
+notification.info({
+  title: '构建完成',
+  content: h('a', { href: '/artifacts' }, '查看产物'),
+});
+```
 
 ## 带回调
 
@@ -324,13 +365,23 @@ const showWithCallback = () => {
   <ex-button @click="showInfo">显示通知</ex-button>
   <ex-button @click="showSuccess">显示通知</ex-button>
   <ex-button @click="showWarning">显示通知</ex-button>
-  <ex-button type="danger" @click="closeAll">关闭所有</ex-button>
+  <ex-button
+    type="danger"
+    @click="closeAll"
+  >
+    关闭所有
+  </ex-button>
 </div>
 
 ```vue
 <template>
   <ex-button @click="showInfo">显示通知</ex-button>
-  <ex-button type="danger" @click="closeAll">关闭所有</ex-button>
+  <ex-button
+    type="danger"
+    @click="closeAll"
+  >
+    关闭所有
+  </ex-button>
 </template>
 
 <script setup>
@@ -367,6 +418,10 @@ notification.config({
 });
 ```
 
+配置会先整体校验再提交，非法字段不会留下部分更新。安装组件库后，每个 Vue App 的
+`$notification` 相互独立；在 ConfigProvider 子树的 `setup()` 中使用
+`useNotificationService()`，通知会继承最近的主题、语言和 z-index，并在 Provider 卸载时清理。
+
 ## API
 
 ### 方法
@@ -378,29 +433,29 @@ notification.config({
 | notification.success(options) | 显示成功通知 | `NotificationOptions`      | `NotificationInstance` |
 | notification.warning(options) | 显示警告通知 | `NotificationOptions`      | `NotificationInstance` |
 | notification.error(options)   | 显示错误通知 | `NotificationOptions`      | `NotificationInstance` |
-| notification.close(id)        | 关闭指定通知 | `string`                   | —                      |
+| notification.close(id)        | 关闭指定通知 | `string`                   | `boolean`              |
 | notification.closeAll()       | 关闭所有通知 | —                          | —                      |
 | notification.config(options)  | 配置全局选项 | `NotificationGlobalConfig` | —                      |
 
 ### NotificationOptions
 
-| 参数                     | 说明                                  | 类型       | 可选值                                            | 默认值    |
-| ------------------------ | ------------------------------------- | ---------- | ------------------------------------------------- | --------- |
-| id                       | 通知唯一标识                          | string     | —                                                 | 自动生成  |
-| type                     | 通知类型                              | string     | info / success / warning / error                  | info      |
-| title                    | 通知标题                              | string     | —                                                 | —         |
-| content                  | 通知内容                              | string     | —                                                 | —         |
-| showIcon                 | 是否显示图标                          | boolean    | —                                                 | true      |
-| closable                 | 是否可关闭                            | boolean    | —                                                 | true      |
-| duration                 | 显示时长（毫秒），设为 0 则不自动关闭 | number     | —                                                 | 4500      |
-| position                 | 显示位置                              | string     | top-right / top-left / bottom-right / bottom-left | top-right |
-| customClass              | 自定义 CSS 类名                       | string     | —                                                 | —         |
-| customStyle              | 自定义样式                            | object     | —                                                 | —         |
-| zIndex                   | 层级                                  | number     | —                                                 | 2000      |
-| offset                   | 距离边缘的偏移量                      | number     | —                                                 | 16        |
-| dangerouslyUseHTMLString | 是否将内容作为 HTML 处理              | boolean    | —                                                 | false     |
-| onClose                  | 关闭时的回调                          | () => void | —                                                 | —         |
-| onClick                  | 点击时的回调                          | () => void | —                                                 | —         |
+| 参数                     | 说明                                  | 类型            | 可选值                                            | 默认值    |
+| ------------------------ | ------------------------------------- | --------------- | ------------------------------------------------- | --------- |
+| id                       | 通知唯一标识                          | string          | —                                                 | 自动生成  |
+| type                     | 通知类型                              | string          | info / success / warning / error                  | info      |
+| title                    | 通知标题                              | string          | —                                                 | —         |
+| content                  | 通知内容                              | string \| VNode | —                                                 | —         |
+| showIcon                 | 是否显示图标                          | boolean         | —                                                 | true      |
+| closable                 | 是否可关闭                            | boolean         | —                                                 | true      |
+| duration                 | 显示时长（毫秒），设为 0 则不自动关闭 | number          | —                                                 | 4500      |
+| position                 | 显示位置                              | string          | top-right / top-left / bottom-right / bottom-left | top-right |
+| customClass              | 自定义 CSS 类名                       | string          | —                                                 | —         |
+| customStyle              | 自定义样式                            | object          | —                                                 | —         |
+| zIndex                   | 层级                                  | number          | —                                                 | 2000      |
+| offset                   | 距离边缘的偏移量                      | number          | —                                                 | 16        |
+| dangerouslyUseHTMLString | 是否将内容作为 HTML 处理              | boolean         | —                                                 | false     |
+| onClose                  | 关闭时的回调                          | () => void      | —                                                 | —         |
+| onClick                  | 点击时的回调                          | () => void      | —                                                 | —         |
 
 ### Slots
 
@@ -413,22 +468,22 @@ notification.config({
 
 ### NotificationInstance
 
-| 属性/方法 | 说明         | 类型       |
-| --------- | ------------ | ---------- |
-| id        | 通知唯一标识 | string     |
-| close     | 关闭通知     | () => void |
+| 属性/方法 | 说明         | 类型          |
+| --------- | ------------ | ------------- |
+| id        | 通知唯一标识 | string        |
+| close     | 关闭通知     | () => boolean |
 
 ### NotificationGlobalConfig
 
-| 参数     | 说明         | 类型    | 默认值    |
-| -------- | ------------ | ------- | --------- |
-| duration | 默认显示时长 | number  | 4500      |
-| offset   | 默认偏移量   | number  | 16        |
-| zIndex   | 默认层级     | number  | 2000      |
-| maxCount | 最大显示数量 | number  | 5         |
-| showIcon | 是否显示图标 | boolean | true      |
-| closable | 是否可关闭   | boolean | true      |
-| position | 默认位置     | string  | top-right |
+| 参数     | 说明         | 类型    | 默认值                             |
+| -------- | ------------ | ------- | ---------------------------------- |
+| duration | 默认显示时长 | number  | 4500                               |
+| offset   | 默认偏移量   | number  | 16                                 |
+| zIndex   | 默认层级     | number  | 2000（Provider 内为基础层级 + 80） |
+| maxCount | 最大显示数量 | number  | 10                                 |
+| showIcon | 是否显示图标 | boolean | true                               |
+| closable | 是否可关闭   | boolean | true                               |
+| position | 默认位置     | string  | top-right                          |
 
 ## 最佳实践
 
@@ -450,10 +505,10 @@ notification.config({
 
 ### 无障碍
 
-- 通知组件使用 `role="alert"` 属性，屏幕阅读器会自动朗读通知内容
-- 错误通知使用 `aria-live="assertive"`，会立即打断当前朗读
-- 其他类型通知使用 `aria-live="polite"`，会等待当前朗读完成
-- 关闭按钮支持键盘操作（Enter 和 Space 键）
+- 错误通知使用 `role="alert"` 与 `aria-live="assertive"`，会立即播报
+- 其他类型使用 `role="status"` 与 `aria-live="polite"`，等待当前朗读完成
+- 关闭控件是真实 `<button>`，无需额外模拟 Enter / Space
+- 鼠标悬停或键盘焦点进入通知时都会暂停倒计时
 
 ## 常见问题
 

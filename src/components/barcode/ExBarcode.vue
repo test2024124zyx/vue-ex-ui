@@ -4,13 +4,19 @@
     :class="barcodeClasses"
     :style="barcodeStyles"
     role="img"
-    :aria-label="ariaLabel || `Barcode: ${value}`"
+    :aria-label="barcodeAriaLabel"
   >
     <!-- SVG 容器 -->
-    <svg ref="svgRef" class="ex-barcode__svg" />
+    <svg
+      ref="svgRef"
+      class="ex-barcode__svg"
+    />
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="ex-barcode__loading">
+    <div
+      v-if="loading"
+      class="ex-barcode__loading"
+    >
       <div class="ex-barcode__loading-spinner" />
       <p class="ex-barcode__loading-text">
         {{ t('barcode.generating') }}
@@ -18,18 +24,39 @@
     </div>
 
     <!-- 错误状态 -->
-    <div v-if="error" class="ex-barcode__error">
-      <slot name="error" :error="errorMessage">
+    <div
+      v-if="error"
+      class="ex-barcode__error"
+    >
+      <slot
+        name="error"
+        :error="errorMessage"
+      >
         <div class="ex-barcode__error-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+          >
             <path
               d="M24 4L4 24L24 44L44 24L24 4Z"
               stroke="currentColor"
               stroke-width="2"
               fill="none"
             />
-            <path d="M24 16V26" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            <circle cx="24" cy="32" r="1.5" fill="currentColor" />
+            <path
+              d="M24 16V26"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <circle
+              cx="24"
+              cy="32"
+              r="1.5"
+              fill="currentColor"
+            />
           </svg>
         </div>
         <p class="ex-barcode__error-text">
@@ -46,10 +73,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ExBarcodeProps, ExBarcodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { generateBarcode } from './barcode-generator';
+import { MAX_BARCODE_VALUE_LENGTH, normalizeBarcodeOptions } from './barcode-limits';
+import { assertImagePixelBudget } from '../../utils/image-resource';
 
 defineOptions({
   name: 'ExBarcode',
 });
+
+const BARCODE_EXPORT_FALLBACK_WIDTH = 300;
+const BARCODE_EXPORT_FALLBACK_HEIGHT = 150;
+const BARCODE_EXPORT_PIXEL_ERROR = 'Barcode image exceeds browser safe pixel limits';
 
 const props = withDefaults(defineProps<ExBarcodeProps>(), {
   value: '',
@@ -81,6 +114,7 @@ const error = ref(false);
 const errorMessage = ref('');
 let generationId = 0;
 let disposed = false;
+const pendingImageLoadCancels = new Set<() => void>();
 
 // 计算属性
 const barcodeClasses = computed(() => {
@@ -94,6 +128,11 @@ const barcodeClasses = computed(() => {
   classes.push(...normalizeCustomClass(props.class));
 
   return classes;
+});
+
+const barcodeAriaLabel = computed(() => {
+  if (props.ariaLabel) return props.ariaLabel;
+  return props.value.length <= MAX_BARCODE_VALUE_LENGTH ? `Barcode: ${props.value}` : 'Barcode';
 });
 
 const barcodeStyles = computed(() => {
@@ -134,31 +173,35 @@ const generate = async (): Promise<void> => {
     svgRef.value.innerHTML = '';
 
     // 生成条码
-    await generateBarcode(svgRef.value, props.value, {
-      format: props.format,
-      width: props.width,
-      height: props.height,
-      displayValue: props.displayValue,
-      textPosition: props.textPosition,
-      textMargin: props.textMargin,
-      fontSize: props.fontSize,
-      font: props.font,
-      textAlign: props.textAlign,
-      lineColor: props.lineColor,
-      background: props.background,
-      margin: props.margin,
-      marginTop: props.marginTop,
-      marginBottom: props.marginBottom,
-      marginLeft: props.marginLeft,
-      marginRight: props.marginRight,
-      flat: props.flat,
-      valid: (valid: boolean) => {
-        if (!valid && requestId === generationId && !disposed) {
-          error.value = true;
-          errorMessage.value = 'Invalid barcode value for format';
-        }
-      },
-    });
+    await generateBarcode(
+      svgRef.value,
+      props.value,
+      normalizeBarcodeOptions({
+        format: props.format,
+        width: props.width,
+        height: props.height,
+        displayValue: props.displayValue,
+        textPosition: props.textPosition,
+        textMargin: props.textMargin,
+        fontSize: props.fontSize,
+        font: props.font,
+        textAlign: props.textAlign,
+        lineColor: props.lineColor,
+        background: props.background,
+        margin: props.margin,
+        marginTop: props.marginTop,
+        marginBottom: props.marginBottom,
+        marginLeft: props.marginLeft,
+        marginRight: props.marginRight,
+        flat: props.flat,
+        valid: (valid: boolean) => {
+          if (!valid && requestId === generationId && !disposed) {
+            error.value = true;
+            errorMessage.value = 'Invalid barcode value for format';
+          }
+        },
+      })
+    );
   } catch (err) {
     if (requestId !== generationId || disposed) return;
     error.value = true;
@@ -168,93 +211,128 @@ const generate = async (): Promise<void> => {
   }
 };
 
-// 下载条码
-const download = (filename?: string) => {
-  if (!svgRef.value || error.value) return;
-
+const revokeObjectUrl = (url: string): void => {
   try {
-    // 创建 canvas
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // 获取 SVG 尺寸
-    const svgData = new XMLSerializer().serializeToString(svgRef.value);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    const releaseSvgUrl = () => URL.revokeObjectURL(url);
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      releaseSvgUrl();
-
-      // 下载
-      canvas.toBlob(blob => {
-        if (!blob) return;
-        const link = document.createElement('a');
-        link.download = filename || `barcode-${Date.now()}.png`;
-        link.href = URL.createObjectURL(blob);
-        try {
-          link.click();
-        } finally {
-          URL.revokeObjectURL(link.href);
-        }
-      });
-    };
-    img.onerror = releaseSvgUrl;
-    img.src = url;
+    URL.revokeObjectURL(url);
   } catch {
-    // 下载能力不可用时保持组件可用，不向宿主控制台写入噪声。
+    // 浏览器资源清理失败不应覆盖原始导出结果。
   }
 };
 
-// 获取条码数据URL（SVG→canvas 为异步绘制，必须等 img.onload 后再读取，故返回 Promise）
-const toDataURL = (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<string> => {
+/** 解码临时 SVG，并允许组件卸载同步结束所有待处理导出。 */
+const loadSvgImage = (svg: SVGSVGElement): Promise<HTMLImageElement | null> => {
   return new Promise(resolve => {
-    if (!svgRef.value || error.value) {
-      resolve('');
-      return;
-    }
-
     let url: string | null = null;
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve('');
-        return;
-      }
+    let settled = false;
+    const image = new Image();
 
-      const svgEl = svgRef.value;
-      const svgData = new XMLSerializer().serializeToString(svgEl);
+    const finish = (result: HTMLImageElement | null): void => {
+      if (settled) return;
+      settled = true;
+      image.onload = null;
+      image.onerror = null;
+      pendingImageLoadCancels.delete(cancel);
+      if (url) revokeObjectUrl(url);
+      url = null;
+      resolve(result);
+    };
+    const cancel = (): void => {
+      finish(null);
+      try {
+        image.src = '';
+      } catch {
+        // 部分浏览器在释放中的图片上写入空地址会抛错，URL 已由 finish 回收。
+      }
+    };
+
+    try {
+      const svgData = new XMLSerializer().serializeToString(svg);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       url = URL.createObjectURL(svgBlob);
-      const release = () => {
-        if (url) URL.revokeObjectURL(url);
-        url = null;
-      };
-
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width || svgEl.clientWidth || 300;
-        canvas.height = img.height || svgEl.clientHeight || 150;
-        ctx.drawImage(img, 0, 0);
-        release();
-        resolve(canvas.toDataURL(type));
-      };
-      img.onerror = () => {
-        release();
-        resolve('');
-      };
-      img.src = url;
+      image.onload = () => finish(image);
+      image.onerror = () => finish(null);
+      pendingImageLoadCancels.add(cancel);
+      image.src = url;
     } catch {
-      if (url) URL.revokeObjectURL(url);
-      resolve('');
+      finish(null);
     }
   });
+};
+
+const setExportPixelError = (): void => {
+  if (disposed) return;
+  error.value = true;
+  errorMessage.value = BARCODE_EXPORT_PIXEL_ERROR;
+};
+
+/** 像素预算检查必须早于 canvas 宽高赋值，避免浏览器先分配超大位图。 */
+const renderExportCanvas = async (svg: SVGSVGElement): Promise<HTMLCanvasElement | null> => {
+  const image = await loadSvgImage(svg);
+  if (!image || disposed) return null;
+
+  const width =
+    image.naturalWidth || image.width || svg.clientWidth || BARCODE_EXPORT_FALLBACK_WIDTH;
+  const height =
+    image.naturalHeight || image.height || svg.clientHeight || BARCODE_EXPORT_FALLBACK_HEIGHT;
+  try {
+    assertImagePixelBudget(width, height);
+  } catch {
+    setExportPixelError();
+    return null;
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    canvas.width = width;
+    canvas.height = height;
+    context.drawImage(image, 0, 0);
+    return canvas;
+  } catch {
+    return null;
+  }
+};
+
+// 下载条码
+const download = (filename?: string): void => {
+  const svg = svgRef.value;
+  if (!svg || error.value) return;
+
+  void renderExportCanvas(svg).then(canvas => {
+    if (!canvas || disposed) return;
+    try {
+      canvas.toBlob(blob => {
+        if (!blob || disposed) return;
+        let downloadUrl: string | null = null;
+        try {
+          downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = filename || `barcode-${Date.now()}.png`;
+          link.href = downloadUrl;
+          link.click();
+        } finally {
+          if (downloadUrl) revokeObjectUrl(downloadUrl);
+        }
+      });
+    } catch {
+      // 下载能力不可用时保持组件可用，不向宿主控制台写入噪声。
+    }
+  });
+};
+
+// 获取条码数据URL（SVG→canvas 为异步绘制，必须等 img.onload 后再读取，故返回 Promise）
+const toDataURL = async (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<string> => {
+  const svg = svgRef.value;
+  if (!svg || error.value) return '';
+  const canvas = await renderExportCanvas(svg);
+  if (!canvas || disposed) return '';
+
+  try {
+    return canvas.toDataURL(type);
+  } catch {
+    return '';
+  }
 };
 
 // 监听值变化（覆盖所有影响渲染的 prop，避免改了某些 prop 不重绘）
@@ -292,6 +370,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true;
   generationId += 1;
+  for (const cancel of [...pendingImageLoadCancels]) cancel();
 });
 
 // 暴露的方法

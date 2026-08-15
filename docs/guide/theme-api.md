@@ -2,6 +2,9 @@
 
 ExUI 的全局主题契约只有两个值：`neon-blue`（赛博暗色）和 `light`（赛博亮色）。
 
+导入根入口、导入 `useTheme` 或只读取 `getTheme()` 都不会修改宿主页面；只有显式调用
+`setTheme()`、`toggleTheme()` 或带初始化语义的持久化/系统主题 API 才会写入根节点。
+
 ## 类型
 
 ```ts
@@ -191,6 +194,6 @@ document.addEventListener('ex-theme-change', event => {
 ## 无障碍与动效
 
 - `prefers-reduced-motion: reduce` 会关闭扫描线、脉冲和非必要过渡。
-- `prefers-contrast: high` 会增强 ExUI 控件边界，不产生第三个主题。
+- `prefers-contrast: more` 会增强 ExUI 控件边界，不产生第三个主题。
 - 主题切换器应使用原生按钮，并提供文本、焦点样式和键盘操作。
 - 主题切换只修改 CSS 变量与根节点属性，不应重新挂载整个应用。

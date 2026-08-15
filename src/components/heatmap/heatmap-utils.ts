@@ -16,8 +16,7 @@ export interface HeatmapRange {
 export type HeatmapRangeError = 'invalid-start' | 'invalid-end' | 'reversed' | 'too-large';
 
 export type HeatmapRangeResult =
-  | { ok: true; range: HeatmapRange }
-  | { ok: false; reason: HeatmapRangeError };
+  { ok: true; range: HeatmapRange } | { ok: false; reason: HeatmapRangeError };
 
 export interface HeatmapCalendarCell extends HeatmapDataItem {
   /** 独立的本地日期对象，供格式化和键盘导航使用。 */

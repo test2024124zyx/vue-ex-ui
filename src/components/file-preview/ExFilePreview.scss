@@ -86,6 +86,16 @@
     height: 36px;
   }
 
+  &__standalone-close.ex-button {
+    position: absolute;
+    top: var(--ex-spacing-4);
+    right: var(--ex-spacing-4);
+    z-index: 4;
+    width: 44px;
+    height: 44px;
+    background: var(--ex-color-black-alpha-80);
+  }
+
   &__toolbar-scale {
     min-width: 52px;
     color: var(--ex-color-white);
@@ -386,4 +396,18 @@
       transition-duration: 0.01ms;
     }
   }
+}
+
+// 预览层被 Teleport 到 body 后，需要在自身恢复 ConfigProvider 的效果开关。
+.ex-file-preview.ex-no-neon,
+.ex-file-preview.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-file-preview.ex-no-animation,
+.ex-file-preview.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
 }

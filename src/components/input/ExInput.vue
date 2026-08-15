@@ -276,7 +276,6 @@ const props = withDefaults(defineProps<ExInputProps>(), {
   autofocus: false,
   required: false,
   rows: 3,
-  autosize: false,
   validateTrigger: 'blur',
 });
 
@@ -680,7 +679,7 @@ const adjustTextareaHeight = (): void => {
 
   textarea.style.height = '0px';
   const style = window.getComputedStyle(textarea);
-  const rows = resolveTextareaRows(props.autosize, props.rows);
+  const rows = resolveTextareaRows(props.autosize ?? false, props.rows);
   const result = calculateTextareaHeight({
     scrollHeight: textarea.scrollHeight,
     lineHeight: style.lineHeight,

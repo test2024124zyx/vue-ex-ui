@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExSkeleton from '../../../src/components/skeleton/ExSkeleton.vue';
-import type { ExSkeletonProps } from '../../../src/components/skeleton/types';
+import type { ExSkeletonExposed, ExSkeletonProps } from '../../../src/components/skeleton/types';
 
 describe('ExSkeleton', () => {
   it('renders correctly with default props', () => {
@@ -29,6 +29,30 @@ describe('ExSkeleton', () => {
       });
       expect(wrapper.find('.ex-skeleton').exists()).toBe(true);
     });
+  });
+
+  it('text 和 image 预设不会额外渲染默认段落', () => {
+    const text = mount(ExSkeleton, { props: { variant: 'text' } });
+    const image = mount(ExSkeleton, { props: { variant: 'image' } });
+
+    expect(text.findAll('.ex-skeleton__element--text')).toHaveLength(1);
+    expect(text.find('.ex-skeleton__paragraph').exists()).toBe(false);
+    expect(image.findAll('.ex-skeleton__element--image')).toHaveLength(1);
+    expect(image.find('.ex-skeleton__paragraph').exists()).toBe(false);
+  });
+
+  it('article、list、table 和 rect 使用各自完整预设结构', () => {
+    const article = mount(ExSkeleton, { props: { variant: 'article', rows: 4 } });
+    const list = mount(ExSkeleton, { props: { variant: 'list', count: 2 } });
+    const table = mount(ExSkeleton, { props: { variant: 'table', rows: 2 } });
+    const rect = mount(ExSkeleton, { props: { variant: 'rect' } });
+
+    expect(article.find('.ex-skeleton__title').exists()).toBe(true);
+    expect(article.findAll('.ex-skeleton__row')).toHaveLength(4);
+    expect(list.findAll('.ex-skeleton__list-item')).toHaveLength(2);
+    expect(table.find('.ex-skeleton__table-header').exists()).toBe(true);
+    expect(table.findAll('.ex-skeleton__table-row')).toHaveLength(2);
+    expect(rect.find('.ex-skeleton__element--rect').exists()).toBe(true);
   });
 
   it('renders different animations', () => {
@@ -133,7 +157,7 @@ describe('ExSkeleton', () => {
   it('exposes getElement method', () => {
     const wrapper = mount(ExSkeleton);
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExSkeletonExposed;
     expect(typeof vm.getElement).toBe('function');
   });
 });

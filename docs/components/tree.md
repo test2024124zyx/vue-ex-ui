@@ -21,6 +21,8 @@ const checkedKeys = ref([])
 
 ## 基础用法
 
+::: raw
+
 <div class="demo-container">
   <ExTree
     v-model:expanded-keys="expandedKeys"
@@ -28,6 +30,10 @@ const checkedKeys = ref([])
     :data="data"
   />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup lang="ts">
@@ -38,23 +44,33 @@ const data: TreeNode[] = [
   {
     key: 'documents',
     label: '文档',
-    children: [{ key: 'report', label: 'report.pdf' }],
+    children: [
+      { key: 'report', label: 'report.pdf' },
+      { key: 'notes', label: 'notes.txt' },
+    ],
   },
+  { key: 'images', label: '图片', children: [{ key: 'photo', label: 'photo.png' }] },
 ];
 const expandedKeys = ref<string[]>(['documents']);
 const selectedKeys = ref<string[]>([]);
 </script>
 
 <template>
-  <ExTree
-    v-model:expanded-keys="expandedKeys"
-    v-model:selected-keys="selectedKeys"
-    :data="data"
-  />
+  <div class="demo-container">
+    <ExTree
+      v-model:expanded-keys="expandedKeys"
+      v-model:selected-keys="selectedKeys"
+      :data="data"
+    />
+  </div>
 </template>
 ```
 
+:::
+
 ## 勾选
+
+::: raw
 
 <div class="demo-container">
   <ExTree
@@ -65,16 +81,43 @@ const selectedKeys = ref<string[]>([]);
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { TreeNode } from 'vue-ex-ui';
+
+const data: TreeNode[] = [
+  {
+    key: 'documents',
+    label: '文档',
+    children: [
+      { key: 'report', label: 'report.pdf' },
+      { key: 'notes', label: 'notes.txt' },
+    ],
+  },
+  { key: 'images', label: '图片', children: [{ key: 'photo', label: 'photo.png' }] },
+];
+const expandedKeys = ref<string[]>(['documents']);
+const checkedKeys = ref<string[]>([]);
+</script>
+
 <template>
-  <ExTree
-    v-model:expanded-keys="expandedKeys"
-    v-model:checked-keys="checkedKeys"
-    :data="data"
-    checkable
-  />
+  <div class="demo-container">
+    <ExTree
+      v-model:expanded-keys="expandedKeys"
+      v-model:checked-keys="checkedKeys"
+      :data="data"
+      checkable
+    />
+  </div>
 </template>
 ```
+
+:::
 
 设置 `check-strictly` 后，父子节点的勾选状态互不级联。
 

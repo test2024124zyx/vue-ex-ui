@@ -1,6 +1,13 @@
 <template>
-  <div ref="itemRef" :class="itemClasses" :style="itemStyles">
-    <div class="ex-collapse-item__header-row" :class="{ 'is-disabled': isDisabled }">
+  <div
+    ref="itemRef"
+    :class="itemClasses"
+    :style="itemStyles"
+  >
+    <div
+      class="ex-collapse-item__header-row"
+      :class="{ 'is-disabled': isDisabled }"
+    >
       <!-- 切换区使用原生按钮，避免手工模拟键盘和禁用语义。 -->
       <button
         :id="headerId"
@@ -69,7 +76,10 @@
       </button>
 
       <!-- 额外操作与切换按钮并列，允许安全放置链接或按钮。 -->
-      <div v-if="$slots.extra" class="ex-collapse-item__extra">
+      <div
+        v-if="$slots.extra"
+        class="ex-collapse-item__extra"
+      >
         <slot name="extra" />
       </div>
     </div>

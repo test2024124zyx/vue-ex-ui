@@ -17,21 +17,20 @@ export function useMediaQuery(query: string, options: UseMediaQueryOptions = {})
   const matches = ref(options.initialValue ?? false);
   let mediaQueryList: MediaQueryList | null = null;
 
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    try {
-      mediaQueryList = window.matchMedia(query);
-      matches.value = mediaQueryList.matches;
-    } catch {
-      // 不支持的查询保持调用方提供的初始值，不污染宿主控制台。
-    }
-  }
-
   const updateMatches = (event: MediaQueryListEvent | MediaQueryList): void => {
     matches.value = event.matches;
   };
 
   onMounted(() => {
-    if (!mediaQueryList) return;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
+    try {
+      mediaQueryList = window.matchMedia(query);
+      matches.value = mediaQueryList.matches;
+    } catch {
+      // 不支持的查询保持调用方提供的初始值，不污染宿主控制台。
+      return;
+    }
 
     if (typeof mediaQueryList.addEventListener === 'function') {
       mediaQueryList.addEventListener('change', updateMatches);
@@ -71,15 +70,15 @@ export function useMediaQueries<T extends Record<string, string>>(
 }
 
 export const breakpointQueries = {
-  xs: '(max-width: 575px)',
-  sm: '(min-width: 576px) and (max-width: 767px)',
-  md: '(min-width: 768px) and (max-width: 991px)',
-  lg: '(min-width: 992px) and (max-width: 1199px)',
-  xl: '(min-width: 1200px) and (max-width: 1599px)',
-  xxl: '(min-width: 1600px)',
+  xs: '(max-width: 479px)',
+  sm: '(min-width: 480px) and (max-width: 767px)',
+  md: '(min-width: 768px) and (max-width: 1023px)',
+  lg: '(min-width: 1024px) and (max-width: 1279px)',
+  xl: '(min-width: 1280px) and (max-width: 1535px)',
+  xxl: '(min-width: 1536px)',
   mobile: '(max-width: 767px)',
-  tablet: '(min-width: 768px) and (max-width: 1199px)',
-  desktop: '(min-width: 1200px)',
+  tablet: '(min-width: 768px) and (max-width: 1279px)',
+  desktop: '(min-width: 1280px)',
 } as const;
 
 export function useBreakpoints(): {

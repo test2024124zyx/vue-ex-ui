@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { useZIndex } from '../config-provider/composables';
+import { useZIndexLayer } from '../config-provider/composables';
 import { watermarkPropDefs } from './types';
 import { useWatermark } from './useWatermark';
 import { normalizeNumber } from './watermark-utils';
@@ -54,7 +54,7 @@ const { overlayDataUrl, tileWidth, tileHeight, refresh, toDataURL } = useWaterma
 // 暴露方法给父组件
 defineExpose<ExWatermarkExposed>({ refresh, toDataURL });
 
-const defaultWatermarkZIndex = useZIndex(-100);
+const defaultWatermarkZIndex = useZIndexLayer('watermark');
 
 // 将交互和层级放在容器变量上，允许调用方通过根元素样式覆盖。
 const containerStyle = computed<CSSProperties>(() => {

@@ -8,6 +8,7 @@
       class="ex-sider__mask"
       :data-theme="configTheme"
       :class="{ 'is-no-animation': !globalAnimation }"
+      :style="maskStyles"
       :aria-label="locale.collapse"
       @click="requestCollapsed(true, 'mask')"
     ></button>
@@ -19,6 +20,8 @@
     :class="siderClasses"
     :style="siderStyles"
     :aria-label="resolvedAriaLabel"
+    :role="isOverlayOpen ? 'dialog' : undefined"
+    :aria-modal="isOverlayOpen ? 'true' : undefined"
   >
     <div
       :id="contentId"
@@ -69,11 +72,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
-import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { layoutContextKey } from './context';
 import {
   getSiderBreakpointQuery,
@@ -111,6 +119,8 @@ const { t } = useLocale('layout');
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
 const configTheme = useConfigTheme();
+const overlayBackdropZIndex = useZIndexLayer('overlayBackdrop');
+const overlayZIndex = useZIndexLayer('overlay');
 
 // 未传 collapsed 时由内部状态管理；受控模式只向外请求变更。
 const collapsedState = useControllableState<boolean>({
@@ -119,6 +129,7 @@ const collapsedState = useControllableState<boolean>({
   onChange: value => emit('update:collapsed', value),
 });
 const collapsed = collapsedState.value;
+const isOverlayOpen = computed(() => isBroken.value && !collapsed.value);
 
 const locale = computed(() => ({
   label: t('sider.label'),
@@ -147,13 +158,21 @@ const siderClasses = computed(() => [
     [`ex-sider--trigger-${props.trigger}`]: props.collapsible && Boolean(props.trigger),
   },
 ]);
-const siderStyles = computed<Record<string, string>>(() => ({
-  '--ex-sider-width': activeWidth.value,
-  '--ex-sider-transition-duration':
-    normalizeTransitionDuration(props.transitionDuration, 300) + 'ms',
+const siderStyles = computed<Record<string, string>>(() => {
+  const styles: Record<string, string> = {
+    '--ex-sider-width': activeWidth.value,
+    '--ex-sider-transition-duration':
+      normalizeTransitionDuration(props.transitionDuration, 300) + 'ms',
+  };
+  if (isBroken.value) styles.zIndex = String(overlayZIndex.value);
+  return styles;
+});
+const maskStyles = computed<Record<string, string>>(() => ({
+  zIndex: String(overlayBackdropZIndex.value),
 }));
 
 const requestCollapsed = (value: boolean, source: SiderCollapseSource): void => {
+  if (source !== 'responsive') collapsedByResponsive = false;
   if (value === collapsed.value) return;
   collapsedState.request(value);
   emit('collapse', value, source);
@@ -166,6 +185,10 @@ let mediaChangeListener: ((event: MediaQueryListEvent) => void) | null = null;
 let breakpointInitialized = false;
 let mounted = false;
 let unregisterSider: (() => void) | null = null;
+let collapsedByResponsive = false;
+let previousFocus: HTMLElement | null = null;
+let previousBodyOverflow = '';
+let overlayActive = false;
 
 const detachMediaQuery = (): void => {
   if (mediaQuery && mediaChangeListener) {
@@ -186,7 +209,68 @@ const applyBreakpointMatches = (matches: boolean): void => {
   breakpointInitialized = true;
   isBroken.value = broken;
   emit('breakpoint', broken);
-  if (broken && !collapsed.value) requestCollapsed(true, 'responsive');
+  if (broken && !collapsed.value) {
+    collapsedByResponsive = true;
+    requestCollapsed(true, 'responsive');
+  } else if (!broken && collapsedByResponsive) {
+    collapsedByResponsive = false;
+    requestCollapsed(false, 'responsive');
+  }
+};
+
+const getFocusableElements = (): HTMLElement[] => {
+  if (!siderRef.value) return [];
+  return Array.from(
+    siderRef.value.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(element => !element.hasAttribute('hidden'));
+};
+
+const handleOverlayKeydown = (event: KeyboardEvent): void => {
+  if (!isOverlayOpen.value) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    requestCollapsed(true, 'mask');
+    return;
+  }
+  if (event.key !== 'Tab') return;
+
+  const focusable = getFocusableElements();
+  if (focusable.length === 0) {
+    event.preventDefault();
+    siderRef.value?.focus();
+    return;
+  }
+  const first = focusable[0]!;
+  const last = focusable[focusable.length - 1]!;
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};
+
+const activateOverlay = async (): Promise<void> => {
+  if (overlayActive || typeof document === 'undefined') return;
+  overlayActive = true;
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  previousBodyOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', handleOverlayKeydown, true);
+  await nextTick();
+  (getFocusableElements()[0] ?? siderRef.value)?.focus();
+};
+
+const deactivateOverlay = (): void => {
+  if (!overlayActive || typeof document === 'undefined') return;
+  overlayActive = false;
+  document.removeEventListener('keydown', handleOverlayKeydown, true);
+  document.body.style.overflow = previousBodyOverflow;
+  previousFocus?.focus();
+  previousFocus = null;
 };
 
 const setupBreakpoint = (): void => {
@@ -224,6 +308,11 @@ watch(
   }
 );
 
+watch(isOverlayOpen, open => {
+  if (open) void activateOverlay();
+  else deactivateOverlay();
+});
+
 onMounted(() => {
   mounted = true;
   unregisterSider = layoutContext?.registerSider() ?? null;
@@ -235,6 +324,7 @@ onBeforeUnmount(() => {
   detachMediaQuery();
   unregisterSider?.();
   unregisterSider = null;
+  deactivateOverlay();
 });
 
 const getElement = (): HTMLElement | null => siderRef.value ?? null;

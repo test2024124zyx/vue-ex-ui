@@ -470,6 +470,11 @@ interface ActiveUpload {
 }
 
 const activeUploads = new Map<string, ActiveUpload>();
+let selectionRevision = 0;
+
+const invalidatePendingSelections = (): void => {
+  selectionRevision += 1;
+};
 
 const requestFileList = (files: readonly UploadFile[]): UploadFile[] => {
   const operationSnapshot = cloneUploadFileList(files);
@@ -525,6 +530,7 @@ const abortUploads = (uids: readonly string[], reason: UploadAbortReason): numbe
 watch(
   () => props.fileList,
   (nextFiles, previousFiles) => {
+    invalidatePendingSelections();
     if (nextFiles !== undefined) {
       operationFileList.value = cloneUploadFileList(nextFiles);
       const currentUids = new Set(nextFiles.map(file => file.uid));
@@ -541,7 +547,10 @@ watch(
 watch(
   () => props.disabled,
   disabled => {
-    if (disabled) isDragOver.value = false;
+    if (disabled) {
+      isDragOver.value = false;
+      invalidatePendingSelections();
+    }
   }
 );
 
@@ -695,17 +704,17 @@ const submit = (file?: UploadFile | string): Promise<UploadResult[]> => {
 
 let selectionQueue: Promise<void> = Promise.resolve();
 
-const processSelectedFiles = async (files: readonly File[]): Promise<void> => {
+const processSelectedFiles = async (files: readonly File[], revision: number): Promise<void> => {
   let nextFiles = cloneUploadFileList(operationFileList.value);
   const addedFiles: UploadFile[] = [];
 
   for (const originalFile of files) {
-    if (destroyed.value) return;
+    if (destroyed.value || revision !== selectionRevision || props.disabled) return;
     let candidate = originalFile;
     if (props.beforeAdd) {
       try {
         const result = await props.beforeAdd(originalFile, cloneUploadFileList(nextFiles));
-        if (destroyed.value) return;
+        if (destroyed.value || revision !== selectionRevision || props.disabled) return;
         if (result === false) {
           emitRejection({ code: 'before-add', file: originalFile }, nextFiles);
           continue;
@@ -716,6 +725,8 @@ const processSelectedFiles = async (files: readonly File[]): Promise<void> => {
         continue;
       }
     }
+
+    nextFiles = [...cloneUploadFileList(operationFileList.value), ...addedFiles];
 
     const rejection = validateFile(candidate);
     if (rejection) {
@@ -732,7 +743,15 @@ const processSelectedFiles = async (files: readonly File[]): Promise<void> => {
     addedFiles.push(uploadFile);
   }
 
-  if (addedFiles.length === 0 || destroyed.value) return;
+  if (
+    addedFiles.length === 0 ||
+    destroyed.value ||
+    revision !== selectionRevision ||
+    props.disabled
+  ) {
+    return;
+  }
+  nextFiles = [...cloneUploadFileList(operationFileList.value), ...addedFiles];
   const committedFiles = requestFileList(nextFiles);
   for (const file of addedFiles) emit('added', { ...file }, cloneUploadFileList(committedFiles));
   if (props.autoUpload) void Promise.all(addedFiles.map(startUpload));
@@ -740,6 +759,7 @@ const processSelectedFiles = async (files: readonly File[]): Promise<void> => {
 
 const enqueueFiles = (files: File[]): void => {
   if (props.disabled || files.length === 0) return;
+  const queuedRevision = selectionRevision;
   let acceptedSelection = files;
   if (!props.multiple && files.length > 1) {
     acceptedSelection = files.slice(0, 1);
@@ -747,7 +767,9 @@ const enqueueFiles = (files: File[]): void => {
       emitRejection({ code: 'multiple', file });
     }
   }
-  selectionQueue = selectionQueue.then(() => processSelectedFiles(acceptedSelection));
+  selectionQueue = selectionQueue.then(() =>
+    processSelectedFiles(acceptedSelection, queuedRevision)
+  );
 };
 
 const handleFileChange = (event: Event): void => {
@@ -776,6 +798,7 @@ const handleDrop = (event: DragEvent): void => {
 
 const handleRemove = (file: UploadFile): void => {
   if (props.disabled) return;
+  invalidatePendingSelections();
   abortActiveUpload(file.uid, 'remove');
   requestFileList(operationFileList.value.filter(item => item.uid !== file.uid));
   emit('remove-request', file);
@@ -794,6 +817,7 @@ const abort = (file?: UploadFile | string): number => {
 };
 
 const requestClear = (): number => {
+  invalidatePendingSelections();
   const abortedCount = abortUploads([...activeUploads.keys()], 'clear');
   requestFileList([]);
   return abortedCount;

@@ -1,5 +1,9 @@
-import { createApp, h, shallowReactive } from 'vue';
-import type { App } from 'vue';
+import { createApp, h, inject, shallowReactive } from 'vue';
+import type { App, AppContext, InjectionKey } from 'vue';
+import { useComponentServiceScope } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
 import ExLoadingBarComponent from './ExLoadingBar.vue';
 import {
   DEFAULT_LOADING_BAR_HEIGHT,
@@ -35,12 +39,22 @@ class LoadingBarController {
   private trickleTimer: ReturnType<typeof setTimeout> | undefined;
   private terminalTimer: ReturnType<typeof setTimeout> | undefined;
   private cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly appContext: AppContext | undefined;
 
-  constructor(defaults: LoadingBarOptions) {
+  constructor(defaults: LoadingBarOptions, appContext?: AppContext) {
+    const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    const scopedDefaults: LoadingBarOptions = {
+      ...defaults,
+      zIndex:
+        defaults.zIndex ??
+        (config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined),
+    };
     this.options = mergeLoadingBarOptions(
       { color: undefined, height: DEFAULT_LOADING_BAR_HEIGHT, zIndex: undefined },
-      defaults
+      scopedDefaults
     );
+    this.appContext = appContext;
     this.state = shallowReactive({
       ...this.options,
       visible: false,
@@ -162,6 +176,10 @@ class LoadingBarController {
         }),
     });
 
+    if (this.appContext) {
+      app._context.provides = Object.create(this.appContext.provides) as AppContext['provides'];
+    }
+
     try {
       app.mount(host);
     } catch (error) {
@@ -199,8 +217,11 @@ class LoadingBarController {
 }
 
 /** 创建状态、DOM 与计时器完全隔离的 LoadingBar 服务。 */
-export function createLoadingBar(defaults: LoadingBarOptions = {}): LoadingBarService {
-  const controller = new LoadingBarController(defaults);
+export function createLoadingBar(
+  defaults: LoadingBarOptions = {},
+  appContext?: AppContext
+): LoadingBarService {
+  const controller = new LoadingBarController(defaults, appContext);
 
   // 使用闭包保持方法可安全解构调用，同时隐藏控制器内部状态。
   return {
@@ -216,5 +237,22 @@ export function createLoadingBar(defaults: LoadingBarOptions = {}): LoadingBarSe
 
 /** 直接导入时使用的全局单例。 */
 export const loadingBar = createLoadingBar();
+
+/** 当前 Vue App 的 LoadingBar 服务注入键。 */
+export const LOADING_BAR_SERVICE_KEY: InjectionKey<LoadingBarService> =
+  Symbol('ExLoadingBarService');
+
+/** 获取最近 ConfigProvider 或当前 Vue App 的 LoadingBar 服务。 */
+export function useLoadingBarService(): LoadingBarService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(
+      LOADING_BAR_SERVICE_KEY,
+      appContext => createLoadingBar({}, appContext),
+      service => service.destroy()
+    );
+  }
+  return inject(LOADING_BAR_SERVICE_KEY, loadingBar);
+}
 
 export default loadingBar;

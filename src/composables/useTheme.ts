@@ -33,11 +33,6 @@ const applyThemeToDocument = (theme: Theme): void => {
   root.classList.add('ex-theme-loaded');
 };
 
-// 模块在浏览器中首次加载时立即同步默认主题，避免根节点短暂处于混合主题状态。
-if (typeof document !== 'undefined') {
-  applyThemeToDocument(currentTheme.value);
-}
-
 /** 设置全局主题，并同步 DOM、颜色模式和变更通知。 */
 export function setTheme(theme: Theme): void {
   if (!isTheme(theme)) {

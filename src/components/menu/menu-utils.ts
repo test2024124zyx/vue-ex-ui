@@ -134,11 +134,14 @@ export function moveMenuFocus(
   const currentIndex = actions.indexOf(current);
   if (currentIndex < 0 || actions.length === 0) return null;
 
-  let targetIndex = currentIndex;
-  if (direction === 'first') targetIndex = 0;
-  else if (direction === 'last') targetIndex = actions.length - 1;
-  else if (direction === 'next') targetIndex = (currentIndex + 1) % actions.length;
-  else targetIndex = (currentIndex - 1 + actions.length) % actions.length;
+  const targetIndex =
+    direction === 'first'
+      ? 0
+      : direction === 'last'
+        ? actions.length - 1
+        : direction === 'next'
+          ? (currentIndex + 1) % actions.length
+          : (currentIndex - 1 + actions.length) % actions.length;
 
   const target = actions[targetIndex] ?? null;
   target?.focus({ preventScroll: true });

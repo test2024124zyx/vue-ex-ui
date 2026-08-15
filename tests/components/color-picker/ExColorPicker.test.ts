@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExColorPicker from '../../../src/components/color-picker/ExColorPicker.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import {
   formatColor,
   hsvToRgb,
@@ -46,6 +47,19 @@ describe('颜色转换工具', () => {
     expect(hsv.h).toBeCloseTo(210, 0);
     expect(hsv.s).toBeCloseTo(0.75, 2);
     expect(hsv.v).toBeCloseTo(0.8, 2);
+  });
+
+  it.each([
+    [0, { r: 255, g: 0, b: 0 }],
+    [60, { r: 255, g: 255, b: 0 }],
+    [120, { r: 0, g: 255, b: 0 }],
+    [180, { r: 0, g: 255, b: 255 }],
+    [240, { r: 0, g: 0, b: 255 }],
+    [300, { r: 255, g: 0, b: 255 }],
+    [360, { r: 255, g: 0, b: 0 }],
+    [-60, { r: 255, g: 0, b: 255 }],
+  ])('HSV 色相 %d 在重构后保持原有扇区结果', (hue, expected) => {
+    expect(hsvToRgb(hue, 1, 1)).toEqual(expected);
   });
 });
 
@@ -266,6 +280,22 @@ describe('ExColorPicker', () => {
 
     expect(document.querySelector('.ex-color-picker__panel')).toBeNull();
     expect(document.activeElement).toBe(wrapper!.find('.ex-color-picker__trigger').element);
+  });
+
+  it('Teleport 面板继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const provider = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExColorPicker) },
+    });
+
+    await provider.get('.ex-color-picker__trigger').trigger('click');
+    await nextTick();
+    const panel = document.querySelector<HTMLElement>('.ex-color-picker__panel')!;
+    expect(panel.style.zIndex).toBe('2400');
+    expect(panel.classList).toContain('ex-no-neon');
+    expect(panel.classList).toContain('ex-no-animation');
+    provider.unmount();
   });
 });
 

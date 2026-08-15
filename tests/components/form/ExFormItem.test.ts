@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import ExForm from '../../../src/components/form/ExForm.vue';
+import type { FormItemInstance } from '../../../src/components/form/types';
 
 describe('ExFormItem', () => {
   describe('Rendering', () => {
@@ -321,7 +322,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.validate).toBe('function');
     });
 
@@ -332,7 +333,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.resetField).toBe('function');
     });
 
@@ -343,7 +344,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.clearValidate).toBe('function');
     });
   });

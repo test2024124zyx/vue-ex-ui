@@ -77,9 +77,13 @@ const holidays = ref([
 
 最简单的日历使用方式。
 
+::: raw
 <div class="demo-container">
   <ExCalendar v-model="selectedDate" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -93,10 +97,13 @@ const selectedDate = ref(new Date());
 </script>
 ```
 
+:::
+
 ## 视图模式
 
 日历支持四种视图模式：日视图、周视图、月视图（默认）和年视图。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
@@ -104,10 +111,17 @@ const selectedDate = ref(new Date());
     @mode-change="handleModeChange"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :mode="mode" @mode-change="handleModeChange" />
+  <ExCalendar
+    v-model="selectedDate"
+    :mode="mode"
+    @mode-change="handleModeChange"
+  />
 </template>
 
 <script setup>
@@ -123,10 +137,13 @@ const handleModeChange = newMode => {
 </script>
 ```
 
+:::
+
 ## 日视图
 
 日视图显示单日的详细信息和事件列表。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
@@ -134,96 +151,17 @@ const handleModeChange = newMode => {
     :events="events"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" mode="day" :events="events" />
-</template>
-
-<script setup>
-import { ref } from 'vue';
-
-const selectedDate = ref(new Date());
-const events = ref([
-  {
-    id: 1,
-    title: '团队会议',
-    date: new Date(),
-    type: 'primary',
-    description: '讨论Q1计划',
-  },
-]);
-</script>
-```
-
-## 周视图
-
-周视图显示一周的日期和事件。
-
-<div class="demo-container">
-  <ExCalendar 
-    v-model="selectedDate" 
-    mode="week"
+  <ExCalendar
+    v-model="selectedDate"
+    mode="day"
     :events="events"
   />
-</div>
-
-```vue
-<template>
-  <ExCalendar v-model="selectedDate" mode="week" :events="events" />
-</template>
-```
-
-## 月视图
-
-月视图是默认视图，显示整月的日期和事件。
-
-<div class="demo-container">
-  <ExCalendar 
-    v-model="selectedDate" 
-    mode="month"
-    :events="events"
-  />
-</div>
-
-```vue
-<template>
-  <ExCalendar v-model="selectedDate" mode="month" :events="events" />
-</template>
-```
-
-## 年视图
-
-年视图显示全年12个月的概览。
-
-<div class="demo-container">
-  <ExCalendar 
-    v-model="selectedDate" 
-    mode="year"
-  />
-</div>
-
-```vue
-<template>
-  <ExCalendar v-model="selectedDate" mode="year" />
-</template>
-```
-
-## 显示事件
-
-可以在日历上显示事件，支持不同类型的事件样式。
-
-<div class="demo-container">
-  <ExCalendar 
-    v-model="selectedDate" 
-    :events="events"
-    @event-click="handleEventClick"
-  />
-</div>
-
-```vue
-<template>
-  <ExCalendar v-model="selectedDate" :events="events" @event-click="handleEventClick" />
 </template>
 
 <script setup>
@@ -245,6 +183,244 @@ const events = ref([
     type: 'danger',
     description: '提交最终版本',
   },
+  {
+    id: 3,
+    title: '培训课程',
+    date: new Date(2025, 9, 25),
+    type: 'success',
+    description: 'Vue 3 进阶',
+  },
+  {
+    id: 4,
+    title: '代码审查',
+    date: new Date(2025, 9, 24),
+    type: 'warning',
+    description: '审查新功能代码',
+  },
+]);
+</script>
+```
+
+:::
+
+## 周视图
+
+周视图显示一周的日期和事件。
+
+::: raw
+<div class="demo-container">
+  <ExCalendar 
+    v-model="selectedDate" 
+    mode="week"
+    :events="events"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExCalendar
+    v-model="selectedDate"
+    mode="week"
+    :events="events"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const selectedDate = ref(new Date());
+const events = ref([
+  {
+    id: 1,
+    title: '团队会议',
+    date: new Date(2025, 9, 23),
+    type: 'primary',
+    description: '讨论Q1计划',
+  },
+  {
+    id: 2,
+    title: '项目截止',
+    date: new Date(2025, 9, 22),
+    type: 'danger',
+    description: '提交最终版本',
+  },
+  {
+    id: 3,
+    title: '培训课程',
+    date: new Date(2025, 9, 25),
+    type: 'success',
+    description: 'Vue 3 进阶',
+  },
+  {
+    id: 4,
+    title: '代码审查',
+    date: new Date(2025, 9, 24),
+    type: 'warning',
+    description: '审查新功能代码',
+  },
+]);
+</script>
+```
+
+:::
+
+## 月视图
+
+月视图是默认视图，显示整月的日期和事件。
+
+::: raw
+<div class="demo-container">
+  <ExCalendar 
+    v-model="selectedDate" 
+    mode="month"
+    :events="events"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExCalendar
+    v-model="selectedDate"
+    mode="month"
+    :events="events"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const selectedDate = ref(new Date());
+const events = ref([
+  {
+    id: 1,
+    title: '团队会议',
+    date: new Date(2025, 9, 23),
+    type: 'primary',
+    description: '讨论Q1计划',
+  },
+  {
+    id: 2,
+    title: '项目截止',
+    date: new Date(2025, 9, 22),
+    type: 'danger',
+    description: '提交最终版本',
+  },
+  {
+    id: 3,
+    title: '培训课程',
+    date: new Date(2025, 9, 25),
+    type: 'success',
+    description: 'Vue 3 进阶',
+  },
+  {
+    id: 4,
+    title: '代码审查',
+    date: new Date(2025, 9, 24),
+    type: 'warning',
+    description: '审查新功能代码',
+  },
+]);
+</script>
+```
+
+:::
+
+## 年视图
+
+年视图显示全年12个月的概览。
+
+::: raw
+<div class="demo-container">
+  <ExCalendar 
+    v-model="selectedDate" 
+    mode="year"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExCalendar
+    v-model="selectedDate"
+    mode="year"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const selectedDate = ref(new Date());
+</script>
+```
+
+:::
+
+## 显示事件
+
+可以在日历上显示事件，支持不同类型的事件样式。
+
+::: raw
+<div class="demo-container">
+  <ExCalendar 
+    v-model="selectedDate" 
+    :events="events"
+    @event-click="handleEventClick"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExCalendar
+    v-model="selectedDate"
+    :events="events"
+    @event-click="handleEventClick"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const selectedDate = ref(new Date());
+const events = ref([
+  {
+    id: 1,
+    title: '团队会议',
+    date: new Date(2025, 9, 23),
+    type: 'primary',
+    description: '讨论Q1计划',
+  },
+  {
+    id: 2,
+    title: '项目截止',
+    date: new Date(2025, 9, 22),
+    type: 'danger',
+    description: '提交最终版本',
+  },
+  {
+    id: 3,
+    title: '培训课程',
+    date: new Date(2025, 9, 25),
+    type: 'success',
+    description: 'Vue 3 进阶',
+  },
+  {
+    id: 4,
+    title: '代码审查',
+    date: new Date(2025, 9, 24),
+    type: 'warning',
+    description: '审查新功能代码',
+  },
 ]);
 
 const handleEventClick = (event, date) => {
@@ -253,44 +429,69 @@ const handleEventClick = (event, date) => {
 </script>
 ```
 
+:::
+
 ## 签到功能
 
 可以标记签到日期，显示签到状态。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
     :checked-in-dates="checkedInDates"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :checked-in-dates="checkedInDates" />
+  <ExCalendar
+    v-model="selectedDate"
+    :checked-in-dates="checkedInDates"
+  />
 </template>
 
 <script setup>
 import { ref } from 'vue';
 
 const selectedDate = ref(new Date());
-const checkedInDates = ref([new Date(2025, 9, 1), new Date(2025, 9, 2), new Date(2025, 9, 3)]);
+const checkedInDates = ref([
+  new Date(2025, 9, 1),
+  new Date(2025, 9, 2),
+  new Date(2025, 9, 3),
+  new Date(2025, 9, 5),
+  new Date(2025, 9, 8),
+  new Date(2025, 9, 10),
+]);
 </script>
 ```
+
+:::
 
 ## 显示农历
 
 可以显示农历日期信息。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
     :show-lunar="true"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :show-lunar="true" />
+  <ExCalendar
+    v-model="selectedDate"
+    :show-lunar="true"
+  />
 </template>
 
 <script setup>
@@ -300,10 +501,13 @@ const selectedDate = ref(new Date());
 </script>
 ```
 
+:::
+
 ## 显示节气
 
 可以显示二十四节气信息。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
@@ -311,10 +515,17 @@ const selectedDate = ref(new Date());
     :show-solar-term="true"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :show-lunar="true" :show-solar-term="true" />
+  <ExCalendar
+    v-model="selectedDate"
+    :show-lunar="true"
+    :show-solar-term="true"
+  />
 </template>
 
 <script setup>
@@ -324,10 +535,13 @@ const selectedDate = ref(new Date());
 </script>
 ```
 
+:::
+
 ## 自定义节假日
 
 可以自定义节假日显示。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
@@ -335,10 +549,17 @@ const selectedDate = ref(new Date());
     :holidays="holidays"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :show-lunar="true" :holidays="holidays" />
+  <ExCalendar
+    v-model="selectedDate"
+    :show-lunar="true"
+    :holidays="holidays"
+  />
 </template>
 
 <script setup>
@@ -354,38 +575,45 @@ const holidays = ref([
 </script>
 ```
 
+:::
+
 ## 禁用日期
 
 可以通过 `disabledDate` 函数禁用特定日期。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
     :disabled-date="(date) => date.getDay() === 0 || date.getDay() === 6"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :disabled-date="disabledDate" />
+  <ExCalendar
+    v-model="selectedDate"
+    :disabled-date="date => date.getDay() === 0 || date.getDay() === 6"
+  />
 </template>
 
 <script setup>
 import { ref } from 'vue';
 
 const selectedDate = ref(new Date());
-
-// 禁用周末
-const disabledDate = date => {
-  return date.getDay() === 0 || date.getDay() === 6;
-};
 </script>
 ```
+
+:::
 
 ## 全屏模式
 
 日历可以全屏显示。
 
+::: raw
 <div class="demo-container">
   <ExCalendar 
     v-model="selectedDate" 
@@ -393,12 +621,57 @@ const disabledDate = date => {
     :events="events"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCalendar v-model="selectedDate" :fullscreen="true" :events="events" />
+  <ExCalendar
+    v-model="selectedDate"
+    :fullscreen="true"
+    :events="events"
+  />
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const selectedDate = ref(new Date());
+const events = ref([
+  {
+    id: 1,
+    title: '团队会议',
+    date: new Date(2025, 9, 23),
+    type: 'primary',
+    description: '讨论Q1计划',
+  },
+  {
+    id: 2,
+    title: '项目截止',
+    date: new Date(2025, 9, 22),
+    type: 'danger',
+    description: '提交最终版本',
+  },
+  {
+    id: 3,
+    title: '培训课程',
+    date: new Date(2025, 9, 25),
+    type: 'success',
+    description: 'Vue 3 进阶',
+  },
+  {
+    id: 4,
+    title: '代码审查',
+    date: new Date(2025, 9, 24),
+    type: 'warning',
+    description: '审查新功能代码',
+  },
+]);
+</script>
 ```
+
+:::
 
 ## API
 

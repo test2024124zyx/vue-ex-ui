@@ -13,22 +13,52 @@ type BuiltinValidatorFn = (
   callback: (error?: string) => void
 ) => void;
 
+const UNSAFE_FIELD_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+const MAX_ARRAY_INDEX = 2 ** 32 - 2;
+type FieldContainer = Record<string, unknown> | unknown[];
+
+/**
+ * 将点分隔字段路径解析为安全片段。空片段与原型链关键字都不能参与读写。
+ */
+function parseFieldPath(prop: string): string[] | null {
+  const keys = prop.split('.');
+  if (
+    keys.length === 0 ||
+    keys.some(key => key.length === 0 || UNSAFE_FIELD_PATH_SEGMENTS.has(key))
+  ) {
+    return null;
+  }
+  return keys;
+}
+
+function isFieldContainer(value: unknown): value is FieldContainer {
+  return typeof value === 'object' && value !== null;
+}
+
+function isArrayIndex(key: string): boolean {
+  if (!/^(?:0|[1-9]\d*)$/u.test(key)) return false;
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && index <= MAX_ARRAY_INDEX;
+}
+
+function readOwn(container: FieldContainer, key: string): unknown {
+  if (!Object.prototype.hasOwnProperty.call(container, key)) return undefined;
+  return (container as Record<string, unknown>)[key];
+}
+
+function writeOwn(container: FieldContainer, key: string, value: unknown): void {
+  (container as Record<string, unknown>)[key] = value;
+}
+
 // 获取字段值
 export function getFieldValue(model: Record<string, unknown>, prop: string): unknown {
-  const keys = prop.split('.');
+  const keys = parseFieldPath(prop);
+  if (!keys) return undefined;
   let value: unknown = model;
 
   for (const key of keys) {
-    if (
-      value &&
-      typeof value === 'object' &&
-      value !== null &&
-      key in (value as Record<string, unknown>)
-    ) {
-      value = (value as Record<string, unknown>)[key];
-    } else {
-      return undefined;
-    }
+    if (!isFieldContainer(value)) return undefined;
+    value = readOwn(value, key);
   }
 
   return value;
@@ -36,18 +66,23 @@ export function getFieldValue(model: Record<string, unknown>, prop: string): unk
 
 // 设置字段值
 export function setFieldValue(model: Record<string, unknown>, prop: string, value: unknown): void {
-  const keys = prop.split('.');
-  const lastKey = keys.pop()!;
-  let target: Record<string, unknown> = model;
+  const keys = parseFieldPath(prop);
+  if (!keys) return;
+  const lastKey = keys.at(-1)!;
+  let target: FieldContainer = model;
 
-  for (const key of keys) {
-    if (!target[key] || typeof target[key] !== 'object') {
-      target[key] = {};
+  for (let index = 0; index < keys.length - 1; index += 1) {
+    const key = keys[index]!;
+    const nextKey = keys[index + 1]!;
+    let child = readOwn(target, key);
+    if (!isFieldContainer(child)) {
+      child = isArrayIndex(nextKey) ? [] : {};
+      writeOwn(target, key, child);
     }
-    target = target[key] as Record<string, unknown>;
+    target = child;
   }
 
-  target[lastKey] = value;
+  writeOwn(target, lastKey, value);
 }
 
 // 重置字段

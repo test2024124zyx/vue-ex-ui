@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h, nextTick, onMounted } from 'vue';
 import ExDrawer from '../../../src/components/drawer/ExDrawer.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { ExDrawerExposed } from '../../../src/components/drawer/types';
 
 describe('ExDrawer', () => {
@@ -128,6 +129,37 @@ describe('ExDrawer', () => {
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
+  it('异步关闭期间重复点击取消只发出一次业务事件', async () => {
+    let resolveGuard: ((value: boolean) => void) | undefined;
+    const beforeClose = vi.fn(() => new Promise<boolean>(resolve => (resolveGuard = resolve)));
+    mountDrawer({ modelValue: true, beforeClose, showFooter: true });
+    await flushPromises();
+    const cancel = document.querySelector<HTMLButtonElement>('.ex-drawer__footer button');
+
+    cancel?.click();
+    cancel?.click();
+    await nextTick();
+
+    expect(wrapper!.emitted('cancel')).toHaveLength(1);
+    expect(beforeClose).toHaveBeenCalledTimes(1);
+    resolveGuard?.(false);
+    await flushPromises();
+  });
+
+  it('自定义 header 为对话框提供可访问名称', async () => {
+    mountDrawer(
+      { modelValue: true },
+      { header: () => h('span', { class: 'custom-header' }, '筛选条件') }
+    );
+    await flushPromises();
+    const panel = document.querySelector('.ex-drawer')!;
+    const header = document.querySelector('.custom-header')?.parentElement;
+
+    expect(header?.id).toBeTruthy();
+    expect(panel.getAttribute('aria-labelledby')).toBe(header?.id);
+    expect(panel.hasAttribute('aria-label')).toBe(false);
+  });
+
   it('destroyOnClose=false 时保留插槽组件实例', async () => {
     const mounted = vi.fn();
     const Child = defineComponent({
@@ -199,8 +231,9 @@ describe('ExDrawer', () => {
     await flushPromises();
     const root = document.querySelector<HTMLElement>('.ex-drawer-wrapper')!;
     const panel = document.querySelector<HTMLElement>('.ex-drawer')!;
-    expect(root.dataset.testid).toBe('drawer-root');
+    expect(root.dataset.testid).toBeUndefined();
     expect(root.style.zIndex).toBe('2000');
+    expect(panel.dataset.testid).toBe('drawer-root');
     expect(panel.classList).toContain('custom-drawer');
     expect(panel.style.maxWidth).toBe('90vw');
   });
@@ -216,5 +249,20 @@ describe('ExDrawer', () => {
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
     exposed.open();
     expect(wrapper!.emitted('update:modelValue')?.at(-1)).toEqual([true]);
+  });
+
+  it('Teleport 包装器继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const provider = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExDrawer, { modelValue: true, title: '标题' }) },
+    });
+    await flushPromises();
+
+    const root = document.querySelector<HTMLElement>('.ex-drawer-wrapper')!;
+    expect(root.style.zIndex).toBe('2450');
+    expect(root.classList).toContain('ex-no-neon');
+    expect(root.classList).toContain('ex-no-animation');
+    provider.unmount();
   });
 });

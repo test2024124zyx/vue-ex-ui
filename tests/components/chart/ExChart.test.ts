@@ -8,6 +8,7 @@ import {
   createDefaultDataZoom,
   createDefaultLegend,
   createDefaultTooltip,
+  formatNumber,
 } from '../../../src/components/chart/utils';
 import * as echarts from 'echarts';
 
@@ -44,7 +45,7 @@ vi.mock('echarts', () => ({
 describe('ExChart', () => {
   let wrapper: ReturnType<typeof mount>;
 
-  const defaultOption: echarts.EChartsOption = {
+  const defaultOption: ExChartProps['option'] = {
     xAxis: {
       type: 'category',
       data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -69,6 +70,12 @@ describe('ExChart', () => {
     expect((tooltip.textStyle as Record<string, unknown>).color).toBe('#1a2332');
     expect((legend.textStyle as Record<string, unknown>).color).toBe('#1a2332');
     expect((dataZoom[0]!.textStyle as Record<string, unknown>).color).toBe('#1a2332');
+  });
+
+  it('格式化负数时同样使用数量级且归一化非法小数位', () => {
+    expect(formatNumber(-1_500, 1)).toBe('-1.5K');
+    expect(formatNumber(-2_500_000, Number.NaN)).toBe('-2.50M');
+    expect(formatNumber(12.34, -4)).toBe('12');
   });
 
   beforeEach(() => {
@@ -372,6 +379,48 @@ describe('ExChart', () => {
     expect(appliedOption.tooltip).toMatchObject({ show: false });
   });
 
+  it('保留调用方显式设置的 tooltip 挂载与边界策略', async () => {
+    wrapper = mount(ExChart, {
+      props: {
+        option: {
+          ...defaultOption,
+          tooltip: { appendToBody: false, confine: true },
+        },
+      },
+    });
+    await flushPromises();
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)?.value as unknown as {
+      setOption: ReturnType<typeof vi.fn>;
+    };
+
+    expect(instance.setOption.mock.calls.at(-1)?.[0].tooltip).toMatchObject({
+      appendToBody: false,
+      confine: true,
+    });
+  });
+
+  it('系统要求减少动画时关闭 ECharts 动画并释放媒体查询监听', async () => {
+    const addEventListener = vi.fn();
+    const removeEventListener = vi.fn();
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener,
+      removeEventListener,
+    }));
+    wrapper = mount(ExChart, { props: { option: defaultOption } });
+    await flushPromises();
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)?.value as unknown as {
+      setOption: ReturnType<typeof vi.fn>;
+    };
+    const appliedOption = instance.setOption.mock.calls.at(-1)?.[0];
+
+    expect(appliedOption).toMatchObject({ animation: false, animationDuration: 0 });
+    expect(addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+
+    wrapper.unmount();
+    expect(removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+  });
+
   it('应用霓虹效果时不修改调用方传入的 option', async () => {
     const option = {
       series: [{ type: 'line', data: [1, 2, 3] }],
@@ -409,13 +458,11 @@ describe('ExChart', () => {
   it('autoResize 动态切换时创建并释放 ResizeObserver', async () => {
     const observe = vi.fn();
     const disconnect = vi.fn();
-    const ResizeObserverMock = vi.fn(function (this: {
-      observe: typeof observe;
-      disconnect: typeof disconnect;
-    }) {
-      this.observe = observe;
-      this.disconnect = disconnect;
-    });
+    class ResizeObserverMock {
+      observe = observe;
+      disconnect = disconnect;
+      unobserve = vi.fn();
+    }
     vi.stubGlobal('ResizeObserver', ResizeObserverMock);
     wrapper = mount(ExChart, {
       props: { option: defaultOption, autoResize: false },

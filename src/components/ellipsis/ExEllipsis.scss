@@ -215,7 +215,7 @@
   }
 }
 
-@media (prefers-contrast: high), (forced-colors: active) {
+@media (prefers-contrast: more), (forced-colors: active) {
   .ex-ellipsis__btn,
   .ex-ellipsis__inline-control::before {
     border-width: 2px;

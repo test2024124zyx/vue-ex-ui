@@ -17,20 +17,44 @@ const longCode = Array.from(
 
 ## 基础用法
 
-<div class="demo-container">
-  <ExCode :code="code" language="javascript" />
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-code :code="code" language="javascript" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExCode :code="code" language="javascript" />
+<script setup>
+import { ref } from 'vue';
+
+const code = ref(`function greet(name) {
+  return \`Hello, \${name}!\`
+}`);
+</script>
+
+<template>
+  <div class="vp-raw demo-container">
+    <ex-code
+      :code="code"
+      language="javascript"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## 行号与行高亮
 
 `highlight-lines` 接收行号数组或 `1,3-5` 格式的字符串，行号以 `start-line` 为基准。
 
-<div class="demo-container">
-  <ExCode
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-code
     :code="code"
     language="javascript"
     line-numbers
@@ -38,32 +62,104 @@ const longCode = Array.from(
     highlight-lines="10,12"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExCode :code="code" language="javascript" line-numbers :start-line="10" highlight-lines="10,12" />
+<script setup>
+import { ref } from 'vue';
+
+const code = ref(`function greet(name) {
+  return \`Hello, \${name}!\`
+}`);
+</script>
+
+<template>
+  <div class="vp-raw demo-container">
+    <ex-code
+      :code="code"
+      language="javascript"
+      line-numbers
+      :start-line="10"
+      highlight-lines="10,12"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## 原位编辑
 
 编辑模式支持 `v-model:code`、Tab 缩进、Shift+Tab 反缩进和多行选区。
 
-<div class="demo-container">
-  <ExCode v-model:code="code" language="javascript" line-numbers editable :tab-size="2" />
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-code v-model:code="code" language="javascript" line-numbers editable :tab-size="2" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExCode v-model:code="code" language="javascript" line-numbers editable :tab-size="2" />
+<script setup>
+import { ref } from 'vue';
+
+const code = ref(`function greet(name) {
+  return \`Hello, \${name}!\`
+}`);
+</script>
+
+<template>
+  <div class="vp-raw demo-container">
+    <ex-code
+      v-model:code="code"
+      language="javascript"
+      line-numbers
+      editable
+      :tab-size="2"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## 高度与换行
 
-<div class="demo-container">
-  <ExCode :code="longCode" language="javascript" line-numbers max-height="200px" wrap />
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-code :code="longCode" language="javascript" line-numbers max-height="200px" wrap />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExCode :code="code" line-numbers max-height="200px" wrap />
+<script setup>
+const longCode = Array.from(
+  { length: 24 },
+  (_, index) => `const item${index + 1} = createItem(${index + 1})`
+).join('\n');
+</script>
+
+<template>
+  <div class="vp-raw demo-container">
+    <ex-code
+      :code="longCode"
+      language="javascript"
+      line-numbers
+      max-height="200px"
+      wrap
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## 文件名与自定义操作
 

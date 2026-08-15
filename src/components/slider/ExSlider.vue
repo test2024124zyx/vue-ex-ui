@@ -16,23 +16,32 @@
       @touchstart="handleTrackClick"
     >
       <!-- 背景轨道 -->
-      <div class="ex-slider__track" />
+      <div class="ex-slider__track"></div>
 
       <!-- 激活轨道 -->
-      <div class="ex-slider__bar" :style="barStyle" />
+      <div
+        class="ex-slider__bar"
+        :style="barStyle"
+      ></div>
 
       <!-- 步进点 -->
-      <div v-if="showStops && stopsData.length > 0" class="ex-slider__stops">
+      <div
+        v-if="showStops && stopsData.length > 0"
+        class="ex-slider__stops"
+      >
         <div
           v-for="stop in stopsData"
           :key="stop"
           class="ex-slider__stop"
           :style="getStopStyle(stop)"
-        />
+        ></div>
       </div>
 
       <!-- 标记 -->
-      <div v-if="hasMarks" class="ex-slider__marks">
+      <div
+        v-if="hasMarks"
+        class="ex-slider__marks"
+      >
         <div
           v-for="(mark, key) in normalizedMarks"
           :key="key"
@@ -58,6 +67,7 @@
         :aria-valuemax="max"
         :aria-valuenow="currentValue as number"
         :aria-label="ariaLabel || t('slider.button')"
+        :aria-description="ariaDescription"
         :aria-disabled="disabled"
         @mousedown="handleThumbMouseDown($event, 0)"
         @touchstart="handleThumbMouseDown($event, 0)"
@@ -87,7 +97,8 @@
           :aria-valuemin="min"
           :aria-valuemax="(currentValue as [number, number])[1]"
           :aria-valuenow="(currentValue as [number, number])[0]"
-          :aria-label="ariaLabel || t('slider.startValue')"
+          :aria-label="getRangeThumbAriaLabel(0)"
+          :aria-description="ariaDescription"
           :aria-disabled="disabled"
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
@@ -114,7 +125,8 @@
           :aria-valuemin="(currentValue as [number, number])[0]"
           :aria-valuemax="max"
           :aria-valuenow="(currentValue as [number, number])[1]"
-          :aria-label="ariaLabel || t('slider.endValue')"
+          :aria-label="getRangeThumbAriaLabel(1)"
+          :aria-description="ariaDescription"
           :aria-disabled="disabled"
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
@@ -133,7 +145,10 @@
     </div>
 
     <!-- 输入框 -->
-    <div v-if="showInput" class="ex-slider__input-wrapper">
+    <div
+      v-if="showInput"
+      class="ex-slider__input-wrapper"
+    >
       <template v-if="!range">
         <input
           v-model.number="inputValue"
@@ -141,7 +156,7 @@
           class="ex-slider__input"
           :min="min"
           :max="max"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
           :aria-label="t('slider.input')"
           @change="handleInputChange"
@@ -154,7 +169,7 @@
           class="ex-slider__input"
           :min="min"
           :max="(currentValue as [number, number])[1]"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
           :aria-label="t('slider.startInput')"
           @change="handleInputChange"
@@ -166,7 +181,7 @@
           class="ex-slider__input"
           :min="(currentValue as [number, number])[0]"
           :max="max"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
           :aria-label="t('slider.endInput')"
           @change="handleInputChange"
@@ -230,6 +245,7 @@ const isHovering = ref(false);
 const isHoveringStart = ref(false);
 const isHoveringEnd = ref(false);
 const activeThumbIndex = ref(0);
+const MAX_RENDERED_STOPS = 1000;
 
 // Input values
 const inputValue = ref(0);
@@ -264,6 +280,10 @@ const trackWrapperStyle = computed(() => {
   return undefined;
 });
 
+const effectiveStep = computed(() => {
+  return Number.isFinite(props.step) && props.step > 0 ? props.step : 1;
+});
+
 const barStyle = computed(() => {
   const isVertical = props.direction === 'vertical';
   const isReverse = props.reverse;
@@ -294,8 +314,10 @@ const barStyle = computed(() => {
 
 const stopsData = computed(() => {
   if (!props.showStops) return [];
+  if (!Number.isFinite(props.step) || props.step <= 0 || props.max <= props.min) return [];
   const stops: number[] = [];
   const stepCount = (props.max - props.min) / props.step;
+  if (!Number.isFinite(stepCount) || stepCount > MAX_RENDERED_STOPS) return [];
 
   for (let i = 1; i < stepCount; i++) {
     stops.push(props.min + i * props.step);
@@ -329,7 +351,9 @@ const normalizedMarks = computed(() => {
 
 // 工具函数
 const getPercent = (value: number): number => {
-  return ((value - props.min) / (props.max - props.min)) * 100;
+  const span = props.max - props.min;
+  if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, ((value - props.min) / span) * 100));
 };
 
 const getValueFromPercent = (percent: number): number => {
@@ -338,14 +362,22 @@ const getValueFromPercent = (percent: number): number => {
 };
 
 const roundToStep = (value: number): number => {
-  const remainder = (value - props.min) % props.step;
-  let rounded = value - remainder;
+  const normalizedValue = Number.isFinite(value) ? value : props.min;
+  const step = effectiveStep.value;
+  const remainder = (normalizedValue - props.min) % step;
+  let rounded = normalizedValue - remainder;
 
-  if (Math.abs(remainder) >= props.step / 2) {
-    rounded += remainder > 0 ? props.step : -props.step;
+  if (Math.abs(remainder) >= step / 2) {
+    rounded += remainder > 0 ? step : -step;
   }
 
+  if (props.max <= props.min) return props.min;
   return Math.max(props.min, Math.min(props.max, rounded));
+};
+
+const getRangeThumbAriaLabel = (thumbIndex: number) => {
+  const thumbLabel = thumbIndex === 0 ? t('slider.startValue') : t('slider.endValue');
+  return props.ariaLabel ? `${props.ariaLabel} ${thumbLabel}` : thumbLabel;
 };
 
 const getThumbStyle = (value: number) => {
@@ -408,12 +440,14 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
   let percent: number;
 
   if (isVertical) {
+    if (rect.height <= 0) return props.min;
     const position = clientY - rect.top;
     percent = (position / rect.height) * 100;
     if (!isReverse) {
       percent = 100 - percent;
     }
   } else {
+    if (rect.width <= 0) return props.min;
     const position = clientX - rect.left;
     percent = (position / rect.width) * 100;
     if (isReverse) {
@@ -480,12 +514,17 @@ const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number
 
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
-  document.addEventListener('touchmove', handleMouseMove);
+  document.addEventListener('touchmove', handleMouseMove, { passive: false });
   document.addEventListener('touchend', handleMouseUp);
+  document.addEventListener('touchcancel', handleMouseUp);
 };
 
 const handleMouseMove = (event: MouseEvent | TouchEvent) => {
   if (props.disabled) return;
+
+  if ('touches' in event && event.cancelable) {
+    event.preventDefault();
+  }
 
   const { x, y } = getPositionFromEvent(event);
   const value = getValueFromPosition(x, y);
@@ -515,6 +554,7 @@ const handleMouseUp = () => {
   document.removeEventListener('mouseup', handleMouseUp);
   document.removeEventListener('touchmove', handleMouseMove);
   document.removeEventListener('touchend', handleMouseUp);
+  document.removeEventListener('touchcancel', handleMouseUp);
 
   // 拖拽结束时提交一次 change
   if (wasDragging) {
@@ -584,19 +624,29 @@ const handleInputChange = () => {
 
 // 监听
 watch(
-  () => props.modelValue,
-  newValue => {
-    currentValue.value = newValue;
+  [() => props.modelValue, () => props.range],
+  ([newValue, isRange]) => {
+    const scalarValue = Array.isArray(newValue) ? newValue[0] : newValue;
+    const normalizedScalar = roundToStep(scalarValue ?? props.min);
 
-    if (!props.range) {
-      inputValue.value = newValue as number;
-    } else {
-      const [start, end] = newValue as [number, number];
-      inputStartValue.value = start;
-      inputEndValue.value = end;
+    if (!isRange) {
+      currentValue.value = normalizedScalar;
+      inputValue.value = normalizedScalar;
+      return;
     }
+
+    const source = Array.isArray(newValue)
+      ? newValue
+      : ([normalizedScalar, normalizedScalar] as [number, number]);
+    const start = roundToStep(source[0] ?? props.min);
+    const end = roundToStep(source[1] ?? start);
+    const normalizedStart = Math.min(start, end);
+    const normalizedEnd = Math.max(start, end);
+    currentValue.value = [normalizedStart, normalizedEnd];
+    inputStartValue.value = normalizedStart;
+    inputEndValue.value = normalizedEnd;
   },
-  { immediate: true }
+  { immediate: true, flush: 'sync' }
 );
 
 // 悬停事件
@@ -622,6 +672,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('mouseup', handleMouseUp);
   document.removeEventListener('touchmove', handleMouseMove);
   document.removeEventListener('touchend', handleMouseUp);
+  document.removeEventListener('touchcancel', handleMouseUp);
 });
 
 // 暴露的方法

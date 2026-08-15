@@ -68,52 +68,96 @@ onBeforeUnmount(() => {
 
 Progress 组件设置 `percentage` 属性即可，表示进度条对应的百分比。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="50" />
   <ExProgress :percentage="100" status="success" />
   <ExProgress :percentage="80" status="warning" />
   <ExProgress :percentage="30" status="exception" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
   <ExProgress :percentage="50" />
-  <ExProgress :percentage="100" status="success" />
-  <ExProgress :percentage="80" status="warning" />
-  <ExProgress :percentage="30" status="exception" />
+  <ExProgress
+    :percentage="100"
+    status="success"
+  />
+  <ExProgress
+    :percentage="80"
+    status="warning"
+  />
+  <ExProgress
+    :percentage="30"
+    status="exception"
+  />
 </template>
 ```
+
+:::
 
 ## 百分比内显
 
 通过 `text-inside` 属性可以将进度条文字放在进度条内部。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="70" text-inside :stroke-width="20" />
   <ExProgress :percentage="100" text-inside :stroke-width="20" status="success" />
   <ExProgress :percentage="80" text-inside :stroke-width="20" status="warning" />
   <ExProgress :percentage="50" text-inside :stroke-width="20" status="exception" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress :percentage="70" text-inside :stroke-width="20" />
-  <ExProgress :percentage="100" text-inside :stroke-width="20" status="success" />
-  <ExProgress :percentage="80" text-inside :stroke-width="20" status="warning" />
-  <ExProgress :percentage="50" text-inside :stroke-width="20" status="exception" />
+  <ExProgress
+    :percentage="70"
+    text-inside
+    :stroke-width="20"
+  />
+  <ExProgress
+    :percentage="100"
+    text-inside
+    :stroke-width="20"
+    status="success"
+  />
+  <ExProgress
+    :percentage="80"
+    text-inside
+    :stroke-width="20"
+    status="warning"
+  />
+  <ExProgress
+    :percentage="50"
+    text-inside
+    :stroke-width="20"
+    status="exception"
+  />
 </template>
 ```
+
+:::
 
 ## 自定义颜色
 
 可以通过 `color` 属性来设置进度条的颜色。支持字符串、函数和渐变色数组。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="70" color="#00f0ff" />
   <ExProgress :percentage="80" color="#ff007f" />
   <ExProgress :percentage="60" :color="customColorMethod" />
   <ExProgress :percentage="100" :color="customColors" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -137,41 +181,87 @@ const customColorMethod = percentage => {
 </script>
 
 <template>
-  <ExProgress :percentage="70" color="#00f0ff" />
-  <ExProgress :percentage="80" color="#ff007f" />
-  <ExProgress :percentage="60" :color="customColorMethod" />
-  <ExProgress :percentage="100" :color="customColors" />
+  <ExProgress
+    :percentage="70"
+    color="#00f0ff"
+  />
+  <ExProgress
+    :percentage="80"
+    color="#ff007f"
+  />
+  <ExProgress
+    :percentage="60"
+    :color="customColorMethod"
+  />
+  <ExProgress
+    :percentage="100"
+    :color="customColors"
+  />
 </template>
 ```
+
+:::
 
 ## 条纹进度条
 
 通过 `striped` 属性可以显示条纹，`striped-flow` 属性可以让条纹流动。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="70" striped :stroke-width="20" />
   <ExProgress :percentage="80" striped striped-flow :stroke-width="20" status="success" />
   <ExProgress :percentage="60" striped striped-flow :stroke-width="20" status="warning" />
   <ExProgress :percentage="50" striped striped-flow :stroke-width="20" status="exception" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress :percentage="70" striped :stroke-width="20" />
-  <ExProgress :percentage="80" striped striped-flow :stroke-width="20" status="success" />
-  <ExProgress :percentage="60" striped striped-flow :stroke-width="20" status="warning" />
-  <ExProgress :percentage="50" striped striped-flow :stroke-width="20" status="exception" />
+  <ExProgress
+    :percentage="70"
+    striped
+    :stroke-width="20"
+  />
+  <ExProgress
+    :percentage="80"
+    striped
+    striped-flow
+    :stroke-width="20"
+    status="success"
+  />
+  <ExProgress
+    :percentage="60"
+    striped
+    striped-flow
+    :stroke-width="20"
+    status="warning"
+  />
+  <ExProgress
+    :percentage="50"
+    striped
+    striped-flow
+    :stroke-width="20"
+    status="exception"
+  />
 </template>
 ```
+
+:::
 
 ## 自定义文字格式
 
 通过 `format` 属性可以自定义文字格式。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="100" :format="format" />
   <ExProgress :percentage="100" :format="(percentage) => `已完成 ${percentage}%`" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -181,47 +271,83 @@ const format = percentage => {
 </script>
 
 <template>
-  <ExProgress :percentage="100" :format="format" />
-  <ExProgress :percentage="100" :format="percentage => `已完成 ${percentage}%`" />
+  <ExProgress
+    :percentage="100"
+    :format="format"
+  />
+  <ExProgress
+    :percentage="100"
+    :format="percentage => `已完成 ${percentage}%`"
+  />
 </template>
 ```
+
+:::
 
 ## 不显示文字
 
 通过 `show-text` 属性可以隐藏进度文字。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="50" :show-text="false" />
   <ExProgress :percentage="100" :show-text="false" status="success" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress :percentage="50" :show-text="false" />
-  <ExProgress :percentage="100" :show-text="false" status="success" />
+  <ExProgress
+    :percentage="50"
+    :show-text="false"
+  />
+  <ExProgress
+    :percentage="100"
+    :show-text="false"
+    status="success"
+  />
 </template>
 ```
+
+:::
 
 ## 不显示图标
 
 通过 `show-icon` 属性可以隐藏状态图标。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="100" status="success" :show-icon="false" />
   <ExProgress :percentage="50" status="exception" :show-icon="false" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress :percentage="100" status="success" :show-icon="false" />
-  <ExProgress :percentage="50" status="exception" :show-icon="false" />
+  <ExProgress
+    :percentage="100"
+    status="success"
+    :show-icon="false"
+  />
+  <ExProgress
+    :percentage="50"
+    status="exception"
+    :show-icon="false"
+  />
 </template>
 ```
+
+:::
 
 ## 动态控制
 
 通过按钮控制进度条的进度。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 16px;">
   <ExProgress :percentage="percentage" />
   <div style="display: flex; gap: 12px;">
@@ -229,6 +355,9 @@ const format = percentage => {
     <ExButton @click="increase">+</ExButton>
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -253,37 +382,58 @@ const decrease = () => {
 
 <template>
   <ExProgress :percentage="percentage" />
-  <div>
+  <div style="display: flex; gap: 12px;">
     <ExButton @click="decrease">-</ExButton>
     <ExButton @click="increase">+</ExButton>
   </div>
 </template>
 ```
 
+:::
+
 ## 不同尺寸
 
 通过 `stroke-width` 属性可以设置进度条的高度。
 
+::: raw
 <div class="demo-container">
   <ExProgress :percentage="50" :stroke-width="6" />
   <ExProgress :percentage="50" :stroke-width="8" />
   <ExProgress :percentage="50" :stroke-width="12" />
   <ExProgress :percentage="50" :stroke-width="16" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress :percentage="50" :stroke-width="6" />
-  <ExProgress :percentage="50" :stroke-width="8" />
-  <ExProgress :percentage="50" :stroke-width="12" />
-  <ExProgress :percentage="50" :stroke-width="16" />
+  <ExProgress
+    :percentage="50"
+    :stroke-width="6"
+  />
+  <ExProgress
+    :percentage="50"
+    :stroke-width="8"
+  />
+  <ExProgress
+    :percentage="50"
+    :stroke-width="12"
+  />
+  <ExProgress
+    :percentage="50"
+    :stroke-width="16"
+  />
 </template>
 ```
+
+:::
 
 ## 赛博朋克主题示例
 
 展示赛博朋克场景中的进度条应用。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 20px;">
   <div>
     <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
@@ -314,11 +464,33 @@ const decrease = () => {
     <ExProgress :percentage="75" :color="customColors" :stroke-width="16" text-inside striped striped-flow />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
+<script setup lang="ts">
+const customColors = [
+  { color: '#ef4444', percentage: 20 },
+  { color: '#f59e0b', percentage: 40 },
+  { color: '#10b981', percentage: 60 },
+  { color: '#3b82f6', percentage: 80 },
+  { color: '#8b5cf6', percentage: 100 },
+];
+</script>
+
 <template>
   <div>
-    <div>生命值</div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/heart-fill.svg"
+        alt="生命值"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 4px #ef4444);"
+      />
+      生命值
+    </div>
     <ExProgress
       :percentage="85"
       color="#ef4444"
@@ -330,7 +502,16 @@ const decrease = () => {
   </div>
 
   <div>
-    <div>能量值</div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/flashlight-fill.svg"
+        alt="能量值"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 4px #3b82f6);"
+      />
+      能量值
+    </div>
     <ExProgress
       :percentage="60"
       color="#3b82f6"
@@ -342,7 +523,16 @@ const decrease = () => {
   </div>
 
   <div>
-    <div>护盾值</div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/shield-fill.svg"
+        alt="护盾值"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 4px #10b981);"
+      />
+      护盾值
+    </div>
     <ExProgress
       :percentage="40"
       color="#10b981"
@@ -354,7 +544,16 @@ const decrease = () => {
   </div>
 
   <div>
-    <div>经验值</div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/star-fill.svg"
+        alt="经验值"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 4px #f59e0b);"
+      />
+      经验值 (等级 50)
+    </div>
     <ExProgress
       :percentage="75"
       :color="customColors"
@@ -367,10 +566,13 @@ const decrease = () => {
 </template>
 ```
 
+:::
+
 ## 环形进度条
 
 使用 `type="circle"` 可以显示环形进度条，支持渐变色和霓虹发光效果。
 
+::: raw
 <div class="demo-container" style="display: flex; gap: 24px; align-items: center; justify-content: center; flex-wrap: wrap;">
   <ExProgress type="circle" :percentage="75" />
   <ExProgress type="circle" :percentage="100" status="success" />
@@ -378,21 +580,48 @@ const decrease = () => {
   <ExProgress type="circle" :percentage="50" status="exception" />
   <ExProgress type="circle" :percentage="60" color="#00f0ff" :width="140" :stroke-width="10" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExProgress type="circle" :percentage="75" />
-  <ExProgress type="circle" :percentage="100" status="success" />
-  <ExProgress type="circle" :percentage="80" status="warning" />
-  <ExProgress type="circle" :percentage="50" status="exception" />
-  <ExProgress type="circle" :percentage="60" color="#00f0ff" :width="140" :stroke-width="10" />
+  <ExProgress
+    type="circle"
+    :percentage="75"
+  />
+  <ExProgress
+    type="circle"
+    :percentage="100"
+    status="success"
+  />
+  <ExProgress
+    type="circle"
+    :percentage="80"
+    status="warning"
+  />
+  <ExProgress
+    type="circle"
+    :percentage="50"
+    status="exception"
+  />
+  <ExProgress
+    type="circle"
+    :percentage="60"
+    color="#00f0ff"
+    :width="140"
+    :stroke-width="10"
+  />
 </template>
 ```
+
+:::
 
 ## 波浪进度条（矩形）
 
 使用 `type="wave"` 可以显示流动的波浪效果进度条，营造动态科技感。波浪会自动流动，展现真实的液体效果。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 16px;">
   <ExProgress type="wave" :percentage="wavePercentage" />
   <ExProgress type="wave" :percentage="75" />
@@ -401,21 +630,67 @@ const decrease = () => {
   <ExProgress type="wave" :percentage="40" status="exception" />
   <ExProgress type="wave" :percentage="85" color="#00f0ff" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+
+const wavePercentage = ref(45);
+let autoInterval: ReturnType<typeof setInterval> | undefined;
+
+onMounted(() => {
+  autoInterval = setInterval(() => {
+    wavePercentage.value = (wavePercentage.value + 1) % 101;
+  }, 100);
+});
+
+onBeforeUnmount(() => {
+  if (autoInterval) clearInterval(autoInterval);
+});
+</script>
+
 <template>
-  <ExProgress type="wave" :percentage="75" />
-  <ExProgress type="wave" :percentage="100" status="success" />
-  <ExProgress type="wave" :percentage="60" status="warning" />
-  <ExProgress type="wave" :percentage="40" status="exception" />
-  <ExProgress type="wave" :percentage="85" color="#00f0ff" />
+  <ExProgress
+    type="wave"
+    :percentage="wavePercentage"
+  />
+  <ExProgress
+    type="wave"
+    :percentage="75"
+  />
+  <ExProgress
+    type="wave"
+    :percentage="100"
+    status="success"
+  />
+  <ExProgress
+    type="wave"
+    :percentage="60"
+    status="warning"
+  />
+  <ExProgress
+    type="wave"
+    :percentage="40"
+    status="exception"
+  />
+  <ExProgress
+    type="wave"
+    :percentage="85"
+    color="#00f0ff"
+  />
 </template>
 ```
+
+:::
 
 ## 波浪进度条（圆形）
 
 使用 `type="wave-circle"` 可以显示圆形波浪效果进度条，更具视觉冲击力。波浪在圆形容器中流动，营造出液体充盈的效果。
 
+::: raw
 <div class="demo-container" style="display: flex; gap: 24px; align-items: center; justify-content: center; flex-wrap: wrap;">
   <ExProgress type="wave-circle" :percentage="waveCirclePercentage" />
   <ExProgress type="wave-circle" :percentage="75" />
@@ -424,21 +699,70 @@ const decrease = () => {
   <ExProgress type="wave-circle" :percentage="40" status="exception" :width="140" />
   <ExProgress type="wave-circle" :percentage="85" color="#ff007f" :width="160" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+
+const waveCirclePercentage = ref(65);
+let autoInterval: ReturnType<typeof setInterval> | undefined;
+
+onMounted(() => {
+  autoInterval = setInterval(() => {
+    waveCirclePercentage.value = (waveCirclePercentage.value + 1) % 101;
+  }, 100);
+});
+
+onBeforeUnmount(() => {
+  if (autoInterval) clearInterval(autoInterval);
+});
+</script>
+
 <template>
-  <ExProgress type="wave-circle" :percentage="75" />
-  <ExProgress type="wave-circle" :percentage="100" status="success" />
-  <ExProgress type="wave-circle" :percentage="60" status="warning" :width="140" />
-  <ExProgress type="wave-circle" :percentage="40" status="exception" :width="140" />
-  <ExProgress type="wave-circle" :percentage="85" color="#ff007f" :width="160" />
+  <ExProgress
+    type="wave-circle"
+    :percentage="waveCirclePercentage"
+  />
+  <ExProgress
+    type="wave-circle"
+    :percentage="75"
+  />
+  <ExProgress
+    type="wave-circle"
+    :percentage="100"
+    status="success"
+  />
+  <ExProgress
+    type="wave-circle"
+    :percentage="60"
+    status="warning"
+    :width="140"
+  />
+  <ExProgress
+    type="wave-circle"
+    :percentage="40"
+    status="exception"
+    :width="140"
+  />
+  <ExProgress
+    type="wave-circle"
+    :percentage="85"
+    color="#ff007f"
+    :width="160"
+  />
 </template>
 ```
+
+:::
 
 ## 波浪效果对比
 
 展示不同振幅的波浪效果（速度固定为 0.02）。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 20px;">
   <div>
     <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
@@ -446,14 +770,14 @@ const decrease = () => {
     </div>
     <ExProgress type="wave" :percentage="65" />
   </div>
-  
+
   <div>
     <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
       平缓波浪（振幅: 5px）
     </div>
     <ExProgress type="wave" :percentage="65" :wave-amplitude="5" color="#10b981" />
   </div>
-  
+
   <div>
     <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
       激烈波浪（振幅: 15px）
@@ -461,24 +785,55 @@ const decrease = () => {
     <ExProgress type="wave" :percentage="65" :wave-amplitude="15" color="#f59e0b" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 标准波浪 -->
-  <ExProgress type="wave" :percentage="65" />
+  <div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      标准波浪（振幅: 10px）
+    </div>
+    <ExProgress
+      type="wave"
+      :percentage="65"
+    />
+  </div>
 
-  <!-- 平缓波浪 -->
-  <ExProgress type="wave" :percentage="65" :wave-amplitude="5" />
+  <div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      平缓波浪（振幅: 5px）
+    </div>
+    <ExProgress
+      type="wave"
+      :percentage="65"
+      :wave-amplitude="5"
+      color="#10b981"
+    />
+  </div>
 
-  <!-- 激烈波浪 -->
-  <ExProgress type="wave" :percentage="65" :wave-amplitude="15" />
+  <div>
+    <div style="margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      激烈波浪（振幅: 15px）
+    </div>
+    <ExProgress
+      type="wave"
+      :percentage="65"
+      :wave-amplitude="15"
+      color="#f59e0b"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 赛博朋克游戏场景
 
 展示不同类型进度条在游戏场景中的应用。
 
+::: raw
 <div class="demo-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
   <div style="text-align: center;">
     <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
@@ -487,7 +842,7 @@ const decrease = () => {
     </div>
     <ExProgress type="circle" :percentage="85" color="#00f0ff" :width="120" />
   </div>
-  
+
   <div style="text-align: center;">
     <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
       <img src="https://api.iconify.design/ri/trophy-fill.svg" alt="成就进度" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" />
@@ -495,7 +850,7 @@ const decrease = () => {
     </div>
     <ExProgress type="circle" :percentage="60" status="warning" :width="120" />
   </div>
-  
+
   <div style="text-align: center;">
     <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
       <img src="https://api.iconify.design/ri/battery-fill.svg" alt="能量储备" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" />
@@ -503,7 +858,7 @@ const decrease = () => {
     </div>
     <ExProgress type="wave-circle" :percentage="75" color="#3b82f6" :width="120" />
   </div>
-  
+
   <div style="text-align: center;">
     <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
       <img src="https://api.iconify.design/ri/download-cloud-fill.svg" alt="下载进度" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" />
@@ -512,30 +867,91 @@ const decrease = () => {
     <ExProgress type="wave-circle" :percentage="45" status="success" :width="120" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <div>
-    <div>玩家等级</div>
-    <ExProgress type="circle" :percentage="85" color="#00f0ff" :width="120" />
+  <div style="text-align: center;">
+    <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/user-fill.svg"
+        alt="玩家等级"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px;"
+      />
+      玩家等级
+    </div>
+    <ExProgress
+      type="circle"
+      :percentage="85"
+      color="#00f0ff"
+      :width="120"
+    />
   </div>
 
-  <div>
-    <div>成就进度</div>
-    <ExProgress type="circle" :percentage="60" status="warning" :width="120" />
+  <div style="text-align: center;">
+    <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/trophy-fill.svg"
+        alt="成就进度"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px;"
+      />
+      成就进度
+    </div>
+    <ExProgress
+      type="circle"
+      :percentage="60"
+      status="warning"
+      :width="120"
+    />
   </div>
 
-  <div>
-    <div>能量储备</div>
-    <ExProgress type="wave-circle" :percentage="75" color="#3b82f6" :width="120" />
+  <div style="text-align: center;">
+    <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/battery-fill.svg"
+        alt="能量储备"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px;"
+      />
+      能量储备
+    </div>
+    <ExProgress
+      type="wave-circle"
+      :percentage="75"
+      color="#3b82f6"
+      :width="120"
+    />
   </div>
 
-  <div>
-    <div>下载进度</div>
-    <ExProgress type="wave-circle" :percentage="45" status="success" :width="120" />
+  <div style="text-align: center;">
+    <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
+      <img
+        src="https://api.iconify.design/ri/download-cloud-fill.svg"
+        alt="下载进度"
+        width="16"
+        height="16"
+        style="vertical-align: middle; margin-right: 4px;"
+      />
+      下载进度
+    </div>
+    <ExProgress
+      type="wave-circle"
+      :percentage="45"
+      status="success"
+      :width="120"
+    />
   </div>
 </template>
 ```
+
+:::
 
 ## API
 

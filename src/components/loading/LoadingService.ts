@@ -1,6 +1,10 @@
 import { createApp, h, inject, shallowReactive } from 'vue';
-import type { App, InjectionKey, Plugin } from 'vue';
+import type { App, AppContext, InjectionKey, Plugin } from 'vue';
 import { generateId } from '../../utils/id';
+import { useComponentServiceScope } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
 import ExLoading from './ExLoading.vue';
 import { resolveLoadingTarget } from './loading-utils';
 import type {
@@ -31,9 +35,17 @@ export const LOADING_SERVICE_KEY: InjectionKey<LoadingService> = Symbol('ExLoadi
 class LoadingServiceController implements LoadingService {
   private readonly records = new Map<string, LoadingRecord>();
   private readonly defaults: LoadingServiceDefaults;
+  private readonly appContext: AppContext | undefined;
 
-  constructor(defaults: LoadingServiceDefaults = {}) {
+  constructor(defaults: LoadingServiceDefaults = {}, appContext?: AppContext) {
     this.defaults = { ...defaults };
+    this.appContext = appContext;
+  }
+
+  private resolveScopedZIndex(): number | undefined {
+    const config = this.appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined;
   }
 
   private normalizeConfig(config: LoadingServiceConfig): LoadingServiceConfig {
@@ -58,12 +70,15 @@ class LoadingServiceController implements LoadingService {
       mask: merged.mask ?? true,
       maskClosable: merged.maskClosable ?? false,
       target: target ?? undefined,
-      zIndex: merged.zIndex,
+      zIndex: merged.zIndex ?? this.resolveScopedZIndex(),
       lockScroll: merged.lockScroll ?? true,
     };
   }
 
   show(config: LoadingServiceConfig = {}): LoadingServiceInstance {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      throw new Error('Loading 服务只能在浏览器环境中创建实例');
+    }
     const normalized = this.normalizeConfig(config);
     const id = generateId('loading');
     const state = shallowReactive<LoadingRenderState>({
@@ -112,6 +127,10 @@ class LoadingServiceController implements LoadingService {
         }),
     });
 
+    if (this.appContext) {
+      app._context.provides = Object.create(this.appContext.provides) as AppContext['provides'];
+    }
+
     Object.assign(record, {
       app,
       config: { ...config },
@@ -139,8 +158,11 @@ class LoadingServiceController implements LoadingService {
 }
 
 /** 创建拥有独立实例集合的 Loading 服务。 */
-export function createLoadingService(defaults: LoadingServiceDefaults = {}): LoadingService {
-  return new LoadingServiceController(defaults);
+export function createLoadingService(
+  defaults: LoadingServiceDefaults = {},
+  appContext?: AppContext
+): LoadingService {
+  return new LoadingServiceController(defaults, appContext);
 }
 
 export const loadingService = createLoadingService();
@@ -181,6 +203,14 @@ export function destroyLoading(): void {
 
 /** 获取当前应用注入的服务；未安装插件时回退为默认服务。 */
 export function useLoadingService(): LoadingService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(
+      LOADING_SERVICE_KEY,
+      appContext => createLoadingService({}, appContext),
+      service => service.destroyAll()
+    );
+  }
   return inject(LOADING_SERVICE_KEY, loadingService);
 }
 
@@ -195,10 +225,11 @@ const normalizeDirectiveValue = (
 };
 
 export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options = {}) => {
-  const service = createLoadingService(options.defaults);
+  const service = createLoadingService(options.defaults, app._context);
   const directiveInstances = new WeakMap<HTMLElement, LoadingServiceInstance>();
   app.config.globalProperties.$loading = service;
   app.provide(LOADING_SERVICE_KEY, service);
+  app.onUnmount(() => service.destroyAll());
 
   if (options.enableDirective === false) return;
 

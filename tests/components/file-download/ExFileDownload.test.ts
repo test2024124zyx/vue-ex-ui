@@ -299,6 +299,44 @@ describe('ExFileDownload', () => {
       expect(wrapper.emitted('progress')).toEqual([[{ loaded: 3, total: null, percent: null }]]);
     });
 
+    it('Content-Length 或流式累计超过 maxBytes 时中止并返回大小错误', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () =>
+          createFetchResponse({
+            headers: { 'content-length': '10' },
+            chunks: [new Uint8Array([1])],
+          })
+        )
+      );
+      const declared = mountDownload({
+        props: { url: '/large.bin', transport: 'fetch', maxBytes: 4 },
+      });
+
+      const declaredResult = await exposed(declared).download();
+      expect(declaredResult.outcome).toBe('error');
+      expect(declared.emitted('error')?.[0]?.[0]).toMatchObject({ code: 'size-exceeded' });
+      expect(createObjectURL).not.toHaveBeenCalled();
+
+      declared.unmount();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () =>
+          createFetchResponse({
+            chunks: [new Uint8Array([1, 2, 3]), new Uint8Array([4, 5, 6])],
+          })
+        )
+      );
+      const streamed = mountDownload({
+        props: { url: '/stream.bin', transport: 'fetch', maxBytes: 4 },
+      });
+
+      const streamedResult = await exposed(streamed).download();
+      expect(streamedResult.outcome).toBe('error');
+      expect(streamed.emitted('error')?.[0]?.[0]).toMatchObject({ code: 'size-exceeded' });
+      expect(createObjectURL).not.toHaveBeenCalled();
+    });
+
     it('响应流不可用时回退 response.blob 并发出完成进度', async () => {
       const fallbackBlob = new Blob(['ready'], { type: 'text/plain' });
       const response = createFetchResponse({ body: false, fallbackBlob });
@@ -529,6 +567,23 @@ describe('ExFileDownload', () => {
 
       exposed(wrapper).cancel();
       await resultPromise;
+    });
+
+    it('XHR 进度超过 maxBytes 时主动中止并返回大小错误', async () => {
+      const wrapper = mountDownload({
+        props: { url: '/large.bin', transport: 'xhr', maxBytes: 4 },
+      });
+      const resultPromise = exposed(wrapper).download();
+      const request = MockXHR.instances[0];
+
+      request.triggerProgress(5, 10);
+
+      await expect(resultPromise).resolves.toMatchObject({
+        outcome: 'error',
+        error: { code: 'size-exceeded' },
+      });
+      expect(request.abort).toHaveBeenCalledOnce();
+      expect(wrapper.emitted('cancel')).toBeUndefined();
     });
 
     it('HTTP、网络错误分别生成稳定错误码', async () => {

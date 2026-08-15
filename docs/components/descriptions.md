@@ -4,76 +4,156 @@
 
 ## 基础用法
 
-<div class="demo-container">
-  <ExDescriptions title="用户信息">
-    <ExDescriptionsItem label="用户名">Cyber_Edge</ExDescriptionsItem>
-    <ExDescriptionsItem label="手机号">138-0000-0000</ExDescriptionsItem>
-    <ExDescriptionsItem label="居住地">Neo Tokyo</ExDescriptionsItem>
-  </ExDescriptions>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-descriptions title="用户信息">
+    <ex-descriptions-item label="用户名">Cyber_Edge</ex-descriptions-item>
+    <ex-descriptions-item label="手机号">138-0000-0000</ex-descriptions-item>
+    <ex-descriptions-item label="居住地">Neo Tokyo</ex-descriptions-item>
+  </ex-descriptions>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExDescriptions title="用户信息">
-  <ExDescriptionsItem label="用户名">Cyber_Edge</ExDescriptionsItem>
-  <ExDescriptionsItem label="手机号">138-0000-0000</ExDescriptionsItem>
-  <ExDescriptionsItem label="居住地">Neo Tokyo</ExDescriptionsItem>
-</ExDescriptions>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-descriptions title="用户信息">
+      <ex-descriptions-item label="用户名">Cyber_Edge</ex-descriptions-item>
+      <ex-descriptions-item label="手机号">138-0000-0000</ex-descriptions-item>
+      <ex-descriptions-item label="居住地">Neo Tokyo</ex-descriptions-item>
+    </ex-descriptions>
+  </div>
+</template>
 ```
+
+:::
 
 ## 边框与跨列
 
 `column` 控制每行逻辑列数，`span` 控制当前项占据的列数。每行最后一项自动填充剩余空间。
 
-<div class="demo-container">
-  <ExDescriptions title="设备状态" border :column="3">
-    <ExDescriptionsItem label="设备名">Spectre-01</ExDescriptionsItem>
-    <ExDescriptionsItem label="状态">在线</ExDescriptionsItem>
-    <ExDescriptionsItem label="IP">10.0.13.7</ExDescriptionsItem>
-    <ExDescriptionsItem label="描述" :span="3">主控节点，承载核心调度服务。</ExDescriptionsItem>
-  </ExDescriptions>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-descriptions title="设备状态" border :column="3">
+    <ex-descriptions-item label="设备名">Spectre-01</ex-descriptions-item>
+    <ex-descriptions-item label="状态">在线</ex-descriptions-item>
+    <ex-descriptions-item label="IP">10.0.13.7</ex-descriptions-item>
+    <ex-descriptions-item label="描述" :span="3">主控节点，承载核心调度服务。</ex-descriptions-item>
+  </ex-descriptions>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExDescriptions border :column="3">
-  <ExDescriptionsItem label="设备名">Spectre-01</ExDescriptionsItem>
-  <ExDescriptionsItem label="状态">在线</ExDescriptionsItem>
-  <ExDescriptionsItem label="描述" :span="3">主控节点</ExDescriptionsItem>
-</ExDescriptions>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-descriptions
+      title="设备状态"
+      border
+      :column="3"
+    >
+      <ex-descriptions-item label="设备名">Spectre-01</ex-descriptions-item>
+      <ex-descriptions-item label="状态">在线</ex-descriptions-item>
+      <ex-descriptions-item label="IP">10.0.13.7</ex-descriptions-item>
+      <ex-descriptions-item
+        label="描述"
+        :span="3"
+      >
+        主控节点，承载核心调度服务。
+      </ex-descriptions-item>
+    </ex-descriptions>
+  </div>
+</template>
 ```
+
+:::
 
 ## 垂直排列
 
-<div class="demo-container">
-  <ExDescriptions title="订单信息" border direction="vertical" :column="4">
-    <ExDescriptionsItem label="订单号">EX-20260711-001</ExDescriptionsItem>
-    <ExDescriptionsItem label="金额">¥1,299</ExDescriptionsItem>
-    <ExDescriptionsItem label="支付方式">数字钱包</ExDescriptionsItem>
-    <ExDescriptionsItem label="状态">已支付</ExDescriptionsItem>
-  </ExDescriptions>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-descriptions title="订单信息" border direction="vertical" :column="4">
+    <ex-descriptions-item label="订单号">EX-20260711-001</ex-descriptions-item>
+    <ex-descriptions-item label="金额">¥1,299</ex-descriptions-item>
+    <ex-descriptions-item label="支付方式">数字钱包</ex-descriptions-item>
+    <ex-descriptions-item label="状态">已支付</ex-descriptions-item>
+  </ex-descriptions>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExDescriptions border direction="vertical" :column="4">
-  <ExDescriptionsItem label="订单号">EX-20260711-001</ExDescriptionsItem>
-  <ExDescriptionsItem label="状态">已支付</ExDescriptionsItem>
-</ExDescriptions>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-descriptions
+      title="订单信息"
+      border
+      direction="vertical"
+      :column="4"
+    >
+      <ex-descriptions-item label="订单号">EX-20260711-001</ex-descriptions-item>
+      <ex-descriptions-item label="金额">¥1,299</ex-descriptions-item>
+      <ex-descriptions-item label="支付方式">数字钱包</ex-descriptions-item>
+      <ex-descriptions-item label="状态">已支付</ex-descriptions-item>
+    </ex-descriptions>
+  </div>
+</template>
 ```
+
+:::
 
 ## 自定义标签与操作区
 
-<div class="demo-container">
-  <ExDescriptions border>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-descriptions border>
     <template #title>账户详情</template>
     <template #extra>
-      <ExButton size="small" type="primary">编辑</ExButton>
+      <ex-button size="small" type="primary">编辑</ex-button>
     </template>
-    <ExDescriptionsItem>
+    <ex-descriptions-item>
       <template #label><strong>会员等级</strong></template>
       白金会员
-    </ExDescriptionsItem>
-    <ExDescriptionsItem label="积分">8,860</ExDescriptionsItem>
-  </ExDescriptions>
+    </ex-descriptions-item>
+    <ex-descriptions-item label="积分">8,860</ex-descriptions-item>
+  </ex-descriptions>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ex-descriptions border>
+      <template #title>账户详情</template>
+      <template #extra>
+        <ex-button
+          size="small"
+          type="primary"
+        >
+          编辑
+        </ex-button>
+      </template>
+      <ex-descriptions-item>
+        <template #label><strong>会员等级</strong></template>
+        白金会员
+      </ex-descriptions-item>
+      <ex-descriptions-item label="积分">8,860</ex-descriptions-item>
+    </ex-descriptions>
+  </div>
+</template>
+```
+
+:::
 
 ## API
 

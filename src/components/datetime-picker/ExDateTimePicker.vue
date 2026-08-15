@@ -1,5 +1,9 @@
 <template>
-  <div ref="pickerRef" :class="pickerClasses" :style="pickerStyles">
+  <div
+    ref="pickerRef"
+    :class="pickerClasses"
+    :style="pickerStyles"
+  >
     <div class="ex-datetime-picker__input-wrapper">
       <input
         ref="inputRef"
@@ -29,239 +33,292 @@
           :aria-label="tCommon('clear')"
           @click="handleClear"
         >
-          <ExIcon icon="close-circle-line" :size="16" aria-hidden="true" />
+          <ExIcon
+            icon="close-circle-line"
+            :size="16"
+            aria-hidden="true"
+          />
         </button>
-        <span class="ex-datetime-picker__icon" aria-hidden="true">
-          <ExIcon icon="calendar-line" :size="16" />
+        <span
+          class="ex-datetime-picker__icon"
+          aria-hidden="true"
+        >
+          <ExIcon
+            icon="calendar-line"
+            :size="16"
+          />
         </span>
       </div>
     </div>
 
-    <Transition name="ex-datetime-picker-dropdown">
-      <div
-        v-if="isOpen"
-        :id="panelId"
-        ref="panelRef"
-        class="ex-datetime-picker__dropdown"
-        role="dialog"
-        :aria-label="tDatePicker('panel')"
-        @keydown="handlePanelKeydown"
-      >
-        <div class="ex-datetime-picker__panel">
-          <div class="ex-datetime-picker__header">
-            <button
-              type="button"
-              class="ex-datetime-picker__nav-btn"
-              data-action="previous-year"
-              :aria-label="tCommon('prevYear')"
-              @click="changeYear(-1)"
-            >
-              <ExIcon icon="arrow-left-double-line" :size="16" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="ex-datetime-picker__nav-btn"
-              data-action="previous-month"
-              :aria-label="tCommon('prevMonth')"
-              @click="changeMonth(-1)"
-            >
-              <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
-            </button>
-
-            <div class="ex-datetime-picker__current" aria-live="polite">
-              {{ currentYearMonth }}
-            </div>
-
-            <button
-              type="button"
-              class="ex-datetime-picker__nav-btn"
-              data-action="next-month"
-              :aria-label="tCommon('nextMonth')"
-              @click="changeMonth(1)"
-            >
-              <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="ex-datetime-picker__nav-btn"
-              data-action="next-year"
-              :aria-label="tCommon('nextYear')"
-              @click="changeYear(1)"
-            >
-              <ExIcon icon="arrow-right-double-line" :size="16" aria-hidden="true" />
-            </button>
-          </div>
-
-          <div class="ex-datetime-picker__calendar-grid" role="grid" :aria-label="currentYearMonth">
-            <div class="ex-datetime-picker__weekdays" role="row">
-              <span
-                v-for="weekday in weekdays"
-                :key="weekday"
-                class="ex-datetime-picker__weekday"
-                role="columnheader"
+    <Teleport
+      to="body"
+      :disabled="!teleported"
+    >
+      <Transition name="ex-datetime-picker-dropdown">
+        <div
+          v-if="isOpen"
+          :id="panelId"
+          ref="panelRef"
+          class="ex-datetime-picker__dropdown"
+          :class="portalEffectClasses"
+          role="dialog"
+          :aria-label="tDatePicker('panel')"
+          :data-theme="configTheme"
+          :style="panelStyle"
+          @keydown="handlePanelKeydown"
+        >
+          <div class="ex-datetime-picker__panel">
+            <div class="ex-datetime-picker__header">
+              <button
+                type="button"
+                class="ex-datetime-picker__nav-btn"
+                data-action="previous-year"
+                :aria-label="tCommon('prevYear')"
+                @click="changeYear(-1)"
               >
-                {{ weekday }}
-              </span>
+                <ExIcon
+                  icon="arrow-left-double-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                type="button"
+                class="ex-datetime-picker__nav-btn"
+                data-action="previous-month"
+                :aria-label="tCommon('prevMonth')"
+                @click="changeMonth(-1)"
+              >
+                <ExIcon
+                  icon="arrow-left-s-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </button>
+
+              <div
+                class="ex-datetime-picker__current"
+                aria-live="polite"
+              >
+                {{ currentYearMonth }}
+              </div>
+
+              <button
+                type="button"
+                class="ex-datetime-picker__nav-btn"
+                data-action="next-month"
+                :aria-label="tCommon('nextMonth')"
+                @click="changeMonth(1)"
+              >
+                <ExIcon
+                  icon="arrow-right-s-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                type="button"
+                class="ex-datetime-picker__nav-btn"
+                data-action="next-year"
+                :aria-label="tCommon('nextYear')"
+                @click="changeYear(1)"
+              >
+                <ExIcon
+                  icon="arrow-right-double-line"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </button>
             </div>
 
             <div
-              v-for="(week, weekIndex) in calendarWeeks"
-              :key="weekIndex"
-              class="ex-datetime-picker__week"
-              role="row"
+              class="ex-datetime-picker__calendar-grid"
+              role="grid"
+              :aria-label="currentYearMonth"
             >
               <div
-                v-for="day in week"
-                :key="day.key"
-                class="ex-datetime-picker__day-cell"
-                role="gridcell"
+                class="ex-datetime-picker__weekdays"
+                role="row"
               >
-                <button
-                  type="button"
-                  :class="getDayClasses(day)"
-                  :data-date="day.key"
-                  :disabled="day.disabled"
-                  :tabindex="isSameDay(day.date, focusedDate) ? 0 : -1"
-                  :aria-label="formatDate(day.date, 'YYYY-MM-DD')"
-                  :aria-selected="day.isSelected"
-                  :aria-current="day.isToday ? 'date' : undefined"
-                  @click="selectDate(day.date)"
-                  @focus="focusedDate = new Date(day.date)"
-                  @keydown="handleDayKeydown($event, day.date)"
-                  @pointerenter="previewRange(day.date)"
-                  @pointerleave="hoverDate = null"
+                <span
+                  v-for="weekday in weekdays"
+                  :key="weekday"
+                  class="ex-datetime-picker__weekday"
+                  role="columnheader"
                 >
-                  {{ day.day }}
-                </button>
+                  {{ weekday }}
+                </span>
+              </div>
+
+              <div
+                v-for="(week, weekIndex) in calendarWeeks"
+                :key="weekIndex"
+                class="ex-datetime-picker__week"
+                role="row"
+              >
+                <div
+                  v-for="day in week"
+                  :key="day.key"
+                  class="ex-datetime-picker__day-cell"
+                  role="gridcell"
+                >
+                  <button
+                    type="button"
+                    :class="getDayClasses(day)"
+                    :data-date="day.key"
+                    :disabled="day.disabled"
+                    :tabindex="!day.disabled && isSameDay(day.date, focusedDate) ? 0 : -1"
+                    :aria-label="formatDate(day.date, 'YYYY-MM-DD')"
+                    :aria-selected="day.isSelected"
+                    :aria-current="day.isToday ? 'date' : undefined"
+                    @click="selectDate(day.date)"
+                    @focus="focusedDate = new Date(day.date)"
+                    @keydown="handleDayKeydown($event, day.date)"
+                    @pointerenter="previewRange(day.date)"
+                    @pointerleave="hoverDate = null"
+                  >
+                    {{ day.day }}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div v-if="hasTime" class="ex-datetime-picker__time-panel">
-            <div class="ex-datetime-picker__time-header">
-              {{ tTimePicker('selectTime') }}
-            </div>
-            <div class="ex-datetime-picker__time-inputs">
-              <fieldset v-if="!isRangeMode || rangeStart" class="ex-datetime-picker__time-group">
-                <legend v-if="isRangeMode">
-                  {{ tTimePicker('startTime') }}
-                </legend>
-                <div class="ex-datetime-picker__time-selectors">
-                  <input
-                    v-model.number="hours"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="hour"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="23"
-                    step="1"
-                    :aria-label="tTimePicker('hour')"
-                    @change="updateStartTime"
-                    @blur="updateStartTime"
-                  />
-                  <span aria-hidden="true">:</span>
-                  <input
-                    v-model.number="minutes"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="minute"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="59"
-                    :step="minuteStep"
-                    :aria-label="tTimePicker('minute')"
-                    @change="updateStartTime"
-                    @blur="updateStartTime"
-                  />
-                  <span aria-hidden="true">:</span>
-                  <input
-                    v-model.number="seconds"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="second"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="59"
-                    step="1"
-                    :aria-label="tTimePicker('second')"
-                    @change="updateStartTime"
-                    @blur="updateStartTime"
-                  />
-                </div>
-              </fieldset>
-
-              <fieldset v-if="isRangeMode && rangeEnd" class="ex-datetime-picker__time-group">
-                <legend>{{ tTimePicker('endTime') }}</legend>
-                <div class="ex-datetime-picker__time-selectors">
-                  <input
-                    v-model.number="endHours"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="end-hour"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="23"
-                    step="1"
-                    :aria-label="tTimePicker('hour')"
-                    @change="updateEndTime"
-                    @blur="updateEndTime"
-                  />
-                  <span aria-hidden="true">:</span>
-                  <input
-                    v-model.number="endMinutes"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="end-minute"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="59"
-                    :step="minuteStep"
-                    :aria-label="tTimePicker('minute')"
-                    @change="updateEndTime"
-                    @blur="updateEndTime"
-                  />
-                  <span aria-hidden="true">:</span>
-                  <input
-                    v-model.number="endSeconds"
-                    class="ex-datetime-picker__time-input"
-                    data-time-part="end-second"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    max="59"
-                    step="1"
-                    :aria-label="tTimePicker('second')"
-                    @change="updateEndTime"
-                    @blur="updateEndTime"
-                  />
-                </div>
-              </fieldset>
-            </div>
-          </div>
-
-          <div class="ex-datetime-picker__footer">
-            <button
-              v-if="showToday"
-              type="button"
-              class="ex-datetime-picker__today-btn"
-              :disabled="isTodayDisabled"
-              @click="selectToday"
+            <div
+              v-if="hasTime"
+              class="ex-datetime-picker__time-panel"
             >
-              {{ tCommon('today') }}
-            </button>
-            <button
-              type="button"
-              class="ex-datetime-picker__confirm-btn"
-              :disabled="!canConfirm"
-              @click="handleConfirm"
-            >
-              {{ tCommon('confirm') }}
-            </button>
+              <div class="ex-datetime-picker__time-header">
+                {{ tTimePicker('selectTime') }}
+              </div>
+              <div class="ex-datetime-picker__time-inputs">
+                <fieldset
+                  v-if="!isRangeMode || rangeStart"
+                  class="ex-datetime-picker__time-group"
+                >
+                  <legend v-if="isRangeMode">
+                    {{ tTimePicker('startTime') }}
+                  </legend>
+                  <div class="ex-datetime-picker__time-selectors">
+                    <input
+                      v-model.number="hours"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="hour"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="23"
+                      step="1"
+                      :aria-label="tTimePicker('hour')"
+                      @change="updateStartTime"
+                      @blur="updateStartTime"
+                    />
+                    <span aria-hidden="true">:</span>
+                    <input
+                      v-model.number="minutes"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="minute"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="59"
+                      :step="minuteStep"
+                      :aria-label="tTimePicker('minute')"
+                      @change="updateStartTime"
+                      @blur="updateStartTime"
+                    />
+                    <span aria-hidden="true">:</span>
+                    <input
+                      v-model.number="seconds"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="second"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="59"
+                      step="1"
+                      :aria-label="tTimePicker('second')"
+                      @change="updateStartTime"
+                      @blur="updateStartTime"
+                    />
+                  </div>
+                </fieldset>
+
+                <fieldset
+                  v-if="isRangeMode && rangeEnd"
+                  class="ex-datetime-picker__time-group"
+                >
+                  <legend>{{ tTimePicker('endTime') }}</legend>
+                  <div class="ex-datetime-picker__time-selectors">
+                    <input
+                      v-model.number="endHours"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="end-hour"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="23"
+                      step="1"
+                      :aria-label="tTimePicker('hour')"
+                      @change="updateEndTime"
+                      @blur="updateEndTime"
+                    />
+                    <span aria-hidden="true">:</span>
+                    <input
+                      v-model.number="endMinutes"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="end-minute"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="59"
+                      :step="minuteStep"
+                      :aria-label="tTimePicker('minute')"
+                      @change="updateEndTime"
+                      @blur="updateEndTime"
+                    />
+                    <span aria-hidden="true">:</span>
+                    <input
+                      v-model.number="endSeconds"
+                      class="ex-datetime-picker__time-input"
+                      data-time-part="end-second"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="59"
+                      step="1"
+                      :aria-label="tTimePicker('second')"
+                      @change="updateEndTime"
+                      @blur="updateEndTime"
+                    />
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+
+            <div class="ex-datetime-picker__footer">
+              <button
+                v-if="showToday"
+                type="button"
+                class="ex-datetime-picker__today-btn"
+                :disabled="isTodayDisabled"
+                @click="selectToday"
+              >
+                {{ tCommon('today') }}
+              </button>
+              <button
+                type="button"
+                class="ex-datetime-picker__confirm-btn"
+                :disabled="!canConfirm"
+                @click="handleConfirm"
+              >
+                {{ tCommon('confirm') }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -283,7 +340,13 @@ import {
   startOfDay,
   toDateKey,
 } from '../../utils/date';
-import { useComponentSize } from '../config-provider/composables';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import type {
@@ -308,6 +371,7 @@ const props = withDefaults(defineProps<ExDateTimePickerProps>(), {
   showTime: false,
   timeStep: 1,
   showToday: true,
+  teleported: true,
 });
 
 const emit = defineEmits<ExDateTimePickerEmits>();
@@ -316,6 +380,10 @@ const { t: tDatePicker } = useLocale('datePicker');
 const { t: tCalendar } = useLocale('calendar');
 const { t: tTimePicker } = useLocale('timePicker');
 const componentSize = useComponentSize(computed(() => props.size));
+const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const dropdownZIndex = useZIndexLayer('dropdown');
 const formItem = useFormItem();
 const instanceId = useId();
 const panelId = `ex-datetime-picker-panel-${instanceId}`;
@@ -323,6 +391,15 @@ const panelId = `ex-datetime-picker-panel-${instanceId}`;
 const pickerRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const panelRef = ref<HTMLElement>();
+const panelPositionStyle = ref<CSSProperties>({});
+const portalEffectClasses = computed(() => ({
+  'ex-no-neon': !neonEffect.value,
+  'ex-no-animation': !animation.value,
+}));
+const panelStyle = computed<CSSProperties>(() => ({
+  ...panelPositionStyle.value,
+  zIndex: dropdownZIndex.value,
+}));
 const isOpen = ref(false);
 const currentDate = ref(new Date());
 const focusedDate = ref(startOfDay(new Date()));
@@ -558,8 +635,42 @@ const closePanel = ({ restoreFocus = false, discardDraft = false }: ClosePanelOp
 const focusCurrentDay = () => {
   nextTick(() => {
     const key = toDateKey(focusedDate.value);
-    pickerRef.value?.querySelector<HTMLButtonElement>(`[data-date="${key}"]`)?.focus();
+    const day = panelRef.value?.querySelector<HTMLButtonElement>(`[data-date="${key}"]`);
+    if (day && !day.disabled) day.focus();
   });
+};
+
+const PANEL_VIEWPORT_GAP = 8;
+
+const updatePanelPosition = () => {
+  if (!props.teleported) {
+    panelPositionStyle.value = {};
+    return;
+  }
+  if (!inputRef.value || !panelRef.value || typeof window === 'undefined') return;
+
+  const triggerRect = inputRef.value.getBoundingClientRect();
+  const panelWidth = panelRef.value.offsetWidth;
+  const panelHeight = panelRef.value.offsetHeight;
+  const maxLeft = Math.max(PANEL_VIEWPORT_GAP, window.innerWidth - panelWidth - PANEL_VIEWPORT_GAP);
+  const left = Math.min(Math.max(PANEL_VIEWPORT_GAP, triggerRect.left), maxLeft);
+  const spaceBelow = window.innerHeight - triggerRect.bottom - PANEL_VIEWPORT_GAP;
+  const spaceAbove = triggerRect.top - PANEL_VIEWPORT_GAP;
+  const openAbove = spaceBelow < panelHeight && spaceAbove > spaceBelow;
+  const desiredTop = openAbove
+    ? triggerRect.top - panelHeight - PANEL_VIEWPORT_GAP
+    : triggerRect.bottom + PANEL_VIEWPORT_GAP;
+  const maxTop = Math.max(
+    PANEL_VIEWPORT_GAP,
+    window.innerHeight - panelHeight - PANEL_VIEWPORT_GAP
+  );
+  const top = Math.min(Math.max(PANEL_VIEWPORT_GAP, desiredTop), maxTop);
+
+  panelPositionStyle.value = {
+    position: 'fixed',
+    top: `${top}px`,
+    left: `${left}px`,
+  };
 };
 
 const openPanel = (focusCalendar = false) => {
@@ -567,7 +678,21 @@ const openPanel = (focusCalendar = false) => {
   syncFromModel();
   isOpen.value = true;
   emit('visible-change', true);
-  if (focusCalendar) focusCurrentDay();
+  nextTick(() => {
+    updatePanelPosition();
+    if (focusCalendar) {
+      if (isDateDisabled(focusedDate.value)) {
+        const nextEnabled = findEnabledDate(addDays(focusedDate.value, 1), 1);
+        const previousEnabled = nextEnabled
+          ? null
+          : findEnabledDate(addDays(focusedDate.value, -1), -1);
+        const enabledDate = nextEnabled || previousEnabled;
+        if (enabledDate) focusDate(enabledDate);
+      } else {
+        focusCurrentDay();
+      }
+    }
+  });
 };
 
 const togglePanel = () => {
@@ -721,12 +846,15 @@ const focusDate = (date: Date) => {
   focusCurrentDay();
 };
 
-const findEnabledDate = (initial: Date, direction: number): Date => {
+const MAX_DISABLED_DATE_SEARCH_DAYS = 3660;
+
+const findEnabledDate = (initial: Date, direction: number): Date | null => {
   let candidate = new Date(initial);
-  for (let attempts = 0; attempts < 366 && isDateDisabled(candidate); attempts += 1) {
+  for (let attempts = 0; attempts <= MAX_DISABLED_DATE_SEARCH_DAYS; attempts += 1) {
+    if (!isDateDisabled(candidate)) return candidate;
     candidate = addDays(candidate, direction);
   }
-  return candidate;
+  return null;
 };
 
 const handleDayKeydown = (event: KeyboardEvent, date: Date) => {
@@ -737,7 +865,7 @@ const handleDayKeydown = (event: KeyboardEvent, date: Date) => {
     return;
   }
 
-  let target: Date | null = null;
+  let target: Date;
   let direction = 1;
   if (event.key === 'ArrowLeft') {
     target = addDays(date, -1);
@@ -758,7 +886,8 @@ const handleDayKeydown = (event: KeyboardEvent, date: Date) => {
   else return;
 
   event.preventDefault();
-  focusDate(findEnabledDate(target, direction));
+  const enabledDate = findEnabledDate(target, direction);
+  if (enabledDate) focusDate(enabledDate);
 };
 
 const handleFocus = (event: FocusEvent) => emit('focus', event);
@@ -780,7 +909,9 @@ const handleClear = () => {
 
 const handleClickOutside = (event: PointerEvent) => {
   if (!(event.target instanceof Node)) return;
-  if (pickerRef.value && !pickerRef.value.contains(event.target)) {
+  const isInsideTrigger = pickerRef.value?.contains(event.target);
+  const isInsidePanel = panelRef.value?.contains(event.target);
+  if (!isInsideTrigger && !isInsidePanel) {
     closePanel({ discardDraft: true });
   }
 };
@@ -802,12 +933,28 @@ watch(
 );
 
 watch(isOpen, open => {
-  if (open) document.addEventListener('pointerdown', handleClickOutside);
-  else document.removeEventListener('pointerdown', handleClickOutside);
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  if (open) {
+    document.addEventListener('pointerdown', handleClickOutside);
+    window.addEventListener('resize', updatePanelPosition);
+    window.addEventListener('scroll', updatePanelPosition, true);
+  } else {
+    document.removeEventListener('pointerdown', handleClickOutside);
+    window.removeEventListener('resize', updatePanelPosition);
+    window.removeEventListener('scroll', updatePanelPosition, true);
+  }
 });
 
+watch(
+  () => props.teleported,
+  () => nextTick(updatePanelPosition)
+);
+
 onBeforeUnmount(() => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
   document.removeEventListener('pointerdown', handleClickOutside);
+  window.removeEventListener('resize', updatePanelPosition);
+  window.removeEventListener('scroll', updatePanelPosition, true);
 });
 
 const focus = () => inputRef.value?.focus();

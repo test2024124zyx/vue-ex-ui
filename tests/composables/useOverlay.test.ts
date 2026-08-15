@@ -39,7 +39,12 @@ describe('useOverlay', () => {
     vi.restoreAllMocks();
   });
 
-  const mountOverlay = (props: Record<string, unknown>) => {
+  const mountOverlay = (props: {
+    onEscape: () => void;
+    active?: boolean;
+    lockScroll?: boolean;
+    trapFocus?: boolean;
+  }) => {
     const wrapper = mount(OverlayHarness, { props, attachTo: document.body });
     wrappers.push(wrapper);
     return wrapper;

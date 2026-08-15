@@ -93,4 +93,51 @@ describe('ExPopconfirm', () => {
     await nextTick();
     expect(document.querySelector('.ex-popover__popper.my-popup')).toBeTruthy();
   });
+
+  it('异步确认期间重复点击只应该执行一次 beforeConfirm', async () => {
+    let resolveConfirm: ((value: boolean) => void) | undefined;
+    const beforeConfirm = vi.fn(() => new Promise<boolean>(resolve => (resolveConfirm = resolve)));
+    const wrapper = mountPC({ beforeConfirm });
+    await wrapper.trigger('click');
+    await nextTick();
+    const confirmButton = footerButtons()[footerButtons().length - 1]!;
+
+    confirmButton.click();
+    confirmButton.click();
+    await nextTick();
+
+    expect(beforeConfirm).toHaveBeenCalledOnce();
+    expect((confirmButton as HTMLButtonElement).disabled).toBe(true);
+
+    resolveConfirm?.(true);
+    await Promise.resolve();
+    await nextTick();
+    expect(wrapper.emitted('confirm')).toHaveLength(1);
+  });
+
+  it('beforeConfirm 拒绝时应该保持打开并通过事件报告错误', async () => {
+    const error = new Error('network failed');
+    const wrapper = mountPC({ beforeConfirm: () => Promise.reject(error) });
+    await wrapper.trigger('click');
+    await nextTick();
+
+    footerButtons()[footerButtons().length - 1]!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    await nextTick();
+
+    expect(wrapper.emitted('confirm')).toBeUndefined();
+    expect(wrapper.emitted('confirm-error')?.at(-1)).toEqual([error]);
+    expect(document.querySelector('.ex-popconfirm')).toBeTruthy();
+  });
+
+  it('确认对话框应该使用标题作为可访问名称', async () => {
+    const wrapper = mountPC({ title: '确认删除项目？' });
+    await wrapper.trigger('click');
+    await nextTick();
+
+    expect(document.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe(
+      '确认删除项目？'
+    );
+  });
 });

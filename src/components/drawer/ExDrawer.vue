@@ -8,12 +8,10 @@
       <div
         v-if="shouldRender"
         v-show="visible"
-        ref="wrapperRef"
         class="ex-drawer-wrapper"
         :class="wrapperClasses"
         :data-theme="configTheme"
         :style="wrapperStyles"
-        v-bind="$attrs"
       >
         <Transition name="ex-drawer-mask-fade">
           <div
@@ -29,12 +27,13 @@
             v-if="shouldRender"
             v-show="visible"
             ref="panelRef"
+            v-bind="panelAttrs"
             :class="drawerClasses"
             :style="drawerStyles"
-            role="dialog"
+            :role="dialogRole"
             :aria-modal="mask ? 'true' : undefined"
-            :aria-label="ariaLabel || undefined"
-            :aria-labelledby="!ariaLabel && hasTitle && !$slots.header ? titleId : undefined"
+            :aria-label="accessibleLabel"
+            :aria-labelledby="labelledBy"
             @click.stop
           >
             <div
@@ -46,10 +45,13 @@
               v-if="showHeader"
               class="ex-drawer__header"
             >
-              <slot
+              <div
                 v-if="$slots.header"
-                name="header"
-              ></slot>
+                :id="titleId"
+                class="ex-drawer__title"
+              >
+                <slot name="header"></slot>
+              </div>
               <div
                 v-else-if="hasTitle"
                 :id="titleId"
@@ -108,11 +110,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useId, useSlots } from 'vue';
+import { computed, ref, useAttrs, useId, useSlots, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
@@ -143,12 +150,29 @@ const props = withDefaults(defineProps<ExDrawerProps>(), {
 
 const emit = defineEmits<ExDrawerEmits>();
 const slots = useSlots();
+const attrs = useAttrs();
 const { t } = useLocale('drawer');
-const baseZIndex = useZIndex(50);
+const { t: tDialog } = useLocale('dialog');
+const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
-const wrapperRef = ref<HTMLDivElement>();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
 const panelRef = ref<HTMLDivElement>();
 const titleId = `ex-drawer-title-${useId()}`;
+const CONTROLLED_PANEL_ATTRS = new Set(['aria-label', 'aria-labelledby', 'aria-modal', 'role']);
+
+const readTextAttribute = (name: string): string | undefined => {
+  const value = attrs[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+const nativeAriaLabel = computed(() => readTextAttribute('aria-label'));
+const nativeLabelledBy = computed(() => readTextAttribute('aria-labelledby'));
+const dialogRole = computed(() =>
+  readTextAttribute('role')?.toLowerCase() === 'alertdialog' ? 'alertdialog' : 'dialog'
+);
+const panelAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !CONTROLLED_PANEL_ATTRS.has(key)))
+);
 
 const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
   modelValue: () => props.modelValue,
@@ -162,11 +186,23 @@ const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
 
 const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
 const hasTitle = computed(() => Boolean(props.title || slots.title));
+const accessibleLabel = computed(() => {
+  const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
+  if (explicitLabel) return explicitLabel;
+  if (nativeLabelledBy.value || slots.header || hasTitle.value) return undefined;
+  return tDialog('label');
+});
+const labelledBy = computed(() => {
+  if (props.ariaLabel?.trim() || nativeAriaLabel.value) return undefined;
+  return nativeLabelledBy.value ?? (slots.header || hasTitle.value ? titleId : undefined);
+});
 const showHeader = computed(() => Boolean(slots.header || hasTitle.value || props.closable));
 const hasFooter = computed(() => Boolean(slots.footer || props.showFooter));
 
 const wrapperClasses = computed(() => ({
   'ex-drawer-wrapper--modeless': !props.mask,
+  'ex-no-neon': !neonEffect.value,
+  'ex-no-animation': !animation.value,
 }));
 const wrapperStyles = computed<CSSProperties>(() => ({
   zIndex: props.zIndex ?? baseZIndex.value,
@@ -206,27 +242,53 @@ useOverlay({
   lockScroll: () => props.mask && props.lockScroll,
   closeOnEscape: () => props.closeOnPressEscape,
   onEscape: async () => {
-    await requestClose();
+    await requestCloseIntent('api');
   },
   trapFocus: () => props.mask,
   autoFocus: () => props.mask,
   restoreFocus: true,
 });
 
-const handleMaskClick = () => {
-  if (props.mask && props.maskClosable) void requestClose();
+type CloseIntent = 'cancel' | 'api';
+let pendingCloseIntent: Promise<boolean> | null = null;
+
+/** 所有关闭入口共享同一任务，避免异步守卫期间重复发出取消事件。 */
+const requestCloseIntent = (intent: CloseIntent): Promise<boolean> => {
+  if (pendingCloseIntent) return pendingCloseIntent;
+
+  if (intent === 'cancel') emit('cancel');
+  const operation = requestClose();
+  pendingCloseIntent = operation;
+  const clearPending = () => {
+    if (pendingCloseIntent === operation) pendingCloseIntent = null;
+  };
+  void operation.then(clearPending, clearPending);
+  return operation;
 };
-const handleClose = () => void requestClose();
+
+watch(
+  () => props.modelValue,
+  () => {
+    pendingCloseIntent = null;
+  }
+);
+
+const handleMaskClick = () => {
+  if (props.mask && props.maskClosable) void requestCloseIntent('api');
+};
+const handleClose = () => void requestCloseIntent('api');
 const handleOk = () => emit('ok');
 const handleCancel = () => {
-  emit('cancel');
-  void requestClose();
+  void requestCloseIntent('cancel');
 };
 const handleOpened = () => emit('opened');
 const handleClosed = () => emit('closed');
 
-const open = () => requestOpen();
-const close = () => requestClose();
+const open = () => {
+  pendingCloseIntent = null;
+  requestOpen();
+};
+const close = () => requestCloseIntent('api');
 const getElement = () => panelRef.value ?? null;
 
 defineExpose<ExDrawerExposed>({ open, close, getElement });

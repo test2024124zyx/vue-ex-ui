@@ -39,4 +39,20 @@ describe('ExSteps', () => {
     await wrapper.findAll('.ex-step')[2].trigger('click');
     expect(wrapper.emitted('change')).toBeFalsy();
   });
+
+  it('子步骤 clickable 可以覆盖父级不可点击设置', async () => {
+    const wrapper = mount(ExSteps, {
+      props: { current: 0, clickable: false },
+      slots: {
+        default: () => [
+          h(ExStep, { title: 'Static' }),
+          h(ExStep, { title: 'Override', clickable: true }),
+        ],
+      },
+    });
+
+    await wrapper.findAll('.ex-step')[1].trigger('click');
+
+    expect(wrapper.emitted('change')?.at(-1)?.[0]).toBe(1);
+  });
 });

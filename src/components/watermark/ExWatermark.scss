@@ -7,7 +7,7 @@
 .ex-watermark__overlay {
   position: absolute;
   inset: 0;
-  z-index: var(--ex-watermark-z-index, var(--ex-z-watermark, 900));
+  z-index: var(--ex-watermark-z-index, var(--ex-z-watermark, 1000));
   color: var(--ex-color-text-primary, rgba(0, 0, 0, 0.8));
   font-family: var(--ex-font-secondary, system-ui, sans-serif);
   pointer-events: var(--ex-watermark-pointer-events, none);

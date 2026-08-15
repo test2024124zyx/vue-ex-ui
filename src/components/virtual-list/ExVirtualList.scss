@@ -365,7 +365,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-virtual-list {
     border-width: 3px;
     box-shadow: none;

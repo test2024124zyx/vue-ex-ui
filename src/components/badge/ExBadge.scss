@@ -356,7 +356,7 @@
   }
 
   // 高对比度模式下使用语义文本色和背景色，避免依赖霓虹色区分类型。
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     &__sup {
       border-width: 2px;
 

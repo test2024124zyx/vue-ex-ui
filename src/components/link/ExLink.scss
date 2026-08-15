@@ -149,7 +149,7 @@
     box-shadow: 0 0 0 4px var(--ex-color-neon-blue-alpha-20);
   }
 
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     text-decoration-thickness: 2px;
 
     &:focus-visible {
@@ -243,7 +243,7 @@
 }
 
 // 强制颜色模式下使用系统颜色，避免霓虹阴影成为唯一的可见反馈。
-@media (prefers-contrast: more), (prefers-contrast: high), (forced-colors: active) {
+@media (prefers-contrast: more), (forced-colors: active) {
   .ex-link {
     text-decoration-thickness: 2px;
     text-shadow: none;

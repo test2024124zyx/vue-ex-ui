@@ -8,7 +8,10 @@
     :aria-label="ariaLabel || t('pagination')"
   >
     <!-- 总数显示 -->
-    <div v-if="showTotal" class="ex-pagination__total">
+    <div
+      v-if="showTotal"
+      class="ex-pagination__total"
+    >
       {{ totalDisplayText }}
     </div>
 
@@ -21,7 +24,11 @@
         :aria-label="t('prev')"
         @click="handlePrev"
       >
-        <ExIcon icon="arrow-left-s-line" :size="16" aria-hidden="true" />
+        <ExIcon
+          icon="arrow-left-s-line"
+          :size="16"
+          aria-hidden="true"
+        />
       </button>
 
       <!-- 简洁模式 -->
@@ -33,7 +40,8 @@
             class="ex-pagination__simple-input"
             :min="1"
             :max="totalPages"
-            :disabled="disabled"
+            :disabled="disabled || totalPages === 0"
+            :aria-label="t('jumpTo')"
             @keyup.enter="handleJump"
           />
           <span class="ex-pagination__simple-separator">/</span>
@@ -45,6 +53,7 @@
       <template v-else>
         <!-- 首页 -->
         <button
+          v-if="totalPages > 0"
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === 1 }"
           :disabled="disabled"
@@ -63,7 +72,12 @@
           :aria-label="t('prev5')"
           @click="handlePrevMore"
         >
-          <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
+          <ExIcon
+            icon="more-fill"
+            :size="16"
+            class="ex-pagination__more-icon"
+            aria-hidden="true"
+          />
           <ExIcon
             icon="arrow-left-double-line"
             :size="16"
@@ -94,7 +108,12 @@
           :aria-label="t('next5')"
           @click="handleNextMore"
         >
-          <ExIcon icon="more-fill" :size="16" class="ex-pagination__more-icon" aria-hidden="true" />
+          <ExIcon
+            icon="more-fill"
+            :size="16"
+            class="ex-pagination__more-icon"
+            aria-hidden="true"
+          />
           <ExIcon
             icon="arrow-right-double-line"
             :size="16"
@@ -124,12 +143,19 @@
         :aria-label="t('next')"
         @click="handleNext"
       >
-        <ExIcon icon="arrow-right-s-line" :size="16" aria-hidden="true" />
+        <ExIcon
+          icon="arrow-right-s-line"
+          :size="16"
+          aria-hidden="true"
+        />
       </button>
     </div>
 
     <!-- 每页条数选择器 -->
-    <div v-if="showSizeChanger && !simple" class="ex-pagination__sizes">
+    <div
+      v-if="showSizeChanger && !simple"
+      class="ex-pagination__sizes"
+    >
       <select
         v-model.number="currentPageSize"
         class="ex-pagination__size-select"
@@ -137,14 +163,21 @@
         :aria-label="t('pageSize')"
         @change="handleSizeChange"
       >
-        <option v-for="size in pageSizeOptions" :key="size" :value="size">
+        <option
+          v-for="size in pageSizeOptions"
+          :key="size"
+          :value="size"
+        >
           {{ size }} {{ t('page') }}
         </option>
       </select>
     </div>
 
     <!-- 快速跳转 -->
-    <div v-if="showQuickJumper && !simple" class="ex-pagination__jumper">
+    <div
+      v-if="showQuickJumper && !simple"
+      class="ex-pagination__jumper"
+    >
       <span class="ex-pagination__jumper-text">{{ t('jumpTo') }}</span>
       <input
         v-model.number="jumpValue"
@@ -191,19 +224,37 @@ const emit = defineEmits<ExPaginationEmits>();
 
 const { t } = useLocale('pagination');
 const paginationRef = ref<HTMLDivElement>();
-const currentPage = ref(props.current);
-const currentPageSize = ref(props.pageSize);
-const jumpValue = ref(props.current);
+
+const normalizePageSize = (value: number) => {
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 10;
+};
+
+const normalizedTotal = computed(() => {
+  return Number.isFinite(props.total) && props.total > 0 ? Math.floor(props.total) : 0;
+});
+
+const currentPageSize = ref(normalizePageSize(props.pageSize));
 
 // 计算总页数
 const totalPages = computed(() => {
-  return Math.ceil(props.total / currentPageSize.value);
+  if (normalizedTotal.value === 0) return 0;
+  return Math.ceil(normalizedTotal.value / currentPageSize.value);
 });
+
+const normalizePage = (value: number, pageCount = totalPages.value) => {
+  if (pageCount === 0) return 0;
+  const page = Number.isFinite(value) ? Math.floor(value) : 1;
+  return Math.max(1, Math.min(pageCount, page));
+};
+
+const currentPage = ref(normalizePage(props.current));
+const jumpValue = ref(currentPage.value);
 
 // 计算当前页的数据范围
 const dataRange = computed<[number, number]>(() => {
+  if (normalizedTotal.value === 0) return [0, 0];
   const start = (currentPage.value - 1) * currentPageSize.value + 1;
-  const end = Math.min(currentPage.value * currentPageSize.value, props.total);
+  const end = Math.min(currentPage.value * currentPageSize.value, normalizedTotal.value);
   return [start, end];
 });
 
@@ -289,27 +340,30 @@ const paginationStyles = computed(() => {
 
 // 监听外部变化
 watch(
-  () => props.current,
-  val => {
-    if (val !== currentPage.value) {
-      currentPage.value = val;
-      jumpValue.value = val;
+  [() => props.current, totalPages],
+  ([val, pageCount]) => {
+    const normalizedPage = normalizePage(val, pageCount);
+    if (normalizedPage !== currentPage.value) {
+      currentPage.value = normalizedPage;
+      jumpValue.value = normalizedPage;
     }
-  }
+  },
+  { flush: 'sync' }
 );
 
 watch(
   () => props.pageSize,
   val => {
-    if (val !== currentPageSize.value) {
-      currentPageSize.value = val;
+    const normalizedSize = normalizePageSize(val);
+    if (normalizedSize !== currentPageSize.value) {
+      currentPageSize.value = normalizedSize;
     }
   }
 );
 
 // 页码改变
 const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value || page === currentPage.value) {
+  if (!Number.isFinite(page) || page < 1 || page > totalPages.value || page === currentPage.value) {
     return;
   }
 
@@ -347,14 +401,17 @@ const handleNextMore = () => {
 
 // 每页条数改变
 const handleSizeChange = () => {
-  const newPageSize = currentPageSize.value;
+  const newPageSize = normalizePageSize(currentPageSize.value);
+  currentPageSize.value = newPageSize;
   emit('update:pageSize', newPageSize);
 
   // 重新计算当前页，保持数据位置
-  const newPage = Math.min(
-    Math.ceil(((currentPage.value - 1) * props.pageSize) / newPageSize) + 1,
-    Math.ceil(props.total / newPageSize)
-  );
+  const oldPageSize = normalizePageSize(props.pageSize);
+  const firstItemIndex = Math.max(0, (currentPage.value - 1) * oldPageSize);
+  const newPage =
+    totalPages.value === 0
+      ? 0
+      : Math.min(Math.floor(firstItemIndex / newPageSize) + 1, totalPages.value);
 
   if (newPage !== currentPage.value) {
     currentPage.value = newPage;
@@ -369,7 +426,7 @@ const handleSizeChange = () => {
 const handleJump = () => {
   // 输入被清空时 v-model.number 会得到 NaN，需先拦截，否则会越过 handlePageChange 的边界守卫
   const raw = Number(jumpValue.value);
-  if (!Number.isFinite(raw)) {
+  if (!Number.isFinite(raw) || totalPages.value === 0) {
     jumpValue.value = currentPage.value;
     return;
   }

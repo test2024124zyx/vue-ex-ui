@@ -14,7 +14,7 @@
   // 聚焦状态 - 增强赛博朋克效果
   &--focused {
     border-color: var(--ex-number-input-border-focus-color, var(--ex-color-primary));
-    box-shadow: 
+    box-shadow:
       0 0 0 2px var(--ex-color-primary-alpha-20),
       0 0 12px var(--ex-color-primary-alpha-30);
     @include neon-glow('blue', 'md');
@@ -305,7 +305,7 @@
     // 悬停效果优化 - 避免 box-shadow 溢出
     &:hover:not(:disabled) {
       box-shadow: none;
-      
+
       &::before {
         opacity: 0.08;
       }
@@ -401,7 +401,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-number-input {
     border-width: 2px;
 

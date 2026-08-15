@@ -6,7 +6,10 @@ const { renderBarcode } = vi.hoisted(() => ({
 
 vi.mock('jsbarcode', () => ({ default: renderBarcode }));
 
-import { generateBarcode } from '../../../src/components/barcode/barcode-generator';
+import {
+  generateBarcode,
+  MAX_BARCODE_VALUE_LENGTH,
+} from '../../../src/components/barcode/barcode-generator';
 
 const createSvg = (): SVGSVGElement =>
   document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -54,5 +57,14 @@ describe('barcode-generator', () => {
     });
 
     await expect(generateBarcode(createSvg(), 'EX-2026')).rejects.toBe(renderError);
+  });
+
+  it('在加载渲染器前拒绝超过安全上限的条码内容', async () => {
+    const oversizedValue = 'A'.repeat(MAX_BARCODE_VALUE_LENGTH + 1);
+
+    await expect(generateBarcode(createSvg(), oversizedValue)).rejects.toThrow(
+      `条码内容不能超过 ${MAX_BARCODE_VALUE_LENGTH} 个字符`
+    );
+    expect(renderBarcode).not.toHaveBeenCalled();
   });
 });

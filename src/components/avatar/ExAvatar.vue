@@ -156,7 +156,9 @@ const imageAriaLabel = computed(() => {
   return props.ariaLabel;
 });
 
-const imageAriaHidden = computed(() => (rootTag.value === 'button' ? 'true' : undefined));
+const imageAriaHidden = computed<'true' | undefined>(() =>
+  rootTag.value === 'button' ? 'true' : undefined
+);
 
 // 图片由 img 自己提供语义；文字和图标头像需要由容器提供图像语义。
 const rootRole = computed(() => {

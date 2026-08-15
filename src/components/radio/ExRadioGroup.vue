@@ -1,28 +1,45 @@
 <template>
   <div
+    ref="groupRef"
     :class="groupClasses"
     :style="groupStyles"
     role="radiogroup"
-    :aria-labelledby="labelId"
+    :aria-labelledby="hasGroupLabel ? labelId : undefined"
     :aria-describedby="ariaDescribedBy"
   >
     <!-- 标签 -->
-    <label v-if="label || $slots.label" :id="labelId" class="ex-radio-group__label">
+    <label
+      v-if="label || $slots.label"
+      :id="labelId"
+      class="ex-radio-group__label"
+    >
       <slot name="label">
         {{ label }}
-        <span v-if="required" class="ex-radio-group__required">*</span>
+        <span
+          v-if="required"
+          class="ex-radio-group__required"
+        >
+          *
+        </span>
       </slot>
     </label>
 
     <!-- 单选框容器 -->
     <div class="ex-radio-group__content">
-      <slot />
+      <slot></slot>
     </div>
 
     <!-- 底部信息 -->
-    <div v-if="showBottomInfo" class="ex-radio-group__bottom">
+    <div
+      v-if="showBottomInfo"
+      class="ex-radio-group__bottom"
+    >
       <!-- 帮助文本 -->
-      <div v-if="helpText || $slots.help" :id="`${groupId}-help`" class="ex-radio-group__help">
+      <div
+        v-if="helpText || $slots.help"
+        :id="`${groupId}-help`"
+        class="ex-radio-group__help"
+      >
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -37,7 +54,11 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon icon="error-warning-line" :size="14" class="ex-radio-group__error-icon" />
+          <ex-icon
+            icon="error-warning-line"
+            :size="14"
+            class="ex-radio-group__error-icon"
+          />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -60,6 +81,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
+import { useFormItem } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRadioGroup',
@@ -80,12 +102,15 @@ defineSlots<ExRadioGroupSlots>();
 
 const slots = useSlots();
 const { t } = useI18n();
+const formItem = useFormItem();
 
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
+const groupRef = ref<HTMLDivElement>();
+const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 
 // 组内共享的 name：未显式传入时自动生成唯一值，保证同组各 radio 的
 // name 一致——原生单选语义（方向键导航、屏幕阅读器成组）才能生效。
@@ -146,6 +171,7 @@ const updateValue = (value: RadioValue) => {
 
   emit('update:modelValue', value);
   emit('change', value);
+  formItem?.onFieldChange();
 };
 
 // 验证单选框组
@@ -195,23 +221,23 @@ provide('radioGroup', {
   get readonly() {
     return props.readonly;
   },
+  get required() {
+    return props.required;
+  },
   updateValue,
 });
 
 // 暴露方法
 const getValue = (): string | number | boolean => {
-  return props.modelValue || '';
+  return props.modelValue ?? '';
 };
 
 const setValue = (value: RadioValue) => {
-  if (props.disabled || props.readonly) return;
-
-  emit('update:modelValue', value);
-  emit('change', value);
+  updateValue(value);
 };
 
 const getRadioGroupElement = () => {
-  return null;
+  return groupRef.value || null;
 };
 
 defineExpose<ExRadioGroupInstance>({

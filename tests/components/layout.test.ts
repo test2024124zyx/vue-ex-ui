@@ -7,6 +7,7 @@ import ExSider from '../../src/components/layout/ExSider.vue';
 import ExContent from '../../src/components/layout/ExContent.vue';
 import ExFooter from '../../src/components/layout/ExFooter.vue';
 import ExContainer from '../../src/components/layout/ExContainer.vue';
+import ExConfigProvider from '../../src/components/config-provider/ExConfigProvider.vue';
 import {
   ExContainer as InstallableContainer,
   ExContent as InstallableContent,
@@ -416,12 +417,44 @@ describe('Layout v2', () => {
       mediaQueries[0]?.dispatch(true);
       await nextTick();
       expect(wrapper.get('aside').classes()).not.toContain('ex-sider--broken');
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--collapsed');
       expect(wrapper.emitted('breakpoint')).toEqual([[true], [false]]);
+      expect(wrapper.emitted('collapse')).toEqual([
+        [true, 'responsive'],
+        [false, 'responsive'],
+      ]);
       mediaQueries[0]?.dispatch(true);
       await nextTick();
       expect(wrapper.emitted('breakpoint')).toEqual([[true], [false]]);
       wrapper.unmount();
       expect(mediaQueries[0]?.listeners.size).toBe(0);
+    });
+
+    it('窄屏展开态支持 Escape 关闭、焦点恢复与滚动锁', async () => {
+      initialMediaMatches = false;
+      const opener = document.createElement('button');
+      document.body.appendChild(opener);
+      opener.focus();
+      const wrapper = mount(ExSider, {
+        attachTo: document.body,
+        props: { breakpoint: 'md', collapsed: false, collapsible: true },
+      });
+      await nextTick();
+
+      expect(wrapper.get('aside').attributes('role')).toBe('dialog');
+      expect(wrapper.get('aside').attributes('aria-modal')).toBe('true');
+      expect(document.body.style.overflow).toBe('hidden');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await nextTick();
+      expect(wrapper.emitted('collapse')).toContainEqual([true, 'mask']);
+
+      await wrapper.setProps({ collapsed: true });
+      await nextTick();
+      expect(document.body.style.overflow).toBe('');
+      expect(document.activeElement).toBe(opener);
+      wrapper.unmount();
+      opener.remove();
     });
 
     it('受控展开侧栏在窄屏显示遮罩，遮罩请求关闭但不篡改状态', async () => {
@@ -442,6 +475,36 @@ describe('Layout v2', () => {
       expect(wrapper.emitted('collapse')).toContainEqual([true, 'mask']);
       wrapper.unmount();
       expect(document.body.querySelector('.ex-sider__mask')).toBeNull();
+    });
+
+    it('窄屏 Teleport 遮罩与侧栏继承最近 ConfigProvider 层级', async () => {
+      initialMediaMatches = false;
+      const wrapper = mount(ExConfigProvider, {
+        attachTo: document.body,
+        props: { zIndex: 3000 },
+        slots: {
+          default: () =>
+            h(ExSider, {
+              breakpoint: 'lg',
+              collapsed: false,
+              collapsible: true,
+            }),
+        },
+      });
+      await nextTick();
+
+      expect(document.body.querySelector<HTMLElement>('.ex-sider__mask')?.style.zIndex).toBe(
+        '3039'
+      );
+      expect(wrapper.get('aside').element.style.zIndex).toBe('3040');
+
+      await wrapper.setProps({ zIndex: 3200 });
+      await nextTick();
+      expect(document.body.querySelector<HTMLElement>('.ex-sider__mask')?.style.zIndex).toBe(
+        '3239'
+      );
+      expect(wrapper.get('aside').element.style.zIndex).toBe('3240');
+      wrapper.unmount();
     });
 
     it('运行时切换 breakpoint 会释放旧监听并应用新查询', async () => {

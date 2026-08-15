@@ -89,6 +89,30 @@ describe('image-resource', () => {
     resource.dispose();
   });
 
+  it('流式读取远程图片时按原顺序合并二进制分片', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Promise.resolve(
+          new Response(new Uint8Array([1, 2, 3, 4]), {
+            headers: { 'content-type': 'image/png' },
+          })
+        )
+      )
+    );
+
+    const resource = await loadBrowserImageResource('https://example.com/stream.png');
+    const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(resource.blob);
+    });
+
+    expect(Array.from(new Uint8Array(bytes))).toEqual([1, 2, 3, 4]);
+    resource.dispose();
+  });
+
   it.each([
     ['', 'INVALID_SOURCE'],
     ['   ', 'INVALID_SOURCE'],
@@ -103,6 +127,24 @@ describe('image-resource', () => {
     await expect(
       loadBrowserImageResource(new Blob(['text'], { type: 'text/plain' }))
     ).rejects.toMatchObject({ code: 'INVALID_SOURCE' });
+  });
+
+  it('在解码前拒绝超过字节上限的来源', async () => {
+    await expect(
+      loadBrowserImageResource(new Blob(['12345'], { type: 'image/png' }), undefined, {
+        maxSourceBytes: 4,
+      })
+    ).rejects.toMatchObject({ code: 'INVALID_SOURCE' });
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('解码后拒绝超过像素预算的图片并释放对象 URL', async () => {
+    await expect(
+      loadBrowserImageResource(new Blob(['image'], { type: 'image/png' }), undefined, {
+        maxPixels: 100,
+      })
+    ).rejects.toMatchObject({ code: 'INVALID_DIMENSION' });
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:image-resource');
   });
 
   it('将 HTTP 与网络失败归类为来源请求失败', async () => {
@@ -217,6 +259,18 @@ describe('image-resource', () => {
 
     expect(blob.type).toBe('image/jpeg');
     expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.8);
+  });
+
+  it('编码前拒绝超过像素预算的 Canvas', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 101;
+    canvas.height = 1;
+    const toBlob = vi.spyOn(canvas, 'toBlob');
+
+    await expect(
+      encodeCanvasToBlob(canvas, 'image/png', undefined, undefined, 100)
+    ).rejects.toMatchObject({ code: 'INVALID_DIMENSION' });
+    expect(toBlob).not.toHaveBeenCalled();
   });
 
   it('区分编码空结果、不支持格式与同步异常', async () => {

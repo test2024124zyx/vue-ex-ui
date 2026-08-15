@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExDateTimePicker from '../../../src/components/datetime-picker/ExDateTimePicker.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { ExDateTimePickerExposed } from '../../../src/components/datetime-picker/types';
 
 describe('ExDateTimePicker', () => {
@@ -46,6 +47,54 @@ describe('ExDateTimePicker', () => {
     expect(panel.getAttribute('role')).toBe('dialog');
     expect(input().attributes('aria-expanded')).toBe('true');
     expect(wrapper!.emitted('visible-change')).toEqual([[true]]);
+  });
+
+  it('默认把面板传送到 body，面板内操作不会被误判为外部点击', async () => {
+    mountPicker();
+    const panel = await openPanel();
+
+    expect(document.body.contains(panel)).toBe(true);
+    expect(wrapper!.element.contains(panel)).toBe(false);
+    panel.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await nextTick();
+
+    expect(document.querySelector('.ex-datetime-picker__dropdown')).toBe(panel);
+  });
+
+  it('传送面板按视口夹取位置并在空间不足时向上展开', async () => {
+    mountPicker();
+    vi.spyOn(input().element, 'getBoundingClientRect').mockReturnValue({
+      top: 700,
+      bottom: 736,
+      left: 760,
+      right: 960,
+      width: 200,
+      height: 36,
+      x: 760,
+      y: 700,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(800);
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(760);
+    const panel = await openPanel();
+    Object.defineProperty(panel, 'offsetWidth', { configurable: true, value: 360 });
+    Object.defineProperty(panel, 'offsetHeight', { configurable: true, value: 500 });
+
+    window.dispatchEvent(new Event('resize'));
+    await nextTick();
+
+    expect(panel.style.position).toBe('fixed');
+    expect(Number.parseFloat(panel.style.left)).toBeGreaterThanOrEqual(8);
+    expect(Number.parseFloat(panel.style.left)).toBeLessThanOrEqual(432);
+    expect(Number.parseFloat(panel.style.top)).toBeLessThan(700);
+  });
+
+  it('teleported=false 时面板保留在组件内且不写入固定定位', async () => {
+    mountPicker({ teleported: false });
+    const panel = await openPanel();
+
+    expect(wrapper!.element.contains(panel)).toBe(true);
+    expect(panel.style.position).toBe('');
   });
 
   it('datetime 类型遵守自定义格式而不是强制固定格式', () => {
@@ -217,6 +266,51 @@ describe('ExDateTimePicker', () => {
     expect((document.activeElement as HTMLElement).dataset.date).toBe('2024-05-16');
   });
 
+  it('受控日期后来变为禁用时，键盘打开会聚焦下一个可用日期', async () => {
+    mountPicker({
+      modelValue: new Date(2024, 4, 15),
+      disabledDate: (date: Date) => date.getDate() === 15,
+    });
+
+    await input().trigger('keydown', { key: 'ArrowDown' });
+    await nextTick();
+    await nextTick();
+
+    expect((document.activeElement as HTMLElement).dataset.date).toBe('2024-05-16');
+  });
+
+  it('键盘导航可越过超过一年的连续禁用区间', async () => {
+    const disabledThrough = new Date(2025, 5, 18).getTime();
+    mountPicker({
+      modelValue: new Date(2024, 4, 15),
+      disabledDate: (date: Date) => date.getTime() <= disabledThrough,
+    });
+    await openPanel();
+    const source = dayButton('2024-05-15');
+
+    source.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await nextTick();
+    await nextTick();
+
+    const activeDay = document.querySelector<HTMLButtonElement>(
+      '.ex-datetime-picker__day[tabindex="0"]'
+    );
+    expect(activeDay?.disabled).toBe(false);
+    expect(activeDay?.dataset.date).toBe('2025-06-19');
+  });
+
+  it('所有日期均禁用时键盘导航保持当前月份且不产生禁用 tabstop', async () => {
+    mountPicker({ modelValue: new Date(2024, 4, 15), disabledDate: () => true });
+    await openPanel();
+    const source = dayButton('2024-05-15');
+
+    source.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await nextTick();
+
+    expect(document.querySelector('.ex-datetime-picker__current')?.textContent).toContain('2024');
+    expect(document.querySelector('.ex-datetime-picker__day:disabled[tabindex="0"]')).toBeNull();
+  });
+
   it('范围未选完整时确认按钮保持禁用', async () => {
     mountPicker({ type: 'datetimerange' });
     await openPanel();
@@ -255,5 +349,21 @@ describe('ExDateTimePicker', () => {
     exposed.blur();
     expect(document.activeElement).not.toBe(input().element);
     expect(exposed.getElement()).toBe(wrapper!.element);
+  });
+
+  it('Teleport 面板继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const provider = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExDateTimePicker) },
+    });
+
+    await provider.get('.ex-datetime-picker__input').trigger('click');
+    await nextTick();
+    const panel = document.querySelector<HTMLElement>('.ex-datetime-picker__dropdown')!;
+    expect(panel.style.zIndex).toBe('2400');
+    expect(panel.classList).toContain('ex-no-neon');
+    expect(panel.classList).toContain('ex-no-animation');
+    provider.unmount();
   });
 });

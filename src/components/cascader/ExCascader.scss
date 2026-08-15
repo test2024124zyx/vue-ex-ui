@@ -503,7 +503,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     .ex-cascader__input {
       border-width: 2px;
     }
@@ -530,4 +530,18 @@
   .ex-cascader-dropdown-leave-active {
     transition: none;
   }
+}
+
+// Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-cascader__dropdown.ex-no-neon,
+.ex-cascader__dropdown.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-cascader__dropdown.ex-no-animation,
+.ex-cascader__dropdown.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
 }

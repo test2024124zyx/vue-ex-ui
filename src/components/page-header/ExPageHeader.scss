@@ -34,6 +34,7 @@
     }
 
     &-link {
+      min-height: 44px;
       background: none;
       border: none;
       padding: var(--ex-spacing-1) 0;
@@ -86,12 +87,14 @@
     background: none;
     border: none;
     padding: var(--ex-spacing-2);
+    min-width: 44px;
+    min-height: 44px;
     color: var(--ex-color-text-secondary);
     cursor: pointer;
     border-radius: var(--ex-radius-base);
-      transition-property: color, background-color, border-color, transform, box-shadow;
-      transition-duration: var(--ex-motion-duration-base, 200ms);
-      transition-timing-function: var(--ex-motion-ease-out, ease);
+    transition-property: color, background-color, border-color, transform, box-shadow;
+    transition-duration: var(--ex-motion-duration-base, 200ms);
+    transition-timing-function: var(--ex-motion-ease-out, ease);
 
     &:hover {
       color: var(--ex-color-primary);

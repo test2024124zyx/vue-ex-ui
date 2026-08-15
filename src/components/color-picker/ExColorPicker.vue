@@ -48,7 +48,7 @@
           ref="panelRef"
           class="ex-color-picker__panel"
           :data-theme="configTheme"
-          :class="popperClass"
+          :class="[popperClass, portalEffectClasses]"
           :style="panelStyle"
           role="dialog"
           :aria-label="t('panel')"
@@ -197,7 +197,13 @@ import type { ExColorPickerEmits, ExColorPickerExposed, ExColorPickerProps } fro
 import { clamp, formatColor, hsvToRgb, opaqueRgb, parseColor, rgbToHsv } from './utils';
 import type { RGBA } from './utils';
 import { useLocale } from '../../locale';
-import { useComponentSize, useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
@@ -234,8 +240,19 @@ const hueRef = ref<HTMLElement>();
 const alphaRef = ref<HTMLElement>();
 
 const visible = ref(false);
-const panelStyle = ref<Record<string, string>>({});
+const panelPositionStyle = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const dropdownZIndex = useZIndexLayer('dropdown');
+const portalEffectClasses = computed(() => ({
+  'ex-no-neon': !neonEffect.value,
+  'ex-no-animation': !animation.value,
+}));
+const panelStyle = computed<Record<string, string>>(() => ({
+  ...panelPositionStyle.value,
+  zIndex: String(dropdownZIndex.value),
+}));
 const hasValue = ref(false);
 const hexInput = ref('');
 const hsva = reactive({ h: 0, s: 1, v: 1, a: 1 });
@@ -480,7 +497,7 @@ const selectPredefine = (color: string) => {
 const updatePanelPosition = () => {
   if (!panelRef.value) return;
   if (!props.teleported) {
-    panelStyle.value = { position: 'absolute', top: 'calc(100% + 6px)', left: '0' };
+    panelPositionStyle.value = { position: 'absolute', top: 'calc(100% + 6px)', left: '0' };
     return;
   }
   if (!triggerRef.value) return;
@@ -500,7 +517,7 @@ const updatePanelPosition = () => {
   const top = clamp(preferredTop, edge, Math.max(edge, viewportHeight - panelHeight - edge));
   const left = clamp(triggerRect.left, edge, Math.max(edge, viewportWidth - panelWidth - edge));
 
-  panelStyle.value = {
+  panelPositionStyle.value = {
     position: 'fixed',
     top: `${top}px`,
     left: `${left}px`,

@@ -53,5 +53,5 @@ export interface ExQRCodeExposed {
   /** 获取二维码数据URL */
   toDataURL: (type?: 'image/png' | 'image/jpeg') => string;
   /** 刷新二维码 */
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }

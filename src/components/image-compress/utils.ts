@@ -1,4 +1,8 @@
-import { encodeCanvasToBlob, loadBrowserImageResource } from '../../utils/image-resource';
+import {
+  assertImagePixelBudget,
+  encodeCanvasToBlob,
+  loadBrowserImageResource,
+} from '../../utils/image-resource';
 import { ExImageCompressError, toImageCompressError } from './errors';
 import type {
   CompressMode,
@@ -148,6 +152,11 @@ function drawImage(
   dimension: ImageDimension,
   options: NormalizedCompressOptions
 ): void {
+  try {
+    assertImagePixelBudget(dimension.width, dimension.height);
+  } catch (error) {
+    throw toImageCompressError(error, 'INVALID_DIMENSION', '压缩尺寸超过安全上限');
+  }
   canvas.width = dimension.width;
   canvas.height = dimension.height;
   context.imageSmoothingEnabled = true;

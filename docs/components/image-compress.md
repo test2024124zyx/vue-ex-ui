@@ -21,58 +21,78 @@ const handleFile = event => {
 
 ## 基础用法
 
+::: raw
 <div class="demo-container">
   <label class="file-picker">
     <span>选择图片</span>
     <input type="file" accept="image/*" @change="handleFile" />
   </label>
-  <ExImageCompress
+  <ex-image-compress
     :src="demoSource"
     mode="quality"
     :quality="0.8"
     @compress="lastResult = $event"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExImageCompress
-    :src="file"
-    mode="quality"
-    :quality="0.8"
-    output-type="image/jpeg"
-    @compress="handleCompress"
-    @error="handleError"
-  />
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ExImageCompress, type CompressResult, type ExImageCompressExposed } from 'vue-ex-ui';
 
-const file = ref<File>();
-const compressor = ref<ExImageCompressExposed>();
+const svg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">',
+  '<defs><linearGradient id="g"><stop stop-color="#1677ff"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs>',
+  '<rect width="800" height="450" fill="url(#g)"/>',
+  '<circle cx="400" cy="225" r="120" fill="none" stroke="white" stroke-width="24"/>',
+  '</svg>',
+].join('');
+const demoSource = ref<string | File>(
+  'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+);
+const lastResult = ref(null);
 
-const handleCompress = (result: CompressResult) => {
-  compressor.value?.download('compressed.jpg');
-};
-
-const handleError = (error: Error) => {
-  // 在业务层展示错误。
+const handleFile = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (file) demoSource.value = file;
 };
 </script>
+
+<template>
+  <div class="demo-container">
+    <label class="file-picker">
+      <span>选择图片</span>
+      <input
+        type="file"
+        accept="image/*"
+        @change="handleFile"
+      />
+    </label>
+    <ex-image-compress
+      :src="demoSource"
+      mode="quality"
+      :quality="0.8"
+      @compress="lastResult = $event"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## 模式
 
+::: raw
 <div class="demo-grid">
-  <ExImageCompress
+  <ex-image-compress
     :src="demoSource"
     mode="size"
     :target-size="20"
     output-type="image/webp"
   />
-  <ExImageCompress
+  <ex-image-compress
     :src="demoSource"
     mode="dimension"
     :max-width="400"
@@ -80,18 +100,42 @@ const handleError = (error: Error) => {
     output-type="image/png"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExImageCompress :src="file" mode="size" :target-size="500" output-type="image/webp" />
+<script setup lang="ts">
+const svg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">',
+  '<defs><linearGradient id="g"><stop stop-color="#1677ff"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs>',
+  '<rect width="800" height="450" fill="url(#g)"/>',
+  '<circle cx="400" cy="225" r="120" fill="none" stroke="white" stroke-width="24"/>',
+  '</svg>',
+].join('');
+const demoSource = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+</script>
 
-<ExImageCompress
-  :src="file"
-  mode="dimension"
-  :max-width="1920"
-  :max-height="1080"
-  :keep-aspect-ratio="true"
-/>
+<template>
+  <div class="demo-grid">
+    <ex-image-compress
+      :src="demoSource"
+      mode="size"
+      :target-size="20"
+      output-type="image/webp"
+    />
+    <ex-image-compress
+      :src="demoSource"
+      mode="dimension"
+      :max-width="400"
+      :max-height="225"
+      output-type="image/png"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## Props
 
@@ -111,6 +155,8 @@ const handleError = (error: Error) => {
 | show-comparison   | boolean                               | true       |
 
 PNG 为无损格式，不提供质量模式；目标大小模式会在必要时缩小尺寸，若 1×1 像素仍无法达到目标则拒绝 Promise。
+
+输入图片默认限制为 64 MiB、3200 万像素且单边不超过 32768 像素；远程响应会优先校验 `Content-Length` 并按流累计字节。超过上限时会在创建对象 URL 或 Canvas 前拒绝处理。压缩参数在任务执行期间变化会取消旧任务；`auto-compress` 开启时以最新参数重新执行。
 
 ## Events
 

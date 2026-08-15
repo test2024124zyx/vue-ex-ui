@@ -32,6 +32,14 @@ export interface ExTreeSelectProps {
   disabled?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
+  /** 触发器原生 ID */
+  id?: string;
+  /** 触发器无障碍名称 */
+  ariaLabel?: string;
+  /** 触发器与树弹层的外部标签元素 ID */
+  ariaLabelledby?: string;
+  /** 触发器无障碍描述元素 ID */
+  ariaDescribedby?: string;
   /** 是否可搜索过滤 */
   filterable?: boolean;
   /** 占位文本 */

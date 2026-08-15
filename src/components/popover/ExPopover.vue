@@ -2,14 +2,12 @@
   <div
     ref="popoverRef"
     class="ex-popover"
-    :aria-haspopup="true"
-    :aria-expanded="visible"
-    :aria-controls="visible ? popperId : undefined"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
     @focusin="handleFocus"
     @focusout="handleBlur"
     @click="handleClick"
+    @contextmenu="handleContextmenu"
   >
     <!-- 触发元素 -->
     <slot></slot>
@@ -25,9 +23,12 @@
           :data-theme="configTheme"
           :style="popoverStyles"
           role="dialog"
-          :aria-label="ariaLabel"
+          :aria-label="ariaLabel || (!hasTitle ? content : undefined)"
+          :aria-labelledby="!ariaLabel && hasTitle ? titleId : undefined"
           @mouseenter="handlePopoverMouseEnter"
           @mouseleave="handlePopoverMouseLeave"
+          @focusin="handlePopoverFocusIn"
+          @focusout="handlePopoverFocusOut"
           @click.stop
         >
           <!-- 霓虹边框效果 -->
@@ -36,6 +37,7 @@
           <!-- 标题 -->
           <div
             v-if="title || $slots.title"
+            :id="titleId"
             class="ex-popover__title"
           >
             <slot name="title">
@@ -62,11 +64,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  getCurrentInstance,
+  useSlots,
+} from 'vue';
 import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
-import { useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 
 defineOptions({
   name: 'ExPopover',
@@ -85,20 +101,41 @@ const props = withDefaults(defineProps<ExPopoverProps>(), {
 });
 
 const emit = defineEmits<ExPopoverEmits>();
+const instance = getCurrentInstance();
+const slots = useSlots();
+const isModelControlled = () => {
+  const vnodeProps = instance?.vnode.props;
+  return Boolean(
+    vnodeProps &&
+    (Object.prototype.hasOwnProperty.call(vnodeProps, 'modelValue') ||
+      Object.prototype.hasOwnProperty.call(vnodeProps, 'model-value'))
+  );
+};
 
 const popoverRef = ref<HTMLDivElement>();
 const popperRef = ref<HTMLDivElement>();
-const visible = ref(false);
+const visible = ref(isModelControlled() && props.modelValue === true && !props.disabled);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
+const isPointerInside = ref(false);
+const isPopoverHovered = ref(false);
+const isFocusInside = ref(false);
 const popperId = `ex-popover-${generateId()}`;
+const titleId = `${popperId}-title`;
+const hasTitle = computed(() => Boolean(props.title || slots.title));
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const popoverZIndex = useZIndexLayer('popover');
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 
 // 计算属性
 const popoverClasses = computed(() => {
   const classes = ['ex-popover__popper', `ex-popover__popper--${resolvedPlacement.value}`];
+
+  if (!neonEffect.value) classes.push('ex-no-neon');
+  if (!animation.value) classes.push('ex-no-animation');
 
   if (props.customClass) {
     classes.push(props.customClass);
@@ -109,12 +146,8 @@ const popoverClasses = computed(() => {
 
 const popoverStyles = computed(() => {
   const styles: Record<string, string | number> = {
-    zIndex: 'calc(var(--ex-z-popover) - 1000 + var(--ex-z-index-base, 1000))',
+    zIndex: props.zIndex ?? popoverZIndex.value,
   };
-
-  if (props.zIndex !== undefined) {
-    styles['--ex-z-popover'] = String(props.zIndex);
-  }
 
   if (props.width) {
     styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
@@ -162,80 +195,105 @@ const updatePosition = () => {
   popperRef.value.style.left = `${left}px`;
 };
 
+const commitVisible = (nextVisible: boolean) => {
+  if (visible.value === nextVisible) return;
+  visible.value = nextVisible;
+  if (nextVisible) emit('show');
+  else emit('hide');
+  if (nextVisible) nextTick(updatePosition);
+};
+
+const requestVisible = (nextVisible: boolean) => {
+  if (!isModelControlled() || props.modelValue !== nextVisible) {
+    emit('update:modelValue', nextVisible);
+  }
+  if (!isModelControlled()) commitVisible(nextVisible);
+};
+
 const show = () => {
   if (props.disabled) return;
-
   clearTimers();
-
-  if (props.openDelay > 0) {
-    openTimer.value = window.setTimeout(() => {
-      visible.value = true;
-      emit('update:modelValue', true);
-      emit('show');
-      nextTick(() => {
-        updatePosition();
-      });
-    }, props.openDelay);
+  const requestShow = () => {
+    if (!props.disabled) requestVisible(true);
+  };
+  if (props.openDelay > 0 && typeof window !== 'undefined') {
+    openTimer.value = window.setTimeout(requestShow, props.openDelay);
   } else {
-    visible.value = true;
-    emit('update:modelValue', true);
-    emit('show');
-    nextTick(() => {
-      updatePosition();
-    });
+    requestShow();
   }
 };
 
 const hide = () => {
   clearTimers();
-
-  if (props.closeDelay > 0) {
-    closeTimer.value = window.setTimeout(() => {
-      visible.value = false;
-      emit('update:modelValue', false);
-      emit('hide');
-    }, props.closeDelay);
+  const requestHide = () => requestVisible(false);
+  if (props.closeDelay > 0 && typeof window !== 'undefined') {
+    closeTimer.value = window.setTimeout(requestHide, props.closeDelay);
   } else {
-    visible.value = false;
-    emit('update:modelValue', false);
-    emit('hide');
+    requestHide();
   }
 };
 
 const handleMouseEnter = () => {
   if (props.trigger === 'hover') {
+    isPointerInside.value = true;
     show();
   }
 };
 
 const handleMouseLeave = () => {
   if (props.trigger === 'hover') {
-    hide();
+    isPointerInside.value = false;
+    if (!isPopoverHovered.value) hide();
   }
 };
 
 const handlePopoverMouseEnter = () => {
   if (props.trigger === 'hover') {
+    isPopoverHovered.value = true;
     clearTimers();
   }
 };
 
 const handlePopoverMouseLeave = () => {
   if (props.trigger === 'hover') {
-    hide();
+    isPopoverHovered.value = false;
+    if (!isPointerInside.value) hide();
   }
 };
 
 const handleFocus = () => {
   if (props.trigger === 'focus') {
+    isFocusInside.value = true;
     show();
   }
 };
 
-const handleBlur = () => {
+const handleBlur = (event: FocusEvent) => {
   if (props.trigger === 'focus') {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (nextTarget && popperRef.value?.contains(nextTarget)) return;
+    isFocusInside.value = false;
     hide();
   }
+};
+
+const handlePopoverFocusIn = () => {
+  if (props.trigger !== 'focus') return;
+  isFocusInside.value = true;
+  clearTimers();
+};
+
+const handlePopoverFocusOut = (event: FocusEvent) => {
+  if (props.trigger !== 'focus') return;
+  const nextTarget = event.relatedTarget as Node | null;
+  if (
+    nextTarget &&
+    (popperRef.value?.contains(nextTarget) || popoverRef.value?.contains(nextTarget))
+  ) {
+    return;
+  }
+  isFocusInside.value = false;
+  hide();
 };
 
 const handleClick = () => {
@@ -246,6 +304,13 @@ const handleClick = () => {
       show();
     }
   }
+};
+
+const handleContextmenu = (event: MouseEvent) => {
+  if (props.trigger !== 'contextmenu' || props.disabled) return;
+  event.preventDefault();
+  if (visible.value) hide();
+  else show();
 };
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -269,36 +334,104 @@ const handleScroll = () => {
   }
 };
 
-// 生命周期
-onMounted(() => {
+interface TriggerAriaSnapshot {
+  haspopup: string | null;
+  expanded: string | null;
+  controls: string | null;
+}
+const triggerAria = new Map<HTMLElement, TriggerAriaSnapshot>();
+const restoreTriggerAria = () => {
+  triggerAria.forEach((snapshot, element) => {
+    const restore = (name: string, value: string | null) => {
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    };
+    restore('aria-haspopup', snapshot.haspopup);
+    restore('aria-expanded', snapshot.expanded);
+    restore('aria-controls', snapshot.controls);
+  });
+  triggerAria.clear();
+};
+
+const syncTriggerAria = () => {
+  restoreTriggerAria();
+  if (!popoverRef.value || typeof HTMLElement === 'undefined') return;
+  const trigger = Array.from(popoverRef.value.children).find(
+    (child): child is HTMLElement => child instanceof HTMLElement
+  );
+  if (!trigger) return;
+  triggerAria.set(trigger, {
+    haspopup: trigger.getAttribute('aria-haspopup'),
+    expanded: trigger.getAttribute('aria-expanded'),
+    controls: trigger.getAttribute('aria-controls'),
+  });
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-expanded', String(visible.value));
+  trigger.setAttribute('aria-controls', popperId);
+};
+
+const removeGlobalListeners = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('scroll', handleScroll, true);
+  document.removeEventListener('click', handleClickOutside);
+};
+
+const syncGlobalListeners = () => {
+  removeGlobalListeners();
+  if (!visible.value || typeof window === 'undefined' || typeof document === 'undefined') return;
   window.addEventListener('resize', handleResize);
   window.addEventListener('scroll', handleScroll, true);
-
-  if (props.trigger === 'click') {
+  if (props.trigger === 'click' || props.trigger === 'contextmenu') {
     document.addEventListener('click', handleClickOutside);
   }
+};
+
+watch(
+  [visible, () => props.trigger],
+  () => {
+    nextTick(syncTriggerAria);
+    syncGlobalListeners();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (!isModelControlled()) return;
+    clearTimers();
+    commitVisible(Boolean(newVal) && !props.disabled);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.disabled,
+  isDisabled => {
+    if (isDisabled) {
+      clearTimers();
+      isPointerInside.value = false;
+      isPopoverHovered.value = false;
+      isFocusInside.value = false;
+      if (isModelControlled() && props.modelValue === true) emit('update:modelValue', false);
+      commitVisible(false);
+    } else if (isModelControlled() && props.modelValue === true) {
+      commitVisible(true);
+    }
+  }
+);
+
+onMounted(() => {
+  syncTriggerAria();
+  if (visible.value) nextTick(updatePosition);
 });
 
 onUnmounted(() => {
   clearTimers();
-  window.removeEventListener('resize', handleResize);
-  window.removeEventListener('scroll', handleScroll, true);
-  document.removeEventListener('click', handleClickOutside);
+  removeGlobalListeners();
+  restoreTriggerAria();
 });
-
-// 监听 modelValue 变化
-watch(
-  () => props.modelValue,
-  newVal => {
-    if (newVal !== undefined) {
-      if (newVal) {
-        show();
-      } else {
-        hide();
-      }
-    }
-  }
-);
 
 defineExpose<ExPopoverExposed>({
   show,

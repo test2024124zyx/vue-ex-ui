@@ -3,6 +3,8 @@ import type { ComputedRef, Ref } from 'vue';
 import type { SupportedLocale } from '../../locale';
 import type { ComponentSize, ConfigContext, Theme } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
+import type { ZIndexLayer } from './z-index';
+import { resolveZIndexLayer } from './z-index';
 
 /** 获取最近一层配置；未使用提供者时返回稳定的只读默认值。 */
 export function useConfig(): ConfigContext {
@@ -57,4 +59,10 @@ export function useAnimation(): ComputedRef<boolean> {
 export function useZIndex(offset = 0): ComputedRef<number> {
   const config = useConfig();
   return computed(() => unref(config.zIndex) + offset);
+}
+
+/** 按统一语义层级解析最近 ConfigProvider 的最终 z-index。 */
+export function useZIndexLayer(layer: ZIndexLayer): ComputedRef<number> {
+  const config = useConfig();
+  return computed(() => resolveZIndexLayer(unref(config.zIndex), layer));
 }

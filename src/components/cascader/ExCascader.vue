@@ -79,7 +79,11 @@
           :id="dropdownId"
           ref="dropdownRef"
           class="ex-cascader__dropdown"
-          :class="{ 'ex-cascader__dropdown--inline': !teleported }"
+          :class="{
+            'ex-cascader__dropdown--inline': !teleported,
+            'ex-no-neon': !neonEffect,
+            'ex-no-animation': !animation,
+          }"
           :data-theme="configTheme"
           role="group"
           :aria-label="tCascader('panel')"
@@ -265,10 +269,16 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, useAttrs, useId } from 'vue';
 import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
 import { useLocale } from '../../locale';
-import { useComponentSize, useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
-import { CASCADER_DROPDOWN_Z_INDEX_OFFSET } from './constants';
 import { calculateCascaderDropdownPosition } from './position';
+import { findNextEnabledIndex } from './keyboard';
 import { useCascaderAria } from './use-cascader-aria';
 
 defineOptions({
@@ -311,9 +321,15 @@ const generatedId = `ex-cascader-${useId().replace(/:/g, '')}`;
 const controlId = computed(() => props.id?.trim() || generatedId);
 const dropdownId = computed(() => `${controlId.value}-dropdown`);
 // 下拉面板定位样式（Teleport 到 body 后用 fixed 坐标定位）
-const dropdownStyle = ref<Record<string, string>>({});
+const dropdownPositionStyle = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
-const dropdownZIndex = useZIndex(CASCADER_DROPDOWN_Z_INDEX_OFFSET);
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const dropdownZIndex = useZIndexLayer('dropdown');
+const dropdownStyle = computed<Record<string, string>>(() => ({
+  ...dropdownPositionStyle.value,
+  zIndex: String(dropdownZIndex.value),
+}));
 const selectedPath = ref<(string | number)[]>([...props.modelValue]);
 const activePath = ref<(string | number)[]>([...props.modelValue]);
 const menus = ref<CascaderOption[][]>([]);
@@ -491,7 +507,7 @@ const isSelected = (option: CascaderOption, level: number) =>
 // 更新下拉面板位置；非 Teleport 模式保留 CSS 的就地/底部面板布局。
 const updateDropdownPosition = () => {
   if (!props.teleported) {
-    dropdownStyle.value = {};
+    dropdownPositionStyle.value = {};
     return;
   }
   if (!triggerRef.value || !dropdownRef.value) return;
@@ -504,32 +520,14 @@ const updateDropdownPosition = () => {
     window.innerHeight
   );
 
-  dropdownStyle.value = {
+  dropdownPositionStyle.value = {
     position: 'fixed',
     top: `${position.top}px`,
     left: `${position.left}px`,
     minWidth: `${position.minWidth}px`,
     maxWidth: `${position.maxWidth}px`,
     maxHeight: `${position.maxHeight}px`,
-    zIndex: String(dropdownZIndex.value),
   };
-};
-
-/** 在选项列表中按方向查找下一个未禁用项。 */
-const findNextEnabledIndex = (
-  options: Array<{ disabled?: boolean }>,
-  from: number,
-  step: 1 | -1
-): number => {
-  if (options.length === 0) return -1;
-
-  const start = from < 0 ? (step === 1 ? -1 : options.length) : from;
-  for (let i = 1; i <= options.length; i++) {
-    const rawIndex = start + step * i;
-    const index = ((rawIndex % options.length) + options.length) % options.length;
-    if (!options[index]?.disabled) return index;
-  }
-  return -1;
 };
 
 /** 在指定菜单列设置键盘高亮，并跳过禁用选项。 */

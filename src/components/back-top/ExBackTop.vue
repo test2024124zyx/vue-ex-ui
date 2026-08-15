@@ -87,7 +87,13 @@
 <script setup lang="ts">
 import { computed, isVNode, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { useConfigTheme } from '../config-provider/composables';
+import { useLocale } from '../../locale';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import type { ExBackTopProps, ExBackTopEmits, ExBackTopExposed, BackTopScrollInfo } from './types';
 import { resolveTarget, getScrollInfo, scrollToPosition, getPositionStyle } from './utils';
@@ -122,6 +128,10 @@ const props = withDefaults(defineProps<ExBackTopProps>(), {
   style: undefined,
 });
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const stickyZIndex = useZIndexLayer('sticky');
+const { t } = useLocale('backTop');
 
 const emit = defineEmits<ExBackTopEmits>();
 
@@ -161,7 +171,7 @@ const transitionName = computed(() =>
   props.animation === 'none' ? '' : `ex-back-top-${props.animation}`
 );
 
-const resolvedAriaLabel = computed(() => props.ariaLabel || props.text || 'Back to top');
+const resolvedAriaLabel = computed(() => props.ariaLabel || props.text || t('label'));
 
 const ringCircumference = computed(() => 2 * Math.PI * 21);
 const ringOffset = computed(() => ringCircumference.value * (1 - scrollInfo.scrollPercent / 100));
@@ -173,25 +183,42 @@ const rootClasses = computed(() => [
   {
     'ex-back-top--with-text': !!props.text,
     'ex-back-top--with-progress': props.showProgress,
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
   },
   ...normalizeCustomClass(props.class),
 ]);
 
 const rootStyle = computed(() => {
   const base = getPositionStyle(props.position, props.offset);
-  if (props.zIndex !== undefined) base.zIndex = props.zIndex;
+  base.zIndex = props.zIndex ?? stickyZIndex.value;
   if (!props.style) return base;
   // Vue 会规范化样式数组，字符串样式只覆盖同名属性而不会清空固定定位。
   return typeof props.style === 'string' ? [base, props.style] : { ...base, ...props.style };
 });
 
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const normalizedVisibilityPercent = computed(() => {
+  if (props.visibilityPercent === undefined || !Number.isFinite(props.visibilityPercent)) {
+    return undefined;
+  }
+  return Math.min(100, Math.max(0, props.visibilityPercent));
+});
+const normalizedVisibilityHeight = computed(() =>
+  Number.isFinite(props.visibilityHeight) ? Math.max(0, props.visibilityHeight) : 200
+);
+
 // ---------------------------------------------------------------------------
 // 滚动监听
 // ---------------------------------------------------------------------------
 const computeVisible = (info: BackTopScrollInfo) =>
-  props.visibilityPercent !== undefined
-    ? info.scrollPercent >= props.visibilityPercent
-    : info.scrollTop >= props.visibilityHeight;
+  normalizedVisibilityPercent.value !== undefined
+    ? info.scrollPercent >= normalizedVisibilityPercent.value
+    : info.scrollTop >= normalizedVisibilityHeight.value;
 
 const update = () => {
   if (!scrollTarget) return;
@@ -243,11 +270,16 @@ const scrollToTop = async (): Promise<void> => {
   scrollAbortController = controller;
   emit('scroll-start');
   try {
+    const reduceMotion = prefersReducedMotion();
+    const targetPosition = Number.isFinite(props.scrollTo) ? Math.max(0, props.scrollTo) : 0;
+    const duration = Number.isFinite(props.scrollDuration)
+      ? Math.max(0, props.scrollDuration)
+      : 400;
     const completed = await scrollToPosition(
       scrollTarget,
-      props.scrollTo,
-      props.scrollBehavior,
-      props.scrollDuration,
+      targetPosition,
+      reduceMotion ? 'auto' : props.scrollBehavior,
+      reduceMotion ? 0 : duration,
       controller.signal
     );
     if (completed && mounted) emit('scroll-end');
@@ -288,6 +320,10 @@ watch(
     bind();
   }
 );
+
+watch([normalizedVisibilityHeight, normalizedVisibilityPercent], () => {
+  if (mounted) update();
+});
 
 onMounted(() => {
   mounted = true;
@@ -482,6 +518,20 @@ defineExpose<ExBackTopExposed>({
   .ex-back-top__line-fill {
     transition: none;
   }
+}
+
+// Teleport 按钮脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-back-top.ex-no-neon,
+.ex-back-top.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-back-top.ex-no-animation,
+.ex-back-top.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
 }
 
 @media print {

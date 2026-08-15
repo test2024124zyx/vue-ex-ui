@@ -56,6 +56,7 @@ export function useWatermark(
   let internalDomUpdate = false;
   let resizeListener: (() => void) | null = null;
   let throttledResize: ReturnType<typeof throttle> | null = null;
+  let renderController: AbortController | null = null;
 
   const resolveText = (): string | string[] => {
     if (Array.isArray(props.text)) return props.text;
@@ -94,16 +95,21 @@ export function useWatermark(
   /** 重绘当前水印；只提交最后一次异步请求的结果。 */
   const refresh = async (): Promise<void> => {
     const requestId = ++renderRequestId;
+    renderController?.abort();
+    const controller = new AbortController();
+    renderController = controller;
     const canvasStyle = resolveCanvasStyle();
     const tile = await renderWatermarkTile({
       props,
       text: resolveText(),
       color: canvasStyle.color,
       fontFamily: canvasStyle.fontFamily,
+      signal: controller.signal,
       onError: error => {
         if (requestId === renderRequestId) callbacks.onError?.(error);
       },
     });
+    if (renderController === controller) renderController = null;
     if (!mounted || requestId !== renderRequestId) return;
 
     overlayDataUrl.value = tile.dataUrl;
@@ -115,11 +121,14 @@ export function useWatermark(
   const toDataURL = (): string => overlayDataUrl.value;
 
   const observeProtectedElements = (): void => {
-    if (!mutationObserver || !containerRef.value) return;
+    if (!mutationObserver || !containerRef.value || !overlayRef.value) return;
     mutationObserver.observe(containerRef.value, {
       attributes: true,
       childList: true,
-      subtree: true,
+      attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
+    });
+    mutationObserver.observe(overlayRef.value, {
+      attributes: true,
       attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
     });
   };
@@ -285,6 +294,8 @@ export function useWatermark(
   onUnmounted(() => {
     mounted = false;
     renderRequestId += 1;
+    renderController?.abort();
+    renderController = null;
     removeResizeListener();
     stopAntiTamper();
   });

@@ -52,7 +52,7 @@
       display: inline-flex;
       opacity: 0;
       @include safe-transition(all);
-      
+
       // 发光效果应用到图标
       :deep(.ex-icon) {
         @include optimized-neon-glow('blue', 'md');
@@ -93,7 +93,8 @@
 
   // 脉冲动画
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1.2);
     }
     50% {

@@ -2,14 +2,7 @@ import type { VNodeChild } from 'vue';
 
 /** 原生单行输入类型，以及由组件切换渲染的 textarea。 */
 export type InputType =
-  | 'text'
-  | 'password'
-  | 'email'
-  | 'number'
-  | 'tel'
-  | 'url'
-  | 'search'
-  | 'textarea';
+  'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'search' | 'textarea';
 
 export type InputSize = 'small' | 'medium' | 'large';
 export type InputStatus = 'default' | 'success' | 'warning' | 'error';

@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, h, nextTick } from 'vue';
+import { defineComponent, h, nextTick, type PropType } from 'vue';
 import { useControllableState } from '../../src/composables/useControllableState';
 
 describe('useControllableState', () => {
   it('非受控模式立即提交内部状态并通知调用方', async () => {
     const changes: string[] = [];
     const Host = defineComponent({
-      props: { value: String },
+      props: {
+        value: {
+          type: String,
+          default: undefined,
+        },
+      },
       setup(props, { expose }) {
         const state = useControllableState({
           controlledValue: () => props.value,
@@ -30,7 +35,12 @@ describe('useControllableState', () => {
   it('受控模式只发出更新请求，等待外部值真正变化', async () => {
     const changes: string[] = [];
     const Host = defineComponent({
-      props: { value: String },
+      props: {
+        value: {
+          type: String,
+          default: undefined,
+        },
+      },
       setup(props, { expose }) {
         const state = useControllableState({
           controlledValue: () => props.value,
@@ -54,7 +64,12 @@ describe('useControllableState', () => {
 
   it('从受控切换为非受控时保留最后一次真实外部状态', async () => {
     const Host = defineComponent({
-      props: { value: String },
+      props: {
+        value: {
+          type: String,
+          default: undefined,
+        },
+      },
       setup(props) {
         const state = useControllableState({
           controlledValue: () => props.value,
@@ -75,7 +90,12 @@ describe('useControllableState', () => {
     const defaults = ['a'];
     const changes: string[][] = [];
     const Host = defineComponent({
-      props: { value: Array<string> },
+      props: {
+        value: {
+          type: Array as PropType<string[]>,
+          default: undefined,
+        },
+      },
       setup(props, { expose }) {
         const state = useControllableState<string[]>({
           controlledValue: () => props.value,

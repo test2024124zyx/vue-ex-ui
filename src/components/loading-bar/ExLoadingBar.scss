@@ -8,6 +8,20 @@
   pointer-events: none;
   contain: layout paint style;
 
+  &--no-animation &__bar {
+    transition: none;
+    will-change: auto;
+  }
+
+  &--no-animation &__glow,
+  &--no-animation &__flow {
+    animation: none;
+  }
+
+  &--no-neon &__bar {
+    box-shadow: none;
+  }
+
   &__bar {
     position: relative;
     width: 100%;

@@ -1,5 +1,6 @@
 import {
   BrowserImageError,
+  assertImagePixelBudget,
   encodeCanvasToBlob,
   throwIfImageOperationAborted,
 } from '../../utils/image-resource';
@@ -115,8 +116,16 @@ export function drawCropPreview(
     throw new ExImageCropError('INVALID_CONFIGURATION', '设备像素比必须是正有限数');
   }
 
-  canvas.width = Math.max(1, Math.round(containerSize.width * pixelRatio));
-  canvas.height = Math.max(1, Math.round(containerSize.height * pixelRatio));
+  const pixelWidth = Math.max(1, Math.round(containerSize.width * pixelRatio));
+  const pixelHeight = Math.max(1, Math.round(containerSize.height * pixelRatio));
+  try {
+    assertImagePixelBudget(pixelWidth, pixelHeight);
+  } catch (error) {
+    throw toImageCropError(error, 'INVALID_DIMENSION', '预览尺寸超过安全上限');
+  }
+
+  canvas.width = pixelWidth;
+  canvas.height = pixelHeight;
   canvas.style.width = containerSize.width + 'px';
   canvas.style.height = containerSize.height + 'px';
   const context = canvas.getContext('2d');
@@ -221,6 +230,7 @@ export async function renderCrop(
       width: Math.max(1, Math.round(sourceArea.width)),
       height: Math.max(1, Math.round(sourceArea.height)),
     };
+    assertImagePixelBudget(outputSize.width, outputSize.height);
     const canvas = document.createElement('canvas');
     canvas.width = outputSize.width;
     canvas.height = outputSize.height;

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExBackTop from '../../../src/components/back-top/ExBackTop.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import { getPositionStyle, resolveTarget } from '../../../src/components/back-top/utils';
 
 describe('ExBackTop', () => {
@@ -77,5 +78,85 @@ describe('ExBackTop', () => {
       left: '50%',
       translate: '-50% 0',
     });
+  });
+
+  it('运行时修改可见阈值会立即重新计算，不等待下一次滚动', async () => {
+    const target = document.createElement('div');
+    Object.defineProperties(target, {
+      scrollTop: { configurable: true, value: 100 },
+      scrollHeight: { configurable: true, value: 1000 },
+      clientHeight: { configurable: true, value: 500 },
+    });
+    const wrapper = mount(ExBackTop, {
+      attachTo: document.body,
+      props: { target, visibilityHeight: 200 },
+    });
+    await nextTick();
+    expect(document.body.querySelector('.ex-back-top')).toBeNull();
+
+    await wrapper.setProps({ visibilityHeight: 50 });
+
+    expect(document.body.querySelector('.ex-back-top')).not.toBeNull();
+    wrapper.unmount();
+  });
+
+  it('系统要求减少动态效果时平滑配置退化为即时滚动', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+    );
+    const request = vi.spyOn(window, 'requestAnimationFrame');
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const wrapper = mount(ExBackTop, {
+      attachTo: document.body,
+      props: { visibilityHeight: 0, scrollBehavior: 'smooth', scrollDuration: 400 },
+    });
+    await nextTick();
+
+    document.body.querySelector<HTMLButtonElement>('.ex-back-top')?.click();
+    await nextTick();
+
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(request).not.toHaveBeenCalled();
+    expect(wrapper.emitted('scroll-end')).toHaveLength(1);
+    wrapper.unmount();
+    vi.unstubAllGlobals();
+  });
+
+  it('默认按钮名称跟随 ConfigProvider 语言', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { locale: 'zh-CN' },
+      slots: { default: () => h(ExBackTop, { visibilityHeight: 0 }) },
+    });
+    await nextTick();
+
+    expect(document.body.querySelector('.ex-back-top')?.getAttribute('aria-label')).toBe(
+      '返回顶部'
+    );
+    await wrapper.setProps({ locale: 'en-US' });
+    expect(document.body.querySelector('.ex-back-top')?.getAttribute('aria-label')).toBe(
+      'Back to top'
+    );
+    wrapper.unmount();
+  });
+
+  it('Teleport 按钮继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExBackTop, { visibilityHeight: 0 }) },
+    });
+    await nextTick();
+
+    const button = document.body.querySelector<HTMLButtonElement>('.ex-back-top')!;
+    expect(button.style.zIndex).toBe('2420');
+    expect(button.classList).toContain('ex-no-neon');
+    expect(button.classList).toContain('ex-no-animation');
+    wrapper.unmount();
   });
 });

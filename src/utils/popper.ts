@@ -119,10 +119,10 @@ export function calcPopperPosition(
   }
 
   // 视口夹取，避免浮层超出可视区域
-  if (left < VIEWPORT_PADDING) left = VIEWPORT_PADDING;
-  if (left + popper.width > vw - VIEWPORT_PADDING) left = vw - popper.width - VIEWPORT_PADDING;
-  if (top < VIEWPORT_PADDING) top = VIEWPORT_PADDING;
-  if (top + popper.height > vh - VIEWPORT_PADDING) top = vh - popper.height - VIEWPORT_PADDING;
+  const maxLeft = Math.max(VIEWPORT_PADDING, vw - popper.width - VIEWPORT_PADDING);
+  const maxTop = Math.max(VIEWPORT_PADDING, vh - popper.height - VIEWPORT_PADDING);
+  left = Math.max(VIEWPORT_PADDING, Math.min(left, maxLeft));
+  top = Math.max(VIEWPORT_PADDING, Math.min(top, maxTop));
 
   return { top, left, placement: align ? `${side}-${align}` : side };
 }

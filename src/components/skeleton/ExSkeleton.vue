@@ -1,5 +1,8 @@
 <template>
-  <transition name="ex-skeleton-fade" mode="out-in">
+  <transition
+    name="ex-skeleton-fade"
+    mode="out-in"
+  >
     <div
       v-if="loading"
       key="skeleton"
@@ -18,9 +21,16 @@
 
       <!-- 预设变体模式（count 控制重复渲染的骨架块数量） -->
       <template v-else>
-        <div v-for="n in count" :key="n" class="ex-skeleton__repeat">
+        <div
+          v-for="n in count"
+          :key="n"
+          class="ex-skeleton__repeat"
+        >
           <!-- 头像 + 内容布局 -->
-          <div v-if="avatar || variant === 'avatar'" class="ex-skeleton__layout">
+          <div
+            v-if="avatar || variant === 'avatar'"
+            class="ex-skeleton__layout"
+          >
             <!-- 头像 -->
             <div
               class="ex-skeleton__avatar"
@@ -29,12 +39,22 @@
             />
 
             <!-- 内容区域 -->
-            <div v-if="variant !== 'avatar'" class="ex-skeleton__content">
+            <div
+              v-if="variant !== 'avatar'"
+              class="ex-skeleton__content"
+            >
               <!-- 标题 -->
-              <div v-if="title" class="ex-skeleton__title" :style="titleStyle" />
+              <div
+                v-if="title"
+                class="ex-skeleton__title"
+                :style="titleStyle"
+              />
 
               <!-- 段落 -->
-              <div v-if="rows > 0" class="ex-skeleton__paragraph">
+              <div
+                v-if="rows > 0"
+                class="ex-skeleton__paragraph"
+              >
                 <div
                   v-for="(_row, index) in rows"
                   :key="index"
@@ -46,16 +66,62 @@
           </div>
 
           <!-- 纯内容布局（无头像） -->
-          <div v-else class="ex-skeleton__content">
-            <!-- 标题 -->
+          <div
+            v-else
+            class="ex-skeleton__content"
+          >
             <div
-              v-if="title || variant === 'title'"
+              v-if="variant === 'list'"
+              class="ex-skeleton__list-item ex-skeleton__layout"
+            >
+              <div
+                class="ex-skeleton__avatar"
+                :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
+                :style="avatarStyle"
+              />
+              <div class="ex-skeleton__content">
+                <div
+                  class="ex-skeleton__title"
+                  :style="titleStyle"
+                />
+                <div class="ex-skeleton__paragraph">
+                  <div
+                    v-for="rowIndex in Math.max(1, rows)"
+                    :key="rowIndex"
+                    class="ex-skeleton__row"
+                    :style="getRowStyle(rowIndex - 1)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-else-if="variant === 'table'"
+              class="ex-skeleton__table"
+            >
+              <div class="ex-skeleton__table-header ex-skeleton__title" />
+              <div
+                v-for="rowIndex in Math.max(1, rows)"
+                :key="rowIndex"
+                class="ex-skeleton__table-row ex-skeleton__row"
+              />
+            </div>
+
+            <div
+              v-else-if="title || variant === 'title' || variant === 'article'"
               class="ex-skeleton__title"
               :style="titleStyle"
             />
 
-            <!-- 段落 -->
-            <div v-if="rows > 0 || variant === 'paragraph'" class="ex-skeleton__paragraph">
+            <div
+              v-if="
+                variant === 'paragraph' ||
+                variant === 'article' ||
+                (variant === 'text' && hasExplicitRows) ||
+                (title && rows > 0)
+              "
+              class="ex-skeleton__paragraph"
+            >
               <div
                 v-for="(_row, index) in computedRows"
                 :key="index"
@@ -66,7 +132,7 @@
 
             <!-- 单个元素变体 -->
             <div
-              v-if="['text', 'image', 'button', 'card'].includes(variant)"
+              v-if="['text', 'image', 'button', 'card', 'rect'].includes(variant)"
               class="ex-skeleton__element"
               :class="`ex-skeleton__element--${variant}`"
               :style="elementStyle"
@@ -80,7 +146,10 @@
     </div>
 
     <!-- 加载完成后显示实际内容 -->
-    <div v-else key="content">
+    <div
+      v-else
+      key="content"
+    >
       <slot name="content">
         <slot />
       </slot>
@@ -90,7 +159,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref } from 'vue';
+import { computed, getCurrentInstance, ref } from 'vue';
 import type { ExSkeletonProps, ExSkeletonExposed } from './types';
 import { useLocale } from '../../locale';
 
@@ -114,6 +183,12 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
 
 const { t } = useLocale('skeleton');
 const skeletonRef = ref<HTMLDivElement>();
+const instance = getCurrentInstance();
+const hasExplicitRows = computed(() => {
+  void props.rows;
+  const vnodeProps = instance?.vnode.props;
+  return Boolean(vnodeProps && Object.prototype.hasOwnProperty.call(vnodeProps, 'rows'));
+});
 
 // 计算属性
 const skeletonClasses = computed(() => {
@@ -180,6 +255,10 @@ const titleStyle = computed(() => {
 const elementStyle = computed(() => {
   const styles: Record<string, string> = {};
 
+  if (props.variant === 'rect' && !props.height) {
+    styles.minHeight = '120px';
+  }
+
   if (props.width) {
     styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
   }
@@ -192,7 +271,7 @@ const elementStyle = computed(() => {
 });
 
 const computedRows = computed(() => {
-  if (props.variant === 'paragraph') {
+  if (props.variant === 'paragraph' || props.variant === 'article') {
     return props.rows || 3;
   }
   return props.rows;

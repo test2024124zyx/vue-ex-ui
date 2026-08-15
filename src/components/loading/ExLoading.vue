@@ -100,8 +100,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useSlots, watch } from 'vue';
 import { lockDocumentScroll, unlockDocumentScroll } from '../../composables/overlay-manager';
-import { useI18n } from '../../locale';
-import { useConfigTheme } from '../config-provider/composables';
+import { useLocale } from '../../locale';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import {
   acquireLoadingTargetPosition,
   normalizeLoadingColor,
@@ -129,8 +134,12 @@ const props = withDefaults(defineProps<ExLoadingProps>(), {
 const emit = defineEmits<ExLoadingEmits>();
 const attrs = useAttrs();
 const slots = useSlots();
-const { t } = useI18n();
+const { t } = useLocale('loading');
 const configTheme = useConfigTheme();
+const animationEnabled = useAnimation();
+const neonEnabled = useNeonEffect();
+const overlayZIndex = useZIndexLayer('overlay');
+const modalZIndex = useZIndexLayer('modal');
 
 const OBSOLETE_ATTRS = new Set([
   'loading',
@@ -175,6 +184,8 @@ const loadingClasses = computed(() => [
   {
     'ex-loading--fullscreen': props.fullscreen,
     'ex-loading--no-mask': !props.mask,
+    'ex-loading--no-animation': !animationEnabled.value,
+    'ex-loading--no-neon': !neonEnabled.value,
   },
 ]);
 
@@ -183,14 +194,16 @@ const loadingStyles = computed<Record<string, string>>(() => {
   const color = normalizeLoadingColor(props.color);
   const zIndex = normalizeLoadingZIndex(props.zIndex);
   if (color) styles['--ex-loading-color'] = color;
-  if (zIndex !== undefined) styles['--ex-loading-z-index'] = String(zIndex);
+  styles['--ex-loading-z-index'] = String(
+    zIndex ?? (props.fullscreen ? modalZIndex.value : overlayZIndex.value)
+  );
   return styles;
 });
 
 const accessibleLabel = computed(() => {
   const nativeLabel = attrs['aria-label'];
   if (typeof nativeLabel === 'string' && nativeLabel.trim()) return nativeLabel.trim();
-  return props.text?.trim() || t('loading.loading');
+  return props.text?.trim() || t('loading');
 });
 
 const canUseDom = (): boolean => typeof document !== 'undefined';

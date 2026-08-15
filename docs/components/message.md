@@ -131,7 +131,10 @@ message.config({
 });
 ```
 
-安装 `ExMessage` 或完整组件库后，Options API 可使用类型完整的 `this.$message`。
+安装 `ExMessage` 或完整组件库后，Options API 可使用类型完整的 `this.$message`，且每个
+Vue App 的配置与队列相互隔离。在 ConfigProvider 子树的 `setup()` 中使用
+`useMessageService()`，消息会继承主题、语言和 z-index，并在 Provider 卸载时统一清理。
+直接导入的 `message` 是 setup 外使用的模块级便捷单例。
 
 ## 服务 API
 

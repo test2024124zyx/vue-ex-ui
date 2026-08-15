@@ -1,12 +1,7 @@
 export type GridGutterPreset = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type GridGutter = number | [number, number] | GridGutterPreset;
 export type GridJustify =
-  | 'start'
-  | 'end'
-  | 'center'
-  | 'space-around'
-  | 'space-between'
-  | 'space-evenly';
+  'start' | 'end' | 'center' | 'space-around' | 'space-between' | 'space-evenly';
 export type GridAlign = 'top' | 'middle' | 'bottom' | 'stretch';
 export type GridSpan = number | 'auto';
 

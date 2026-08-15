@@ -3,7 +3,12 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { h } from 'vue';
 import ExDropdown from '../../../src/components/dropdown/ExDropdown.vue';
 import ExDropdownItem from '../../../src/components/dropdown/ExDropdownItem.vue';
-import type { DropdownItemData, ExDropdownExposed } from '../../../src/components/dropdown/types';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import type {
+  DropdownItemData,
+  DropdownTriggerSlotProps,
+  ExDropdownExposed,
+} from '../../../src/components/dropdown/types';
 
 const items: DropdownItemData[] = [
   { key: 'edit', label: '编辑' },
@@ -32,7 +37,7 @@ describe('ExDropdown', () => {
       props: { items, trigger: 'click', ...props },
       attrs,
       slots: {
-        default: (slotProps: { triggerProps: Record<string, unknown> }) =>
+        default: (slotProps: DropdownTriggerSlotProps) =>
           h(
             'button',
             {
@@ -263,6 +268,23 @@ describe('ExDropdown', () => {
     expect(document.activeElement).not.toBe(triggerButton().element);
   });
 
+  it('受控关闭在父级确认隐藏后才把焦点归还触发器', async () => {
+    mountDropdown({ visible: true });
+    await flushPromises();
+    menuElement().focus();
+
+    menuElement().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await flushPromises();
+
+    expect(wrapper!.emitted('update:visible')?.at(-1)).toEqual([false]);
+    expect(menuElement().style.display).not.toBe('none');
+    expect(document.activeElement).toBe(menuElement());
+
+    await wrapper!.setProps({ visible: false });
+    await flushPromises();
+    expect(document.activeElement).toBe(triggerButton().element);
+  });
+
   it('字符键执行标签前缀导航', async () => {
     mountDropdown();
     await triggerButton().trigger('keydown', { key: 'ArrowDown' });
@@ -405,5 +427,28 @@ describe('ExDropdown', () => {
     expect(wrapper!.classes()).toContain('custom-dropdown');
     expect(wrapper!.attributes('style')).toContain('opacity: 0.9');
     expect(wrapper!.attributes('data-testid')).toBe('dropdown');
+  });
+
+  it('Teleport 菜单继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const provider = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: {
+        default: () =>
+          h(
+            ExDropdown,
+            { items, trigger: 'click' },
+            { default: () => h('button', { class: 'provider-trigger' }, '打开菜单') }
+          ),
+      },
+    });
+
+    await provider.get('.provider-trigger').trigger('click');
+    await flushPromises();
+    const menu = document.querySelector<HTMLElement>('.ex-dropdown__menu')!;
+    expect(menu.style.zIndex).toBe('2400');
+    expect(menu.classList).toContain('ex-no-neon');
+    expect(menu.classList).toContain('ex-no-animation');
+    provider.unmount();
   });
 });

@@ -16,25 +16,38 @@ const time5 = ref('14:00:00')
 
 绑定 `v-model`，默认格式为 `HH:mm:ss`。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time1" />
   <span style="color: var(--ex-color-text-secondary);">当前值：{{ time1 || '（空）' }}</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" />
+  <div class="demo-container">
+    <ExTimePicker v-model="time1" />
+    <span style="color: var(--ex-color-text-secondary);">当前值：{{ time1 || '（空）' }}</span>
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-const time = ref('');
+const time1 = ref('');
 </script>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 设置 `small` / `medium`（默认）/ `large`。
+
+::: raw
 
 <div class="demo-container">
   <ExTimePicker v-model="time2" size="small" />
@@ -42,55 +55,138 @@ const time = ref('');
   <ExTimePicker v-model="time2" size="large" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" size="small" />
-  <ExTimePicker v-model="time" size="medium" />
-  <ExTimePicker v-model="time" size="large" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time2"
+      size="small"
+    />
+    <ExTimePicker
+      v-model="time2"
+      size="medium"
+    />
+    <ExTimePicker
+      v-model="time2"
+      size="large"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time2 = ref('09:30:00');
+</script>
 ```
+
+:::
 
 ## 时分格式
 
 通过 `format` 控制显示的时间单位，例如只选时分。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time3" format="HH:mm" placeholder="选择时分" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" format="HH:mm" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time3"
+      format="HH:mm"
+      placeholder="选择时分"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time3 = ref('');
+</script>
 ```
+
+:::
 
 ## 步进间隔
 
 通过 `hour-step` / `minute-step` / `second-step` 设置步进。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time4" :minute-step="15" :second-step="15" placeholder="每 15 分钟" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" :minute-step="15" :second-step="15" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time4"
+      :minute-step="15"
+      :second-step="15"
+      placeholder="每 15 分钟"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time4 = ref('');
+</script>
 ```
+
+:::
 
 ## 禁用状态
 
 设置 `disabled` 禁用整个选择器。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time5" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" disabled />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time5"
+      disabled
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time5 = ref('14:00:00');
+</script>
 ```
+
+:::
 
 ## 受控 / 非受控
 
@@ -98,7 +194,10 @@ TimePicker 通过 `v-model` 受控。每次点选时分秒都会实时更新绑�
 
 ```vue
 <template>
-  <ExTimePicker v-model="time" @change="onChange" />
+  <ExTimePicker
+    v-model="time"
+    @change="onChange"
+  />
 </template>
 
 <script setup>
@@ -126,6 +225,9 @@ const onChange = val => console.log('changed:', val);
 | disabled-seconds                      | 返回禁用的秒数组                              | `(hour, minute) => number[]`     | —                |
 | teleported                            | 面板是否传送到 body                           | `boolean`                        | `true`           |
 | popper-class                          | 弹层自定义类名                                | `string`                         | —                |
+| id                                    | 输入框 ID                                     | `string`                         | —                |
+| aria-label                            | 输入框无障碍名称                              | `string`                         | 使用占位文本     |
+| aria-describedby                      | 关联描述元素 ID                               | `string`                         | —                |
 
 ### Events
 

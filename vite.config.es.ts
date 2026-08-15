@@ -35,7 +35,7 @@ const entries = Object.fromEntries(
   entryFiles.map(file => {
     // 入口名：去掉 src/ 前缀与扩展名，作为 dist/es 下的相对路径
     const name = file.slice('src/'.length).replace(/\.(ts|vue)$/, '');
-    return [name, resolve(__dirname, file)];
+    return [name, resolve(import.meta.dirname, file)];
   })
 );
 
@@ -47,7 +47,7 @@ export default defineConfig({
     dts({
       include: ['src/**/*'],
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-      outDir: 'dist/es',
+      outDirs: 'dist/es',
       entryRoot: 'src',
       afterDiagnostic(diagnostics) {
         // 按需构建的声明错误同样必须阻断发布。
@@ -65,11 +65,12 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'es2020',
     outDir: 'dist/es',
     emptyOutDir: true,
     cssCodeSplit: true,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       formats: ['es'],
     },
     rollupOptions: {
@@ -86,12 +87,9 @@ export default defineConfig({
       },
     },
   },
-  esbuild: {
-    target: 'es2020',
-  },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
   define: {

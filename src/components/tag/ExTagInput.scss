@@ -209,7 +209,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high), (prefers-contrast: more), (forced-colors: active) {
+@media (prefers-contrast: more), (forced-colors: active) {
   .ex-tag-input {
     &__button {
       background: Canvas;

@@ -2,7 +2,6 @@
   <div
     ref="tooltipRef"
     class="ex-tooltip"
-    :aria-describedby="visible ? popperId : undefined"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
     @focusin="handleFocus"
@@ -50,11 +49,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
-import { useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 
 defineOptions({
   name: 'ExTooltip',
@@ -73,14 +77,29 @@ const props = withDefaults(defineProps<ExTooltipProps>(), {
 });
 
 const emit = defineEmits<ExTooltipEmits>();
+const instance = getCurrentInstance();
+const isModelControlled = () => {
+  const vnodeProps = instance?.vnode.props;
+  return Boolean(
+    vnodeProps &&
+    (Object.prototype.hasOwnProperty.call(vnodeProps, 'modelValue') ||
+      Object.prototype.hasOwnProperty.call(vnodeProps, 'model-value'))
+  );
+};
 
 const tooltipRef = ref<HTMLDivElement>();
 const popperRef = ref<HTMLDivElement>();
-const visible = ref(false);
+const visible = ref(isModelControlled() && props.modelValue === true && !props.disabled);
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
+const isPointerInside = ref(false);
+const isFocusInside = ref(false);
+const isPopperHovered = ref(false);
 const popperId = `ex-tooltip-${generateId()}`;
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const tooltipZIndex = useZIndexLayer('tooltip');
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 
@@ -92,6 +111,9 @@ const tooltipClasses = computed(() => {
     `ex-tooltip__popper--${props.effect}`,
   ];
 
+  if (!neonEffect.value) classes.push('ex-no-neon');
+  if (!animation.value) classes.push('ex-no-animation');
+
   if (props.customClass) {
     classes.push(props.customClass);
   }
@@ -101,12 +123,8 @@ const tooltipClasses = computed(() => {
 
 const tooltipStyles = computed(() => {
   const styles: Record<string, string> = {
-    zIndex: 'calc(var(--ex-z-tooltip) - 1000 + var(--ex-z-index-base, 1000))',
+    zIndex: String(props.zIndex ?? tooltipZIndex.value),
   };
-
-  if (props.zIndex !== undefined) {
-    styles['--ex-z-tooltip'] = String(props.zIndex);
-  }
 
   return styles;
 });
@@ -146,63 +164,86 @@ const updatePosition = () => {
   popperRef.value.style.left = `${left}px`;
 };
 
+const commitVisible = (nextVisible: boolean) => {
+  if (visible.value === nextVisible) return;
+  visible.value = nextVisible;
+  if (nextVisible) emit('show');
+  else emit('hide');
+  if (nextVisible) nextTick(updatePosition);
+};
+
+const requestVisible = (nextVisible: boolean) => {
+  if (!isModelControlled() || props.modelValue !== nextVisible) {
+    emit('update:modelValue', nextVisible);
+  }
+  if (!isModelControlled()) {
+    commitVisible(nextVisible);
+  }
+};
+
 const show = () => {
   if (props.disabled) return;
-
   clearTimers();
 
-  if (props.openDelay > 0) {
-    openTimer.value = window.setTimeout(() => {
-      visible.value = true;
-      emit('show');
-      nextTick(() => {
-        updatePosition();
-      });
-    }, props.openDelay);
+  const requestShow = () => {
+    if (!props.disabled) requestVisible(true);
+  };
+  if (props.openDelay > 0 && typeof window !== 'undefined') {
+    openTimer.value = window.setTimeout(requestShow, props.openDelay);
   } else {
-    visible.value = true;
-    emit('show');
-    nextTick(() => {
-      updatePosition();
-    });
+    requestShow();
   }
 };
 
 const hide = () => {
   clearTimers();
 
-  if (props.closeDelay > 0) {
-    closeTimer.value = window.setTimeout(() => {
-      visible.value = false;
-      emit('hide');
-    }, props.closeDelay);
+  const requestHide = () => requestVisible(false);
+  if (props.closeDelay > 0 && typeof window !== 'undefined') {
+    closeTimer.value = window.setTimeout(requestHide, props.closeDelay);
   } else {
-    visible.value = false;
-    emit('hide');
+    requestHide();
   }
+};
+
+const shouldStayVisible = () => {
+  if (props.trigger === 'hover-focus') {
+    return isPointerInside.value || isFocusInside.value || isPopperHovered.value;
+  }
+  if (props.trigger === 'hover') return isPointerInside.value || isPopperHovered.value;
+  if (props.trigger === 'focus') return isFocusInside.value;
+  return visible.value;
+};
+
+const hideWhenInactive = () => {
+  if (!shouldStayVisible()) hide();
 };
 
 const handleMouseEnter = () => {
   if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
+    isPointerInside.value = true;
     show();
   }
 };
 
 const handleMouseLeave = () => {
   if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
-    hide();
+    isPointerInside.value = false;
+    hideWhenInactive();
   }
 };
 
 const handleFocus = () => {
   if (props.trigger === 'focus' || props.trigger === 'hover-focus') {
+    isFocusInside.value = true;
     show();
   }
 };
 
 const handleBlur = () => {
   if (props.trigger === 'focus' || props.trigger === 'hover-focus') {
-    hide();
+    isFocusInside.value = false;
+    hideWhenInactive();
   }
 };
 
@@ -219,13 +260,15 @@ const handleClick = () => {
 // 鼠标移入浮层时取消关闭计时，允许用户在浮层内交互/选中文本
 const handlePopperEnter = () => {
   if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
+    isPopperHovered.value = true;
     clearTimers();
   }
 };
 
 const handlePopperLeave = () => {
   if (props.trigger === 'hover' || props.trigger === 'hover-focus') {
-    hide();
+    isPopperHovered.value = false;
+    hideWhenInactive();
   }
 };
 
@@ -239,24 +282,57 @@ const handleScroll = () => {
 
 // Esc 关闭（WAI-ARIA tooltip 规范要求）
 const handleEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
+  if (event.key === 'Escape' && visible.value) {
     clearTimers();
-    visible.value = false;
-    emit('hide');
+    requestVisible(false);
   }
 };
 
+const describedElements = new Map<HTMLElement, string | null>();
+const restoreTriggerDescriptions = () => {
+  describedElements.forEach((description, element) => {
+    if (description === null) element.removeAttribute('aria-describedby');
+    else element.setAttribute('aria-describedby', description);
+  });
+  describedElements.clear();
+};
+
+const syncTriggerDescriptions = () => {
+  restoreTriggerDescriptions();
+  if (!visible.value || !tooltipRef.value || typeof HTMLElement === 'undefined') return;
+  const trigger = Array.from(tooltipRef.value.children).find(
+    (child): child is HTMLElement => child instanceof HTMLElement
+  );
+  if (!trigger) return;
+  const current = trigger.getAttribute('aria-describedby');
+  describedElements.set(trigger, current);
+  const ids = new Set((current ?? '').split(/\s+/).filter(Boolean));
+  ids.add(popperId);
+  trigger.setAttribute('aria-describedby', Array.from(ids).join(' '));
+};
+
 // 仅在浮层可见时挂载全局监听器
-watch(visible, isVisible => {
-  if (isVisible) {
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll, true);
-    document.addEventListener('keydown', handleEscape);
-  } else {
-    window.removeEventListener('resize', handleResize);
-    window.removeEventListener('scroll', handleScroll, true);
-    document.removeEventListener('keydown', handleEscape);
-  }
+watch(
+  visible,
+  isVisible => {
+    nextTick(syncTriggerDescriptions);
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (isVisible) {
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      document.addEventListener('keydown', handleEscape);
+    } else {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('keydown', handleEscape);
+      restoreTriggerDescriptions();
+    }
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
+  if (visible.value) nextTick(updatePosition);
 });
 
 onUnmounted(() => {
@@ -264,18 +340,33 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('scroll', handleScroll, true);
   document.removeEventListener('keydown', handleEscape);
+  restoreTriggerDescriptions();
 });
 
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
   newVal => {
-    if (newVal !== undefined) {
-      if (newVal) {
-        show();
-      } else {
-        hide();
-      }
+    if (isModelControlled()) {
+      clearTimers();
+      commitVisible(Boolean(newVal) && !props.disabled);
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.disabled,
+  isDisabled => {
+    if (isDisabled) {
+      clearTimers();
+      isPointerInside.value = false;
+      isFocusInside.value = false;
+      isPopperHovered.value = false;
+      if (isModelControlled() && props.modelValue === true) emit('update:modelValue', false);
+      commitVisible(false);
+    } else if (isModelControlled() && props.modelValue === true) {
+      commitVisible(true);
     }
   }
 );

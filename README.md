@@ -1,9 +1,9 @@
 # 🎮 ExUI - Vue3 Cyberpunk UI Component Library
 
-<img src="https://img.shields.io/badge/Vue-3.4+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
+<img src="https://img.shields.io/badge/Vue-3.5+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
 <img src="https://img.shields.io/badge/TypeScript-5.9+-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-<img src="https://img.shields.io/badge/Vite-7.1+-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
-<img src="https://img.shields.io/badge/SCSS-1.92+-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="SCSS">
+<img src="https://img.shields.io/badge/Vite-8.2+-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+<img src="https://img.shields.io/badge/Sass-1.102+-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="Sass">
 <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 
 **移动端优先的响应式 Vue3 组件库 | 赛博朋克主题风格**
@@ -442,12 +442,11 @@ const { theme } = usePersistedTheme();
 
 ## 🌍 国际化（i18n）
 
-ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方式完成初始化。
+ExUI 拥有独立的语言状态与翻译器。`createLocaleProvider()` 只为 ExUI 组件和从
+`vue-ex-ui` 导出的 `useI18n()` / `useLocale()` 提供 App 级隔离；它不会为宿主业务安装
+`vue-i18n`，也不会让宿主直接使用 `vue-i18n` 的 `useI18n()`。
 
-- 推荐方式：使用 ExUI 提供的 `createLocaleProvider`
-- 手动方式：自行创建 `createI18n` 并注入 ExUI 的语言包
-
-### 一、快速开始（推荐）
+### 一、只配置 ExUI
 
 ```ts
 import { createApp } from 'vue';
@@ -468,13 +467,18 @@ app.use(i18nProvider);
 app.mount('#app');
 ```
 
-### 二、手动集成 vue-i18n
+即使项目没有安装 `vue-i18n`，ExUI 也会使用内置中英文翻译。若已安装，
+`createLocaleProvider()` 可以在自己的隔离作用域内增强翻译，但不会注册宿主插件。
+
+### 二、宿主业务同时使用 vue-i18n
+
+宿主必须自行创建并同步安装 `vue-i18n`；ExUI 与宿主的消息表也分别配置：
 
 ```ts
 import { createApp } from 'vue';
 import App from './App.vue';
 import { createI18n } from 'vue-i18n';
-import { enUS, zhCN } from 'vue-ex-ui';
+import { createLocaleProvider, enUS, zhCN } from 'vue-ex-ui';
 
 const app = createApp(App);
 
@@ -486,21 +490,28 @@ const i18n = createI18n({
     'zh-CN': zhCN,
   },
 });
+const exLocale = createLocaleProvider({ locale: 'zh-CN' });
 
 app.use(i18n);
+app.use(exLocale);
 app.mount('#app');
 ```
+
+切换语言时，应让宿主 `vue-i18n` 的 `locale` 与 `ExConfigProvider` 的 `locale` 读取
+同一个响应式语言状态；这样 ExUI 会保留 `createLocaleProvider({ messages })` 的自定义文案，
+同时只覆盖当前 Provider 子树选择的语言，不会修改其他 App。
 
 ### 组件中使用
 
 ```ts
-// 方式A：vue-i18n
-import { useI18n } from 'vue-i18n';
-const { t, locale } = useI18n();
-
-// 方式B：ExUI 提供的作用域翻译（内部优先代理到 vue-i18n）
-import { useLocale } from 'vue-ex-ui';
+// ExUI 翻译器：只依赖 createLocaleProvider 或内置回退
+import { useI18n as useExI18n, useLocale } from 'vue-ex-ui';
+const exI18n = useExI18n();
 const { t: tm } = useLocale('menu');
+
+// 宿主翻译器：仅在 main.ts 已执行 app.use(i18n) 后可用
+import { useI18n as useHostI18n } from 'vue-i18n';
+const hostI18n = useHostI18n();
 
 // 示例
 tm('search'); // => '搜索菜单'
@@ -508,8 +519,9 @@ tm('search'); // => '搜索菜单'
 
 ### 依赖与外部化
 
-- 组件库将 `vue-i18n` 标记为 external（见 vite.config），并声明为 peerDependencies。
-- 请在宿主项目安装：`npm i vue-i18n`，并按上述任一方式完成初始化。
+- `vue-i18n` 是可选 peer 依赖；只使用 ExUI 内置翻译时无需安装。
+- 宿主业务需要其 API 时执行 `npm i vue-i18n`，并自行 `createI18n()` 与 `app.use(i18n)`。
+- `createLocaleProvider({ messages })` 只覆盖 ExUI 文案，不会写入宿主 `vue-i18n` 的消息表。
 
 ---
 
@@ -580,19 +592,19 @@ const handleBreakpoint = broken => {
 
 ## 🛠️ 技术栈
 
-| 技术                 | 版本  | 说明                     |
-| -------------------- | ----- | ------------------------ |
-| **Vue**              | 3.4+  | 渐进式 JavaScript 框架   |
-| **TypeScript**       | 5.9+  | 类型安全的 JavaScript    |
-| **Vite**             | 7.1+  | 下一代前端构建工具       |
-| **SCSS**             | 1.92+ | CSS 预处理器             |
-| **内置 SVG 图标**    | -     | 60+ 内联图标，零网络依赖 |
-| **Vitest**           | 3.2+  | 单元测试框架             |
-| **VitePress**        | 1.6+  | 文档生成工具             |
-| **Vue I18n**         | 11.1+ | 国际化支持               |
-| **JsBarcode**        | 3.12+ | 条码生成库               |
-| **QRCode**           | 1.5+  | 二维码生成库             |
-| **Lunar JavaScript** | 1.7+  | 农历支持                 |
+| 技术                 | 版本   | 说明                     |
+| -------------------- | ------ | ------------------------ |
+| **Vue**              | 3.5+   | 渐进式 JavaScript 框架   |
+| **TypeScript**       | 5.9+   | 类型安全的 JavaScript    |
+| **Vite**             | 8.2+   | 下一代前端构建工具       |
+| **SCSS**             | 1.102+ | CSS 预处理器             |
+| **内置 SVG 图标**    | -      | 60+ 内联图标，零网络依赖 |
+| **Vitest**           | 4.1+   | 单元测试框架             |
+| **VitePress**        | 1.6+   | 文档生成工具             |
+| **Vue I18n**         | 11.4+  | 国际化支持               |
+| **JsBarcode**        | 3.12+  | 条码生成库               |
+| **QRCode**           | 1.5+   | 二维码生成库             |
+| **Lunar JavaScript** | 1.7+   | 农历支持                 |
 
 ---
 

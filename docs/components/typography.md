@@ -300,7 +300,7 @@
 | `text`             | 无默认插槽时显示的文本                      | `string`                                                        | —                   |
 | `tag`              | HTML 标签                                   | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
 | `variant`          | 文本层级                                    | `display \| heading \| title \| body \| caption \| overline`    | `body`              |
-| `size`             | 字号                                        | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | `md`                |
+| `size`             | 显式字号；未设置时保留 `variant` 的字号     | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | —                   |
 | `color`            | 主题色名或有效 CSS 颜色                     | `TypographyColor \| string`                                     | `text-primary`      |
 | `truncate`         | 是否截断文本                                | `boolean`                                                       | `false`             |
 | `maxLines`         | 截断时保留的最大行数，非整数会向下取整      | `number`                                                        | `1`                 |

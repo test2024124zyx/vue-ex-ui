@@ -1,9 +1,6 @@
 /** 文件预览可辨识的错误代码。 */
 export type ExFilePreviewErrorCode =
-  | 'invalid-source'
-  | 'http-error'
-  | 'text-too-large'
-  | 'load-failed';
+  'invalid-source' | 'http-error' | 'text-too-large' | 'load-failed';
 
 export interface ExFilePreviewErrorOptions {
   /** 稳定错误代码，供调用方执行分支处理。 */

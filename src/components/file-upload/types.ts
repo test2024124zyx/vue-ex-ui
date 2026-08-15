@@ -58,12 +58,7 @@ export type BeforeAdd = (
 ) => BeforeAddResult | Promise<BeforeAddResult>;
 
 export type UploadRejectionCode =
-  | 'accept'
-  | 'size'
-  | 'limit'
-  | 'multiple'
-  | 'before-add'
-  | 'before-add-error';
+  'accept' | 'size' | 'limit' | 'multiple' | 'before-add' | 'before-add-error';
 
 /** 选择阶段的可判别拒绝结果。 */
 export interface UploadRejection {

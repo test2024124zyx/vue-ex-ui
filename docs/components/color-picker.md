@@ -13,10 +13,16 @@ const predefine = ['#29abe2', '#ff2d78', '#7c4dff', '#00d68f', '#ffaa00']
 
 ## 基础用法
 
+::: raw
+
 <div class="demo-container">
   <ExColorPicker v-model="color" />
   <span>{{ color }}</span>
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -26,35 +32,89 @@ const color = ref('#29abe2');
 </script>
 
 <template>
-  <ExColorPicker v-model="color" />
+  <div class="demo-container">
+    <ExColorPicker v-model="color" />
+    <span>{{ color }}</span>
+  </div>
 </template>
 ```
+
+:::
 
 ## 透明度
 
 启用 `show-alpha` 后，十六进制格式固定输出 `#rrggbbaa`，RGB 格式固定输出 `rgba()`。
+
+::: raw
 
 <div class="demo-container">
   <ExColorPicker v-model="alphaColor" show-alpha format="rgb" />
   <span>{{ alphaColor }}</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExColorPicker v-model="color" show-alpha format="rgb" />
+<script setup>
+import { ref } from 'vue';
+
+const alphaColor = ref('rgba(255, 45, 120, 0.6)');
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExColorPicker
+      v-model="alphaColor"
+      show-alpha
+      format="rgb"
+    />
+    <span>{{ alphaColor }}</span>
+  </div>
+</template>
 ```
 
+:::
+
 ## 预设颜色与清空
+
+::: raw
 
 <div class="demo-container">
   <ExColorPicker v-model="emptyColor" :predefine="predefine" clearable />
   <span>{{ emptyColor || '未选择' }}</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExColorPicker v-model="color" :predefine="predefine" clearable />
+<script setup>
+import { ref } from 'vue';
+
+const emptyColor = ref('');
+const predefine = ['#29abe2', '#ff2d78', '#7c4dff', '#00d68f', '#ffaa00'];
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExColorPicker
+      v-model="emptyColor"
+      :predefine="predefine"
+      clearable
+    />
+    <span>{{ emptyColor || '未选择' }}</span>
+  </div>
+</template>
 ```
 
+:::
+
 ## 尺寸与禁用
+
+::: raw
 
 <div class="demo-container">
   <ExColorPicker v-model="color" size="small" />
@@ -62,6 +122,41 @@ const color = ref('#29abe2');
   <ExColorPicker v-model="color" size="large" />
   <ExColorPicker v-model="color" disabled />
 </div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const color = ref('#29abe2');
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExColorPicker
+      v-model="color"
+      size="small"
+    />
+    <ExColorPicker
+      v-model="color"
+      size="medium"
+    />
+    <ExColorPicker
+      v-model="color"
+      size="large"
+    />
+    <ExColorPicker
+      v-model="color"
+      disabled
+    />
+  </div>
+</template>
+```
+
+:::
 
 ## API
 

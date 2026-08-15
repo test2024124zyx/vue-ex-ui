@@ -10,6 +10,8 @@ export type * from './types';
 
 // 导出组合式 API
 export * from './composables';
+export * from './service-scope';
+export * from './z-index';
 
 // 导出组件
 export const ExConfigProvider: InstallableComponent<typeof ExConfigProviderComponent> =

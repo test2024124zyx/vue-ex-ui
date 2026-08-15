@@ -113,7 +113,10 @@ describe('ExMenu', () => {
         ],
       },
     });
-    const menuStyles = readFileSync(resolve(process.cwd(), 'src/components/menu/ExMenu.scss'), 'utf8');
+    const menuStyles = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExMenu.scss'),
+      'utf8'
+    );
     const itemStyles = readFileSync(
       resolve(process.cwd(), 'src/components/menu/ExMenuItem.scss'),
       'utf8'
@@ -177,6 +180,24 @@ describe('ExMenu', () => {
 
     await wrapper.get('input').setValue('');
     expect(wrapper.findAll('.ex-menu-item')).toHaveLength(3);
+  });
+
+  it('搜索隐藏当前激活项后仍应该保留一个可键盘聚焦项', async () => {
+    const wrapper = mountMenu({
+      props: {
+        searchable: true,
+        activeKey: 'settings',
+        items: [
+          { key: 'terminal', label: '终端' },
+          { key: 'settings', label: '设置' },
+        ],
+      },
+    });
+
+    await wrapper.get('input').setValue('终端');
+    await nextTick();
+
+    expect(wrapper.get('.ex-menu-item__action').attributes('tabindex')).toBe('0');
   });
 
   it('非受控选择同步状态并提供完整事件信息', async () => {

@@ -7,7 +7,7 @@ let wrapper: VueWrapper | null = null;
 
 const mountMessage = (
   props: Partial<ExMessageProps> = {},
-  slots: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
   attrs: Record<string, unknown> = {}
 ): VueWrapper => {
   wrapper = mount(ExMessage, {

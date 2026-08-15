@@ -3,10 +3,29 @@
  * 使用 fast-check 进行属性基测试
  */
 import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import * as fc from 'fast-check';
 import ExVerificationCode from '../../../src/components/verification-code/ExVerificationCode.vue';
 import { isValidChar, filterValidChars } from '../../../src/components/verification-code/types';
+
+interface VerificationCodeTestVm {
+  cells: string[];
+  focusedIndex: number;
+  isPendingSubmit: boolean;
+  lastInputIndex: number;
+  cellStyle: Record<string, string>;
+  handleBackspace: () => void;
+  handleDelete: () => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  updateValue: () => void;
+  getCellDisplay: (index: number) => string;
+  setValue: (value: string) => void;
+  getValue: () => string;
+  clear: () => void;
+}
+
+const getTestVm = (wrapper: VueWrapper): VerificationCodeTestVm =>
+  wrapper.vm as unknown as VerificationCodeTestVm;
 
 /**
  * Property 1: Cell Count Rendering
@@ -49,7 +68,7 @@ describe('Property 2: Character Input and Auto-Focus', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 设置初始焦点位置
           vm.focusedIndex = startIndex;
@@ -139,7 +158,7 @@ describe('Property 3: Backspace Handling', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 设置格子有内容
           vm.cells[index] = digit.toString();
@@ -171,7 +190,7 @@ describe('Property 3: Backspace Handling', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 设置当前格子为空，前一个格子有内容
           vm.cells[index] = '';
@@ -201,7 +220,7 @@ describe('Property 3: Backspace Handling', () => {
       },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = getTestVm(wrapper);
 
     // 设置第一个格子为空
     vm.cells[0] = '';
@@ -235,7 +254,7 @@ describe('Property 5: Complete Event Emission', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 填充所有格子
           digits.forEach((digit, index) => {
@@ -270,7 +289,7 @@ describe('Property 5: Complete Event Emission', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 只填充部分格子
           const fillCount = Math.min(6 - emptyCount, digits.length);
@@ -315,7 +334,7 @@ describe('Property 6: Paste Handling', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
           vm.focusedIndex = startIndex;
 
           // 过滤有效字符
@@ -370,7 +389,7 @@ describe('Property 7: Paste Focus Management', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
           vm.focusedIndex = startIndex;
 
           // 模拟粘贴
@@ -413,7 +432,7 @@ describe('Property 8: Keyboard Navigation', () => {
             props: { length: 6 },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
           vm.focusedIndex = startIndex;
 
           // 模拟 ArrowLeft
@@ -440,7 +459,7 @@ describe('Property 8: Keyboard Navigation', () => {
             props: { length: 6 },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
           vm.focusedIndex = startIndex;
 
           // 模拟 ArrowRight
@@ -465,7 +484,7 @@ describe('Property 8: Keyboard Navigation', () => {
           props: { length: 6 },
         });
 
-        const vm = wrapper.vm as any;
+        const vm = getTestVm(wrapper);
         vm.focusedIndex = startIndex;
 
         // 模拟 Home
@@ -488,7 +507,7 @@ describe('Property 8: Keyboard Navigation', () => {
             props: { length: 6 },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 填充部分格子
           digits.forEach((digit, index) => {
@@ -498,7 +517,7 @@ describe('Property 8: Keyboard Navigation', () => {
           });
 
           // 模拟 End
-          const lastFilledIndex = vm.cells.findLastIndex((c: string) => c !== '');
+          const lastFilledIndex = vm.cells.map(cell => cell !== '').lastIndexOf(true);
           const firstEmptyIndex = vm.cells.findIndex((c: string) => c === '');
           const expectedFocus =
             firstEmptyIndex !== -1 ? firstEmptyIndex : lastFilledIndex !== -1 ? lastFilledIndex : 5;
@@ -532,7 +551,7 @@ describe('Property 9: Delete with Shift', () => {
             props: { length: 6 },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 填充所有格子
           digits.forEach((digit, index) => {
@@ -579,7 +598,7 @@ describe('Property 10: Auto-Submit Timing', () => {
       },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = getTestVm(wrapper);
 
     // 填充所有格子
     for (let i = 0; i < 6; i++) {
@@ -620,7 +639,7 @@ describe('Property 11: Auto-Submit Cancellation', () => {
       },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = getTestVm(wrapper);
 
     // 填充所有格子
     for (let i = 0; i < 6; i++) {
@@ -671,7 +690,7 @@ describe('Property 12: Mask Mode Display', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 填充格子
           digits.forEach((digit, index) => {
@@ -710,7 +729,7 @@ describe('Property 12: Mask Mode Display', () => {
             },
           });
 
-          const vm = wrapper.vm as any;
+          const vm = getTestVm(wrapper);
 
           // 填充格子
           digits.forEach((digit, index) => {
@@ -751,8 +770,7 @@ describe('Property 13: Input Prevention States', () => {
           },
         });
 
-        const vm = wrapper.vm as any;
-        const initialCells = [...vm.cells];
+        const vm = getTestVm(wrapper);
 
         // 尝试输入
         vm.cells[0] = digit.toString();
@@ -781,7 +799,7 @@ describe('Property 13: Input Prevention States', () => {
           },
         });
 
-        const vm = wrapper.vm as any;
+        const vm = getTestVm(wrapper);
 
         // 尝试通过 handleKeyDown 输入
         const event = new KeyboardEvent('keydown', { key: digit.toString() });
@@ -838,7 +856,7 @@ describe('Property 14: Custom Cell Styling', () => {
           },
         });
 
-        const vm = wrapper.vm as any;
+        const vm = getTestVm(wrapper);
         const style = vm.cellStyle;
 
         expect(style.width).toBe(`${width}px`);
@@ -857,7 +875,7 @@ describe('Property 14: Custom Cell Styling', () => {
       },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = getTestVm(wrapper);
     const style = vm.cellStyle;
 
     expect(style.width).toBe('3rem');
@@ -875,10 +893,9 @@ describe('Property 14: Custom Cell Styling', () => {
           },
         });
 
-        const vm = wrapper.vm as any;
-        const style = vm.cellStyle;
+        const cells = wrapper.get<HTMLElement>('.ex-verification-code__cells');
 
-        expect(style.marginRight).toBe(`${gap}px`);
+        expect(cells.element.style.gap).toBe(`${gap}px`);
 
         wrapper.unmount();
       }),
@@ -928,7 +945,7 @@ describe('Properties 15-18: rendering and public contracts', () => {
     fc.assert(
       fc.property(fc.stringMatching(/^\d{0,10}$/), code => {
         const wrapper = mount(ExVerificationCode, { props: { length: 6 } });
-        const vm = wrapper.vm as any;
+        const vm = getTestVm(wrapper);
         vm.setValue(code);
         expect(vm.getValue()).toBe(code.slice(0, 6));
         vm.clear();

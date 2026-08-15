@@ -1,19 +1,29 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compileString } from 'sass-embedded';
+import { globSync } from 'glob';
 
 const root = process.cwd();
 const loadPaths = [root, join(root, 'node_modules')];
+const STYLE_COMPILATION_TIMEOUT_MS = 60_000;
+const compilationCache = new Map<string, string>();
 
-const compile = (source: string): string =>
-  compileString(source, {
+const compile = (source: string): string => {
+  const cached = compilationCache.get(source);
+  if (cached !== undefined) return cached;
+
+  const css = compileString(source, {
     loadPaths,
     style: 'expanded',
   }).css;
+  // 同一入口在多个契约中复用，缓存可避免重复启动 Sass 编译器并降低门禁抖动。
+  compilationCache.set(source, css);
+  return css;
+};
 
 const countOccurrences = (source: string, value: string): number => source.split(value).length - 1;
 
-describe('v2 样式系统边界', () => {
+describe('v2 样式系统边界', { timeout: STYLE_COMPILATION_TIMEOUT_MS }, () => {
   it('多属性过渡生成独立长属性且保留统一时序', () => {
     const css = compile(`
       @use 'src/styles/mixins' as mixins;
@@ -38,6 +48,18 @@ describe('v2 样式系统边界', () => {
     expect(mixinCss).not.toContain('.ex-performance-container');
     expect(countOccurrences(globalCss, '.ex-performance-container')).toBe(1);
     expect(countOccurrences(globalCss, '.ex-no-animation')).toBe(1);
+  });
+
+  it('图片延迟渲染工具只输出有效 CSS 属性', () => {
+    const css = compile(`
+      @use 'src/styles/performance' as performance;
+      .image { @include performance.lazy-image; }
+    `);
+
+    expect(css).toContain('content-visibility: auto;');
+    expect(css).toContain('contain-intrinsic-size: auto 300px;');
+    expect(css).not.toContain('loading: lazy');
+    expect(css).not.toContain('decoding: async');
   });
 
   it('组件样式不会重复输出全局变量', () => {
@@ -70,15 +92,18 @@ describe('v2 样式系统边界', () => {
     expect(fontCss).not.toContain('.woff)');
   });
 
-  it('整包入口默认加载完整赛博字体，按需入口保留独立字体资源', () => {
+  it('源码根入口无样式副作用，完整构建与独立字体入口各自声明资源', () => {
     const indexSource = readFileSync(join(root, 'src/index.ts'), 'utf8');
+    const fullStyleEntrySource = readFileSync(join(root, 'src/style-full.ts'), 'utf8');
     const fontEntrySource = readFileSync(join(root, 'src/style-font.ts'), 'utf8');
     const variablesCss = compile("@use 'src/styles/variables';");
 
-    expect(indexSource).toContain('@fontsource/orbitron/latin-700.css');
-    expect(indexSource).toContain('@fontsource/jetbrains-mono/latin-400.css');
-    expect(indexSource).toContain('@fontsource/share-tech-mono/latin-400.css');
-    expect(indexSource).toContain("import './styles/font.scss';");
+    expect(indexSource).not.toContain('@fontsource/');
+    expect(indexSource).not.toContain("import './styles/");
+    expect(indexSource).not.toContain("import './style-full';");
+    expect(indexSource).not.toContain("import './style-font';");
+    expect(fullStyleEntrySource).toContain("import './style-font';");
+    expect(fullStyleEntrySource).toContain("import './styles/index.scss';");
     expect(fontEntrySource).toContain('@fontsource/orbitron/latin-700.css');
     expect(fontEntrySource).toContain('@fontsource/jetbrains-mono/latin-400.css');
     expect(fontEntrySource).toContain('@fontsource/share-tech-mono/latin-400.css');
@@ -224,6 +249,46 @@ describe('v2 样式系统边界', () => {
     expect(css).toContain('.ex-app::after');
     expect(css).toContain('@keyframes ex-cyber-scanline');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('所有高对比度媒体查询都使用标准 more 值', () => {
+    const invalidFiles = globSync('src/**/*.{scss,vue}', { cwd: root, windowsPathsNoEscape: true })
+      .filter(file => readFileSync(join(root, file), 'utf8').includes('(prefers-contrast: high)'))
+      .sort();
+
+    expect(invalidFiles).toEqual([]);
+  });
+
+  it('源码文本统一使用有效 UTF-8 编码', () => {
+    const decoder = new TextDecoder('utf-8', { fatal: true });
+    const invalidFiles = globSync('src/**/*.{scss,vue,ts}', {
+      cwd: root,
+      windowsPathsNoEscape: true,
+    })
+      .filter(file => {
+        try {
+          decoder.decode(readFileSync(join(root, file)));
+          return false;
+        } catch {
+          return true;
+        }
+      })
+      .sort();
+
+    expect(invalidFiles).toEqual([]);
+  });
+
+  it('减少动画偏好只停止运动，不移除静态状态层级', () => {
+    const source = readFileSync(join(root, 'src/styles/base/_accessibility.scss'), 'utf8');
+    const reducedMotionBlock = source.slice(
+      source.indexOf('@media (prefers-reduced-motion: reduce)'),
+      source.indexOf('// 高对比度偏好')
+    );
+
+    expect(reducedMotionBlock).not.toContain('box-shadow: none');
+    expect(reducedMotionBlock).not.toContain('text-shadow: none');
+    expect(reducedMotionBlock).not.toContain('backdrop-filter: none');
+    expect(reducedMotionBlock).not.toContain('filter: none');
   });
 
   it('基础样式只在 ExUI 作用域内修改宿主页面', () => {

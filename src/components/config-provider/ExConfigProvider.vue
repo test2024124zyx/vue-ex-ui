@@ -11,33 +11,35 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, provide, ref, toRef } from 'vue';
+import { computed, inject, provide, ref } from 'vue';
 import type { ExConfigProviderProps, ConfigContext } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import { LOCALE_INJECTION_KEY } from '../../locale';
+import { provideComponentServiceScope } from './service-scope';
+import { createZIndexCssVariables, normalizeZIndexBase } from './z-index';
 
 defineOptions({
   name: 'ExConfigProvider',
 });
 
-const props = withDefaults(defineProps<ExConfigProviderProps>(), {
-  theme: DEFAULT_CONFIG.theme,
-  locale: DEFAULT_CONFIG.locale,
-  size: DEFAULT_CONFIG.size,
-  neonEffect: DEFAULT_CONFIG.neonEffect,
-  animation: DEFAULT_CONFIG.animation,
-  zIndex: DEFAULT_CONFIG.zIndex,
-});
+const props = defineProps<ExConfigProviderProps>();
 
 const providerRef = ref<HTMLDivElement>();
+const parentConfig = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
 
-// 响应式配置
-const theme = toRef(props, 'theme');
-const locale = toRef(props, 'locale');
-const size = toRef(props, 'size');
-const neonEffect = toRef(props, 'neonEffect');
-const animation = toRef(props, 'animation');
-const zIndex = toRef(props, 'zIndex');
+// 未显式传入的字段响应式继承最近 Provider，只有根节点使用默认值。
+const theme = computed(() => props.theme ?? parentConfig?.theme.value ?? DEFAULT_CONFIG.theme);
+const locale = computed(() => props.locale ?? parentConfig?.locale.value ?? DEFAULT_CONFIG.locale);
+const size = computed(() => props.size ?? parentConfig?.size.value ?? DEFAULT_CONFIG.size);
+const neonEffect = computed(
+  () => props.neonEffect ?? parentConfig?.neonEffect.value ?? DEFAULT_CONFIG.neonEffect
+);
+const animation = computed(
+  () => props.animation ?? parentConfig?.animation.value ?? DEFAULT_CONFIG.animation
+);
+const zIndex = computed(() =>
+  normalizeZIndexBase(props.zIndex, parentConfig?.zIndex.value ?? DEFAULT_CONFIG.zIndex)
+);
 
 // 提供配置上下文
 const configContext: ConfigContext = {
@@ -51,6 +53,7 @@ const configContext: ConfigContext = {
 
 provide(CONFIG_PROVIDER_INJECTION_KEY, configContext);
 provide(LOCALE_INJECTION_KEY, locale);
+provideComponentServiceScope();
 
 // 计算属性
 const providerClasses = computed(() => {
@@ -70,11 +73,13 @@ const providerClasses = computed(() => {
 });
 
 const providerStyles = computed(() => {
-  const styles: Record<string, string> = {};
+  const styles: Record<string, string> = {
+    display: 'contents',
+  };
 
   // z-index 基础值
   if (zIndex.value !== DEFAULT_CONFIG.zIndex) {
-    styles['--ex-z-index-base'] = String(zIndex.value);
+    Object.assign(styles, createZIndexCssVariables(zIndex.value));
   }
 
   // 合并用户自定义样式
@@ -103,8 +108,7 @@ defineExpose({
 @use '../../styles/mixins' as *;
 
 .ex-config-provider {
-  width: 100%;
-  height: 100%;
+  display: contents;
 }
 
 // 禁用霓虹效果

@@ -50,11 +50,7 @@
 
   // 游戏样式
   &--gaming {
-    background: linear-gradient(
-      135deg,
-      var(--ex-color-bg-secondary),
-      var(--ex-color-bg-tertiary)
-    );
+    background: linear-gradient(135deg, var(--ex-color-bg-secondary), var(--ex-color-bg-tertiary));
     border: 2px solid transparent;
     background-clip: padding-box;
     position: relative;
@@ -180,13 +176,21 @@
 
 // 抖动动画
 @keyframes ex-barcode-shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-4px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(4px);
   }
 }

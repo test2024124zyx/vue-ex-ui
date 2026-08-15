@@ -186,6 +186,25 @@ describe('ExFileList', () => {
       expect(wrapper.emitted('update:selectedIds')?.at(-1)).toEqual([['2']]);
     });
 
+    it('从多选切换到单选后不会在再次开启多选时恢复陈旧选择', async () => {
+      const wrapper = mount(ExFileList, {
+        props: {
+          files,
+          selectable: true,
+          multiple: true,
+          defaultSelectedIds: ['1', '2'],
+        },
+      });
+      expect(wrapper.findAll('.ex-file-list__list-item.is-selected')).toHaveLength(2);
+
+      await wrapper.setProps({ multiple: false });
+      expect(wrapper.findAll('.ex-file-list__list-item.is-selected')).toHaveLength(1);
+      expect(wrapper.emitted('update:selectedIds')?.at(-1)).toEqual([['1']]);
+
+      await wrapper.setProps({ multiple: true });
+      expect(wrapper.findAll('.ex-file-list__list-item.is-selected')).toHaveLength(1);
+    });
+
     it('全选仅修改当前可见项并保留搜索范围外的选择', async () => {
       const wrapper = mount(ExFileList, {
         props: {

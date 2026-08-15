@@ -61,7 +61,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, provide, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
-import { useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useOverlay } from '../../composables/useOverlay';
 import { computeFloatingPosition } from '../../utils/floating';
 import type { FloatingRect } from '../../utils/floating';
@@ -124,18 +129,21 @@ const menuRef = ref<HTMLDivElement>();
 const instanceId = useId();
 const triggerId = `ex-dropdown-trigger-${instanceId}`;
 const menuId = `ex-dropdown-menu-${instanceId}`;
-const baseZIndex = useZIndex(20);
+const baseZIndex = useZIndexLayer('dropdown');
 const isVisible = ref(props.visible ?? false);
 const activeItemId = ref<string | null>(null);
 const actualPlacement = ref<DropdownPlacement>('bottom-start');
-const menuStyles = ref<CSSProperties>({});
+const menuPositionStyles = ref<CSSProperties>({});
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
 const contextPoint = ref<{ x: number; y: number } | null>(null);
 let hoverTimer: number | undefined;
 let positionFrame: number | undefined;
 let listenersAttached = false;
 let resizeObserver: ResizeObserver | null = null;
 let focusMenuWhenOpened = false;
+let restoreFocusWhenClosed = false;
 let lastTriggerElement: HTMLElement | null = null;
 
 const normalizedTrigger = computed<DropdownTrigger>(() =>
@@ -153,7 +161,15 @@ const dropdownClasses = computed(() => [
 const menuClasses = computed(() => [
   'ex-dropdown__menu',
   `ex-dropdown__menu--${actualPlacement.value}`,
+  {
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
+  },
 ]);
+const menuStyles = computed<CSSProperties>(() => ({
+  ...menuPositionStyles.value,
+  zIndex: props.zIndex ?? baseZIndex.value,
+}));
 const triggerProps = computed(() => ({
   'aria-haspopup': 'menu' as const,
   'aria-expanded': isVisible.value,
@@ -263,8 +279,12 @@ const requestShow = (focus = false) => {
 };
 
 const requestHide = (restoreTriggerFocus = false) => {
+  restoreFocusWhenClosed = restoreTriggerFocus;
   const changed = requestVisible(false);
-  if (restoreTriggerFocus && (changed || !isVisible.value)) nextTick(focusTrigger);
+  if (restoreTriggerFocus && !changed && !isVisible.value) {
+    restoreFocusWhenClosed = false;
+    nextTick(focusTrigger);
+  }
 };
 
 provide(DROPDOWN_INJECTION_KEY, {
@@ -312,10 +332,9 @@ const updatePosition = () => {
   });
 
   actualPlacement.value = result.placement as DropdownPlacement;
-  menuStyles.value = {
+  menuPositionStyles.value = {
     top: `${result.y}px`,
     left: `${result.x}px`,
-    zIndex: props.zIndex ?? baseZIndex.value,
     ...(result.width === undefined ? {} : { width: `${result.width}px` }),
   };
 };
@@ -517,6 +536,8 @@ watch(
     if (!visible) {
       detachPositionListeners();
       contextPoint.value = null;
+      if (restoreFocusWhenClosed) nextTick(focusTrigger);
+      restoreFocusWhenClosed = false;
       return;
     }
     nextTick(() => {

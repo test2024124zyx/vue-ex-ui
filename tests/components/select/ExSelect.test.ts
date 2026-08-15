@@ -173,6 +173,22 @@ describe('ExSelect', () => {
       await trigger.trigger('click');
       expect(document.querySelector('.ex-select__dropdown')).toBeNull();
     });
+
+    it('打开后运行时切换为禁用或只读会立即关闭下拉菜单', async () => {
+      const wrapper = mount(ExSelect, { props: { options: basicOptions } });
+
+      await wrapper.get('.ex-select__trigger').trigger('click');
+      expect(document.querySelector('.ex-select__dropdown')).toBeTruthy();
+      await wrapper.setProps({ disabled: true });
+      expect(document.querySelector('.ex-select__dropdown')).toBeNull();
+
+      await wrapper.setProps({ disabled: false });
+      await wrapper.get('.ex-select__trigger').trigger('click');
+      expect(document.querySelector('.ex-select__dropdown')).toBeTruthy();
+      await wrapper.setProps({ readonly: true });
+      expect(document.querySelector('.ex-select__dropdown')).toBeNull();
+      expect(wrapper.emitted('visible-change')).toEqual([[true], [false], [true], [false]]);
+    });
   });
 
   describe('可清空', () => {
@@ -330,7 +346,7 @@ describe('ExSelect', () => {
       });
 
       const input = wrapper.get('.ex-select__input');
-      expect(input.exists()).toBe(true);
+      expect(input.element).toBeInstanceOf(HTMLInputElement);
       expect(input.attributes('placeholder')).toBe('选项一');
 
       await input.trigger('click');
@@ -785,6 +801,25 @@ describe('ExSelect', () => {
       expect(wrapper.find('.ex-select__label').text()).toBe('已选部门');
       expect(wrapper.find('.ex-select__clear').exists()).toBe(true);
     });
+
+    it('大量远程结果仅长期保留已选项，不无限缓存过期未选项', async () => {
+      const manyOptions: SelectOptions = Array.from({ length: 250 }, (_, index) => ({
+        value: index,
+        label: `远程选项 ${index}`,
+      }));
+      const wrapper = mount(ExSelect, {
+        props: { remote: true, modelValue: 0, options: manyOptions },
+      });
+
+      await wrapper.setProps({ options: [] });
+      expect(wrapper.get('.ex-select__label').text()).toBe('远程选项 0');
+
+      await wrapper.setProps({ modelValue: null, options: [{ value: 999, label: '新结果' }] });
+      await wrapper.setProps({ modelValue: 1 });
+
+      expect(wrapper.find('.ex-select__label').exists()).toBe(false);
+      expect(wrapper.find('.ex-select__placeholder').exists()).toBe(true);
+    });
   });
 
   describe('FormItem 集成与全局配置', () => {
@@ -862,7 +897,7 @@ describe('ExSelect', () => {
       const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
       expect(dropdown.classList.contains('ex-no-neon')).toBe(true);
       expect(dropdown.classList.contains('ex-no-animation')).toBe(true);
-      expect(dropdown.style.zIndex).toBe('2020');
+      expect(dropdown.style.zIndex).toBe('2000');
     });
   });
 });

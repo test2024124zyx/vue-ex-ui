@@ -6,6 +6,7 @@
 import { ref } from 'vue'
 
 const listRef = ref(null)
+const controlListRef = ref(null)
 const scrollInfo = ref({ scrollTop: 0, isTop: true, isBottom: false })
 
 const records = Array.from({ length: 2000 }, (_, index) => ({
@@ -70,11 +71,66 @@ const handleScroll = info => {
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
-<ex-virtual-list :data-source="records" :height="360" :item-height="64" item-key="id">
-  <template #default="{ item }">{{ item.name }}</template>
-</ex-virtual-list>
+<template>
+  <div class="demo-container">
+    <ex-virtual-list
+      ref="listRef"
+      :data-source="records"
+      :height="360"
+      :item-height="64"
+      item-key="id"
+      :buffer="5"
+      @scroll="handleScroll"
+    >
+      <template #default="{ item, index }">
+        <div class="virtual-record">
+          <div class="virtual-index">{{ String(index + 1).padStart(4, '0') }}</div>
+          <div class="virtual-body">
+            <strong>{{ item.name }}</strong>
+            <span>负责人：{{ item.owner }}</span>
+          </div>
+          <ex-tag
+            size="small"
+            :type="item.status === '已成交' ? 'success' : 'info'"
+          >
+            {{ item.status }}
+          </ex-tag>
+        </div>
+      </template>
+    </ex-virtual-list>
+    <div class="virtual-status">
+      scrollTop: {{ scrollInfo.scrollTop }} · 顶部: {{ scrollInfo.isTop }} · 底部:
+      {{ scrollInfo.isBottom }}
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const listRef = ref(null);
+const scrollInfo = ref({ scrollTop: 0, isTop: true, isBottom: false });
+const records = Array.from({ length: 2000 }, (_, index) => ({
+  id: index + 1,
+  name: `客户档案 ${String(index + 1).padStart(4, '0')}`,
+  owner: ['林知远', '周予安', '陈嘉树', '许清和'][index % 4],
+  status: ['跟进中', '待确认', '已成交'][index % 3],
+}));
+
+const handleScroll = info => {
+  scrollInfo.value = {
+    scrollTop: Math.round(info.scrollTop),
+    isTop: info.isTop,
+    isBottom: info.isBottom,
+  };
+};
+</script>
 ```
+
+:::
 
 快速滚动时渲染窗口使用稳定的三维位移，分隔线只在真实数据末项结束。
 
@@ -100,17 +156,124 @@ const handleScroll = info => {
 </div>
 :::
 
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="demo-container">
+    <ex-virtual-list
+      :data-source="dynamicRecords"
+      :height="360"
+      :item-height="getDynamicHeight"
+      item-key="id"
+      :buffer="6"
+    >
+      <template #default="{ item }">
+        <div class="virtual-dynamic-record">
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.content }}</span>
+        </div>
+      </template>
+    </ex-virtual-list>
+  </div>
+</template>
+
+<script setup>
+const dynamicRecords = Array.from({ length: 600 }, (_, index) => ({
+  id: index + 1,
+  title: `项目动态 ${index + 1}`,
+  content:
+    index % 3 === 0
+      ? '已完成节点确认。'
+      : index % 3 === 1
+        ? '交付团队已同步本周计划，当前风险处于可控范围。'
+        : '客户已确认阶段成果，下一步将进入灰度发布和业务验收，负责人会持续更新处理进度。',
+}));
+
+const getDynamicHeight = (_index, item) =>
+  item.content.length > 45 ? 104 : item.content.length > 18 ? 82 : 64;
+</script>
+```
+
+:::
+
 ## 滚动控制
 
 ::: raw
 
 <div class="vp-raw demo-container virtual-controls">
   <ex-space wrap>
-    <ex-button size="small" type="default" @click="listRef?.scrollToTop('smooth')">回到顶部</ex-button>
-    <ex-button size="small" type="default" @click="listRef?.scrollToIndex(999, 'smooth')">第 1000 项</ex-button>
-    <ex-button size="small" type="default" @click="listRef?.scrollToBottom('smooth')">滚动到底部</ex-button>
+    <ex-button size="small" type="default" @click="controlListRef?.scrollToTop('smooth')">回到顶部</ex-button>
+    <ex-button size="small" type="default" @click="controlListRef?.scrollToIndex(999, 'smooth')">第 1000 项</ex-button>
+    <ex-button size="small" type="default" @click="controlListRef?.scrollToBottom('smooth')">滚动到底部</ex-button>
   </ex-space>
+  <ex-virtual-list
+    ref="controlListRef"
+    :data-source="records"
+    :height="240"
+    :item-height="48"
+    item-key="id"
+  >
+    <template #default="{ item }">
+      <div class="virtual-control-record">{{ item.name }}</div>
+    </template>
+  </ex-virtual-list>
 </div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="demo-container virtual-controls">
+    <ex-space wrap>
+      <ex-button
+        size="small"
+        type="default"
+        @click="controlListRef?.scrollToTop('smooth')"
+      >
+        回到顶部
+      </ex-button>
+      <ex-button
+        size="small"
+        type="default"
+        @click="controlListRef?.scrollToIndex(999, 'smooth')"
+      >
+        第 1000 项
+      </ex-button>
+      <ex-button
+        size="small"
+        type="default"
+        @click="controlListRef?.scrollToBottom('smooth')"
+      >
+        滚动到底部
+      </ex-button>
+    </ex-space>
+    <ex-virtual-list
+      ref="controlListRef"
+      :data-source="records"
+      :height="240"
+      :item-height="48"
+      item-key="id"
+    >
+      <template #default="{ item }">
+        <div class="virtual-control-record">{{ item.name }}</div>
+      </template>
+    </ex-virtual-list>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const controlListRef = ref(null);
+const records = Array.from({ length: 2000 }, (_, index) => ({
+  id: index + 1,
+  name: `客户档案 ${String(index + 1).padStart(4, '0')}`,
+}));
+</script>
+```
+
 :::
 
 ## API
@@ -131,7 +294,7 @@ const handleScroll = info => {
 | `virtual`           | 是否启用虚拟滚动           | `boolean`                                       | `true` |
 | `loadMoreThreshold` | 距底部多少像素触发加载更多 | `number`                                        | `50`   |
 | `wrapperRole`       | 滚动包装器的 ARIA role     | `string`                                        | `list` |
-| `wrapperTabindex`   | 滚动包装器的键盘焦点顺序   | `number \| string`                              | `0`    |
+| `wrapperTabindex`   | 滚动包装器的键盘焦点顺序   | `number \| string`                              | `-1`   |
 
 ### Events
 
@@ -203,8 +366,12 @@ const handleScroll = info => {
 }
 
 .virtual-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 12px;
+}
+
+.virtual-control-record {
+  min-height: 48px;
+  padding: 12px 16px;
 }
 </style>

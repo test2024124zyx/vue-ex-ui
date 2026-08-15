@@ -96,8 +96,8 @@ export function computeFloatingPosition(options: ComputeFloatingPositionOptions)
     }
   }
 
-  let x = 0;
-  let y = 0;
+  let x: number;
+  let y: number;
   if (side === 'top' || side === 'bottom') {
     y =
       side === 'bottom'

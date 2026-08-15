@@ -11,6 +11,8 @@ const activeName = ref('profile')
 
 ## 基础用法
 
+::: raw
+
 <div class="demo-container">
   <ExCollapse v-model="activeNames" aria-label="账户设置">
     <ExCollapseItem name="profile" title="个人资料">
@@ -25,6 +27,10 @@ const activeName = ref('profile')
   </ExCollapse>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup>
 import { ref } from 'vue';
@@ -33,16 +39,41 @@ const activeNames = ref(['profile']);
 </script>
 
 <template>
-  <ExCollapse v-model="activeNames">
-    <ExCollapseItem name="profile" title="个人资料">内容</ExCollapseItem>
-    <ExCollapseItem name="security" title="安全设置">内容</ExCollapseItem>
-  </ExCollapse>
+  <div class="demo-container">
+    <ExCollapse
+      v-model="activeNames"
+      aria-label="账户设置"
+    >
+      <ExCollapseItem
+        name="profile"
+        title="个人资料"
+      >
+        修改头像、昵称和联系方式。
+      </ExCollapseItem>
+      <ExCollapseItem
+        name="security"
+        title="安全设置"
+      >
+        管理密码和登录验证方式。
+      </ExCollapseItem>
+      <ExCollapseItem
+        name="notice"
+        title="通知设置"
+      >
+        选择需要接收的通知类型。
+      </ExCollapseItem>
+    </ExCollapse>
+  </div>
 </template>
 ```
+
+:::
 
 ## 手风琴模式
 
 手风琴模式一次只展开一项；全部关闭时绑定值为 `null`。
+
+::: raw
 
 <div class="demo-container">
   <ExCollapse v-model="activeName" accordion>
@@ -51,16 +82,47 @@ const activeNames = ref(['profile']);
   </ExCollapse>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExCollapse v-model="activeName" accordion>
-  <ExCollapseItem name="profile" title="个人资料">内容</ExCollapseItem>
-  <ExCollapseItem name="security" title="安全设置">内容</ExCollapseItem>
-</ExCollapse>
+<script setup>
+import { ref } from 'vue';
+
+const activeName = ref('profile');
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExCollapse
+      v-model="activeName"
+      accordion
+    >
+      <ExCollapseItem
+        name="profile"
+        title="个人资料"
+      >
+        个人资料内容
+      </ExCollapseItem>
+      <ExCollapseItem
+        name="security"
+        title="安全设置"
+      >
+        安全设置内容
+      </ExCollapseItem>
+    </ExCollapse>
+  </div>
+</template>
 ```
+
+:::
 
 ## 标题与额外操作
 
 `extra` 插槽位于折叠按钮之外，可安全放置按钮或链接。
+
+::: raw
 
 <div class="demo-container">
   <ExCollapse v-model="activeNames">
@@ -73,6 +135,39 @@ const activeNames = ref(['profile']);
     </ExCollapseItem>
   </ExCollapse>
 </div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const activeNames = ref(['profile']);
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExCollapse v-model="activeNames">
+      <ExCollapseItem name="notice">
+        <template #title>通知设置</template>
+        <template #extra>
+          <ExButton
+            size="small"
+            text
+          >
+            管理
+          </ExButton>
+        </template>
+        通知设置内容。
+      </ExCollapseItem>
+    </ExCollapse>
+  </div>
+</template>
+```
+
+:::
 
 ## 禁用与无边框
 

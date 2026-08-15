@@ -33,12 +33,6 @@
     pointer-events: none;
   }
 
-  &[role='button']:focus-visible {
-    outline: 2px solid var(--ex-color-border-focus);
-    outline-offset: 4px;
-    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
-  }
-
   // 通过 class prop 提供终端面板和全息面板两种可组合的视觉变体
   &.ex-terminal {
     background: var(--ex-color-bg-primary);
@@ -113,9 +107,7 @@
 
     &:hover:not(.ex-card--loading) {
       transform: translateY(-2px);
-      filter:
-        var(--ex-card-filter-shadow-lg)
-        drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
+      filter: var(--ex-card-filter-shadow-lg) drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
 
       .ex-card__cover-image {
         transform: scale(1.05);
@@ -124,6 +116,34 @@
 
     &:active:not(.ex-card--loading) {
       transform: translateY(-2px);
+    }
+  }
+
+  &--clickable {
+    cursor: pointer;
+
+    .ex-card__cover,
+    .ex-card__header,
+    .ex-card__body,
+    .ex-card__footer {
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    :is(
+      a,
+      button,
+      input,
+      select,
+      textarea,
+      summary,
+      [role='button'],
+      [role='link'],
+      [contenteditable]:not([contenteditable='false']),
+      [data-ex-card-stop-click]
+    ) {
+      pointer-events: auto;
     }
   }
 
@@ -153,11 +173,7 @@
 
     .ex-card__body {
       border-left: 3px solid transparent;
-      border-image: linear-gradient(
-        to bottom,
-        var(--ex-color-primary),
-        transparent
-      ) 1;
+      border-image: linear-gradient(to bottom, var(--ex-color-primary), transparent) 1;
     }
 
     &.ex-card--hoverable:hover:not(.ex-card--loading) {
@@ -190,11 +206,7 @@
 
     .ex-card__body {
       border-left: 3px solid transparent;
-      border-image: linear-gradient(
-        to bottom,
-        var(--ex-color-success),
-        transparent
-      ) 1;
+      border-image: linear-gradient(to bottom, var(--ex-color-success), transparent) 1;
     }
 
     &.ex-card--hoverable:hover:not(.ex-card--loading) {
@@ -222,11 +234,7 @@
 
     .ex-card__body {
       border-left: 3px solid transparent;
-      border-image: linear-gradient(
-        to bottom,
-        var(--ex-color-warning),
-        transparent
-      ) 1;
+      border-image: linear-gradient(to bottom, var(--ex-color-warning), transparent) 1;
     }
 
     &.ex-card--hoverable:hover:not(.ex-card--loading) {
@@ -254,11 +262,7 @@
 
     .ex-card__body {
       border-left: 3px solid transparent;
-      border-image: linear-gradient(
-        to bottom,
-        var(--ex-color-danger),
-        transparent
-      ) 1;
+      border-image: linear-gradient(to bottom, var(--ex-color-danger), transparent) 1;
     }
 
     &.ex-card--hoverable:hover:not(.ex-card--loading) {
@@ -286,11 +290,7 @@
 
     .ex-card__body {
       border-left: 3px solid transparent;
-      border-image: linear-gradient(
-        to bottom,
-        var(--ex-color-info),
-        transparent
-      ) 1;
+      border-image: linear-gradient(to bottom, var(--ex-color-info), transparent) 1;
     }
 
     &.ex-card--hoverable:hover:not(.ex-card--loading) {
@@ -321,6 +321,27 @@
     .ex-card__footer {
       padding: var(--ex-spacing-6) var(--ex-spacing-8);
     }
+  }
+}
+
+.ex-card__primary-action {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: -2px;
+    box-shadow: inset 0 0 8px var(--ex-color-primary-alpha-30);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
   }
 }
 
@@ -490,7 +511,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-card:not(.ex-card--borderless) {
     border-width: 2px;
   }

@@ -1,31 +1,47 @@
 <template>
-  <transition name="ex-alert-fade" @after-leave="handleAfterLeave">
+  <transition
+    name="ex-alert-fade"
+    @after-leave="handleAfterLeave"
+  >
     <div
       v-show="visible"
-      ref="alertRef"
       :class="alertClasses"
       :style="alertStyles"
       role="alert"
       :aria-live="type === 'error' ? 'assertive' : 'polite'"
     >
       <!-- 图标 -->
-      <div v-if="showIcon" class="ex-alert__icon">
+      <div
+        v-if="showIcon"
+        class="ex-alert__icon"
+      >
         <slot name="icon">
-          <ExIcon :icon="builtinIcon" :src="customIconUrl" :size="20" aria-hidden="true" />
+          <ExIcon
+            :icon="builtinIcon"
+            :src="customIconUrl"
+            :size="20"
+            aria-hidden="true"
+          />
         </slot>
       </div>
 
       <!-- 内容区域 -->
       <div class="ex-alert__content">
         <!-- 标题 -->
-        <div v-if="title || $slots.title" class="ex-alert__title">
+        <div
+          v-if="title || $slots.title"
+          class="ex-alert__title"
+        >
           <slot name="title">
             {{ title }}
           </slot>
         </div>
 
         <!-- 描述/默认内容 -->
-        <div v-if="description || $slots.default" class="ex-alert__description">
+        <div
+          v-if="description || $slots.default"
+          class="ex-alert__description"
+        >
           <slot>
             {{ description }}
           </slot>
@@ -33,7 +49,10 @@
       </div>
 
       <!-- 操作区域 -->
-      <div v-if="$slots.action" class="ex-alert__action">
+      <div
+        v-if="$slots.action"
+        class="ex-alert__action"
+      >
         <slot name="action" />
       </div>
 
@@ -46,7 +65,10 @@
         @click="handleClose"
       >
         <slot name="close">
-          <span v-if="closeText" class="ex-alert__close-text">
+          <span
+            v-if="closeText"
+            class="ex-alert__close-text"
+          >
             {{ closeText }}
           </span>
           <ExIcon
@@ -90,7 +112,6 @@ const { t } = useI18n();
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
-const alertRef = ref<HTMLElement>();
 const visible = ref(true);
 
 // 图标映射（内置 SVG 图标名）

@@ -61,8 +61,18 @@ const inputId = `ex-verification-code-${idSuffix}`;
 const labelId = `${inputId}-label`;
 const helpId = `${inputId}-help`;
 
+const MIN_CODE_LENGTH = 1;
+const MAX_CODE_LENGTH = 12;
+const DEFAULT_CODE_LENGTH = 6;
+const normalizedLength = computed(() => {
+  const length = Number(props.length);
+  if (Number.isNaN(length)) return DEFAULT_CODE_LENGTH;
+  if (!Number.isFinite(length)) return length > 0 ? MAX_CODE_LENGTH : MIN_CODE_LENGTH;
+  return Math.min(MAX_CODE_LENGTH, Math.max(MIN_CODE_LENGTH, Math.trunc(length)));
+});
+
 // 内部状态
-const cells = ref<string[]>(Array(props.length).fill(''));
+const cells = ref<string[]>(Array(normalizedLength.value).fill(''));
 const focusedIndex = ref(0);
 const isFocused = ref(false);
 const isMasked = ref(props.mask);
@@ -78,7 +88,7 @@ const currentValue = computed(() => cells.value.join(''));
 
 // 计算属性：是否完成
 const isComplete = computed(() => {
-  return cells.value.every(cell => cell !== '') && cells.value.length === props.length;
+  return cells.value.every(cell => cell !== '') && cells.value.length === normalizedLength.value;
 });
 
 // 计算属性：组件类名
@@ -109,8 +119,13 @@ const cellStyle = computed(() => {
   if (props.cellWidth) {
     style.width = typeof props.cellWidth === 'number' ? `${props.cellWidth}px` : props.cellWidth;
   }
+  return style;
+});
+
+const cellsStyle = computed(() => {
+  const style: Record<string, string> = {};
   if (props.cellGap) {
-    style.marginRight = typeof props.cellGap === 'number' ? `${props.cellGap}px` : props.cellGap;
+    style.gap = typeof props.cellGap === 'number' ? `${props.cellGap}px` : props.cellGap;
   }
   return style;
 });
@@ -130,8 +145,8 @@ watch(
   newValue => {
     if (newValue !== currentValue.value) {
       const filtered = filterValidChars(newValue || '', props.inputMode);
-      const chars = filtered.slice(0, props.length).split('');
-      cells.value = [...chars, ...Array(props.length - chars.length).fill('')];
+      const chars = filtered.slice(0, normalizedLength.value).split('');
+      cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
     }
   },
   { immediate: true }
@@ -140,7 +155,9 @@ watch(
 // 监听 length 变化
 watch(
   () => props.length,
-  newLength => {
+  () => {
+    const newLength = normalizedLength.value;
+    const previousValue = currentValue.value;
     const currentChars = cells.value.filter(c => c !== '');
     cells.value = [
       ...currentChars.slice(0, newLength),
@@ -149,6 +166,32 @@ watch(
     if (focusedIndex.value >= newLength) {
       focusedIndex.value = Math.max(0, newLength - 1);
     }
+    const nextValue = currentValue.value;
+    if (nextValue !== previousValue) {
+      emit('update:modelValue', nextValue);
+      emit('input', nextValue);
+      emit('change', nextValue);
+      cancelAutoSubmit();
+    }
+  }
+);
+
+watch(
+  () => props.inputMode,
+  () => {
+    const previousValue = currentValue.value;
+    const filtered = filterValidChars(previousValue, props.inputMode)
+      .slice(0, normalizedLength.value)
+      .split('');
+    cells.value = [...filtered, ...Array(normalizedLength.value - filtered.length).fill('')];
+    if (currentValue.value !== previousValue) updateValue();
+  }
+);
+
+watch(
+  () => [props.disabled, props.readonly, props.autoSubmit] as const,
+  ([disabled, readonly, autoSubmit]) => {
+    if (disabled || readonly || !autoSubmit) cancelAutoSubmit();
   }
 );
 
@@ -188,7 +231,7 @@ function handleAutoSubmit() {
   isPendingSubmit.value = true;
 
   autoSubmitTimer = setTimeout(() => {
-    if (isComplete.value) {
+    if (isComplete.value && props.autoSubmit && !props.disabled && !props.readonly) {
       emit('submit', currentValue.value);
     }
     isPendingSubmit.value = false;
@@ -224,7 +267,6 @@ function handleInput(event: Event) {
 
   if (!value) return;
 
-  // 获取最后一个有效字符
   const chars = filterValidChars(value, props.inputMode);
   if (!chars) {
     input.value = '';
@@ -237,12 +279,17 @@ function handleInput(event: Event) {
     focusedIndex.value = firstEmptyIndex;
   }
 
-  // 处理单字符输入
-  const char = chars[chars.length - 1];
-  if (char && isValidChar(char, props.inputMode)) {
-    cells.value[focusedIndex.value] = char;
-    lastInputIndex.value = focusedIndex.value;
+  const availableLength = normalizedLength.value - focusedIndex.value;
+  const inputChars = chars.slice(0, availableLength).split('');
+  inputChars.forEach((char, offset) => {
+    if (isValidChar(char, props.inputMode)) {
+      const targetIndex = focusedIndex.value + offset;
+      cells.value[targetIndex] = char;
+      lastInputIndex.value = targetIndex;
+    }
+  });
 
+  if (inputChars.length > 0) {
     // 处理遮罩延迟
     if (props.mask && props.maskDelay > 0) {
       if (maskDelayTimer) clearTimeout(maskDelayTimer);
@@ -251,10 +298,8 @@ function handleInput(event: Event) {
       }, props.maskDelay);
     }
 
-    // 移动到下一个格子
-    if (focusedIndex.value < props.length - 1) {
-      focusedIndex.value++;
-    }
+    const firstEmptyIndex = getFirstEmptyIndex();
+    focusedIndex.value = firstEmptyIndex === -1 ? normalizedLength.value - 1 : firstEmptyIndex;
 
     updateValue();
   }
@@ -291,7 +336,7 @@ function handleKeyDown(event: KeyboardEvent) {
     case 'ArrowRight': {
       // 顺序输入限制：不能向右移动到空格子之后
       const firstEmptyIndex = getFirstEmptyIndex();
-      const maxAllowedIndex = firstEmptyIndex !== -1 ? firstEmptyIndex : props.length - 1;
+      const maxAllowedIndex = firstEmptyIndex !== -1 ? firstEmptyIndex : normalizedLength.value - 1;
       if (focusedIndex.value < maxAllowedIndex) {
         focusedIndex.value++;
       }
@@ -305,7 +350,7 @@ function handleKeyDown(event: KeyboardEvent) {
     case 'End': {
       // 顺序输入限制：End 键跳转到第一个空格子或最后一个已填充的格子
       const emptyIndex = getFirstEmptyIndex();
-      focusedIndex.value = emptyIndex !== -1 ? emptyIndex : props.length - 1;
+      focusedIndex.value = emptyIndex !== -1 ? emptyIndex : normalizedLength.value - 1;
       event.preventDefault();
       break;
     }
@@ -333,10 +378,10 @@ function handleBackspace() {
 function handleDelete() {
   if (cells.value[focusedIndex.value] !== '') {
     // 删除当前格子并左移后续内容
-    for (let i = focusedIndex.value; i < props.length - 1; i++) {
+    for (let i = focusedIndex.value; i < normalizedLength.value - 1; i++) {
       cells.value[i] = cells.value[i + 1] ?? '';
     }
-    cells.value[props.length - 1] = '';
+    cells.value[normalizedLength.value - 1] = '';
     updateValue();
   }
 }
@@ -365,17 +410,17 @@ function handlePaste(event: ClipboardEvent) {
   }
 
   // 从第一个空格子开始填充
-  const chars = validChars.slice(0, props.length - startIndex).split('');
+  const chars = validChars.slice(0, normalizedLength.value - startIndex).split('');
   chars.forEach((char, index) => {
     const targetIndex = startIndex + index;
-    if (targetIndex < props.length) {
+    if (targetIndex < normalizedLength.value) {
       cells.value[targetIndex] = char;
     }
   });
 
   // 更新焦点位置到下一个空格子
   const newFirstEmpty = getFirstEmptyIndex();
-  focusedIndex.value = newFirstEmpty !== -1 ? newFirstEmpty : props.length - 1;
+  focusedIndex.value = newFirstEmpty !== -1 ? newFirstEmpty : normalizedLength.value - 1;
 
   updateValue();
 }
@@ -443,7 +488,7 @@ function getCellDisplay(index: number): string {
  * 判断是否应该显示分隔符
  */
 function shouldShowSeparator(index: number): boolean {
-  return props.separatorPositions.includes(index + 1) && index < props.length - 1;
+  return props.separatorPositions.includes(index + 1) && index < normalizedLength.value - 1;
 }
 
 /**
@@ -453,7 +498,7 @@ function shouldShowSeparator(index: number): boolean {
 function focus() {
   // 顺序输入限制：聚焦到第一个空格子
   const firstEmptyIndex = getFirstEmptyIndex();
-  focusedIndex.value = firstEmptyIndex !== -1 ? firstEmptyIndex : props.length - 1;
+  focusedIndex.value = firstEmptyIndex !== -1 ? firstEmptyIndex : normalizedLength.value - 1;
   hiddenInputRef.value?.focus();
 }
 
@@ -462,7 +507,7 @@ function blur() {
 }
 
 function clear() {
-  cells.value = Array(props.length).fill('');
+  cells.value = Array(normalizedLength.value).fill('');
   focusedIndex.value = 0;
   cancelAutoSubmit();
   emit('clear');
@@ -472,8 +517,8 @@ function clear() {
 
 function setValue(value: string) {
   const filtered = filterValidChars(value || '', props.inputMode);
-  const chars = filtered.slice(0, props.length).split('');
-  cells.value = [...chars, ...Array(props.length - chars.length).fill('')];
+  const chars = filtered.slice(0, normalizedLength.value).split('');
+  cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
   updateValue();
 }
 
@@ -544,6 +589,7 @@ defineExpose<ExVerificationCodeExposed>({
     <!-- 格子容器 -->
     <div
       class="ex-verification-code__cells"
+      :style="cellsStyle"
       :aria-label="label ? undefined : ariaLabel || t('verificationCode.ariaLabel')"
       :aria-labelledby="label ? labelId : undefined"
       role="group"

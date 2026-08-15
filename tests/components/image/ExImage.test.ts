@@ -355,7 +355,7 @@ describe('ExImage', () => {
     hosts.push(host);
     const wrapper = mount(ExConfigProvider, {
       attachTo: host,
-      props: { zIndex: 2000 },
+      props: { zIndex: 2000, animation: false, neonEffect: false },
       slots: {
         default: () =>
           h(ExImage, {
@@ -372,9 +372,10 @@ describe('ExImage', () => {
     await image.find('.ex-image__preview-trigger').trigger('click');
     await nextTick();
 
-    expect(document.body.querySelector<HTMLElement>('.ex-image-preview')?.style.zIndex).toBe(
-      '2050'
-    );
+    const preview = document.body.querySelector<HTMLElement>('.ex-image-preview');
+    expect(preview?.style.zIndex).toBe('2050');
+    expect(preview?.classList.contains('ex-no-animation')).toBe(true);
+    expect(preview?.classList.contains('ex-no-neon')).toBe(true);
   });
 
   it('暴露真实根元素', () => {

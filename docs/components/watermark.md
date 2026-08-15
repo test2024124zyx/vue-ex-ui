@@ -158,7 +158,7 @@ const exportDynamicWatermark = () => {
 
 ## 图片与失败回退
 
-图片默认使用 `crossOrigin="anonymous"` 与 `referrerPolicy="no-referrer"`，避免 Canvas 导出被跨域资源污染。建议提供 2 倍或 3 倍源图，并同时提供 `text`：图片加载失败时组件会触发 `error`，随后回退到文本水印。
+图片默认以匿名跨域语义和 `referrerPolicy="no-referrer"` 拉取，避免 Canvas 导出被跨域资源污染。远程源图最多读取 64 MiB，解码尺寸受 3200 万像素和 32768 像素单边上限保护；超限或加载失败时组件会触发 `error`，随后回退到 `text` 水印。建议提供 2 倍或 3 倍源图，并同时提供回退文字。
 
 ::: raw
 
@@ -364,7 +364,7 @@ DOM 防篡改只能提高删除水印的成本，无法阻止截屏、重新绘�
 
 ## 全屏与响应式
 
-`fullPage` 默认为 `true`，覆盖层使用 `position: fixed`。在组件文档或嵌套卡片中通常应显式设置 `:full-page="false"`。`responsive` 开启时会监听窗口尺寸变化并按 `throttleMs` 节流重绘；运行时切换这两个属性会自动重绑监听器。高分屏倍率最多按 4 倍渲染，避免异常 DPR 造成过大的 Canvas。
+`fullPage` 默认为 `true`，覆盖层使用 `position: fixed`。在组件文档或嵌套卡片中通常应显式设置 `:full-page="false"`。`responsive` 开启时会监听窗口尺寸变化并按 `throttleMs` 节流重绘；运行时切换这两个属性会自动重绑监听器。高分屏倍率最多按 4 倍渲染，瓦片同时受 3200 万像素和 32768 像素单边上限保护。切换图片来源会中止旧加载；错误事件不会回显可能带签名参数的完整地址。
 
 ::: raw
 

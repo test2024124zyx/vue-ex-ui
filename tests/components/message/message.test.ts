@@ -1,8 +1,11 @@
-import { flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createApp, defineComponent, h, nextTick } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExMessage, message } from '@/index';
+import { createMessageService, useMessageService } from '../../../src/components/message/message';
 import type { MessageGlobalConfig, MessageOptions } from '../../../src/components/message/types';
+import type { MessageService } from '../../../src/components/message/types';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 const defaultConfig: MessageGlobalConfig = {
   duration: 3000,
@@ -300,11 +303,64 @@ describe('Message 服务', () => {
     }
   });
 
-  it('组件独立安装会注册同一个 $message 服务', () => {
-    const app = createApp(defineComponent(() => () => h('div')));
-    app.use(ExMessage);
-    expect(app.component('ExMessage')).toBe(ExMessage);
-    expect(app.config.globalProperties.$message).toBe(message);
+  it('组件独立安装为每个 Vue App 注册隔离的 $message 服务', () => {
+    const firstApp = createApp(defineComponent(() => () => h('div')));
+    const secondApp = createApp(defineComponent(() => () => h('div')));
+    const firstUnmount = vi.spyOn(firstApp, 'onUnmount');
+    const secondUnmount = vi.spyOn(secondApp, 'onUnmount');
+    firstApp.use(ExMessage);
+    secondApp.use(ExMessage);
+
+    expect(firstApp.component('ExMessage')).toBe(ExMessage);
+    expect(firstApp.config.globalProperties.$message).not.toBe(message);
+    expect(secondApp.config.globalProperties.$message).not.toBe(message);
+    expect(secondApp.config.globalProperties.$message).not.toBe(
+      firstApp.config.globalProperties.$message
+    );
+    expect(firstUnmount).toHaveBeenCalledOnce();
+    expect(secondUnmount).toHaveBeenCalledOnce();
+  });
+
+  it('ConfigProvider 作用域服务继承主题、语言、层级并在卸载时清理', async () => {
+    let scopedService: MessageService | undefined;
+    const Harness = defineComponent({
+      setup() {
+        scopedService = useMessageService();
+        return () => null;
+      },
+    });
+    const wrapper = mount(ExConfigProvider, {
+      props: { theme: 'light', locale: 'zh-CN', zIndex: 3000 },
+      slots: { default: () => h(Harness) },
+    });
+
+    expect(scopedService).toBeDefined();
+    expect(scopedService).not.toBe(message);
+    scopedService!.info({ content: '作用域消息', closable: true, duration: 0 });
+    await flush();
+
+    expect(document.querySelector<HTMLElement>('.ex-message')?.dataset.theme).toBe('light');
+    expect(document.querySelector('.ex-message__close')?.getAttribute('aria-label')).toBe('关闭');
+    expect(document.querySelector<HTMLElement>('.ex-message-container')?.style.zIndex).toBe('3080');
+
+    wrapper.unmount();
+    await flush();
+    expect(document.querySelector('.ex-message')).toBeNull();
+  });
+
+  it('createMessageService 工厂返回完全独立的队列与配置', async () => {
+    const first = createMessageService();
+    const second = createMessageService();
+    first.config({ maxCount: 1 });
+    first.info({ content: '第一应用', duration: 0 });
+    second.info({ content: '第二应用-A', duration: 0 });
+    second.info({ content: '第二应用-B', duration: 0 });
+    await flush();
+
+    expect(messages()).toHaveLength(3);
+    first.closeAll();
+    expect(messages().map(element => element.textContent)).toEqual(['第二应用-A', '第二应用-B']);
+    second.closeAll();
   });
 
   it('服务方法可安全解构调用', async () => {

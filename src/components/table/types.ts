@@ -94,7 +94,7 @@ export interface TableColumn<T = unknown> {
   minWidth?: string | number;
   /** 对齐方式 */
   align?: TableColumnAlign;
-  /** 是否固定列 */
+  /** 是否固定列；固定列应设置 width 或 minWidth 以计算相邻列偏移 */
   fixed?: 'left' | 'right' | boolean;
   /** 是否可排序 */
   sortable?: boolean;
@@ -106,6 +106,8 @@ export interface TableColumn<T = unknown> {
   children?: TableColumn<T>[];
   /** 过滤器 */
   onFilter?: (value: unknown, record: T) => boolean;
+  /** 当前生效的过滤值；同列多个值按任一匹配处理 */
+  filteredValue?: readonly unknown[];
   /** 是否省略显示 */
   ellipsis?: boolean;
   /** 自定义类名 */

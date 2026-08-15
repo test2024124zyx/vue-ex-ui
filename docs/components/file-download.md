@@ -6,16 +6,31 @@
 
 `link` 只负责创建并点击下载链接。浏览器接管后组件会触发 `trigger`，不会把未知的磁盘保存结果报告为 `success`。
 
+::: raw
+<div class="demo-container">
+  <ExFileDownload
+    url="/downloads/manual.pdf"
+    filename="manual.pdf"
+    transport="link"
+    button-text="下载手册"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExFileDownload
     url="/downloads/manual.pdf"
     filename="manual.pdf"
     transport="link"
-    @trigger="handleTrigger"
+    button-text="下载手册"
   />
 </template>
 ```
+
+:::
 
 ## Fetch 与进度
 
@@ -112,6 +127,7 @@ const cancelDownload = () => {
 | transport        | 下载传输方式                     | `'link' \| 'fetch' \| 'xhr'` | `'link'`    |
 | show-progress    | 活动 Fetch / XHR 是否显示进度    | `boolean`                    | `true`      |
 | headers          | Fetch / XHR 请求头               | `Record<string, string>`     | -           |
+| max-bytes        | Fetch / XHR 最大缓冲字节数       | `number`                     | `536870912` |
 | with-credentials | Fetch 使用 include，XHR 携带凭证 | `boolean`                    | `false`     |
 | button-text      | 固定按钮文案                     | `string`                     | 按状态翻译  |
 | button-type      | 默认按钮类型                     | `ButtonType`                 | `'primary'` |
@@ -152,3 +168,12 @@ const cancelDownload = () => {
 - 文件名会移除路径、控制字符和跨平台保留字符。
 - 默认触发器使用原生按钮语义；进度条提供确定或不确定的 ARIA 进度状态。
 - Fetch / XHR 仍受浏览器同源策略和服务端 CORS 配置约束。
+
+<style scoped>
+.demo-container {
+  padding: 24px;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-color-bg-secondary);
+}
+</style>

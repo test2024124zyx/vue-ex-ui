@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, provide, ref } from 'vue';
+import { computed, onUpdated, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
 
 defineOptions({
@@ -34,6 +34,7 @@ const stepsRef = ref<HTMLDivElement>();
 // 按注册顺序保存各步骤的唯一标识；索引通过 indexOf 实时计算，
 // 这样动态增删/重排步骤后 isLast、状态判断等都会自动更新（避免自增计数器永久漂移）。
 const stepUids = ref<symbol[]>([]);
+const stepElements = new Map<symbol, () => HTMLElement | null>();
 
 // 计算属性
 const stepsClasses = computed(() => {
@@ -62,7 +63,8 @@ const stepsStyles = computed(() => {
 });
 
 // 注册步骤（按文档顺序追加）
-const registerStep = (uid: symbol) => {
+const registerStep = (uid: symbol, getElement: () => HTMLElement | null) => {
+  stepElements.set(uid, getElement);
   if (!stepUids.value.includes(uid)) {
     stepUids.value.push(uid);
   }
@@ -74,14 +76,30 @@ const unregisterStep = (uid: symbol) => {
   if (index > -1) {
     stepUids.value.splice(index, 1);
   }
+  stepElements.delete(uid);
 };
+
+const syncStepOrder = (): void => {
+  const ordered = [...stepUids.value].sort((leftUid, rightUid) => {
+    const left = stepElements.get(leftUid)?.();
+    const right = stepElements.get(rightUid)?.();
+    if (!left || !right || left === right) return 0;
+    const position = left.compareDocumentPosition(right);
+    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+  });
+  if (ordered.some((uid, index) => uid !== stepUids.value[index])) {
+    stepUids.value = ordered;
+  }
+};
+
+onUpdated(syncStepOrder);
 
 // 获取步骤当前索引（响应式）
 const getStepIndex = (uid: symbol) => stepUids.value.indexOf(uid);
 
 // 步骤点击事件
-const onStepClick = (index: number) => {
-  if (props.clickable) {
+const onStepClick = (index: number, childOverride = false) => {
+  if (props.clickable || childOverride) {
     emit('change', index);
   }
 };

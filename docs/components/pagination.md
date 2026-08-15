@@ -22,6 +22,8 @@ const handleChange = (page, pageSize) => {
 
 基础的分页用法。
 
+::: raw
+
 <div class="demo-container">
   <ExPagination
     v-model:current="current1"
@@ -29,21 +31,34 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const current = ref(1);
+const current1 = ref(1);
 </script>
 
 <template>
-  <ExPagination v-model:current="current" :total="100" />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current1"
+      :total="100"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 更多页码
 
 当页数较多时，会自动折叠显示。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -53,15 +68,35 @@ const current = ref(1);
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination v-model:current="current" :total="500" :page-size="10" />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current2"
+      :total="500"
+      :page-size="10"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const current2 = ref(1);
+</script>
 ```
+
+:::
 
 ## 改变每页显示条数
 
 可以改变每页显示的条数。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -74,11 +109,15 @@ const current = ref(1);
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const current = ref(1);
+const current3 = ref(1);
 const pageSize = ref(10);
 
 const handleChange = (page, pageSize) => {
@@ -87,20 +126,26 @@ const handleChange = (page, pageSize) => {
 </script>
 
 <template>
-  <ExPagination
-    v-model:current="current"
-    v-model:page-size="pageSize"
-    :total="500"
-    show-size-changer
-    :page-size-options="[10, 20, 30, 50, 100]"
-    @change="handleChange"
-  />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current3"
+      v-model:page-size="pageSize"
+      :total="500"
+      show-size-changer
+      :page-size-options="[10, 20, 30, 50, 100]"
+      @change="handleChange"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 快速跳转
 
 可以快速跳转到指定页码。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -110,15 +155,35 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination v-model:current="current" :total="500" show-quick-jumper />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current4"
+      :total="500"
+      show-quick-jumper
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const current4 = ref(1);
+</script>
 ```
+
+:::
 
 ## 完整功能
 
 包含所有功能的分页组件。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -132,23 +197,44 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const current5 = ref(1);
+const pageSize = ref(10);
+
+const handleChange = (page, currentPageSize) => {
+  console.log('Page changed:', page, currentPageSize);
+};
+</script>
+
 <template>
-  <ExPagination
-    v-model:current="current"
-    v-model:page-size="pageSize"
-    :total="500"
-    show-size-changer
-    show-quick-jumper
-    :page-size-options="[10, 20, 30, 50, 100]"
-    @change="handleChange"
-  />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current5"
+      v-model:page-size="pageSize"
+      :total="500"
+      show-size-changer
+      show-quick-jumper
+      :page-size-options="[10, 20, 30, 50, 100]"
+      @change="handleChange"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 简洁模式
 
 简洁的分页模式，适合空间有限的场景。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -158,15 +244,35 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination v-model:current="current" :total="100" simple />
+  <div class="demo-container">
+    <ExPagination
+      v-model:current="current6"
+      :total="100"
+      simple
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const current6 = ref(1);
+</script>
 ```
+
+:::
 
 ## 不同尺寸
 
 提供三种尺寸的分页组件。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <ExPagination
@@ -186,19 +292,42 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination :current="1" :total="100" size="small" />
-
-  <ExPagination :current="1" :total="100" size="medium" />
-
-  <ExPagination :current="1" :total="100" size="large" />
+  <div
+    class="demo-container"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    <ExPagination
+      :current="1"
+      :total="100"
+      size="small"
+    />
+    <ExPagination
+      :current="1"
+      :total="100"
+      size="medium"
+    />
+    <ExPagination
+      :current="1"
+      :total="100"
+      size="large"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 对齐方式
 
 可以设置分页组件的对齐方式。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <ExPagination
@@ -218,19 +347,42 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination :current="1" :total="100" align="left" />
-
-  <ExPagination :current="1" :total="100" align="center" />
-
-  <ExPagination :current="1" :total="100" align="right" />
+  <div
+    class="demo-container"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    <ExPagination
+      :current="1"
+      :total="100"
+      align="left"
+    />
+    <ExPagination
+      :current="1"
+      :total="100"
+      align="center"
+    />
+    <ExPagination
+      :current="1"
+      :total="100"
+      align="right"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 自定义总数显示
 
 可以自定义总数的显示文本。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -240,19 +392,29 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination
-    :current="1"
-    :total="500"
-    :total-text="(total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条数据`"
-  />
+  <div class="demo-container">
+    <ExPagination
+      :current="1"
+      :total="500"
+      :total-text="(total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条数据`"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 禁用状态
 
 禁用分页组件。
+
+::: raw
 
 <div class="demo-container">
   <ExPagination
@@ -262,15 +424,29 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination :current="1" :total="100" disabled />
+  <div class="demo-container">
+    <ExPagination
+      :current="1"
+      :total="100"
+      disabled
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 隐藏单页
 
 当只有一页时，可以隐藏分页组件。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
@@ -293,15 +469,49 @@ const handleChange = (page, pageSize) => {
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPagination :current="1" :total="5" :page-size="10" hide-on-single-page />
+  <div
+    class="demo-container"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    <div>
+      <p style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">
+        总数 5 条（单页，隐藏）：
+      </p>
+      <ExPagination
+        :current="1"
+        :total="5"
+        :page-size="10"
+        hide-on-single-page
+      />
+    </div>
+    <div>
+      <p style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">
+        总数 15 条（多页，显示）：
+      </p>
+      <ExPagination
+        :current="1"
+        :total="15"
+        :page-size="10"
+        hide-on-single-page
+      />
+    </div>
+  </div>
 </template>
 ```
+
+:::
 
 ## 赛博朋克主题示例
 
 展示赛博朋克风格的分页组件应用场景。
+
+::: raw
 
 <div class="demo-container" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 0, 127, 0.05)); padding: 32px;">
   <div style="margin-bottom: 24px;">
@@ -311,7 +521,7 @@ const handleChange = (page, pageSize) => {
     <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
       <div v-for="i in 10" :key="i" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--ex-color-bg-secondary); border: 1px solid var(--ex-color-border-primary); border-radius: var(--ex-radius-base);">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 20px;">{{ i <= 3 ? ['🥇', '🥈', '🥉'][i-1] : `#${i}` }}</span>
+          <span style="font-size: 20px;">{{ i <= 3 ? ['🥇', '🥈', '🥉'][i - 1] : `#${i}` }}</span>
           <span style="color: var(--ex-color-text-primary); font-weight: 600;">Player{{ String(i).padStart(3, '0') }}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
@@ -333,12 +543,44 @@ const handleChange = (page, pageSize) => {
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <div>
-    <h3>玩家排行榜</h3>
-    <div class="player-list">
-      <!-- 玩家列表 -->
+  <div
+    class="demo-container"
+    style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 0, 127, 0.05)); padding: 32px;"
+  >
+    <div style="margin-bottom: 24px;">
+      <h3
+        style="margin: 0 0 16px; color: var(--ex-color-neon-blue-500); font-family: var(--ex-font-primary); text-transform: uppercase;"
+      >
+        玩家排行榜
+      </h3>
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+        <div
+          v-for="i in 10"
+          :key="i"
+          style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--ex-color-bg-secondary); border: 1px solid var(--ex-color-border-primary); border-radius: var(--ex-radius-base);"
+        >
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">{{ i <= 3 ? ['🥇', '🥈', '🥉'][i - 1] : `#${i}` }}</span>
+            <span style="color: var(--ex-color-text-primary); font-weight: 600;">
+              Player{{ String(i).padStart(3, '0') }}
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <span style="color: var(--ex-color-text-secondary); font-size: 14px;">
+              等级 {{ 50 - i }}
+            </span>
+            <span style="color: var(--ex-color-neon-blue-500); font-weight: bold; font-size: 18px;">
+              {{ 10000 - i * 100 }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
     <ExPagination
       :current="1"
@@ -353,6 +595,8 @@ const handleChange = (page, pageSize) => {
   </div>
 </template>
 ```
+
+:::
 
 ## API
 

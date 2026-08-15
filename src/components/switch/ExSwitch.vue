@@ -1,5 +1,9 @@
 <template>
-  <div :class="switchClasses" :style="switchStyles" @click="handleClick">
+  <div
+    :class="switchClasses"
+    :style="switchStyles"
+    @click="handleClick"
+  >
     <!-- 开关前文本 -->
     <span
       v-if="inactiveText && !inlinePrompt"
@@ -10,19 +14,38 @@
     </span>
 
     <!-- 开关主体 -->
-    <div class="ex-switch__core" :style="coreStyle">
+    <div
+      class="ex-switch__core"
+      :style="coreStyle"
+    >
       <!-- 内联文本 -->
-      <span v-if="inlinePrompt && hasText" class="ex-switch__inner">
+      <span
+        v-if="inlinePrompt && hasText"
+        class="ex-switch__inner"
+      >
         <span class="ex-switch__inner-text">
-          <slot v-if="isChecked" name="active">{{ activeText }}</slot>
-          <slot v-else name="inactive">{{ inactiveText }}</slot>
+          <slot
+            v-if="isChecked"
+            name="active"
+          >
+            {{ activeText }}
+          </slot>
+          <slot
+            v-else
+            name="inactive"
+          >
+            {{ inactiveText }}
+          </slot>
         </span>
       </span>
 
       <!-- 开关按钮 -->
       <div class="ex-switch__action">
-        <div v-if="loading" class="ex-switch__loading">
-          <div class="ex-switch__spinner" />
+        <div
+          v-if="loading"
+          class="ex-switch__loading"
+        >
+          <div class="ex-switch__spinner"></div>
         </div>
       </div>
 
@@ -34,9 +57,11 @@
         class="ex-switch__input"
         role="switch"
         :name="name"
-        :disabled="disabled"
+        :disabled="isInteractionDisabled"
+        :required="required"
         :checked="isChecked"
         :aria-checked="isChecked"
+        :aria-disabled="isInteractionDisabled"
         :aria-label="ariaLabel"
         :aria-describedby="ariaDescribedby"
         @change="handleChange"
@@ -94,6 +119,8 @@ const formItem = useFormItem();
 const isChecked = computed(() => {
   return props.modelValue === props.activeValue;
 });
+
+const isInteractionDisabled = computed(() => props.disabled || props.loading);
 
 const slots = useSlots();
 
@@ -176,6 +203,7 @@ const handleFocus = (event: FocusEvent) => {
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {

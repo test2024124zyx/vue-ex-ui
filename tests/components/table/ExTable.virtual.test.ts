@@ -45,4 +45,43 @@ describe('ExTable 虚拟滚动', () => {
     const firstDataRow = wrapper.findAll('tbody tr').find(r => !r.classes('ex-table__spacer-row'));
     expect(firstDataRow?.text()).toContain('用户 0');
   });
+
+  it('滚动到底部后数据缩短时仍渲染剩余记录', async () => {
+    const wrapper = mount(ExTable, {
+      props: { columns, data: bigData, virtual: true, rowHeight: 40, virtualHeight: 400 },
+    });
+    const container = wrapper.get('.ex-table__container');
+    Object.defineProperty(container.element, 'scrollTop', { value: 36_000, writable: true });
+    await container.trigger('scroll');
+    await new Promise(resolve => window.requestAnimationFrame(resolve));
+
+    const remaining = bigData.slice(0, 2);
+    await wrapper.setProps({ data: remaining });
+    await nextTick();
+
+    const dataRows = wrapper
+      .findAll('.ex-table__row')
+      .filter(row => !row.classes('ex-table__spacer-row'));
+    expect(dataRows).toHaveLength(2);
+    expect(dataRows[0].text()).toContain('用户 0');
+  });
+
+  it('非法虚拟尺寸回退为有限正数', async () => {
+    const wrapper = mount(ExTable, {
+      props: {
+        columns,
+        data: bigData.slice(0, 20),
+        virtual: true,
+        rowHeight: 0,
+        virtualHeight: Number.NaN,
+        virtualBuffer: -5,
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.get('.ex-table__container').attributes('style')).toContain('height: 400px');
+    expect(wrapper.findAll('.ex-table__row').length).toBeGreaterThan(0);
+    expect(wrapper.get('.ex-table__row').attributes('style')).toContain('height: 48px');
+    expect(wrapper.html()).not.toMatch(/NaN|Infinity/);
+  });
 });

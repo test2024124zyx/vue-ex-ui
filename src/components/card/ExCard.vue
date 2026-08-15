@@ -3,14 +3,20 @@
     ref="cardRef"
     :class="cardClasses"
     :style="cardStyles"
-    :aria-label="ariaLabel"
-    :role="hasClickListener() ? 'button' : undefined"
-    :tabindex="hasClickListener() ? (loading ? -1 : 0) : undefined"
+    :aria-label="hasClickListener() ? undefined : ariaLabel"
     :aria-busy="loading || undefined"
     :aria-disabled="hasClickListener() && loading ? 'true' : undefined"
-    @click="handleClick"
-    @keydown="handleKeydown"
+    @click.self="handleClick"
   >
+    <button
+      v-if="hasClickListener()"
+      class="ex-card__primary-action"
+      type="button"
+      :disabled="loading"
+      :aria-label="ariaLabel || t('card.more')"
+      @click="handleClick"
+    ></button>
+
     <!-- 封面图片 -->
     <div
       v-if="cover || $slots.cover"
@@ -19,7 +25,11 @@
       :inert="loading || undefined"
     >
       <slot name="cover">
-        <img :src="cover" :alt="ariaLabel || ''" class="ex-card__cover-image" />
+        <img
+          :src="cover"
+          :alt="ariaLabel || ''"
+          class="ex-card__cover-image"
+        />
       </slot>
     </div>
 
@@ -34,7 +44,11 @@
     </div>
 
     <!-- 卡片内容 -->
-    <div class="ex-card__body" :style="bodyStyle" :inert="loading || undefined">
+    <div
+      class="ex-card__body"
+      :style="bodyStyle"
+      :inert="loading || undefined"
+    >
       <slot />
     </div>
 
@@ -46,7 +60,10 @@
       :inert="loading || undefined"
     >
       <slot name="footer">
-        <div v-if="$slots.actions" class="ex-card__actions">
+        <div
+          v-if="$slots.actions"
+          class="ex-card__actions"
+        >
           <slot name="actions" />
         </div>
       </slot>
@@ -105,6 +122,7 @@ const cardClasses = computed(() => {
   if (!props.bordered) classes.push('ex-card--borderless');
   if (props.hoverable) classes.push('ex-card--hoverable');
   if (props.loading) classes.push('ex-card--loading');
+  if (hasClickListener()) classes.push('ex-card--clickable');
 
   classes.push(...normalizeCustomClass(props.class));
 
@@ -131,21 +149,6 @@ const handleClick = (event: MouseEvent) => {
   if (!props.loading) {
     emit('click', event);
   }
-};
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (
-    props.loading ||
-    !hasClickListener() ||
-    event.target !== event.currentTarget ||
-    (event.key !== 'Enter' && event.key !== ' ')
-  ) {
-    return;
-  }
-
-  event.preventDefault();
-  // 使用原生 click 生成 MouseEvent，使键盘与指针事件保持同一事件契约。
-  cardRef.value?.click();
 };
 
 // 暴露的方法

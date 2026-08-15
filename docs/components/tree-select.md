@@ -37,106 +37,332 @@ const strict = ref([])
 
 单选模式，点击节点即选中并关闭。
 
+::: raw
+
 <div class="demo-container">
   <ExTreeSelect v-model="single" :data="treeData" placeholder="请选择区域" clearable />
   <span style="color: var(--ex-color-text-secondary);">值：{{ single ?? '（空）' }}</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTreeSelect v-model="value" :data="treeData" clearable />
+  <div class="demo-container">
+    <ExTreeSelect
+      v-model="single"
+      :data="treeData"
+      placeholder="请选择区域"
+      clearable
+    />
+    <span style="color: var(--ex-color-text-secondary);">值：{{ single ?? '（空）' }}</span>
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-const value = ref(null);
+const single = ref(null);
 const treeData = [
-  { value: 'tokyo', label: 'Neo Tokyo', children: [{ value: 'shibuya', label: '涩谷区' }] },
+  {
+    value: 'tokyo',
+    label: 'Neo Tokyo',
+    children: [
+      { value: 'shibuya', label: '涩谷区' },
+      {
+        value: 'shinjuku',
+        label: '新宿区',
+        children: [
+          { value: 'kabukicho', label: '歌舞伎町' },
+          { value: 'nishi', label: '西新宿' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'night-city',
+    label: 'Night City',
+    children: [
+      { value: 'watson', label: 'Watson' },
+      { value: 'westbrook', label: 'Westbrook', disabled: true },
+    ],
+  },
 ];
 </script>
 ```
 
+:::
+
 ## 多选（级联勾选）
 
 设置 `multiple` 显示复选框，勾选父节点会级联选中子节点，子节点状态回溯影响父节点（半选）。
+
+::: raw
 
 <div class="demo-container">
   <ExTreeSelect v-model="multi" :data="treeData" multiple clearable default-expand-all placeholder="请选择" />
   <span style="color: var(--ex-color-text-secondary);">已选 {{ multi.length }} 项</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTreeSelect v-model="value" :data="treeData" multiple clearable default-expand-all />
+  <div class="demo-container">
+    <ExTreeSelect
+      v-model="multi"
+      :data="treeData"
+      multiple
+      clearable
+      default-expand-all
+      placeholder="请选择"
+    />
+    <span style="color: var(--ex-color-text-secondary);">已选 {{ multi.length }} 项</span>
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-const value = ref([]);
+const multi = ref([]);
+const treeData = [
+  {
+    value: 'tokyo',
+    label: 'Neo Tokyo',
+    children: [
+      { value: 'shibuya', label: '涩谷区' },
+      {
+        value: 'shinjuku',
+        label: '新宿区',
+        children: [
+          { value: 'kabukicho', label: '歌舞伎町' },
+          { value: 'nishi', label: '西新宿' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'night-city',
+    label: 'Night City',
+    children: [
+      { value: 'watson', label: 'Watson' },
+      { value: 'westbrook', label: 'Westbrook', disabled: true },
+    ],
+  },
+];
 </script>
 ```
+
+:::
 
 ## 父子不关联
 
 设置 `check-strictly`，父子节点的勾选状态相互独立。
 
+::: raw
+
 <div class="demo-container">
   <ExTreeSelect v-model="strict" :data="treeData" multiple check-strictly default-expand-all placeholder="独立勾选" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const strict = ref([]);
+const treeData = [
+  {
+    value: 'tokyo',
+    label: 'Neo Tokyo',
+    children: [
+      { value: 'shibuya', label: '涩谷区' },
+      {
+        value: 'shinjuku',
+        label: '新宿区',
+        children: [
+          { value: 'kabukicho', label: '歌舞伎町' },
+          { value: 'nishi', label: '西新宿' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'night-city',
+    label: 'Night City',
+    children: [
+      { value: 'watson', label: 'Watson' },
+      { value: 'westbrook', label: 'Westbrook', disabled: true },
+    ],
+  },
+];
+</script>
+
 <template>
-  <ExTreeSelect v-model="value" :data="treeData" multiple check-strictly />
+  <div class="demo-container">
+    <ExTreeSelect
+      v-model="strict"
+      :data="treeData"
+      multiple
+      check-strictly
+      default-expand-all
+      placeholder="独立勾选"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 可搜索
 
 设置 `filterable`，输入关键字过滤节点（自动展开匹配路径）。
 
+::: raw
+
 <div class="demo-container">
   <ExTreeSelect v-model="searchVal" :data="treeData" filterable clearable placeholder="输入关键字搜索" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const searchVal = ref(null);
+const treeData = [
+  {
+    value: 'tokyo',
+    label: 'Neo Tokyo',
+    children: [
+      { value: 'shibuya', label: '涩谷区' },
+      {
+        value: 'shinjuku',
+        label: '新宿区',
+        children: [
+          { value: 'kabukicho', label: '歌舞伎町' },
+          { value: 'nishi', label: '西新宿' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'night-city',
+    label: 'Night City',
+    children: [
+      { value: 'watson', label: 'Watson' },
+      { value: 'westbrook', label: 'Westbrook', disabled: true },
+    ],
+  },
+];
+</script>
+
 <template>
-  <ExTreeSelect v-model="value" :data="treeData" filterable clearable />
+  <div class="demo-container">
+    <ExTreeSelect
+      v-model="searchVal"
+      :data="treeData"
+      filterable
+      clearable
+      placeholder="输入关键字搜索"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 禁用
 
 整体禁用，或对单个节点设置 `disabled`（如示例中的 “Westbrook”）。
 
+::: raw
+
 <div class="demo-container">
   <ExTreeSelect v-model="single" :data="treeData" disabled placeholder="已禁用" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const single = ref(null);
+const treeData = [
+  {
+    value: 'tokyo',
+    label: 'Neo Tokyo',
+    children: [
+      { value: 'shibuya', label: '涩谷区' },
+      {
+        value: 'shinjuku',
+        label: '新宿区',
+        children: [
+          { value: 'kabukicho', label: '歌舞伎町' },
+          { value: 'nishi', label: '西新宿' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'night-city',
+    label: 'Night City',
+    children: [
+      { value: 'watson', label: 'Watson' },
+      { value: 'westbrook', label: 'Westbrook', disabled: true },
+    ],
+  },
+];
+</script>
+
 <template>
-  <ExTreeSelect v-model="value" :data="treeData" disabled />
+  <div class="demo-container">
+    <ExTreeSelect
+      v-model="single"
+      :data="treeData"
+      disabled
+      placeholder="已禁用"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## API
 
 ### Props
 
-| 属性                  | 说明                           | 类型                                | 默认值         |
-| --------------------- | ------------------------------ | ----------------------------------- | -------------- |
-| model-value / v-model | 绑定值：单选为值，多选为值数组 | `string \| number \| Array \| null` | `null`         |
-| data                  | 树形数据                       | `TreeSelectNode[]`                  | `[]`           |
-| multiple              | 是否多选（显示复选框）         | `boolean`                           | `false`        |
-| check-strictly        | 多选时父子节点选中状态不关联   | `boolean`                           | `false`        |
-| disabled              | 是否禁用                       | `boolean`                           | `false`        |
-| clearable             | 是否可清空                     | `boolean`                           | `false`        |
-| filterable            | 是否可搜索过滤                 | `boolean`                           | `false`        |
-| placeholder           | 占位文本                       | `string`                            | 内置「请选择」 |
-| size                  | 尺寸                           | `'small' \| 'medium' \| 'large'`    | 跟随全局配置   |
-| default-expand-all    | 是否默认展开全部               | `boolean`                           | `false`        |
-| collapse-tags         | 多选时折叠超出标签             | `boolean`                           | `false`        |
-| teleported            | 弹层是否传送到 body            | `boolean`                           | `true`         |
-| popper-class          | 弹层自定义类名                 | `string`                            | —              |
+| 属性                  | 说明                            | 类型                                | 默认值         |
+| --------------------- | ------------------------------- | ----------------------------------- | -------------- |
+| model-value / v-model | 绑定值：单选为值，多选为值数组  | `string \| number \| Array \| null` | `null`         |
+| data                  | 树形数据                        | `TreeSelectNode[]`                  | `[]`           |
+| multiple              | 是否多选（显示复选框）          | `boolean`                           | `false`        |
+| check-strictly        | 多选时父子节点选中状态不关联    | `boolean`                           | `false`        |
+| disabled              | 是否禁用                        | `boolean`                           | `false`        |
+| clearable             | 是否可清空                      | `boolean`                           | `false`        |
+| filterable            | 是否可搜索过滤                  | `boolean`                           | `false`        |
+| placeholder           | 占位文本                        | `string`                            | 内置「请选择」 |
+| size                  | 尺寸                            | `'small' \| 'medium' \| 'large'`    | 跟随全局配置   |
+| default-expand-all    | 是否默认展开全部                | `boolean`                           | `false`        |
+| collapse-tags         | 多选时折叠超出标签              | `boolean`                           | `false`        |
+| teleported            | 弹层是否传送到 body             | `boolean`                           | `true`         |
+| popper-class          | 弹层自定义类名                  | `string`                            | —              |
+| id                    | 输入框 ID                       | `string`                            | —              |
+| aria-label            | 输入框与树弹层的无障碍名称      | `string`                            | 使用占位文本   |
+| aria-labelledby       | 输入框与树弹层的外部标签元素 ID | `string`                            | —              |
+| aria-describedby      | 关联描述元素 ID                 | `string`                            | —              |
 
 ### TreeSelectNode
 

@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import ExNumberInput from '../../../src/components/number-input/ExNumberInput.vue';
-import type { ExNumberInputProps } from '../../../src/components/number-input/types';
 
 describe('ExNumberInput', () => {
   let wrapper: VueWrapper<InstanceType<typeof ExNumberInput>>;
@@ -12,6 +11,10 @@ describe('ExNumberInput', () => {
         modelValue: 0,
       },
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('基础功能', () => {
@@ -62,11 +65,11 @@ describe('ExNumberInput', () => {
           modelValue: 0,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       await increaseButton.trigger('click');
       await wrapper.vm.$nextTick();
-      
+
       const emitted = wrapper.emitted('update:modelValue');
       expect(emitted).toBeTruthy();
       expect(emitted?.[0][0]).toBe(1);
@@ -78,11 +81,11 @@ describe('ExNumberInput', () => {
           modelValue: 0,
         },
       });
-      
+
       const decreaseButton = wrapper.findAll('.ex-number-input__button--decrease')[0];
       await decreaseButton.trigger('click');
       await wrapper.vm.$nextTick();
-      
+
       const emitted = wrapper.emitted('update:modelValue');
       expect(emitted).toBeTruthy();
       expect(emitted?.[0][0]).toBe(-1);
@@ -116,11 +119,11 @@ describe('ExNumberInput', () => {
           step: 5,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       await increaseButton.trigger('click');
       await wrapper.vm.$nextTick();
-      
+
       const emitted = wrapper.emitted('update:modelValue');
       expect(emitted).toBeTruthy();
       expect(emitted?.[0][0]).toBe(5);
@@ -133,11 +136,11 @@ describe('ExNumberInput', () => {
           step: 3,
         },
       });
-      
+
       const decreaseButton = wrapper.findAll('.ex-number-input__button--decrease')[0];
       await decreaseButton.trigger('click');
       await wrapper.vm.$nextTick();
-      
+
       const emitted = wrapper.emitted('update:modelValue');
       expect(emitted).toBeTruthy();
       expect(emitted?.[0][0]).toBe(7);
@@ -152,7 +155,7 @@ describe('ExNumberInput', () => {
           min: 0,
         },
       });
-      
+
       const decreaseButton = wrapper.findAll('.ex-number-input__button--decrease')[0];
       expect(decreaseButton.attributes('disabled')).toBeDefined();
     });
@@ -164,7 +167,7 @@ describe('ExNumberInput', () => {
           max: 10,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       expect(increaseButton.attributes('disabled')).toBeDefined();
     });
@@ -177,11 +180,11 @@ describe('ExNumberInput', () => {
           max: 10,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('15');
       await input.trigger('change');
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([10]);
     });
   });
@@ -194,7 +197,7 @@ describe('ExNumberInput', () => {
           precision: 2,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input').element as HTMLInputElement;
       expect(input.value).toBe('1.23');
     });
@@ -207,11 +210,11 @@ describe('ExNumberInput', () => {
           precision: 1,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       await increaseButton.trigger('click');
       await wrapper.vm.$nextTick();
-      
+
       const emitted = wrapper.emitted('update:modelValue');
       expect(emitted).toBeTruthy();
       expect(emitted?.[0][0]).toBe(0.3);
@@ -228,11 +231,11 @@ describe('ExNumberInput', () => {
           strictStep: true,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('7');
       await input.trigger('change');
-      
+
       // 7 应该被调整为最近的步长倍数 5
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([5]);
     });
@@ -245,7 +248,7 @@ describe('ExNumberInput', () => {
           disabled: true,
         },
       });
-      
+
       expect(wrapper.classes()).toContain('ex-number-input--disabled');
       const input = wrapper.find('.ex-number-input__input').element as HTMLInputElement;
       expect(input.disabled).toBe(true);
@@ -257,7 +260,7 @@ describe('ExNumberInput', () => {
           readonly: true,
         },
       });
-      
+
       expect(wrapper.classes()).toContain('ex-number-input--readonly');
       const input = wrapper.find('.ex-number-input__input').element as HTMLInputElement;
       expect(input.readOnly).toBe(true);
@@ -270,10 +273,27 @@ describe('ExNumberInput', () => {
           disabled: true,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       await increaseButton.trigger('click');
-      
+
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    });
+
+    it('只读时控制按钮和暴露方法都不应该修改值', async () => {
+      wrapper = mount(ExNumberInput, {
+        props: {
+          modelValue: 5,
+          readonly: true,
+        },
+      });
+
+      const increaseButton = wrapper.find('.ex-number-input__button--increase');
+      expect(increaseButton.attributes('disabled')).toBeDefined();
+      await increaseButton.trigger('click');
+      wrapper.vm.increase();
+      wrapper.vm.decrease();
+
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
   });
@@ -282,14 +302,14 @@ describe('ExNumberInput', () => {
     it('应该支持上箭头键增加', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'ArrowUp' });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([1]);
     });
 
     it('应该支持下箭头键减少', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'ArrowDown' });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([-1]);
     });
 
@@ -300,10 +320,10 @@ describe('ExNumberInput', () => {
           step: 1,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'ArrowUp', shiftKey: true });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([10]);
     });
 
@@ -314,10 +334,10 @@ describe('ExNumberInput', () => {
           step: 1,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'PageUp' });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([10]);
     });
 
@@ -328,10 +348,10 @@ describe('ExNumberInput', () => {
           min: 0,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'Home' });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([0]);
     });
 
@@ -342,10 +362,10 @@ describe('ExNumberInput', () => {
           max: 100,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('keydown', { key: 'End' });
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([100]);
     });
   });
@@ -354,7 +374,7 @@ describe('ExNumberInput', () => {
     it('应该过滤非法字符', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('abc123');
-      
+
       const inputElement = input.element as HTMLInputElement;
       expect(inputElement.value).toBe('123');
     });
@@ -363,7 +383,7 @@ describe('ExNumberInput', () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('-5');
       await input.trigger('change');
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([-5]);
     });
 
@@ -371,7 +391,7 @@ describe('ExNumberInput', () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('3.14');
       await input.trigger('change');
-      
+
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([3.14]);
     });
   });
@@ -409,7 +429,7 @@ describe('ExNumberInput', () => {
     it('应该触发 input 事件', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('5');
-      
+
       expect(wrapper.emitted('input')).toBeTruthy();
     });
 
@@ -417,22 +437,57 @@ describe('ExNumberInput', () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.setValue('5');
       await input.trigger('change');
-      
+
       expect(wrapper.emitted('change')).toBeTruthy();
     });
 
     it('应该触发 focus 事件', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('focus');
-      
+
       expect(wrapper.emitted('focus')).toBeTruthy();
     });
 
     it('应该触发 blur 事件', async () => {
       const input = wrapper.find('.ex-number-input__input');
       await input.trigger('blur');
-      
+
       expect(wrapper.emitted('blur')).toBeTruthy();
+    });
+
+    it('运行时修改防抖延迟应该立即生效', async () => {
+      vi.useFakeTimers();
+      wrapper = mount(ExNumberInput, {
+        props: {
+          modelValue: 0,
+          debounceDelay: 100,
+        },
+      });
+      await wrapper.setProps({ debounceDelay: 0 });
+
+      await wrapper.find('.ex-number-input__input').setValue('8');
+
+      expect(wrapper.emitted('input')).toEqual([[8]]);
+    });
+
+    it('提交 change 前应该取消尚未触发的旧 input', async () => {
+      vi.useFakeTimers();
+      wrapper = mount(ExNumberInput, {
+        props: {
+          modelValue: 0,
+          debounceDelay: 100,
+        },
+      });
+      const input = wrapper.find('.ex-number-input__input');
+      (input.element as HTMLInputElement).value = '5';
+      await input.trigger('input');
+      (input.element as HTMLInputElement).value = '6';
+      await input.trigger('change');
+
+      vi.runAllTimers();
+
+      expect(wrapper.emitted('update:modelValue')).toEqual([[6]]);
+      expect(wrapper.emitted('input')).toBeUndefined();
     });
   });
 
@@ -498,7 +553,7 @@ describe('ExNumberInput', () => {
           max: 10,
         },
       });
-      
+
       const input = wrapper.find('.ex-number-input__input').element as HTMLInputElement;
       expect(input.getAttribute('role')).toBe('spinbutton');
       expect(input.getAttribute('aria-valuemin')).toBe('0');
@@ -513,9 +568,16 @@ describe('ExNumberInput', () => {
           max: 10,
         },
       });
-      
+
       const increaseButton = wrapper.findAll('.ex-number-input__button--increase')[0];
       expect(increaseButton.attributes('tabindex')).toBe('-1');
+    });
+
+    it('默认无限边界不应该输出无效的 ARIA 数值', () => {
+      const input = wrapper.find('.ex-number-input__input');
+
+      expect(input.attributes('aria-valuemin')).toBeUndefined();
+      expect(input.attributes('aria-valuemax')).toBeUndefined();
     });
   });
 });

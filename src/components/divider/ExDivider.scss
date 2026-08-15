@@ -179,7 +179,7 @@
     }
   }
 
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     .ex-divider__line {
       background: var(--ex-divider-color, var(--ex-color-border-primary));
 

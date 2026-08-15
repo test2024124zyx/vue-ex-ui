@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExRadio from '../../../src/components/radio/ExRadio.vue';
-import type { ExRadioProps } from '../../../src/components/radio/types';
+import type { ExRadioInstance, ExRadioProps } from '../../../src/components/radio/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -56,7 +56,7 @@ describe('ExRadio', () => {
   describe('Sizes', () => {
     const sizes: ExRadioProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExRadio, {
           props: { value: 'test', size },
@@ -70,14 +70,9 @@ describe('ExRadio', () => {
 
   // 状态测试
   describe('Status', () => {
-    const statuses: ExRadioProps['status'][] = [
-      'default',
-      'success',
-      'warning',
-      'error',
-    ];
+    const statuses: ExRadioProps['status'][] = ['default', 'success', 'warning', 'error'];
 
-    statuses.forEach((status) => {
+    statuses.forEach(status => {
       it(`renders ${status} status correctly`, () => {
         const wrapper = mount(ExRadio, {
           props: { value: 'test', status },
@@ -96,8 +91,7 @@ describe('ExRadio', () => {
         props: {
           modelValue: '',
           value: 'test',
-          'onUpdate:modelValue': (value: string) =>
-            wrapper.setProps({ modelValue: value }),
+          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Radio' },
       });
@@ -382,7 +376,7 @@ describe('ExRadio', () => {
         slots: { default: 'Radio' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExRadioInstance;
       expect(typeof vm.focus).toBe('function');
     });
 
@@ -394,7 +388,7 @@ describe('ExRadio', () => {
         slots: { default: 'Radio' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExRadioInstance;
       expect(typeof vm.blur).toBe('function');
     });
 

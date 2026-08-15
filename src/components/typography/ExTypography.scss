@@ -575,7 +575,7 @@ $breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
     }
   }
 
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     // 高对比度偏好只移除装饰性霓虹色差，保留静态渐变本身。
     &,
     &--cyberpunk,

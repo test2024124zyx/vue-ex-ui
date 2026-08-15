@@ -4,6 +4,7 @@ export type ExFileDownloadErrorCode =
   | 'invalid-transport'
   | 'http-error'
   | 'network-error'
+  | 'size-exceeded'
   | 'unsupported';
 
 export interface ExFileDownloadErrorOptions {

@@ -1,18 +1,23 @@
 <template>
   <div
     ref="rootRef"
+    v-bind="rootAttrs"
     :class="rootClasses"
     :style="rootStyle"
   >
     <!-- 触发器 -->
     <div
+      :id="id"
       ref="triggerRef"
       class="ex-tree-select__trigger"
       role="combobox"
       aria-haspopup="tree"
-      :aria-controls="panelId"
+      :aria-controls="treeId"
       :aria-expanded="visible"
       :aria-disabled="disabled"
+      :aria-label="ariaLabelledby ? undefined : ariaLabel || placeholder || t('placeholder')"
+      :aria-labelledby="ariaLabelledby"
+      :aria-describedby="ariaDescribedby"
       :tabindex="disabled ? undefined : 0"
       @click="handleTriggerClick"
       @keydown="handleKeydown"
@@ -102,7 +107,7 @@
           ref="panelRef"
           class="ex-tree-select__panel"
           :data-theme="configTheme"
-          :class="popperClass"
+          :class="[popperClass, portalEffectClasses]"
           :style="panelStyle"
         >
           <div
@@ -114,12 +119,16 @@
               v-model="searchQuery"
               class="ex-tree-select__search-input"
               :placeholder="t('searchPlaceholder')"
+              :aria-label="t('searchPlaceholder')"
             />
           </div>
 
           <div
+            :id="treeId"
             class="ex-tree-select__tree"
             role="tree"
+            :aria-label="ariaLabelledby ? undefined : ariaLabel || placeholder || t('placeholder')"
+            :aria-labelledby="ariaLabelledby"
             :aria-multiselectable="multiple"
           >
             <div
@@ -132,9 +141,10 @@
                 'is-disabled': flat.node.disabled,
               }"
               role="treeitem"
-              :tabindex="flat.node.disabled ? -1 : 0"
+              :tabindex="flat.node.disabled ? -1 : activeNodeValue === flat.node.value ? 0 : -1"
               :aria-expanded="flat.hasChildren ? flat.expanded : undefined"
-              :aria-selected="isChecked(flat.node) || flat.node.value === modelValue"
+              :aria-selected="multiple ? undefined : flat.node.value === modelValue"
+              :aria-checked="multiple ? getAriaChecked(flat.node) : undefined"
               :aria-disabled="flat.node.disabled || undefined"
               :aria-level="flat.level + 1"
               :style="{ paddingLeft: `${flat.level * 18 + 8}px` }"
@@ -184,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted, useId } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted, useId, useAttrs } from 'vue';
 import type {
   ExTreeSelectProps,
   ExTreeSelectEmits,
@@ -192,7 +202,13 @@ import type {
   TreeSelectNode,
 } from './types';
 import { useLocale } from '../../locale';
-import { useComponentSize, useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
@@ -222,6 +238,7 @@ const emit = defineEmits<ExTreeSelectEmits>();
 const { t } = useLocale('treeSelect');
 const componentSize = useComponentSize(computed(() => props.size));
 const formItem = useFormItem();
+const attrs = useAttrs();
 
 const rootRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
@@ -229,11 +246,32 @@ const panelRef = ref<HTMLElement>();
 const searchInputRef = ref<HTMLInputElement>();
 const idSuffix = useId().replace(/:/g, '');
 const panelId = `ex-tree-select-panel-${idSuffix}`;
+const treeId = `ex-tree-select-tree-${idSuffix}`;
 const nodeRefs = new Map<string | number, HTMLElement>();
+const PANEL_VIEWPORT_GAP = 4;
+
+const rootAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(
+      ([key]) => !['aria-label', 'aria-describedby', 'id', 'class', 'style'].includes(key)
+    )
+  )
+);
 
 const visible = ref(false);
-const panelStyle = ref<Record<string, string>>({});
+const panelPositionStyle = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const dropdownZIndex = useZIndexLayer('dropdown');
+const portalEffectClasses = computed(() => ({
+  'ex-no-neon': !neonEffect.value,
+  'ex-no-animation': !animation.value,
+}));
+const panelStyle = computed<Record<string, string>>(() => ({
+  ...panelPositionStyle.value,
+  zIndex: String(dropdownZIndex.value),
+}));
 const searchQuery = ref('');
 const expandedKeys = ref<Set<string | number>>(new Set());
 
@@ -326,6 +364,21 @@ const flatNodes = computed<FlatNode[]>(() => {
   return out;
 });
 
+const activeNodeValue = ref<string | number | null>(null);
+
+watch(
+  flatNodes,
+  nodes => {
+    const current = nodes.find(
+      item => item.node.value === activeNodeValue.value && !item.node.disabled
+    );
+    if (!current) {
+      activeNodeValue.value = nodes.find(item => !item.node.disabled)?.node.value ?? null;
+    }
+  },
+  { immediate: true }
+);
+
 const setNodeRef = (value: string | number, element: unknown) => {
   if (element && typeof element === 'object' && 'focus' in element) {
     nodeRefs.set(value, element as HTMLElement);
@@ -334,10 +387,15 @@ const setNodeRef = (value: string | number, element: unknown) => {
   }
 };
 
-const focusNodeAt = (index: number) => {
-  const target = flatNodes.value[index];
+const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
+  let target = flatNodes.value[index];
+  while (target?.node.disabled) {
+    index += direction;
+    target = flatNodes.value[index];
+  }
   if (!target) return;
-  nodeRefs.get(target.node.value)?.focus();
+  activeNodeValue.value = target.node.value;
+  nextTick(() => nodeRefs.get(target.node.value)?.focus());
 };
 
 const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
@@ -354,20 +412,32 @@ const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
 
   if (event.key === 'ArrowDown') {
     event.preventDefault();
-    focusNodeAt(Math.min(currentIndex + 1, flatNodes.value.length - 1));
+    focusNodeAt(currentIndex + 1, 1);
     return;
   }
 
   if (event.key === 'ArrowUp') {
     event.preventDefault();
-    focusNodeAt(Math.max(currentIndex - 1, 0));
+    focusNodeAt(currentIndex - 1, -1);
+    return;
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault();
+    focusNodeAt(0, 1);
+    return;
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault();
+    focusNodeAt(flatNodes.value.length - 1, -1);
     return;
   }
 
   if (event.key === 'ArrowRight' && flat.hasChildren) {
     event.preventDefault();
     if (!flat.expanded) toggleExpand(flat.node);
-    else focusNodeAt(currentIndex + 1);
+    else focusNodeAt(currentIndex + 1, 1);
     return;
   }
 
@@ -380,7 +450,7 @@ const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
     const parentValue = parentMap.value.get(flat.node.value);
     if (parentValue != null) {
       const parentIndex = flatNodes.value.findIndex(item => item.node.value === parentValue);
-      focusNodeAt(parentIndex);
+      focusNodeAt(parentIndex, -1);
     }
   }
 };
@@ -413,9 +483,14 @@ const isIndeterminate = (node: TreeSelectNode): boolean => {
   if (props.checkStrictly || isChecked(node)) return false;
   return getDescendants(node).some(d => checkedSet.value.has(d.value));
 };
+const getAriaChecked = (node: TreeSelectNode): boolean | 'mixed' => {
+  if (isIndeterminate(node)) return 'mixed';
+  return isChecked(node);
+};
 
 // ---- 交互 ----
 const toggleExpand = (node: TreeSelectNode) => {
+  if (props.disabled || node.disabled) return;
   const next = new Set(expandedKeys.value);
   if (next.has(node.value)) next.delete(node.value);
   else next.add(node.value);
@@ -424,7 +499,7 @@ const toggleExpand = (node: TreeSelectNode) => {
 };
 
 const handleNodeClick = (node: TreeSelectNode) => {
-  if (node.disabled) return;
+  if (props.disabled || node.disabled) return;
   if (props.multiple) {
     toggleCheck(node);
   } else {
@@ -436,7 +511,7 @@ const handleNodeClick = (node: TreeSelectNode) => {
 };
 
 const toggleCheck = (node: TreeSelectNode) => {
-  if (node.disabled) return;
+  if (props.disabled || node.disabled) return;
   const next = new Set(checkedSet.value);
   const target = !next.has(node.value);
 
@@ -456,7 +531,7 @@ const toggleCheck = (node: TreeSelectNode) => {
       if (!parent) break;
       const children = (parent.children ?? []).filter(c => !c.disabled);
       const allChecked = children.length > 0 && children.every(c => next.has(c.value));
-      if (allChecked) next.add(parent.value);
+      if (!parent.disabled && allChecked) next.add(parent.value);
       else next.delete(parent.value);
       parentVal = parentMap.value.get(parentVal) ?? null;
     }
@@ -487,6 +562,7 @@ const removeTag = (value: string | number) => {
 };
 
 const handleClear = () => {
+  if (props.disabled) return;
   const cleared = props.multiple ? [] : null;
   emit('update:modelValue', cleared);
   emit('change', cleared, props.multiple ? [] : null);
@@ -497,29 +573,43 @@ const handleClear = () => {
 
 // ---- 面板 ----
 const updatePanelPosition = () => {
-  if (!props.teleported || !triggerRef.value || !panelRef.value) return;
+  if (!props.teleported) {
+    panelPositionStyle.value = {};
+    return;
+  }
+  if (!triggerRef.value || !panelRef.value) return;
   const rect = triggerRef.value.getBoundingClientRect();
   const panelHeight = panelRef.value.offsetHeight;
+  const panelWidth = Math.max(panelRef.value.offsetWidth, rect.width);
   const spaceBelow = window.innerHeight - rect.bottom;
   const top =
     spaceBelow < panelHeight && rect.top > panelHeight
-      ? rect.top - panelHeight - 4
-      : rect.bottom + 4;
-  panelStyle.value = {
+      ? Math.max(PANEL_VIEWPORT_GAP, rect.top - panelHeight - PANEL_VIEWPORT_GAP)
+      : Math.min(
+          Math.max(PANEL_VIEWPORT_GAP, window.innerHeight - panelHeight - PANEL_VIEWPORT_GAP),
+          rect.bottom + PANEL_VIEWPORT_GAP
+        );
+  const maxLeft = Math.max(PANEL_VIEWPORT_GAP, window.innerWidth - panelWidth - PANEL_VIEWPORT_GAP);
+  const left = Math.max(PANEL_VIEWPORT_GAP, Math.min(rect.left, maxLeft));
+  panelPositionStyle.value = {
     position: 'fixed',
     top: `${top}px`,
-    left: `${rect.left}px`,
+    left: `${left}px`,
     minWidth: `${rect.width}px`,
   };
 };
 
-const open = () => {
+const open = (focusTree = false) => {
   if (props.disabled) return;
   visible.value = true;
   emit('visible-change', true);
   nextTick(() => {
     updatePanelPosition();
     if (props.filterable) searchInputRef.value?.focus();
+    else if (focusTree) {
+      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.node.disabled);
+      focusNodeAt(firstEnabledIndex, 1);
+    }
   });
 };
 const close = () => {
@@ -542,16 +632,19 @@ const handleBlur = (e: FocusEvent) => {
 };
 const handleKeydown = (e: KeyboardEvent) => {
   if (props.disabled) return;
-  if (e.key === 'Enter' || (e.key === ' ' && !props.filterable)) {
+  if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (visible.value) close();
-    else open();
+    if (!visible.value) open(true);
+    else if (!props.filterable) {
+      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.node.disabled);
+      focusNodeAt(firstEnabledIndex, 1);
+    }
+  } else if (e.key === 'Enter' || (e.key === ' ' && !props.filterable)) {
+    e.preventDefault();
+    if (!visible.value) open(true);
   } else if (e.key === 'Escape' && visible.value) {
     e.preventDefault();
     close();
-  } else if (e.key === 'ArrowDown' && !visible.value) {
-    e.preventDefault();
-    open();
   }
 };
 
@@ -571,7 +664,7 @@ const handleClickOutside = (event: MouseEvent) => {
 const expandAll = () => {
   const next = new Set<string | number>();
   walk(props.data, node => {
-    if (node.children && node.children.length) next.add(node.value);
+    if (!node.disabled && node.children && node.children.length) next.add(node.value);
   });
   expandedKeys.value = next;
 };
@@ -590,6 +683,20 @@ watch(visible, isVisible => {
     window.removeEventListener('scroll', updatePanelPosition, true);
   }
 });
+
+watch(
+  () => props.disabled,
+  isDisabled => {
+    if (isDisabled) close();
+  }
+);
+
+watch(
+  () => props.teleported,
+  () => {
+    if (visible.value) nextTick(updatePanelPosition);
+  }
+);
 
 onMounted(() => {
   if (props.defaultExpandAll) expandAll();

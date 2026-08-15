@@ -19,25 +19,40 @@ const disabledDate = (value) => {
 
 ## 日期
 
+::: raw
+
 <div class="demo-container">
   <ExDateTimePicker v-model="date" placeholder="请选择日期" />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const date = ref(null);
+const date = ref(new Date());
 </script>
 
 <template>
-  <ExDateTimePicker v-model="date" />
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="date"
+      placeholder="请选择日期"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 日期时间
 
 `time-step` 约束分钟输入，最终值会吸附到有效刻度。
+
+::: raw
 
 <div class="demo-container">
   <ExDateTimePicker
@@ -48,11 +63,34 @@ const date = ref(null);
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExDateTimePicker v-model="datetime" type="datetime" format="YYYY/MM/DD HH:mm" :time-step="15" />
+<script setup>
+import { ref } from 'vue';
+
+const datetime = ref(null);
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="datetime"
+      type="datetime"
+      format="YYYY/MM/DD HH:mm"
+      :time-step="15"
+    />
+  </div>
+</template>
 ```
 
+:::
+
 ## 日期范围
+
+::: raw
 
 <div class="demo-container">
   <ExDateTimePicker
@@ -63,21 +101,66 @@ const date = ref(null);
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExDateTimePicker v-model="dateRange" type="daterange" />
+<script setup>
+import { ref } from 'vue';
+
+const dateRange = ref(null);
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="dateRange"
+      type="daterange"
+      start-placeholder="开始日期"
+      end-placeholder="结束日期"
+    />
+  </div>
+</template>
 ```
 
+:::
+
 ## 日期时间范围
+
+::: raw
 
 <div class="demo-container">
   <ExDateTimePicker v-model="datetimeRange" type="datetimerange" :time-step="5" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExDateTimePicker v-model="datetimeRange" type="datetimerange" :time-step="5" />
+<script setup>
+import { ref } from 'vue';
+
+const datetimeRange = ref(null);
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="datetimeRange"
+      type="datetimerange"
+      :time-step="5"
+    />
+  </div>
+</template>
 ```
 
+:::
+
 ## 禁用日期与状态
+
+::: raw
 
 <div class="demo-container demo-container--row">
   <ExDateTimePicker v-model="date" :disabled-date="disabledDate" />
@@ -85,11 +168,42 @@ const date = ref(null);
   <ExDateTimePicker v-model="date" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExDateTimePicker v-model="date" :disabled-date="disabledDate" />
-<ExDateTimePicker v-model="date" readonly />
-<ExDateTimePicker v-model="date" disabled />
+<script setup>
+import { ref } from 'vue';
+
+const date = ref(new Date());
+
+const disabledDate = value => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return value < today;
+};
+</script>
+
+<template>
+  <div class="demo-container demo-container--row">
+    <ExDateTimePicker
+      v-model="date"
+      :disabled-date="disabledDate"
+    />
+    <ExDateTimePicker
+      v-model="date"
+      readonly
+    />
+    <ExDateTimePicker
+      v-model="date"
+      disabled
+    />
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 
@@ -111,6 +225,7 @@ const date = ref(null);
 | `show-time`               | 在日期模式中额外启用时间选择                             | `boolean`                                                | `false`      |
 | `time-step`               | 分钟步长，规范范围 1～60                                 | `number`                                                 | `1`          |
 | `show-today`              | 是否显示“今天”按钮                                       | `boolean`                                                | `true`       |
+| `teleported`              | 是否将面板传送到 body，避免祖先 overflow 裁剪            | `boolean`                                                | `true`       |
 | `aria-label`              | 输入框无障碍名称                                         | `string`                                                 | 使用占位文本 |
 
 ### Events

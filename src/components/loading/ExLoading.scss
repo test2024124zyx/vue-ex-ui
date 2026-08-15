@@ -19,6 +19,31 @@
     pointer-events: none;
   }
 
+  &--no-animation {
+    transition: none;
+
+    .ex-loading__spinner-circle,
+    .ex-loading__spinner-circle svg,
+    .ex-loading__dot,
+    .ex-loading__pulse-ring,
+    .ex-loading__bar,
+    .ex-loading__neon-ring,
+    .ex-loading__neon-ring::before {
+      animation: none;
+    }
+  }
+
+  &--no-neon {
+    .ex-loading__spinner-circle circle,
+    .ex-loading__neon-ring {
+      filter: none;
+    }
+
+    .ex-loading__dot {
+      box-shadow: none;
+    }
+  }
+
   &--small {
     --ex-loading-size: 24px;
 

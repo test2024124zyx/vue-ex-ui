@@ -4,55 +4,85 @@
 
 ## 基础用法
 
+::: raw
 <div class="demo-container">
-  <ExEmpty />
+  <ex-empty />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExEmpty />
+  <div class="demo-container">
+    <ex-empty />
+  </div>
 </template>
 ```
+
+:::
 
 ## 场景文案
 
 未传入 `description` 时，`type` 会选择当前语言下的内置文案。
 
+::: raw
 <div class="demo-grid">
-  <ExEmpty
+  <ex-empty
     type="no-result"
     image-size="small"
   />
-  <ExEmpty
+  <ex-empty
     type="network-error"
     image-size="small"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExEmpty type="no-result" />
-  <ExEmpty type="network-error" />
+  <div class="demo-grid">
+    <ex-empty
+      type="no-result"
+      image-size="small"
+    />
+    <ex-empty
+      type="network-error"
+      image-size="small"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 描述与操作
 
 `description` 覆盖内置文案；传入空字符串可隐藏描述。默认插槽用于放置操作。
 
+::: raw
 <div class="demo-container">
-  <ExEmpty description="当前筛选条件下没有数据">
-    <ExButton type="primary">清除筛选</ExButton>
-  </ExEmpty>
+  <ex-empty description="当前筛选条件下没有数据">
+    <ex-button type="primary">清除筛选</ex-button>
+  </ex-empty>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExEmpty description="当前筛选条件下没有数据">
-    <ExButton type="primary">清除筛选</ExButton>
-  </ExEmpty>
+  <div class="demo-container">
+    <ex-empty description="当前筛选条件下没有数据">
+      <ex-button type="primary">清除筛选</ex-button>
+    </ex-empty>
+  </div>
 </template>
 ```
+
+:::
 
 ## 图片
 
@@ -78,8 +108,9 @@ const handleImageError = (event: Event) => {
 
 ## 自定义图片与描述
 
+::: raw
 <div class="demo-container">
-  <ExEmpty :image-size="96">
+  <ex-empty :image-size="96">
     <template #image>
       <span
         aria-hidden="true"
@@ -91,23 +122,35 @@ const handleImageError = (event: Event) => {
     <template #description>
       <span>还没有收藏内容</span>
     </template>
-    <ExButton>浏览内容</ExButton>
-  </ExEmpty>
+    <ex-button>浏览内容</ex-button>
+  </ex-empty>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExEmpty :image-size="96">
-    <template #image>
-      <span aria-hidden="true">◇</span>
-    </template>
-    <template #description>
-      <span>还没有收藏内容</span>
-    </template>
-    <ExButton>浏览内容</ExButton>
-  </ExEmpty>
+  <div class="demo-container">
+    <ex-empty :image-size="96">
+      <template #image>
+        <span
+          aria-hidden="true"
+          class="custom-empty-icon"
+        >
+          ◇
+        </span>
+      </template>
+      <template #description>
+        <span>还没有收藏内容</span>
+      </template>
+      <ex-button>浏览内容</ex-button>
+    </ex-empty>
+  </div>
 </template>
 ```
+
+:::
 
 ## API
 

@@ -17,7 +17,6 @@
 
 // ==================== 导入组件库样式（含主题变量、字体、基础样式） ====================
 @use '../../../src/styles/index.scss';
-
 // ============================================================================
 // 1. VitePress 设计令牌映射到 ExUI 变量
 // ============================================================================
@@ -811,8 +810,16 @@ html {
       radial-gradient(circle at 85% 25%, var(--ex-color-neon-pink-alpha-10), transparent 42%),
       linear-gradient(var(--ex-color-border-primary) 1px, transparent 1px),
       linear-gradient(90deg, var(--ex-color-border-primary) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
-    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+    background-size:
+      100% 100%,
+      100% 100%,
+      48px 48px,
+      48px 48px;
+    background-position:
+      0 0,
+      0 0,
+      -1px -1px,
+      -1px -1px;
     opacity: 0.5;
     -webkit-mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);
     mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);

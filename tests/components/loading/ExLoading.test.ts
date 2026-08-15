@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { renderToString } from '@vue/server-renderer';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createSSRApp, h, nextTick } from 'vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExLoading from '../../../src/components/loading/ExLoading.vue';
 import type {
   ExLoadingExposed,
@@ -65,7 +66,7 @@ describe('ExLoading', () => {
 
       expect(wrapper.get('.ex-loading').classes()).toContain(`ex-loading--${type}`);
       expect(
-        wrapper.get(`.ex-loading__${type === 'spinner' ? 'spinner-circle' : type}`).exists()
+        wrapper.find(`.ex-loading__${type === 'spinner' ? 'spinner-circle' : type}`).exists()
       ).toBe(true);
     }
   );
@@ -170,9 +171,11 @@ describe('ExLoading', () => {
     expect(wrapper.get('.ex-loading').attributes('style') ?? '').not.toContain(
       '--ex-loading-color'
     );
-    expect(wrapper.get('.ex-loading').attributes('style') ?? '').not.toContain(
-      '--ex-loading-z-index'
-    );
+    expect(
+      (wrapper.get('.ex-loading').element as HTMLElement).style.getPropertyValue(
+        '--ex-loading-z-index'
+      )
+    ).toBe('1040');
   });
 
   it('遮罩默认不可关闭，启用后发送受控更新与 close 事件', async () => {
@@ -219,8 +222,39 @@ describe('ExLoading', () => {
     expect(document.body.style.overflow).toBe('auto');
   });
 
+  it('全屏 Teleport 以内联层级继承最近 ConfigProvider', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 3000 },
+      slots: { default: () => h(ExLoading, { fullscreen: true }) },
+    });
+    wrappers.push(wrapper);
+    await nextTick();
+
+    const loading = document.body.querySelector<HTMLElement>('.ex-loading');
+    expect(loading?.style.getPropertyValue('--ex-loading-z-index')).toBe('3050');
+
+    await wrapper.setProps({ zIndex: 3200 });
+    await nextTick();
+    expect(loading?.style.getPropertyValue('--ex-loading-z-index')).toBe('3250');
+  });
+
+  it('全屏 Teleport 显式继承动画与霓虹开关', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { animation: false, neonEffect: false },
+      slots: { default: () => h(ExLoading, { fullscreen: true }) },
+    });
+    wrappers.push(wrapper);
+    await nextTick();
+
+    const loading = document.body.querySelector<HTMLElement>('.ex-loading');
+    expect(loading?.classList.contains('ex-loading--no-animation')).toBe(true);
+    expect(loading?.classList.contains('ex-loading--no-neon')).toBe(true);
+  });
+
   it('无遮罩全屏提示不会锁定滚动或拦截底层交互', async () => {
-    const _wrapper = mountLoading({
+    mountLoading({
       attachTo: document.body,
       props: { fullscreen: true, mask: false },
     });

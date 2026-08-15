@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExHeatmap from '../../../src/components/heatmap/ExHeatmap.vue';
 import { setLocale } from '../../../src/locale';
 import type { ExHeatmapProps, HeatmapDataItem } from '../../../src/components/heatmap/types';
@@ -110,9 +111,9 @@ describe('ExHeatmap', () => {
         'compact',
       ])
     );
-    expect(wrapper.attributes('style')).toContain('--ex-heatmap-cell-size: 14px');
+    expect(wrapper.attributes('style')).toContain('--ex-heatmap-cell-size: 32px');
     expect(wrapper.attributes('style')).toContain('--ex-heatmap-gap: 6px');
-    expect(wrapper.attributes('style')).toContain('--ex-heatmap-radius: 7px');
+    expect(wrapper.attributes('style')).toContain('--ex-heatmap-radius: 16px');
     expect(wrapper.attributes('style')).toContain('max-width: 600px');
   });
 
@@ -170,6 +171,33 @@ describe('ExHeatmap', () => {
     expect(wrapper.emitted('cell-hover')).toHaveLength(2);
     expect(wrapper.emitted('cell-hover')?.[1]?.[0]).toBeNull();
     expect(document.body.querySelectorAll('.ex-heatmap__tooltip')).toHaveLength(1);
+  });
+
+  it('Teleport Tooltip 使用最近 ConfigProvider 的语义层级', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    hosts.push(host);
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: host,
+      props: { zIndex: 2400, animation: false, neonEffect: false },
+      slots: {
+        default: () =>
+          h(ExHeatmap, {
+            data,
+            startDate: '2024-01-01',
+            endDate: '2024-01-07',
+          }),
+      },
+    });
+    wrappers.push(wrapper);
+
+    await wrapper.get('[data-date="2024-01-01"]').trigger('mouseenter');
+    await nextTick();
+
+    const tooltip = document.body.querySelector<HTMLElement>('.ex-heatmap__tooltip');
+    expect(tooltip?.style.zIndex).toBe('2490');
+    expect(tooltip?.classList.contains('ex-no-animation')).toBe(true);
+    expect(tooltip?.classList.contains('ex-no-neon')).toBe(true);
   });
 
   it('关闭 Tooltip 后不会创建隐藏或裁剪的伪浮层', async () => {

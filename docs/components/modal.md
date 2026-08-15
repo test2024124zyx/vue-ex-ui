@@ -42,6 +42,8 @@ const handleOk = () => {
 
 最简单的用法。默认为中等尺寸（520px）。
 
+::: raw
+
 <div class="demo-container">
   <ExButton type="primary" @click="visible = true">打开模态框</ExButton>
   <ExModal v-model="visible" title="基础模态框" size="medium">
@@ -50,6 +52,10 @@ const handleOk = () => {
     <p>这是模态框的内容</p>
   </ExModal>
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -63,7 +69,10 @@ const handleOk = () => {
   <ExModal
     v-model="visible"
     title="基础模态框"
+    size="medium"
   >
+    <p>这是模态框的内容</p>
+    <p>这是模态框的内容</p>
     <p>这是模态框的内容</p>
   </ExModal>
 </template>
@@ -75,9 +84,13 @@ const visible = ref(false);
 </script>
 ```
 
+:::
+
 ## 不同类型
 
 通过 `type` 属性设置模态框的语义类型。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExButton type="primary" @click="visibleType1 = true">主要模态框</ExButton>
@@ -110,17 +123,47 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleType1 = ref(false);
+const visibleType2 = ref(false);
+const visibleType3 = ref(false);
+const visibleType4 = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleType1 = true"
   >
     主要模态框
   </ExButton>
-
+  <ExButton
+    type="success"
+    @click="visibleType2 = true"
+  >
+    成功模态框
+  </ExButton>
+  <ExButton
+    type="warning"
+    @click="visibleType3 = true"
+  >
+    警告模态框
+  </ExButton>
+  <ExButton
+    type="danger"
+    @click="visibleType4 = true"
+  >
+    危险模态框
+  </ExButton>
   <ExModal
-    v-model="visible"
+    v-model="visibleType1"
     title="主要模态框"
     type="primary"
     size="medium"
@@ -135,12 +178,64 @@ const visible = ref(false);
     </template>
     <p>这是一个主要类型的模态框。</p>
   </ExModal>
+  <ExModal
+    v-model="visibleType2"
+    title="操作成功"
+    type="success"
+    size="medium"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/checkbox-circle-line.svg"
+        alt="成功"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>您的操作已成功完成！</p>
+  </ExModal>
+  <ExModal
+    v-model="visibleType3"
+    title="警告提示"
+    type="warning"
+    size="medium"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/alert-line.svg"
+        alt="警告"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>请注意：此操作可能会影响您的数据。</p>
+  </ExModal>
+  <ExModal
+    v-model="visibleType4"
+    title="危险操作"
+    type="danger"
+    size="medium"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/error-warning-line.svg"
+        alt="危险"
+        width="24"
+        height="24"
+      />
+    </template>
+    <p>警告：此操作不可撤销，请谨慎操作！</p>
+  </ExModal>
 </template>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 属性可以设置不同尺寸的模态框。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExButton @click="visibleSize1 = true" size="small">小尺寸</ExButton>
@@ -157,23 +252,64 @@ const visible = ref(false);
   </ExModal>
 </div>
 
-```vue
-<template>
-  <ExButton @click="visible = true">小尺寸</ExButton>
+:::
 
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleSize1 = ref(false);
+const visibleSize2 = ref(false);
+const visibleSize3 = ref(false);
+</script>
+
+<template>
+  <ExButton
+    @click="visibleSize1 = true"
+    size="small"
+  >
+    小尺寸
+  </ExButton>
+  <ExButton @click="visibleSize2 = true">中等尺寸</ExButton>
+  <ExButton
+    @click="visibleSize3 = true"
+    size="large"
+  >
+    大尺寸
+  </ExButton>
   <ExModal
-    v-model="visible"
+    v-model="visibleSize1"
     title="小尺寸模态框"
     size="small"
   >
-    <p>这是一个小尺寸的模态框。</p>
+    <p>这是一个小尺寸的模态框（400px）。</p>
+  </ExModal>
+  <ExModal
+    v-model="visibleSize2"
+    title="中等尺寸模态框"
+    size="medium"
+  >
+    <p>这是一个中等尺寸的模态框（520px）。</p>
+  </ExModal>
+  <ExModal
+    v-model="visibleSize3"
+    title="大尺寸模态框"
+    size="large"
+  >
+    <p>这是一个大尺寸的模态框（720px）。</p>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 自定义宽度
 
 通过 `width` 属性可以自定义模态框宽度。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleWidth = true">自定义宽度</ExButton>
@@ -183,11 +319,21 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleWidth = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleWidth = true"
   >
     自定义宽度
   </ExButton>
@@ -198,13 +344,18 @@ const visible = ref(false);
     :width="800"
   >
     <p>这个模态框的宽度是 800px。</p>
+    <p>你可以通过 width 属性设置任意宽度。</p>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 居中显示
 
 设置 `centered` 属性可以让模态框垂直居中显示。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleCenter = true">居中模态框</ExButton>
@@ -224,11 +375,21 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleCenter = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleCenter = true"
   >
     居中模态框
   </ExButton>
@@ -239,17 +400,34 @@ const visible = ref(false);
     size="medium"
     centered
   >
-    <div style="text-align: center;">
-      <div style="font-size: 48px;">🏆</div>
-      <div>恭喜获胜！</div>
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/trophy-line.svg"
+        alt="奖杯"
+        width="24"
+        height="24"
+      />
+    </template>
+    <div style="text-align: center; padding: 20px 0;">
+      <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
+      <div
+        style="font-size: 24px; font-weight: bold; color: var(--ex-color-neon-blue-500); margin-bottom: 8px;"
+      >
+        恭喜获胜！
+      </div>
+      <div style="color: var(--ex-color-text-secondary);">您在本场比赛中表现出色</div>
     </div>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 自定义按钮文字
 
 通过 `okText` 和 `cancelText` 属性可以自定义按钮文字。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleCustomBtn = true">自定义按钮</ExButton>
@@ -270,30 +448,55 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleCustomBtn = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleCustomBtn = true"
   >
     自定义按钮
   </ExButton>
 
   <ExModal
-    v-model="visible"
+    v-model="visibleCustomBtn"
     title="删除确认"
+    size="medium"
+    type="danger"
     ok-text="删除"
     cancel-text="我再想想"
     ok-type="danger"
   >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/delete-bin-line.svg"
+        alt="删除"
+        width="24"
+        height="24"
+      />
+    </template>
     <p>确定要删除这条记录吗？</p>
+    <p>删除后将无法恢复。</p>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 自定义底部
 
 通过 `footer` 插槽可以自定义底部内容。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleCustomFooter = true">自定义底部</ExButton>
@@ -305,11 +508,21 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleCustomFooter = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleCustomFooter = true"
   >
     自定义底部
   </ExButton>
@@ -332,9 +545,13 @@ const visible = ref(false);
 </template>
 ```
 
+:::
+
 ## 确认加载状态
 
 通过 `confirmLoading` 属性可以让确认按钮处于加载状态。需要配合 `before-close` 属性来阻止模态框自动关闭。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleLoading = true">加载状态</ExButton>
@@ -351,18 +568,23 @@ const visible = ref(false);
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleLoading = true"
   >
     加载状态
   </ExButton>
 
   <ExModal
-    v-model="visible"
+    v-model="visibleLoading"
     title="提交表单"
+    size="medium"
     :confirm-loading="confirmLoading"
     :before-close="() => !confirmLoading"
     @ok="handleOk"
@@ -375,7 +597,7 @@ const visible = ref(false);
 <script setup>
 import { ref } from 'vue';
 
-const visible = ref(false);
+const visibleLoading = ref(false);
 const confirmLoading = ref(false);
 
 const handleOk = () => {
@@ -383,15 +605,19 @@ const handleOk = () => {
   // 模拟异步操作（如API请求）
   setTimeout(() => {
     confirmLoading.value = false;
-    visible.value = false; // 操作完成后关闭模态框
+    visibleLoading.value = false; // 操作完成后关闭模态框
   }, 2000);
 };
 </script>
 ```
 
+:::
+
 ## 不可点击遮罩关闭
 
 设置 `:mask-closable="false"` 可以禁止点击遮罩层关闭。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleMask = true">不可点击遮罩关闭</ExButton>
@@ -410,28 +636,53 @@ const handleOk = () => {
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleMask = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleMask = true"
   >
     不可点击遮罩关闭
   </ExButton>
 
   <ExModal
-    v-model="visible"
+    v-model="visibleMask"
     title="重要提示"
+    size="medium"
+    type="warning"
     :mask-closable="false"
   >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/alert-line.svg"
+        alt="警告"
+        width="24"
+        height="24"
+      />
+    </template>
     <p>这个模态框不能通过点击遮罩层关闭。</p>
+    <p>必须点击按钮才能关闭。</p>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 自定义样式
 
 通过 `bodyStyle` 属性可以自定义内容区域样式。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleCustomStyle = true">自定义样式</ExButton>
@@ -453,31 +704,49 @@ const handleOk = () => {
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const visibleCustomStyle = ref(false);
+</script>
+
 <template>
   <ExButton
     type="primary"
-    @click="visible = true"
+    @click="visibleCustomStyle = true"
   >
     自定义样式
   </ExButton>
 
   <ExModal
-    v-model="visible"
+    v-model="visibleCustomStyle"
     title="自定义样式"
+    size="medium"
     :body-style="{
       background: 'var(--ex-color-primary-alpha-10)',
       minHeight: '200px',
     }"
   >
-    <div>自定义内容样式</div>
+    <div style="text-align: center; padding: 40px 0;">
+      <h3 style="color: var(--ex-color-primary); margin-bottom: 16px;">自定义内容样式</h3>
+      <p>这个模态框的内容区域使用了自定义样式。</p>
+    </div>
   </ExModal>
 </template>
 ```
 
+:::
+
 ## 嵌套模态框
 
 模态框可以嵌套使用。
+
+::: raw
 
 <div class="demo-container">
   <ExButton type="primary" @click="visibleOuter = true">打开外层模态框</ExButton>
@@ -490,30 +759,36 @@ const handleOk = () => {
   </ExModal>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExButton
     type="primary"
-    @click="outerVisible = true"
+    @click="visibleOuter = true"
   >
     打开外层模态框
   </ExButton>
 
   <ExModal
-    v-model="outerVisible"
+    v-model="visibleOuter"
     title="外层模态框"
+    size="medium"
   >
     <p>这是外层模态框的内容。</p>
     <ExButton
       type="primary"
-      @click="innerVisible = true"
+      @click="visibleInner = true"
     >
       打开内层模态框
     </ExButton>
 
     <ExModal
-      v-model="innerVisible"
+      v-model="visibleInner"
       title="内层模态框"
+      size="small"
       :z-index="1010"
     >
       <p>这是内层模态框的内容。</p>
@@ -524,10 +799,12 @@ const handleOk = () => {
 <script setup>
 import { ref } from 'vue';
 
-const outerVisible = ref(false);
-const innerVisible = ref(false);
+const visibleOuter = ref(false);
+const visibleInner = ref(false);
 </script>
 ```
+
+:::
 
 ## API
 

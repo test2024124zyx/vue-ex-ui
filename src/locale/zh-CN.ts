@@ -1,4 +1,6 @@
-export default {
+import type { BuiltInLocale } from './en-US';
+
+const zhCN = {
   // 通用
   common: {
     confirm: '确认',
@@ -133,6 +135,16 @@ export default {
   // 警告提示
   alert: {
     close: '关闭',
+  },
+
+  // 锚点导航
+  anchor: {
+    label: '锚点导航',
+  },
+
+  // 返回顶部
+  backTop: {
+    label: '返回顶部',
   },
 
   // 表格
@@ -688,4 +700,6 @@ export default {
     loading: '验证中...',
     autoSubmit: '即将自动提交',
   },
-};
+} satisfies BuiltInLocale;
+
+export default zhCN;

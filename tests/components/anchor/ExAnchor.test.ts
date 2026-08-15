@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { h, nextTick, ref } from 'vue';
 import ExAnchor from '../../../src/components/anchor/ExAnchor.vue';
 import ExAnchorLink from '../../../src/components/anchor/ExAnchorLink.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { ExAnchorExposed } from '../../../src/components/anchor/types';
 
 const rect = (values: Partial<DOMRect>): DOMRect =>
@@ -145,5 +146,45 @@ describe('ExAnchor', () => {
     expect(vi.getTimerCount()).toBe(1);
     wrapper.unmount();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('导航地标名称跟随 ConfigProvider 语言', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      props: { locale: 'zh-CN' },
+      slots: { default: () => h(ExAnchor) },
+    });
+
+    expect(wrapper.get('nav').attributes('aria-label')).toBe('锚点导航');
+    await wrapper.setProps({ locale: 'en-US' });
+    expect(wrapper.get('nav').attributes('aria-label')).toBe('Anchor navigation');
+  });
+
+  it('系统要求减少动态效果时使用即时滚动且不创建动画抑制定时器', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+    );
+    const target = document.createElement('div');
+    target.id = 'reduced-motion-target';
+    document.body.append(target);
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 200 }));
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const wrapper = mount(ExAnchor, {
+      slots: {
+        default: () => h(ExAnchorLink, { href: '#reduced-motion-target', title: 'Reduced motion' }),
+      },
+    });
+
+    await wrapper.find('a').trigger('click');
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 200, behavior: 'auto' });
+    expect(vi.getTimerCount()).toBe(0);
+    wrapper.unmount();
+    vi.unstubAllGlobals();
   });
 });

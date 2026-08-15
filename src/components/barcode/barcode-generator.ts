@@ -1,4 +1,7 @@
 import type { BarcodeOptions } from './types';
+import { assertBarcodeValue, normalizeBarcodeOptions } from './barcode-limits';
+
+export { MAX_BARCODE_VALUE_LENGTH } from './barcode-limits';
 
 type BarcodeRenderer = (element: SVGSVGElement, value: string, options: BarcodeOptions) => void;
 
@@ -37,12 +40,14 @@ export async function generateBarcode(
   value: string,
   options: BarcodeOptions = {}
 ): Promise<void> {
+  assertBarcodeValue(value);
+  const normalizedOptions = normalizeBarcodeOptions(options);
   const lib = await loadJsBarcode();
 
   return new Promise((resolve, reject) => {
     try {
       lib(element, value, {
-        ...options,
+        ...normalizedOptions,
         valid: (valid: boolean) => {
           if (options.valid) {
             options.valid(valid);

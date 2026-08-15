@@ -1,14 +1,19 @@
 <template>
   <div
+    :id="id"
     :class="rateClasses"
     :style="rateStyles"
     role="slider"
-    :tabindex="disabled || readonly ? undefined : 0"
+    :tabindex="effectiveDisabled ? undefined : 0"
     :aria-valuemin="0"
-    :aria-valuemax="max"
+    :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
-    :aria-disabled="disabled"
-    :aria-readonly="readonly"
+    :aria-label="ariaLabel || undefined"
+    :aria-labelledby="ariaLabel ? undefined : formItem?.labelId?.value"
+    :aria-describedby="resolvedDescribedBy"
+    :aria-invalid="formItem?.status?.value === 'error' ? 'true' : undefined"
+    :aria-disabled="effectiveDisabled"
+    :aria-readonly="effectiveReadonly"
     @mouseleave="handleMouseLeave"
     @keydown="handleKeydown"
     @blur="handleBlur"
@@ -16,7 +21,7 @@
     <!-- 评分星星 -->
     <div class="ex-rate__stars">
       <span
-        v-for="item in max"
+        v-for="item in normalizedMax"
         :key="item"
         :class="getStarClasses(item)"
         @mouseenter="handleMouseEnter(item)"
@@ -25,18 +30,30 @@
       >
         <!-- 未选中的图标 -->
         <span class="ex-rate__icon ex-rate__icon--void">
-          <slot name="icon-void" :index="item" :color="voidColor">
-            <ex-icon icon="star-line" :size="iconSize" :color="voidColor" />
+          <slot
+            name="icon-void"
+            :index="item"
+            :color="voidColor"
+          >
+            <ex-icon
+              icon="star-line"
+              :size="iconSize"
+              :color="voidColor"
+            />
           </slot>
         </span>
 
         <!-- 选中的图标 -->
         <span class="ex-rate__icon ex-rate__icon--active">
-          <slot name="icon-active" :index="item" :color="disabled ? disabledVoidColor : color">
+          <slot
+            name="icon-active"
+            :index="item"
+            :color="effectiveDisabled ? disabledVoidColor : color"
+          >
             <ex-icon
               icon="star-fill"
               :size="iconSize"
-              :color="disabled ? disabledVoidColor : color"
+              :color="effectiveDisabled ? disabledVoidColor : color"
               :style="getActiveStyle(item)"
             />
           </slot>
@@ -45,7 +62,10 @@
     </div>
 
     <!-- 分数显示 -->
-    <span v-if="showScore || showText" class="ex-rate__text">
+    <span
+      v-if="showScore || showText"
+      class="ex-rate__text"
+    >
       {{ displayText }}
     </span>
   </div>
@@ -80,9 +100,23 @@ const emit = defineEmits<ExRateEmits>();
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
 const formItem = useFormItem();
+const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
+const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
+const normalizedMax = computed(() =>
+  Number.isFinite(props.max) && props.max > 0 ? Math.floor(props.max) : 5
+);
+const resolvedDescribedBy = computed(
+  () => [props.ariaDescribedby, formItem?.describedBy?.value].filter(Boolean).join(' ') || undefined
+);
+
+const normalizeValue = (value: number) => {
+  const finiteValue = Number.isFinite(value) ? value : 0;
+  const step = props.allowHalf ? 0.5 : 1;
+  return Math.min(normalizedMax.value, Math.max(0, Math.round(finiteValue / step) * step));
+};
 
 // 响应式状态
-const currentValue = ref(props.modelValue);
+const currentValue = ref(normalizeValue(props.modelValue));
 const hoverValue = ref(-1);
 const isHovering = ref(false);
 
@@ -90,8 +124,9 @@ const isHovering = ref(false);
 const rateClasses = computed(() => {
   const classes = ['ex-rate', `ex-rate--${props.size}`];
 
-  if (props.disabled) classes.push('is-disabled');
-  if (props.readonly) classes.push('is-readonly');
+  if (effectiveDisabled.value) classes.push('is-disabled');
+  if (effectiveReadonly.value) classes.push('is-readonly');
+  if (props.customClass) classes.push(props.customClass);
 
   return classes;
 });
@@ -141,7 +176,7 @@ function getStarClasses(item: number) {
     classes.push('is-half');
   }
 
-  if (!props.disabled && !props.readonly) {
+  if (!effectiveDisabled.value && !effectiveReadonly.value) {
     classes.push('is-interactive');
   }
 
@@ -173,21 +208,21 @@ function getValueFromEvent(item: number, event: MouseEvent): number {
 }
 
 function handleMouseEnter(item: number) {
-  if (props.disabled || props.readonly) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   isHovering.value = true;
   hoverValue.value = item;
 }
 
 function handleMouseMove(item: number, event: MouseEvent) {
-  if (props.disabled || props.readonly || !props.allowHalf) return;
+  if (effectiveDisabled.value || effectiveReadonly.value || !props.allowHalf) return;
 
   const value = getValueFromEvent(item, event);
   hoverValue.value = value;
 }
 
 function handleMouseLeave() {
-  if (props.disabled || props.readonly) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   isHovering.value = false;
   hoverValue.value = -1;
@@ -199,51 +234,48 @@ function handleBlur() {
 }
 
 function handleClick(item: number, event: MouseEvent) {
-  if (props.disabled || props.readonly) return;
-
-  const newValue = getValueFromEvent(item, event);
-
-  currentValue.value = newValue;
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
+  commitValue(getValueFromEvent(item, event));
 }
 
 function setCurrentValue(value: number) {
-  currentValue.value = value;
-  emit('update:modelValue', value);
-  emit('change', value);
+  commitValue(value);
 }
 
 function resetCurrentValue() {
-  currentValue.value = 0;
-  emit('update:modelValue', 0);
-  emit('change', 0);
+  commitValue(0);
+}
+
+function commitValue(value: number) {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
+  const normalizedValue = normalizeValue(value);
+  currentValue.value = normalizedValue;
+  emit('update:modelValue', normalizedValue);
+  emit('change', normalizedValue);
+  formItem?.onFieldChange();
 }
 
 // 键盘操作：左右方向键增减评分
 function handleKeydown(event: KeyboardEvent) {
-  if (props.disabled || props.readonly) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   const step = props.allowHalf ? 0.5 : 1;
-  let newValue = currentValue.value;
+  let newValue: number;
 
   if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-    newValue = Math.min(props.max, currentValue.value + step);
+    newValue = Math.min(normalizedMax.value, currentValue.value + step);
   } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
     newValue = Math.max(0, currentValue.value - step);
   } else if (event.key === 'Home') {
     newValue = 0;
   } else if (event.key === 'End') {
-    newValue = props.max;
+    newValue = normalizedMax.value;
   } else {
     return;
   }
 
   event.preventDefault();
   if (newValue !== currentValue.value) {
-    currentValue.value = newValue;
-    emit('update:modelValue', newValue);
-    emit('change', newValue);
+    commitValue(newValue);
   }
 }
 
@@ -251,9 +283,13 @@ function handleKeydown(event: KeyboardEvent) {
 watch(
   () => props.modelValue,
   newValue => {
-    currentValue.value = newValue;
+    currentValue.value = normalizeValue(newValue);
   }
 );
+
+watch([normalizedMax, () => props.allowHalf], () => {
+  currentValue.value = normalizeValue(currentValue.value);
+});
 
 // 暴露方法
 defineExpose({

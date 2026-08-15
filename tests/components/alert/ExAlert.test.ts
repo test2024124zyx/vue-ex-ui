@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExAlert from '../../../src/components/alert/ExAlert.vue';
 
+interface AlertExposed {
+  close: () => void;
+}
+
 describe('ExAlert', () => {
   describe('Rendering', () => {
     it('renders correctly with default props', () => {
@@ -318,7 +322,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       expect(typeof vm.close).toBe('function');
     });
 
@@ -329,7 +333,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       vm.close();
       await wrapper.vm.$nextTick();
 
@@ -417,7 +421,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       vm.close();
       await wrapper.vm.$nextTick();
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { defineComponent, h, nextTick, onMounted } from 'vue';
 import ExDialog from '../../../src/components/dialog/ExDialog.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 // 这些用例同时验证 ExDialog 与 ExModal 共用的 useOverlay 机制（打开/关闭/Esc/守卫）
 
@@ -186,6 +187,54 @@ describe('ExDialog', () => {
     wrapper.unmount();
   });
 
+  it('异步关闭期间重复点击取消只发出一次业务事件', async () => {
+    let resolveGuard: ((value: boolean) => void) | undefined;
+    const beforeClose = vi.fn(() => new Promise<boolean>(resolve => (resolveGuard = resolve)));
+    const wrapper = mount(ExDialog, {
+      attachTo: document.body,
+      props: { modelValue: true, beforeClose },
+    });
+    await flushPromises();
+    const cancel = document.querySelector<HTMLButtonElement>('.ex-dialog__footer button');
+
+    cancel?.click();
+    cancel?.click();
+    await nextTick();
+
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
+    expect(beforeClose).toHaveBeenCalledTimes(1);
+    resolveGuard?.(false);
+    await flushPromises();
+    wrapper.unmount();
+  });
+
+  it('原生属性透传到语义面板而不是定位包装器', async () => {
+    const wrapper = mount(ExDialog, {
+      attachTo: document.body,
+      props: { modelValue: true },
+      attrs: { 'data-testid': 'dialog-panel', 'aria-describedby': 'dialog-description' },
+    });
+    await flushPromises();
+    const panel = document.querySelector('.ex-dialog')!;
+    const root = document.querySelector('.ex-dialog-wrapper')!;
+
+    expect(panel.getAttribute('data-testid')).toBe('dialog-panel');
+    expect(panel.getAttribute('aria-describedby')).toBe('dialog-description');
+    expect(root.hasAttribute('data-testid')).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('无标题时使用本地化的兜底无障碍名称', async () => {
+    const wrapper = mount(ExDialog, {
+      attachTo: document.body,
+      props: { modelValue: true, showClose: false },
+    });
+    await flushPromises();
+
+    expect(document.querySelector('.ex-dialog')?.getAttribute('aria-label')).toBe('Dialog');
+    wrapper.unmount();
+  });
+
   it('公开 close 方法与界面关闭入口使用同一 beforeClose 守卫', async () => {
     const beforeClose = vi.fn().mockResolvedValue(false);
     const wrapper = mount(ExDialog, {
@@ -246,6 +295,21 @@ describe('ExDialog', () => {
       'ex-dialog-wrapper--modeless'
     );
     expect(document.querySelector('.ex-dialog')?.hasAttribute('aria-modal')).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('Teleport 包装器继承 ConfigProvider 的语义层级和效果开关', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      attachTo: document.body,
+      props: { zIndex: 2400, neonEffect: false, animation: false },
+      slots: { default: () => h(ExDialog, { modelValue: true, title: '标题' }) },
+    });
+    await flushPromises();
+
+    const root = document.querySelector<HTMLElement>('.ex-dialog-wrapper')!;
+    expect(root.style.zIndex).toBe('2450');
+    expect(root.classList).toContain('ex-no-neon');
+    expect(root.classList).toContain('ex-no-animation');
     wrapper.unmount();
   });
 });

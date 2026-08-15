@@ -133,6 +133,7 @@
   flex: 1;
   height: 6px;
   cursor: pointer;
+  touch-action: none;
   @include transition(all);
 }
 
@@ -517,7 +518,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-slider__track {
     border: 1px solid var(--ex-color-border-primary);
   }

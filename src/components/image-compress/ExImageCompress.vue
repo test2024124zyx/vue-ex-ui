@@ -240,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import ExNumberInput from '../number-input/ExNumberInput.vue';
@@ -540,6 +540,25 @@ watch(
   () => props.maxHeight,
   maxHeight => {
     currentMaxHeight.value = normalizeCompressOptions({ maxHeight }).maxHeight;
+  }
+);
+watch(
+  [
+    currentMode,
+    currentQuality,
+    currentTargetSize,
+    currentMaxWidth,
+    currentMaxHeight,
+    currentOutputType,
+    () => props.keepAspectRatio,
+    () => props.backgroundColor,
+  ],
+  () => {
+    cancelCompression();
+    clearCompressedResult();
+    if (props.autoCompress && sourceResource.value && !isDisposed) {
+      void nextTick(() => compress().catch(() => undefined));
+    }
   }
 );
 watch(

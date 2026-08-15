@@ -25,7 +25,7 @@ app.mount('#app');
 
 **缺点：**
 
-- 打包体积较大（约 1MB gzipped）
+- 会包含全部组件代码与完整样式
 - 包含未使用的组件代码
 
 ## 按需导入（推荐）
@@ -38,7 +38,7 @@ app.mount('#app');
 
 ```typescript
 // 在组件文件中
-import { ExButton, ExInput, ExMessage } from 'vue-ex-ui';
+import { ExButton, ExInput, message } from 'vue-ex-ui';
 import 'vue-ex-ui/style.css'; // 仍需引入全部样式
 
 export default {
@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     handleClick() {
-      ExMessage.success('操作成功！');
+      message.success('操作成功！');
     },
   },
 };
@@ -58,9 +58,11 @@ export default {
 
 ```vue
 <script setup lang="ts">
+import { ref } from 'vue';
 import { ExButton, ExInput, message } from 'vue-ex-ui';
 import 'vue-ex-ui/style.css';
 
+const value = ref('');
 const handleClick = () => {
   message.success('操作成功！');
 };
@@ -68,8 +70,16 @@ const handleClick = () => {
 
 <template>
   <div>
-    <ExInput v-model="value" placeholder="请输入" />
-    <ExButton type="primary" @click="handleClick">提交</ExButton>
+    <ExInput
+      v-model="value"
+      placeholder="请输入"
+    />
+    <ExButton
+      type="primary"
+      @click="handleClick"
+    >
+      提交
+    </ExButton>
   </div>
 </template>
 ```
@@ -153,7 +163,12 @@ const handleClick = () => {
 <template>
   <div>
     <!-- 组件会自动按需导入 -->
-    <ExButton type="primary" @click="handleClick">点击我</ExButton>
+    <ExButton
+      type="primary"
+      @click="handleClick"
+    >
+      点击我
+    </ExButton>
     <ExInput placeholder="请输入" />
   </div>
 </template>
@@ -314,7 +329,7 @@ const buttonProps: ExButtonProps = {
 };
 
 const messageOptions: MessageOptions = {
-  message: '操作成功',
+  content: '操作成功',
   type: 'success',
   duration: 3000,
 };

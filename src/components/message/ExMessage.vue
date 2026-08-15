@@ -8,11 +8,14 @@
       ref="messageRef"
       v-bind="rootAttrs"
       :class="messageClasses"
+      :data-theme="configTheme"
       :role="liveRole"
       :aria-live="ariaLive"
       aria-atomic="true"
       @mouseenter="pauseTimer"
       @mouseleave="resumeTimer"
+      @focusin="pauseTimer"
+      @focusout="handleFocusOut"
     >
       <span
         v-if="props.showIcon"
@@ -64,6 +67,7 @@
 import { computed, onMounted, onUnmounted, ref, useAttrs, watch } from 'vue';
 import { useLocale } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
+import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import { normalizeMessageDuration, normalizeMessageType } from './message-utils';
 import type {
@@ -92,6 +96,9 @@ const props = withDefaults(defineProps<ExMessageProps>(), {
 const emit = defineEmits<ExMessageEmits>();
 const attrs = useAttrs();
 const { t } = useLocale('message');
+const configTheme = useConfigTheme();
+const animationEnabled = useAnimation();
+const neonEnabled = useNeonEffect();
 const messageRef = ref<HTMLElement | null>(null);
 const visible = ref(false);
 const normalizedType = computed(() => normalizeMessageType(props.type));
@@ -115,6 +122,8 @@ const messageClasses = computed(() => [
   'ex-message',
   `ex-message--${normalizedType.value}`,
   { 'ex-message--closable': props.closable },
+  { 'ex-message--no-animation': !animationEnabled.value },
+  { 'ex-message--no-neon': !neonEnabled.value },
 ]);
 
 const OBSOLETE_ATTRS = new Set([
@@ -185,6 +194,12 @@ const resumeTimer = (): void => {
   if (!paused) return;
   paused = false;
   startTimer();
+};
+
+const handleFocusOut = (event: FocusEvent): void => {
+  if (event.relatedTarget instanceof Node && messageRef.value?.contains(event.relatedTarget))
+    return;
+  resumeTimer();
 };
 
 watch(normalizedDuration, duration => {

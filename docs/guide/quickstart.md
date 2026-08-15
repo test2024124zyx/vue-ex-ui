@@ -140,14 +140,13 @@ const handleClick = () => {
 ```vue
 <script setup lang="ts">
 import { ExConfigProvider } from 'vue-ex-ui';
-import zhCN from 'vue-ex-ui/locale/zh-CN';
 import 'vue-ex-ui/style.css';
 </script>
 
 <template>
   <ExConfigProvider
     theme="neon-blue"
-    :locale="zhCN"
+    locale="zh-CN"
     size="medium"
     :neon-effect="true"
     :animation="true"

@@ -138,6 +138,38 @@ describe('ExTree', () => {
 
       expect(wrapper.emitted('update:checkedKeys')?.[0]).toEqual([['parent', 'enabled']]);
     });
+
+    it('部分勾选的树节点应该暴露 aria-checked="mixed"', () => {
+      const wrapper = mount(ExTree, {
+        props: {
+          data,
+          checkable: true,
+          defaultExpandedKeys: ['1'],
+          defaultCheckedKeys: ['1-1'],
+        },
+      });
+
+      expect(wrapper.find('[role="treeitem"]').attributes('aria-checked')).toBe('mixed');
+    });
+
+    it('子节点全部勾选时不应该把禁用父节点加入 checkedKeys', async () => {
+      const guardedData: TreeNode[] = [
+        {
+          key: 'disabled-parent',
+          label: '禁用父节点',
+          disabled: true,
+          children: [{ key: 'child', label: '子节点' }],
+        },
+      ];
+      const wrapper = mount(ExTree, {
+        props: { data: guardedData, checkable: true, defaultExpandedKeys: ['disabled-parent'] },
+      });
+      const childCheckbox = wrapper.findAll('.ex-tree-node__checkbox input')[1];
+
+      await childCheckbox.setValue(true);
+
+      expect(wrapper.emitted('update:checkedKeys')?.at(-1)).toEqual([['child']]);
+    });
   });
 
   describe('键盘与上下文菜单', () => {
@@ -268,6 +300,68 @@ describe('ExTree', () => {
       expect(wrapper.text()).toContain('节点 5');
       expect(wrapper.text()).not.toContain('节点 0');
       requestFrame.mockRestore();
+    });
+
+    it('滚轮将激活节点移出窗口后仍保留唯一的可见 tabstop', async () => {
+      const largeData: TreeNode[] = Array.from({ length: 20 }, (_, index) => ({
+        key: String(index),
+        label: `节点 ${index}`,
+        disabled: index === 5,
+      }));
+      let frame: FrameRequestCallback | undefined;
+      const requestFrame = vi
+        .spyOn(globalThis, 'requestAnimationFrame')
+        .mockImplementation(callback => {
+          frame = callback;
+          return 1;
+        });
+      const wrapper = mount(ExTree, {
+        props: {
+          data: largeData,
+          virtual: true,
+          height: 56,
+          itemHeight: 28,
+          virtualBuffer: 0,
+        },
+      });
+      const viewport = wrapper.get<HTMLElement>('.ex-tree__viewport');
+
+      viewport.element.scrollTop = 140;
+      await viewport.trigger('scroll');
+      frame?.(0);
+      await nextTick();
+
+      const renderedNodes = wrapper.findAll<HTMLElement>('[role="treeitem"]');
+      const tabStops = renderedNodes.filter(node => node.attributes('tabindex') === '0');
+      expect(tabStops).toHaveLength(1);
+      expect(tabStops[0]?.text()).toContain('节点 6');
+      requestFrame.mockRestore();
+    });
+
+    it('虚拟树方向键应该能导航到当前窗口之外的下一节点', async () => {
+      const largeData: TreeNode[] = Array.from({ length: 20 }, (_, index) => ({
+        key: String(index),
+        label: `节点 ${index}`,
+      }));
+      const wrapper = mount(ExTree, {
+        props: {
+          data: largeData,
+          virtual: true,
+          height: 56,
+          itemHeight: 28,
+          virtualBuffer: 0,
+        },
+        attachTo: document.body,
+      });
+      const second = wrapper.findAll<HTMLElement>('[role="treeitem"]')[1];
+      second.element.focus();
+
+      await second.trigger('keydown', { key: 'ArrowDown' });
+      await nextTick();
+
+      expect(document.activeElement?.textContent).toContain('节点 2');
+      expect(wrapper.get<HTMLElement>('.ex-tree__viewport').element.scrollTop).toBe(56);
+      wrapper.unmount();
     });
 
     it('节点插槽中的交互控件不会触发树节点键盘选择', async () => {
@@ -463,6 +557,27 @@ describe('ExTree', () => {
       await nextTick();
       expect(wrapper.findAll('[role="treeitem"]')).toHaveLength(2);
       expect(vm.getElement()).toBe(wrapper.element);
+    });
+
+    it('展开全部应该跳过禁用的可展开节点', () => {
+      const guardedData: TreeNode[] = [
+        {
+          key: 'disabled-parent',
+          label: '禁用父节点',
+          disabled: true,
+          children: [{ key: 'disabled-child', label: '子节点' }],
+        },
+        {
+          key: 'enabled-parent',
+          label: '正常父节点',
+          children: [{ key: 'enabled-child', label: '子节点' }],
+        },
+      ];
+      const wrapper = mount(ExTree, { props: { data: guardedData } });
+
+      (wrapper.vm as unknown as { requestExpandAll: () => void }).requestExpandAll();
+
+      expect(wrapper.emitted('update:expandedKeys')?.at(-1)).toEqual([['enabled-parent']]);
     });
   });
 });

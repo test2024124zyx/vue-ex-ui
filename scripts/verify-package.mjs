@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { createRequire } from 'node:module';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -9,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distRoot = join(projectRoot, 'dist');
 const temporaryDirectory = await mkdtemp(join(tmpdir(), 'vue-ex-ui-consumer-'));
+const consumerDirectory = join(temporaryDirectory, 'consumer');
 
 const requiredFiles = [
   'index.d.ts',
@@ -35,11 +35,40 @@ const requiredStyleMarkers = [
   { name: '赛博扫描线关键帧', pattern: /@keyframes\s+ex-cyber-scanline/ },
 ];
 
+const runCommand = (command, args, options = {}) => {
+  const result = spawnSync(command, args, {
+    cwd: options.cwd ?? projectRoot,
+    encoding: 'utf8',
+    env: { ...process.env, HUSKY: '0' },
+    shell: options.shell ?? false,
+  });
+
+  if (result.error) {
+    throw new Error(`${options.name ?? command} 无法启动：${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `${options.name ?? command} 失败（退出码 ${String(result.status)}）：\n${result.stdout}${result.stderr}`
+    );
+  }
+  return result.stdout.trim();
+};
+
+const runNpm = (args, options = {}) => {
+  if (process.env.npm_execpath) {
+    return runCommand(process.execPath, [process.env.npm_execpath, ...args], options);
+  }
+  const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  return runCommand(npmExecutable, args, {
+    ...options,
+    shell: process.platform === 'win32',
+  });
+};
+
 const isRenderableComponent = value => {
   if ((typeof value !== 'object' || value === null) && typeof value !== 'function') {
     return false;
   }
-
   return (
     typeof value.setup === 'function' ||
     typeof value.render === 'function' ||
@@ -48,27 +77,19 @@ const isRenderableComponent = value => {
 };
 
 const verifyRuntimeExports = (module, format) => {
-  // 错误类等运行时 API 也可能使用 Ex 前缀，组件必须按可渲染能力识别。
   const componentEntries = Object.entries(module).filter(([, value]) =>
     isRenderableComponent(value)
   );
-
   if (componentEntries.length === 0) {
     throw new Error(`${format} 产物没有导出任何公共组件`);
   }
-
   for (const [name, component] of componentEntries) {
-    if (!isRenderableComponent(component) || typeof component.install !== 'function') {
+    if (typeof component.install !== 'function') {
       throw new Error(`${format} 产物的 ${name} 不是可安装组件`);
     }
   }
+  return componentEntries.map(([name]) => name).sort();
 };
-
-const publicComponentNames = module =>
-  Object.entries(module)
-    .filter(([, value]) => isRenderableComponent(value))
-    .map(([name]) => name)
-    .sort();
 
 try {
   for (const file of requiredFiles) {
@@ -77,7 +98,6 @@ try {
 
   const fullStyle = await readFile(join(distRoot, 'ex-ui.css'), 'utf8');
   const fontStyle = await readFile(join(distRoot, 'es/assets/style-font.css'), 'utf8');
-  // 中文字体文件和 CSS 引用必须同时存在，避免发布后重新落到系统回退字体。
   const requiredFontFiles = [
     'noto-sans-sc-chinese-simplified-400-normal.woff2',
     'noto-sans-sc-chinese-simplified-500-normal.woff2',
@@ -98,45 +118,88 @@ try {
   }
 
   const esmModule = await import(`${pathToFileURL(join(distRoot, 'ex-ui.js')).href}?verify=1`);
-  const require = createRequire(import.meta.url);
-  const cjsModule = require(join(distRoot, 'ex-ui.cjs'));
+  const publicComponentNames = verifyRuntimeExports(esmModule, 'ESM');
 
-  verifyRuntimeExports(esmModule, 'ESM');
-  verifyRuntimeExports(cjsModule, 'CommonJS');
+  const packOutput = runNpm(
+    ['pack', '--json', '--ignore-scripts', '--pack-destination', temporaryDirectory],
+    { name: 'npm pack' }
+  );
+  const packEntries = JSON.parse(packOutput);
+  const packEntry = packEntries[0];
+  if (!packEntry?.filename || !Array.isArray(packEntry.files)) {
+    throw new Error('npm pack 未返回可验证的包清单');
+  }
+  const packedPaths = new Set(packEntry.files.map(file => file.path));
+  for (const file of requiredFiles) {
+    if (!packedPaths.has(`dist/${file}`)) {
+      throw new Error(`npm tarball 缺少 dist/${file}`);
+    }
+  }
+  if (!packedPaths.has('LICENSE') || !packedPaths.has('package.json')) {
+    throw new Error('npm tarball 缺少许可证或包清单');
+  }
 
-  const sourcePath = join(temporaryDirectory, 'consumer.ts');
-  const tsconfigPath = join(temporaryDirectory, 'tsconfig.json');
-  const declarationPath = join(distRoot, 'index.d.ts').replaceAll('\\', '/');
+  const tarballPath = join(temporaryDirectory, packEntry.filename);
+  await access(tarballPath);
+  await writeFile(
+    join(temporaryDirectory, 'package.json'),
+    JSON.stringify(
+      {
+        private: true,
+        type: 'module',
+        dependencies: {
+          'vue-ex-ui': `file:${tarballPath.replaceAll('\\', '/')}`,
+          vue: '^3.5.41',
+        },
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+  runNpm(['install', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false'], {
+    cwd: temporaryDirectory,
+    name: 'tarball 消费安装',
+  });
 
+  await mkdir(consumerDirectory);
+  const sourcePath = join(consumerDirectory, 'consumer.ts');
+  const tsconfigPath = join(consumerDirectory, 'tsconfig.json');
   await writeFile(
     sourcePath,
     [
       "import ExUI, * as ExUIExports from 'vue-ex-ui';",
-      "import { THEME_CONFIGS } from 'vue-ex-ui';",
+      "import ExButton from 'vue-ex-ui/es/components/button';",
+      "import { useTheme } from 'vue-ex-ui/es/composables/useTheme';",
+      "import { createLocaleProvider } from 'vue-ex-ui/es/locale';",
+      "import { deepClone } from 'vue-ex-ui/es/utils';",
+      "import 'vue-ex-ui/base.css';",
       "import type { ExButtonProps, Theme } from 'vue-ex-ui';",
+      "import type { ExNotificationProps, ExNotificationEmits, ExNotificationSlots, ExNotificationExposed, NotificationOptions, NotificationTypedOptions, NotificationInstance, NotificationService, NotificationGlobalConfig, NotificationType, NotificationPosition } from 'vue-ex-ui';",
+      "import type { DrawerGuard, DrawerPlacement, DrawerPresetSize, DrawerSize, ExDrawerProps, ExDrawerEmits, ExDrawerExposed } from 'vue-ex-ui';",
+      "import type { PopoverPlacement, PopoverTrigger, PopoverPosition, PopoverBoundaryCheck, PopoverConfig, ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from 'vue-ex-ui';",
+      "import type { ProgressType, ProgressStatus, ProgressColor, ExProgressProps, ExProgressEmits, ExProgressExposed } from 'vue-ex-ui';",
+      "import type { TooltipPlacement, TooltipTrigger, TooltipEffect, ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from 'vue-ex-ui';",
       '',
+      'type NotificationContract = [ExNotificationProps, ExNotificationEmits, ExNotificationSlots, ExNotificationExposed, NotificationOptions, NotificationTypedOptions, NotificationInstance, NotificationService, NotificationGlobalConfig, NotificationType, NotificationPosition];',
+      'type OverlayContract = [DrawerGuard, DrawerPlacement, DrawerPresetSize, DrawerSize, ExDrawerProps, ExDrawerEmits, ExDrawerExposed, PopoverPlacement, PopoverTrigger, PopoverPosition, PopoverBoundaryCheck, PopoverConfig, ExPopoverProps, ExPopoverEmits, ExPopoverExposed, ProgressType, ProgressStatus, ProgressColor, ExProgressProps, ExProgressEmits, ExProgressExposed, TooltipPlacement, TooltipTrigger, TooltipEffect, ExTooltipProps, ExTooltipEmits, ExTooltipExposed];',
       "const theme: Theme = 'light';",
       'const props: ExButtonProps = {};',
-      'void [ExUI, THEME_CONFIGS[theme], props];',
-      ...publicComponentNames(esmModule).map(name => `void ExUIExports.${name}.install;`),
+      'void [ExUI, ExButton, useTheme, createLocaleProvider, deepClone, theme, props];',
+      ...publicComponentNames.map(name => `void ExUIExports.${name}.install;`),
       '',
     ].join('\n'),
     'utf8'
   );
-
   await writeFile(
     tsconfigPath,
     JSON.stringify(
       {
         compilerOptions: {
-          baseUrl: projectRoot.replaceAll('\\', '/'),
           lib: ['ES2022', 'DOM'],
           module: 'ESNext',
           moduleResolution: 'Bundler',
           noEmit: true,
-          paths: {
-            'vue-ex-ui': [declarationPath],
-          },
           skipLibCheck: false,
           strict: true,
           target: 'ES2022',
@@ -149,20 +212,64 @@ try {
     ),
     'utf8'
   );
-
-  const result = spawnSync(
+  runCommand(
     process.execPath,
     [join(projectRoot, 'node_modules/typescript/bin/tsc'), '-p', tsconfigPath],
-    {
-      cwd: projectRoot,
-      encoding: 'utf8',
-    }
+    { cwd: consumerDirectory, name: '发布声明消费验证' }
   );
 
-  if (result.status !== 0) {
-    throw new Error(`发布声明消费验证失败：\n${result.stdout}${result.stderr}`);
-  }
+  await writeFile(
+    join(consumerDirectory, 'index.html'),
+    '<!doctype html><html><body><div id="app"></div><script type="module" src="/consumer.ts"></script></body></html>',
+    'utf8'
+  );
+  runCommand(
+    process.execPath,
+    [
+      join(projectRoot, 'node_modules/vite/bin/vite.js'),
+      'build',
+      '--outDir',
+      'bundle',
+      '--emptyOutDir',
+      '--logLevel',
+      'error',
+    ],
+    { cwd: consumerDirectory, name: 'tarball Vite 消费构建' }
+  );
+
+  const runtimeEsmPath = join(consumerDirectory, 'runtime.mjs');
+  await writeFile(
+    runtimeEsmPath,
+    [
+      "import ExUI, { ExButton, createMessageService } from 'vue-ex-ui';",
+      "if (typeof ExUI.install !== 'function') throw new Error('默认 ESM 插件不可安装');",
+      "if (typeof ExButton.install !== 'function') throw new Error('ESM 组件不可安装');",
+      "if (typeof createMessageService !== 'function') throw new Error('ESM 服务工厂缺失');",
+      '',
+    ].join('\n'),
+    'utf8'
+  );
+  runCommand(process.execPath, [runtimeEsmPath], {
+    cwd: consumerDirectory,
+    name: 'tarball ESM 运行时验证',
+  });
+
+  const runtimeCjsPath = join(consumerDirectory, 'runtime.cjs');
+  await writeFile(
+    runtimeCjsPath,
+    [
+      "const ExUI = require('vue-ex-ui');",
+      "if (typeof ExUI.default?.install !== 'function') throw new Error('默认 CJS 插件不可安装');",
+      "if (typeof ExUI.ExButton?.install !== 'function') throw new Error('CJS 组件不可安装');",
+      '',
+    ].join('\n'),
+    'utf8'
+  );
+  runCommand(process.execPath, [runtimeCjsPath], {
+    cwd: consumerDirectory,
+    name: 'tarball CommonJS 运行时验证',
+  });
 } finally {
-  // IO 验证必须清理临时消费者目录，避免污染后续测试。
+  // 包消费验证的所有写入都限制在独立临时目录，并在成功或失败后统一清理。
   await rm(temporaryDirectory, { force: true, recursive: true });
 }

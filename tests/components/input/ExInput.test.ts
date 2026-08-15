@@ -466,8 +466,8 @@ describe('ExInput', () => {
 
     expect(inputWrapper.get('.ex-input__prepend').text()).toBe('https://');
     expect(inputWrapper.get('.ex-input__append').text()).toBe('.com');
-    expect(inputWrapper.get('.prefix-content').exists()).toBe(true);
-    expect(inputWrapper.get('.suffix-content').exists()).toBe(true);
+    expect(inputWrapper.find('.prefix-content').exists()).toBe(true);
+    expect(inputWrapper.find('.suffix-content').exists()).toBe(true);
   });
 
   it('帮助文本与外部 aria-describedby 合并且去重，不伪装成警报', () => {

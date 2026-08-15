@@ -316,7 +316,7 @@ describe('ExModal', () => {
 
   it('通过注入配置控制传送后仍生效的霓虹与动画表现', async () => {
     wrapper = mount(ExConfigProvider, {
-      props: { neonEffect: false, animation: false },
+      props: { zIndex: 2400, neonEffect: false, animation: false },
       slots: { default: () => h(ExModal, { modelValue: true, title: '配置继承' }) },
       attachTo: document.body,
     });
@@ -326,6 +326,7 @@ describe('ExModal', () => {
     expect(document.querySelector('.ex-modal-root')?.classList).toContain(
       'ex-modal-root--no-motion'
     );
+    expect((document.querySelector('.ex-modal-root') as HTMLElement).style.zIndex).toBe('2450');
 
     await wrapper.setProps({ neonEffect: true, animation: true });
     expect(document.querySelector('.ex-modal')?.classList).toContain('ex-modal--neon');

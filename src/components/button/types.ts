@@ -25,14 +25,7 @@ export type ButtonSize = 'small' | 'medium' | 'large';
  * default/round/circle 保留基础形态；其余形态用于组件库的赛博朋克边框语言。
  */
 export type ButtonShape =
-  | 'default'
-  | 'round'
-  | 'circle'
-  | 'slice'
-  | 'slant'
-  | 'bracket'
-  | 'hex'
-  | 'notched';
+  'default' | 'round' | 'circle' | 'slice' | 'slant' | 'bracket' | 'hex' | 'notched';
 
 /**
  * 原生按钮类型

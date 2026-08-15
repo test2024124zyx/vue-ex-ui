@@ -26,7 +26,7 @@
   border-radius: var(--ex-radius-md);
   z-index: var(--ex-z-skipLink);
   @include transition(top);
-  
+
   &:focus {
     top: 6px;
   }
@@ -53,38 +53,29 @@
   .ex-app {
     scroll-behavior: auto;
   }
-  
-  // 禁用复杂效果（仅针对有这些效果的元素）
-  [class^='ex-'],
-  [class*=' ex-'] {
-    box-shadow: none;
-    text-shadow: none;
-    backdrop-filter: none;
-    filter: none;
-  }
-  
-  // 简化背景
+
+  // 隐藏持续扫描的全局装饰层，静态阴影与滤镜仍保留状态层级。
   .ex-app::before {
     display: none;
   }
 }
 
 // 高对比度偏好
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   // 移除装饰性效果
   [class^='ex-'],
   [class*=' ex-'] {
     text-shadow: none;
     box-shadow: none;
   }
-  
+
   // 增强链接可见性
   .ex-app a,
   [class^='ex-'] a,
   [class*=' ex-'] a {
     text-decoration: underline;
   }
-  
+
   // 增强表单元素边框
   .ex-app button,
   .ex-app input,

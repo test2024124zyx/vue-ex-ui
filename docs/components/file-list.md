@@ -38,8 +38,9 @@ const currentPage = ref(1)
 
 ## 基础用法
 
+::: raw
 <div class="demo-container">
-  <ExFileList
+  <ex-file-list
     v-model:selected-ids="selectedIds"
     v-model:view-mode="viewMode"
     v-model:search-value="searchValue"
@@ -54,6 +55,9 @@ const currentPage = ref(1)
     @delete-request="file => console.log('delete request', file)"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup lang="ts">
@@ -61,9 +65,30 @@ import { ref } from 'vue';
 import type { FileItem, SortField, SortOrder, ViewMode } from 'vue-ex-ui';
 
 const files: FileItem[] = [
-  { id: 'folder', name: 'documents', isDirectory: true },
-  { id: 'report', name: 'report.pdf', size: 2048, type: 'application/pdf' },
+  {
+    id: 'folder',
+    name: 'documents',
+    isDirectory: true,
+    modifiedTime: '2026-07-10T08:00:00Z',
+    children: [
+      {
+        id: 'report',
+        name: 'report.pdf',
+        size: 2048,
+        type: 'application/pdf',
+        modifiedTime: '2026-07-10T09:00:00Z',
+      },
+    ],
+  },
+  {
+    id: 'photo',
+    name: 'photo.png',
+    size: 1024,
+    type: 'image/png',
+    modifiedTime: '2026-07-09T09:00:00Z',
+  },
 ];
+
 const selectedIds = ref<string[]>([]);
 const viewMode = ref<ViewMode>('list');
 const searchValue = ref('');
@@ -73,22 +98,26 @@ const currentPage = ref(1);
 </script>
 
 <template>
-  <ExFileList
-    v-model:selected-ids="selectedIds"
-    v-model:view-mode="viewMode"
-    v-model:search-value="searchValue"
-    v-model:sort-field="sortField"
-    v-model:sort-order="sortOrder"
-    v-model:current-page="currentPage"
-    :files="files"
-    selectable
-    multiple
-    @preview-request="handlePreviewRequest"
-    @download-request="handleDownloadRequest"
-    @delete-request="handleDeleteRequest"
-  />
+  <div class="demo-container">
+    <ex-file-list
+      v-model:selected-ids="selectedIds"
+      v-model:view-mode="viewMode"
+      v-model:search-value="searchValue"
+      v-model:sort-field="sortField"
+      v-model:sort-order="sortOrder"
+      v-model:current-page="currentPage"
+      :files="files"
+      selectable
+      multiple
+      @preview-request="file => console.log('preview request', file)"
+      @download-request="file => console.log('download request', file)"
+      @delete-request="file => console.log('delete request', file)"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 非受控初始值
 
@@ -172,6 +201,8 @@ const currentPage = ref(1);
 | `meta`         | `Readonly<Record<string, unknown>>` | 否   |
 
 全量数据树中的 `id` 必须非空且唯一。目录可省略 `size` 和 `type`。
+
+运行时从多选切换到单选时，非受控状态会保留第一个有效标识并提交规范化更新；再次开启多选不会恢复已经收窄掉的陈旧选择。受控模式仍以父组件同步后的 `selected-ids` 为准。
 
 ## Events
 

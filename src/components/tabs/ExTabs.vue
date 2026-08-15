@@ -1,5 +1,9 @@
 <template>
-  <div ref="tabsRef" :class="tabsClasses" :style="tabsStyles">
+  <div
+    ref="tabsRef"
+    :class="tabsClasses"
+    :style="tabsStyles"
+  >
     <!-- 标签页导航 -->
     <div :class="`ex-tabs__nav-wrap ex-tabs__nav-wrap--${position}`">
       <div class="ex-tabs__nav-scroll">
@@ -14,62 +18,83 @@
           <!-- 标签页项 -->
           <div
             v-for="pane in panes"
-            :id="`${tabsUid}-tab-${pane.name}`"
             :key="pane.name"
-            :class="getTabClasses(pane)"
-            :aria-selected="activeTab === pane.name"
-            :aria-disabled="pane.disabled"
-            :aria-controls="`${tabsUid}-panel-${pane.name}`"
-            role="tab"
-            :tabindex="getTabTabindex(pane)"
-            @click="handleTabClick(pane, $event)"
-            @keydown="handleTabKeydown(pane, $event)"
+            class="ex-tabs__tab-item"
           >
-            <!-- 标签页图标插槽 -->
-            <div v-if="$slots[`icon-${pane.name}`]" class="ex-tabs__tab-icon">
-              <slot :name="`icon-${pane.name}`" />
-            </div>
+            <button
+              :id="getTabId(pane.name)"
+              type="button"
+              :class="getTabClasses(pane)"
+              :aria-selected="activeTab === pane.name"
+              :aria-disabled="pane.disabled"
+              :aria-controls="getPanelId(pane.name)"
+              :disabled="pane.disabled"
+              role="tab"
+              :tabindex="getTabTabindex(pane)"
+              @click="handleTabClick(pane, $event)"
+              @keydown="handleTabKeydown(pane, $event)"
+            >
+              <!-- 标签页图标插槽 -->
+              <span
+                v-if="$slots[`icon-${pane.name}`]"
+                class="ex-tabs__tab-icon"
+              >
+                <slot :name="`icon-${pane.name}`"></slot>
+              </span>
 
-            <!-- 标签页标题 -->
-            <span class="ex-tabs__tab-label">
-              <slot :name="`label-${pane.name}`">
-                {{ pane.label || pane.name }}
-              </slot>
-            </span>
+              <!-- 标签页标题 -->
+              <span class="ex-tabs__tab-label">
+                <slot :name="`label-${pane.name}`">
+                  {{ pane.label || pane.name }}
+                </slot>
+              </span>
+            </button>
 
             <!-- 关闭按钮（editable 同时启用增删，与添加按钮配套） -->
-            <div
+            <button
               v-if="(closable || editable || pane.closable) && !pane.disabled"
+              type="button"
               class="ex-tabs__tab-close"
+              :aria-label="`${t('close')} ${pane.label || pane.name}`"
               @click.stop="handleTabRemove(pane.name)"
+              @keydown.stop
             >
-              <ExIcon icon="close-line" :size="14" aria-hidden="true" />
-            </div>
+              <ExIcon
+                icon="close-line"
+                :size="14"
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
           <!-- 添加按钮 -->
-          <div
+          <button
             v-if="addable || editable"
+            type="button"
             class="ex-tabs__tab ex-tabs__tab--add"
+            :aria-label="t('add')"
             @click="handleTabAdd"
           >
-            <ExIcon icon="add-line" :size="16" aria-hidden="true" />
-          </div>
+            <ExIcon
+              icon="add-line"
+              :size="16"
+              aria-hidden="true"
+            />
+          </button>
 
           <!-- 激活指示器（无标签时不显示，避免关闭全部后残留指示条） -->
           <div
             v-if="type === 'line' && panes.length > 0"
-            ref="indicatorRef"
             class="ex-tabs__indicator"
             :style="indicatorStyle"
-          />
+          ></div>
         </div>
       </div>
     </div>
 
     <!-- 标签页内容 -->
     <div class="ex-tabs__content">
-      <slot />
+      <slot></slot>
     </div>
   </div>
 </template>
@@ -80,6 +105,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, provide, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
 import { generateId } from '../../utils/id';
+import { useLocale } from '../../locale';
 
 defineOptions({
   name: 'ExTabs',
@@ -96,6 +122,7 @@ const props = withDefaults(defineProps<ExTabsProps>(), {
 });
 
 const emit = defineEmits<ExTabsEmits>();
+const { t } = useLocale('tabs');
 
 interface PaneInfo {
   name: string | number;
@@ -106,25 +133,60 @@ interface PaneInfo {
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
-const indicatorRef = ref<HTMLDivElement>();
 const panes = ref<PaneInfo[]>([]);
 const activeTab = ref(props.modelValue);
 // 每个 Tabs 实例唯一前缀，避免多实例间 tab/panel 的 id 冲突
 const tabsUid = generateId('ex-tabs');
+const encodePaneName = (name: string | number) => {
+  const encodedName = Array.from(String(name), character =>
+    character.codePointAt(0)?.toString(16)
+  ).join('-');
+  return `${typeof name}-${encodedName || 'empty'}`;
+};
+const getTabId = (name: string | number) => `${tabsUid}-tab-${encodePaneName(name)}`;
+const getPanelId = (name: string | number) => `${tabsUid}-panel-${encodePaneName(name)}`;
 
 // 提供给子组件
 provide('exTabsUid', tabsUid);
+provide('getTabId', getTabId);
+provide('getPanelId', getPanelId);
 provide('activeTab', activeTab);
 provide('registerPane', (pane: PaneInfo) => {
   panes.value.push(pane);
-  if (!activeTab.value && !pane.disabled) {
+  if (activeTab.value === undefined && !pane.disabled) {
     activeTab.value = pane.name;
   }
 });
+provide('updatePane', (registeredName: string | number, pane: PaneInfo) => {
+  const target = panes.value.find(current => current.name === registeredName);
+  if (!target) return;
+  const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
+  Object.assign(target, pane);
+  if (activeNameChanged) {
+    activeTab.value = pane.name;
+    emit('update:modelValue', pane.name);
+    emit('change', pane.name);
+  }
+});
+let isTabsUnmounting = false;
 provide('unregisterPane', (name: string | number) => {
   const index = panes.value.findIndex(p => p.name === name);
   if (index > -1) {
+    const wasActive = activeTab.value === name;
     panes.value.splice(index, 1);
+    if (wasActive && !isTabsUnmounting) {
+      const nextPane =
+        panes.value.slice(index).find(pane => !pane.disabled) ||
+        panes.value
+          .slice(0, index)
+          .reverse()
+          .find(pane => !pane.disabled);
+      if (nextPane) {
+        activeTab.value = nextPane.name;
+        emit('update:modelValue', nextPane.name);
+        emit('change', nextPane.name);
+      }
+    }
   }
 });
 
@@ -155,6 +217,11 @@ const getTabClasses = (pane: PaneInfo) => {
 
   if (activeTab.value === pane.name) classes.push('ex-tabs__tab--active');
   if (pane.disabled) classes.push('ex-tabs__tab--disabled');
+  if (props.closable || props.editable || pane.closable) classes.push('ex-tabs__tab--closable');
+  if (panes.value[0]?.name === pane.name) classes.push('ex-tabs__tab--first');
+  if (panes.value[panes.value.length - 1]?.name === pane.name) {
+    classes.push('ex-tabs__tab--last');
+  }
 
   return classes;
 };
@@ -162,7 +229,9 @@ const getTabClasses = (pane: PaneInfo) => {
 // 漫游式 tabindex：仅激活项可被 Tab 键聚焦，其余项用方向键在 tablist 内移动（WAI-ARIA tabs 规范）
 const getTabTabindex = (pane: PaneInfo) => {
   if (pane.disabled) return -1;
-  return activeTab.value === pane.name ? 0 : -1;
+  const activePane = panes.value.find(item => item.name === activeTab.value && !item.disabled);
+  if (activePane) return activeTab.value === pane.name ? 0 : -1;
+  return panes.value.find(item => !item.disabled)?.name === pane.name ? 0 : -1;
 };
 
 const indicatorStyle = ref({});
@@ -211,7 +280,7 @@ const handleTabClick = (pane: PaneInfo, event: MouseEvent | KeyboardEvent) => {
 const focusTab = (pane: PaneInfo) => {
   nextTick(() => {
     if (typeof document === 'undefined') return;
-    document.getElementById(`${tabsUid}-tab-${pane.name}`)?.focus();
+    document.getElementById(getTabId(pane.name))?.focus();
   });
 };
 
@@ -257,7 +326,12 @@ const handleTabRemove = (name: string | number) => {
   // 如果删除的是当前激活的标签页，切换到下一个
   if (activeTab.value === name) {
     const index = panes.value.findIndex(p => p.name === name);
-    const nextPane = panes.value[index + 1] || panes.value[index - 1];
+    const nextPane =
+      panes.value.slice(index + 1).find(pane => !pane.disabled) ||
+      panes.value
+        .slice(0, index)
+        .reverse()
+        .find(pane => !pane.disabled);
     if (nextPane) {
       activeTab.value = nextPane.name;
       emit('update:modelValue', nextPane.name);
@@ -296,6 +370,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  isTabsUnmounting = true;
   resizeObserver?.disconnect();
   resizeObserver = null;
 });

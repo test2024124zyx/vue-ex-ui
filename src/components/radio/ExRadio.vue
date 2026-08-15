@@ -1,6 +1,12 @@
 <template>
-  <div :class="wrapperClasses" :style="wrapperStyles">
-    <label :class="radioClasses" :for="radioId">
+  <div
+    :class="wrapperClasses"
+    :style="wrapperStyles"
+  >
+    <label
+      :class="radioClasses"
+      :for="radioId"
+    >
       <!-- 隐藏的原生单选框 -->
       <input
         v-if="radioGroupContext"
@@ -13,7 +19,7 @@
         :checked="isChecked"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
-        :required="required"
+        :required="currentRequired"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
@@ -32,7 +38,7 @@
         :value="value"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
-        :required="required"
+        :required="currentRequired"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
@@ -43,19 +49,32 @@
 
       <!-- 自定义单选框外观 -->
       <span :class="radioBoxClasses">
-        <span v-if="isChecked" class="ex-radio__dot" />
+        <span
+          v-if="isChecked"
+          class="ex-radio__dot"
+        ></span>
       </span>
 
       <!-- 标签文本 -->
-      <span v-if="hasLabel" class="ex-radio__label-text">
+      <span
+        v-if="hasLabel"
+        class="ex-radio__label-text"
+      >
         <slot>{{ label }}</slot>
       </span>
     </label>
 
     <!-- 底部信息 -->
-    <div v-if="showBottomInfo" class="ex-radio__bottom">
+    <div
+      v-if="showBottomInfo"
+      class="ex-radio__bottom"
+    >
       <!-- 帮助文本 -->
-      <div v-if="helpText || $slots.help" :id="`${radioId}-help`" class="ex-radio__help">
+      <div
+        v-if="helpText || $slots.help"
+        :id="`${radioId}-help`"
+        class="ex-radio__help"
+      >
         <slot name="help">
           {{ helpText }}
         </slot>
@@ -70,7 +89,11 @@
           role="alert"
           aria-live="polite"
         >
-          <ex-icon icon="error-warning-line" :size="14" class="ex-radio__error-icon" />
+          <ex-icon
+            icon="error-warning-line"
+            :size="14"
+            class="ex-radio__error-icon"
+          />
           <slot name="error">
             {{ currentErrorMessage }}
           </slot>
@@ -122,6 +145,7 @@ const radioGroupContext = inject<{
   status?: string;
   disabled?: boolean;
   readonly?: boolean;
+  required?: boolean;
   updateValue: (value: string | number | boolean) => void;
 } | null>('radioGroup', null);
 
@@ -176,6 +200,10 @@ const currentDisabled = computed(() => {
 
 const currentReadonly = computed(() => {
   return radioGroupContext?.readonly || props.readonly;
+});
+
+const currentRequired = computed(() => {
+  return radioGroupContext?.required || props.required;
 });
 
 // Icon size is handled by the icon component itself based on the radio size
@@ -262,6 +290,7 @@ const handleChange = (event: Event) => {
   } else if (props.value !== undefined) {
     validateRadio(props.value);
     emit('change', props.value, event);
+    formItem?.onFieldChange();
   }
 };
 

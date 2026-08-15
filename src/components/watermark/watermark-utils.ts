@@ -1,4 +1,9 @@
 import type { ExWatermarkProps, WatermarkFontStyle, WatermarkTextAlign } from './types';
+import {
+  assertImagePixelBudget,
+  BrowserImageError,
+  loadBrowserImageResource,
+} from '../../utils/image-resource';
 
 export const DEFAULT_WATERMARK_GAP = 120;
 export const DEFAULT_WATERMARK_FONT_SIZE = 14;
@@ -27,6 +32,7 @@ export interface WatermarkRenderOptions {
   color: string;
   fontFamily: string;
   onError: (error: Error) => void;
+  signal?: AbortSignal;
 }
 
 interface TextMetricsSize {
@@ -38,6 +44,7 @@ interface PreparedContent {
   width: number;
   height: number;
   draw: (context: CanvasRenderingContext2D) => void;
+  dispose?: () => void;
 }
 
 /** 将任意数值限制到给定范围，非法数值使用回退值。 */
@@ -94,19 +101,6 @@ const waitForFont = async (font: string, sample: string): Promise<void> => {
   }
 };
 
-const loadImage = (
-  src: string,
-  crossOrigin: ExWatermarkProps['crossOrigin']
-): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = crossOrigin ?? 'anonymous';
-    image.referrerPolicy = 'no-referrer';
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`[ExWatermark] 图片加载失败：${src}`));
-    image.src = src;
-  });
-
 const prepareTextContent = async (
   context: CanvasRenderingContext2D,
   options: WatermarkRenderOptions
@@ -157,7 +151,12 @@ const prepareImageContent = async (
   const { props } = options;
   if (!props.imageSrc) return null;
 
-  const image = await loadImage(props.imageSrc, props.crossOrigin);
+  const resource = await loadBrowserImageResource(props.imageSrc, options.signal, {
+    requestInit: {
+      credentials: props.crossOrigin === 'use-credentials' ? 'include' : 'same-origin',
+      referrerPolicy: 'no-referrer',
+    },
+  });
   const aliasWidth = normalizeNumber(props.imageWidth, DEFAULT_IMAGE_WIDTH, 1);
   const aliasHeight = normalizeNumber(props.imageHeight, DEFAULT_IMAGE_HEIGHT, 1);
   const width = normalizeNumber(props.width, aliasWidth, 1);
@@ -165,7 +164,8 @@ const prepareImageContent = async (
   return {
     width,
     height,
-    draw: context => context.drawImage(image, -width / 2, -height / 2, width, height),
+    draw: context => context.drawImage(resource.image, -width / 2, -height / 2, width, height),
+    dispose: resource.dispose,
   };
 };
 
@@ -201,12 +201,18 @@ export async function renderWatermarkTile(options: WatermarkRenderOptions): Prom
     return { dataUrl: '', width: 0, height: 0 };
   }
 
-  let content: PreparedContent | null = null;
+  let content: PreparedContent | null;
   if (options.props.type === 'image') {
     try {
       content = await prepareImageContent(options);
       if (!content) throw new Error('[ExWatermark] 图片水印缺少 imageSrc');
     } catch (error) {
+      if (
+        (error instanceof BrowserImageError && error.code === 'ABORTED') ||
+        (error instanceof Error && error.name === 'AbortError')
+      ) {
+        return { dataUrl: '', width: 0, height: 0 };
+      }
       const normalizedError = error instanceof Error ? error : new Error(String(error));
       options.onError(normalizedError);
       content = await prepareTextContent(measurementContext, options);
@@ -217,39 +223,54 @@ export async function renderWatermarkTile(options: WatermarkRenderOptions): Prom
 
   if (!content) return { dataUrl: '', width: 0, height: 0 };
 
-  const angle = normalizeAngle(options.props.angle);
-  const rotatedSize = getRotatedSize(content.width, content.height, angle);
-  const gapX = normalizeNumber(options.props.gapX, DEFAULT_WATERMARK_GAP, 0);
-  const gapY = normalizeNumber(options.props.gapY, DEFAULT_WATERMARK_GAP, 0);
-  const cellWidth = Math.max(1, rotatedSize.width + gapX);
-  const cellHeight = Math.max(1, rotatedSize.height + gapY);
-  const staggered = Boolean(options.props.repeat && options.props.staggered);
-  const tileWidth = cellWidth * (staggered ? 2 : 1);
-  const tileHeight = cellHeight;
-  const dpr = getDevicePixelRatio(options.props.dprAware);
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.ceil(tileWidth * dpr));
-  canvas.height = Math.max(1, Math.ceil(tileHeight * dpr));
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    options.onError(new Error('[ExWatermark] 无法创建 Canvas 2D 上下文'));
-    return { dataUrl: '', width: tileWidth, height: tileHeight };
-  }
-
-  context.scale(dpr, dpr);
-  context.clearRect(0, 0, tileWidth, tileHeight);
-  drawPreparedContent(context, content, cellWidth / 2, cellHeight / 2, angle);
-  if (staggered) {
-    drawPreparedContent(context, content, cellWidth * 1.5, 0, angle);
-    drawPreparedContent(context, content, cellWidth * 1.5, cellHeight, angle);
-  }
-
   try {
-    return { dataUrl: canvas.toDataURL('image/png'), width: tileWidth, height: tileHeight };
-  } catch (error) {
-    const normalizedError = error instanceof Error ? error : new Error(String(error));
-    options.onError(normalizedError);
-    return { dataUrl: '', width: tileWidth, height: tileHeight };
+    const angle = normalizeAngle(options.props.angle);
+    const rotatedSize = getRotatedSize(content.width, content.height, angle);
+    const gapX = normalizeNumber(options.props.gapX, DEFAULT_WATERMARK_GAP, 0);
+    const gapY = normalizeNumber(options.props.gapY, DEFAULT_WATERMARK_GAP, 0);
+    const cellWidth = Math.max(1, rotatedSize.width + gapX);
+    const cellHeight = Math.max(1, rotatedSize.height + gapY);
+    const staggered = Boolean(options.props.repeat && options.props.staggered);
+    const tileWidth = cellWidth * (staggered ? 2 : 1);
+    const tileHeight = cellHeight;
+    const dpr = getDevicePixelRatio(options.props.dprAware);
+    const pixelWidth = Math.max(1, Math.ceil(tileWidth * dpr));
+    const pixelHeight = Math.max(1, Math.ceil(tileHeight * dpr));
+    try {
+      assertImagePixelBudget(pixelWidth, pixelHeight);
+    } catch (error) {
+      options.onError(error instanceof Error ? error : new Error(String(error)));
+      return { dataUrl: '', width: 0, height: 0 };
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      options.onError(new Error('[ExWatermark] 无法创建 Canvas 2D 上下文'));
+      return { dataUrl: '', width: tileWidth, height: tileHeight };
+    }
+
+    context.scale(dpr, dpr);
+    context.clearRect(0, 0, tileWidth, tileHeight);
+    drawPreparedContent(context, content, cellWidth / 2, cellHeight / 2, angle);
+    if (staggered) {
+      drawPreparedContent(context, content, cellWidth * 1.5, 0, angle);
+      drawPreparedContent(context, content, cellWidth * 1.5, cellHeight, angle);
+    }
+
+    try {
+      return { dataUrl: canvas.toDataURL('image/png'), width: tileWidth, height: tileHeight };
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      options.onError(normalizedError);
+      return { dataUrl: '', width: tileWidth, height: tileHeight };
+    } finally {
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+  } finally {
+    content.dispose?.();
   }
 }

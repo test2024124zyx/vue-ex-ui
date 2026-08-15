@@ -160,6 +160,17 @@ describe('ExCode', () => {
     expect(wrapper.find('textarea').attributes('readonly')).toBeDefined();
   });
 
+  it('编辑态高亮副本对辅助技术隐藏且复制反馈使用 live region', () => {
+    const wrapper = mount(ExCode, {
+      props: { code: 'const value = 1;', editable: true, copyable: true },
+    });
+
+    expect(
+      wrapper.findAll('.ex-code__line').every(line => line.attributes('aria-hidden') === 'true')
+    ).toBe(true);
+    expect(wrapper.get('.ex-code__copy-text').attributes('aria-live')).toBe('polite');
+  });
+
   it('复制按钮应复制当前代码并派发 copy 事件', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {

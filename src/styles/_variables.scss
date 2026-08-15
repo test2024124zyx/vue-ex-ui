@@ -93,7 +93,7 @@
 }
 
 // 高对比度偏好
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   :where([data-theme='neon-blue'], [data-theme='light'], .ex-app, .ex-config-provider) {
     --ex-color-border-primary: var(--ex-color-text-primary);
     --ex-shadow-neon-sm: 0 0 0 2px var(--ex-color-primary);

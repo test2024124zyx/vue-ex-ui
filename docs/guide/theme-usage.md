@@ -149,7 +149,7 @@ document.addEventListener('ex-theme-change', event => {
 - `neonEffect="false"` 只关闭 ExUI 组件的阴影、文字阴影和滤镜，不会修改插槽内容或宿主页面的任意元素。
 - `animation="false"` 只关闭 ExUI 组件的过渡与动画。
 - `prefers-reduced-motion: reduce` 会关闭扫描线、复杂发光和组件动画。
-- `prefers-contrast: high` 会增强 ExUI 控件边界；它不是单独的主题名称。
+- `prefers-contrast: more` 会增强 ExUI 控件边界；它不是单独的主题名称。
 - 主题切换器应使用原生 `button`，提供可见文本、焦点状态和键盘操作。
 
 ## API 速查

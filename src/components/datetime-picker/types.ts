@@ -38,6 +38,8 @@ export interface ExDateTimePickerProps {
   timeStep?: number;
   /** 是否显示“今天”按钮。 */
   showToday?: boolean;
+  /** 下拉面板是否传送到 body，避免被祖先 overflow 裁剪。 */
+  teleported?: boolean;
   /** 输入框无障碍名称。 */
   ariaLabel?: string;
   /** 根元素自定义类名。 */

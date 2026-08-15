@@ -151,6 +151,20 @@
   z-index: var(--ex-z-tooltip, 1090);
 }
 
+// 浮层被 Teleport 到 body 后，需要在自身恢复 ConfigProvider 的效果开关。
+.ex-heatmap__tooltip.ex-no-neon,
+.ex-heatmap__tooltip.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-heatmap__tooltip.ex-no-animation,
+.ex-heatmap__tooltip.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
+}
+
 .ex-heatmap__tooltip-date {
   margin-bottom: var(--ex-spacing-1);
   color: var(--ex-color-text-secondary);

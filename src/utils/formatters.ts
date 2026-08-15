@@ -10,18 +10,18 @@
  */
 export function formatThousands(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字字符（保留小数点）
   const cleaned = value.replace(/[^\d.]/g, '');
-  
+
   // 分割整数和小数部分
   const parts = cleaned.split('.');
   const integerPart = parts[0] || '';
   const decimalPart = parts[1];
-  
+
   // 添加千分位分隔符
   const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  
+
   // 组合整数和小数部分
   return decimalPart !== undefined ? `${formatted}.${decimalPart}` : formatted;
 }
@@ -44,13 +44,13 @@ export function parseThousands(value: string): string {
  */
 export function formatPhone(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字字符
   const cleaned = value.replace(/\D/g, '');
-  
+
   // 限制长度为11位
   const limited = cleaned.slice(0, 11);
-  
+
   // 格式化为 3-4-4 格式
   if (limited.length <= 3) {
     return limited;
@@ -79,13 +79,13 @@ export function parsePhone(value: string): string {
  */
 export function formatCreditCard(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字字符
   const cleaned = value.replace(/\D/g, '');
-  
+
   // 限制长度为16位
   const limited = cleaned.slice(0, 16);
-  
+
   // 格式化为 4-4-4-4 格式
   const groups = limited.match(/.{1,4}/g) || [];
   return groups.join(' ');
@@ -109,21 +109,21 @@ export function parseCreditCard(value: string): string {
  */
 export function formatCurrency(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字字符（保留小数点）
   const cleaned = value.replace(/[^\d.]/g, '');
-  
+
   // 确保只有一个小数点
   const parts = cleaned.split('.');
   const integerPart = parts[0] || '';
   let decimalPart = parts[1] || '';
-  
+
   // 限制小数位数为2位
   decimalPart = decimalPart.slice(0, 2);
-  
+
   // 添加千分位分隔符
   const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  
+
   // 组合整数和小数部分
   return decimalPart ? `${formatted}.${decimalPart}` : formatted;
 }
@@ -146,14 +146,14 @@ export function parseCurrency(value: string): string {
  */
 export function formatPercent(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字字符（保留小数点）
   const cleaned = value.replace(/[^\d.]/g, '');
-  
+
   // 限制范围 0-100
   const num = parseFloat(cleaned);
   if (isNaN(num)) return '';
-  
+
   const limited = Math.min(100, Math.max(0, num));
   return `${limited}%`;
 }
@@ -176,13 +176,13 @@ export function parsePercent(value: string): string {
  */
 export function formatIdCard(value: string): string {
   if (!value) return '';
-  
+
   // 移除非数字和X字符
   const cleaned = value.replace(/[^\dXx]/g, '').toUpperCase();
-  
+
   // 限制长度为18位
   const limited = cleaned.slice(0, 18);
-  
+
   // 格式化为 6-8-4 格式
   if (limited.length <= 6) {
     return limited;
@@ -230,7 +230,7 @@ export function formatLowerCase(value: string): string {
  * @example formatCapitalize('hello world') => 'Hello World'
  */
 export function formatCapitalize(value: string): string {
-  return value.replace(/\b\w/g, (char) => char.toUpperCase());
+  return value.replace(/\b\w/g, char => char.toUpperCase());
 }
 
 /**

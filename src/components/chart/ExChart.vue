@@ -89,9 +89,11 @@ const chartRef = ref<HTMLDivElement>();
 const chartInstance = shallowRef<ChartInstance | null>(null);
 const resizeObserver = ref<ResizeObserver | null>(null);
 const resizeTimer = ref<number | null>(null);
+const prefersReducedMotion = ref(false);
 // 异步初始化竞态控制：序号 + 卸载标记
 let initSeq = 0;
 let isUnmounted = false;
+let reducedMotionQuery: MediaQueryList | null = null;
 
 // 计算属性
 const chartClasses = computed(() => {
@@ -212,9 +214,10 @@ const updateChart = () => {
     let mergedOption: ChartOption = {
       ...props.option,
       series: cloneSeries(props.option.series),
-      animation: globalConfig.animation.value,
-      animationDuration:
-        Number.isFinite(props.animationDuration) && props.animationDuration >= 0
+      animation: globalConfig.animation.value && !prefersReducedMotion.value,
+      animationDuration: prefersReducedMotion.value
+        ? 0
+        : Number.isFinite(props.animationDuration) && props.animationDuration >= 0
           ? props.animationDuration
           : 1000,
     };
@@ -231,10 +234,10 @@ const updateChart = () => {
     };
     mergedOption.tooltip = {
       ...(props.showTooltip ? createDefaultTooltip(globalConfig.theme.value) : {}),
-      ...asComponentOption(props.option.tooltip),
-      show: props.showTooltip,
       appendToBody: true,
       confine: false,
+      ...asComponentOption(props.option.tooltip),
+      show: props.showTooltip,
     };
     mergedOption.dataZoom = props.showDataZoom
       ? Array.isArray(props.option.dataZoom) && props.option.dataZoom.length > 0
@@ -425,6 +428,7 @@ watch(
     () => props.animationDuration,
     () => globalConfig.animation.value,
     () => globalConfig.neonEffect.value,
+    () => prefersReducedMotion.value,
   ],
   () => {
     if (chartInstance.value) {
@@ -472,8 +476,17 @@ watch(
   { deep: true }
 );
 
+const handleReducedMotionChange = (event: MediaQueryListEvent) => {
+  prefersReducedMotion.value = event.matches;
+};
+
 // 生命周期
 onMounted(async () => {
+  if (typeof window.matchMedia === 'function') {
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    prefersReducedMotion.value = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener('change', handleReducedMotionChange);
+  }
   await nextTick();
   await initChart();
   setupResizeObserver();
@@ -481,6 +494,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   isUnmounted = true;
+  reducedMotionQuery?.removeEventListener('change', handleReducedMotionChange);
+  reducedMotionQuery = null;
   cleanupResizeObserver();
   if (resizeTimer.value !== null) {
     clearTimeout(resizeTimer.value);

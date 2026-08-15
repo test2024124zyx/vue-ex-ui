@@ -16,103 +16,234 @@ const value7 = ref(false)
 
 ## 基础用法
 
+::: raw
+
 <div class="demo-container">
   <ExSwitch v-model="value1" />
   <ExSwitch v-model="value2" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value1" />
-  <ExSwitch v-model="value2" />
+  <div class="demo-container">
+    <ExSwitch v-model="value1" />
+    <ExSwitch v-model="value2" />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(true);
+const value2 = ref(false);
+</script>
 ```
+
+:::
 
 ## 文字描述
 
 使用 `active-text` 属性与 `inactive-text` 属性来设置开关的文字描述。
 
+::: raw
+
 <div class="demo-container">
   <ExSwitch v-model="value3" active-text="按月付费" inactive-text="按年付费" />
   <ExSwitch v-model="value4" active-text="开启" inactive-text="关闭" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value3" active-text="按月付费" inactive-text="按年付费" />
-  <ExSwitch v-model="value4" active-text="开启" inactive-text="关闭" />
+  <div class="demo-container">
+    <ExSwitch
+      v-model="value3"
+      active-text="按月付费"
+      inactive-text="按年付费"
+    />
+    <ExSwitch
+      v-model="value4"
+      active-text="开启"
+      inactive-text="关闭"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value3 = ref(true);
+const value4 = ref(false);
+</script>
 ```
+
+:::
 
 ## 扩展的 value 类型
 
 设置 `active-value` 和 `inactive-value` 属性，接受 `Boolean`, `String` 或 `Number` 类型的值。
 
+::: raw
+
 <div class="demo-container">
-  <ExSwitch 
-    v-model="value5" 
-    active-value="100" 
-    inactive-value="0" 
+  <ExSwitch
+    v-model="value5"
+    active-value="100"
+    inactive-value="0"
   />
-  <ExSwitch 
-    v-model="value6" 
-    :active-value="1" 
-    :inactive-value="0" 
+  <ExSwitch
+    v-model="value6"
+    :active-value="1"
+    :inactive-value="0"
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value5" active-value="100" inactive-value="0" />
-  <ExSwitch v-model="value6" :active-value="1" :inactive-value="0" />
+  <div class="demo-container">
+    <ExSwitch
+      v-model="value5"
+      active-value="100"
+      inactive-value="0"
+    />
+    <ExSwitch
+      v-model="value6"
+      :active-value="1"
+      :inactive-value="0"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value5 = ref('100');
+const value6 = ref(1);
+</script>
 ```
+
+:::
 
 ## 禁用状态
 
 设置 `disabled` 属性，接受一个 `Boolean`，设置 `true` 即可禁用。
 
+::: raw
+
 <div class="demo-container">
   <ExSwitch v-model="value1" disabled />
   <ExSwitch v-model="value2" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value1" disabled />
-  <ExSwitch v-model="value2" disabled />
+  <div class="demo-container">
+    <ExSwitch
+      v-model="value1"
+      disabled
+    />
+    <ExSwitch
+      v-model="value2"
+      disabled
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(true);
+const value2 = ref(false);
+</script>
 ```
+
+:::
 
 ## 加载中
 
 设置 `loading` 属性，接受一个 `Boolean`，设置 `true` 即可显示加载中状态。
 
+::: raw
+
 <div class="demo-container">
   <ExSwitch v-model="value7" loading />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value7" loading />
+  <div class="demo-container">
+    <ExSwitch
+      v-model="value7"
+      loading
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value7 = ref(false);
+</script>
 ```
+
+:::
 
 ## 不同尺寸
 
+::: raw
+
 <div class="demo-container">
   <ExSwitch v-model="value1" size="large" />
   <ExSwitch v-model="value1" />
   <ExSwitch v-model="value1" size="small" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSwitch v-model="value1" size="large" />
-  <ExSwitch v-model="value1" />
-  <ExSwitch v-model="value1" size="small" />
+  <div class="demo-container">
+    <ExSwitch
+      v-model="value1"
+      size="large"
+    />
+    <ExSwitch v-model="value1" />
+    <ExSwitch
+      v-model="value1"
+      size="small"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(true);
+</script>
 ```
+
+:::
 
 ## API
 

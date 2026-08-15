@@ -3,6 +3,8 @@
  * 用于防止 XSS 攻击
  */
 
+import sanitizeMarkup from 'sanitize-html';
+
 /**
  * 允许的 HTML 标签白名单
  */
@@ -50,17 +52,34 @@ const ALLOWED_TAGS = new Set([
  * 允许的 HTML 属性白名单
  */
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
-  '*': new Set(['class', 'style', 'id', 'title']),
+  '*': new Set(['class', 'id', 'title']),
   a: new Set(['href', 'target', 'rel']),
   img: new Set(['src', 'alt', 'width', 'height']),
   td: new Set(['colspan', 'rowspan']),
   th: new Set(['colspan', 'rowspan']),
 };
 
-/**
- * 危险的 URL 协议
- */
-const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:'];
+const SAFE_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+const SAFE_IMAGE_PROTOCOLS = new Set(['http:', 'https:']);
+const ASCII_CONTROL_CODE_MAX = 0x1f;
+const ASCII_DELETE_CODE = 0x7f;
+const RASTER_DATA_IMAGE_PATTERN =
+  /^data:image\/(?:png|jpeg|gif|webp|avif|bmp|x-icon|vnd\.microsoft\.icon);base64,([a-z0-9+/]+={0,2})$/iu;
+
+const isValidRasterDataImage = (url: string): boolean => {
+  const match = RASTER_DATA_IMAGE_PATTERN.exec(url);
+  const payload = match?.[1];
+  return payload !== undefined && payload.length % 4 === 0;
+};
+
+const containsAsciiControlCharacter = (value: string): boolean =>
+  Array.from(value).some(character => {
+    const codePoint = character.codePointAt(0);
+    return (
+      codePoint !== undefined &&
+      (codePoint <= ASCII_CONTROL_CODE_MAX || codePoint === ASCII_DELETE_CODE)
+    );
+  });
 
 /**
  * 检查 URL 是否安全
@@ -69,17 +88,20 @@ const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:'];
  * @returns 是否安全
  */
 export function isSafeUrl(url: string, allowDataImage = false): boolean {
-  // 先去除控制字符/空白（绕过手段之一：java\tscript:）
-  const trimmedUrl = Array.from(url)
-    .filter(ch => ch.charCodeAt(0) > 0x20)
-    .join('')
-    .toLowerCase();
-  if (allowDataImage && trimmedUrl.startsWith('data:image/')) {
-    // 阻止 data:image/svg+xml（SVG 可携带脚本）
-    return !trimmedUrl.startsWith('data:image/svg');
+  const normalizedUrl = url.trim();
+  if (!normalizedUrl || containsAsciiControlCharacter(normalizedUrl)) return false;
+  if (allowDataImage && normalizedUrl.toLowerCase().startsWith('data:')) {
+    return isValidRasterDataImage(normalizedUrl);
   }
 
-  return !DANGEROUS_PROTOCOLS.some(protocol => trimmedUrl.startsWith(protocol));
+  const scheme = normalizedUrl.match(/^[a-z][a-z0-9+.-]*:/iu)?.[0]?.toLowerCase();
+  if (scheme) {
+    return (allowDataImage ? SAFE_IMAGE_PROTOCOLS : SAFE_LINK_PROTOCOLS).has(scheme);
+  }
+
+  // RFC 3986 的相对路径首段不能含冒号；拒绝畸形 scheme，避免浏览器宽松解析。
+  const firstPathSegment = normalizedUrl.split(/[/?#]/u, 1)[0];
+  return !firstPathSegment?.includes(':');
 }
 
 /**
@@ -105,90 +127,30 @@ export function escapeHtml(str: string): string {
  * @returns 消毒后的安全 HTML 字符串
  */
 export function sanitizeHtml(html: string): string {
-  // 如果不在浏览器环境，直接转义所有 HTML
-  if (typeof document === 'undefined') {
-    return escapeHtml(html);
-  }
+  // 使用同一解析器处理 SSR 与浏览器，避免服务端转义、客户端保留标签造成 hydration 差异。
+  return sanitizeMarkup(html, {
+    allowedTags: Array.from(ALLOWED_TAGS),
+    allowedAttributes: Object.fromEntries(
+      Object.entries(ALLOWED_ATTRS).map(([tag, attrs]) => [tag, Array.from(attrs)])
+    ),
+    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    allowProtocolRelative: true,
+    transformTags: {
+      '*': (tagName, attributes) => {
+        const safeAttributes = { ...attributes };
+        const source = safeAttributes.src;
+        if (source && !isSafeUrl(source, tagName === 'img')) delete safeAttributes.src;
+        const href = safeAttributes.href;
+        if (href && !isSafeUrl(href)) delete safeAttributes.href;
 
-  // 创建临时 DOM 解析 HTML
-  const template = document.createElement('template');
-  template.innerHTML = html;
-
-  // 递归处理所有节点
-  const sanitizeNode = (node: Node): void => {
-    // 处理元素节点
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as Element;
-      const tagName = element.tagName.toLowerCase();
-
-      // 检查标签是否在白名单中
-      if (!ALLOWED_TAGS.has(tagName)) {
-        // 移除危险标签，但保留其文本内容
-        const textContent = element.textContent || '';
-        const textNode = document.createTextNode(textContent);
-        element.parentNode?.replaceChild(textNode, element);
-        return;
-      }
-
-      // 处理属性
-      const attrs = Array.from(element.attributes);
-      const globalAllowed = ALLOWED_ATTRS['*'] || new Set();
-      const tagAllowed = ALLOWED_ATTRS[tagName] || new Set();
-
-      for (const attr of attrs) {
-        const attrName = attr.name.toLowerCase();
-
-        // 检查属性是否在白名单中
-        if (!globalAllowed.has(attrName) && !tagAllowed.has(attrName)) {
-          element.removeAttribute(attr.name);
-          continue;
+        if (tagName === 'a' && safeAttributes.target === '_blank') {
+          safeAttributes.rel = 'noopener noreferrer';
         }
-
-        // 检查事件处理器属性
-        if (attrName.startsWith('on')) {
-          element.removeAttribute(attr.name);
-          continue;
-        }
-
-        // 检查 href 和 src 属性的 URL 安全性（img src 允许 data:image 内联图片）
-        if (attrName === 'href' || attrName === 'src') {
-          const allowDataImage = attrName === 'src' && tagName === 'img';
-          if (!isSafeUrl(attr.value, allowDataImage)) {
-            element.removeAttribute(attr.name);
-            continue;
-          }
-        }
-
-        // 检查 style 属性中的危险内容：脚本协议、IE expression、外部资源引用
-        if (attrName === 'style') {
-          const styleValue = attr.value.toLowerCase();
-          if (
-            styleValue.includes('javascript:') ||
-            styleValue.includes('expression(') ||
-            styleValue.includes('url(') ||
-            styleValue.includes('@import')
-          ) {
-            element.removeAttribute(attr.name);
-          }
-        }
-      }
-
-      // 为外部链接添加安全属性
-      if (tagName === 'a' && element.getAttribute('target') === '_blank') {
-        element.setAttribute('rel', 'noopener noreferrer');
-      }
-    }
-
-    // 递归处理子节点
-    const children = Array.from(node.childNodes);
-    for (const child of children) {
-      sanitizeNode(child);
-    }
-  };
-
-  sanitizeNode(template.content);
-
-  return template.innerHTML;
+        return { tagName, attribs: safeAttributes };
+      },
+    },
+  });
 }
 
 /**
@@ -204,6 +166,7 @@ export function containsDangerousHtml(html: string): boolean {
     /<embed\b/i,
     /<form\b/i,
     /\bon\w+\s*=/i,
+    /\bstyle\s*=/i,
     /javascript:/i,
     /vbscript:/i,
     /data:/i,

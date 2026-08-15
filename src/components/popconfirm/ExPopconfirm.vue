@@ -4,12 +4,13 @@
     :placement="placement"
     :trigger="trigger"
     :disabled="disabled"
+    :aria-label="title || t('confirm')"
     :custom-class="popupClasses"
     :custom-style="popupStyle"
     @update:model-value="handleVisibleChange"
   >
     <!-- 触发元素 -->
-    <slot />
+    <slot></slot>
 
     <!-- 确认框内容 -->
     <template #content>
@@ -17,7 +18,10 @@
         <!-- 头部 -->
         <div class="ex-popconfirm__header">
           <!-- 图标 -->
-          <div v-if="showIcon" class="ex-popconfirm__icon">
+          <div
+            v-if="showIcon"
+            class="ex-popconfirm__icon"
+          >
             <slot name="icon">
               <ExIcon
                 :icon="customIconUrl ? undefined : defaultIcon"
@@ -35,7 +39,10 @@
                 {{ title }}
               </slot>
             </div>
-            <div v-if="description || $slots.description" class="ex-popconfirm__description">
+            <div
+              v-if="description || $slots.description"
+              class="ex-popconfirm__description"
+            >
               <slot name="description">
                 {{ description }}
               </slot>
@@ -45,13 +52,19 @@
 
         <!-- 底部按钮 -->
         <div class="ex-popconfirm__footer">
-          <ExButton v-if="showCancel" size="small" @click.stop="handleCancel">
+          <ExButton
+            v-if="showCancel"
+            size="small"
+            :disabled="confirmPending"
+            @click.stop="handleCancel"
+          >
             {{ cancelText || t('cancel') }}
           </ExButton>
           <ExButton
             size="small"
             :type="okType"
-            :loading="confirmLoading"
+            :loading="effectiveConfirmLoading"
+            :disabled="effectiveConfirmLoading"
             @click.stop="handleConfirm"
           >
             {{ okText || t('confirm') }}
@@ -90,6 +103,8 @@ const emit = defineEmits<ExPopconfirmEmits>();
 const { t } = useLocale('dialog');
 
 const popoverVisible = ref(false);
+const confirmPending = ref(false);
+const effectiveConfirmLoading = computed(() => props.confirmLoading || confirmPending.value);
 
 // 计算属性
 const popconfirmClasses = computed(() => {
@@ -126,22 +141,32 @@ const handleVisibleChange = (visible: boolean) => {
 };
 
 const handleConfirm = async () => {
-  if (props.beforeConfirm) {
-    const result = await props.beforeConfirm();
-    if (result === false) return;
-  }
+  if (props.disabled || props.confirmLoading || confirmPending.value) return;
+  confirmPending.value = true;
+  try {
+    if (props.beforeConfirm) {
+      const result = await props.beforeConfirm();
+      if (result === false) return;
+    }
 
-  emit('confirm');
-  popoverVisible.value = false;
+    emit('confirm');
+    popoverVisible.value = false;
+  } catch (error) {
+    emit('confirm-error', error);
+  } finally {
+    confirmPending.value = false;
+  }
 };
 
 const handleCancel = () => {
+  if (confirmPending.value) return;
   emit('cancel');
   popoverVisible.value = false;
 };
 
 // 暴露的方法
 const show = () => {
+  if (props.disabled) return;
   popoverVisible.value = true;
 };
 

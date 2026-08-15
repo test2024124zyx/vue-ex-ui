@@ -131,6 +131,10 @@ imageLoading.hideAll();
 imageLoading.destroyAll();
 ```
 
+在 ConfigProvider 子树的 `setup()` 中调用 `useLoadingService()`，实例会继承最近的语言、
+主题与 z-index，并随 Provider 卸载清理。直接导入的 `loadingService` 是模块级便捷单例；
+完整安装组件库后，`this.$loading` 则绑定当前 Vue App 的上下文。
+
 ## v-loading
 
 完整安装组件库后可使用指令。对象绑定会在更新时同步配置。

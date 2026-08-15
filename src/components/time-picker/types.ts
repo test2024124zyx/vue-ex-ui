@@ -15,6 +15,12 @@ export interface ExTimePickerProps {
   disabled?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
+  /** 触发器原生 ID */
+  id?: string;
+  /** 触发器无障碍名称 */
+  ariaLabel?: string;
+  /** 触发器无障碍描述元素 ID */
+  ariaDescribedby?: string;
   /** 尺寸 */
   size?: TimePickerSize;
   /** 小时步进 */

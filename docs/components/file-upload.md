@@ -16,37 +16,40 @@ const submit = async () => {
 
 ## 选择文件
 
+::: raw
 <div class="demo-container">
-  <ExFileUpload
+  <ex-file-upload
     v-model:file-list="files"
     :auto-upload="false"
     accept="image/*,.pdf"
     :max-file-size="5 * 1024 * 1024"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExFileUpload
-    v-model:file-list="files"
-    :auto-upload="false"
-    accept="image/*,.pdf"
-    :max-file-size="5 * 1024 * 1024"
-    @rejected="handleRejected"
-  />
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { UploadFile, UploadRejection } from 'vue-ex-ui';
+import type { UploadFile } from 'vue-ex-ui';
 
 const files = ref<UploadFile[]>([]);
-
-const handleRejected = (rejection: UploadRejection) => {
-  console.warn(rejection.code, rejection.file.name);
-};
 </script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-upload
+      v-model:file-list="files"
+      :auto-upload="false"
+      accept="image/*,.pdf"
+      :max-file-size="5 * 1024 * 1024"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 传入 `file-list` 后列表为受控状态。组件只发出新快照，父级同步 `update:fileList` 前不会提前改变界面；不需要受控时使用 `default-file-list`。
 

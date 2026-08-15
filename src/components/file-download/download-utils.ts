@@ -4,6 +4,8 @@ import { formatFileSize } from '../../utils/format';
 
 const ALLOWED_DOWNLOAD_PROTOCOLS = new Set(['http:', 'https:', 'blob:']);
 const DEFAULT_DOWNLOAD_NAME = 'download';
+const UNICODE_FILENAME_FORMAT_CONTROLS =
+  /[\u00ad\u061c\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g;
 
 const runtimeBaseUrl = (): string => {
   if (typeof globalThis.location !== 'undefined' && globalThis.location.href) {
@@ -45,6 +47,7 @@ export const sanitizeDownloadFilename = (value?: string | null): string | undefi
     return code <= 31 || code === 127 ? '_' : character;
   }).join('');
   let filename = withoutControlCharacters
+    .replace(UNICODE_FILENAME_FORMAT_CONTROLS, '_')
     .replace(/[<>:"|?*%]/g, '_')
     .trim()
     .replace(/[. ]+$/g, '');

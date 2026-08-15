@@ -125,6 +125,47 @@
   }
 }
 
+.ex-table__sort-button {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+}
+
+.ex-table__cell--fixed-left,
+.ex-table__cell--fixed-right {
+  background: var(--ex-color-bg-elevated);
+}
+
+.ex-table__body-cell.ex-table__cell--fixed-left,
+.ex-table__body-cell.ex-table__cell--fixed-right {
+  background: var(--ex-color-bg-primary);
+}
+
+.ex-table__cell--ellipsis {
+  max-width: 0;
+
+  .ex-table__cell-content {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 // 表体
 .ex-table__body {
   background: transparent;
@@ -459,20 +500,12 @@
 
     &::before {
       left: 0;
-      background: linear-gradient(
-        to right,
-        var(--ex-color-bg-secondary),
-        transparent
-      );
+      background: linear-gradient(to right, var(--ex-color-bg-secondary), transparent);
     }
 
     &::after {
       right: 0;
-      background: linear-gradient(
-        to left,
-        var(--ex-color-bg-secondary),
-        transparent
-      );
+      background: linear-gradient(to left, var(--ex-color-bg-secondary), transparent);
     }
   }
 
@@ -564,7 +597,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-table--bordered {
     border-width: 2px;
 

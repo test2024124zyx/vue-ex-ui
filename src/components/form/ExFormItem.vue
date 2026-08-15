@@ -129,6 +129,10 @@ const validateMessage = ref('');
 const isValidating = ref(false);
 const initialValue = ref<unknown>(undefined);
 let latestValidationId = 0;
+let isMounted = false;
+let validationScheduled = false;
+type FieldValidationTrigger = 'blur' | 'change' | 'input';
+const pendingValidationTriggers = new Set<FieldValidationTrigger>();
 
 // 使用实例级 ID 建立标签、控件与反馈消息之间的稳定关联。
 const generatedId = generateId('ex-form-item');
@@ -137,10 +141,9 @@ const generatedId = generateId('ex-form-item');
 // 覆盖未显式接入字段上下文的控件（含程序化赋值）
 watch(
   () => (formContext && props.prop ? getFieldValue(formContext.model, props.prop) : undefined),
-  (newValue, oldValue) => {
+  () => {
     if (!formContext || !props.prop) return;
-    if (newValue === oldValue) return;
-    void validateFieldMethod('change');
+    scheduleFieldValidation('change');
   },
   { deep: true }
 );
@@ -298,19 +301,17 @@ const feedbackClasses = computed(() => {
 provideFormItem({
   onFieldBlur: () => {
     if (props.prop && formContext) {
-      void validateFieldMethod('blur');
+      scheduleFieldValidation('blur');
     }
   },
   onFieldChange: () => {
     if (props.prop && formContext) {
-      // 等待 v-model 写回 model 后再校验。
-      void nextTick(() => validateFieldMethod('change'));
+      scheduleFieldValidation('change');
     }
   },
   onFieldInput: () => {
     if (props.prop && formContext) {
-      // 输入事件需要在当前模型值写回后再执行规则校验。
-      void nextTick(() => validateFieldMethod('input'));
+      scheduleFieldValidation('input');
     }
   },
   labelId: formItemLabelId,
@@ -324,23 +325,45 @@ provideFormItem({
 
 // 表单项上下文
 const formItemContext: FormItemContext = {
-  prop: props.prop || '',
+  get prop() {
+    return props.prop || '';
+  },
   props,
-  validateStatus: validateStatus.value,
-  validateMessage: validateMessage.value,
+  get validateStatus() {
+    return validateStatus.value;
+  },
+  get validateMessage() {
+    return validateMessage.value;
+  },
   validate: validateFieldMethod,
   resetField: resetFieldMethod,
   clearValidate: clearValidateMethod,
 };
 
 // 方法
-async function validateFieldMethod(trigger?: string): Promise<FormItemValidateResult> {
+function scheduleFieldValidation(trigger: FieldValidationTrigger) {
+  pendingValidationTriggers.add(trigger);
+  if (validationScheduled) return;
+
+  validationScheduled = true;
+  void nextTick(async () => {
+    validationScheduled = false;
+    const triggers = Array.from(pendingValidationTriggers);
+    pendingValidationTriggers.clear();
+    if (!isMounted || !props.prop || !formContext) return;
+    await validateFieldMethod(triggers);
+  });
+}
+
+async function validateFieldMethod(trigger?: string | string[]): Promise<FormItemValidateResult> {
   if (!props.prop || !formContext) {
     return { valid: true };
   }
 
   const rules = getRules();
   if (!rules || rules.length === 0) {
+    invalidateFieldValidation();
+    clearValidationState();
     return { valid: true };
   }
 
@@ -348,8 +371,11 @@ async function validateFieldMethod(trigger?: string): Promise<FormItemValidateRe
   const filteredRules = trigger
     ? rules.filter(rule => {
         if (!rule.trigger) return true;
-        const triggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
-        return triggers.includes(trigger as 'blur' | 'change' | 'input');
+        const ruleTriggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
+        const requestedTriggers = Array.isArray(trigger) ? trigger : [trigger];
+        return requestedTriggers.some(item =>
+          ruleTriggers.includes(item as FieldValidationTrigger)
+        );
       })
     : rules;
 
@@ -358,7 +384,6 @@ async function validateFieldMethod(trigger?: string): Promise<FormItemValidateRe
   }
 
   const validationId = ++latestValidationId;
-
   const value = getFieldValue(formContext.model, props.prop);
 
   validateStatus.value = 'validating';
@@ -409,12 +434,25 @@ async function validateFieldMethod(trigger?: string): Promise<FormItemValidateRe
 function resetFieldMethod() {
   if (!props.prop || !formContext) return;
 
+  invalidateFieldValidation();
   setFieldValue(formContext.model, props.prop, initialValue.value);
-
-  clearValidateMethod();
+  clearValidationState();
 }
 
 function clearValidateMethod() {
+  invalidateFieldValidation();
+  clearValidationState();
+}
+
+function invalidateFieldValidation() {
+  latestValidationId += 1;
+  isValidating.value = false;
+  validationScheduled = false;
+  pendingValidationTriggers.clear();
+}
+
+function clearValidationState() {
+  isValidating.value = false;
   validateStatus.value = '';
   validateMessage.value = '';
   emit('validate-status-change', validateStatus.value, validateMessage.value);
@@ -449,6 +487,7 @@ defineExpose({
 
 // 生命周期
 onMounted(() => {
+  isMounted = true;
   if (formContext && props.prop) {
     formContext.addField(formItemContext);
     // 存储初始值
@@ -457,10 +496,27 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (formContext && props.prop) {
+  isMounted = false;
+  invalidateFieldValidation();
+  if (formContext) {
     formContext.removeField(formItemContext);
   }
 });
+
+watch(
+  () => props.prop,
+  newProp => {
+    if (!isMounted || !formContext) return;
+
+    formContext.removeField(formItemContext);
+    invalidateFieldValidation();
+    clearValidationState();
+    initialValue.value = newProp ? deepClone(getFieldValue(formContext.model, newProp)) : undefined;
+    if (newProp) {
+      formContext.addField(formItemContext);
+    }
+  }
+);
 
 // 监听验证状态变化
 watch(

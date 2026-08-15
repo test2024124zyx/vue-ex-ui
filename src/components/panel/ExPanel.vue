@@ -3,26 +3,53 @@
     ref="panelRef"
     :class="panelClasses"
     :style="panelStyles"
-    role="region"
-    :aria-label="ariaLabel || title"
+    :role="panelRole"
+    :aria-label="accessibleLabel"
+    :aria-busy="loading ? 'true' : undefined"
+    :tabindex="isInteractive ? 0 : undefined"
+    @keydown.enter="triggerPanelClick"
+    @keydown.space.prevent="triggerPanelClick"
   >
+    <span
+      v-if="loading"
+      class="ex-panel__loading-status"
+      role="status"
+      aria-live="polite"
+    >
+      {{ t('loading') }}
+    </span>
+
     <!-- 面板头部 -->
-    <div v-if="hasHeader" class="ex-panel__header" :style="headerStyle">
+    <div
+      v-if="hasHeader"
+      class="ex-panel__header"
+      :style="headerStyle"
+      :inert="loading ? true : undefined"
+    >
       <!-- 标题区域 -->
       <div class="ex-panel__title">
         <!-- 图标 -->
-        <div v-if="$slots.icon" class="ex-panel__icon">
+        <div
+          v-if="$slots.icon"
+          class="ex-panel__icon"
+        >
           <slot name="icon" />
         </div>
 
         <!-- 标题内容 -->
         <div class="ex-panel__title-content">
           <slot name="title">
-            <h3 v-if="title" class="ex-panel__title-text">
+            <h3
+              v-if="title"
+              class="ex-panel__title-text"
+            >
               {{ title }}
             </h3>
           </slot>
-          <p v-if="subtitle || $slots.subtitle" class="ex-panel__subtitle">
+          <p
+            v-if="subtitle || $slots.subtitle"
+            class="ex-panel__subtitle"
+          >
             <slot name="subtitle">
               {{ subtitle }}
             </slot>
@@ -31,18 +58,30 @@
       </div>
 
       <!-- 额外内容 -->
-      <div v-if="$slots.extra" class="ex-panel__extra">
+      <div
+        v-if="$slots.extra"
+        class="ex-panel__extra"
+      >
         <slot name="extra" />
       </div>
     </div>
 
     <!-- 面板内容 -->
-    <div class="ex-panel__body" :style="bodyStyle">
+    <div
+      class="ex-panel__body"
+      :style="bodyStyle"
+      :inert="loading ? true : undefined"
+    >
       <slot />
     </div>
 
     <!-- 面板底部 -->
-    <div v-if="$slots.footer" class="ex-panel__footer" :style="footerStyle">
+    <div
+      v-if="$slots.footer"
+      class="ex-panel__footer"
+      :style="footerStyle"
+      :inert="loading ? true : undefined"
+    >
       <slot name="footer" />
     </div>
   </div>
@@ -50,7 +89,8 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, useSlots } from 'vue';
+import { computed, getCurrentInstance, ref, useSlots } from 'vue';
+import { useLocale } from '../../locale';
 import type { ExPanelProps, ExPanelExposed } from './types';
 
 defineOptions({
@@ -65,6 +105,16 @@ const props = withDefaults(defineProps<ExPanelProps>(), {
 
 const slots = useSlots();
 const panelRef = ref<HTMLDivElement>();
+const componentInstance = getCurrentInstance();
+const { t } = useLocale('common');
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || props.title?.trim() || undefined);
+const isInteractive = computed(
+  () => props.hoverable && Boolean(componentInstance?.vnode.props?.onClick)
+);
+const panelRole = computed(() => {
+  if (isInteractive.value) return 'button';
+  return accessibleLabel.value ? 'region' : undefined;
+});
 
 // 计算属性
 const hasHeader = computed(() => {
@@ -101,6 +151,9 @@ const panelStyles = computed(() => {
 
 // 暴露的方法
 const getElement = () => panelRef.value || null;
+const triggerPanelClick = (): void => {
+  if (isInteractive.value) panelRef.value?.click();
+};
 
 defineExpose<ExPanelExposed>({
   getElement,

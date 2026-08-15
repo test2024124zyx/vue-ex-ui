@@ -27,6 +27,25 @@ describe('ExTimeline', () => {
     });
     expect(wrapper.find('.ex-timeline--reverse').exists()).toBe(true);
   });
+
+  it('reverse 同时反转真实 DOM 与辅助技术读取顺序', () => {
+    const wrapper = mount(ExTimeline, {
+      props: { reverse: true },
+      slots: {
+        default: () => [
+          h(ExTimelineItem, {}, () => 'First'),
+          h(ExTimelineItem, {}, () => 'Second'),
+          h(ExTimelineItem, {}, () => 'Third'),
+        ],
+      },
+    });
+
+    expect(wrapper.findAll('.ex-timeline-item').map(item => item.text())).toEqual([
+      'Third',
+      'Second',
+      'First',
+    ]);
+  });
 });
 
 describe('ExTimelineItem', () => {
@@ -43,16 +62,24 @@ describe('ExTimelineItem', () => {
     expect(wrapper.emitted('click')).toBeTruthy();
   });
 
-  it('exposes keyboard semantics when clickable', async () => {
+  it('clickable 项同时保留列表项语义与独立按钮语义', async () => {
     const wrapper = mount(ExTimelineItem, {
-      props: { clickable: true },
-      slots: { default: () => 'content' },
+      props: { clickable: true, ariaLabel: '查看发布记录' },
+      slots: { default: () => h('button', { class: 'inner-action' }, '内部操作') },
     });
     const item = wrapper.find('.ex-timeline-item');
+    const primaryAction = wrapper.get('.ex-timeline-item__primary-action');
+    const innerAction = wrapper.get('.inner-action');
 
-    expect(item.attributes('role')).toBe('button');
-    expect(item.attributes('tabindex')).toBe('0');
-    await item.trigger('keydown', { key: 'Enter' });
+    expect(item.attributes('role')).toBe('listitem');
+    expect(item.attributes('tabindex')).toBeUndefined();
+    expect(primaryAction.element.tagName).toBe('BUTTON');
+    expect(primaryAction.attributes('aria-label')).toBe('查看发布记录');
+    expect(primaryAction.element.contains(innerAction.element)).toBe(false);
+
+    await innerAction.trigger('click');
+    expect(wrapper.emitted('click')).toBeUndefined();
+    await primaryAction.trigger('click');
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
 });

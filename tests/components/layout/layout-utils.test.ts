@@ -21,6 +21,8 @@ describe('layout-utils', () => {
     expect(normalizeLayoutLength(Number.NaN, '4rem')).toBe('4rem');
     expect(normalizeLayoutLength('', 64)).toBe('64px');
     expect(normalizeLayoutLength('   ', '3rem')).toBe('3rem');
+    expect(normalizeLayoutLength('garbage', 64)).toBe('64px');
+    expect(normalizeLayoutLength('javascript:alert(1)', 64)).toBe('64px');
   });
 
   it('识别带单位和无单位的零宽度', () => {

@@ -1,61 +1,69 @@
-// vitest.setup.ts
-// Polyfills for JSDOM
-
-// ResizeObserver
-class ResizeObserver {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(_cb: any) {}
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+// 为 JSDOM 补齐组件运行时依赖的浏览器 API。
+class ResizeObserverStub {
+  constructor(_callback: ResizeObserverCallback) {}
+  observe(_target: Element): void {}
+  unobserve(_target: Element): void {}
+  disconnect(): void {}
 }
-// @ts-ignore
-global.ResizeObserver = global.ResizeObserver || ResizeObserver;
 
-// IntersectionObserver
-class IntersectionObserver {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(_cb: any) {}
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+if (!globalThis.ResizeObserver) {
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    configurable: true,
+    value: ResizeObserverStub,
+    writable: true,
+  });
 }
-// @ts-ignore
-global.IntersectionObserver = global.IntersectionObserver || IntersectionObserver;
 
-// matchMedia
-// @ts-ignore
-if (!global.matchMedia) {
-  // @ts-ignore
-  global.matchMedia = () => ({
+class IntersectionObserverStub {
+  constructor(_callback: IntersectionObserverCallback) {}
+  observe(_target: Element): void {}
+  unobserve(_target: Element): void {}
+  disconnect(): void {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+if (!globalThis.IntersectionObserver) {
+  Object.defineProperty(globalThis, 'IntersectionObserver', {
+    configurable: true,
+    value: IntersectionObserverStub,
+    writable: true,
+  });
+}
+
+if (!globalThis.matchMedia) {
+  globalThis.matchMedia = (query: string): MediaQueryList => ({
     matches: false,
+    media: query,
+    onchange: null,
     addEventListener: () => {},
     removeEventListener: () => {},
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-    media: ''
   });
 }
 
-// crypto.getRandomValues
-// @ts-ignore
-if (!global.crypto) {
-  // @ts-ignore
-  global.crypto = {
-    // @ts-ignore
-    getRandomValues: (arr: Uint8Array) => {
-      for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
-      return arr;
-    }
-  };
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues: <T extends ArrayBufferView | null>(array: T): T => {
+        if (!array) throw new TypeError('随机数目标不能为空');
+        const bytes = new Uint8Array(array.buffer, array.byteOffset, array.byteLength);
+        for (let index = 0; index < bytes.length; index += 1) {
+          bytes[index] = Math.floor(Math.random() * 256);
+        }
+        return array;
+      },
+    },
+    writable: true,
+  });
 }
 
-// requestAnimationFrame
-// @ts-ignore
-if (!global.requestAnimationFrame) {
-  // @ts-ignore
-  global.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 16) as unknown as number;
-  // @ts-ignore
-  global.cancelAnimationFrame = (id: number) => clearTimeout(id);
+if (!globalThis.requestAnimationFrame) {
+  globalThis.requestAnimationFrame = callback =>
+    setTimeout(() => callback(performance.now()), 16) as unknown as number;
+  globalThis.cancelAnimationFrame = handle => clearTimeout(handle);
 }

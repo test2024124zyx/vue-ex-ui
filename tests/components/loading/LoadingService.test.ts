@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { createApp, defineComponent, nextTick } from 'vue';
+import { createApp, defineComponent, h, nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
 import LoadingPlugin, {
   createLoadingService,
@@ -10,6 +10,7 @@ import LoadingPlugin, {
   useLoadingService,
 } from '../../../src/components/loading/LoadingService';
 import type { LoadingService } from '../../../src/components/loading/types';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 const localServices: LoadingService[] = [];
 
@@ -240,6 +241,7 @@ describe('LoadingService', () => {
 
   it('插件只暴露可兑现的 $loading 服务', () => {
     const app = createApp(defineComponent(() => () => null));
+    const onUnmount = vi.spyOn(app, 'onUnmount');
     app.use(LoadingPlugin, { enableDirective: false, defaults: { type: 'neon' } });
 
     expect(app.config.globalProperties.$loading).toEqual(
@@ -251,6 +253,7 @@ describe('LoadingService', () => {
     );
     expect(app.config.globalProperties.$showLoading).toBeUndefined();
     expect(app.config.globalProperties.$hideLoading).toBeUndefined();
+    expect(onUnmount).toHaveBeenCalledOnce();
   });
 
   it('useLoadingService 优先返回当前应用服务，未安装时回退默认服务', () => {
@@ -272,6 +275,34 @@ describe('LoadingService', () => {
     const fallbackWrapper = mount(Harness);
     expect(injectedService).toBe(loadingService);
     fallbackWrapper.unmount();
+  });
+
+  it('ConfigProvider 为编程式 Loading 创建隔离服务并传递上下文', async () => {
+    let scopedService: LoadingService | undefined;
+    const Harness = defineComponent({
+      setup() {
+        scopedService = useLoadingService();
+        return () => null;
+      },
+    });
+    const wrapper = mount(ExConfigProvider, {
+      props: { theme: 'light', locale: 'zh-CN', zIndex: 3000 },
+      slots: { default: () => h(Harness) },
+    });
+
+    expect(scopedService).toBeDefined();
+    expect(scopedService).not.toBe(loadingService);
+    scopedService!.show();
+    await flush();
+
+    const loading = document.body.querySelector<HTMLElement>('.ex-loading');
+    expect(loading?.dataset.theme).toBe('light');
+    expect(loading?.getAttribute('aria-label')).toBe('加载中...');
+    expect(loading?.getAttribute('style')).toContain('--ex-loading-z-index: 3100');
+
+    wrapper.unmount();
+    await flush();
+    expect(document.querySelector('.ex-loading')).toBeNull();
   });
 
   it('v-loading 支持显隐与配置更新，卸载时清理目标数据', async () => {

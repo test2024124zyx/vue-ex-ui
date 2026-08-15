@@ -31,6 +31,20 @@ const normalizeChannel = (value: number): number =>
 
 const normalizeAlpha = (value: number): number => clamp(normalizeFinite(value, 1), 0, 1);
 
+/** 按 HSV 色相扇区返回未叠加明度偏移的 RGB 通道。 */
+const resolveHueSector = (
+  hue: number,
+  chroma: number,
+  secondary: number
+): [number, number, number] => {
+  if (hue < 60) return [chroma, secondary, 0];
+  if (hue < 120) return [secondary, chroma, 0];
+  if (hue < 180) return [0, chroma, secondary];
+  if (hue < 240) return [0, secondary, chroma];
+  if (hue < 300) return [secondary, 0, chroma];
+  return [chroma, 0, secondary];
+};
+
 /** 将 HSV 转换为 RGB，并约束异常输入，避免向样式层传播 NaN。 */
 export function hsvToRgb(h: number, s: number, v: number): Pick<RGBA, 'r' | 'g' | 'b'> {
   h = ((normalizeFinite(h, 0) % 360) + 360) % 360;
@@ -40,16 +54,7 @@ export function hsvToRgb(h: number, s: number, v: number): Pick<RGBA, 'r' | 'g' 
   const chroma = v * s;
   const secondary = chroma * (1 - Math.abs(((h / 60) % 2) - 1));
   const offset = v - chroma;
-  let red = 0;
-  let green = 0;
-  let blue = 0;
-
-  if (h < 60) [red, green, blue] = [chroma, secondary, 0];
-  else if (h < 120) [red, green, blue] = [secondary, chroma, 0];
-  else if (h < 180) [red, green, blue] = [0, chroma, secondary];
-  else if (h < 240) [red, green, blue] = [0, secondary, chroma];
-  else if (h < 300) [red, green, blue] = [secondary, 0, chroma];
-  else [red, green, blue] = [chroma, 0, secondary];
+  const [red, green, blue] = resolveHueSector(h, chroma, secondary);
 
   return {
     r: Math.round((red + offset) * 255),

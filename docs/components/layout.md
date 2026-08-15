@@ -65,6 +65,11 @@ const collapsed = ref(false);
 </script>
 ```
 
+进入 `breakpoint` 对应的小视口后，非受控 Sider 会自动收起；回到宽视口时只恢复由响应式
+逻辑触发的收起状态，不会覆盖用户手动选择。小视口展开时侧栏作为模态导航：锁定页面滚动、
+限制 Tab 焦点，点击遮罩或按 Escape 会以 `mask` 来源触发收起，并把焦点归还给此前元素。
+受控模式仍由父组件响应 `update:collapsed` 决定最终状态。
+
 ## Header 与 Footer 插槽
 
 ```vue

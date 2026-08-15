@@ -21,7 +21,7 @@ describe('ExList', () => {
     const list = wrapper.get('ul.ex-list__items');
     const rows = wrapper.findAll('li.ex-list__item');
 
-    expect(list.exists()).toBe(true);
+    expect(list.element.tagName).toBe('UL');
     expect(rows).toHaveLength(3);
     expect(rows[0]?.get('.ex-list__item-surface').element.tagName).toBe('DIV');
     expect(rows[0]?.attributes('role')).toBeUndefined();
@@ -39,26 +39,30 @@ describe('ExList', () => {
     expect(stylesheet).toMatch(/\.ex-list__item[\s\S]*?::marker\s*\{[\s\S]*?content:\s*['"]{2}/);
   });
 
-  it('默认点击不发事件，clickable=true 时使用不会提交表单的原生按钮', async () => {
+  it('默认点击不发事件，clickable=true 时使用独立的原生主操作按钮', async () => {
     const passive = mount(ExList, { props: { data: items } });
     await passive.get('.ex-list__item-surface').trigger('click');
     expect(passive.emitted('item-click')).toBeUndefined();
 
     const interactive = mount(ExList, { props: { data: items, clickable: true } });
-    const button = interactive.findAll<HTMLButtonElement>('.ex-list__item-surface')[0]!;
+    const surface = interactive.findAll<HTMLElement>('.ex-list__item-surface')[0]!;
+    const button = interactive.findAll<HTMLButtonElement>('.ex-list__item-primary-action')[0]!;
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
     button.element.dispatchEvent(event);
 
+    expect(surface.element.tagName).toBe('DIV');
+    expect(surface.attributes('role')).toBeUndefined();
     expect(button.element.tagName).toBe('BUTTON');
     expect(button.attributes('type')).toBe('button');
+    expect(button.attributes('aria-label')).toBe('第一项');
     expect(interactive.emitted('item-click')?.[0]).toEqual([items[0], 0, event]);
   });
 
-  it('禁用项与加载期间的按钮使用原生 disabled 且不发送事件', async () => {
+  it('禁用项与加载期间公开禁用语义且不发送事件', async () => {
     const wrapper = mount(ExList, { props: { data: items, clickable: true } });
-    const buttons = wrapper.findAll<HTMLButtonElement>('button.ex-list__item-surface');
+    const buttons = wrapper.findAll<HTMLButtonElement>('.ex-list__item-primary-action');
 
-    expect(buttons[2]?.attributes('disabled')).toBe('');
+    expect(buttons[2]?.attributes()).toHaveProperty('disabled');
     expect(wrapper.findAll('.ex-list__item')[2]?.attributes('aria-disabled')).toBe('true');
     await buttons[2]?.trigger('click');
     expect(wrapper.emitted('item-click')).toBeUndefined();
@@ -66,10 +70,10 @@ describe('ExList', () => {
     await wrapper.setProps({ loading: true });
     expect(
       wrapper
-        .findAll('button.ex-list__item-surface')
-        .every(button => button.attributes('disabled') === '')
+        .findAll('.ex-list__item-primary-action')
+        .every(button => Object.hasOwn(button.attributes(), 'disabled'))
     ).toBe(true);
-    await wrapper.findAll('button.ex-list__item-surface')[0]?.trigger('click');
+    await wrapper.findAll('.ex-list__item-primary-action')[0]?.trigger('click');
     expect(wrapper.emitted('item-click')).toBeUndefined();
   });
 
@@ -301,8 +305,28 @@ describe('ExList', () => {
       },
     });
 
-    await wrapper.findAll('button.ex-list__item-surface')[1]?.trigger('click');
+    await wrapper.findAll('.ex-list__item-primary-action')[1]?.trigger('click');
     expect(wrapper.emitted('item-click')?.[0]?.slice(0, 2)).toEqual([data[1], 1]);
+  });
+
+  it('主操作按钮与插槽交互控件保持同级且内部操作不冒泡为 item-click', async () => {
+    const wrapper = mount(ExList, {
+      props: { data: items.slice(0, 1), clickable: true },
+      slots: {
+        item: '<template #item><button class="inner-action">Action</button></template>',
+      },
+    });
+    const primaryAction = wrapper.get('.ex-list__item-primary-action');
+    const innerAction = wrapper.get('.inner-action');
+
+    expect(primaryAction.element.tagName).toBe('BUTTON');
+    expect(innerAction.element.tagName).toBe('BUTTON');
+    expect(primaryAction.element.contains(innerAction.element)).toBe(false);
+    await innerAction.trigger('click');
+    expect(wrapper.emitted('item-click')).toBeUndefined();
+
+    await primaryAction.trigger('click');
+    expect(wrapper.emitted('item-click')).toHaveLength(1);
   });
 
   it('暴露真实根元素', () => {

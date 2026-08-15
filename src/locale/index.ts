@@ -1,23 +1,24 @@
-import type { App, InjectionKey, Ref } from 'vue';
-import { computed, inject, ref, shallowRef } from 'vue';
-import enUS from './en-US';
+import type { App, ComputedRef, InjectionKey, Ref } from 'vue';
+import { computed, getCurrentInstance, inject, ref, shallowRef, watch } from 'vue';
+import enUS, { type BuiltInLocale } from './en-US';
 import zhCN from './zh-CN';
 import { logger } from '../utils/logger';
 
-export type Locale = typeof enUS;
+export type Locale = BuiltInLocale;
 export type LocaleKey = keyof Locale;
-export type LocaleMessages = Record<string, unknown>;
+export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+export type LocaleMessages = DeepPartial<Locale>;
 export type TranslationParams = Record<string, unknown>;
 
 interface LocaleComposer {
-  locale: { value: string };
-  messages: { value: Record<string, Record<string, unknown>> };
+  locale: Ref<string>;
+  messages: Readonly<Ref<Record<string, Record<string, unknown>>>>;
   t(key: string, params?: TranslationParams): string;
+  setLocale?: (locale: SupportedLocale) => void;
 }
 
 interface LocaleI18n {
   global: LocaleComposer;
-  install(app: App): void;
 }
 
 // 支持的语言列表
@@ -35,12 +36,12 @@ const isSupportedLocale = (value: string): value is SupportedLocale =>
 export const LOCALE_INJECTION_KEY: InjectionKey<Readonly<Ref<SupportedLocale>>> =
   Symbol('exui-locale');
 
+/** createLocaleProvider 为单个 Vue App 提供的隔离翻译器。 */
+export const LOCALE_COMPOSER_INJECTION_KEY: InjectionKey<LocaleComposer> =
+  Symbol('exui-locale-composer');
+
 // 默认语言
 export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
-// 用 shallowRef 持有 vue-i18n 实例（可能异步加载完成）。设为响应式后，
-// 当实例就绪时，读取过它的 t()/模板会自动重新求值，无需手动刷新。
-const _i18n = shallowRef<LocaleI18n | null>(null);
-
 // 当前语言状态 - 使用响应式
 const currentLocale = ref<SupportedLocale>(DEFAULT_LOCALE);
 const currentMessages = computed<Locale>(() => SUPPORTED_LOCALES[currentLocale.value]);
@@ -56,23 +57,24 @@ export function setLocale(locale: SupportedLocale): void {
     logger.warn(`Unsupported locale "${locale}", falling back to "${DEFAULT_LOCALE}"`);
     return;
   }
-  if (_i18n.value) {
-    _i18n.value.global.locale.value = locale;
-  } else {
-    currentLocale.value = locale;
-  }
+  currentLocale.value = locale;
 }
 
-const translateBuiltIn = (
+const translateMessages = (
+  messages: Record<SupportedLocale, Locale>,
   locale: SupportedLocale,
   key: string,
   params?: TranslationParams
 ): string => {
   const keys = key.split('.');
-  let value: unknown = SUPPORTED_LOCALES[locale];
+  let value: unknown = messages[locale];
 
   for (const segment of keys) {
-    if (value && typeof value === 'object' && segment in (value as Record<string, unknown>)) {
+    if (
+      value &&
+      typeof value === 'object' &&
+      Object.prototype.hasOwnProperty.call(value, segment)
+    ) {
       value = (value as Record<string, unknown>)[segment];
     } else {
       logger.warn(`Translation key "${key}" not found`);
@@ -92,41 +94,96 @@ const translateBuiltIn = (
     : value;
 };
 
+const translateBuiltIn = (
+  locale: SupportedLocale,
+  key: string,
+  params?: TranslationParams
+): string =>
+  translateMessages(SUPPORTED_LOCALES as Record<SupportedLocale, Locale>, locale, key, params);
+
+const isMessageRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** 只合并内置语言包已经声明的键，并为每一层创建新对象。 */
+const mergeLocaleMessages = (
+  base: Record<string, unknown>,
+  overrides: Record<string, unknown>,
+  parentPath: readonly string[] = []
+): Record<string, unknown> => {
+  const merged = { ...base };
+  for (const [key, overrideValue] of Object.entries(overrides)) {
+    if (!Object.prototype.hasOwnProperty.call(base, key) || overrideValue === undefined) continue;
+    const baseValue = base[key];
+    const keyPath = [...parentPath, key];
+    if (isMessageRecord(baseValue)) {
+      if (!isMessageRecord(overrideValue)) {
+        throw new TypeError(`自定义语言包 ${keyPath.join('.')} 必须是对象`);
+      }
+      merged[key] = mergeLocaleMessages(baseValue, overrideValue, keyPath);
+      continue;
+    }
+    if (typeof baseValue === 'string') {
+      if (typeof overrideValue !== 'string') {
+        throw new TypeError(`自定义语言包 ${keyPath.join('.')} 必须是字符串`);
+      }
+      merged[key] = overrideValue;
+      continue;
+    }
+    throw new TypeError(`内置语言包 ${keyPath.join('.')} 使用了不受支持的值类型`);
+  }
+  return merged;
+};
+
 // 获取翻译文本
 export function t(key: string, params?: TranslationParams): string {
-  if (_i18n.value) {
-    const composer = _i18n.value.global;
-    return params ? composer.t(key, params) : composer.t(key);
-  }
   return translateBuiltIn(currentLocale.value, key, params);
 }
 
-// 组合式 API
-// 说明：以 _i18n 实例是否就绪作为「是否走 vue-i18n」的判断依据——
-// 无需调用 vue-i18n 的 useI18n（那需要静态依赖），未安装时返回内置实现。
-// 返回对象里的 t 始终是模块级响应式 t()，即便 vue-i18n 稍后异步就绪也能自动生效。
-export function useI18n() {
-  if (_i18n.value) {
-    return _i18n.value.global;
-  }
-  return { t, locale: currentLocale, setLocale, getCurrentLocale };
+const globalMessages = computed(
+  () => SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>
+);
+const globalComposer: LocaleComposer = {
+  t,
+  locale: currentLocale,
+  messages: globalMessages,
+  setLocale,
+};
+
+/** 在 setup 中返回当前 App 的隔离翻译器，setup 外返回全局轻量翻译器。 */
+export function useI18n(): LocaleComposer {
+  if (!getCurrentInstance()) return globalComposer;
+  return inject(LOCALE_COMPOSER_INJECTION_KEY, globalComposer);
 }
 
 export function useLocale(componentName: keyof Locale) {
   const providedLocale = inject(LOCALE_INJECTION_KEY, null);
+  const appComposer = getCurrentInstance() ? inject(LOCALE_COMPOSER_INJECTION_KEY, null) : null;
 
   if (providedLocale) {
     const locale = computed(() => providedLocale.value);
-    const tWithScope = (key: string, params?: TranslationParams) =>
-      translateBuiltIn(providedLocale.value, `${componentName}.${key}`, params);
-    const messages = computed(
-      () => SUPPORTED_LOCALES[providedLocale.value][componentName] as Record<string, string>
-    );
+    const tWithScope = (key: string, params?: TranslationParams) => {
+      const scopedMessages = appComposer
+        ? (appComposer.messages.value as unknown as Record<SupportedLocale, Locale>)
+        : (SUPPORTED_LOCALES as unknown as Record<SupportedLocale, Locale>);
+      return translateMessages(
+        scopedMessages,
+        providedLocale.value,
+        `${componentName}.${key}`,
+        params
+      );
+    };
+    const messages = computed(() => {
+      const allMessages = appComposer
+        ? appComposer.messages.value
+        : (SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>);
+      const scoped = allMessages[providedLocale.value];
+      return (scoped?.[componentName as string] as Record<string, string>) || {};
+    });
     return { t: tWithScope, messages, locale };
   }
 
-  if (_i18n.value) {
-    const composer = _i18n.value.global;
+  if (appComposer) {
+    const composer = appComposer;
     const locale = computed<SupportedLocale>(() => {
       const value = composer.locale.value;
       return isSupportedLocale(value) ? value : DEFAULT_LOCALE;
@@ -155,25 +212,60 @@ export function useLocale(componentName: keyof Locale) {
 // Vue 插件
 export interface LocaleProviderOptions {
   locale?: SupportedLocale;
-  messages?: Partial<Locale>;
+  messages?: LocaleMessages;
 }
 
 export function createLocaleProvider(options: LocaleProviderOptions = {}) {
+  const initial = options.locale ?? DEFAULT_LOCALE;
+  const base = SUPPORTED_LOCALES as Record<SupportedLocale, Locale>;
+  const messages: Record<SupportedLocale, Locale> = { ...base };
+  if (options.messages) {
+    messages[initial] = mergeLocaleMessages(
+      messages[initial] as unknown as Record<string, unknown>,
+      options.messages as Record<string, unknown>
+    ) as Locale;
+  }
+
   return {
     install(app: App) {
-      const initial = options.locale ?? DEFAULT_LOCALE;
-      const base = SUPPORTED_LOCALES as Record<SupportedLocale, Locale>;
-      const messages: Record<SupportedLocale, Locale> = { ...base };
-      if (options.messages) {
-        messages[initial] = { ...(messages[initial] || {}), ...options.messages } as Locale;
-      }
-      // 同步反映初始语言，保证 vue-i18n 异步就绪前内置翻译也用对语言
-      currentLocale.value = initial;
-      // 动态加载 vue-i18n（可选依赖）。未安装时静默降级到内置翻译。
+      const locale = ref<SupportedLocale>(initial);
+      const vueI18nComposer = shallowRef<LocaleComposer | null>(null);
+      const messagesRef: ComputedRef<Record<string, Record<string, unknown>>> = computed(() =>
+        vueI18nComposer.value
+          ? vueI18nComposer.value.messages.value
+          : (messages as unknown as Record<string, Record<string, unknown>>)
+      );
+      const composer: LocaleComposer = {
+        locale,
+        messages: messagesRef,
+        t: (key, params) => {
+          const activeComposer = vueI18nComposer.value;
+          if (activeComposer) return params ? activeComposer.t(key, params) : activeComposer.t(key);
+          return translateMessages(messages, locale.value, key, params);
+        },
+        setLocale: nextLocale => {
+          locale.value = nextLocale;
+        },
+      };
+
+      app.provide(LOCALE_COMPOSER_INJECTION_KEY, composer);
+
+      let disposed = false;
+      const stopLocaleSync = watch(locale, value => {
+        if (vueI18nComposer.value) vueI18nComposer.value.locale.value = value;
+      });
+      app.onUnmount(() => {
+        disposed = true;
+        stopLocaleSync();
+        vueI18nComposer.value = null;
+      });
+
+      // 每个 App 独立动态加载可选依赖，绝不覆盖模块级或其他 App 的翻译状态。
       import('vue-i18n')
         .then(({ createI18n }) => {
-          _i18n.value = createI18n({ legacy: false, locale: initial, messages }) as LocaleI18n;
-          app.use(_i18n.value);
+          if (disposed) return;
+          const i18n = createI18n({ legacy: false, locale: locale.value, messages }) as LocaleI18n;
+          vueI18nComposer.value = i18n.global;
         })
         .catch(() => {
           logger.warn(

@@ -12,13 +12,13 @@
       <nav
         v-if="$slots.breadcrumb || (breadcrumb && breadcrumb.length > 0)"
         class="ex-page-header__breadcrumb"
-        :aria-label="t('pageHeader.breadcrumb')"
+        :aria-label="t('breadcrumb')"
       >
         <slot name="breadcrumb">
           <ol class="ex-page-header__breadcrumb-list">
             <li
               v-for="(item, index) in breadcrumb"
-              :key="index"
+              :key="item.id || item.path || `${item.title}-${index}`"
               class="ex-page-header__breadcrumb-item"
             >
               <component
@@ -54,7 +54,7 @@
             v-if="showBack"
             class="ex-page-header__back"
             type="button"
-            :aria-label="backText || t('pageHeader.back')"
+            :aria-label="backText || t('back')"
             @click="handleBack"
           >
             <ExIcon
@@ -63,7 +63,10 @@
               class="ex-page-header__back-icon"
               aria-hidden="true"
             />
-            <span v-if="backText" class="ex-page-header__back-text">
+            <span
+              v-if="backText"
+              class="ex-page-header__back-text"
+            >
               {{ backText }}
             </span>
           </button>
@@ -82,23 +85,32 @@
 
         <!-- 标题区域 -->
         <div class="ex-page-header__title-wrapper">
-          <h1 v-if="title || $slots.title" class="ex-page-header__title">
+          <h1
+            v-if="title || $slots.title"
+            class="ex-page-header__title"
+          >
             <slot name="title">
               {{ title }}
             </slot>
           </h1>
-          <p v-if="subtitle || $slots.subtitle" class="ex-page-header__subtitle">
+          <p
+            v-if="subtitle || $slots.subtitle"
+            class="ex-page-header__subtitle"
+          >
             <slot name="subtitle">
               {{ subtitle }}
             </slot>
           </p>
 
           <!-- 标签 -->
-          <div v-if="$slots.tags || (tags && tags.length > 0)" class="ex-page-header__tags">
+          <div
+            v-if="$slots.tags || (tags && tags.length > 0)"
+            class="ex-page-header__tags"
+          >
             <slot name="tags">
               <ExTag
                 v-for="(tag, index) in tags"
-                :key="index"
+                :key="tag.id || `${tag.text}-${tag.type || 'default'}-${index}`"
                 :type="resolveTagType(tag.type)"
                 :bg-color="tag.color"
                 size="small"
@@ -111,18 +123,27 @@
         </div>
 
         <!-- 操作区域插槽 -->
-        <div v-if="$slots.extra" class="ex-page-header__extra">
+        <div
+          v-if="$slots.extra"
+          class="ex-page-header__extra"
+        >
           <slot name="extra" />
         </div>
       </div>
 
       <!-- 内容区域（默认插槽） -->
-      <div v-if="$slots.default" class="ex-page-header__content">
+      <div
+        v-if="$slots.default"
+        class="ex-page-header__content"
+      >
         <slot />
       </div>
 
       <!-- 底部区域插槽 -->
-      <div v-if="$slots.footer" class="ex-page-header__footer">
+      <div
+        v-if="$slots.footer"
+        class="ex-page-header__footer"
+      >
         <slot name="footer" />
       </div>
     </div>
@@ -136,13 +157,16 @@ import { ExIcon } from '../icon';
 import { ExAvatar } from '../avatar';
 import { ExTag } from '../tag';
 import type { TagType } from '../tag/types';
-import { useI18n } from '../../locale';
+import { useLocale } from '../../locale';
+import { useZIndexLayer } from '../config-provider/composables';
+import { normalizeLayoutLength } from '../layout/layout-utils';
 
 defineOptions({
   name: 'ExPageHeader',
 });
 
-const { t } = useI18n();
+const { t } = useLocale('pageHeader');
+const stickyZIndex = useZIndexLayer('sticky');
 
 const props = withDefaults(defineProps<PageHeaderProps>(), {
   title: undefined,
@@ -156,7 +180,7 @@ const props = withDefaults(defineProps<PageHeaderProps>(), {
   showDivider: true,
   height: undefined,
   fixed: false,
-  zIndex: 1000,
+  zIndex: undefined,
 });
 
 const emit = defineEmits<PageHeaderEmits>();
@@ -164,11 +188,11 @@ const emit = defineEmits<PageHeaderEmits>();
 // 头部样式
 const headerStyle = computed(() => {
   const style: Record<string, string | number> = {};
-  if (props.height) {
-    style.height = typeof props.height === 'number' ? `${props.height}px` : props.height;
+  if (props.height !== undefined) {
+    style.height = normalizeLayoutLength(props.height, 'auto');
   }
   if (props.fixed) {
-    style.zIndex = props.zIndex;
+    style.zIndex = props.zIndex ?? stickyZIndex.value;
   }
   return style;
 });

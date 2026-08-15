@@ -61,7 +61,7 @@ const FOCUSABLE_FIELD_SELECTOR =
 
 // 响应式状态
 const formRef = ref<HTMLFormElement>();
-const fields = ref<Map<string, FormItemContext>>(new Map());
+const fields = new Map<string, FormItemContext[]>();
 const isValidating = ref(false);
 let latestValidationId = 0;
 const componentSize = useComponentSize(computed(() => props.size));
@@ -113,8 +113,10 @@ watch(
     formContext.rules = newRules || {};
     // validateOnRuleChange：规则变化后重新校验已注册字段（不滚动）
     if (props.validateOnRuleChange) {
-      fields.value.forEach(field => {
-        void field.validate();
+      fields.forEach(fieldGroup => {
+        fieldGroup.forEach(field => {
+          void field.validate();
+        });
       });
     }
   },
@@ -124,26 +126,42 @@ watch(
 // 方法
 function addField(field: FormItemContext) {
   if (field.prop) {
-    fields.value.set(field.prop, field);
+    const fieldGroup = fields.get(field.prop) || [];
+    if (!fieldGroup.includes(field)) {
+      fieldGroup.push(field);
+      fields.set(field.prop, fieldGroup);
+    }
   }
 }
 
 function removeField(field: FormItemContext) {
-  if (field.prop) {
-    fields.value.delete(field.prop);
-  }
+  fields.forEach((fieldGroup, prop) => {
+    const index = fieldGroup.indexOf(field);
+    if (index < 0) return;
+
+    fieldGroup.splice(index, 1);
+    if (fieldGroup.length === 0) {
+      fields.delete(prop);
+    }
+  });
 }
 
 async function validateFieldMethod(
   prop: string,
   trigger?: string
 ): Promise<FormItemValidateResult> {
-  const field = fields.value.get(prop);
-  if (!field) {
+  const fieldGroup = fields.get(prop) || [];
+  if (fieldGroup.length === 0) {
     return { valid: true };
   }
 
-  return await field.validate(trigger);
+  const results = await Promise.all(fieldGroup.map(field => field.validate(trigger)));
+  if (results.some(result => result.outOfDate)) {
+    return { valid: false, outOfDate: true };
+  }
+
+  const firstError = results.find(result => !result.valid);
+  return firstError || { valid: true };
 }
 
 // 将 FormItem 的验证结果转换为 Form 对外统一的字段验证事件。
@@ -162,17 +180,18 @@ function notifyFieldValidate(prop: string, result: FormItemValidateResult) {
 }
 
 function resetFieldMethod(prop: string) {
-  const field = fields.value.get(prop);
-  if (field) {
-    field.resetField();
-  }
+  invalidateFormValidation();
+  fields.get(prop)?.forEach(field => field.resetField());
 }
 
 function clearValidateMethod(prop: string) {
-  const field = fields.value.get(prop);
-  if (field) {
-    field.clearValidate();
-  }
+  invalidateFormValidation();
+  fields.get(prop)?.forEach(field => field.clearValidate());
+}
+
+function invalidateFormValidation() {
+  latestValidationId += 1;
+  isValidating.value = false;
 }
 
 // 验证整个表单
@@ -184,24 +203,26 @@ async function validate(
 
   try {
     const results = await Promise.all(
-      Array.from(fields.value.entries()).map(async ([prop, field]) => {
-        try {
-          const result = await field.validate();
-          return { prop, result };
-        } catch (error) {
-          logger.error(
-            `An unexpected error occurred during validation for field "${prop}".`,
-            error
-          );
-          return {
-            prop,
-            result: {
-              valid: false,
-              error: error instanceof Error ? error.message : String(error),
-            },
-          } satisfies { prop: string; result: FormItemValidateResult };
-        }
-      })
+      Array.from(fields.entries()).flatMap(([prop, fieldGroup]) =>
+        fieldGroup.map(async field => {
+          try {
+            const result = await field.validate();
+            return { prop, result };
+          } catch (error) {
+            logger.error(
+              `An unexpected error occurred during validation for field "${prop}".`,
+              error
+            );
+            return {
+              prop,
+              result: {
+                valid: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            } satisfies { prop: string; result: FormItemValidateResult };
+          }
+        })
+      )
     );
 
     if (validationId !== latestValidationId) {
@@ -249,13 +270,18 @@ async function validateField(
   isValidating.value = true;
 
   try {
+    const entries: Array<{ prop: string; field?: FormItemContext }> = [];
+    propsArray.forEach(prop => {
+      const fieldGroup = fields.get(prop) || [];
+      if (fieldGroup.length === 0) {
+        entries.push({ prop });
+      } else {
+        fieldGroup.forEach(field => entries.push({ prop, field }));
+      }
+    });
     const results = await Promise.all(
-      propsArray.map(async prop => {
-        const field = fields.value.get(prop);
-        if (!field) {
-          return { prop, result: { valid: true } satisfies FormItemValidateResult };
-        }
-
+      entries.map(async ({ prop, field }) => {
+        if (!field) return { prop, result: { valid: true } satisfies FormItemValidateResult };
         try {
           const result = await field.validate();
           return { prop, result };
@@ -354,13 +380,12 @@ function resetFields(fieldProps?: string | string[]) {
     ? Array.isArray(fieldProps)
       ? fieldProps
       : [fieldProps]
-    : Array.from(fields.value.keys());
+    : Array.from(fields.keys());
+
+  invalidateFormValidation();
 
   propsArray.forEach(prop => {
-    const field = fields.value.get(prop);
-    if (field) {
-      field.resetField();
-    }
+    fields.get(prop)?.forEach(field => field.resetField());
   });
 }
 
@@ -370,13 +395,12 @@ function clearValidate(fieldProps?: string | string[]) {
     ? Array.isArray(fieldProps)
       ? fieldProps
       : [fieldProps]
-    : Array.from(fields.value.keys());
+    : Array.from(fields.keys());
+
+  invalidateFormValidation();
 
   propsArray.forEach(prop => {
-    const field = fields.value.get(prop);
-    if (field) {
-      field.clearValidate();
-    }
+    fields.get(prop)?.forEach(field => field.clearValidate());
   });
 }
 

@@ -127,6 +127,40 @@ describe('image-crop utils', () => {
     ).toThrowError(expect.objectContaining({ code: 'CANVAS_UNAVAILABLE' }));
   });
 
+  it('预览和导出会在分配前拒绝超出像素预算的 Canvas', async () => {
+    expect(() =>
+      drawCropPreview(
+        document.createElement('canvas'),
+        image,
+        { width: 10_000, height: 10_000 },
+        layout,
+        2
+      )
+    ).toThrowError(expect.objectContaining({ code: 'INVALID_DIMENSION' }));
+
+    const hugeLayout: ImageCropLayout = {
+      ...layout,
+      rotatedSize: { width: 10_000, height: 10_000 },
+      imageBounds: { x: 0, y: 0, width: 10_000, height: 10_000 },
+      baseScale: 1,
+      displayScale: 1,
+    };
+    await expect(
+      renderCrop(
+        { naturalWidth: 10_000, naturalHeight: 10_000 } as HTMLImageElement,
+        { width: 10_000, height: 10_000 },
+        hugeLayout,
+        {
+          area: { x: 0, y: 0, width: 10_000, height: 10_000 },
+          shape: 'rect',
+          outputType: 'image/png',
+          quality: 0.9,
+          backgroundColor: '#ffffff',
+        }
+      )
+    ).rejects.toMatchObject({ code: 'INVALID_DIMENSION' });
+  });
+
   it('矩形裁剪按来源像素输出 JPEG 并应用背景色和质量', async () => {
     let encodedSize = { width: 0, height: 0 };
     vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(

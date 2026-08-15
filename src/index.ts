@@ -1,5 +1,4 @@
 import type { App, Plugin } from 'vue';
-import { withInstall } from './utils/install';
 
 // 导入所有
 import ExAffix from './components/affix';
@@ -32,17 +31,38 @@ import { ExInput } from './components/input';
 import { ExLink } from './components/link';
 import { ExList } from './components/list';
 import ExLoading, {
+  createLoadingService,
+  LOADING_SERVICE_KEY,
   loadingService,
   showLoading,
   hideLoading,
   destroyLoading,
+  useLoadingService,
 } from './components/loading';
 import LoadingPlugin from './components/loading/LoadingService';
-import { ExLoadingBar, createLoadingBar, loadingBar } from './components/loading-bar';
+import {
+  ExLoadingBar,
+  createLoadingBar,
+  loadingBar,
+  LOADING_BAR_SERVICE_KEY,
+  useLoadingBarService,
+} from './components/loading-bar';
 import { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
-import { ExMessage, message } from './components/message';
+import {
+  ExMessage,
+  createMessageService,
+  message,
+  MESSAGE_SERVICE_KEY,
+  useMessageService,
+} from './components/message';
 import ExModal from './components/modal';
-import { ExNotification, notification } from './components/notification';
+import {
+  ExNotification,
+  createNotificationService,
+  notification,
+  NOTIFICATION_SERVICE_KEY,
+  useNotificationService,
+} from './components/notification';
 import { ExPagination } from './components/pagination';
 import ExPanel from './components/panel';
 import ExPopconfirm from './components/popconfirm';
@@ -85,18 +105,6 @@ import ExColorPicker from './components/color-picker';
 import ExTimePicker from './components/time-picker';
 import ExTreeSelect from './components/tree-select';
 import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
-
-// 导入样式（全局导入时自动引入）
-// 整包构建必须从公共入口直接声明全局样式，避免 CSS-only 中间入口被 Rollup 错误裁剪。
-// 完整入口直接加载品牌字体，确保 style.css 与字体变量的默认契约一致。
-import '@fontsource/orbitron/latin-700.css';
-import '@fontsource/orbitron/latin-900.css';
-import '@fontsource/jetbrains-mono/latin-400.css';
-import '@fontsource/jetbrains-mono/latin-500.css';
-import '@fontsource/jetbrains-mono/latin-700.css';
-import '@fontsource/share-tech-mono/latin-400.css';
-import './styles/font.scss';
-import './styles/index.scss';
 
 // v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
 const publicComponents = [
@@ -202,22 +210,6 @@ const publicComponents = [
   ExDescriptionsItem,
 ] as const;
 
-for (const component of publicComponents) {
-  withInstall(component);
-}
-
-// 主组件的 install 已负责注册附属组件；全量插件只安装组根，避免重复注册与重复副作用。
-const publicComponentSet = new Set<unknown>(publicComponents);
-const attachedPublicComponents = new Set<unknown>();
-for (const component of publicComponents) {
-  for (const value of Object.values(component)) {
-    if (publicComponentSet.has(value)) attachedPublicComponents.add(value);
-  }
-}
-const publicComponentPlugins = publicComponents.filter(
-  component => !attachedPublicComponents.has(component)
-);
-
 // 导出所有组
 export {
   ExAffix,
@@ -321,13 +313,24 @@ export {
   ExDescriptions,
   ExDescriptionsItem,
   notification,
+  createNotificationService,
+  NOTIFICATION_SERVICE_KEY,
+  useNotificationService,
   message,
+  createMessageService,
+  MESSAGE_SERVICE_KEY,
+  useMessageService,
   createLoadingBar,
   loadingBar,
+  LOADING_BAR_SERVICE_KEY,
+  useLoadingBarService,
+  createLoadingService,
+  LOADING_SERVICE_KEY,
   loadingService,
   showLoading,
   hideLoading,
   destroyLoading,
+  useLoadingService,
 };
 
 export { ICONS, getBuiltinIcon, isBuiltinIcon } from './components/icon';
@@ -347,7 +350,7 @@ export type * from './components/collapse/types';
 export type * from './components/config-provider/types';
 export type * from './components/dialog/types';
 export type * from './components/divider/types';
-export type { DrawerPlacement, DrawerSize } from './components/drawer/types';
+export type * from './components/drawer/types';
 export type * from './components/dropdown/types';
 export type * from './components/ellipsis/types';
 export type * from './components/empty/types';
@@ -376,17 +379,19 @@ export type {
 export type * from './components/menu/types';
 export type * from './components/message/types';
 export type * from './components/modal/types';
-export type {
-  NotificationOptions,
-  NotificationInstance,
-  NotificationType,
-  NotificationPosition,
-} from './components/notification/types';
+export type * from './components/notification/types';
 export type * from './components/pagination/types';
 export type * from './components/panel/types';
 export type * from './components/popconfirm/types';
-export type { PopoverPlacement, PopoverTrigger } from './components/popover/types';
-export type { ProgressType, ProgressStatus, ProgressColor } from './components/progress/types';
+export type * from './components/popover/types';
+export type {
+  ExProgressProps,
+  ExProgressEmits,
+  ExProgressExposed,
+  ProgressType,
+  ProgressStatus,
+  ProgressColor,
+} from './components/progress/types';
 export type * from './components/qrcode/types';
 export type * from './components/barcode/types';
 export type * from './components/radio/types';
@@ -401,7 +406,14 @@ export type * from './components/steps/types';
 export type * from './components/switch/types';
 export type * from './components/table/types';
 export type * from './components/tabs/types';
-export type { TooltipPlacement, TooltipTrigger, TooltipEffect } from './components/tooltip/types';
+export type {
+  ExTooltipProps,
+  ExTooltipEmits,
+  ExTooltipExposed,
+  TooltipPlacement,
+  TooltipTrigger,
+  TooltipEffect,
+} from './components/tooltip/types';
 export type * from './components/tree/types';
 export type * from './components/typography/types';
 export type * from './components/virtual-list/types';
@@ -489,11 +501,13 @@ export {
 } from './components/file-preview/preview-utils';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
+export * from './components/config-provider/z-index';
 export {
   enUS,
   zhCN,
   createLocaleProvider,
   useI18n,
+  useLocale,
   setLocale,
   getCurrentLocale,
   SUPPORTED_LOCALES,
@@ -501,9 +515,21 @@ export {
 } from './locale';
 
 // 安装函数
+const getPublicComponentPlugins = (): readonly Plugin[] => {
+  // 仅在真正安装整包插件时计算附属组件，根命名导入不会保留整库安装图。
+  const publicComponentSet = new Set<unknown>(publicComponents);
+  const attachedPublicComponents = new Set<unknown>();
+  for (const component of publicComponents) {
+    for (const value of Object.values(component)) {
+      if (publicComponentSet.has(value)) attachedPublicComponents.add(value);
+    }
+  }
+  return publicComponents.filter(component => !attachedPublicComponents.has(component)) as Plugin[];
+};
+
 const install: Plugin['install'] = (app: App) => {
-  for (const component of publicComponentPlugins) {
-    app.use(component as Plugin);
+  for (const component of getPublicComponentPlugins()) {
+    app.use(component);
   }
 
   // 注册 v-loading 指令与 $loading 全局服务

@@ -261,6 +261,87 @@ describe('ExFileUpload', () => {
       });
     });
 
+    it('清空列表会使仍在等待的 beforeAdd 结果失效', async () => {
+      let resolveBeforeAdd: ((file: File) => void) | undefined;
+      const beforeAdd = vi.fn(
+        () =>
+          new Promise<File>(resolve => {
+            resolveBeforeAdd = resolve;
+          })
+      );
+      const file = makeFile('late.txt', 'text/plain');
+      const wrapper = mountUpload({ props: { action: '/upload', beforeAdd } });
+      const input = wrapper.find<HTMLInputElement>('input[type="file"]');
+      Object.defineProperty(input.element, 'files', { value: [file], configurable: true });
+
+      await input.trigger('change');
+      await nextTick();
+      expect(beforeAdd).toHaveBeenCalledOnce();
+
+      (wrapper.vm as unknown as ExFileUploadExposed).requestClear();
+      resolveBeforeAdd?.(file);
+      await flushPromises();
+
+      expect((wrapper.vm as unknown as ExFileUploadExposed).getFiles()).toEqual([]);
+      expect(wrapper.emitted('added')).toBeUndefined();
+      expect(MockXHR.instances).toHaveLength(0);
+    });
+
+    it('清空列表会同时取消尚未开始的排队选择', async () => {
+      let resolveFirst: ((file: File) => void) | undefined;
+      const first = makeFile('first.txt', 'text/plain');
+      const second = makeFile('second.txt', 'text/plain');
+      const beforeAdd = vi.fn((file: File) => {
+        if (file === first) {
+          return new Promise<File>(resolve => {
+            resolveFirst = resolve;
+          });
+        }
+        return Promise.resolve(file);
+      });
+      const wrapper = mountUpload({ props: { autoUpload: false, beforeAdd } });
+      const input = wrapper.find<HTMLInputElement>('input[type="file"]');
+
+      Object.defineProperty(input.element, 'files', { value: [first], configurable: true });
+      await input.trigger('change');
+      await nextTick();
+      Object.defineProperty(input.element, 'files', { value: [second], configurable: true });
+      await input.trigger('change');
+
+      (wrapper.vm as unknown as ExFileUploadExposed).requestClear();
+      resolveFirst?.(first);
+      await flushPromises();
+
+      expect(beforeAdd).toHaveBeenCalledOnce();
+      expect(wrapper.emitted('added')).toBeUndefined();
+      expect((wrapper.vm as unknown as ExFileUploadExposed).getFiles()).toEqual([]);
+    });
+
+    it('禁用组件会使仍在等待的 beforeAdd 结果失效', async () => {
+      let resolveBeforeAdd: ((file: File) => void) | undefined;
+      const file = makeFile('late.txt', 'text/plain');
+      const wrapper = mountUpload({
+        props: {
+          action: '/upload',
+          beforeAdd: () =>
+            new Promise<File>(resolve => {
+              resolveBeforeAdd = resolve;
+            }),
+        },
+      });
+      const input = wrapper.find<HTMLInputElement>('input[type="file"]');
+      Object.defineProperty(input.element, 'files', { value: [file], configurable: true });
+
+      await input.trigger('change');
+      await nextTick();
+      await wrapper.setProps({ disabled: true });
+      resolveBeforeAdd?.(file);
+      await flushPromises();
+
+      expect(wrapper.emitted('added')).toBeUndefined();
+      expect(MockXHR.instances).toHaveLength(0);
+    });
+
     it('单选模式的拖拽只接受首个文件并明确拒绝其余文件', async () => {
       const wrapper = mountUpload({ props: { drag: true, autoUpload: false } });
       await wrapper.find('.ex-file-upload__drag').trigger('drop', {

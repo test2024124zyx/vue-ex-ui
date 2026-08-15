@@ -83,6 +83,6 @@ ExUI 的全局主题只有以下两个值：`neon-blue` 与 `light`。组件应�
 ## 对比度与动效
 
 - 正文和交互文字至少按 WCAG AA 目标检查；亮色主题的 tertiary 文本使用 `#64748b`，避免浅灰不可读。
-- `prefers-contrast: high` 增强边框和焦点，不切换到第三个主题。
+- `prefers-contrast: more` 增强边框和焦点，不切换到第三个主题。
 - `prefers-reduced-motion: reduce` 关闭扫描线、脉冲、闪烁和非必要过渡。
 - 发光是装饰层，不应替代焦点环、选中状态或错误提示。

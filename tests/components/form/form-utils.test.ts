@@ -35,6 +35,42 @@ describe('Form 校验工具', () => {
     expect(getFieldValue(model, 'user.name')).toBe('初始值');
   });
 
+  it('字段路径只读取自有属性并拒绝原型污染与空路径段', () => {
+    const inheritedModel = Object.create({ inherited: '原型值' }) as Record<string, unknown>;
+    const model: Record<string, unknown> = {};
+
+    expect(getFieldValue(inheritedModel, 'inherited')).toBeUndefined();
+
+    try {
+      setFieldValue(model, '__proto__.polluted', true);
+      setFieldValue(model, 'constructor.prototype.polluted', true);
+      setFieldValue(model, 'safe..polluted', true);
+
+      expect(getFieldValue(model, '__proto__.polluted')).toBeUndefined();
+      expect(getFieldValue(model, 'constructor.prototype.polluted')).toBeUndefined();
+      expect(getFieldValue(model, 'safe..polluted')).toBeUndefined();
+      expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+      expect(Object.prototype.hasOwnProperty.call(model, '__proto__')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(model, 'constructor')).toBe(false);
+      expect(model).toEqual({});
+    } finally {
+      delete (Object.prototype as Record<string, unknown>).polluted;
+    }
+  });
+
+  it('字段路径保留已有数组索引并为新数组路径创建数组容器', () => {
+    const model: Record<string, unknown> = {
+      users: [{ name: '旧值' }],
+    };
+
+    setFieldValue(model, 'users.0.name', '新值');
+    setFieldValue(model, 'groups.0.name', '第一组');
+
+    expect(getFieldValue(model, 'users.0.name')).toBe('新值');
+    expect(getFieldValue(model, 'groups.0.name')).toBe('第一组');
+    expect(Array.isArray(model.groups)).toBe(true);
+  });
+
   it('执行必填、空白和常用基础校验', async () => {
     expect(await runValidator('required', { required: true, message: '必填' }, '')).toBe('必填');
     expect(await runValidator('required', { required: true, message: '必填' }, [])).toBe('必填');

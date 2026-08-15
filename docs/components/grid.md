@@ -4,21 +4,32 @@
 
 ## 基础用法
 
-<div class="demo-container">
-  <ExGrid :gutter="16">
-    <ExGridItem :span="8"><div class="grid-block">8</div></ExGridItem>
-    <ExGridItem :span="8"><div class="grid-block grid-block--strong">8</div></ExGridItem>
-    <ExGridItem :span="8"><div class="grid-block">8</div></ExGridItem>
-  </ExGrid>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-grid :gutter="16">
+    <ex-grid-item :span="8"><div class="grid-block">8</div></ex-grid-item>
+    <ex-grid-item :span="8"><div class="grid-block grid-block--strong">8</div></ex-grid-item>
+    <ex-grid-item :span="8"><div class="grid-block">8</div></ex-grid-item>
+  </ex-grid>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExGrid :gutter="16">
-  <ExGridItem :span="8">8</ExGridItem>
-  <ExGridItem :span="8">8</ExGridItem>
-  <ExGridItem :span="8">8</ExGridItem>
-</ExGrid>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-grid :gutter="16">
+      <ex-grid-item :span="8"><div class="grid-block">8</div></ex-grid-item>
+      <ex-grid-item :span="8"><div class="grid-block grid-block--strong">8</div></ex-grid-item>
+      <ex-grid-item :span="8"><div class="grid-block">8</div></ex-grid-item>
+    </ex-grid>
+  </div>
+</template>
 ```
+
+:::
 
 ## 水平与垂直间距
 

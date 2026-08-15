@@ -41,6 +41,12 @@ export interface ExRateProps {
   textColor?: string;
   /** 自定义类名 */
   customClass?: string;
+  /** 滑块根元素 ID。 */
+  id?: string;
+  /** 滑块的显式无障碍名称。 */
+  ariaLabel?: string;
+  /** 额外描述元素 ID。 */
+  ariaDescribedby?: string;
   /** 自定义样式 */
   customStyle?: string | CSSProperties;
 }

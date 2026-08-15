@@ -4,21 +4,36 @@
 
 ## 基础用法
 
-<div class="demo-container">
-  <ExFlex gap="md" justify="space-between" align="center">
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-flex gap="md" justify="space-between" align="center">
     <div class="flex-block">A</div>
     <div class="flex-block">B</div>
     <div class="flex-block">C</div>
-  </ExFlex>
+  </ex-flex>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExFlex gap="md" justify="space-between" align="center">
-  <div>A</div>
-  <div>B</div>
-  <div>C</div>
-</ExFlex>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-flex
+      gap="md"
+      justify="space-between"
+      align="center"
+    >
+      <div class="flex-block">A</div>
+      <div class="flex-block">B</div>
+      <div class="flex-block">C</div>
+    </ex-flex>
+  </div>
+</template>
 ```
+
+:::
 
 ## 垂直与换行
 

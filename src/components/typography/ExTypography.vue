@@ -5,7 +5,7 @@
     :class="[
       'ex-typography',
       `ex-typography--${props.variant}`,
-      `ex-typography--${props.size}`,
+      props.size ? `ex-typography--${props.size}` : undefined,
       {
         'ex-typography--truncate': props.truncate,
         'ex-typography--truncate-single-line': isSingleLineTruncate,
@@ -61,7 +61,6 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExTypographyProps>(), {
   variant: 'body',
-  size: 'md',
   color: 'text-primary',
   truncate: false,
   gradient: false,

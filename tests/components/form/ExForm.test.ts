@@ -4,6 +4,7 @@ import { h, nextTick } from 'vue';
 import ExForm from '../../../src/components/form/ExForm.vue';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import type { FormInstance } from '../../../src/components/form/types';
 
 describe('ExForm', () => {
   describe('Rendering', () => {
@@ -181,37 +182,37 @@ describe('ExForm', () => {
   describe('Exposed Methods', () => {
     it('exposes validate method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.validate).toBe('function');
     });
 
     it('exposes validateField method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.validateField).toBe('function');
     });
 
     it('exposes resetFields method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.resetFields).toBe('function');
     });
 
     it('exposes clearValidate method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.clearValidate).toBe('function');
     });
 
     it('exposes getFieldValue method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.getFieldValue).toBe('function');
     });
 
     it('exposes setFieldValue method', () => {
       const wrapper = mount(ExForm);
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
       expect(typeof vm.setFieldValue).toBe('function');
     });
 
@@ -235,7 +236,7 @@ describe('ExForm', () => {
       const field = wrapper.find('.ex-form-item').element as HTMLElement;
       const scrollIntoView = vi.fn();
       Object.defineProperty(field, 'scrollIntoView', { value: scrollIntoView });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormInstance;
 
       vm.scrollToField(prop, { behavior: 'auto', block: 'nearest' });
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'nearest' });

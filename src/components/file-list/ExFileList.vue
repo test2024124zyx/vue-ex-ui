@@ -623,6 +623,21 @@ const normalizeSelectedIds = (ids: readonly string[]): string[] => {
 const effectiveSelectedIds = computed(() => normalizeSelectedIds(selectionState.value.value));
 const selectedIdSet = computed(() => new Set(effectiveSelectedIds.value));
 
+watch(
+  () => props.multiple,
+  () => {
+    const currentIds = selectionState.value.value;
+    const normalized = normalizeSelectedIds(currentIds);
+    if (
+      normalized.length !== currentIds.length ||
+      normalized.some((id, index) => id !== currentIds[index])
+    ) {
+      // 模式收窄时提交规范化状态，避免重新开启多选后复活旧选择。
+      selectionState.request(normalized);
+    }
+  }
+);
+
 const collection = computed(() => collectFileEntries(props.files));
 watch(
   () => [collection.value.duplicateIds.join('\u0000'), collection.value.invalidItemCount] as const,

@@ -23,10 +23,20 @@
           :clickable="clickable"
           @click="handleItemClick(item, index)"
         >
-          <template v-if="$slots.icon" #icon="{ item: slotItem, index: slotIndex }">
-            <slot name="icon" :item="slotItem" :index="slotIndex" />
+          <template
+            v-if="$slots.icon"
+            #icon="{ item: slotItem, index: slotIndex }"
+          >
+            <slot
+              name="icon"
+              :item="slotItem"
+              :index="slotIndex"
+            />
           </template>
-          <template v-if="$slots.separator" #separator>
+          <template
+            v-if="$slots.separator"
+            #separator
+          >
             <slot name="separator" />
           </template>
         </ExBreadcrumbItem>
@@ -44,10 +54,20 @@
           :clickable="clickable"
           @click="handleItemClick(displayItems[0]!, 0)"
         >
-          <template v-if="$slots.icon" #icon="{ item: slotItem, index: slotIndex }">
-            <slot name="icon" :item="slotItem" :index="slotIndex" />
+          <template
+            v-if="$slots.icon"
+            #icon="{ item: slotItem, index: slotIndex }"
+          >
+            <slot
+              name="icon"
+              :item="slotItem"
+              :index="slotIndex"
+            />
           </template>
-          <template v-if="$slots.separator" #separator>
+          <template
+            v-if="$slots.separator"
+            #separator
+          >
             <slot name="separator" />
           </template>
         </ExBreadcrumbItem>
@@ -60,7 +80,10 @@
             class="ex-breadcrumb__separator"
             aria-hidden="true"
           >
-            <slot v-if="$slots.separator" name="separator" />
+            <slot
+              v-if="$slots.separator"
+              name="separator"
+            />
             <span v-else>{{ separator || '/' }}</span>
           </span>
         </li>
@@ -77,10 +100,20 @@
           :clickable="clickable"
           @click="handleItemClick(item, displayItems.length - lastItems.length + index)"
         >
-          <template v-if="$slots.icon" #icon="{ item: slotItem, index: slotIndex }">
-            <slot name="icon" :item="slotItem" :index="slotIndex" />
+          <template
+            v-if="$slots.icon"
+            #icon="{ item: slotItem, index: slotIndex }"
+          >
+            <slot
+              name="icon"
+              :item="slotItem"
+              :index="slotIndex"
+            />
           </template>
-          <template v-if="$slots.separator" #separator>
+          <template
+            v-if="$slots.separator"
+            #separator
+          >
             <slot name="separator" />
           </template>
         </ExBreadcrumbItem>

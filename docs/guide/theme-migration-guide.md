@@ -9,7 +9,7 @@ ExUI 现在将全局主题收敛为两个赛博朋克主题：`neon-blue`（赛�
 | `neon-pink`     | `neon-blue` | 保留旧主题的深色赛博氛围，强调色由新主题 token 统一管理      |
 | `dark`          | `neon-blue` | 暗色系统偏好统一映射到赛博暗色                               |
 | `matrix`        | `neon-blue` | 矩阵风格不再作为独立主题，强对比由媒体查询增强               |
-| `high-contrast` | `neon-blue` | 使用 `prefers-contrast: high` 获取边界增强，不创建第三个主题 |
+| `high-contrast` | `neon-blue` | 使用 `prefers-contrast: more` 获取边界增强，不创建第三个主题 |
 
 如果业务原本使用亮色页面，应直接改用 `light`。
 
@@ -28,7 +28,7 @@ toggleTheme(['neon-blue', 'light']);
 `ThemeConfig.isHighContrast` 和 `isHighContrastTheme` 已移除。请改用 CSS 媒体查询控制高对比度表现：
 
 ```scss
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-app [class^='ex-'],
   .ex-app [class*=' ex-'] {
     border-width: 2px;

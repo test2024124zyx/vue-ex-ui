@@ -101,11 +101,10 @@
   // 无障碍支持
   @media (prefers-reduced-motion: reduce) {
     transition: none;
-
   }
 
   // 高对比度模式支持
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     border-width: 2px;
 
     &--neon {

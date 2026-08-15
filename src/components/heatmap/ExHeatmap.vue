@@ -146,7 +146,7 @@
         v-if="activeTooltipCell"
         :id="tooltipId"
         ref="tooltipRef"
-        :class="['ex-heatmap__tooltip', `ex-heatmap__tooltip--${theme}`]"
+        :class="tooltipClasses"
         :data-theme="configTheme"
         :data-placement="tooltipPlacement"
         :style="tooltipStyle"
@@ -181,7 +181,12 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useLocale } from '../../locale';
 import { computeFloatingPosition, type FloatingPlacement } from '../../utils/floating';
 import { generateId } from '../../utils/id';
-import { useConfigTheme } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import {
   createHeatmapCalendar,
@@ -206,9 +211,9 @@ interface HeatmapViewCell {
 }
 
 const CELL_SIZES = {
-  small: 10,
-  medium: 12,
-  large: 14,
+  small: 24,
+  medium: 28,
+  large: 32,
 } as const;
 
 const props = withDefaults(defineProps<ExHeatmapProps>(), {
@@ -223,6 +228,9 @@ const props = withDefaults(defineProps<ExHeatmapProps>(), {
 
 const emit = defineEmits<ExHeatmapEmits>();
 const configTheme = useConfigTheme();
+const animation = useAnimation();
+const neonEffect = useNeonEffect();
+const tooltipZIndex = useZIndexLayer('tooltip');
 const { t, locale } = useLocale('heatmap');
 const heatmapRef = ref<HTMLDivElement>();
 const tooltipRef = ref<HTMLDivElement>();
@@ -232,7 +240,7 @@ const activeDate = ref<string | null>(null);
 const hoveredDate = ref<string | null>(null);
 const focusedDate = ref<string | null>(null);
 const tooltipPlacement = ref<FloatingPlacement>('top');
-const tooltipStyle = ref<CSSProperties>({
+const tooltipPositionStyle = ref<CSSProperties>({
   position: 'fixed',
   top: '0',
   left: '0',
@@ -246,6 +254,18 @@ const heatmapClasses = computed(() => [
   `ex-heatmap--${props.theme}`,
   ...normalizeCustomClass(props.class),
 ]);
+const tooltipClasses = computed(() => [
+  'ex-heatmap__tooltip',
+  `ex-heatmap__tooltip--${props.theme}`,
+  {
+    'ex-no-animation': !animation.value,
+    'ex-no-neon': !neonEffect.value,
+  },
+]);
+const tooltipStyle = computed<CSSProperties>(() => ({
+  ...tooltipPositionStyle.value,
+  zIndex: tooltipZIndex.value,
+}));
 
 const cellSize = computed(() => CELL_SIZES[props.size]);
 const normalizedGap = computed(() => normalizeHeatmapMetric(props.gap, 4, 64));
@@ -457,7 +477,7 @@ const updateTooltipPosition = () => {
   });
 
   tooltipPlacement.value = position.placement;
-  tooltipStyle.value = {
+  tooltipPositionStyle.value = {
     position: 'fixed',
     top: `${position.y}px`,
     left: `${position.x}px`,
@@ -487,7 +507,7 @@ watch(
       return;
     }
 
-    tooltipStyle.value = {
+    tooltipPositionStyle.value = {
       position: 'fixed',
       top: '0',
       left: '0',

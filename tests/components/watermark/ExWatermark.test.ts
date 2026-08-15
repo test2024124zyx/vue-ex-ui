@@ -1,13 +1,15 @@
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExWatermark from '@/components/watermark/ExWatermark.vue';
 import { ExWatermark as InstallableWatermark } from '@/components/watermark';
+import ExConfigProvider from '@/components/config-provider/ExConfigProvider.vue';
 import {
   getRotatedSize,
   normalizeNumber,
   renderWatermarkTile,
 } from '@/components/watermark/watermark-utils';
+import { MAX_BROWSER_IMAGE_SOURCE_BYTES } from '@/utils/image-resource';
 
 interface CanvasContextMock {
   scale: ReturnType<typeof vi.fn>;
@@ -32,6 +34,9 @@ class ControllableImage {
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
   crossOrigin: string | null = null;
+  decoding: HTMLImageElement['decoding'] = 'auto';
+  naturalWidth = 160;
+  naturalHeight = 56;
   referrerPolicy = '';
   private currentSrc = '';
 
@@ -92,16 +97,32 @@ beforeEach(() => {
   contexts.length = 0;
   ControllableImage.instances.length = 0;
 
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function () {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+    this: HTMLCanvasElement
+  ) {
     const context = createContext();
     contexts.push(context);
     canvasIds.set(this, contexts.length);
     return context as unknown as CanvasRenderingContext2D;
   });
-  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(function () {
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(function (
+    this: HTMLCanvasElement
+  ) {
     return `data:image/png;base64,CANVAS_${canvasIds.get(this) ?? 0}`;
   });
   vi.stubGlobal('Image', ControllableImage);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      Promise.resolve(
+        new Response(new Uint8Array([1, 2, 3]), {
+          headers: { 'content-type': 'image/png' },
+        })
+      )
+    )
+  );
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:watermark-image');
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   Object.defineProperty(window, 'devicePixelRatio', {
     configurable: true,
     value: 2,
@@ -193,6 +214,29 @@ describe('ExWatermark', () => {
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'tainted canvas' }));
   });
 
+  it('瓦片尺寸超过像素预算时拒绝分配巨大 Canvas', async () => {
+    const onError = vi.fn();
+    const tile = await renderWatermarkTile({
+      props: {
+        type: 'text',
+        width: 100_000,
+        height: 100_000,
+        gapX: 0,
+        gapY: 0,
+        dprAware: false,
+      },
+      text: 'TOO LARGE',
+      color: '#fff',
+      fontFamily: 'sans-serif',
+      onError,
+    });
+
+    expect(tile).toEqual({ dataUrl: '', width: 0, height: 0 });
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('安全') })
+    );
+  });
+
   it('按文字尺寸、旋转包围盒和间距生成不会裁切的瓦片', async () => {
     const wrapper = mount(ExWatermark, {
       props: {
@@ -282,17 +326,51 @@ describe('ExWatermark', () => {
       },
     });
 
-    await nextTick();
+    await waitAsync();
     const image = ControllableImage.instances[0];
-    expect(image?.crossOrigin).toBe('anonymous');
-    expect(image?.referrerPolicy).toBe('no-referrer');
+    expect(fetch).toHaveBeenCalledWith(
+      '/logo.png',
+      expect.objectContaining({
+        credentials: 'same-origin',
+        referrerPolicy: 'no-referrer',
+        signal: expect.any(AbortSignal),
+      })
+    );
     image?.load();
     await waitAsync();
 
     expect(contexts[1]?.drawImage).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:watermark-image');
+    expect(image?.src).toBe('');
     expect(wrapper.get('.ex-watermark__overlay').attributes('style')).toContain(
       'background-size: 100px 42px'
     );
+  });
+
+  it('远程图片超过字节上限时拒绝解码并回退到文本水印', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(new Uint8Array([1]), {
+        headers: {
+          'content-type': 'image/png',
+          'content-length': String(MAX_BROWSER_IMAGE_SOURCE_BYTES + 1),
+        },
+      })
+    );
+    const onError = vi.fn();
+
+    const tile = await renderWatermarkTile({
+      props: { type: 'image', imageSrc: 'https://cdn.example/oversized.png' },
+      text: 'FALLBACK',
+      color: '',
+      fontFamily: '',
+      onError,
+    });
+
+    expect(ControllableImage.instances).toHaveLength(0);
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('大小上限') })
+    );
+    expect(tile.dataUrl).toContain('data:image/png;base64,CANVAS_');
   });
 
   it('图片加载失败时发出错误事件并回退到文本水印', async () => {
@@ -305,7 +383,7 @@ describe('ExWatermark', () => {
       },
     });
 
-    await nextTick();
+    await waitAsync();
     ControllableImage.instances[0]?.fail();
     await waitAsync();
 
@@ -314,16 +392,34 @@ describe('ExWatermark', () => {
     expect(wrapper.vm.toDataURL()).toContain('data:image/png;base64,CANVAS_');
   });
 
+  it('图片加载错误不会在消息中泄露签名查询参数', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        type: 'image',
+        imageSrc: 'https://cdn.example/logo.png?token=top-secret',
+        text: 'FALLBACK',
+        fullPage: false,
+      },
+    });
+    await waitAsync();
+    ControllableImage.instances[0]?.fail();
+    await waitAsync();
+
+    const error = wrapper.emitted('error')?.[0]?.[0] as Error;
+    expect(error.message).not.toContain('top-secret');
+  });
+
   it('忽略较早完成的异步图片绘制结果', async () => {
     const wrapper = mount(ExWatermark, {
       props: { type: 'image', imageSrc: '/first.png', fullPage: false },
     });
-    await nextTick();
+    await waitAsync();
     const firstImage = ControllableImage.instances[0];
 
     await wrapper.setProps({ imageSrc: '/second.png' });
-    await nextTick();
+    await waitAsync();
     const secondImage = ControllableImage.instances[1];
+    expect(firstImage?.src).toBe('');
     secondImage?.load();
     await waitAsync();
     const latestDataUrl = wrapper.vm.toDataURL();
@@ -408,6 +504,27 @@ describe('ExWatermark', () => {
     wrapper.unmount();
   });
 
+  it('防篡改观察器只监听受保护节点而不遍历业务插槽子树', async () => {
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'MutationObserver',
+      class {
+        observe = observe;
+        disconnect = disconnect;
+      }
+    );
+    const wrapper = mount(ExWatermark, {
+      props: { antiTamper: true, text: 'PROTECTED', fullPage: false },
+      slots: { default: '<section><div><span>业务内容</span></div></section>' },
+    });
+    await waitAsync();
+
+    expect(observe).toHaveBeenCalledTimes(2);
+    expect(observe.mock.calls.every(([, options]) => options.subtree !== true)).toBe(true);
+    wrapper.unmount();
+  });
+
   it('关闭防篡改时不会恢复覆盖层', async () => {
     const wrapper = mount(ExWatermark, {
       props: { antiTamper: false, text: 'NORMAL', fullPage: false },
@@ -459,5 +576,17 @@ describe('ExWatermark', () => {
     expect(rootStyle).toContain('--ex-watermark-user-select: text');
     expect(wrapper.vm.refresh).toBeInstanceOf(Function);
     expect(wrapper.vm.toDataURL()).toContain('data:image/png;base64,CANVAS_');
+  });
+
+  it('默认层级使用 ConfigProvider 的 watermark 语义且不会产生负数', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      props: { zIndex: 0 },
+      slots: {
+        default: () => h(ExWatermark, { fullPage: false }),
+      },
+    });
+    await waitAsync();
+
+    expect(wrapper.get('.ex-watermark').attributes('style')).toContain('--ex-watermark-z-index: 0');
   });
 });

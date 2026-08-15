@@ -1,5 +1,9 @@
 <template>
-  <div ref="numberInputRef" :class="numberInputClasses" :style="numberInputStyles">
+  <div
+    ref="numberInputRef"
+    :class="numberInputClasses"
+    :style="numberInputStyles"
+  >
     <!-- 左侧减少按钮 -->
     <button
       v-if="controls && controlsPosition === 'both'"
@@ -31,9 +35,10 @@
       :readonly="readonly"
       :name="name"
       :aria-label="ariaLabel"
-      :aria-valuemin="min"
-      :aria-valuemax="max"
+      :aria-valuemin="ariaValueMin"
+      :aria-valuemax="ariaValueMax"
       :aria-valuenow="modelValue ?? undefined"
+      :aria-readonly="readonly"
       role="spinbutton"
       @input="handleInput"
       @change="handleChange"
@@ -43,7 +48,10 @@
     />
 
     <!-- 右侧控制按钮 -->
-    <div v-if="controls && controlsPosition === 'right'" class="ex-number-input__controls">
+    <div
+      v-if="controls && controlsPosition === 'right'"
+      class="ex-number-input__controls"
+    >
       <button
         type="button"
         class="ex-number-input__button ex-number-input__button--increase"
@@ -106,6 +114,7 @@ import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } fro
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
+import type { DebouncedFunction } from '../../utils/debounce';
 import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -167,14 +176,19 @@ const numberInputStyles = computed(() => {
 });
 
 const isIncreaseDisabled = computed(() => {
+  if (props.readonly) return true;
   if (props.modelValue === null) return false;
   return props.modelValue >= props.max;
 });
 
 const isDecreaseDisabled = computed(() => {
+  if (props.readonly) return true;
   if (props.modelValue === null) return false;
   return props.modelValue <= props.min;
 });
+
+const ariaValueMin = computed(() => (Number.isFinite(props.min) ? props.min : undefined));
+const ariaValueMax = computed(() => (Number.isFinite(props.max) ? props.max : undefined));
 
 // 图标尺寸
 const iconSize = computed(() => {
@@ -275,12 +289,21 @@ watch(
 );
 
 // 防抖的输入事件
-const debouncedInput =
-  props.debounceDelay > 0
-    ? debounce((value: number) => {
-        emit('input', value);
-      }, props.debounceDelay)
-    : null;
+let debouncedInput: DebouncedFunction<(value: number) => void> | null = null;
+
+watch(
+  () => props.debounceDelay,
+  delay => {
+    debouncedInput?.cancel();
+    debouncedInput =
+      delay > 0
+        ? debounce((value: number) => {
+            emit('input', value);
+          }, delay)
+        : null;
+  },
+  { immediate: true }
+);
 
 // 事件处理
 const handleInput = (event: Event) => {
@@ -307,6 +330,7 @@ const handleInput = (event: Event) => {
 };
 
 const handleChange = (event: Event) => {
+  debouncedInput?.cancel();
   const target = event.target as HTMLInputElement;
   const value = target.value;
 
@@ -386,7 +410,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 };
 
 const handleIncrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || isIncreaseDisabled.value) return;
+  if (props.disabled || props.readonly || isIncreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
@@ -402,7 +426,7 @@ const handleIncrease = (customStepOrEvent?: number | Event) => {
 };
 
 const handleDecrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || isDecreaseDisabled.value) return;
+  if (props.disabled || props.readonly || isDecreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;

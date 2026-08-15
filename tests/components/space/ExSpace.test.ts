@@ -13,7 +13,7 @@ describe('ExSpace', () => {
     expect(root.attributes('role')).toBeUndefined();
     const style = root.attributes('style') || '';
     expect(style).toContain('flex-direction: row');
-    expect(root.element.style.getPropertyValue('--ex-space-gap')).toBe('16px');
+    expect((root.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe('16px');
   });
 
   it('supports vertical direction', () => {
@@ -35,26 +35,30 @@ describe('ExSpace', () => {
       slots: { default: '<div>child</div>' },
     });
 
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe(expectedGap);
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe(
+      expectedGap
+    );
   });
 
   it('supports numeric size and CSS length values', async () => {
     const wrapper = mount(ExSpace, { props: { size: 20 }, slots: { default: '<div>child</div>' } });
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe('20px');
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe('20px');
 
     await wrapper.setProps({ size: 'var(--ex-spacing-4)' });
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe('var(--ex-spacing-4)');
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe(
+      'var(--ex-spacing-4)'
+    );
   });
 
   it('normalizes invalid numeric values without emitting invalid CSS', async () => {
     const wrapper = mount(ExSpace, { props: { size: -4 } });
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe('0px');
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe('0px');
 
     await wrapper.setProps({ size: Number.NaN });
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe('16px');
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe('16px');
 
     await wrapper.setProps({ size: Number.POSITIVE_INFINITY });
-    expect(wrapper.element.style.getPropertyValue('--ex-space-gap')).toBe('16px');
+    expect((wrapper.element as HTMLElement).style.getPropertyValue('--ex-space-gap')).toBe('16px');
   });
 
   it('supports wrap', () => {
@@ -88,8 +92,12 @@ describe('ExSpace', () => {
       `,
     });
 
-    expect(wrapper.get('.inherited').element.style.getPropertyValue('--ex-space-gap')).toBe('24px');
-    expect(wrapper.get('.overridden').element.style.getPropertyValue('--ex-space-gap')).toBe('8px');
+    expect(
+      (wrapper.get('.inherited').element as HTMLElement).style.getPropertyValue('--ex-space-gap')
+    ).toBe('24px');
+    expect(
+      (wrapper.get('.overridden').element as HTMLElement).style.getPropertyValue('--ex-space-gap')
+    ).toBe('8px');
   });
 
   it('forwards native attributes, renders slot content and exposes the root element', () => {

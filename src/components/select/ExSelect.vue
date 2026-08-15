@@ -335,7 +335,7 @@ import {
   useComponentSize,
   useConfigTheme,
   useNeonEffect,
-  useZIndex,
+  useZIndexLayer,
 } from '../config-provider/composables';
 import { useFormItem } from '../form/use-form-item';
 import { generateId } from '../../utils/id';
@@ -344,9 +344,9 @@ import {
   SELECT_DEFAULT_OPTION_HEIGHT,
   SELECT_DEFAULT_REMOTE_DEBOUNCE,
   SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT,
-  SELECT_DROPDOWN_Z_INDEX_OFFSET,
 } from './constants';
 import { calculateSelectDropdownPosition } from './position';
+import { useRemoteOptionCache } from './use-option-cache';
 
 defineOptions({
   name: 'ExSelect',
@@ -397,7 +397,7 @@ const dropdownStyles = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
-const dropdownZIndex = useZIndex(SELECT_DROPDOWN_Z_INDEX_OFFSET);
+const dropdownZIndex = useZIndexLayer('dropdown');
 const availableDropdownHeight = ref(SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT);
 
 // 唯一 id 前缀：用于 option id 与 aria-activedescendant 关联（屏幕阅读器播报高亮项）
@@ -597,8 +597,13 @@ const getOptionKey = (item: SelectOption | SelectOptionGroup): string =>
     ? `group:${item.label}:${item.options.map(option => `${typeof option.value}:${String(option.value)}`).join('|')}`
     : `option:${typeof item.value}:${String(item.value)}`;
 
-// 远程搜索结果通常只保留当前查询页；缓存已见选项，保证已选标签不会因换页丢失。
-const optionCache = ref(new Map<string | number, SelectOption>());
+// 远程搜索结果通常只保留当前查询页；有界缓存保证已选标签不会因换页丢失。
+const optionCache = useRemoteOptionCache(
+  flatOptions,
+  () => props.remote,
+  () => props.modelValue,
+  () => props.multiple
+);
 
 const getOptionByValue = (value: string | number): SelectOption | undefined => {
   return (
@@ -606,16 +611,6 @@ const getOptionByValue = (value: string | number): SelectOption | undefined => {
     (props.remote ? optionCache.value.get(value) : undefined)
   );
 };
-
-watch(
-  flatOptions,
-  options => {
-    const nextCache = new Map(optionCache.value);
-    options.forEach(option => nextCache.set(option.value, option));
-    optionCache.value = nextCache;
-  },
-  { immediate: true }
-);
 
 const matchOption = (option: SelectOption, query: string): boolean => {
   const labelMatch = option.label.toLowerCase().includes(query);
@@ -839,6 +834,12 @@ watch(normalizedRemoteDebounce, delay => {
   triggerRemote = debounce((query: string) => {
     props.remoteMethod?.(query);
   }, delay);
+});
+
+watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
+  if (!disabled && !readonly) return;
+  triggerRemote.cancel();
+  hideDropdown();
 });
 
 const handleSearch = () => {

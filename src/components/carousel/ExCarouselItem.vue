@@ -6,7 +6,8 @@
     role="group"
     :aria-roledescription="t('carousel.slide')"
     :aria-label="`${t('carousel.slide')} ${Math.max(0, index) + 1}`"
-    :aria-hidden="index !== carousel.currentIndex.value"
+    :aria-hidden="!isActive"
+    :inert="!isActive || undefined"
   >
     <slot />
   </div>
@@ -47,14 +48,13 @@ onBeforeUnmount(() => carousel.unregisterItem(uid));
 
 // 当前项索引（实时计算，随增删/重排更新）
 const index = computed(() => carousel.getItemIndex(uid));
+const isActive = computed(() => index.value === carousel.currentIndex.value);
 
 // 计算属性
 const itemClasses = computed(() => {
   const classes = ['ex-carousel-item'];
 
-  const isActive = index.value === carousel.currentIndex.value;
-
-  if (isActive) classes.push('ex-carousel-item--active');
+  if (isActive.value) classes.push('ex-carousel-item--active');
 
   classes.push(...normalizeCustomClass(props.class));
 

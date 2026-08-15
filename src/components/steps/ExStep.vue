@@ -14,7 +14,10 @@
     <!-- 步骤头部 -->
     <div class="ex-step__head">
       <!-- 图标容器 -->
-      <div class="ex-step__icon" :style="iconStyles">
+      <div
+        class="ex-step__icon"
+        :style="iconStyles"
+      >
         <!-- 进度点模式：不显示任何内容，只显示圆点 -->
         <template v-if="stepsContext.progressDot.value">
           <!-- 空的，只显示圆点边框 -->
@@ -25,10 +28,17 @@
           <slot name="icon">
             <!-- 默认图标：根据状态显示 -->
             <template v-if="statusIcon">
-              <ExIcon :icon="statusIcon" class="ex-step__icon-image" aria-hidden="true" />
+              <ExIcon
+                :icon="statusIcon"
+                class="ex-step__icon-image"
+                aria-hidden="true"
+              />
             </template>
             <!-- 默认显示步骤数字 -->
-            <span v-else class="ex-step__icon-number">
+            <span
+              v-else
+              class="ex-step__icon-number"
+            >
               {{ stepNumber }}
             </span>
           </slot>
@@ -36,27 +46,41 @@
       </div>
 
       <!-- 连接线 -->
-      <div v-if="!isLastStep" class="ex-step__line" :class="lineClasses" :style="lineStyles" />
+      <div
+        v-if="!isLastStep"
+        class="ex-step__line"
+        :class="lineClasses"
+        :style="lineStyles"
+      />
     </div>
 
     <!-- 步骤内容 -->
     <div class="ex-step__content">
       <!-- 标题 -->
-      <div class="ex-step__title" :style="titleStyles">
+      <div
+        class="ex-step__title"
+        :style="titleStyles"
+      >
         <slot name="title">
           {{ title }}
         </slot>
       </div>
 
       <!-- 子标题 -->
-      <div v-if="subtitle || $slots.subtitle" class="ex-step__subtitle">
+      <div
+        v-if="subtitle || $slots.subtitle"
+        class="ex-step__subtitle"
+      >
         <slot name="subtitle">
           {{ subtitle }}
         </slot>
       </div>
 
       <!-- 描述 -->
-      <div v-if="description || $slots.description" class="ex-step__description">
+      <div
+        v-if="description || $slots.description"
+        class="ex-step__description"
+      >
         <slot name="description">
           {{ description }}
         </slot>
@@ -87,7 +111,7 @@ const stepsContext = inject<StepsContext>('exSteps')!;
 
 // 注册步骤（索引由父组件按文档顺序实时计算，支持动态增删/重排）
 const uid = Symbol('ex-step');
-stepsContext.registerStep(uid);
+stepsContext.registerStep(uid, () => stepRef.value ?? null);
 const stepIndex = computed(() => stepsContext.getStepIndex(uid));
 
 // 组件卸载时注销
@@ -222,7 +246,7 @@ const statusIcon = computed(() => {
 // 事件处理
 const handleClick = () => {
   if (!props.disabled && isClickable.value) {
-    stepsContext.onStepClick(stepIndex.value);
+    stepsContext.onStepClick(stepIndex.value, props.clickable === true);
   }
 };
 

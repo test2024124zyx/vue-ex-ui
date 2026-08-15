@@ -11,12 +11,10 @@
       <div
         v-if="shouldRender"
         v-show="visible"
-        ref="dialogRef"
         class="ex-dialog-wrapper"
         :class="wrapperClasses"
         :data-theme="configTheme"
         :style="wrapperStyles"
-        v-bind="$attrs"
         @click.self="handleMaskClick"
       >
         <div
@@ -31,12 +29,13 @@
             v-if="shouldRender"
             v-show="visible"
             ref="dialogContainerRef"
+            v-bind="panelAttrs"
             class="ex-dialog"
             :class="dialogClasses"
-            role="dialog"
+            :role="dialogRole"
             :aria-modal="modal ? 'true' : undefined"
-            :aria-label="ariaLabel || undefined"
-            :aria-labelledby="!ariaLabel && hasTitle ? titleId : undefined"
+            :aria-label="accessibleLabel"
+            :aria-labelledby="labelledBy"
             @click.stop
           >
             <div
@@ -118,13 +117,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useId, useSlots } from 'vue';
+import { computed, ref, useAttrs, useId, useSlots, watch } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
 import { useOverlay } from '../../composables/useOverlay';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import type { ExDialogEmits, ExDialogExposed, ExDialogProps } from './types';
 
 defineOptions({
@@ -155,12 +159,28 @@ const props = withDefaults(defineProps<ExDialogProps>(), {
 
 const emit = defineEmits<ExDialogEmits>();
 const slots = useSlots();
+const attrs = useAttrs();
 const { t } = useLocale('dialog');
-const baseZIndex = useZIndex(50);
+const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
-const dialogRef = ref<HTMLDivElement>();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
 const dialogContainerRef = ref<HTMLDivElement>();
 const titleId = `ex-dialog-title-${useId()}`;
+const CONTROLLED_PANEL_ATTRS = new Set(['aria-label', 'aria-labelledby', 'aria-modal', 'role']);
+
+const readTextAttribute = (name: string): string | undefined => {
+  const value = attrs[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+const nativeAriaLabel = computed(() => readTextAttribute('aria-label'));
+const nativeLabelledBy = computed(() => readTextAttribute('aria-labelledby'));
+const dialogRole = computed(() =>
+  readTextAttribute('role')?.toLowerCase() === 'alertdialog' ? 'alertdialog' : 'dialog'
+);
+const panelAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !CONTROLLED_PANEL_ATTRS.has(key)))
+);
 
 const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
   modelValue: () => props.modelValue,
@@ -174,6 +194,16 @@ const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
 
 const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
 const hasTitle = computed(() => Boolean(props.title || slots.title));
+const accessibleLabel = computed(() => {
+  const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
+  if (explicitLabel) return explicitLabel;
+  if (nativeLabelledBy.value || hasTitle.value) return undefined;
+  return t('label');
+});
+const labelledBy = computed(() => {
+  if (props.ariaLabel?.trim() || nativeAriaLabel.value) return undefined;
+  return nativeLabelledBy.value ?? (hasTitle.value ? titleId : undefined);
+});
 const showHeader = computed(() => Boolean(hasTitle.value || slots.icon || props.showClose));
 const hasFooter = computed(() =>
   Boolean(slots.footer || (props.showFooter && (props.showConfirm || props.showCancel)))
@@ -183,6 +213,8 @@ const wrapperClasses = computed(() => [
   {
     'ex-dialog-wrapper--center': props.center,
     'ex-dialog-wrapper--modeless': !props.modal,
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
   },
 ]);
 const wrapperStyles = computed(() => ({ zIndex: props.zIndex ?? baseZIndex.value }));
@@ -201,7 +233,7 @@ useOverlay({
   lockScroll: () => props.lockScroll,
   closeOnEscape: () => props.closeOnPressEscape,
   onEscape: async () => {
-    await requestClose();
+    await requestCloseIntent('api');
   },
   trapFocus: () => props.modal,
   autoFocus: () => props.modal,
@@ -211,18 +243,44 @@ useOverlay({
 const handleOpened = () => emit('opened');
 const handleClosed = () => emit('closed');
 
-const handleMaskClick = () => {
-  if (props.modal && props.closeOnClickModal) void requestClose();
-};
-const handleClose = () => void requestClose();
-const handleConfirm = () => emit('confirm');
-const handleCancel = () => {
-  emit('cancel');
-  void requestClose();
+type CloseIntent = 'cancel' | 'api';
+let pendingCloseIntent: Promise<boolean> | null = null;
+
+/** 所有关闭入口共享同一任务，避免异步守卫期间重复发出取消事件。 */
+const requestCloseIntent = (intent: CloseIntent): Promise<boolean> => {
+  if (pendingCloseIntent) return pendingCloseIntent;
+
+  if (intent === 'cancel') emit('cancel');
+  const operation = requestClose();
+  pendingCloseIntent = operation;
+  const clearPending = () => {
+    if (pendingCloseIntent === operation) pendingCloseIntent = null;
+  };
+  void operation.then(clearPending, clearPending);
+  return operation;
 };
 
-const open = () => requestOpen();
-const close = () => requestClose();
+watch(
+  () => props.modelValue,
+  () => {
+    pendingCloseIntent = null;
+  }
+);
+
+const handleMaskClick = () => {
+  if (props.modal && props.closeOnClickModal) void requestCloseIntent('api');
+};
+const handleClose = () => void requestCloseIntent('api');
+const handleConfirm = () => emit('confirm');
+const handleCancel = () => {
+  void requestCloseIntent('cancel');
+};
+
+const open = () => {
+  pendingCloseIntent = null;
+  requestOpen();
+};
+const close = () => requestCloseIntent('api');
 const getElement = () => dialogContainerRef.value ?? null;
 
 defineExpose<ExDialogExposed>({ open, close, getElement });

@@ -47,7 +47,7 @@ const ButtonStub = defineComponent({
 const SliderStub = defineComponent({
   name: 'ExSlider',
   props: {
-    modelValue: Number,
+    modelValue: { type: Number, default: 0 },
   },
   emits: ['update:modelValue'],
   template:
@@ -57,7 +57,7 @@ const SliderStub = defineComponent({
 const NumberInputStub = defineComponent({
   name: 'ExNumberInput',
   props: {
-    modelValue: Number,
+    modelValue: { type: Number, default: 0 },
   },
   emits: ['update:modelValue'],
   template:
@@ -67,8 +67,8 @@ const NumberInputStub = defineComponent({
 const SelectStub = defineComponent({
   name: 'ExSelect',
   props: {
-    modelValue: String,
-    options: Array,
+    modelValue: { type: String, default: '' },
+    options: { type: Array, default: () => [] },
   },
   emits: ['update:modelValue'],
   template:
@@ -153,6 +153,7 @@ describe('ExImageCompress', () => {
     compressionRatio: 75,
     originalDimension: { width: 640, height: 360 },
     compressedDimension: { width: 640, height: 360 },
+    originalType: 'image/jpeg',
     outputType: 'image/jpeg',
     qualityUsed: 0.8,
     mode: 'quality',
@@ -316,6 +317,51 @@ describe('ExImageCompress', () => {
     pending.resolve(createResult());
     await first;
     expect(imageCompress.attributes('aria-busy')).toBe('false');
+  });
+
+  it('压缩期间设置变化会取消旧快照且不提交失效结果', async () => {
+    const resource = createResource('source');
+    const pending = deferred<CompressResult>();
+    utilityMocks.loadImageResource.mockResolvedValue(resource);
+    utilityMocks.compressLoadedImage.mockReturnValue(pending.promise);
+    const imageCompress = mountCompress({
+      props: {
+        src: new File([new Uint8Array(4)], 'source.jpg', { type: 'image/jpeg' }),
+        quality: 0.8,
+      },
+    });
+    await flushPromises();
+    const exposed = imageCompress.vm as unknown as ExImageCompressExposed;
+
+    const compression = exposed.compress();
+    await nextTick();
+    const signal = utilityMocks.compressLoadedImage.mock.calls[0]?.[1]?.signal as AbortSignal;
+    await imageCompress.setProps({ quality: 0.2 });
+
+    expect(signal.aborted).toBe(true);
+    pending.resolve(createResult({ qualityUsed: 0.8 }));
+    await expect(compression).rejects.toMatchObject({ code: 'ABORTED' });
+    expect(exposed.getResult()).toBeNull();
+    expect(imageCompress.emitted('compress')).toBeUndefined();
+  });
+
+  it('已有结果在压缩设置变化后立即失效并释放地址', async () => {
+    utilityMocks.loadImageResource.mockResolvedValue(createResource('source'));
+    utilityMocks.compressLoadedImage.mockResolvedValue(createResult());
+    const imageCompress = mountCompress({
+      props: {
+        src: new File([new Uint8Array(4)], 'source.jpg', { type: 'image/jpeg' }),
+        quality: 0.8,
+      },
+    });
+    await flushPromises();
+    const exposed = imageCompress.vm as unknown as ExImageCompressExposed;
+    await exposed.compress();
+
+    await imageCompress.setProps({ quality: 0.3 });
+
+    expect(exposed.getResult()).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:compressed-1');
   });
 
   it('压缩失败发出一次 error、恢复 busy，并让暴露方法保留拒绝语义', async () => {

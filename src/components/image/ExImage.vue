@@ -3,7 +3,12 @@ import { computed, nextTick, onMounted, ref, useSlots, watch, type CSSProperties
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
-import { useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import {
   normalizeImageAspectRatio,
@@ -19,9 +24,6 @@ defineOptions({
 
 type ImageStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
-// 预览层与默认 modal token 的层级差保持一致，同时通过配置注入支持自定义基础层级。
-const IMAGE_PREVIEW_Z_INDEX_OFFSET = 50;
-
 const props = withDefaults(defineProps<ExImageProps>(), {
   fit: 'cover',
   lazy: true,
@@ -32,7 +34,9 @@ const emit = defineEmits<ExImageEmits>();
 const slots = useSlots();
 const { t } = useLocale('image');
 const configTheme = useConfigTheme();
-const previewZIndex = useZIndex(IMAGE_PREVIEW_Z_INDEX_OFFSET);
+const animation = useAnimation();
+const neonEffect = useNeonEffect();
+const previewZIndex = useZIndexLayer('modal');
 
 const rootRef = ref<HTMLDivElement>();
 const mainImageRef = ref<HTMLImageElement>();
@@ -78,6 +82,13 @@ const imageStyles = computed<CSSProperties>(
     }) as CSSProperties
 );
 const previewStyles = computed<CSSProperties>(() => ({ zIndex: previewZIndex.value }));
+const previewClasses = computed(() => [
+  'ex-image-preview',
+  {
+    'ex-no-animation': !animation.value,
+    'ex-no-neon': !neonEffect.value,
+  },
+]);
 
 const previewTriggerLabel = computed(() =>
   props.alt ? t('openPreview', { alt: props.alt }) : t('preview')
@@ -316,7 +327,7 @@ defineExpose<ExImageExposed>({
         <div
           v-if="previewVisible"
           ref="overlayRef"
-          class="ex-image-preview"
+          :class="previewClasses"
           :style="previewStyles"
           :data-theme="configTheme"
           role="dialog"

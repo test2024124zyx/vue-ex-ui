@@ -14,6 +14,8 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
 
 默认监听整个页面，滚动超过 `visibility-height`（默认 200px）后在右下角出现。下面在一个独立滚动容器内演示，按钮固定在视口角落。
 
+::: raw
+
 <div class="demo-container">
   <div id="bt-box-1" class="bt-scroll">
     <div class="bt-filler">↓ 向下滚动这个区域，超过 120px 后视口右下角会出现「回到顶部」按钮</div>
@@ -21,19 +23,49 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box1" :visibility-height="120" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <!-- 监听整个页面：滚动超过 200px 后显示 -->
-  <ExBackTop />
-
-  <!-- 监听指定滚动容器 -->
-  <ExBackTop :target="() => containerEl" :visibility-height="120" />
+  <div class="demo-container">
+    <div
+      id="bt-box-1"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 向下滚动这个区域，超过 120px 后视口右下角会出现「回到顶部」按钮</div>
+    </div>
+    <ExBackTop
+      :target="box1"
+      :visibility-height="120"
+    />
+  </div>
 </template>
+
+<script setup>
+const box1 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-1') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 显示滚动进度
 
 `show-progress` 显示滚动进度，`progress-type` 支持环形（`circle`）与线形（`line`），`show-percent` 额外显示百分比文字。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-2" class="bt-scroll">
@@ -49,16 +81,53 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBackTop show-progress progress-type="circle" show-percent />
-  <ExBackTop show-progress progress-type="line" />
+  <div class="demo-container">
+    <div
+      id="bt-box-2"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，左下角出现带环形进度 + 百分比的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box2"
+      :visibility-height="80"
+      show-progress
+      progress-type="circle"
+      show-percent
+      position="bottom-left"
+    />
+  </div>
 </template>
+
+<script setup>
+const box2 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-2') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 文字按钮
 
 设置 `text` 后按钮变为图标 + 文字的纵向布局。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-3" class="bt-scroll">
@@ -67,11 +136,45 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box3" :visibility-height="80" text="顶部" position="top-right" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBackTop text="顶部" />
+  <div class="demo-container">
+    <div
+      id="bt-box-3"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，右上角出现带「顶部」文字的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box3"
+      :visibility-height="80"
+      text="顶部"
+      position="top-right"
+    />
+  </div>
 </template>
+
+<script setup>
+const box3 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-3') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 形状与尺寸
 
@@ -79,15 +182,26 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
 
 ```vue
 <template>
-  <ExBackTop shape="circle" size="small" />
-  <ExBackTop shape="rounded" size="medium" />
-  <ExBackTop shape="square" size="large" />
+  <ExBackTop
+    shape="circle"
+    size="small"
+  />
+  <ExBackTop
+    shape="rounded"
+    size="medium"
+  />
+  <ExBackTop
+    shape="square"
+    size="large"
+  />
 </template>
 ```
 
 ## 自定义图标 / 内容
 
 通过 `icon` 传入内置图标名（推荐）、组件或 VNode；也可以用默认插槽完全自定义内容。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-4" class="bt-scroll">
@@ -96,17 +210,44 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box4" :visibility-height="80" icon="arrow-up-s-line" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <!-- 内置图标名 -->
-  <ExBackTop icon="arrow-up-s-line" />
-
-  <!-- 完全自定义内容 -->
-  <ExBackTop #default="{ percent }">
-    <span>{{ Math.round(percent) }}%</span>
-  </ExBackTop>
+  <div class="demo-container">
+    <div
+      id="bt-box-4"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，右下角出现使用自定义图标的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box4"
+      :visibility-height="80"
+      icon="arrow-up-s-line"
+    />
+  </div>
 </template>
+
+<script setup>
+const box4 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-4') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## API
 

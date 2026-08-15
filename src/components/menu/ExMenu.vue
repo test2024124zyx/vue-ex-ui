@@ -167,7 +167,8 @@ watch(activeKey, ensureTabStop);
 
 const getTabIndex = (key: string, disabled: boolean): 0 | -1 => {
   if (disabled) return -1;
-  if (activeKey.value) return activeKey.value === key ? 0 : -1;
+  const activeRecord = activeKey.value ? focusables.get(activeKey.value) : undefined;
+  if (activeRecord && !activeRecord.value) return activeKey.value === key ? 0 : -1;
   return tabStopKey.value === key ? 0 : -1;
 };
 

@@ -16,9 +16,13 @@ export function normalizeLayoutLength(value: LayoutLength, fallback: LayoutLengt
       return Number.isFinite(candidate) && candidate >= 0 ? candidate + 'px' : null;
     }
     const trimmed = candidate.trim();
-    const simpleLength = /^(-?\d*\.?\d+)(?:[a-z%]+)?$/i.exec(trimmed);
+    const simpleLength =
+      /^(-?\d*\.?\d+)(?:px|r?em|%|[dls]?v[wh]|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)?$/i.exec(trimmed);
     if (simpleLength && Number(simpleLength[1]) < 0) return null;
-    return trimmed || null;
+    if (simpleLength) return trimmed;
+    if (/^(?:calc|min|max|clamp|var)\(.+\)$/i.test(trimmed)) return trimmed;
+    if (/^(?:auto|min-content|max-content|fit-content)$/i.test(trimmed)) return trimmed;
+    return null;
   };
 
   return normalize(value) ?? normalize(fallback) ?? '0px';

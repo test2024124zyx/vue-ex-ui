@@ -304,3 +304,17 @@
   opacity: 0;
   transform: translateY(-6px);
 }
+
+// Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-tree-select__panel.ex-no-neon,
+.ex-tree-select__panel.ex-no-neon * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.ex-tree-select__panel.ex-no-animation,
+.ex-tree-select__panel.ex-no-animation * {
+  transition: none !important;
+  animation: none !important;
+}

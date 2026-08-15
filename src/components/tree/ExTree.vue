@@ -11,6 +11,7 @@
     <!-- 虚拟滚动模式：扁平化 + 窗口化渲染 -->
     <div
       v-if="virtual"
+      ref="viewportRef"
       class="ex-tree__viewport"
       :style="viewportStyle"
       @scroll.passive="handleVirtualScroll"
@@ -42,6 +43,7 @@
             @select="handleSelect"
             @check="handleCheck"
             @focus-node="handleFocusNode"
+            @navigate="handleNavigate"
             @node-click="handleNodeClick"
             @node-contextmenu="handleNodeContextmenu"
             @node-drag-start="handleNodeDragStart"
@@ -82,6 +84,7 @@
         @select="handleSelect"
         @check="handleCheck"
         @focus-node="handleFocusNode"
+        @navigate="handleNavigate"
         @node-click="handleNodeClick"
         @node-contextmenu="handleNodeContextmenu"
         @node-drag-start="handleNodeDragStart"
@@ -102,7 +105,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { ref, computed, watch, provide, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, provide, onBeforeUnmount, nextTick } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
@@ -138,6 +141,7 @@ const emit = defineEmits<ExTreeEmits>();
 defineSlots<ExTreeSlots>();
 
 const treeRef = ref<HTMLDivElement>();
+const viewportRef = ref<HTMLDivElement>();
 const filterValue = ref('');
 
 const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
@@ -154,7 +158,7 @@ const collectExpandableKeys = (nodes: readonly TreeNode[]): string[] => {
   const keys: string[] = [];
   const visit = (items: readonly TreeNode[]) => {
     for (const node of items) {
-      if (node.children && node.children.length > 0) {
+      if (!node.disabled && node.children && node.children.length > 0) {
         keys.push(node.key);
         visit(node.children);
       }
@@ -324,9 +328,10 @@ watch(
 const renderedActiveKey = computed(() => {
   if (!props.virtual) return activeKey.value;
   const enabledNodes = virtualNodes.value.filter(({ node }) => !node.disabled);
-  return enabledNodes.some(({ node }) => node.key === activeKey.value)
-    ? activeKey.value
-    : (enabledNodes[0]?.node.key ?? null);
+  if (enabledNodes.some(({ node }) => node.key === activeKey.value)) {
+    return activeKey.value;
+  }
+  return enabledNodes[0]?.node.key ?? null;
 });
 
 const topSpacerHeight = computed(() => virtualRange.value.start * safeItemHeight.value);
@@ -482,7 +487,7 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
         if (parentNode?.children) {
           const checkableChildren = parentNode.children.filter(isNodeCheckable);
           const allChildrenChecked = checkableChildren.every(child => checkedSet.has(child.key));
-          if (checkableChildren.length > 0 && allChildrenChecked) {
+          if (isNodeCheckable(parentNode) && checkableChildren.length > 0 && allChildrenChecked) {
             checkedSet.add(parentKey);
           }
         }
@@ -510,6 +515,35 @@ const handleNodeClick = (node: TreeNode, event: MouseEvent) => {
 
 const handleFocusNode = (node: TreeNode) => {
   activeKey.value = node.key;
+};
+
+const focusNodeByKey = (key: string) => {
+  nextTick(() => {
+    const target = Array.from(
+      treeRef.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []
+    ).find(item => item.dataset.nodeKey === key);
+    target?.focus();
+  });
+};
+
+const handleNavigate = (node: TreeNode, key: 'ArrowDown' | 'ArrowUp' | 'Home' | 'End') => {
+  const enabledNodes = flattenedNodes.value.filter(item => !item.node.disabled);
+  const currentIndex = enabledNodes.findIndex(item => item.node.key === node.key);
+  let target = enabledNodes[currentIndex];
+  if (key === 'ArrowDown') target = enabledNodes[currentIndex + 1];
+  else if (key === 'ArrowUp') target = enabledNodes[currentIndex - 1];
+  else if (key === 'Home') target = enabledNodes[0];
+  else if (key === 'End') target = enabledNodes[enabledNodes.length - 1];
+  if (!target || target.node.key === node.key) return;
+
+  activeKey.value = target.node.key;
+  if (props.virtual) {
+    const targetIndex = flattenedNodes.value.findIndex(item => item.node.key === target.node.key);
+    const nextScrollTop = targetIndex * safeItemHeight.value;
+    scrollTop.value = nextScrollTop;
+    if (viewportRef.value) viewportRef.value.scrollTop = nextScrollTop;
+  }
+  focusNodeByKey(target.node.key);
 };
 
 // 处理节点右键

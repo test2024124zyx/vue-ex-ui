@@ -12,7 +12,18 @@ describe('ExTypography', () => {
     expect(wrapper.element.tagName).toBe('P');
     expect(wrapper.classes()).toContain('ex-typography');
     expect(wrapper.classes()).toContain('ex-typography--body');
-    expect(wrapper.classes()).toContain('ex-typography--md');
+    expect(wrapper.classes()).not.toContain('ex-typography--md');
+  });
+
+  it('未显式传入 size 时保留 variant 自身的排版层级', () => {
+    const wrapper = mount(ExTypography, { props: { variant: 'display' } });
+
+    expect(wrapper.classes()).toContain('ex-typography--display');
+    expect(
+      wrapper
+        .classes()
+        .some(className => /^ex-typography--(?:xs|sm|md|lg|xl|\d+xl)$/.test(className))
+    ).toBe(false);
   });
 
   // 文本内容测试

@@ -147,9 +147,9 @@ const warnIfMissingAccessibleName = () => {
   const contentText = button.querySelector('.ex-button__content')?.textContent?.trim();
   const hasAccessibleName = Boolean(
     button.getAttribute('aria-label')?.trim() ||
-      contentText ||
-      button.getAttribute('aria-labelledby')?.trim() ||
-      button.getAttribute('title')?.trim()
+    contentText ||
+    button.getAttribute('aria-labelledby')?.trim() ||
+    button.getAttribute('title')?.trim()
   );
 
   if (!hasAccessibleName) {

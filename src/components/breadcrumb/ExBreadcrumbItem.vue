@@ -6,19 +6,26 @@
       {
         'ex-breadcrumb-item--clickable': isClickable,
         'ex-breadcrumb-item--last': isLast,
-        'ex-breadcrumb-item--disabled': item.disabled,
+        'ex-breadcrumb-item--disabled': isEffectivelyDisabled,
       },
     ]"
-    :aria-disabled="item.disabled || undefined"
+    :aria-disabled="isEffectivelyDisabled || undefined"
   >
     <a
       v-if="isClickable"
-      :href="item.path"
+      :href="normalizedPath"
       class="ex-breadcrumb-item__link"
-      @click.prevent="handleClick"
+      @click="handleClick"
     >
-      <span v-if="$slots.icon" class="ex-breadcrumb-item__icon">
-        <slot name="icon" :item="item" :index="index" />
+      <span
+        v-if="$slots.icon"
+        class="ex-breadcrumb-item__icon"
+      >
+        <slot
+          name="icon"
+          :item="item"
+          :index="index"
+        ></slot>
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </a>
@@ -28,8 +35,15 @@
       class="ex-breadcrumb-item__text-wrapper"
       :aria-current="isLast ? 'page' : undefined"
     >
-      <span v-if="$slots.icon" class="ex-breadcrumb-item__icon">
-        <slot name="icon" :item="item" :index="index" />
+      <span
+        v-if="$slots.icon"
+        class="ex-breadcrumb-item__icon"
+      >
+        <slot
+          name="icon"
+          :item="item"
+          :index="index"
+        ></slot>
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </span>
@@ -40,7 +54,10 @@
       class="ex-breadcrumb-item__separator"
       aria-hidden="true"
     >
-      <slot v-if="$slots.separator" name="separator" />
+      <slot
+        v-if="$slots.separator"
+        name="separator"
+      ></slot>
       <span v-else>{{ separator || '/' }}</span>
     </span>
   </li>
@@ -48,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { normalizeLinkHref } from '../link/link-utils';
 import type { BreadcrumbItemProps, BreadcrumbItemEmits } from './types';
 
 defineOptions({
@@ -63,10 +81,16 @@ const props = withDefaults(defineProps<BreadcrumbItemProps>(), {
 });
 
 const emit = defineEmits<BreadcrumbItemEmits>();
+const normalizedPath = computed(() => normalizeLinkHref(props.item.path));
+const isEffectivelyDisabled = computed(() =>
+  Boolean(props.item.disabled || (props.item.path && !normalizedPath.value))
+);
 
 // 是否可点击
 const isClickable = computed(() => {
-  return Boolean(props.clickable && !props.isLast && !props.item.disabled && props.item.path);
+  return Boolean(
+    props.clickable && !props.isLast && !isEffectivelyDisabled.value && normalizedPath.value
+  );
 });
 
 // 处理点击

@@ -79,7 +79,11 @@
 
     // 选中状态 - 霓虹蓝渐变
     &--checked {
-      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-blue-600)
+      );
       border-color: var(--ex-color-neon-blue-500);
       @include optimized-neon-glow('blue', 'sm');
 
@@ -390,7 +394,7 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-radio {
     &__box {
       border-width: 3px;

@@ -55,6 +55,8 @@ export interface ExFileDownloadProps {
   showProgress?: boolean;
   /** fetch/xhr 请求头。 */
   headers?: Record<string, string>;
+  /** fetch/xhr 允许缓冲的最大字节数，默认 512 MiB。 */
+  maxBytes?: number;
   /** fetch 使用 include 凭证，xhr 设置 withCredentials。 */
   withCredentials?: boolean;
   /** 固定按钮文案；未提供时按状态显示本地化文案。 */

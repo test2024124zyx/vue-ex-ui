@@ -1,7 +1,15 @@
 <template>
-  <div ref="affixRef" :class="affixClasses" :style="wrapperStyle">
-    <div :class="['ex-affix__content', { 'is-fixed': isFixed }]" :style="contentStyle">
-      <slot />
+  <div
+    ref="affixRef"
+    :class="affixClasses"
+    :style="wrapperStyle"
+  >
+    <div
+      ref="contentRef"
+      :class="['ex-affix__content', { 'is-fixed': isFixed }]"
+      :style="contentStyle"
+    >
+      <slot></slot>
     </div>
   </div>
 </template>
@@ -24,6 +32,7 @@ const props = withDefaults(defineProps<ExAffixProps>(), {
 const emit = defineEmits<ExAffixEmits>();
 
 const affixRef = ref<HTMLDivElement>();
+const contentRef = ref<HTMLDivElement>();
 const isFixed = ref(false);
 const affixStyle = ref<Record<string, string | number>>({});
 const placeholderStyle = ref<{
@@ -49,6 +58,8 @@ const contentStyle = computed(() => {
 
 // 滚动容器元素
 let scrollContainer: HTMLElement | Window | null = null;
+const listenedScrollTargets = new Set<HTMLElement | Window>();
+let resizeObserver: ResizeObserver | null = null;
 
 const getTargetRect = (target: HTMLElement | Window) => {
   if (target === window) {
@@ -141,19 +152,64 @@ const handleResize = () => {
   scheduleUpdate();
 };
 
-const addListeners = () => {
-  scrollContainer = props.target();
+const isScrollable = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element);
+  return /(auto|scroll|overlay)/.test(`${style.overflow} ${style.overflowX} ${style.overflowY}`);
+};
 
-  scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+const getScrollAncestors = (element: HTMLElement) => {
+  const ancestors: HTMLElement[] = [];
+  let current = element.parentElement;
+  while (current && current !== document.body && current !== document.documentElement) {
+    if (isScrollable(current)) ancestors.push(current);
+    current = current.parentElement;
+  }
+  return ancestors;
+};
+
+const observeLayout = () => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  if (typeof ResizeObserver === 'undefined') return;
+
+  resizeObserver = new ResizeObserver(scheduleUpdate);
+  if (affixRef.value) resizeObserver.observe(affixRef.value);
+  if (contentRef.value) resizeObserver.observe(contentRef.value);
+  if (scrollContainer instanceof HTMLElement) resizeObserver.observe(scrollContainer);
+};
+
+const addListeners = () => {
+  try {
+    scrollContainer = props.target();
+  } catch {
+    scrollContainer = window;
+  }
+  if (!(scrollContainer instanceof HTMLElement) && scrollContainer !== window) {
+    scrollContainer = window;
+  }
+
+  const scrollTargets: Array<HTMLElement | Window> = [scrollContainer];
+  if (affixRef.value) {
+    scrollTargets.push(...getScrollAncestors(affixRef.value));
+  }
+  scrollTargets.push(window);
+  scrollTargets.forEach(target => {
+    if (listenedScrollTargets.has(target)) return;
+    target.addEventListener('scroll', handleScroll, { passive: true });
+    listenedScrollTargets.add(target);
+  });
+
   window.addEventListener('resize', handleResize);
+  observeLayout();
 };
 
 const removeListeners = () => {
-  if (scrollContainer) {
-    scrollContainer.removeEventListener('scroll', handleScroll);
-    scrollContainer = null;
-  }
+  listenedScrollTargets.forEach(target => target.removeEventListener('scroll', handleScroll));
+  listenedScrollTargets.clear();
+  scrollContainer = null;
   window.removeEventListener('resize', handleResize);
+  resizeObserver?.disconnect();
+  resizeObserver = null;
 };
 
 watch(

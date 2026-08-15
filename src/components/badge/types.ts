@@ -2,13 +2,7 @@
  * 徽章类型
  */
 export type BadgeType =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info';
+  'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 /**
  * 徽章尺寸

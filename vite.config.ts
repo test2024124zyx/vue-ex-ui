@@ -1,13 +1,32 @@
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
 
 /// <reference types="vitest" />
 
+const fullStyleEntryPath = normalizePath(resolve(import.meta.dirname, 'src/index.ts'));
+
+/** Vite 的模块 ID 可能使用任一平台分隔符并携带查询参数。 */
+export const isFullStyleEntryId = (id: string): boolean => {
+  const [path] = id.split('?', 1);
+  return normalizePath(path.replace(/\\/gu, '/')) === fullStyleEntryPath;
+};
+
 export default defineConfig({
   base: './',
   plugins: [
+    {
+      name: 'ex-ui-full-style-entry',
+      enforce: 'pre',
+      transform(code, id) {
+        if (isFullStyleEntryId(id)) {
+          // 只给完整产物注入样式入口，源码 barrel 与按需 ESM 保持可 tree-shake。
+          return `import './style-full';\n${code}`;
+        }
+        return null;
+      },
+    },
     vue(),
     dts({
       insertTypesEntry: true,
@@ -29,8 +48,9 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'es2020',
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'ExUI',
       formats: ['es', 'cjs'],
       // 产物实际为 ESM 与 CommonJS（非 UMD），文件名如实命名
@@ -62,11 +82,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
-  },
-  esbuild: {
-    target: 'es2020',
   },
   define: {
     __EX_UI_VERSION__: JSON.stringify(process.env.npm_package_version),

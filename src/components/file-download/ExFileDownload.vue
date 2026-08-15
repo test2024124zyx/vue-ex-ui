@@ -28,11 +28,14 @@ import type {
 
 defineOptions({ name: 'ExFileDownload' });
 
+const DEFAULT_MAX_DOWNLOAD_BYTES = 512 * 1024 * 1024;
+
 const props = withDefaults(defineProps<ExFileDownloadProps>(), {
   filename: undefined,
   transport: 'link',
   showProgress: true,
   headers: undefined,
+  maxBytes: DEFAULT_MAX_DOWNLOAD_BYTES,
   withCredentials: false,
   buttonText: undefined,
   buttonType: 'primary',
@@ -128,6 +131,18 @@ const reportProgress = (operation: ActiveOperation, next: ExFileDownloadProgress
   emit('progress', next);
 };
 
+const normalizedMaxBytes = computed(() =>
+  Number.isFinite(props.maxBytes) && props.maxBytes > 0
+    ? Math.floor(props.maxBytes)
+    : DEFAULT_MAX_DOWNLOAD_BYTES
+);
+
+const createSizeExceededError = () =>
+  new ExFileDownloadError(
+    'size-exceeded',
+    `下载内容超过允许的最大大小 ${formatDownloadBytes(normalizedMaxBytes.value)}`
+  );
+
 /** 创建临时链接并保证节点始终从文档中移除。 */
 const triggerBrowserDownload = (url: string, filename: string) => {
   if (typeof document === 'undefined') {
@@ -204,13 +219,22 @@ const downloadByFetch = async (
   }
 
   const contentDisposition = response.headers.get('content-disposition');
+  const declaredTotal = parseContentLength(response.headers.get('content-length'));
+  if (declaredTotal !== null && declaredTotal > normalizedMaxBytes.value) {
+    controller.abort();
+    throw createSizeExceededError();
+  }
   if (!response.body) {
     const blob = await response.blob();
+    if (blob.size > normalizedMaxBytes.value) {
+      controller.abort();
+      throw createSizeExceededError();
+    }
     reportProgress(operation, calculateDownloadProgress(blob.size, blob.size, true));
     return { blob, contentDisposition };
   }
 
-  const total = parseContentLength(response.headers.get('content-length'));
+  const total = declaredTotal;
   const contentType = response.headers.get('content-type') ?? '';
   const reader = response.body.getReader();
   const chunks: ArrayBuffer[] = [];
@@ -226,6 +250,13 @@ const downloadByFetch = async (
     chunk.set(value);
     chunks.push(buffer);
     loaded += chunk.byteLength;
+    if (loaded > normalizedMaxBytes.value) {
+      if (typeof reader.cancel === 'function') {
+        void reader.cancel().catch(() => undefined);
+      }
+      controller.abort();
+      throw createSizeExceededError();
+    }
     reportProgress(operation, calculateDownloadProgress(loaded, total));
   }
 
@@ -258,6 +289,14 @@ const downloadByXhr = (operation: ActiveOperation, url: string): Promise<Downloa
 
     request.addEventListener('progress', event => {
       const total = event.lengthComputable ? event.total : null;
+      if (
+        event.loaded > normalizedMaxBytes.value ||
+        (total !== null && total > normalizedMaxBytes.value)
+      ) {
+        rejectOnce(createSizeExceededError());
+        request.abort();
+        return;
+      }
       reportProgress(operation, calculateDownloadProgress(event.loaded, total));
     });
     request.addEventListener('load', () => {
@@ -277,6 +316,10 @@ const downloadByXhr = (operation: ActiveOperation, url: string): Promise<Downloa
 
       const blob =
         request.response instanceof Blob ? request.response : new Blob([request.response]);
+      if (blob.size > normalizedMaxBytes.value) {
+        rejectOnce(createSizeExceededError());
+        return;
+      }
       const knownTotal = progress.value.total ?? blob.size;
       reportProgress(operation, calculateDownloadProgress(blob.size, knownTotal, true));
       resolveOnce({

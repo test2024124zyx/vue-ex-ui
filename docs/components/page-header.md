@@ -31,7 +31,12 @@ const avatar = { alt: 'U', size: 'medium' }
 
 ```vue
 <template>
-  <ExPageHeader title="页面标题" subtitle="副标题说明" show-back @back="handleBack" />
+  <ExPageHeader
+    title="页面标题"
+    subtitle="副标题说明"
+    show-back
+    @back="handleBack"
+  />
 </template>
 
 <script setup>
@@ -97,10 +102,19 @@ const handleBack = () => history.back();
 
 ```vue
 <template>
-  <ExPageHeader title="订单 #1024" subtitle="2026-06-17 创建" show-back>
+  <ExPageHeader
+    title="订单 #1024"
+    subtitle="2026-06-17 创建"
+    show-back
+  >
     <template #extra>
       <ExButton size="small">编辑</ExButton>
-      <ExButton size="small" type="primary">导出</ExButton>
+      <ExButton
+        size="small"
+        type="primary"
+      >
+        导出
+      </ExButton>
     </template>
   </ExPageHeader>
 </template>
@@ -111,7 +125,10 @@ const handleBack = () => history.back();
 默认插槽渲染在标题区下方，`#footer` 渲染在最底部（常用于放选项卡）。
 
 <div class="demo-container">
-  <ExPageHeader title="项目概览" :breadcrumb="breadcrumb">
+  <ExPageHeader
+    title="项目概览"
+    :breadcrumb="breadcrumb"
+  >
     <template #extra>
       <ExButton size="small" type="primary">新建</ExButton>
     </template>
@@ -120,8 +137,14 @@ const handleBack = () => history.back();
     </p>
     <template #footer>
       <ExTabs v-model="tab">
-        <ExTabPane :name="0" label="详情" />
-        <ExTabPane :name="1" label="成员" />
+        <ExTabPane
+          :name="0"
+          label="详情"
+        />
+        <ExTabPane
+          :name="1"
+          label="成员"
+        />
         <ExTabPane :name="2" label="设置" />
       </ExTabs>
     </template>
@@ -130,12 +153,21 @@ const handleBack = () => history.back();
 
 ```vue
 <template>
-  <ExPageHeader title="项目概览" :breadcrumb="breadcrumb">
+  <ExPageHeader
+    title="项目概览"
+    :breadcrumb="breadcrumb"
+  >
     <p>位于标题下方的补充描述内容。</p>
     <template #footer>
       <ExTabs v-model="activeTab">
-        <ExTabPane :name="0" label="详情" />
-        <ExTabPane :name="1" label="成员" />
+        <ExTabPane
+          :name="0"
+          label="详情"
+        />
+        <ExTabPane
+          :name="1"
+          label="成员"
+        />
       </ExTabs>
     </template>
   </ExPageHeader>
@@ -164,7 +196,12 @@ const handleBack = () => history.back();
 <template>
   <ExPageHeader>
     <template #back>
-      <ExButton type="text" @click="goBack">← 返回列表</ExButton>
+      <ExButton
+        type="text"
+        @click="goBack"
+      >
+        ← 返回列表
+      </ExButton>
     </template>
     <template #title>
       <span class="my-title">自定义标题</span>
@@ -175,11 +212,15 @@ const handleBack = () => history.back();
 
 ## 固定页头
 
-`fixed` 让页头固定在视口顶部，配合 `z-index` 控制层级。
+`fixed` 让页头固定在视口顶部。省略 `z-index` 时继承最近 ConfigProvider 的
+基础层级 + 20；只有需要脱离该层级体系时才显式覆盖。
 
 ```vue
 <template>
-  <ExPageHeader title="固定页头" fixed :z-index="1000" />
+  <ExPageHeader
+    title="固定页头"
+    fixed
+  />
 </template>
 ```
 
@@ -187,20 +228,20 @@ const handleBack = () => history.back();
 
 ### Props
 
-| 属性           | 说明                       | 类型                                                                                                                                | 默认值                |
-| -------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `title`        | 页面标题                   | `string`                                                                                                                            | -                     |
-| `subtitle`     | 副标题                     | `string`                                                                                                                            | -                     |
-| `show-back`    | 是否显示返回按钮           | `boolean`                                                                                                                           | `false`               |
-| `back-text`    | 返回按钮文字               | `string`                                                                                                                            | -                     |
-| `back-icon`    | 返回按钮图标（内置图标名） | `string`                                                                                                                            | `'arrow-left-s-line'` |
-| `breadcrumb`   | 面包屑数据                 | `Array<{ title: string; path?: string }>`                                                                                           | -                     |
-| `tags`         | 标签列表                   | `Array<{ text: string; type?: 'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'error' \| 'info'; color?: string }>` | -                     |
-| `avatar`       | 头像信息                   | `{ src?: string; alt?: string; size?: 'small' \| 'medium' \| 'large' }`                                                             | -                     |
-| `show-divider` | 是否显示底部分割线         | `boolean`                                                                                                                           | `true`                |
-| `height`       | 页头高度                   | `string \| number`                                                                                                                  | -                     |
-| `fixed`        | 是否固定在顶部             | `boolean`                                                                                                                           | `false`               |
-| `z-index`      | 固定时的层级               | `number`                                                                                                                            | `1000`                |
+| 属性           | 说明                       | 类型                                                                                                                                | 默认值                       |
+| -------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `title`        | 页面标题                   | `string`                                                                                                                            | -                            |
+| `subtitle`     | 副标题                     | `string`                                                                                                                            | -                            |
+| `show-back`    | 是否显示返回按钮           | `boolean`                                                                                                                           | `false`                      |
+| `back-text`    | 返回按钮文字               | `string`                                                                                                                            | -                            |
+| `back-icon`    | 返回按钮图标（内置图标名） | `string`                                                                                                                            | `'arrow-left-s-line'`        |
+| `breadcrumb`   | 面包屑数据                 | `Array<{ title: string; path?: string }>`                                                                                           | -                            |
+| `tags`         | 标签列表                   | `Array<{ text: string; type?: 'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'error' \| 'info'; color?: string }>` | -                            |
+| `avatar`       | 头像信息                   | `{ src?: string; alt?: string; size?: 'small' \| 'medium' \| 'large' }`                                                             | -                            |
+| `show-divider` | 是否显示底部分割线         | `boolean`                                                                                                                           | `true`                       |
+| `height`       | 页头高度                   | `string \| number`                                                                                                                  | -                            |
+| `fixed`        | 是否固定在顶部             | `boolean`                                                                                                                           | `false`                      |
+| `z-index`      | 固定时的层级               | `number`                                                                                                                            | ConfigProvider 基础层级 + 20 |
 
 ### Events
 

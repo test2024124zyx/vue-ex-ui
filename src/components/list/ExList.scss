@@ -36,6 +36,7 @@
 }
 
 .ex-list__item {
+  position: relative;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -59,6 +60,8 @@
 }
 
 .ex-list__item-surface {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   margin: 0;
@@ -71,7 +74,14 @@
   @include safe-transition((background-color, box-shadow));
 }
 
-button.ex-list__item-surface {
+.ex-list__item-primary-action {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
 
   &:disabled {
@@ -79,14 +89,30 @@ button.ex-list__item-surface {
   }
 
   &:focus-visible {
-    position: relative;
-    z-index: 1;
     outline: 2px solid var(--ex-color-border-focus);
     outline-offset: -2px;
   }
 }
 
-.ex-list--hoverable .ex-list__item:not(.ex-list__item--disabled) .ex-list__item-surface:hover {
+.ex-list--clickable .ex-list__item-surface {
+  pointer-events: none;
+
+  :is(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [role='link'],
+    [contenteditable]:not([contenteditable='false'])
+  ) {
+    pointer-events: auto;
+  }
+}
+
+.ex-list--hoverable .ex-list__item:not(.ex-list__item--disabled):hover .ex-list__item-surface {
   background: var(--ex-color-bg-hover);
   box-shadow: inset 3px 0 0 var(--ex-color-neon-blue-500);
 }
@@ -239,7 +265,7 @@ button.ex-list__item-surface {
   }
 }
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-list--bordered,
   .ex-list--split .ex-list__item {
     border-width: 2px;

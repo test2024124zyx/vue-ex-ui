@@ -1,21 +1,42 @@
 <template>
   <div :class="rootClasses">
-    <div v-if="hasHeader" class="ex-descriptions__header" :class="{ 'has-title': hasTitle }">
-      <div v-if="hasTitle" :id="titleId" class="ex-descriptions__title">
+    <div
+      v-if="hasHeader"
+      class="ex-descriptions__header"
+      :class="{ 'has-title': hasTitle }"
+    >
+      <div
+        v-if="hasTitle"
+        :id="titleId"
+        class="ex-descriptions__title"
+      >
         <slot name="title">
           {{ title }}
         </slot>
       </div>
-      <div v-if="$slots.extra" class="ex-descriptions__extra">
+      <div
+        v-if="$slots.extra"
+        class="ex-descriptions__extra"
+      >
         <slot name="extra" />
       </div>
     </div>
 
     <div class="ex-descriptions__body">
-      <table class="ex-descriptions__table" :aria-labelledby="hasTitle ? titleId : undefined">
+      <table
+        class="ex-descriptions__table"
+        :aria-labelledby="hasTitle ? titleId : undefined"
+      >
         <tbody>
-          <tr v-for="(row, rowIndex) in tableRows" :key="rowIndex" class="ex-descriptions__row">
-            <template v-for="cell in row" :key="cell.key">
+          <tr
+            v-for="(row, rowIndex) in tableRows"
+            :key="rowIndex"
+            class="ex-descriptions__row"
+          >
+            <template
+              v-for="cell in row"
+              :key="cell.key"
+            >
               <th
                 v-if="cell.kind === 'label'"
                 :id="cell.id"
@@ -26,7 +47,12 @@
               >
                 <span class="ex-descriptions__label-inner">
                   <Cell :nodes="cell.nodes" />
-                  <span v-if="showColon && cell.hasLabel" class="ex-descriptions__colon">:</span>
+                  <span
+                    v-if="showColon && cell.hasLabel"
+                    class="ex-descriptions__colon"
+                  >
+                    :
+                  </span>
                 </span>
               </th>
               <td
@@ -136,8 +162,8 @@ const isItemVNode = (vnode: VNode): boolean => {
   const type = vnode.type as { name?: string; __name?: string } | undefined;
   return Boolean(
     type &&
-      typeof type === 'object' &&
-      (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem')
+    typeof type === 'object' &&
+    (type.name === 'ExDescriptionsItem' || type.__name === 'ExDescriptionsItem')
   );
 };
 
@@ -175,21 +201,16 @@ const items = computed<ParsedItem[]>(() => {
         hasLabel: Boolean(label || labelNodes?.length),
         span: normalizePositiveInteger(getProp(vnodeProps, 'span') ?? 1, 1, normalizedColumn.value),
         labelAlign: getProp(vnodeProps, 'labelAlign', 'label-align') as
-          | DescriptionsAlign
-          | undefined,
+          DescriptionsAlign | undefined,
         contentAlign: getProp(vnodeProps, 'contentAlign', 'content-align') as
-          | DescriptionsAlign
-          | undefined,
+          DescriptionsAlign | undefined,
         labelClass: getProp(vnodeProps, 'labelClass', 'label-class') as
-          | DescriptionsClass
-          | undefined,
+          DescriptionsClass | undefined,
         contentClass: getProp(vnodeProps, 'contentClass', 'content-class') as
-          | DescriptionsClass
-          | undefined,
+          DescriptionsClass | undefined,
         labelStyle: getProp(vnodeProps, 'labelStyle', 'label-style') as CSSProperties | undefined,
         contentStyle: getProp(vnodeProps, 'contentStyle', 'content-style') as
-          | CSSProperties
-          | undefined,
+          CSSProperties | undefined,
       };
     });
 });

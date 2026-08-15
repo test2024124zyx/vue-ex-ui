@@ -46,7 +46,8 @@
       @include neon-glow('blue', 'sm');
 
       img {
-        filter: brightness(0) saturate(100%) invert(70%) sepia(100%) saturate(1000%) hue-rotate(180deg) brightness(1.2);
+        filter: brightness(0) saturate(100%) invert(70%) sepia(100%) saturate(1000%)
+          hue-rotate(180deg) brightness(1.2);
       }
     }
 
@@ -119,7 +120,11 @@
 
     &--active {
       color: var(--ex-color-white);
-      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-pink-500)
+      );
       @include neon-glow('blue', 'sm');
     }
   }
@@ -127,7 +132,11 @@
   // 今天按钮
   &__today-btn {
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
-    background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-neon-blue-500),
+      var(--ex-color-neon-pink-500)
+    );
     border: none;
     border-radius: var(--ex-radius-base);
     color: var(--ex-color-white);
@@ -154,7 +163,11 @@
 
   &__day-header {
     padding: var(--ex-spacing-4);
-    background: linear-gradient(135deg, var(--ex-color-primary-alpha-10), var(--ex-color-secondary-alpha-10));
+    background: linear-gradient(
+      135deg,
+      var(--ex-color-primary-alpha-10),
+      var(--ex-color-secondary-alpha-10)
+    );
     border-radius: var(--ex-radius-base);
     margin-bottom: var(--ex-spacing-4);
   }
@@ -187,6 +200,10 @@
   }
 
   &__day-event {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     padding: var(--ex-spacing-4);
     background: var(--ex-color-bg-tertiary);
     border: 1px solid var(--ex-color-border-primary);
@@ -199,6 +216,11 @@
       border-color: var(--ex-color-neon-blue-500);
       transform: translateX(4px);
       @include neon-glow('blue', 'sm');
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
     }
 
     &--success {
@@ -324,7 +346,11 @@
     // 选中
     &[aria-selected='true'] {
       border-color: var(--ex-color-secondary);
-      background: linear-gradient(135deg, var(--ex-color-primary-alpha-20), var(--ex-color-secondary-alpha-20));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-primary-alpha-20),
+        var(--ex-color-secondary-alpha-20)
+      );
       @include neon-glow('pink', 'sm');
 
       .ex-calendar__date-number {
@@ -449,6 +475,11 @@
 
   // 事件项
   &__event {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: var(--ex-spacing-1);
@@ -464,6 +495,11 @@
       transform: translateX(2px);
     }
 
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 1px;
+    }
+
     &--success {
       background: var(--ex-color-success-alpha-10);
       border-left-color: var(--ex-color-success);
@@ -471,7 +507,7 @@
       .ex-calendar__event-dot {
         background: var(--ex-color-success);
       }
-      
+
       &:hover {
         background: var(--ex-color-success-alpha-20);
       }
@@ -484,7 +520,7 @@
       .ex-calendar__event-dot {
         background: var(--ex-color-warning);
       }
-      
+
       &:hover {
         background: var(--ex-color-warning-alpha-20);
       }
@@ -497,7 +533,7 @@
       .ex-calendar__event-dot {
         background: var(--ex-color-danger);
       }
-      
+
       &:hover {
         background: var(--ex-color-error-alpha-20);
       }
@@ -510,7 +546,7 @@
       .ex-calendar__event-dot {
         background: var(--ex-color-info);
       }
-      
+
       &:hover {
         background: var(--ex-color-info-alpha-20);
       }
@@ -523,7 +559,7 @@
       .ex-calendar__event-dot {
         background: var(--ex-color-primary);
       }
-      
+
       &:hover {
         background: var(--ex-color-primary-alpha-20);
       }
@@ -563,6 +599,10 @@
   }
 
   &__year-month {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: initial;
     padding: var(--ex-spacing-3);
     background: var(--ex-color-bg-tertiary);
     border: 1px solid var(--ex-color-border-primary);
@@ -574,6 +614,11 @@
       border-color: var(--ex-color-neon-blue-500);
       transform: translateY(-2px);
       @include neon-glow('blue', 'sm');
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
     }
   }
 
@@ -682,7 +727,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     border-width: 2px;
 
     .ex-calendar__cell {

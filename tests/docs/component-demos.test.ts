@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -11,12 +11,114 @@ const readLiveMarkup = (name: string): string => readDocument(name).replace(/```
 const countLiveComponent = (name: string, component: string): number =>
   readLiveMarkup(name).match(new RegExp(`<${component}\\b`, 'gi'))?.length ?? 0;
 
+const componentDocumentNames = readdirSync(resolve(process.cwd(), 'docs/components'))
+  .filter(file => file.endsWith('.md'))
+  .map(file => file.slice(0, -3))
+  .filter(name => /<(?:ex-|Ex)[a-z0-9-]+\b/i.test(readLiveMarkup(name)))
+  .sort();
+
+const interactiveComponentDocumentNames = [
+  'affix',
+  'anchor',
+  'back-top',
+  'breadcrumb',
+  'cascader',
+  'collapse',
+  'color-picker',
+  'datetime-picker',
+  'dialog',
+  'drawer',
+  'dropdown',
+  'menu',
+  'modal',
+  'number-input',
+  'pagination',
+  'popconfirm',
+  'popover',
+  'radio',
+  'rate',
+  'slider',
+  'switch',
+  'tabs',
+  'time-picker',
+  'tooltip',
+  'tree',
+  'tree-select',
+] as const;
+
+const displayDataComponentDocumentNames = [
+  'barcode',
+  'calendar',
+  'card',
+  'carousel',
+  'chart',
+  'code',
+  'descriptions',
+  'divider',
+  'empty',
+  'file-download',
+  'file-list',
+  'file-preview',
+  'file-upload',
+  'flex',
+  'grid',
+  'heatmap',
+  'image',
+  'image-compress',
+  'image-crop',
+  'list',
+  'progress',
+  'qrcode',
+  'skeleton',
+  'steps',
+  'table',
+  'timeline',
+  'verification-code',
+] as const;
+
 const readBlocks = (document: string, marker: RegExp): string[] =>
   [...document.matchAll(marker)].map(match => match[1] ?? '');
 
-// 折叠代码中的换行和对象尾逗号只用于排版，比较时统一后验证示例内容本身。
+// 折叠代码中的换行、尾逗号和单参数括号只用于排版，比较时统一后验证示例内容本身。
 const normalizeTypographyExample = (example: string): string =>
-  example.replace(/\s+/g, ' ').replace(/\s+>/g, '>').replace(/,\s*}/g, ' }').trim();
+  example
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>/g, '$1 =>')
+    .replace(/\[\s+/g, '[')
+    .replace(/,\s*]/g, ']')
+    .replace(/\s+>/g, '>')
+    .replace(/>\s+/g, '>')
+    .replace(/\s+</g, '<')
+    .replace(/,\s*}/g, ' }')
+    .trim();
+
+// 文档演示容器只承担样式隔离和排版，不属于组件业务示例。
+const unwrapDocumentationContainer = (block: string): string => {
+  const wrapper = block.match(
+    /^\s*<div\b(?=[^>]*\bclass\s*=\s*"[^"]*(?:vp-raw|demo-container|demo-block)[^"]*")[^>]*>\s*([\s\S]*)\s*<\/div>\s*$/
+  );
+  return wrapper?.[1] ?? block;
+};
+
+// 可复制示例允许携带脚本和样式，但模板标记必须与实时演示完全一致。
+const extractCopyableExampleMarkup = (block: string): string => {
+  const templateStart = block.search(/<template>\s*/i);
+  const templateEnd = block.toLowerCase().lastIndexOf('</template>');
+  const template =
+    templateStart >= 0 && templateEnd > templateStart
+      ? block.slice(block.indexOf('>', templateStart) + 1, templateEnd)
+      : null;
+  const markup =
+    template ??
+    block.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '');
+
+  return normalizeTypographyExample(unwrapDocumentationContainer(markup));
+};
+
+// raw 与源码统一忽略文档专用容器后，再比较完整业务标记。
+const normalizeLiveExampleMarkup = (block: string): string => {
+  return normalizeTypographyExample(unwrapDocumentationContainer(block));
+};
 
 const extractTypographyExamples = (block: string): string[] =>
   (block.match(/<ex-typography\b[\s\S]*?(?:<\/ex-typography>|\/>)/gi) ?? []).map(
@@ -89,6 +191,55 @@ const extractFormExampleMarkup = (block: string): string => {
 };
 
 describe('组件文档实时演示', () => {
+  it.each(componentDocumentNames)('%s 的每个实时演示都有隔离且默认折叠的 Vue 源码', name => {
+    const document = readDocument(name);
+    const documentWithoutCodeFences = document
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`[^`\n]*`/g, '');
+    const rawBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const pairedBlocks = document.match(
+      /::: raw\s*\n[\s\S]*?\n:::\s*\n+::: details 查看示例代码\s*\n```vue\s*\n[\s\S]*?\n```\s*\n:::/g
+    );
+    const markupOutsideRaw = documentWithoutCodeFences.replace(/::: raw\s*\n[\s\S]*?\n:::/g, '');
+
+    expect(rawBlocks.length).toBeGreaterThan(0);
+    expect(pairedBlocks ?? []).toHaveLength(rawBlocks.length);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+    expect(markupOutsideRaw).not.toMatch(/<(?:ex-|Ex)[a-z0-9-]+\b/i);
+  });
+
+  it.each(interactiveComponentDocumentNames)('%s 的实时演示与可复制源码保持一致', name => {
+    const document = readDocument(name);
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(normalizeLiveExampleMarkup(liveBlock)).toBe(
+        extractCopyableExampleMarkup(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it.each(displayDataComponentDocumentNames)('%s 的实时演示与可复制源码保持一致', name => {
+    const document = readDocument(name);
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(codeBlocks).toHaveLength(liveBlocks.length);
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(normalizeLiveExampleMarkup(liveBlock)).toBe(
+        extractCopyableExampleMarkup(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
   it.each([
     ['typography', 'ex-typography', 32],
     ['icon', 'ex-icon', 4],

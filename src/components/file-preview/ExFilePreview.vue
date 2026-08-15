@@ -4,7 +4,7 @@
       <div
         v-if="visible"
         ref="previewRef"
-        class="ex-file-preview"
+        :class="previewClasses"
         :data-theme="configTheme"
         role="dialog"
         aria-modal="true"
@@ -147,6 +147,21 @@
             </ExButton>
           </div>
         </div>
+
+        <ExButton
+          v-if="!showToolbar && showClose"
+          type="text"
+          shape="circle"
+          class="ex-file-preview__toolbar-btn ex-file-preview__standalone-close"
+          :aria-label="t('closePreview')"
+          @click="requestClose"
+        >
+          <ExIcon
+            icon="close-line"
+            :size="20"
+            aria-hidden="true"
+          />
+        </ExButton>
 
         <div class="ex-file-preview__content">
           <ExButton
@@ -341,7 +356,12 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { useConfigTheme, useZIndex } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import { useControllableState } from '../../composables/useControllableState';
 import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
@@ -394,8 +414,10 @@ const emit = defineEmits<ExFilePreviewEmits>();
 defineSlots<ExFilePreviewSlots>();
 
 const { t } = useLocale('filePreview');
-const baseZIndex = useZIndex(50);
+const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
+const animation = useAnimation();
+const neonEffect = useNeonEffect();
 const previewRef = ref<HTMLDivElement>();
 const { files: fileList, sourceFailure } = usePreviewSources(
   () => props.file,
@@ -422,6 +444,13 @@ const dialogLabel = computed(() =>
   props.ariaLabel ? props.ariaLabel : currentFile.value?.name || t('preview')
 );
 const previewStyle = computed(() => ({ zIndex: props.zIndex ?? baseZIndex.value }));
+const previewClasses = computed(() => [
+  'ex-file-preview',
+  {
+    'ex-no-animation': !animation.value,
+    'ex-no-neon': !neonEffect.value,
+  },
+]);
 const canDownload = computed(() =>
   Boolean(props.showDownload && currentFile.value && currentUrl.value)
 );
@@ -528,9 +557,13 @@ const handleMaskClick = (): void => {
 
 const handleWheel = (event: WheelEvent): void => {
   if (!props.zoomable || currentType.value !== 'image') return;
-  event.preventDefault();
-  if (event.deltaY < 0) requestZoomIn();
-  else if (event.deltaY > 0) requestZoomOut();
+  if (event.deltaY < 0 && !cannotZoomIn.value) {
+    event.preventDefault();
+    requestZoomIn();
+  } else if (event.deltaY > 0 && !cannotZoomOut.value) {
+    event.preventDefault();
+    requestZoomOut();
+  }
 };
 
 const isShortcutInput = (target: EventTarget | null): boolean => {
@@ -543,7 +576,7 @@ const isShortcutInput = (target: EventTarget | null): boolean => {
 };
 
 const handleShortcut = (event: KeyboardEvent): void => {
-  if (isShortcutInput(event.target)) return;
+  if (isShortcutInput(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
 
   if (event.key === 'ArrowLeft' && currentIndex.value > 0) {
     event.preventDefault();
@@ -551,10 +584,20 @@ const handleShortcut = (event: KeyboardEvent): void => {
   } else if (event.key === 'ArrowRight' && currentIndex.value < fileList.value.length - 1) {
     event.preventDefault();
     requestNext();
-  } else if ((event.key === '+' || event.key === '=') && !cannotZoomIn.value) {
+  } else if (
+    currentType.value === 'image' &&
+    props.zoomable &&
+    (event.key === '+' || event.key === '=') &&
+    !cannotZoomIn.value
+  ) {
     event.preventDefault();
     requestZoomIn();
-  } else if (event.key === '-' && !cannotZoomOut.value) {
+  } else if (
+    currentType.value === 'image' &&
+    props.zoomable &&
+    event.key === '-' &&
+    !cannotZoomOut.value
+  ) {
     event.preventDefault();
     requestZoomOut();
   } else if (event.key === '0' && props.zoomable && currentType.value === 'image') {
@@ -577,13 +620,20 @@ watch(
   { immediate: true }
 );
 
-const handleMediaReady = (): void => {
+const isCurrentMediaEvent = (event: Event): boolean => {
+  const target = event.currentTarget;
+  return target instanceof Node && Boolean(previewRef.value?.contains(target));
+};
+
+const handleMediaReady = (event: Event): void => {
+  if (!isCurrentMediaEvent(event)) return;
   if (!currentFile.value) return;
   mediaState.value = 'ready';
   emit('ready', currentFile.value, currentIndex.value);
 };
 
 const handleMediaError = (cause: Event): void => {
+  if (!isCurrentMediaEvent(cause)) return;
   if (!currentFile.value) return;
   mediaState.value = 'error';
   emit(
@@ -635,17 +685,10 @@ const displayTextLine = (line: string): string => line || '\u200b';
 const createTextTooLargeError = (): ExFilePreviewError =>
   new ExFilePreviewError('文本内容超过允许的最大字节数', { code: 'text-too-large' });
 
-const getTextByteLength = (text: string): number => {
-  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(text).byteLength;
-  return new Blob([text]).size;
-};
-
 const readBoundedText = async (response: Response, byteLimit: number): Promise<string> => {
   const reader = response.body?.getReader();
   if (!reader) {
-    const text = await response.text();
-    if (getTextByteLength(text) > byteLimit) throw createTextTooLargeError();
-    return text;
+    throw createTextTooLargeError();
   }
 
   const decoder = new TextDecoder();
@@ -707,8 +750,11 @@ const loadTextContent = async (
       });
     }
 
-    const contentLength = Number(response.headers.get('content-length'));
-    if (Number.isFinite(contentLength) && contentLength > byteLimit) {
+    const rawContentLength = response.headers.get('content-length');
+    const contentLength =
+      rawContentLength !== null && /^\d+$/.test(rawContentLength) ? Number(rawContentLength) : null;
+    if (contentLength !== null && Number.isFinite(contentLength) && contentLength > byteLimit) {
+      controller.abort();
       throw createTextTooLargeError();
     }
 
@@ -718,7 +764,12 @@ const loadTextContent = async (
     textState.value = 'ready';
     emit('ready', file, index);
   } catch (cause) {
-    if (revision !== textRequestRevision || controller.signal.aborted) return;
+    if (
+      revision !== textRequestRevision ||
+      (controller.signal.aborted && !(cause instanceof ExFilePreviewError))
+    ) {
+      return;
+    }
     const error =
       cause instanceof ExFilePreviewError
         ? cause
