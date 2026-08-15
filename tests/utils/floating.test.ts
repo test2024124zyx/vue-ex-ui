@@ -88,4 +88,38 @@ describe('computeFloatingPosition', () => {
     expect(Number.isFinite(result.x)).toBe(true);
     expect(Number.isFinite(result.y)).toBe(true);
   });
+
+  it('非法位置和关闭翻转时应该使用安全默认方向与居中对齐', () => {
+    expect(
+      computeFloatingPosition({
+        reference,
+        floating,
+        viewport,
+        placement: 'invalid' as never,
+        flip: false,
+      })
+    ).toMatchObject({ placement: 'bottom', x: 80, y: 140 });
+  });
+
+  it('左右方向应该覆盖起始和结束交叉轴对齐', () => {
+    expect(
+      computeFloatingPosition({
+        reference,
+        floating,
+        viewport,
+        placement: 'right-end',
+        offset: 4,
+      })
+    ).toMatchObject({ placement: 'right-end', x: 184, y: 80 });
+    expect(
+      computeFloatingPosition({
+        reference,
+        floating,
+        viewport,
+        placement: 'left-start',
+        offset: 4,
+        flip: false,
+      })
+    ).toMatchObject({ placement: 'left-start', x: 8, y: 100 });
+  });
 });

@@ -1,9 +1,17 @@
 import { renderToString } from '@vue/server-renderer';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
+import { afterEach, vi } from 'vitest';
 import { generateId, generateRandomId, generateUUID } from '../../src/utils/id';
 
 describe('id utilities', () => {
+  const originalCrypto = globalThis.crypto;
+
+  afterEach(() => {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: originalCrypto });
+    vi.restoreAllMocks();
+  });
+
   it('组件作用域中的 ID 在服务端渲染与客户端首屏保持一致', async () => {
     const Probe = defineComponent({
       setup() {
@@ -42,5 +50,30 @@ describe('id utilities', () => {
     expect(generateUUID()).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
     );
+  });
+
+  it('没有 Web Crypto 时应该使用安全字符降级和 UUID 位修正', () => {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: {} });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    expect(generateRandomId(4)).toMatch(/^[A-Za-z0-9]{4}$/);
+    expect(generateUUID()).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+  });
+
+  it('随机源返回拒绝采样字节时应该继续采样直到填满长度', () => {
+    const getRandomValues = vi.fn((bytes: Uint8Array) => {
+      bytes.fill(255);
+      bytes[0] = 0;
+      return bytes;
+    });
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: { getRandomValues },
+    });
+
+    expect(generateRandomId(5)).toMatch(/^[A-Za-z0-9]{5}$/);
+    expect(getRandomValues.mock.calls.length).toBeGreaterThan(1);
   });
 });
