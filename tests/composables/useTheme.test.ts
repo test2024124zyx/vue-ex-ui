@@ -1,11 +1,14 @@
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import {
+  getPreferredSystemTheme,
   getTheme,
   loadThemeFromStorage,
   onThemeChange,
+  observeSystemTheme,
   saveThemeToStorage,
   setTheme,
+  toggleTheme,
   usePersistedTheme,
   useSystemTheme,
   VALID_THEMES,
@@ -135,5 +138,89 @@ describe('useTheme', () => {
 
     stop();
     expect(darkListeners.size).toBe(0);
+  });
+
+  it('主题切换支持自定义循环列表并拒绝空列表和未知主题', () => {
+    toggleTheme([]);
+    expect(getTheme()).toBe('neon-blue');
+    toggleTheme(['light']);
+    expect(getTheme()).toBe('light');
+    toggleTheme(['light', 'neon-blue']);
+    expect(getTheme()).toBe('neon-blue');
+    expect(() => toggleTheme(['unknown' as never])).toThrow(TypeError);
+  });
+
+  it('主题回调快照允许回调在执行时取消自身', () => {
+    const calls: string[] = [];
+    let stopSelf = () => undefined;
+    stopSelf = onThemeChange(theme => {
+      calls.push(`self:${theme}`);
+      stopSelf();
+    });
+    onThemeChange(theme => calls.push(`other:${theme}`));
+
+    setTheme('light');
+    setTheme('neon-blue');
+    expect(calls).toEqual(['self:light', 'other:light', 'other:neon-blue']);
+  });
+
+  it('系统主题偏好在无 API、非暗色和异常 API 时安全回退', () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined });
+    expect(getPreferredSystemTheme()).toBe('neon-blue');
+    const callback = vi.fn();
+    expect(observeSystemTheme(callback)).toBeTypeOf('function');
+    expect(callback).toHaveBeenCalledWith('neon-blue');
+
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+    expect(getPreferredSystemTheme()).toBe('light');
+    const stop = observeSystemTheme(callback, false);
+    stop();
+
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => {
+        throw new Error('denied');
+      }),
+    });
+    expect(getPreferredSystemTheme()).toBe('neon-blue');
+    expect(observeSystemTheme(callback)).toBeTypeOf('function');
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: originalMatchMedia });
+  });
+
+  it('系统主题监听应该响应变化事件且重复停止无副作用', () => {
+    let listener: ((event: MediaQueryListEvent) => void) | undefined;
+    const query = {
+      matches: true,
+      addEventListener: vi.fn((_type: string, callback: (event: MediaQueryListEvent) => void) => {
+        listener = callback;
+      }),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList;
+    vi.spyOn(window, 'matchMedia').mockReturnValue(query);
+    const callback = vi.fn();
+    const stop = observeSystemTheme(callback);
+    expect(callback).toHaveBeenCalledWith('neon-blue');
+    listener?.({} as MediaQueryListEvent);
+    expect(callback).toHaveBeenCalledTimes(2);
+    stop();
+    stop();
+    expect(query.removeEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('存储主题会忽略无效值并保存有效值', () => {
+    saveThemeToStorage('light');
+    expect(loadThemeFromStorage()).toBe('light');
+    localStorage.setItem('ex-ui-theme', 'unknown');
+    expect(loadThemeFromStorage()).toBeNull();
+    saveThemeToStorage('unknown' as never);
+    expect(localStorage.getItem('ex-ui-theme')).toBe('unknown');
   });
 });
