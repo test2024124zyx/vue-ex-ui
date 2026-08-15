@@ -21,6 +21,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel title="基础面板">
@@ -29,6 +31,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 带副标题
 
@@ -60,6 +64,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -71,6 +77,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 带图标
 
@@ -102,6 +110,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel title="游戏设置">
@@ -118,6 +128,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 不同类型
 
@@ -157,6 +169,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -181,6 +195,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 不同尺寸
 
@@ -211,6 +227,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -235,6 +253,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 阴影效果
 
@@ -274,6 +294,8 @@ import { ref } from 'vue'
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -291,6 +313,8 @@ import { ref } from 'vue'
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 可悬停
 
@@ -372,6 +396,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -391,6 +417,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 额外内容
 
@@ -427,6 +455,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel title="任务列表">
@@ -442,6 +472,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 底部内容
 
@@ -469,6 +501,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -494,6 +528,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 </template>
 ```
 
+:::
+
 ## 无边框
 
 设置 `bordered` 为 `false` 可以渲染无边框的面板。
@@ -511,6 +547,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -521,6 +559,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 自定义样式
 
@@ -541,6 +581,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -556,6 +598,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## 加载状态
 
@@ -578,6 +622,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
 
 :::
 
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPanel
@@ -588,6 +634,8 @@ Enter / Space 激活能力。仅展示内容的面板不会伪装成按钮。
   </ExPanel>
 </template>
 ```
+
+:::
 
 ## API
 

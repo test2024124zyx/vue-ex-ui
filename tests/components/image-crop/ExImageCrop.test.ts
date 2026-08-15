@@ -43,12 +43,9 @@ const ControlStub = {
     size: [Number, String],
   },
   emits: ['click'],
-  setup(
-    props: { loading: boolean; disabled: boolean; icon?: string },
-    { attrs, emit, slots }: SetupContext
-  ) {
+  setup(props: Record<string, unknown>, { attrs, emit, slots }: SetupContext) {
     return () => {
-      if (props.icon) {
+      if (typeof props.icon === 'string' && props.icon.length > 0) {
         return h('span', { class: 'icon-stub', 'aria-hidden': 'true' });
       }
       return h(
@@ -56,7 +53,7 @@ const ControlStub = {
         {
           ...attrs,
           type: 'button',
-          disabled: props.disabled || props.loading,
+          disabled: props.disabled === true || props.loading === true,
           onClick: (event: MouseEvent) => emit('click', event),
         },
         slots.default?.()

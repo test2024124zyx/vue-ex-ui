@@ -105,9 +105,13 @@ const closeAll = () => {
 
 从页面角落悬浮出现，4.5 秒后自动消失。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showInfo">信息通知</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -126,10 +130,13 @@ const showInfo = () => {
 </script>
 ```
 
+:::
+
 ## 不同类型
 
 用来显示「成功、警告、消息、错误」类的通知。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showInfo">信息</ex-button>
   <ex-button
@@ -151,6 +158,9 @@ const showInfo = () => {
     错误
   </ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -208,16 +218,22 @@ const showError = () => {
 </script>
 ```
 
+:::
+
 ## 不同位置
 
 可以设置通知从四个角落弹出。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showInfo">右上角（默认）</ex-button>
   <ex-button @click="showTopLeft">左上角</ex-button>
   <ex-button @click="showBottomRight">右下角</ex-button>
   <ex-button @click="showBottomLeft">左下角</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -248,14 +264,20 @@ const showBottomRight = () => {
 </script>
 ```
 
+:::
+
 ## 自定义时长
 
 自定义通知显示时长。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showCustomDuration">10 秒后关闭</ex-button>
   <ex-button @click="showNonClosable">不自动关闭</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -285,13 +307,19 @@ const showNonClosable = () => {
 </script>
 ```
 
+:::
+
 ## HTML 内容
 
 支持渲染 HTML 字符串。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showHtml">HTML 内容</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -310,6 +338,8 @@ const showHtml = () => {
 };
 </script>
 ```
+
+:::
 
 ::: warning 安全提示
 `dangerouslyUseHTMLString` 会经过内置白名单消毒，但仍应避免传入未经确认的外部 HTML。
@@ -330,9 +360,13 @@ notification.info({
 
 可以设置点击和关闭时的回调函数。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showWithCallback">带回调的通知</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -357,10 +391,13 @@ const showWithCallback = () => {
 </script>
 ```
 
+:::
+
 ## 关闭所有
 
 一次性关闭所有通知。
 
+::: raw
 <div class="demo-container">
   <ex-button @click="showInfo">显示通知</ex-button>
   <ex-button @click="showSuccess">显示通知</ex-button>
@@ -372,6 +409,9 @@ const showWithCallback = () => {
     关闭所有
   </ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -399,6 +439,8 @@ const closeAll = () => {
 };
 </script>
 ```
+
+:::
 
 ## 全局配置
 

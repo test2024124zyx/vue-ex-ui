@@ -163,14 +163,17 @@ describe('image-crop utils', () => {
 
   it('矩形裁剪按来源像素输出 JPEG 并应用背景色和质量', async () => {
     let encodedSize = { width: 0, height: 0 };
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      function (callback, type, quality) {
-        encodedSize = { width: this.width, height: this.height };
-        expect(type).toBe('image/jpeg');
-        expect(quality).toBe(0.85);
-        callback(new Blob(['jpeg'], { type: 'image/jpeg' }));
-      }
-    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+      this: HTMLCanvasElement,
+      callback,
+      type,
+      quality
+    ) {
+      encodedSize = { width: this.width, height: this.height };
+      expect(type).toBe('image/jpeg');
+      expect(quality).toBe(0.85);
+      callback(new Blob(['jpeg'], { type: 'image/jpeg' }));
+    });
 
     const result = await renderCrop(image, { width: 800, height: 600 }, layout, {
       area: { x: 100, y: 75, width: 200, height: 100 },

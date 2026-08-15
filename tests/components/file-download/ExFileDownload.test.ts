@@ -124,7 +124,9 @@ describe('ExFileDownload', () => {
     });
     vi.stubGlobal('URL', TestURL);
     vi.stubGlobal('location', new TestURL('https://app.example/page'));
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
       clickedAnchors.push({ href: this.href, download: this.download });
     });
   });

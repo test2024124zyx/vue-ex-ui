@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useAnimation, useNeonEffect } from '../config-provider/composables';
+import { useAnimation, useNeonEffect, useZIndexLayer } from '../config-provider/composables';
 import { normalizeLayoutLength } from './layout-utils';
 import type { ExHeaderExposed, ExHeaderProps } from './types';
 
@@ -56,6 +56,7 @@ const props = withDefaults(defineProps<ExHeaderProps>(), {
 const headerRef = ref<HTMLElement>();
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
+const stickyZIndex = useZIndexLayer('sticky');
 
 const headerClasses = computed(() => [
   'ex-header',
@@ -68,6 +69,7 @@ const headerClasses = computed(() => [
 ]);
 const headerStyles = computed<Record<string, string>>(() => ({
   '--ex-header-height': normalizeLayoutLength(props.height, 64),
+  ...(props.fixed ? { zIndex: String(stickyZIndex.value) } : {}),
 }));
 
 const getElement = (): HTMLElement | null => headerRef.value ?? null;

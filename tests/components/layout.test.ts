@@ -237,6 +237,18 @@ describe('Layout v2', () => {
       );
     });
 
+    it('固定 Header/Footer 继承 ConfigProvider 的 sticky 语义层', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { zIndex: 2400 },
+        slots: {
+          default: () => [h(ExHeader, { fixed: true }), h(ExFooter, { fixed: true })],
+        },
+      });
+
+      expect(wrapper.find('header').attributes('style')).toContain('z-index: 2420');
+      expect(wrapper.find('footer').attributes('style')).toContain('z-index: 2420');
+    });
+
     it('显式关闭霓虹效果会覆盖全局默认值', () => {
       const header = mount(ExHeader, { props: { neonBorder: false } });
       const footer = mount(ExFooter, { props: { neonBorder: false } });

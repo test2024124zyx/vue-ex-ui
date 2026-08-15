@@ -29,12 +29,16 @@ onBeforeUnmount(() => loadingBar.destroy())
 
 `start()` 会自动推进到 90% 以内；调用 `finish()`、`error()` 或 `warning()` 后，加载条展示对应终态并自动清理。
 
+::: raw
 <div class="demo-container">
   <ExButton type="primary" @click="start">开始</ExButton>
   <ExButton type="success" @click="finish">完成</ExButton>
   <ExButton type="danger" @click="fail">失败</ExButton>
   <ExButton type="warning" @click="warn">警告</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup lang="ts">
@@ -53,10 +57,13 @@ const load = async () => {
 </script>
 ```
 
+:::
+
 ## 手动进度
 
 `update()` 会显示加载条并切换为手动进度。输入会限制在 0-100；传入 `100` 等同于进入成功终态，`NaN` 与无限值会抛出 `TypeError`。
 
+::: raw
 <div class="demo-container">
   <ExButton @click="update(0)">0%</ExButton>
   <ExButton @click="update(25)">25%</ExButton>
@@ -64,31 +71,34 @@ const load = async () => {
   <ExButton @click="update(75)">75%</ExButton>
   <ExButton @click="update(100)">100%</ExButton>
 </div>
+:::
 
-```ts
-import { loadingBar } from 'vue-ex-ui';
+::: details 查看示例代码
 
-loadingBar.update(35);
-loadingBar.update(80);
+```vue
+import { loadingBar } from 'vue-ex-ui'; loadingBar.update(35); loadingBar.update(80);
 loadingBar.update(100);
 ```
 
+:::
+
 ## 视觉配置
 
+::: raw
 <div class="demo-container">
   <ExButton type="primary" @click="useCustomAppearance">应用配置并开始</ExButton>
   <ExButton @click="resetAppearance">恢复默认并清理</ExButton>
 </div>
+:::
 
-```ts
-import { loadingBar } from 'vue-ex-ui';
+::: details 查看示例代码
 
-loadingBar.config({
-  height: 5,
-  zIndex: 1200,
-  color: percentage => (percentage < 50 ? '#29abe2' : '#10b981'),
-});
+```vue
+import { loadingBar } from 'vue-ex-ui'; loadingBar.config({ height: 5, zIndex: 1200, color:
+percentage => (percentage < 50 ? '#29abe2' : '#10b981'), });
 ```
+
+:::
 
 高度必须在 1-16 之间，层级必须为非负有限值，字符串颜色不能为空。非法配置会抛出异常并保留此前有效配置。
 

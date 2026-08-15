@@ -8,11 +8,15 @@ const collapsed = ref(false)
 
 ## 基础用法
 
+::: raw
 <ExLayout class="layout-demo">
-  <ExHeader>Header</ExHeader>
-  <ExContent>Content</ExContent>
-  <ExFooter>Footer</ExFooter>
+<ExHeader>Header</ExHeader>
+<ExContent>Content</ExContent>
+<ExFooter>Footer</ExFooter>
 </ExLayout>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -28,17 +32,23 @@ import { ExContent, ExFooter, ExHeader, ExLayout } from 'vue-ex-ui';
 </script>
 ```
 
+:::
+
 ## 侧栏布局
 
+::: raw
 <ExLayout class="layout-demo">
-  <ExSider v-model:collapsed="collapsed" collapsible>
-    <div class="layout-demo__sider">Navigation</div>
-  </ExSider>
-  <ExLayout>
-    <ExHeader>Header</ExHeader>
-    <ExContent>Content</ExContent>
-  </ExLayout>
+<ExSider v-model:collapsed="collapsed" collapsible>
+<div class="layout-demo__sider">Navigation</div>
+</ExSider>
+<ExLayout>
+<ExHeader>Header</ExHeader>
+<ExContent>Content</ExContent>
 </ExLayout>
+</ExLayout>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -64,6 +74,8 @@ import { ExContent, ExHeader, ExLayout, ExSider } from 'vue-ex-ui';
 const collapsed = ref(false);
 </script>
 ```
+
+:::
 
 进入 `breakpoint` 对应的小视口后，非受控 Sider 会自动收起；回到宽视口时只恢复由响应式
 逻辑触发的收起状态，不会覆盖用户手动选择。小视口展开时侧栏作为模态导航：锁定页面滚动、

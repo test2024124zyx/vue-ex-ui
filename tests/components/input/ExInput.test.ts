@@ -611,14 +611,16 @@ describe('ExInput', () => {
 
     await textarea.setValue('很多内容');
     await nextTick();
-    pendingFrame?.(0);
+    const firstFrame = pendingFrame as unknown as FrameRequestCallback | undefined;
+    if (typeof firstFrame === 'function') firstFrame(0);
     expect((textarea.element as HTMLTextAreaElement).style.height).toBe('90px');
     expect((textarea.element as HTMLTextAreaElement).style.overflowY).toBe('auto');
 
     scrollHeight = 20;
     await textarea.setValue('少量');
     await nextTick();
-    pendingFrame?.(16);
+    const secondFrame = pendingFrame as unknown as FrameRequestCallback | undefined;
+    if (typeof secondFrame === 'function') secondFrame(16);
     expect((textarea.element as HTMLTextAreaElement).style.height).toBe('50px');
     expect((textarea.element as HTMLTextAreaElement).style.overflowY).toBe('hidden');
 

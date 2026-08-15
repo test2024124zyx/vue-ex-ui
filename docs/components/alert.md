@@ -13,6 +13,7 @@ const visible2 = ref(true)
 
 Alert 组件提供四种类型，由 `type` 属性指定。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -31,6 +32,9 @@ Alert 组件提供四种类型，由 `type` 属性指定。
     title="错误提示"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -53,10 +57,13 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 </template>
 ```
 
+:::
+
 ## 带描述信息
 
 包含标题和详细描述的警告提示。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -69,6 +76,9 @@ Alert 组件提供四种类型，由 `type` 属性指定。
     description="恭喜你，操作已经成功完成！所有数据已经保存。"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -80,10 +90,13 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 </template>
 ```
 
+:::
+
 ## 可关闭
 
 可以添加关闭按钮。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     v-if="visible1"
@@ -95,6 +108,9 @@ Alert 组件提供四种类型，由 `type` 属性指定。
   />
   <ExButton v-if="!visible1" @click="visible1 = true">重新显示</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -114,10 +130,13 @@ const visible = ref(true);
 </script>
 ```
 
+:::
+
 ## 带图标
 
 通过设置 `show-icon` 属性来显示图标。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -140,6 +159,9 @@ const visible = ref(true);
     show-icon
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -166,10 +188,13 @@ const visible = ref(true);
 </template>
 ```
 
+:::
+
 ## 居中显示
 
 使用 `center` 属性让文字水平居中。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="success"
@@ -179,6 +204,9 @@ const visible = ref(true);
     show-icon
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -191,10 +219,13 @@ const visible = ref(true);
 </template>
 ```
 
+:::
+
 ## 自定义图标
 
 通过插槽自定义图标。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -210,6 +241,9 @@ const visible = ref(true);
     </template>
   </ExAlert>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -228,11 +262,14 @@ const visible = ref(true);
   </ExAlert>
 </template>
 ```
+
+:::
 
 ## 不同变体
 
 通过 `variant` 设置 `standard`（默认）、`filled`、`outlined` 三种视觉风格。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="success"
@@ -253,6 +290,9 @@ const visible = ref(true);
     show-icon
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -276,11 +316,14 @@ const visible = ref(true);
   />
 </template>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 设置 `small` / `medium`（默认）/ `large`，未设置时跟随 `ExConfigProvider` 全局尺寸。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -301,6 +344,9 @@ const visible = ref(true);
     show-icon
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -325,10 +371,13 @@ const visible = ref(true);
 </template>
 ```
 
+:::
+
 ## 操作区域
 
 通过 `action` 插槽在右侧放置操作按钮。
 
+::: raw
 <div class="demo-container">
   <ExAlert type="warning" title="检测到新版本" description="建议立即更新以获取最新功能。" show-icon>
     <template #action>
@@ -336,6 +385,9 @@ const visible = ref(true);
     </template>
   </ExAlert>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -356,6 +408,8 @@ const visible = ref(true);
   </ExAlert>
 </template>
 ```
+
+:::
 
 ## 受控 / 非受控
 

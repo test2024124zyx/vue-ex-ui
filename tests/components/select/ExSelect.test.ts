@@ -60,8 +60,6 @@ describe('ExSelect', () => {
       const wrapper: VueWrapper = mount(ExSelect, {
         props: {
           modelValue: '',
-          'onUpdate:modelValue': (value: string | number | null) =>
-            wrapper.setProps({ modelValue: value }),
           options: basicOptions,
         },
       });
@@ -236,8 +234,6 @@ describe('ExSelect', () => {
       const wrapper: VueWrapper = mount(ExSelect, {
         props: {
           modelValue: 'option1',
-          'onUpdate:modelValue': (value: string | number | null) =>
-            wrapper.setProps({ modelValue: value }),
           options: basicOptions,
           clearable: true,
         },

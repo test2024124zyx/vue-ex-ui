@@ -79,7 +79,7 @@ export function setFieldValue(model: Record<string, unknown>, prop: string, valu
       child = isArrayIndex(nextKey) ? [] : {};
       writeOwn(target, key, child);
     }
-    target = child;
+    target = child as FieldContainer;
   }
 
   writeOwn(target, lastKey, value);

@@ -120,7 +120,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
-  useZIndex,
+  useZIndexLayer,
 } from '../config-provider/composables';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
@@ -163,7 +163,7 @@ const props = withDefaults(defineProps<ExModalProps>(), {
 const emit = defineEmits<ExModalEmits>();
 const attrs = useAttrs();
 const { t } = useLocale('dialog');
-const baseZIndex = useZIndex(50);
+const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();

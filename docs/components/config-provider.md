@@ -35,6 +35,7 @@ const changesize = () => {
 
 在应用的最外层使用 ConfigProvider 包裹，所有子组件都会继承配置。
 
+::: raw
 <div class="demo-container">
 <ExPanel>
 <template #extra>
@@ -55,6 +56,9 @@ const changesize = () => {
   </ExConfigProvider>
 </ExPanel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -80,6 +84,8 @@ const changesize = () => {
   </ExConfigProvider>
 </template>
 ```
+
+:::
 
 ::: tip 提示
 ConfigProvider 会自动将配置传递给所有子组件，无需手动传递 props。
@@ -159,6 +165,7 @@ const hostI18n = useHostI18n();
 
 通过 `theme` 属性可以切换不同的主题风格。点击按钮查看不同主题效果。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
     <ExButton 
@@ -201,6 +208,9 @@ const hostI18n = useHostI18n();
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -219,10 +229,13 @@ const theme = ref('neon-blue');
 </template>
 ```
 
+:::
+
 ## 语言切换
 
 通过 `locale` 属性可以切换界面语言。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -243,6 +256,9 @@ const theme = ref('neon-blue');
     <ExEmpty />
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -258,10 +274,13 @@ const locale = ref('zh-CN');
 </template>
 ```
 
+:::
+
 ## 全局尺寸
 
 通过 `size` 属性可以设置所有组件的默认尺寸。点击按钮查看不同尺寸效果。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px; display: flex; gap: 8px;">
     <ExButton 
@@ -308,6 +327,9 @@ const locale = ref('zh-CN');
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -324,10 +346,13 @@ const size = ref('medium');
 </template>
 ```
 
+:::
+
 ## 霓虹效果控制
 
 通过 `neon-effect` 属性可以全局控制霓虹发光效果。禁用后，所有组件的发光效果都会消失。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -362,6 +387,9 @@ const size = ref('medium');
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -378,10 +406,13 @@ const neonEffect = ref(true);
 </template>
 ```
 
+:::
+
 ## 动画控制
 
 通过 `animation` 属性可以全局控制动画效果。禁用后，所有过渡和动画都会被移除。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -413,10 +444,13 @@ const neonEffect = ref(true);
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 无障碍支持
 ConfigProvider 会自动尊重用户的 `prefers-reduced-motion` 设置。如果用户在系统中启用了"减少动画"选项，动画会自动禁用。
 :::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -433,15 +467,21 @@ const animation = ref(true);
 </template>
 ```
 
+:::
+
 ## 自定义 z-index
 
 通过 `z-index` 属性可以自定义组件的 z-index 基础值。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider :z-index="2000">
     <ExButton type="primary">z-index 基础值为 2000</ExButton>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -451,10 +491,13 @@ const animation = ref(true);
 </template>
 ```
 
+:::
+
 ## 综合演示
 
 一个完整的示例，展示如何组合使用多个配置选项。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider 
     :theme="customTheme" 
@@ -557,15 +600,45 @@ const animation = ref(true);
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 实时预览
 上面的演示是完全交互式的，你可以实时调整配置并查看效果。所有配置都会立即应用到子组件。
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const customTheme = ref('neon-blue');
+const customSize = ref('medium');
+const neonEffect = ref(true);
+const animation = ref(true);
+</script>
+
+<template>
+  <ExConfigProvider
+    :theme="customTheme"
+    :size="customSize"
+    :neon-effect="neonEffect"
+    :animation="animation"
+    locale="zh-CN"
+  >
+    <ExCard type="primary">配置控制面板</ExCard>
+    <ExCard>效果预览</ExCard>
+  </ExConfigProvider>
+</template>
+```
+
 :::
 
 ## 嵌套使用
 
 ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider theme="neon-blue" size="medium">
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -592,6 +665,9 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -611,10 +687,13 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
 </template>
 ```
 
+:::
+
 ## 实际应用场景
 
 一个完整的游戏应用示例，展示如何在实际项目中使用 ConfigProvider。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider theme="neon-blue" locale="zh-CN" size="medium">
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -669,9 +748,28 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 应用场景
 这个示例展示了如何在应用中使用 ConfigProvider 来统一管理主题、尺寸等配置。所有组件都会自动继承这些配置，无需手动传递 props。
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    size="medium"
+  >
+    <ExCard type="primary">游戏大厅</ExCard>
+    <ExCard hoverable>统计信息</ExCard>
+    <ExButton type="primary">开始游戏</ExButton>
+  </ExConfigProvider>
+</template>
+```
+
 :::
 
 ## 组合式 API

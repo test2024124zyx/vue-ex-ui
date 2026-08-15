@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import type { ExAffixProps, ExAffixEmits, ExAffixExposed } from './types';
+import { useZIndexLayer } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExAffix',
@@ -26,10 +27,11 @@ const props = withDefaults(defineProps<ExAffixProps>(), {
   offsetTop: undefined,
   offsetBottom: undefined,
   target: () => window,
-  zIndex: 100,
+  zIndex: undefined,
 });
 
 const emit = defineEmits<ExAffixEmits>();
+const stickyZIndex = useZIndexLayer('sticky');
 
 const affixRef = ref<HTMLDivElement>();
 const contentRef = ref<HTMLDivElement>();
@@ -113,7 +115,7 @@ const updatePosition = () => {
     const styles: Record<string, string | number> = {
       position: 'fixed',
       width: `${rect.width}px`,
-      zIndex: props.zIndex,
+      zIndex: props.zIndex ?? stickyZIndex.value,
       left: `${rect.left}px`,
     };
 

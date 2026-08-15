@@ -40,78 +40,81 @@ const showHtml = () => {
 
 ## 不同状态
 
+::: raw
 <div class="demo-container">
   <ExButton @click="showInfo">信息</ExButton>
   <ExButton type="success" @click="showSuccess">成功</ExButton>
   <ExButton type="warning" @click="showWarning">警告</ExButton>
   <ExButton type="danger" @click="showError">错误</ExButton>
 </div>
+:::
 
-```ts
-import { message } from 'vue-ex-ui';
+::: details 查看示例代码
 
-message.info('这是一条信息提示');
-message.success('操作成功');
-message.warning('请检查输入内容');
-message.error('操作失败，请重试');
+```vue
+import { message } from 'vue-ex-ui'; message.info('这是一条信息提示'); message.success('操作成功');
+message.warning('请检查输入内容'); message.error('操作失败，请重试');
 ```
+
+:::
 
 ## 加载状态
 
 `loading` 未设置 `duration` 时持续显示，由返回实例负责关闭。
 
+::: raw
 <div class="demo-container">
   <ExButton @click="showLoading">开始处理</ExButton>
 </div>
+:::
 
-```ts
-const loading = message.loading('处理中');
+::: details 查看示例代码
 
-try {
-  await submit();
-  loading.close();
-  message.success('处理完成');
-} catch {
-  loading.close();
-  message.error('处理失败');
-}
+```vue
+const loading = message.loading('处理中'); try { await submit(); loading.close();
+message.success('处理完成'); } catch { loading.close(); message.error('处理失败'); }
 ```
+
+:::
 
 ## 手动关闭与合并
 
+::: raw
 <div class="demo-container">
   <ExButton @click="showClosable">手动关闭</ExButton>
   <ExButton type="warning" @click="showGrouped">重复触发合并</ExButton>
   <ExButton @click="message.closeAll()">关闭全部</ExButton>
 </div>
+:::
 
-```ts
-message.info({
-  content: '这条消息需要手动关闭',
-  duration: 0,
-  closable: true,
-});
+::: details 查看示例代码
 
-message.warning({
-  content: '请勿重复提交',
-  grouping: true,
-});
+```vue
+message.info({ content: '这条消息需要手动关闭', duration: 0, closable: true, }); message.warning({
+content: '请勿重复提交', grouping: true, });
 ```
+
+:::
 
 分组只合并仍处于活动状态且 `type + content` 相同的消息。
 
 ## HTML 内容
 
+::: raw
 <div class="demo-container">
   <ExButton @click="showHtml">显示 HTML</ExButton>
 </div>
+:::
 
-```ts
-message.info({
-  content: '<strong>已保存</strong>到草稿箱',
-  dangerouslyUseHTMLString: true,
-});
+::: details 查看示例代码
+
+```vue
+message.info({ content: '
+<strong>已保存</strong>
+到草稿箱', dangerouslyUseHTMLString: true, });
 ```
+
+:::
 
 HTML 字符串会经过内置白名单消毒。仍应避免把未经确认的外部输入直接作为提示内容。
 

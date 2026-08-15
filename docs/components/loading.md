@@ -4,8 +4,12 @@
 
 目标容器会在浮层显示期间自动获得定位上下文。
 
+::: raw
 <div id="loading-basic" style="height: 180px; background: var(--ex-color-bg-tertiary); border-radius: var(--ex-radius-base);"></div>
 <ExLoading target="#loading-basic" text="正在加载数据" />
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -26,8 +30,11 @@ const target = ref<HTMLElement>();
 </script>
 ```
 
+:::
+
 ## 动画类型
 
+::: raw
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
   <div id="loading-spinner" style="height: 120px; background: var(--ex-color-bg-tertiary);"></div>
   <div id="loading-dots" style="height: 120px; background: var(--ex-color-bg-tertiary);"></div>
@@ -41,6 +48,9 @@ const target = ref<HTMLElement>();
 <ExLoading target="#loading-pulse" type="pulse" text="Pulse" />
 <ExLoading target="#loading-bars" type="bars" text="Bars" />
 <ExLoading target="#loading-neon" type="neon" text="Neon" />
+:::
+
+::: details 查看示例代码
 
 ```vue
 <ExLoading type="spinner" />
@@ -49,6 +59,8 @@ const target = ref<HTMLElement>();
 <ExLoading type="bars" />
 <ExLoading type="neon" />
 ```
+
+:::
 
 ## 尺寸与颜色
 

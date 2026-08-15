@@ -16,7 +16,6 @@ describe('Link 工具函数', () => {
       '#section',
       'mailto:team@example.com',
       'tel:+8613800000000',
-      'my-app://open/page',
     ])('保留安全导航地址 %s', href => {
       expect(normalizeLinkHref(`  ${href}  `)).toBe(href);
     });
@@ -29,6 +28,7 @@ describe('Link 工具函数', () => {
       '\u0000javascript:alert(1)',
       'vbscript:msgbox(1)',
       'data:text/html,<script>alert(1)</script>',
+      'my-app://open/page',
     ])('拒绝可执行协议及其混淆形式 %s', href => {
       expect(normalizeLinkHref(href)).toBeUndefined();
     });

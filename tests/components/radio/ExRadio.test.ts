@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExRadio from '../../../src/components/radio/ExRadio.vue';
-import type { ExRadioInstance, ExRadioProps } from '../../../src/components/radio/types';
+import type {
+  ExRadioInstance,
+  ExRadioProps,
+  RadioValue,
+} from '../../../src/components/radio/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -91,7 +95,6 @@ describe('ExRadio', () => {
         props: {
           modelValue: '',
           value: 'test',
-          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Radio' },
       });
@@ -312,7 +315,7 @@ describe('ExRadio', () => {
         props: {
           value: 'test',
           modelValue: 'test',
-          rules: [(value: string) => value === 'test' || 'Must be test'],
+          rules: [(value: RadioValue) => value === 'test' || 'Must be test'],
         },
         slots: { default: 'Radio' },
       });

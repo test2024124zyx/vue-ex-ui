@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref, useAttrs, watch } from 'vue';
+import { computed, onMounted, provide, ref, useAttrs, watch } from 'vue';
 import type { Ref } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
@@ -136,6 +136,7 @@ const resolvedAriaLabel = computed(() => {
 
 const focusables = new Map<string, Readonly<Ref<boolean>>>();
 const tabStopKey = ref<string | null>(activeKey.value || null);
+let menuMounted = false;
 
 const ensureTabStop = (): void => {
   const activeRecord = activeKey.value ? focusables.get(activeKey.value) : undefined;
@@ -146,6 +147,7 @@ const ensureTabStop = (): void => {
 
   const currentRecord = tabStopKey.value ? focusables.get(tabStopKey.value) : undefined;
   if (currentRecord && !currentRecord.value) return;
+  if (!currentRecord && tabStopKey.value === activeKey.value && !menuMounted) return;
 
   tabStopKey.value =
     Array.from(focusables.entries()).find(([, disabled]) => !disabled.value)?.[0] ?? null;
@@ -164,6 +166,10 @@ const registerFocusable = (key: string, disabled: Readonly<Ref<boolean>>): (() =
 };
 
 watch(activeKey, ensureTabStop);
+onMounted(() => {
+  menuMounted = true;
+  ensureTabStop();
+});
 
 const getTabIndex = (key: string, disabled: boolean): 0 | -1 => {
   if (disabled) return -1;

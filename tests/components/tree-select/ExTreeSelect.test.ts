@@ -127,7 +127,9 @@ describe('ExTreeSelect', () => {
 
     await trigger.trigger('click');
     await nextTick();
-    const controlledTree = document.getElementById(trigger.attributes('aria-controls'));
+    const controlsId = trigger.attributes('aria-controls');
+    expect(controlsId).toBeDefined();
+    const controlledTree = document.getElementById(controlsId!);
     expect(controlledTree?.getAttribute('role')).toBe('tree');
     expect(controlledTree?.getAttribute('aria-label')).toBe('分类');
     const tabStops = Array.from(document.querySelectorAll('[role="treeitem"]')).filter(

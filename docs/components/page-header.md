@@ -25,9 +25,13 @@ const avatar = { alt: 'U', size: 'medium' }
 
 最简单的标题 + 副标题，可选返回按钮。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader title="页面标题" subtitle="副标题说明" show-back @back="onBack" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -44,13 +48,19 @@ const handleBack = () => history.back();
 </script>
 ```
 
+:::
+
 ## 面包屑
 
 通过 `breadcrumb` 传入数据；带 `path` 的项可点击并触发 `breadcrumb-click`。也可用 `#breadcrumb` 插槽完全自定义。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader title="详情页" :breadcrumb="breadcrumb" @breadcrumb-click="onCrumb" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -66,13 +76,19 @@ const handleBack = () => history.back();
 </template>
 ```
 
+:::
+
 ## 标签与头像
 
 `tags` 渲染为标签（基于 `ExTag`），`type` 支持 `primary` / `success` / `warning` / `danger` / `info`，也可用 `color` 自定义背景色。`avatar` 展示头像。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader title="用户中心" subtitle="account@example.com" :tags="tags" :avatar="avatar" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -87,10 +103,13 @@ const handleBack = () => history.back();
 </template>
 ```
 
+:::
+
 ## 操作区
 
 `#extra` 插槽用于放置右侧操作按钮。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader title="订单 #1024" subtitle="2026-06-17 创建" show-back @back="onBack">
     <template #extra>
@@ -99,6 +118,9 @@ const handleBack = () => history.back();
     </template>
   </ExPageHeader>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -120,10 +142,13 @@ const handleBack = () => history.back();
 </template>
 ```
 
+:::
+
 ## 内容与底部
 
 默认插槽渲染在标题区下方，`#footer` 渲染在最底部（常用于放选项卡）。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader
     title="项目概览"
@@ -150,6 +175,9 @@ const handleBack = () => history.back();
     </template>
   </ExPageHeader>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -174,10 +202,13 @@ const handleBack = () => history.back();
 </template>
 ```
 
+:::
+
 ## 自定义标题与返回按钮
 
 `#title` / `#subtitle` / `#back` / `#avatar` / `#tags` 插槽用于覆盖默认渲染。
 
+::: raw
 <div class="demo-container">
   <ExPageHeader>
     <template #back>
@@ -191,6 +222,9 @@ const handleBack = () => history.back();
     </template>
   </ExPageHeader>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -209,6 +243,8 @@ const handleBack = () => history.back();
   </ExPageHeader>
 </template>
 ```
+
+:::
 
 ## 固定页头
 

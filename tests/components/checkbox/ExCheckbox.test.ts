@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { computed } from 'vue';
 import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
-import type { ExCheckboxInstance, ExCheckboxProps } from '../../../src/components/checkbox/types';
+import type {
+  CheckboxValue,
+  ExCheckboxInstance,
+  ExCheckboxProps,
+} from '../../../src/components/checkbox/types';
 import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
 // Mock ExIcon component
@@ -113,7 +117,6 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -130,7 +133,6 @@ describe('ExCheckbox', () => {
           modelValue: 'no',
           trueValue: 'yes',
           falseValue: 'no',
-          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -204,7 +206,6 @@ describe('ExCheckbox', () => {
         props: {
           readonly: true,
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -398,7 +399,7 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          rules: [(value: boolean) => value === true || 'Must be checked'],
+          rules: [(value: CheckboxValue | CheckboxValue[]) => value === true || 'Must be checked'],
         },
         slots: { default: 'Checkbox' },
       });
@@ -414,7 +415,7 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          rules: [(value: boolean) => value === true || 'Must be checked'],
+          rules: [(value: CheckboxValue | CheckboxValue[]) => value === true || 'Must be checked'],
         },
         slots: { default: 'Checkbox' },
       });

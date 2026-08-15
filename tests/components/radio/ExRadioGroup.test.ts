@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExRadioGroup from '../../../src/components/radio/ExRadioGroup.vue';
 import ExRadio from '../../../src/components/radio/ExRadio.vue';
-import type { ExRadioGroupInstance, ExRadioGroupProps } from '../../../src/components/radio/types';
+import type {
+  ExRadioGroupInstance,
+  ExRadioGroupProps,
+  RadioValue,
+} from '../../../src/components/radio/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -133,7 +137,6 @@ describe('ExRadioGroup', () => {
       const wrapper = mount(ExRadioGroup, {
         props: {
           modelValue: '',
-          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: {
           default: `
@@ -380,7 +383,7 @@ describe('ExRadioGroup', () => {
       const wrapper = mount(ExRadioGroup, {
         props: {
           modelValue: 'ok',
-          rules: [(value: string | number | boolean) => value === 'ok' || 'invalid'],
+          rules: [(value: RadioValue) => value === 'ok' || 'invalid'],
         },
         slots: { default: '<ExRadio value="ok">Option</ExRadio>' },
         global: { components: { ExRadio } },

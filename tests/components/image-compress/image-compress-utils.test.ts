@@ -76,11 +76,14 @@ describe('image-compress utils', () => {
   const setCanvasEncoder = (
     encoder: (canvas: HTMLCanvasElement, type: string, quality: number | undefined) => Blob | null
   ) =>
-    vi
-      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
-      .mockImplementation(function (callback, type, quality) {
-        callback(encoder(this, type ?? '', quality));
-      });
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+      this: HTMLCanvasElement,
+      callback,
+      type,
+      quality
+    ) {
+      callback(encoder(this, type ?? '', quality));
+    });
 
   it('规范化运行时选项，拒绝 NaN、负数和未知枚举污染 Canvas', () => {
     const options = normalizeCompressOptions({
@@ -435,7 +438,10 @@ describe('image-compress utils', () => {
       })
     );
 
-    encodeCallback?.(new Blob([new Uint8Array(10)], { type: 'image/jpeg' }));
+    const lateEncodeCallback = encodeCallback as unknown as BlobCallback | undefined;
+    if (typeof lateEncodeCallback === 'function') {
+      lateEncodeCallback(new Blob([new Uint8Array(10)], { type: 'image/jpeg' }));
+    }
   });
 
   it('compressImage 在成功和失败后都释放临时源资源', async () => {

@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useAnimation, useNeonEffect } from '../config-provider/composables';
+import { useAnimation, useNeonEffect, useZIndexLayer } from '../config-provider/composables';
 import { normalizeLayoutLength } from './layout-utils';
 import type { ExFooterExposed, ExFooterProps } from './types';
 
@@ -56,6 +56,7 @@ const props = withDefaults(defineProps<ExFooterProps>(), {
 const footerRef = ref<HTMLElement>();
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
+const stickyZIndex = useZIndexLayer('sticky');
 
 const footerClasses = computed(() => [
   'ex-footer',
@@ -68,6 +69,7 @@ const footerClasses = computed(() => [
 ]);
 const footerStyles = computed<Record<string, string>>(() => ({
   '--ex-footer-height': normalizeLayoutLength(props.height, 64),
+  ...(props.fixed ? { zIndex: String(stickyZIndex.value) } : {}),
 }));
 
 const getElement = (): HTMLElement | null => footerRef.value ?? null;
