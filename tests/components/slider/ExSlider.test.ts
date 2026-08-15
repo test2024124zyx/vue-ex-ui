@@ -569,7 +569,11 @@ describe('ExSlider', () => {
         showStops: true,
         showTooltip: true,
         formatTooltip: value => `${value}%`,
-        marks: { '-10': 'outside', 25: { label: 'quarter', style: { color: 'red' } }, 100: 'max' },
+        marks: {
+          '-10': 'outside',
+          25: { value: 25, label: 'quarter', style: { color: 'red' } },
+          100: 'max',
+        },
       });
       expect(wrapper.findAll('.ex-slider__stop')).toHaveLength(99);
       expect(wrapper.findAll('.ex-slider__mark')).toHaveLength(2);

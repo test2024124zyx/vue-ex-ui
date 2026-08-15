@@ -200,7 +200,7 @@ describe('ExCalendar', () => {
     expect(wrapper.emitted('event-click')?.at(-1)?.[0]).toMatchObject({ id: 'event-1' });
 
     await wrapper.setProps({ events: [] });
-    expect(wrapper.get('.ex-calendar__day-empty').exists()).toBe(true);
+    expect(wrapper.find('.ex-calendar__day-empty').exists()).toBe(true);
   });
 
   it('周视图处理签到、事件上限、键盘选择和禁用单元格', async () => {

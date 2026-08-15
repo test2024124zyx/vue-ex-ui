@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { h, nextTick } from 'vue';
 import ExTimePicker from '../../../src/components/time-picker/ExTimePicker.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import type { ExTimePickerExposed } from '../../../src/components/time-picker/types';
 
 describe('ExTimePicker', () => {
   let wrapper: ReturnType<typeof mount> | null = null;
@@ -353,9 +354,10 @@ describe('ExTimePicker', () => {
   it('暴露的 focus 和 blur 方法应该作用于触发器', () => {
     mountTP();
     const trigger = wrapper!.find('.ex-time-picker__trigger').element;
-    wrapper!.vm.focus();
+    const exposed = wrapper!.vm as unknown as ExTimePickerExposed;
+    exposed.focus();
     expect(document.activeElement).toBe(trigger);
-    wrapper!.vm.blur();
+    exposed.blur();
     expect(document.activeElement).not.toBe(trigger);
   });
 });

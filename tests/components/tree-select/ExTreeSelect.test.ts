@@ -4,6 +4,7 @@ import { h, nextTick } from 'vue';
 import ExTreeSelect from '../../../src/components/tree-select/ExTreeSelect.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { TreeSelectNode } from '../../../src/components/tree-select/types';
+import type { ExTreeSelectExposed } from '../../../src/components/tree-select/types';
 
 const data: TreeSelectNode[] = [
   {
@@ -309,10 +310,11 @@ describe('ExTreeSelect', () => {
     await wrapper!.find('.ex-tree-select__trigger').trigger('click');
     await nextTick();
     expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(2);
-    wrapper!.vm.expandAll();
+    const exposed = wrapper!.vm as unknown as ExTreeSelectExposed;
+    exposed.expandAll();
     await nextTick();
     expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(4);
-    wrapper!.vm.collapseAll();
+    exposed.collapseAll();
     await nextTick();
     expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(2);
   });

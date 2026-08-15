@@ -95,12 +95,12 @@ describe('ExVerificationCode regressions', () => {
     expect(wrapper.get('.ex-verification-code__required').text()).toBe('*');
     expect(wrapper.findAll('.ex-verification-code__separator')).toHaveLength(1);
     expect(wrapper.get('.ex-verification-code__separator').text()).toBe('·');
-    expect(wrapper.get('.ex-verification-code__loading').exists()).toBe(true);
+    expect(wrapper.find('.ex-verification-code__loading').exists()).toBe(true);
     expect(wrapper.get('.ex-verification-code__help').text()).toBe('验证码错误');
     expect(wrapper.get('.ex-verification-code__cells').attributes('style')).toContain('gap: 4px');
     expect(wrapper.get('.ex-verification-code__cell').attributes('style')).toContain('width: 32px');
     expect(wrapper.attributes('style')).toContain('color: red');
-    expect(wrapper.get('.ex-verification-code__mask-toggle').exists()).toBe(true);
+    expect(wrapper.find('.ex-verification-code__mask-toggle').exists()).toBe(true);
   });
 
   it('输入事件过滤非法字符、遵守顺序并处理遮罩延迟', async () => {

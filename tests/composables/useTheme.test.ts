@@ -152,7 +152,7 @@ describe('useTheme', () => {
 
   it('主题回调快照允许回调在执行时取消自身', () => {
     const calls: string[] = [];
-    let stopSelf = () => undefined;
+    let stopSelf: () => void = () => undefined;
     stopSelf = onThemeChange(theme => {
       calls.push(`self:${theme}`);
       stopSelf();

@@ -399,7 +399,9 @@ describe('ExCascader', () => {
 
     expect(wrapper.classes()).toContain('custom');
     expect(wrapper.attributes('style')).toContain('color: red');
-    expect(wrapper.get('.ex-cascader__input').element.value).toBe('浙江 > 杭州 > 西湖');
+    expect((wrapper.get('.ex-cascader__input').element as HTMLInputElement).value).toBe(
+      '浙江 > 杭州 > 西湖'
+    );
     expect(exposed.getCheckedNodes().map(option => option.value)).toEqual([
       'zhejiang',
       'hangzhou',
@@ -429,7 +431,7 @@ describe('ExCascader', () => {
 
     await wrapper.setProps({ disabled: false, readonly: true });
     await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
-    input.element.value = '浙江';
+    (input.element as HTMLInputElement).value = '浙江';
     await input.trigger('input');
     expect(input.attributes('aria-expanded')).toBe('false');
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
@@ -521,7 +523,7 @@ describe('ExCascader', () => {
     const emptyInput = empty.get('.ex-cascader__input');
     await emptyInput.trigger('keydown', { key: 'ArrowDown' });
     await nextTick();
-    expect(empty.get('.ex-cascader__menu').exists()).toBe(true);
+    expect(empty.find('.ex-cascader__menu').exists()).toBe(true);
     await emptyInput.trigger('keydown', { key: 'Escape' });
     expect(emptyInput.attributes('aria-expanded')).toBe('false');
   });
