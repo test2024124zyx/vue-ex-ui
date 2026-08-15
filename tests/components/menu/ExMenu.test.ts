@@ -128,6 +128,21 @@ describe('ExMenu', () => {
     expect(`${menuStyles}\n${itemStyles}`).toMatch(/::marker\s*\{[\s\S]*?content:\s*['"]{2}/);
   });
 
+  it('水平菜单不应继承 ex-app 列表样式生成的蓝色圆点', () => {
+    const menuStyles = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExMenu.scss'),
+      'utf8'
+    );
+    const subMenuStyles = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExSubMenu.scss'),
+      'utf8'
+    );
+
+    expect(`${menuStyles}\n${subMenuStyles}`).toMatch(
+      /> li::before[\s\S]*?content:\s*(?:none|['"]{2})/
+    );
+  });
+
   it('数据图标复用 ExIcon 且保持装饰语义', () => {
     const wrapper = mountMenu({
       props: {

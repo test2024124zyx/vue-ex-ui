@@ -119,6 +119,12 @@
     padding: 0 0 0 var(--ex-spacing-5);
     overflow: hidden;
     list-style: none;
+
+    // 子菜单列表同样需要隔离 .ex-app 的页面级蓝色圆点装饰。
+    > li::before {
+      display: none;
+      content: none;
+    }
   }
 
   &__list--popup {

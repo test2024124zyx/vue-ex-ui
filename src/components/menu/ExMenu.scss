@@ -30,6 +30,12 @@
     > li::marker {
       content: '';
     }
+
+    // 菜单列表不继承 .ex-app 的页面级蓝色圆点装饰。
+    > li::before {
+      display: none;
+      content: none;
+    }
   }
 
   &--vertical,
