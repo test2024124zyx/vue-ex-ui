@@ -246,16 +246,23 @@ const updateIndicator = async () => {
   if (!activeTabEl) return;
 
   const isVertical = props.position === 'left' || props.position === 'right';
+  const activeTabRect = activeTabEl.getBoundingClientRect();
+  const navRect = navRef.value.getBoundingClientRect();
+  // offsetLeft/offsetTop 只相对于最近的定位父级，标签项本身有定位样式时会始终得到局部坐标。
+  // 使用两个元素的视口坐标差，才能得到指示条相对于导航容器的真实位置。
+  const indicatorOffset = isVertical
+    ? activeTabRect.top - navRect.top + navRef.value.scrollTop
+    : activeTabRect.left - navRect.left + navRef.value.scrollLeft;
 
   if (isVertical) {
     indicatorStyle.value = {
       height: `${activeTabEl.offsetHeight}px`,
-      transform: `translateY(${activeTabEl.offsetTop}px)`,
+      transform: `translateY(${indicatorOffset}px)`,
     };
   } else {
     indicatorStyle.value = {
       width: `${activeTabEl.offsetWidth}px`,
-      transform: `translateX(${activeTabEl.offsetLeft}px)`,
+      transform: `translateX(${indicatorOffset}px)`,
     };
   }
 };

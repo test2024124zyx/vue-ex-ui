@@ -100,6 +100,46 @@ describe('ExTabs', () => {
     expect(wrapper.find('.ex-tabs').exists()).toBe(true);
   });
 
+  it('基础线性标签切换后指示条应该跟随标签的真实位置移动', async () => {
+    const wrapper = mount(ExTabs, {
+      props: { modelValue: 'tab1' },
+      slots: {
+        default: () => [
+          h(ExTabPane, { name: 'tab1', label: 'Tab 1' }, () => 'Content 1'),
+          h(ExTabPane, { name: 'tab2', label: 'Tab 2' }, () => 'Content 2'),
+        ],
+      },
+    });
+    await nextTick();
+
+    const nav = wrapper.get('.ex-tabs__nav').element as HTMLElement;
+    const tabs = wrapper.findAll('[role="tab"]');
+    const secondTab = tabs[1].element as HTMLElement;
+    const rect = (left: number, width: number): DOMRect =>
+      ({
+        x: left,
+        y: 0,
+        left,
+        top: 0,
+        right: left + width,
+        bottom: 40,
+        width,
+        height: 40,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    Object.defineProperty(secondTab, 'offsetWidth', { configurable: true, value: 120 });
+    vi.spyOn(nav, 'getBoundingClientRect').mockReturnValue(rect(100, 300));
+    vi.spyOn(secondTab, 'getBoundingClientRect').mockReturnValue(rect(188, 120));
+
+    await tabs[1].trigger('click');
+    await nextTick();
+
+    const indicatorStyle = wrapper.get('.ex-tabs__indicator').attributes('style');
+    expect(indicatorStyle).toContain('width: 120px');
+    expect(indicatorStyle).toContain('transform: translateX(88px)');
+  });
+
   it('emits update:modelValue on tab click', async () => {
     const wrapper = mount(ExTabs, {
       props: { modelValue: 'tab1' },
