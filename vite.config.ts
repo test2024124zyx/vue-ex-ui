@@ -21,8 +21,18 @@ export default defineConfig({
       enforce: 'pre',
       transform(code, id) {
         if (isFullStyleEntryId(id)) {
-          // 只给完整产物注入样式入口，源码 barrel 与按需 ESM 保持可 tree-shake。
-          return `import './style-full';\n${code}`;
+          // 直接注入 CSS 模块，避免 package.json 的 sideEffects 规则把仅含样式导入的 TS 包装模块裁掉。
+          return [
+            "import '@fontsource/orbitron/latin-700.css';",
+            "import '@fontsource/orbitron/latin-900.css';",
+            "import '@fontsource/jetbrains-mono/latin-400.css';",
+            "import '@fontsource/jetbrains-mono/latin-500.css';",
+            "import '@fontsource/jetbrains-mono/latin-700.css';",
+            "import '@fontsource/share-tech-mono/latin-400.css';",
+            "import './styles/font.scss';",
+            "import './styles/index.scss';",
+            code,
+          ].join('\n');
         }
         return null;
       },
