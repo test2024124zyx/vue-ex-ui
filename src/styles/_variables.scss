@@ -29,42 +29,42 @@
   @each $name, $value in $colors {
     --ex-color-#{$name}: #{$value};
   }
-  
+
   // 字体变量
   @each $name, $value in $typography {
     --ex-#{$name}: #{$value};
   }
-  
+
   // 间距变量
   @each $name, $value in $spacing {
     --ex-spacing-#{$name}: #{$value};
   }
-  
+
   // 尺寸变量
   @each $name, $value in $sizes {
     --ex-size-#{$name}: #{$value};
   }
-  
+
   // 圆角变量
   @each $name, $value in $radius {
     --ex-radius-#{$name}: #{$value};
   }
-  
+
   // 阴影变量
   @each $name, $value in $shadows {
     --ex-shadow-#{$name}: #{$value};
   }
-  
+
   // 动画变量
   @each $name, $value in $motion {
     --ex-motion-#{$name}: #{$value};
   }
-  
+
   // Z-Index 变量
   @each $name, $value in $z-index {
     --ex-z-#{$name}: #{$value};
   }
-  
+
   // 断点变量
   @each $name, $value in $breakpoints {
     --ex-breakpoint-#{$name}: #{$value};
@@ -153,7 +153,7 @@
   --ex-button-font-weight: var(--ex-font-medium);
   // 亮色填充按钮上的文字「墨色」——深色油墨保证 WCAG AA 对比度（霓虹灯管式）
   --ex-button-ink-on-bright: #0a0f16;
-  
+
   // 输入框组件
   --ex-input-height-sm: 32px;
   --ex-input-height-md: 40px;
@@ -194,7 +194,7 @@
   --ex-card-filter-shadow-md: drop-shadow(0 4px 6px var(--ex-color-black-alpha-30));
   --ex-card-filter-shadow-lg: drop-shadow(0 8px 12px var(--ex-color-black-alpha-30));
   --ex-card-filter-shadow-xl: drop-shadow(0 12px 20px var(--ex-color-black-alpha-40));
-  
+
   // 模态框组件
   --ex-modal-width-small: #{map.get($components, modal, width-small)};
   --ex-modal-width-medium: #{map.get($components, modal, width-medium)};
@@ -232,8 +232,16 @@
   --ex-image-spinner-size-mobile: #{map.get($components, image, spinner-size-mobile)};
   --ex-image-spinner-size-compact: #{map.get($components, image, spinner-size-compact)};
   --ex-image-spinner-border-width: #{map.get($components, image, spinner-border-width)};
-  --ex-image-spinner-border-width-mobile: #{map.get($components, image, spinner-border-width-mobile)};
-  --ex-image-spinner-border-width-compact: #{map.get($components, image, spinner-border-width-compact)};
+  --ex-image-spinner-border-width-mobile: #{map.get(
+      $components,
+      image,
+      spinner-border-width-mobile
+    )};
+  --ex-image-spinner-border-width-compact: #{map.get(
+      $components,
+      image,
+      spinner-border-width-compact
+    )};
   --ex-image-error-min-width: #{map.get($components, image, error-min-width)};
   --ex-image-error-min-height: #{map.get($components, image, error-min-height)};
   --ex-image-error-icon-size: #{map.get($components, image, error-icon-size)};
@@ -249,7 +257,11 @@
   --ex-image-preview-hint-size: #{map.get($components, image, preview-hint-size)};
   --ex-image-preview-hint-size-compact: #{map.get($components, image, preview-hint-size-compact)};
   --ex-image-preview-hint-icon-size: #{map.get($components, image, preview-hint-icon-size)};
-  --ex-image-preview-hint-icon-size-compact: #{map.get($components, image, preview-hint-icon-size-compact)};
+  --ex-image-preview-hint-icon-size-compact: #{map.get(
+      $components,
+      image,
+      preview-hint-icon-size-compact
+    )};
   --ex-image-preview-hint-opacity: #{map.get($components, image, preview-hint-opacity)};
   --ex-image-preview-hint-initial-scale: #{map.get($components, image, preview-hint-initial-scale)};
   --ex-image-preview-hint-active-scale: #{map.get($components, image, preview-hint-active-scale)};
@@ -264,20 +276,20 @@
   --ex-nav-padding-x: var(--ex-spacing-4);
   --ex-nav-item-padding-x: var(--ex-spacing-3);
   --ex-nav-item-padding-y: var(--ex-spacing-2);
-  
+
   // 表格组件
   --ex-table-cell-padding-x: var(--ex-spacing-3);
   --ex-table-cell-padding-y: var(--ex-spacing-2);
   --ex-table-header-height: 48px;
   --ex-table-row-height: 40px;
-  
+
   // 工具提示组件
   --ex-tooltip-padding-x: var(--ex-spacing-2);
   --ex-tooltip-padding-y: var(--ex-spacing-1);
   --ex-tooltip-radius: var(--ex-radius-base);
   --ex-tooltip-font-size: var(--ex-text-sm);
   --ex-tooltip-max-width: 200px;
-  
+
   // 徽章组件
   --ex-badge-z-index: 10;
   --ex-badge-min-width: 18px;
@@ -302,7 +314,7 @@
   --ex-badge-sm-font-size: var(--ex-text-xs);
   --ex-badge-sm-border-radius: var(--ex-radius-none);
   --ex-badge-sm-dot-size: 8px;
-  
+
   --ex-badge-lg-min-width: 22px;
   --ex-badge-lg-height: 22px;
   --ex-badge-lg-padding-x: 8px;
@@ -312,7 +324,7 @@
   --ex-badge-dot-size: 10px;
   --ex-badge-status-dot-size: 6px;
   --ex-badge-status-dot-ring-width: 1px;
-  
+
   // 分割线组件
   --ex-divider-color: #{map.get($components, divider, color)};
   --ex-divider-text-color: #{map.get($components, divider, text-color)};
