@@ -295,7 +295,8 @@
   @include neon-border($color);
   @include neon-glow($color, 'sm');
 
-  transition-property: background-color, border-color, color, opacity, transform, box-shadow, filter;
+  transition-property:
+    background-color, border-color, color, opacity, transform, box-shadow, filter;
   transition-duration: var(--ex-motion-duration-base);
   transition-timing-function: var(--ex-motion-ease-out);
 
