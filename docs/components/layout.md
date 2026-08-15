@@ -104,17 +104,20 @@ const collapsed = ref(false);
 
 ::: raw
 
-<div class="vp-raw demo-container layout-demo">
-  <ExHeader>
-    <template #left>Brand</template>
-    <template #center>Navigation</template>
-    <template #right>Account</template>
-  </ExHeader>
-  <ExFooter>
-    <template #left>Status</template>
-    <template #center>ExUI</template>
-    <template #right>2026</template>
-  </ExFooter>
+<div class="vp-raw demo-container">
+  <ExLayout class="layout-demo">
+    <ExHeader>
+      <template #left>Brand</template>
+      <template #center>Navigation</template>
+      <template #right>Account</template>
+    </ExHeader>
+    <ExContent>Content</ExContent>
+    <ExFooter>
+      <template #left>Status</template>
+      <template #center>ExUI</template>
+      <template #right>2026</template>
+    </ExFooter>
+  </ExLayout>
 </div>
 
 :::
@@ -123,22 +126,25 @@ const collapsed = ref(false);
 
 ```vue
 <template>
-  <div class="vp-raw demo-container layout-demo">
-    <ExHeader>
-      <template #left>Brand</template>
-      <template #center>Navigation</template>
-      <template #right>Account</template>
-    </ExHeader>
-    <ExFooter>
-      <template #left>Status</template>
-      <template #center>ExUI</template>
-      <template #right>2026</template>
-    </ExFooter>
+  <div class="vp-raw demo-container">
+    <ExLayout class="layout-demo">
+      <ExHeader>
+        <template #left>Brand</template>
+        <template #center>Navigation</template>
+        <template #right>Account</template>
+      </ExHeader>
+      <ExContent>Content</ExContent>
+      <ExFooter>
+        <template #left>Status</template>
+        <template #center>ExUI</template>
+        <template #right>2026</template>
+      </ExFooter>
+    </ExLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ExFooter, ExHeader } from 'vue-ex-ui';
+import { ExContent, ExFooter, ExHeader, ExLayout } from 'vue-ex-ui';
 </script>
 ```
 
@@ -148,24 +154,8 @@ import { ExFooter, ExHeader } from 'vue-ex-ui';
 
 ::: raw
 
-<div class="vp-raw demo-container layout-demo">
-  <ExContent
-    tag="section"
-    aria-label="Dashboard"
-    grid
-    scanline
-  >
-    Dashboard
-  </ExContent>
-</div>
-
-:::
-
-::: details 查看示例代码
-
-```vue
-<template>
-  <div class="vp-raw demo-container layout-demo">
+<div class="vp-raw demo-container">
+  <ExLayout class="layout-demo">
     <ExContent
       tag="section"
       aria-label="Dashboard"
@@ -174,11 +164,31 @@ import { ExFooter, ExHeader } from 'vue-ex-ui';
     >
       Dashboard
     </ExContent>
+  </ExLayout>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ExLayout class="layout-demo">
+      <ExContent
+        tag="section"
+        aria-label="Dashboard"
+        grid
+        scanline
+      >
+        Dashboard
+      </ExContent>
+    </ExLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ExContent } from 'vue-ex-ui';
+import { ExContent, ExLayout } from 'vue-ex-ui';
 </script>
 ```
 

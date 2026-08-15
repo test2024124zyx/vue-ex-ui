@@ -264,6 +264,26 @@ describe('组件文档实时演示', () => {
     });
   });
 
+  it('Layout 的 Header/Footer 插槽演示必须处于 ExLayout 的纵向布局上下文', () => {
+    const document = readDocument('layout');
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+    const liveSlotBlock = liveBlocks.find(block => block.includes('#left>Brand'));
+    const codeSlotBlock = codeBlocks.find(block => block.includes('#left>Brand'));
+
+    expect(liveSlotBlock).toBeDefined();
+    expect(codeSlotBlock).toBeDefined();
+    expect(liveSlotBlock).toMatch(
+      /<ExLayout\b[\s\S]*<ExHeader>[\s\S]*#left>Brand[\s\S]*<ExContent>[\s\S]*<ExFooter>[\s\S]*<\/ExLayout>/
+    );
+    expect(codeSlotBlock).toMatch(
+      /<ExLayout\b[\s\S]*<ExHeader>[\s\S]*#left>Brand[\s\S]*<ExContent>[\s\S]*<ExFooter>[\s\S]*<\/ExLayout>/
+    );
+  });
+
   it.each([
     ['typography', 'ex-typography', 32],
     ['icon', 'ex-icon', 4],
