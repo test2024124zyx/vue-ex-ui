@@ -134,62 +134,62 @@
     opacity: 0.55;
   }
 
-  // 垂直布局由父级方向类控制，子组件自身不复制方向状态。
-  :global(.ex-steps--vertical) & {
-    flex: none;
-    flex-direction: row;
-    min-height: calc(var(--ex-step-icon-size) + var(--ex-spacing-8));
-
-    &:last-child {
-      min-height: var(--ex-step-icon-size);
-    }
-
-    .ex-step__head {
-      flex: 0 0 var(--ex-step-icon-size);
-      flex-direction: column;
-      width: var(--ex-step-icon-size);
-    }
-
-    .ex-step__line {
-      width: 2px;
-      height: auto;
-      min-height: var(--ex-spacing-6);
-      margin: var(--ex-spacing-2) 0;
-    }
-
-    .ex-step__content {
-      margin-top: 0;
-      margin-left: var(--ex-step-gap);
-      padding-right: 0;
-      padding-bottom: var(--ex-spacing-8);
-    }
-  }
-
-  // 进度点模式只保留状态色圆点，内容与连线仍保持完整语义。
-  :global(.ex-steps--progress-dot) &__icon {
-    color: var(--ex-color-border-secondary);
-    font-size: 0;
-    background: transparent;
-  }
-
-  :global(.ex-steps--progress-dot) &--process &__icon {
-    color: var(--ex-color-primary);
-    background: currentColor;
-  }
-
-  :global(.ex-steps--progress-dot) &--finish &__icon {
-    color: var(--ex-color-success);
-    background: currentColor;
-  }
-
-  :global(.ex-steps--progress-dot) &--error &__icon {
-    color: var(--ex-color-error);
-    background: currentColor;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     &--clickable:hover .ex-step__icon {
       transform: none;
     }
   }
+}
+
+// 垂直布局由父级方向类控制，子组件自身不复制方向状态。
+.ex-steps--vertical .ex-step {
+  flex: none;
+  flex-direction: row;
+  min-height: calc(var(--ex-step-icon-size) + var(--ex-spacing-8));
+
+  &:last-child {
+    min-height: var(--ex-step-icon-size);
+  }
+
+  .ex-step__head {
+    flex: 0 0 var(--ex-step-icon-size);
+    flex-direction: column;
+    width: var(--ex-step-icon-size);
+  }
+
+  .ex-step__line {
+    width: 2px;
+    height: auto;
+    min-height: var(--ex-spacing-6);
+    margin: var(--ex-spacing-2) 0;
+  }
+
+  .ex-step__content {
+    margin-top: 0;
+    margin-left: var(--ex-step-gap);
+    padding-right: 0;
+    padding-bottom: var(--ex-spacing-8);
+  }
+}
+
+// 进度点模式只保留状态色圆点，内容与连线仍保持完整语义。
+.ex-steps--progress-dot .ex-step__icon {
+  color: var(--ex-color-border-secondary);
+  font-size: 0;
+  background: transparent;
+}
+
+.ex-steps--progress-dot .ex-step--process .ex-step__icon {
+  color: var(--ex-color-primary);
+  background: currentColor;
+}
+
+.ex-steps--progress-dot .ex-step--finish .ex-step__icon {
+  color: var(--ex-color-success);
+  background: currentColor;
+}
+
+.ex-steps--progress-dot .ex-step--error .ex-step__icon {
+  color: var(--ex-color-error);
+  background: currentColor;
 }

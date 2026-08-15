@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { h, nextTick, ref, defineComponent } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExSteps from '../../../src/components/steps/ExSteps.vue';
 import ExStep from '../../../src/components/steps/ExStep.vue';
 import type { ExStepsExposed } from '../../../src/components/steps/types';
@@ -106,6 +108,16 @@ describe('ExSteps', () => {
     expect(wrapper.attributes('style')).toContain('color: red');
     expect(wrapper.attributes('aria-label')).toBe('流程');
     expect(wrapper.find('.ex-step__icon-number').exists()).toBe(false);
+  });
+
+  it('垂直布局样式必须作用于步骤节点而不是根容器', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/steps/ExStep.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toContain('.ex-steps--vertical .ex-step {');
+    expect(stylesheet).not.toContain(':global(.ex-steps--vertical) & {');
   });
 
   it('根据步骤状态渲染连接线、图标和自定义颜色', async () => {
