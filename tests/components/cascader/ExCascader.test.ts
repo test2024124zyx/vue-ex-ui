@@ -4,7 +4,7 @@ import { h, nextTick } from 'vue';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ExCascader from '../../../src/components/cascader/ExCascader.vue';
-import type { CascaderOption } from '../../../src/components/cascader/types';
+import type { CascaderOption, ExCascaderExposed } from '../../../src/components/cascader/types';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
@@ -380,5 +380,161 @@ describe('ExCascader', () => {
     expect(dropdown.style.zIndex).toBe('2400');
     expect(dropdown.classList).toContain('ex-no-neon');
     expect(dropdown.classList).toContain('ex-no-animation');
+  });
+
+  it('完整路径、清空按钮和公开方法保持受控状态一致', async () => {
+    const wrapper = mount(ExCascader, {
+      props: {
+        options,
+        modelValue: ['zhejiang', 'hangzhou', 'xihu'],
+        showAllLevels: true,
+        separator: ' > ',
+        clearable: true,
+        teleported: false,
+        class: { custom: true },
+        style: 'color: red',
+      },
+    });
+    const exposed = wrapper.vm as unknown as ExCascaderExposed;
+
+    expect(wrapper.classes()).toContain('custom');
+    expect(wrapper.attributes('style')).toContain('color: red');
+    expect(wrapper.get('.ex-cascader__input').element.value).toBe('浙江 > 杭州 > 西湖');
+    expect(exposed.getCheckedNodes().map(option => option.value)).toEqual([
+      'zhejiang',
+      'hangzhou',
+      'xihu',
+    ]);
+    expect(exposed.getElement()).toBe(wrapper.element);
+    exposed.focus();
+    exposed.blur();
+    exposed.show();
+    await nextTick();
+    expect(wrapper.get('.ex-cascader__input').attributes('aria-expanded')).toBe('true');
+    exposed.hide();
+    await nextTick();
+    await wrapper.get('.ex-cascader__clear').trigger('click');
+    expect(wrapper.emitted('clear')).toBeTruthy();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[]]);
+  });
+
+  it('禁用和只读状态不会打开面板、改变值或抢占焦点', async () => {
+    const wrapper = mount(ExCascader, {
+      props: { options, modelValue: ['zhejiang'], disabled: true, readonly: false },
+    });
+    const input = wrapper.get('.ex-cascader__input');
+    await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    expect(input.attributes('aria-expanded')).toBe('false');
+
+    await wrapper.setProps({ disabled: false, readonly: true });
+    await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+    input.element.value = '浙江';
+    await input.trigger('input');
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('打开面板后覆盖列内键盘导航、返回、选择和关闭分支', async () => {
+    const wrapper = mount(ExCascader, { props: { options, teleported: false } });
+    const input = wrapper.get('.ex-cascader__input');
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'ArrowRight']) {
+      await input.trigger('keydown', { key });
+      await nextTick();
+    }
+    await input.trigger('keydown', { key: 'ArrowLeft' });
+    await input.trigger('keydown', { key: 'Enter' });
+    await nextTick();
+    await input.trigger('keydown', { key: ' ' });
+    await input.trigger('keydown', { key: 'Tab' });
+    expect(input.attributes('aria-expanded')).toBe('false');
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'Escape' });
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('搜索模式支持上下、Home/End、Enter、Escape 和 Tab 导航', async () => {
+    const wrapper = mount(ExCascader, {
+      props: { options, filterable: true, teleported: false },
+    });
+    const input = wrapper.get('.ex-cascader__input');
+
+    await input.setValue('湖');
+    for (const key of ['ArrowDown', 'ArrowDown', 'ArrowUp', 'Home', 'End']) {
+      await input.trigger('keydown', { key });
+    }
+    expect(input.attributes('aria-activedescendant')).toBeTruthy();
+    await input.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
+
+    await input.setValue('杭');
+    await input.trigger('keydown', { key: 'Escape' });
+    expect(input.attributes('aria-expanded')).toBe('false');
+    await input.setValue('浙');
+    await input.trigger('keydown', { key: 'Tab' });
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('外部点击只在触发器和面板之外关闭，并在悬停时跳过禁用项', async () => {
+    const wrapper = mount(ExCascader, {
+      props: {
+        options: [
+          {
+            value: 'disabled',
+            label: '禁用',
+            disabled: true,
+            children: [{ value: 'leaf', label: '叶子' }],
+          },
+          { value: 'enabled', label: '启用', children: [{ value: 'leaf-2', label: '叶子二' }] },
+        ],
+        trigger: 'hover',
+        teleported: false,
+      },
+    });
+    const trigger = wrapper.get('.ex-cascader__input-wrapper');
+    await trigger.trigger('click');
+    await wrapper.get('.ex-cascader__input').trigger('focus');
+    await wrapper.find('.ex-cascader__option').trigger('mouseenter');
+    await nextTick();
+    expect(wrapper.findAll('.ex-cascader__menu')).toHaveLength(1);
+    await trigger.trigger('click');
+    expect(wrapper.get('.ex-cascader__input').attributes('aria-expanded')).toBe('false');
+
+    await trigger.trigger('click');
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    await nextTick();
+    expect(wrapper.get('.ex-cascader__input').attributes('aria-expanded')).toBe('false');
+  });
+
+  it('changeOnSelect 允许选择中间节点，空选项仍能安全打开和关闭', async () => {
+    const wrapper = mount(ExCascader, {
+      props: { options, changeOnSelect: true, teleported: false },
+    });
+    await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+    await wrapper.get('.ex-cascader__option').trigger('click');
+    expect(wrapper.emitted('change')?.at(-1)).toEqual([['zhejiang'], expect.any(Array)]);
+
+    const empty = mount(ExCascader, { props: { options: [], teleported: false } });
+    const emptyInput = empty.get('.ex-cascader__input');
+    await emptyInput.trigger('keydown', { key: 'ArrowDown' });
+    await nextTick();
+    expect(empty.get('.ex-cascader__menu').exists()).toBe(true);
+    await emptyInput.trigger('keydown', { key: 'Escape' });
+    expect(emptyInput.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('Teleport 开关变化和窗口事件会重新计算面板位置', async () => {
+    const wrapper = mount(ExCascader, { props: { options, teleported: true } });
+    await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
+    await nextTick();
+    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new Event('scroll'));
+    await wrapper.setProps({ teleported: false });
+    await nextTick();
+    expect(wrapper.get('.ex-cascader__input').attributes('aria-expanded')).toBe('true');
+    await wrapper.find('.ex-cascader__input-wrapper').trigger('click');
   });
 });
