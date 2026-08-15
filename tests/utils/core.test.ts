@@ -1,4 +1,18 @@
-import { deepClone, deepMerge, isComponent, isNumber } from '../../src/utils';
+import { h } from 'vue';
+import {
+  classNames,
+  deepClone,
+  deepMerge,
+  hasOwnProperty,
+  isBoolean,
+  isComponent,
+  isFunction,
+  isNumber,
+  isObject,
+  isString,
+  isVNode,
+  styleToString,
+} from '../../src/utils';
 
 describe('公共核心工具', () => {
   it('deepClone 支持循环引用、Map、Set、Date 和类实例原型', () => {
@@ -141,5 +155,30 @@ describe('公共核心工具', () => {
     expect(isComponent({ template: '   ' })).toBe(false);
     expect(isComponent({ __file: 'FakeComponent.vue' })).toBe(false);
     expect(isComponent({ arbitrary: true })).toBe(false);
+  });
+
+  it('基础类型守卫、VNode 和安全属性检查应该区分边界值', () => {
+    expect(isObject({})).toBe(true);
+    expect(isObject([])).toBe(false);
+    expect(isObject(null)).toBe(false);
+    expect(isFunction(() => undefined)).toBe(true);
+    expect(isFunction('function')).toBe(false);
+    expect(isString('text')).toBe(true);
+    expect(isString(1)).toBe(false);
+    expect(isBoolean(false)).toBe(true);
+    expect(isBoolean(0)).toBe(false);
+
+    const vnode = h('span', '文本');
+    expect(isVNode(vnode)).toBe(true);
+    expect(isVNode({ __v_isVNode: false })).toBe(false);
+    expect(isVNode(null)).toBe(false);
+
+    const record = { own: 1 };
+    expect(hasOwnProperty(record, 'own')).toBe(true);
+    expect(hasOwnProperty(record, 'missing')).toBe(false);
+    expect(classNames('a', undefined, null, false, 'b')).toBe('a b');
+    expect(styleToString({ backgroundColor: 'red', zIndex: 2 })).toBe(
+      'background-color: red; z-index: 2'
+    );
   });
 });
