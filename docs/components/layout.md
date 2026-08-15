@@ -9,22 +9,28 @@ const collapsed = ref(false)
 ## 基础用法
 
 ::: raw
-<ExLayout class="layout-demo">
-<ExHeader>Header</ExHeader>
-<ExContent>Content</ExContent>
-<ExFooter>Footer</ExFooter>
-</ExLayout>
+
+<div class="vp-raw demo-container">
+  <ExLayout class="layout-demo">
+    <ExHeader>Header</ExHeader>
+    <ExContent>Content</ExContent>
+    <ExFooter>Footer</ExFooter>
+  </ExLayout>
+</div>
+
 :::
 
 ::: details 查看示例代码
 
 ```vue
 <template>
-  <ExLayout>
-    <ExHeader>Header</ExHeader>
-    <ExContent>Content</ExContent>
-    <ExFooter>Footer</ExFooter>
-  </ExLayout>
+  <div class="vp-raw demo-container">
+    <ExLayout class="layout-demo">
+      <ExHeader>Header</ExHeader>
+      <ExContent>Content</ExContent>
+      <ExFooter>Footer</ExFooter>
+    </ExLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -37,34 +43,44 @@ import { ExContent, ExFooter, ExHeader, ExLayout } from 'vue-ex-ui';
 ## 侧栏布局
 
 ::: raw
-<ExLayout class="layout-demo">
-<ExSider v-model:collapsed="collapsed" collapsible>
-<div class="layout-demo__sider">Navigation</div>
-</ExSider>
-<ExLayout>
-<ExHeader>Header</ExHeader>
-<ExContent>Content</ExContent>
-</ExLayout>
-</ExLayout>
-:::
 
-::: details 查看示例代码
-
-```vue
-<template>
-  <ExLayout>
+<div class="vp-raw demo-container">
+  <ExLayout class="layout-demo">
     <ExSider
       v-model:collapsed="collapsed"
       collapsible
       breakpoint="md"
     >
-      Navigation
+      <div class="layout-demo__sider">Navigation</div>
     </ExSider>
     <ExLayout>
       <ExHeader>Header</ExHeader>
       <ExContent>Content</ExContent>
     </ExLayout>
   </ExLayout>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ExLayout class="layout-demo">
+      <ExSider
+        v-model:collapsed="collapsed"
+        collapsible
+        breakpoint="md"
+      >
+        <div class="layout-demo__sider">Navigation</div>
+      </ExSider>
+      <ExLayout>
+        <ExHeader>Header</ExHeader>
+        <ExContent>Content</ExContent>
+      </ExLayout>
+    </ExLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -84,22 +100,55 @@ const collapsed = ref(false);
 
 ## Header 与 Footer 插槽
 
-```vue
-<template>
+具名 `center` 不存在时，默认插槽作为中间内容；未使用任何具名插槽时，默认插槽占满可用宽度。
+
+::: raw
+
+<div class="vp-raw demo-container layout-demo">
   <ExHeader>
     <template #left>Brand</template>
     <template #center>Navigation</template>
     <template #right>Account</template>
   </ExHeader>
-</template>
-```
+  <ExFooter>
+    <template #left>Status</template>
+    <template #center>ExUI</template>
+    <template #right>2026</template>
+  </ExFooter>
+</div>
 
-具名 `center` 不存在时，默认插槽作为中间内容；未使用任何具名插槽时，默认插槽占满可用宽度。
+:::
 
-## Content 标签
+::: details 查看示例代码
 
 ```vue
 <template>
+  <div class="vp-raw demo-container layout-demo">
+    <ExHeader>
+      <template #left>Brand</template>
+      <template #center>Navigation</template>
+      <template #right>Account</template>
+    </ExHeader>
+    <ExFooter>
+      <template #left>Status</template>
+      <template #center>ExUI</template>
+      <template #right>2026</template>
+    </ExFooter>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ExFooter, ExHeader } from 'vue-ex-ui';
+</script>
+```
+
+:::
+
+## Content 标签
+
+::: raw
+
+<div class="vp-raw demo-container layout-demo">
   <ExContent
     tag="section"
     aria-label="Dashboard"
@@ -108,17 +157,60 @@ const collapsed = ref(false);
   >
     Dashboard
   </ExContent>
-</template>
-```
+</div>
 
-## Container
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
+  <div class="vp-raw demo-container layout-demo">
+    <ExContent
+      tag="section"
+      aria-label="Dashboard"
+      grid
+      scanline
+    >
+      Dashboard
+    </ExContent>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ExContent } from 'vue-ex-ui';
+</script>
+```
+
+:::
+
+## Container
+
+::: raw
+
+<div class="vp-raw demo-container">
   <ExContainer size="lg">Fixed token width</ExContainer>
   <ExContainer fluid>Fluid width</ExContainer>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ExContainer size="lg">Fixed token width</ExContainer>
+    <ExContainer fluid>Fluid width</ExContainer>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { ExContainer } from 'vue-ex-ui';
+</script>
 ```
+
+:::
 
 ## API
 

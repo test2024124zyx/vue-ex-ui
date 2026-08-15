@@ -33,43 +33,133 @@
 
 ## 水平与垂直间距
 
+`gutter` 数组顺序为 `[水平, 垂直]`，也可使用 `xs`、`sm`、`md`、`lg`、`xl`，分别对应 4、8、16、24、32px。负数收敛到 0。嵌套 Grid 会显式重置自己的 gutter，不继承外层间距。
+
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-grid :gutter="[16, 24]">
+    <ex-grid-item :span="12"><div class="grid-block">水平 16 / 垂直 24</div></ex-grid-item>
+    <ex-grid-item :span="12"><div class="grid-block grid-block--strong">第二列</div></ex-grid-item>
+  </ex-grid>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExGrid :gutter="[16, 24]">
-  <ExGridItem :span="12">A</ExGridItem>
-  <ExGridItem :span="12">B</ExGridItem>
-</ExGrid>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-grid :gutter="[16, 24]">
+      <ex-grid-item :span="12"><div class="grid-block">水平 16 / 垂直 24</div></ex-grid-item>
+      <ex-grid-item :span="12">
+        <div class="grid-block grid-block--strong">第二列</div>
+      </ex-grid-item>
+    </ex-grid>
+  </div>
+</template>
 ```
 
-`gutter` 数组顺序为 `[水平, 垂直]`，也可使用 `xs`、`sm`、`md`、`lg`、`xl`，分别对应 4、8、16、24、32px。负数收敛到 0。嵌套 Grid 会显式重置自己的 gutter，不继承外层间距。
+:::
 
 ## 偏移、推拉与顺序
 
+`offset` 占用布局空间；`push` 和 `pull` 使用相对定位，不改变其他栅格项占位；`order` 接受安全整数。`span="auto"` 平分剩余空间，`span="0"` 隐藏当前断点的栅格项。
+
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-grid :gutter="16">
+    <ex-grid-item :span="7" :offset="3" :push="2" :order="2">
+      <div class="grid-block">A：offset 3 / push 2 / order 2</div>
+    </ex-grid-item>
+    <ex-grid-item :span="7" :pull="1" :order="1">
+      <div class="grid-block grid-block--strong">B：pull 1 / order 1</div>
+    </ex-grid-item>
+  </ex-grid>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExGrid>
-  <ExGridItem :span="7" :offset="3" :push="2" :order="2">A</ExGridItem>
-  <ExGridItem :span="7" :pull="1" :order="1">B</ExGridItem>
-</ExGrid>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-grid :gutter="16">
+      <ex-grid-item
+        :span="7"
+        :offset="3"
+        :push="2"
+        :order="2"
+      >
+        <div class="grid-block">A：offset 3 / push 2 / order 2</div>
+      </ex-grid-item>
+      <ex-grid-item
+        :span="7"
+        :pull="1"
+        :order="1"
+      >
+        <div class="grid-block grid-block--strong">B：pull 1 / order 1</div>
+      </ex-grid-item>
+    </ex-grid>
+  </div>
+</template>
 ```
 
-- `offset` 占用布局空间。
-- `push` 和 `pull` 使用相对定位，不改变其他栅格项占位。
-- `order` 接受安全整数。
-- `span="auto"` 平分剩余空间；`span="0"` 隐藏当前断点的栅格项。
+:::
 
 ## 响应式布局
 
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-grid :gutter="16">
+    <ex-grid-item
+      :xs="24"
+      :sm="12"
+      :md="{ span: 7, offset: 1 }"
+      :lg="{ span: 5, push: 1, order: -1 }"
+    >
+      <div class="grid-block">响应式内容</div>
+    </ex-grid-item>
+    <ex-grid-item :xs="24" :sm="12" :md="{ span: 7 }" :lg="{ span: 5 }">
+      <div class="grid-block grid-block--strong">随断点变化</div>
+    </ex-grid-item>
+  </ex-grid>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExGrid :gutter="16">
-  <ExGridItem
-    :xs="24"
-    :sm="12"
-    :md="{ span: 7, offset: 1 }"
-    :lg="{ span: 5, push: 1, order: -1 }"
-  >
-    响应式内容
-  </ExGridItem>
-</ExGrid>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-grid :gutter="16">
+      <ex-grid-item
+        :xs="24"
+        :sm="12"
+        :md="{ span: 7, offset: 1 }"
+        :lg="{ span: 5, push: 1, order: -1 }"
+      >
+        <div class="grid-block">响应式内容</div>
+      </ex-grid-item>
+      <ex-grid-item
+        :xs="24"
+        :sm="12"
+        :md="{ span: 7 }"
+        :lg="{ span: 5 }"
+      >
+        <div class="grid-block grid-block--strong">随断点变化</div>
+      </ex-grid-item>
+    </ex-grid>
+  </div>
+</template>
 ```
+
+:::
 
 | 属性  | 生效范围   |
 | ----- | ---------- |
@@ -84,12 +174,35 @@
 
 ## 对齐与换行
 
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-grid justify="space-between" align="middle" :wrap="false">
+    <ex-grid-item :span="6"><div class="grid-block">A</div></ex-grid-item>
+    <ex-grid-item :span="6"><div class="grid-block grid-block--strong">B</div></ex-grid-item>
+  </ex-grid>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExGrid justify="space-between" align="middle" :wrap="false">
-  <ExGridItem :span="6">A</ExGridItem>
-  <ExGridItem :span="6">B</ExGridItem>
-</ExGrid>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-grid
+      justify="space-between"
+      align="middle"
+      :wrap="false"
+    >
+      <ex-grid-item :span="6"><div class="grid-block">A</div></ex-grid-item>
+      <ex-grid-item :span="6"><div class="grid-block grid-block--strong">B</div></ex-grid-item>
+    </ex-grid>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 

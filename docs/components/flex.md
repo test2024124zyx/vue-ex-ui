@@ -37,30 +37,129 @@
 
 ## 垂直与换行
 
-```vue
-<ExFlex vertical gap="sm">
-  <div>第一行</div>
-  <div>第二行</div>
-</ExFlex>
+`vertical` 是 `direction="column"` 的便捷写法；两者同时传入时，`vertical` 优先。`align-content` 只在 `wrap` 不是 `nowrap` 时写入。
 
-<ExFlex wrap="wrap" :row-gap="16" :column-gap="24" align-content="space-between">
-  <div v-for="item in items" :key="item.id">{{ item.label }}</div>
-</ExFlex>
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-flex
+    vertical
+    gap="sm"
+  >
+    <div class="flex-block">第一行</div>
+    <div class="flex-block">第二行</div>
+  </ex-flex>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ex-flex
+      vertical
+      gap="sm"
+    >
+      <div class="flex-block">第一行</div>
+      <div class="flex-block">第二行</div>
+    </ex-flex>
+  </div>
+</template>
 ```
 
-`vertical` 是 `direction="column"` 的便捷写法；两者同时传入时，`vertical` 优先。`align-content` 只在 `wrap` 不是 `nowrap` 时写入。
+:::
+
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-flex
+    wrap="wrap"
+    :row-gap="16"
+    :column-gap="24"
+    align-content="space-between"
+  >
+    <div class="flex-block flex-block--half">第一项</div>
+    <div class="flex-block flex-block--half">第二项</div>
+    <div class="flex-block flex-block--half">第三项</div>
+    <div class="flex-block flex-block--half">第四项</div>
+  </ex-flex>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="vp-raw demo-container">
+    <ex-flex
+      wrap="wrap"
+      :row-gap="16"
+      :column-gap="24"
+      align-content="space-between"
+    >
+      <div class="flex-block flex-block--half">第一项</div>
+      <div class="flex-block flex-block--half">第二项</div>
+      <div class="flex-block flex-block--half">第三项</div>
+      <div class="flex-block flex-block--half">第四项</div>
+    </ex-flex>
+  </div>
+</template>
+```
+
+:::
 
 ## 子项伸缩
 
+显式 `flex` 优先于 `grow`、`shrink` 和 `basis`。数字 `basis` 按像素处理；负数会收敛到 0。`grow`、`shrink` 和数字 `flex` 不接受负值。
+
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-flex gap="sm">
+    <ex-flex-item :flex="1"><div class="flex-block">平分</div></ex-flex-item>
+    <ex-flex-item
+      :grow="2"
+      :shrink="0"
+      basis="160px"
+    ><div class="flex-block">双倍增长</div></ex-flex-item>
+    <ex-flex-item
+      align-self="center"
+      :order="-1"
+    ><div class="flex-block">优先显示</div></ex-flex-item>
+  </ex-flex>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFlex gap="sm">
-  <ExFlexItem :flex="1">平分</ExFlexItem>
-  <ExFlexItem :grow="2" :shrink="0" basis="160px">双倍增长</ExFlexItem>
-  <ExFlexItem align-self="center" :order="-1">优先显示</ExFlexItem>
-</ExFlex>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-flex gap="sm">
+      <ex-flex-item :flex="1"><div class="flex-block">平分</div></ex-flex-item>
+      <ex-flex-item
+        :grow="2"
+        :shrink="0"
+        basis="160px"
+      >
+        <div class="flex-block">双倍增长</div>
+      </ex-flex-item>
+      <ex-flex-item
+        align-self="center"
+        :order="-1"
+      >
+        <div class="flex-block">优先显示</div>
+      </ex-flex-item>
+    </ex-flex>
+  </div>
+</template>
 ```
 
-显式 `flex` 优先于 `grow`、`shrink` 和 `basis`。数字 `basis` 按像素处理；负数会收敛到 0。`grow`、`shrink` 和数字 `flex` 不接受负值。
+:::
 
 ## 间距
 
@@ -74,9 +173,31 @@
 | `lg` | 24px |
 | `xl` | 32px |
 
+::: raw
+
+<div class="vp-raw demo-container">
+  <ex-flex gap="calc(1rem + 2px)">
+    <div class="flex-block">自定义 CSS 长度间距</div>
+    <div class="flex-block">第二项</div>
+  </ex-flex>
+</div>
+
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFlex gap="calc(1rem + 2px)">...</ExFlex>
+<template>
+  <div class="vp-raw demo-container">
+    <ex-flex gap="calc(1rem + 2px)">
+      <div class="flex-block">自定义 CSS 长度间距</div>
+      <div class="flex-block">第二项</div>
+    </ex-flex>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 
@@ -123,5 +244,9 @@
   background: var(--ex-color-primary-alpha-20);
   border: 1px solid var(--ex-color-primary);
   border-radius: var(--ex-radius-sm);
+}
+
+.flex-block--half {
+  flex: 0 0 calc(50% - 12px);
 }
 </style>

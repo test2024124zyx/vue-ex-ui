@@ -241,6 +241,30 @@ describe('组件文档实时演示', () => {
   });
 
   it.each([
+    ['grid', 5],
+    ['flex', 5],
+    ['layout', 5],
+  ] as const)('%s 的完整 API 示例都应渲染并默认折叠源码', (name, expectedCount) => {
+    const document = readDocument(name);
+    const liveBlocks = readBlocks(document, /::: raw\s*\n([\s\S]*?)\n:::/g);
+    const codeBlocks = readBlocks(
+      document,
+      /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
+    );
+
+    expect(liveBlocks).toHaveLength(expectedCount);
+    expect(codeBlocks).toHaveLength(expectedCount);
+    expect(document.match(/```vue/g) ?? []).toHaveLength(expectedCount);
+    expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
+
+    liveBlocks.forEach((liveBlock, index) => {
+      expect(normalizeLiveExampleMarkup(liveBlock)).toBe(
+        extractCopyableExampleMarkup(codeBlocks[index] ?? '')
+      );
+    });
+  });
+
+  it.each([
     ['typography', 'ex-typography', 32],
     ['icon', 'ex-icon', 4],
     ['button', 'ex-button', 8],
