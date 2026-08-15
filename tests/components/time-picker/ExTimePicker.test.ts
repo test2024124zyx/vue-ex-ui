@@ -227,4 +227,135 @@ describe('ExTimePicker', () => {
     expect(panel.classList).toContain('ex-no-animation');
     provider.unmount();
   });
+
+  it('不同格式应该只渲染对应的时间列并保留自定义外观', async () => {
+    mountTP({
+      format: 'HH',
+      class: 'meeting-time',
+      style: { color: 'red' },
+      popperClass: 'meeting-panel',
+    });
+    expect(wrapper!.classes()).toContain('meeting-time');
+    expect(wrapper!.attributes('style')).toContain('color: red');
+    await wrapper!.find('.ex-time-picker__trigger').trigger('click');
+    await nextTick();
+    expect(document.querySelectorAll('.ex-time-picker__column')).toHaveLength(1);
+    expect(document.querySelector('.meeting-panel')).toBeTruthy();
+
+    wrapper!.unmount();
+    wrapper = mountTP({ format: 'mm:ss' });
+    await wrapper.find('.ex-time-picker__trigger').trigger('click');
+    await nextTick();
+    expect(document.querySelectorAll('.ex-time-picker__column')).toHaveLength(2);
+    expect(document.querySelector('[data-unit="h"]')).toBeNull();
+  });
+
+  it('teleported=false 应该把面板保留在组件树内并支持运行时切换', async () => {
+    mountTP({ teleported: false });
+    await wrapper!.find('.ex-time-picker__trigger').trigger('click');
+    await nextTick();
+    const panel = wrapper!.find('.ex-time-picker__panel');
+    expect(panel.exists()).toBe(true);
+    expect(wrapper!.element.contains(panel.element)).toBe(true);
+
+    await wrapper!.setProps({ teleported: true });
+    await nextTick();
+    expect(document.body.contains(document.querySelector('.ex-time-picker__panel'))).toBe(true);
+    document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    await nextTick();
+    expect(document.querySelector('.ex-time-picker__panel')).toBeNull();
+  });
+
+  it('触发器和单元格键盘应该覆盖打开、移动、提交和关闭路径', async () => {
+    mountTP({ modelValue: '00:00:00' });
+    const trigger = wrapper!.find('.ex-time-picker__trigger');
+    await trigger.trigger('keydown', { key: 'ArrowDown' });
+    await nextTick();
+    expect(document.activeElement?.getAttribute('data-unit')).toBe('h');
+
+    const hour = document.querySelector<HTMLElement>('[data-unit="h"][data-value="0"]')!;
+    hour.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toBe('01:00:00');
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true })
+    );
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toBe('23:00:00');
+
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.activeElement?.getAttribute('data-unit')).toBe('m');
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.activeElement?.getAttribute('data-unit')).toBe('h');
+
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.querySelector('.ex-time-picker__panel')).toBeNull();
+
+    await trigger.trigger('keydown', { key: 'Enter' });
+    await nextTick();
+    await trigger.trigger('keydown', { key: ' ' });
+    await nextTick();
+    expect(wrapper!.emitted('visible-change')?.filter(([visible]) => visible)).toHaveLength(2);
+  });
+
+  it('禁用项应该不可选择，确认按钮应反映没有可用时间', async () => {
+    mountTP({
+      format: 'HH:mm:ss',
+      disabledHours: () => Array.from({ length: 24 }, (_, value) => value),
+      clearable: false,
+      modelValue: '00:00:00',
+    });
+    expect(wrapper!.find('.ex-time-picker__clear').exists()).toBe(false);
+    await wrapper!.find('.ex-time-picker__trigger').trigger('click');
+    await nextTick();
+    const panel = document.querySelector<HTMLElement>('.ex-time-picker__panel')!;
+    expect(panel.querySelector<HTMLButtonElement>('.ex-time-picker__now')!.disabled).toBe(true);
+    expect(panel.querySelector<HTMLButtonElement>('.ex-time-picker__confirm')!.disabled).toBe(true);
+    panel.querySelector<HTMLElement>('[data-unit="h"]')!.click();
+    await nextTick();
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('确认、清空、触发器焦点和外部点击应该触发对应事件', async () => {
+    mountTP({ modelValue: '09:30:00', format: 'HH:mm', clearable: true });
+    const trigger = wrapper!.find('.ex-time-picker__trigger');
+    await trigger.trigger('focus');
+    await trigger.trigger('blur');
+    expect(wrapper!.emitted('focus')).toHaveLength(1);
+    expect(wrapper!.emitted('blur')).toHaveLength(1);
+
+    await trigger.trigger('click');
+    await nextTick();
+    document.querySelector<HTMLButtonElement>('.ex-time-picker__confirm')!.click();
+    await nextTick();
+    expect(wrapper!.emitted('change')).toBeTruthy();
+    expect(document.querySelector('.ex-time-picker__panel')).toBeNull();
+
+    await wrapper!.find('.ex-time-picker__clear').trigger('click');
+    expect(wrapper!.emitted('clear')).toHaveLength(1);
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toBe('');
+  });
+
+  it('暴露的 focus 和 blur 方法应该作用于触发器', () => {
+    mountTP();
+    const trigger = wrapper!.find('.ex-time-picker__trigger').element;
+    wrapper!.vm.focus();
+    expect(document.activeElement).toBe(trigger);
+    wrapper!.vm.blur();
+    expect(document.activeElement).not.toBe(trigger);
+  });
 });
