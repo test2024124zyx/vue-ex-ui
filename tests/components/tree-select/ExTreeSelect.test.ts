@@ -283,4 +283,114 @@ describe('ExTreeSelect', () => {
     expect(panel.classList).toContain('ex-no-animation');
     provider.unmount();
   });
+
+  it('折叠标签应该保留首项、显示数量并支持移除和清空', async () => {
+    mountTS({
+      multiple: true,
+      modelValue: ['1-1', '2'],
+      collapseTags: true,
+      clearable: true,
+      defaultExpandAll: true,
+    });
+    await wrapper!.find('.ex-tree-select__trigger').trigger('click');
+    await nextTick();
+    expect(wrapper!.findAll('.ex-tree-select__tag')).toHaveLength(2);
+    expect(wrapper!.find('.ex-tree-select__tag--count').text()).toBe('+1');
+
+    await wrapper!.find('.ex-tree-select__tag-close').trigger('click');
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['2']);
+    await wrapper!.find('.ex-tree-select__clear').trigger('click');
+    expect(wrapper!.emitted('clear')).toHaveLength(1);
+    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([]);
+  });
+
+  it('展开和收起暴露方法应该同步树节点渲染', async () => {
+    mountTS({ defaultExpandAll: false });
+    await wrapper!.find('.ex-tree-select__trigger').trigger('click');
+    await nextTick();
+    expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(2);
+    wrapper!.vm.expandAll();
+    await nextTick();
+    expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(4);
+    wrapper!.vm.collapseAll();
+    await nextTick();
+    expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(2);
+  });
+
+  it('树节点左右键应该展开、移动焦点并回到父节点', async () => {
+    mountTS({ defaultExpandAll: false });
+    await wrapper!.find('.ex-tree-select__trigger').trigger('keydown', { key: 'ArrowDown' });
+    await nextTick();
+    const parent = document.querySelector<HTMLElement>('[role="treeitem"]')!;
+    parent.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(4);
+    parent.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.activeElement?.textContent).toContain('C1');
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.activeElement?.textContent).toContain('P1');
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true })
+    );
+    await nextTick();
+    expect(document.querySelectorAll('.ex-tree-select__node')).toHaveLength(2);
+  });
+
+  it('过滤状态应该自动保留祖先并处理空结果', async () => {
+    mountTS({ filterable: true });
+    await wrapper!.find('.ex-tree-select__trigger').trigger('click');
+    await nextTick();
+    const input = document.querySelector<HTMLInputElement>('.ex-tree-select__search-input')!;
+    await wrapper!.find('.ex-tree-select__trigger').trigger('keydown', { key: 'ArrowDown' });
+    input.value = 'not-found';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
+    expect(document.querySelector('.ex-tree-select__empty')).toBeTruthy();
+    input.value = 'C2';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
+    expect(
+      Array.from(document.querySelectorAll('.ex-tree-select__node-label')).map(
+        node => node.textContent
+      )
+    ).toEqual(['P1', 'C2']);
+  });
+
+  it('非传送面板应该支持外部点击关闭和运行时禁用', async () => {
+    mountTS({ teleported: false, clearable: true, modelValue: '1' });
+    await wrapper!.find('.ex-tree-select__trigger').trigger('click');
+    await nextTick();
+    expect(wrapper!.find('.ex-tree-select__panel').exists()).toBe(true);
+    document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    await nextTick();
+    expect(wrapper!.find('.ex-tree-select__panel').exists()).toBe(false);
+
+    await wrapper!.find('.ex-tree-select__trigger').trigger('click');
+    await wrapper!.setProps({ disabled: true });
+    await nextTick();
+    expect(wrapper!.find('.ex-tree-select__panel').exists()).toBe(false);
+    expect(wrapper!.find('.ex-tree-select__clear').exists()).toBe(false);
+  });
+
+  it('单选焦点、失焦和清空事件应该保持类型契约', async () => {
+    mountTS({ modelValue: '1', clearable: true });
+    const trigger = wrapper!.find('.ex-tree-select__trigger');
+    await trigger.trigger('focus');
+    await trigger.trigger('blur');
+    expect(wrapper!.emitted('focus')).toHaveLength(1);
+    expect(wrapper!.emitted('blur')).toHaveLength(1);
+    await trigger.trigger('click');
+    await nextTick();
+    await wrapper!.find('.ex-tree-select__clear').trigger('click');
+    expect(wrapper!.emitted('change')?.at(-1)?.[0]).toBeNull();
+    expect(wrapper!.emitted('change')?.at(-1)?.[1]).toBeNull();
+  });
 });
