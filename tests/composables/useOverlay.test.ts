@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h, ref } from 'vue';
 import { useOverlay } from '../../src/composables/useOverlay';
+import {
+  createFocusTrap,
+  registerOverlay,
+  scheduleAutoFocus,
+} from '../../src/composables/overlay-manager';
 
 const OverlayHarness = defineComponent({
   props: {
@@ -101,5 +106,58 @@ describe('useOverlay', () => {
     last.focus();
     last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     expect(document.activeElement).toBe(last);
+  });
+
+  it('底层浮层栈应该只响应可逃逸的顶层项并支持非顶层注销', () => {
+    const firstEscape = vi.fn();
+    const secondEscape = vi.fn();
+    const first = registerOverlay({ canEscape: () => true, onEscape: firstEscape });
+    const second = registerOverlay({ canEscape: () => false, onEscape: secondEscape });
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    );
+    expect(firstEscape).not.toHaveBeenCalled();
+    expect(secondEscape).not.toHaveBeenCalled();
+    expect(first()).toBe(false);
+    expect(second()).toBe(true);
+    expect(second()).toBe(false);
+  });
+
+  it('没有可聚焦元素时焦点圈闭应该聚焦容器并阻止 Tab', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const stop = createFocusTrap(container);
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    container.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(container);
+    stop();
+  });
+
+  it('自动聚焦应该在两帧后聚焦首个控件，断开节点时不聚焦', () => {
+    const callbacks: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+
+    const container = document.createElement('div');
+    const button = document.createElement('button');
+    container.appendChild(button);
+    document.body.appendChild(container);
+    const stop = scheduleAutoFocus(container);
+    callbacks[0]?.(0);
+    callbacks[1]?.(0);
+    expect(document.activeElement).toBe(button);
+    stop();
+
+    const detached = document.createElement('div');
+    const detachedStop = scheduleAutoFocus(detached);
+    callbacks[2]?.(0);
+    callbacks[3]?.(0);
+    expect(document.activeElement).toBe(button);
+    detachedStop();
   });
 });
