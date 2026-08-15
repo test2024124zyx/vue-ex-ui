@@ -227,5 +227,15 @@ describe('sanitize', () => {
       const result = sanitizeHtml(input);
       expect(result).not.toContain('data:');
     });
+
+    it('应该在解析器不依赖 Node 内置模块时丢弃危险原始节点', () => {
+      const input =
+        '<svg><script>alert(1)</script><img src="https://example.com/image.png"></svg>' +
+        '<textarea>secret</textarea><p>safe &amp; sound</p>';
+
+      expect(sanitizeHtml(input)).toBe(
+        '<img src="https://example.com/image.png" /><p>safe &amp; sound</p>'
+      );
+    });
   });
 });

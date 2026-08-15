@@ -3,7 +3,8 @@
  * 用于防止 XSS 攻击
  */
 
-import sanitizeMarkup from 'sanitize-html';
+import render from 'dom-serializer';
+import { ElementType, parseDocument } from 'htmlparser2';
 
 /**
  * 允许的 HTML 标签白名单
@@ -66,6 +67,15 @@ const ASCII_DELETE_CODE = 0x7f;
 const RASTER_DATA_IMAGE_PATTERN =
   /^data:image\/(?:png|jpeg|gif|webp|avif|bmp|x-icon|vnd\.microsoft\.icon);base64,([a-z0-9+/]+={0,2})$/iu;
 
+/** 这些节点的文本本身也可能被浏览器当成可执行或替换内容，必须连同子树一起丢弃。 */
+const DROP_CONTENT_TAGS = new Set(['script', 'style', 'iframe', 'object', 'embed', 'textarea']);
+
+type ParsedNode = ReturnType<typeof parseDocument>['children'][number];
+type ParsedElement = Extract<
+  ParsedNode,
+  { name: string; attribs: Record<string, string>; children: ParsedNode[] }
+>;
+
 const isValidRasterDataImage = (url: string): boolean => {
   const match = RASTER_DATA_IMAGE_PATTERN.exec(url);
   const payload = match?.[1];
@@ -121,36 +131,79 @@ export function escapeHtml(str: string): string {
   return str.replace(/[&<>"'/]/g, char => escapeMap[char] || char);
 }
 
+const isElementNode = (node: ParsedNode): node is ParsedElement =>
+  node.type === ElementType.Tag ||
+  node.type === ElementType.Script ||
+  node.type === ElementType.Style;
+
+/** 根据组件白名单复制属性，并在复制时完成 URL 校验。 */
+const sanitizeAttributes = (
+  tagName: string,
+  attributes: Record<string, string>
+): Record<string, string> => {
+  const allowedAttributes = ALLOWED_ATTRS[tagName] ?? new Set<string>();
+  const globalAllowedAttributes = ALLOWED_ATTRS['*'] ?? new Set<string>();
+  const safeAttributes: Record<string, string> = {};
+
+  for (const [attributeName, attributeValue] of Object.entries(attributes)) {
+    const normalizedName = attributeName.toLowerCase();
+    if (!globalAllowedAttributes.has(normalizedName) && !allowedAttributes.has(normalizedName)) {
+      continue;
+    }
+
+    if (normalizedName === 'href' && !isSafeUrl(attributeValue)) continue;
+    if (normalizedName === 'src' && !isSafeUrl(attributeValue, tagName === 'img')) continue;
+
+    safeAttributes[normalizedName] = attributeValue;
+  }
+
+  if (tagName === 'a' && safeAttributes.target === '_blank') {
+    safeAttributes.rel = 'noopener noreferrer';
+  }
+
+  return safeAttributes;
+};
+
+/** 递归过滤节点，未知标签只去掉标签本身，保持原有文本语义。 */
+const sanitizeNodes = (nodes: ParsedNode[]): ParsedNode[] => {
+  const safeNodes: ParsedNode[] = [];
+
+  for (const node of nodes) {
+    if (node.type === ElementType.Text) {
+      safeNodes.push(node);
+      continue;
+    }
+
+    if (!isElementNode(node)) continue;
+
+    const tagName = node.name.toLowerCase();
+    if (DROP_CONTENT_TAGS.has(tagName)) continue;
+
+    const children = sanitizeNodes(node.children);
+    if (!ALLOWED_TAGS.has(tagName)) {
+      safeNodes.push(...children);
+      continue;
+    }
+
+    node.name = tagName;
+    node.attribs = sanitizeAttributes(tagName, node.attribs);
+    node.children = children;
+    safeNodes.push(node);
+  }
+
+  return safeNodes;
+};
+
 /**
  * 消毒 HTML 内容，移除危险标签和属性
  * @param html - 要消毒的 HTML 字符串
  * @returns 消毒后的安全 HTML 字符串
  */
 export function sanitizeHtml(html: string): string {
-  // 使用同一解析器处理 SSR 与浏览器，避免服务端转义、客户端保留标签造成 hydration 差异。
-  return sanitizeMarkup(html, {
-    allowedTags: Array.from(ALLOWED_TAGS),
-    allowedAttributes: Object.fromEntries(
-      Object.entries(ALLOWED_ATTRS).map(([tag, attrs]) => [tag, Array.from(attrs)])
-    ),
-    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
-    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
-    allowProtocolRelative: true,
-    transformTags: {
-      '*': (tagName, attributes) => {
-        const safeAttributes = { ...attributes };
-        const source = safeAttributes.src;
-        if (source && !isSafeUrl(source, tagName === 'img')) delete safeAttributes.src;
-        const href = safeAttributes.href;
-        if (href && !isSafeUrl(href)) delete safeAttributes.href;
-
-        if (tagName === 'a' && safeAttributes.target === '_blank') {
-          safeAttributes.rel = 'noopener noreferrer';
-        }
-        return { tagName, attribs: safeAttributes };
-      },
-    },
-  });
+  // htmlparser2 与 dom-serializer 均可在浏览器和 SSR 使用，避免 Node-only 的 PostCSS 依赖。
+  const document = parseDocument(html, { decodeEntities: true, lowerCaseTags: true });
+  const safeNodes = sanitizeNodes(document.children);
+  return render(safeNodes, { encodeEntities: 'utf8', selfClosingTags: true });
 }
 
 /**
