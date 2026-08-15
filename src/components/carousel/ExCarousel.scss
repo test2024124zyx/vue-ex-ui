@@ -33,6 +33,7 @@
   &--horizontal {
     .ex-carousel__track {
       flex-direction: row;
+      touch-action: pan-y;
     }
   }
 
@@ -40,6 +41,7 @@
   &--vertical {
     .ex-carousel__track {
       flex-direction: column;
+      touch-action: pan-x;
     }
   }
 

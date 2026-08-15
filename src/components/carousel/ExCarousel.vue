@@ -416,6 +416,19 @@ const handleTouchStart = (e: TouchEvent) => {
   touchIntent.value = null;
 };
 
+const resolveTouchIntent = () => {
+  if (touchIntent.value !== null) return;
+
+  const dx = Math.abs(touchEndX.value - touchStartX.value);
+  const dy = Math.abs(touchEndY.value - touchStartY.value);
+  if (Math.max(dx, dy) < GESTURE_INTENT_THRESHOLD_PX) return;
+
+  touchIntent.value =
+    (direction.value === 'horizontal' && dx > dy) || (direction.value === 'vertical' && dy > dx)
+      ? 'carousel'
+      : 'page';
+};
+
 const handleTouchMove = (e: TouchEvent) => {
   if (!touchActive.value) return;
   const touch = e.touches[0];
@@ -425,14 +438,7 @@ const handleTouchMove = (e: TouchEvent) => {
   touchEndY.value = touch.clientY;
 
   // 滑动方向与轮播方向一致时阻止默认滚动，避免与页面滚动冲突
-  const dx = Math.abs(touchEndX.value - touchStartX.value);
-  const dy = Math.abs(touchEndY.value - touchStartY.value);
-  if (touchIntent.value === null && Math.max(dx, dy) >= GESTURE_INTENT_THRESHOLD_PX) {
-    touchIntent.value =
-      (direction.value === 'horizontal' && dx > dy) || (direction.value === 'vertical' && dy > dx)
-        ? 'carousel'
-        : 'page';
-  }
+  resolveTouchIntent();
   if (touchIntent.value === 'carousel') {
     if (e.cancelable) e.preventDefault();
   }
@@ -447,8 +453,17 @@ const resetTouch = () => {
   touchIntent.value = null;
 };
 
-const handleTouchEnd = () => {
+const handleTouchEnd = (e: TouchEvent) => {
   if (!touchActive.value) return;
+
+  // touchmove 可能因系统事件合并或短促手势而缺失，结束事件中的 changedTouches 才是最终位置。
+  const touch = e.changedTouches[0];
+  if (touch) {
+    touchEndX.value = touch.clientX;
+    touchEndY.value = touch.clientY;
+  }
+
+  resolveTouchIntent();
 
   if (touchIntent.value !== 'carousel') {
     resetTouch();

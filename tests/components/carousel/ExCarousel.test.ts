@@ -1,6 +1,8 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExCarousel from '../../../src/components/carousel/ExCarousel.vue';
 import ExCarouselItem from '../../../src/components/carousel/ExCarouselItem.vue';
 import type { ExCarouselExposed } from '../../../src/components/carousel/types';
@@ -102,6 +104,31 @@ describe('ExCarousel', () => {
     await track.trigger('touchend');
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('没有 touchmove 时也会根据 touchend 的 changedTouches 完成滑动切换', async () => {
+    const wrapper = mountCarousel();
+    const track = wrapper.get('.ex-carousel__track');
+
+    await track.trigger('touchstart', {
+      touches: [{ clientX: 120, clientY: 60 }],
+    });
+    await track.trigger('touchend', {
+      touches: [],
+      changedTouches: [{ clientX: 20, clientY: 62 }],
+    });
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1]);
+  });
+
+  it('根据轮播方向声明触摸手势轴，避免移动端默认滚动抢占滑动', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/carousel/ExCarousel.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toContain('touch-action: pan-y;');
+    expect(stylesheet).toContain('touch-action: pan-x;');
   });
 
   it('滑动距离超过阈值时切换到下一项', async () => {
