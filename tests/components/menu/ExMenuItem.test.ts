@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { h } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ExMenu from '../../../src/components/menu/ExMenu.vue';
 import ExMenuItem from '../../../src/components/menu/ExMenuItem.vue';
 
@@ -50,6 +52,15 @@ describe('ExMenuItem', () => {
     expect(action.attributes('type')).toBe('button');
     expect(action.attributes('role')).toBe('menuitem');
     expect(action.attributes('tabindex')).toBe('0');
+  });
+
+  it('菜单项根节点不继承页面级列表圆点', () => {
+    const stylesheet = readFileSync(
+      resolve(process.cwd(), 'src/components/menu/ExMenuItem.scss'),
+      'utf8'
+    );
+
+    expect(stylesheet).toMatch(/&::before\s*\{[\s\S]*?display:\s*none;[\s\S]*?content:\s*none;/);
   });
 
   it('href 使用原生安全锚点并保护新窗口来源', () => {
