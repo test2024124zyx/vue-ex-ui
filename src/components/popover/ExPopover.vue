@@ -16,7 +16,7 @@
     <Teleport to="body">
       <Transition :name="transition">
         <div
-          v-if="visible"
+          v-if="overlayActive"
           :id="popperId"
           ref="popperRef"
           :class="popoverClasses"
@@ -77,6 +77,7 @@ import {
 import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import {
   useAnimation,
   useConfigTheme,
@@ -127,6 +128,20 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const popoverZIndex = useZIndexLayer('popover');
+const {
+  styles: popupOverlayStyles,
+  containsTarget: containsPopupTarget,
+  active: overlayActive,
+} = usePopupOverlay({
+  active: () => visible.value,
+  container: popperRef,
+  zIndex: () => props.zIndex ?? popoverZIndex.value,
+  restoreFocus: props.trigger === 'click' || props.trigger === 'contextmenu',
+  onEscape: () => {
+    clearTimers();
+    requestVisible(false);
+  },
+});
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 
@@ -146,7 +161,7 @@ const popoverClasses = computed(() => {
 
 const popoverStyles = computed(() => {
   const styles: Record<string, string | number> = {
-    zIndex: props.zIndex ?? popoverZIndex.value,
+    ...popupOverlayStyles.value,
   };
 
   if (props.width) {
@@ -317,7 +332,7 @@ const handleClickOutside = (event: MouseEvent) => {
   if (!popoverRef.value || !popperRef.value) return;
 
   const target = event.target as Node;
-  if (!popoverRef.value.contains(target) && !popperRef.value.contains(target)) {
+  if (!popoverRef.value.contains(target) && !containsPopupTarget(target)) {
     hide();
   }
 };
@@ -366,7 +381,7 @@ const syncTriggerAria = () => {
     controls: trigger.getAttribute('aria-controls'),
   });
   trigger.setAttribute('aria-haspopup', 'dialog');
-  trigger.setAttribute('aria-expanded', String(visible.value));
+  trigger.setAttribute('aria-expanded', String(overlayActive.value));
   trigger.setAttribute('aria-controls', popperId);
 };
 
@@ -379,7 +394,8 @@ const removeGlobalListeners = () => {
 
 const syncGlobalListeners = () => {
   removeGlobalListeners();
-  if (!visible.value || typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (!overlayActive.value || typeof window === 'undefined' || typeof document === 'undefined')
+    return;
   window.addEventListener('resize', handleResize);
   window.addEventListener('scroll', handleScroll, true);
   if (props.trigger === 'click' || props.trigger === 'contextmenu') {
@@ -388,10 +404,11 @@ const syncGlobalListeners = () => {
 };
 
 watch(
-  [visible, () => props.trigger],
+  [overlayActive, () => props.trigger],
   () => {
     nextTick(syncTriggerAria);
     syncGlobalListeners();
+    if (overlayActive.value) nextTick(updatePosition);
   },
   { immediate: true }
 );

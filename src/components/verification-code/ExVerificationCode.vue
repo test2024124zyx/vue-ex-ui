@@ -11,7 +11,8 @@ import type {
 } from './types';
 import { isValidChar, filterValidChars } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize, useNeonEffect, useAnimation } from '../config-provider/composables';
+import { useNeonEffect, useAnimation } from '../config-provider/composables';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({ name: 'ExVerificationCode' });
@@ -44,7 +45,8 @@ const props = withDefaults(defineProps<ExVerificationCodeProps>(), {
 });
 
 // 使用全局配置
-const componentSize = useComponentSize(computed(() => props.size));
+const field = useFormFieldState(props);
+const { disabled, readonly, size: componentSize } = field;
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 
@@ -60,6 +62,13 @@ const idSuffix = useId().replace(/:/g, '');
 const inputId = `ex-verification-code-${idSuffix}`;
 const labelId = `${inputId}-label`;
 const helpId = `${inputId}-help`;
+const inputLabelledBy = computed(() => (props.label ? labelId : field.labelledBy.value));
+const inputAriaLabel = computed(() =>
+  inputLabelledBy.value ? undefined : props.ariaLabel || t('verificationCode.ariaLabel')
+);
+const inputDescribedBy = computed(() =>
+  mergeAriaIds(field.describedBy.value, props.helpText || props.errorMessage ? helpId : undefined)
+);
 
 const MIN_CODE_LENGTH = 1;
 const MAX_CODE_LENGTH = 12;
@@ -98,8 +107,8 @@ const componentClasses = computed(() => {
     `ex-verification-code--${componentSize.value}`,
     `ex-verification-code--${props.variant}`,
     {
-      'ex-verification-code--disabled': props.disabled,
-      'ex-verification-code--readonly': props.readonly,
+      'ex-verification-code--disabled': disabled.value,
+      'ex-verification-code--readonly': readonly.value,
       'ex-verification-code--focused': isFocused.value,
       'ex-verification-code--error': props.status === 'error',
       'ex-verification-code--success': props.status === 'success',
@@ -189,7 +198,7 @@ watch(
 );
 
 watch(
-  () => [props.disabled, props.readonly, props.autoSubmit] as const,
+  () => [disabled.value, readonly.value, props.autoSubmit] as const,
   ([disabled, readonly, autoSubmit]) => {
     if (disabled || readonly || !autoSubmit) cancelAutoSubmit();
   }
@@ -211,6 +220,8 @@ function updateValue() {
   emit('update:modelValue', value);
   emit('input', value);
   emit('change', value);
+  field.formItem?.onFieldInput?.();
+  field.formItem?.onFieldChange();
 
   // 检查是否完成
   if (isComplete.value) {
@@ -225,13 +236,13 @@ function updateValue() {
  * 处理自动提交
  */
 function handleAutoSubmit() {
-  if (!props.autoSubmit || props.disabled || props.readonly) return;
+  if (!props.autoSubmit || !field.interactive.value) return;
 
   cancelAutoSubmit();
   isPendingSubmit.value = true;
 
   autoSubmitTimer = setTimeout(() => {
-    if (isComplete.value && props.autoSubmit && !props.disabled && !props.readonly) {
+    if (isComplete.value && props.autoSubmit && field.interactive.value) {
       emit('submit', currentValue.value);
     }
     isPendingSubmit.value = false;
@@ -260,7 +271,7 @@ function getFirstEmptyIndex(): number {
  * 处理输入
  */
 function handleInput(event: Event) {
-  if (props.disabled || props.readonly) return;
+  if (!field.interactive.value) return;
 
   const input = event.target as HTMLInputElement;
   const value = input.value;
@@ -311,8 +322,7 @@ function handleInput(event: Event) {
  * 处理键盘事件
  */
 function handleKeyDown(event: KeyboardEvent) {
-  if (props.disabled || props.readonly) {
-    event.preventDefault();
+  if (!field.interactive.value) {
     return;
   }
 
@@ -391,7 +401,7 @@ function handleDelete() {
  * 顺序输入限制：始终从第一个空格子开始粘贴
  */
 function handlePaste(event: ClipboardEvent) {
-  if (props.disabled || props.readonly) {
+  if (!field.interactive.value) {
     event.preventDefault();
     return;
   }
@@ -430,7 +440,7 @@ function handlePaste(event: ClipboardEvent) {
  * 顺序输入限制：只能点击已填充的格子或第一个空格子
  */
 function handleCellClick(index: number) {
-  if (props.disabled) return;
+  if (disabled.value) return;
 
   const firstEmptyIndex = getFirstEmptyIndex();
 
@@ -458,12 +468,14 @@ function handleFocus(event: FocusEvent) {
 function handleBlur(event: FocusEvent) {
   isFocused.value = false;
   emit('blur', event);
+  field.formItem?.onFieldBlur();
 }
 
 /**
  * 切换遮罩显示
  */
 function toggleMask() {
+  if (disabled.value) return;
   isMasked.value = !isMasked.value;
 }
 
@@ -513,6 +525,7 @@ function clear() {
   emit('clear');
   emit('update:modelValue', '');
   emit('change', '');
+  field.formItem?.onFieldChange();
 }
 
 function setValue(value: string) {
@@ -590,8 +603,8 @@ defineExpose<ExVerificationCodeExposed>({
     <div
       class="ex-verification-code__cells"
       :style="cellsStyle"
-      :aria-label="label ? undefined : ariaLabel || t('verificationCode.ariaLabel')"
-      :aria-labelledby="label ? labelId : undefined"
+      :aria-label="inputAriaLabel"
+      :aria-labelledby="inputLabelledBy"
       role="group"
     >
       <!-- 隐藏的输入框（用于移动端键盘和自动填充） -->
@@ -605,10 +618,11 @@ defineExpose<ExVerificationCodeExposed>({
         :autocomplete="hiddenInputAttrs.autocomplete"
         :disabled="disabled"
         :readonly="readonly"
-        :aria-label="label ? undefined : ariaLabel || t('verificationCode.ariaLabel')"
-        :aria-labelledby="label ? labelId : undefined"
-        :aria-describedby="helpText || errorMessage ? helpId : undefined"
-        :aria-invalid="status === 'error' ? 'true' : undefined"
+        :aria-label="inputAriaLabel"
+        :aria-labelledby="inputLabelledBy"
+        :aria-describedby="inputDescribedBy"
+        :aria-invalid="status === 'error' || field.invalid.value ? 'true' : undefined"
+        :aria-errormessage="field.invalid.value ? field.describedBy.value : undefined"
         :aria-required="required ? 'true' : undefined"
         :required="required"
         @input="handleInput"
@@ -662,6 +676,7 @@ defineExpose<ExVerificationCodeExposed>({
         v-if="showMaskToggle && mask"
         type="button"
         class="ex-verification-code__mask-toggle"
+        :disabled="disabled"
         :aria-label="isMasked ? t('verificationCode.showCode') : t('verificationCode.hideCode')"
         @click="toggleMask"
       >

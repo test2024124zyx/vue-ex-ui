@@ -37,7 +37,14 @@
             :key="tag.value"
             class="ex-select__tag"
           >
-            <span class="ex-select__tag-label">{{ tag.label }}</span>
+            <span class="ex-select__tag-label">
+              <slot
+                name="tag"
+                :option="tag"
+              >
+                {{ tag.label }}
+              </slot>
+            </span>
             <button
               v-if="!effectiveDisabled && !effectiveReadonly"
               type="button"
@@ -130,7 +137,12 @@
             v-else-if="selectedOption"
             class="ex-select__label"
           >
-            {{ selectedOption.label }}
+            <slot
+              name="label"
+              :option="selectedOption"
+            >
+              {{ selectedOption.label }}
+            </slot>
           </span>
           <span
             v-else
@@ -198,39 +210,59 @@
           role="listbox"
           :aria-labelledby="controlId"
           :aria-multiselectable="multiple || undefined"
-          :style="dropdownStyles"
+          :style="[dropdownStyles, popupOverlayStyles]"
         >
-          <!-- 虚拟滚动：仅在 virtual 开启且为扁平（非分组）选项时启用，适配上千选项 -->
+          <!-- 分组标题与选项共享固定行高，键盘导航仍只计算可选项。 -->
           <ExVirtualList
             v-if="useVirtual"
             ref="virtualListRef"
             class="ex-select__options ex-select__options--virtual"
             wrapper-role="presentation"
             :wrapper-tabindex="-1"
-            :data-source="flatFilteredOptions"
+            :data-source="virtualRows"
             :height="virtualHeight"
             :item-height="normalizedOptionHeight"
-            item-key="value"
+            item-key="key"
             :threshold="0"
             :buffer="6"
           >
             <template #default="{ item }">
               <div
-                :id="getOptionId(getOptionIndex(item as SelectOption))"
+                v-if="(item as SelectVirtualRow).option"
+                :id="getOptionId((item as SelectVirtualRow).index)"
                 class="ex-select__option"
                 :class="{
                   'ex-select__option--virtual': true,
-                  'is-selected': isSelected(item as SelectOption),
-                  'is-disabled': (item as SelectOption).disabled,
-                  'is-hover': hoverIndex === getOptionIndex(item as SelectOption),
+                  'is-selected': isSelected((item as SelectVirtualRow).option!),
+                  'is-disabled': (item as SelectVirtualRow).option!.disabled,
+                  'is-hover': hoverIndex === (item as SelectVirtualRow).index,
                 }"
                 role="option"
-                :aria-selected="isSelected(item as SelectOption)"
-                :aria-disabled="(item as SelectOption).disabled || undefined"
-                @click="handleSelect(item as SelectOption)"
-                @mouseenter="hoverIndex = getOptionIndex(item as SelectOption)"
+                :aria-selected="isSelected((item as SelectVirtualRow).option!)"
+                :aria-disabled="(item as SelectVirtualRow).option!.disabled || undefined"
+                @click="handleSelect((item as SelectVirtualRow).option!)"
+                @mouseenter="hoverIndex = (item as SelectVirtualRow).index"
               >
-                {{ (item as SelectOption).label }}
+                <slot
+                  name="option"
+                  :option="(item as SelectVirtualRow).option!"
+                  :index="(item as SelectVirtualRow).index"
+                  :selected="isSelected((item as SelectVirtualRow).option!)"
+                >
+                  {{ (item as SelectVirtualRow).option!.label }}
+                </slot>
+              </div>
+              <div
+                v-else
+                class="ex-select__group ex-select__option--virtual"
+                role="presentation"
+              >
+                <slot
+                  name="group"
+                  :group="(item as SelectVirtualRow).group!"
+                >
+                  {{ (item as SelectVirtualRow).group!.label }}
+                </slot>
               </div>
             </template>
           </ExVirtualList>
@@ -250,7 +282,12 @@
                 class="ex-select__group"
                 role="presentation"
               >
-                {{ item.label }}
+                <slot
+                  name="group"
+                  :group="item"
+                >
+                  {{ item.label }}
+                </slot>
               </li>
 
               <!-- 分组选项 -->
@@ -271,7 +308,14 @@
                   @click="handleSelect(option)"
                   @mouseenter="hoverIndex = getOptionIndex(option)"
                 >
-                  {{ option.label }}
+                  <slot
+                    name="option"
+                    :option="option"
+                    :index="getOptionIndex(option)"
+                    :selected="isSelected(option)"
+                  >
+                    {{ option.label }}
+                  </slot>
                 </li>
               </template>
 
@@ -291,7 +335,14 @@
                 @click="handleSelect(item)"
                 @mouseenter="hoverIndex = getOptionIndex(item)"
               >
-                {{ item.label }}
+                <slot
+                  name="option"
+                  :option="item"
+                  :index="getOptionIndex(item)"
+                  :selected="isSelected(item)"
+                >
+                  {{ item.label }}
+                </slot>
               </li>
             </template>
 
@@ -300,7 +351,7 @@
               v-if="loading"
               class="ex-select__loading"
             >
-              {{ t('loading') }}
+              <slot name="loading">{{ t('loading') }}</slot>
             </li>
 
             <!-- 无数据 -->
@@ -308,7 +359,7 @@
               v-else-if="filteredOptions.length === 0"
               class="ex-select__empty"
             >
-              {{ t('noData') }}
+              <slot name="empty">{{ t('noData') }}</slot>
             </li>
           </ul>
         </div>
@@ -324,8 +375,8 @@ import type {
   ExSelectProps,
   ExSelectEmits,
   ExSelectExposed,
+  ExSelectSlots,
   SelectOption,
-  SelectOptionGroup,
   SelectValue,
 } from './types';
 import { useLocale } from '../../locale';
@@ -346,7 +397,10 @@ import {
   SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT,
 } from './constants';
 import { calculateSelectDropdownPosition } from './position';
-import { useRemoteOptionCache } from './use-option-cache';
+import { getOptionKey, isGroup, useSelectOptions } from './use-select-options';
+import type { SelectVirtualRow } from './use-select-options';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExSelect',
@@ -372,6 +426,7 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
 });
 
 const emit = defineEmits<ExSelectEmits>();
+defineSlots<ExSelectSlots>();
 const attrs = useAttrs();
 
 const { t } = useLocale('selector');
@@ -398,6 +453,12 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
+const { styles: popupOverlayStyles, containsTarget: containsPopupTarget } = usePopupOverlay({
+  active: () => dropdownVisible.value,
+  container: dropdownRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => hideDropdown(),
+});
 const availableDropdownHeight = ref(SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT);
 
 // 唯一 id 前缀：用于 option id 与 aria-activedescendant 关联（屏幕阅读器播报高亮项）
@@ -517,62 +578,19 @@ const selectStyles = computed(() => {
   return props.style;
 });
 
-// 扁平化选项
-const flatOptions = computed<SelectOption[]>(() => {
-  const flat: SelectOption[] = [];
-  props.options.forEach(item => {
-    if (isGroup(item)) {
-      flat.push(...item.options);
-    } else {
-      flat.push(item);
-    }
-  });
-  return flat;
-});
-
-// 过滤选项
-const filteredOptions = computed(() => {
-  // 远程搜索：options 已是父级返回的结果，不做本地过滤
-  if (props.remote) {
-    return props.options;
-  }
-  if (!props.searchable || !searchQuery.value) {
-    return props.options;
-  }
-
-  const query = searchQuery.value.toLowerCase();
-  const result: typeof props.options = [];
-
-  props.options.forEach(item => {
-    if (isGroup(item)) {
-      const filteredGroupOptions = item.options.filter(opt => matchOption(opt, query));
-      if (filteredGroupOptions.length > 0) {
-        result.push({ ...item, options: filteredGroupOptions });
-      }
-    } else {
-      if (matchOption(item, query)) {
-        result.push(item);
-      }
-    }
-  });
-
-  return result;
-});
-
-// 选中的选项（单选）
-const selectedOption = computed(() => {
-  return getOptionByValue(props.modelValue as string | number) || null;
-});
-
-// 多选：已选值数组
-const selectedValues = computed<Array<string | number>>(() =>
-  Array.isArray(props.modelValue) ? props.modelValue : []
-);
-
-// 多选：已选选项（按选中顺序），用于渲染标签
-const selectedOptions = computed<SelectOption[]>(() =>
-  selectedValues.value.map(getOptionByValue).filter((opt): opt is SelectOption => !!opt)
-);
+const {
+  filteredOptions,
+  flatFilteredOptions,
+  selectedOption,
+  selectedValues,
+  selectedOptions,
+  getOptionByValue,
+  isSelected,
+  getOptionIndex,
+  virtualRows,
+  getVirtualRowIndex,
+  useVirtual,
+} = useSelectOptions(props, searchQuery);
 
 // 折叠标签时实际展示的标签与被折叠数量
 const displayTags = computed<SelectOption[]>(() =>
@@ -587,72 +605,9 @@ const showClearIcon = computed(() => {
   return props.multiple ? selectedOptions.value.length > 0 : selectedOption.value !== null;
 });
 
-// 工具函数
-const isGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup => {
-  return 'options' in item;
-};
-
-const getOptionKey = (item: SelectOption | SelectOptionGroup): string =>
-  isGroup(item)
-    ? `group:${item.label}:${item.options.map(option => `${typeof option.value}:${String(option.value)}`).join('|')}`
-    : `option:${typeof item.value}:${String(item.value)}`;
-
-// 远程搜索结果通常只保留当前查询页；有界缓存保证已选标签不会因换页丢失。
-const optionCache = useRemoteOptionCache(
-  flatOptions,
-  () => props.remote,
-  () => props.modelValue,
-  () => props.multiple
-);
-
-const getOptionByValue = (value: string | number): SelectOption | undefined => {
-  return (
-    flatOptions.value.find(option => option.value === value) ||
-    (props.remote ? optionCache.value.get(value) : undefined)
-  );
-};
-
-const matchOption = (option: SelectOption, query: string): boolean => {
-  const labelMatch = option.label.toLowerCase().includes(query);
-  const keywordsMatch = option.keywords?.some(kw => kw.toLowerCase().includes(query));
-  return labelMatch || !!keywordsMatch;
-};
-
-const isSelected = (option: SelectOption): boolean => {
-  return props.multiple
-    ? selectedValues.value.includes(option.value)
-    : option.value === props.modelValue;
-};
-
-// 扁平化"过滤后"的选项：键盘导航与高亮都以此为准，
-// 避免搜索过滤后索引与渲染列表错位
-const flatFilteredOptions = computed<SelectOption[]>(() => {
-  const flat: SelectOption[] = [];
-  filteredOptions.value.forEach(item => {
-    if (isGroup(item)) {
-      flat.push(...item.options);
-    } else {
-      flat.push(item);
-    }
-  });
-  return flat;
-});
-
-const getOptionIndex = (option: SelectOption): number => {
-  return flatFilteredOptions.value.findIndex(opt => opt.value === option.value);
-};
-
-// 是否包含分组（分组场景不启用虚拟滚动）
-const hasGroups = computed(() => filteredOptions.value.some(item => isGroup(item)));
-
-// 是否启用虚拟滚动：开启 virtual、有数据、非加载态、且为扁平（非分组）选项
-const useVirtual = computed(
-  () => props.virtual && !hasGroups.value && !props.loading && flatFilteredOptions.value.length > 0
-);
-
 // 虚拟滚动容器高度：按选项数量自适应，最高不超过下拉的可视高度
 const virtualHeight = computed(() => {
-  const contentHeight = flatFilteredOptions.value.length * normalizedOptionHeight.value;
+  const contentHeight = virtualRows.value.length * normalizedOptionHeight.value;
   return Math.min(contentHeight, SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT, availableDropdownHeight.value);
 });
 
@@ -660,7 +615,7 @@ const virtualHeight = computed(() => {
 const scrollHoverIntoView = () => {
   if (hoverIndex.value < 0) return;
   if (useVirtual.value) {
-    nextTick(() => virtualListRef.value?.scrollToIndex(hoverIndex.value));
+    nextTick(() => virtualListRef.value?.scrollToIndex(getVirtualRowIndex(hoverIndex.value)));
   }
 };
 
@@ -855,7 +810,7 @@ const handleSearch = () => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (effectiveDisabled.value || effectiveReadonly.value) return;
+  if (effectiveDisabled.value || effectiveReadonly.value || isComposingKeyboardEvent(event)) return;
 
   switch (event.key) {
     case 'ArrowDown':
@@ -915,7 +870,9 @@ const handleKeydown = (event: KeyboardEvent) => {
       break;
 
     case 'Escape':
+      if (!dropdownVisible.value) return;
       event.preventDefault();
+      event.stopPropagation();
       hideDropdown();
       break;
 
@@ -930,12 +887,7 @@ const handleClickOutside = (event: MouseEvent) => {
   if (!dropdownVisible.value) return;
 
   const target = event.target as Node;
-  if (
-    selectRef.value &&
-    !selectRef.value.contains(target) &&
-    dropdownRef.value &&
-    !dropdownRef.value.contains(target)
-  ) {
+  if (selectRef.value && !selectRef.value.contains(target) && !containsPopupTarget(target)) {
     hideDropdown();
   }
 };

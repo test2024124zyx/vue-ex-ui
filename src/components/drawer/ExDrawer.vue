@@ -118,6 +118,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import { useLocale } from '../../locale';
@@ -157,6 +158,7 @@ const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
+const themeOverrides = useThemeOverrides();
 const panelRef = ref<HTMLDivElement>();
 const titleId = `ex-drawer-title-${useId()}`;
 const CONTROLLED_PANEL_ATTRS = new Set(['aria-label', 'aria-labelledby', 'aria-modal', 'role']);
@@ -205,7 +207,8 @@ const wrapperClasses = computed(() => ({
   'ex-no-animation': !animation.value,
 }));
 const wrapperStyles = computed<CSSProperties>(() => ({
-  zIndex: props.zIndex ?? baseZIndex.value,
+  ...themeOverrides.value,
+  zIndex: overlayZIndex.value,
 }));
 const drawerClasses = computed(() => [
   'ex-drawer',
@@ -236,9 +239,10 @@ const sizeStyles = computed<CSSProperties>(() => {
 });
 const drawerStyles = computed(() => [sizeStyles.value, props.customStyle]);
 
-useOverlay({
+const { zIndex: overlayZIndex } = useOverlay({
   active: () => visible.value,
   container: panelRef,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
   lockScroll: () => props.mask && props.lockScroll,
   closeOnEscape: () => props.closeOnPressEscape,
   onEscape: async () => {

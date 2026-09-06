@@ -34,6 +34,8 @@ export interface UploadRequestOptions {
 
 export interface UploadRequestHandle {
   promise: Promise<UploadTransportResult>;
+  /** 尚在解析配置、未发送请求且未结束，可由字段状态变化取消。 */
+  readonly pending: boolean;
   /** 返回本次调用是否真实中止了尚未完成的任务。 */
   abort: () => boolean;
 }
@@ -140,6 +142,7 @@ export function createUploadRequest(options: UploadRequestOptions): UploadReques
   const context: UploadResolveContext = { signal: controller.signal };
   let request: XMLHttpRequest | null = null;
   let completed = false;
+  let started = false;
   let settle: (result: UploadTransportResult) => void = () => undefined;
 
   const finish = (result: UploadTransportResult): void => {
@@ -206,6 +209,7 @@ export function createUploadRequest(options: UploadRequestOptions): UploadReques
         xhr.withCredentials = options.withCredentials === true;
         xhr.timeout = normalizeUploadTimeout(options.timeout);
         applyHeaders(xhr, headers);
+        started = true;
         xhr.send(formData);
       } catch (cause) {
         if (controller.signal.aborted) return;
@@ -226,5 +230,11 @@ export function createUploadRequest(options: UploadRequestOptions): UploadReques
     return true;
   };
 
-  return { promise, abort };
+  return {
+    promise,
+    abort,
+    get pending() {
+      return !started && !completed;
+    },
+  };
 }

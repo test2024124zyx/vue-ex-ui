@@ -3,6 +3,7 @@ import { computed, getCurrentInstance, inject, ref, shallowRef, watch } from 'vu
 import enUS, { type BuiltInLocale } from './en-US';
 import zhCN from './zh-CN';
 import { logger } from '../utils/logger';
+import { createDocumentRuntime, createSharedInjectionKey } from '../utils/shared-runtime';
 
 export type Locale = BuiltInLocale;
 export type LocaleKey = keyof Locale;
@@ -34,25 +35,35 @@ const isSupportedLocale = (value: string): value is SupportedLocale =>
 
 /** ConfigProvider 用于隔离子树语言的注入键。 */
 export const LOCALE_INJECTION_KEY: InjectionKey<Readonly<Ref<SupportedLocale>>> =
-  Symbol('exui-locale');
+  createSharedInjectionKey('locale');
 
 /** createLocaleProvider 为单个 Vue App 提供的隔离翻译器。 */
 export const LOCALE_COMPOSER_INJECTION_KEY: InjectionKey<LocaleComposer> =
-  Symbol('exui-locale-composer');
+  createSharedInjectionKey('locale-composer');
 
 // 默认语言
 export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
-// 当前语言状态 - 使用响应式
-const currentLocale = ref<SupportedLocale>(DEFAULT_LOCALE);
-const currentMessages = computed<Locale>(() => SUPPORTED_LOCALES[currentLocale.value]);
+interface LocaleRuntime {
+  currentLocale: Ref<SupportedLocale>;
+  composer?: LocaleComposer;
+}
+
+// 全局语言只在同一浏览器文档内共享，App 级 Provider 继续持有独立状态。
+const getLocaleRuntime = createDocumentRuntime<LocaleRuntime>('locale', () => ({
+  currentLocale: ref<SupportedLocale>(DEFAULT_LOCALE),
+}));
 
 // 获取当前语言
 export function getCurrentLocale(): SupportedLocale {
-  return currentLocale.value;
+  return getLocaleRuntime().currentLocale.value;
 }
 
 // 设置语言
 export function setLocale(locale: SupportedLocale): void {
+  updateLocale(getLocaleRuntime().currentLocale, locale);
+}
+
+function updateLocale(currentLocale: Ref<SupportedLocale>, locale: SupportedLocale): void {
   if (!SUPPORTED_LOCALES[locale]) {
     logger.warn(`Unsupported locale "${locale}", falling back to "${DEFAULT_LOCALE}"`);
     return;
@@ -136,21 +147,25 @@ const mergeLocaleMessages = (
 
 // 获取翻译文本
 export function t(key: string, params?: TranslationParams): string {
-  return translateBuiltIn(currentLocale.value, key, params);
+  return translateBuiltIn(getCurrentLocale(), key, params);
 }
 
-const globalMessages = computed(
-  () => SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>
-);
-const globalComposer: LocaleComposer = {
-  t,
-  locale: currentLocale,
-  messages: globalMessages,
-  setLocale,
+const getGlobalComposer = (): LocaleComposer => {
+  const runtime = getLocaleRuntime();
+  runtime.composer ??= {
+    t: (key, params) => translateBuiltIn(runtime.currentLocale.value, key, params),
+    locale: runtime.currentLocale,
+    messages: computed(
+      () => SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>
+    ),
+    setLocale: locale => updateLocale(runtime.currentLocale, locale),
+  };
+  return runtime.composer;
 };
 
 /** 在 setup 中返回当前 App 的隔离翻译器，setup 外返回全局轻量翻译器。 */
 export function useI18n(): LocaleComposer {
+  const globalComposer = getGlobalComposer();
   if (!getCurrentInstance()) return globalComposer;
   return inject(LOCALE_COMPOSER_INJECTION_KEY, globalComposer);
 }
@@ -200,11 +215,12 @@ export function useLocale(componentName: keyof Locale) {
     });
     return { t: tWithScope, messages, locale };
   }
+  const { currentLocale } = getLocaleRuntime();
   const componentMessages = computed(
-    () => currentMessages.value[componentName] as Record<string, string>
+    () => SUPPORTED_LOCALES[currentLocale.value][componentName] as Record<string, string>
   );
   const tWithScope = (key: string, params?: Record<string, unknown>) =>
-    t(`${componentName}.${key}`, params);
+    translateBuiltIn(currentLocale.value, `${componentName}.${key}`, params);
   const locale = computed(() => currentLocale.value);
   return { t: tWithScope, messages: componentMessages, locale };
 }

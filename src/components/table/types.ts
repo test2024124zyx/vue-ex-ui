@@ -98,6 +98,8 @@ export interface TableColumn<T = unknown> {
   fixed?: 'left' | 'right' | boolean;
   /** 是否可排序 */
   sortable?: boolean;
+  /** 本地自定义比较器，接收完整记录；返回负数表示 a 在 b 前，降序由组件反转；remoteSort 时不调用 */
+  sorter?: (a: TableDataItem, b: TableDataItem) => number;
   /** 自定义渲染函数 */
   render?: (value: unknown, record: unknown, index: number) => unknown;
   /** 自定义插槽名称 */

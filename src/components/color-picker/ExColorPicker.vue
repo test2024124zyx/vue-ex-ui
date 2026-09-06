@@ -14,7 +14,7 @@
       aria-haspopup="dialog"
       :aria-controls="panelId"
       :aria-label="t('trigger')"
-      :aria-disabled="disabled"
+      v-bind="fieldAriaAttrs"
       :aria-expanded="visible"
       :disabled="disabled"
       :tabindex="disabled ? -1 : 0"
@@ -199,12 +199,12 @@ import type { RGBA } from './utils';
 import { useLocale } from '../../locale';
 import {
   useAnimation,
-  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
 } from '../config-provider/composables';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -226,8 +226,13 @@ const props = withDefaults(defineProps<ExColorPickerProps>(), {
 
 const emit = defineEmits<ExColorPickerEmits>();
 const { t } = useLocale('colorPicker');
-const componentSize = useComponentSize(computed(() => props.size));
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 const instanceId = useId();
 const panelId = `ex-color-picker-panel-${instanceId}`;
 const inputId = `ex-color-picker-input-${instanceId}`;
@@ -245,13 +250,19 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
+const { styles: popupOverlayStyles, containsTarget } = usePopupOverlay({
+  active: () => visible.value,
+  container: panelRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => handleEscape(),
+});
 const portalEffectClasses = computed(() => ({
   'ex-no-neon': !neonEffect.value,
   'ex-no-animation': !animation.value,
 }));
 const panelStyle = computed<Record<string, string>>(() => ({
   ...panelPositionStyle.value,
-  zIndex: String(dropdownZIndex.value),
+  ...popupOverlayStyles.value,
 }));
 const hasValue = ref(false);
 const hexInput = ref('');
@@ -260,7 +271,7 @@ const hsva = reactive({ h: 0, s: 1, v: 1, a: 1 });
 const rootClasses = computed(() => [
   'ex-color-picker',
   `ex-color-picker--${componentSize.value}`,
-  { 'is-disabled': props.disabled, 'is-active': visible.value },
+  { 'is-disabled': disabled.value, 'is-active': visible.value },
   ...normalizeCustomClass(props.class),
 ]);
 const rootStyle = computed(() => props.style || undefined);
@@ -333,6 +344,7 @@ watch(
 
 /** 实时更新绑定值；change 仅在一次交互正式结束时触发。 */
 const applyLive = () => {
+  if (!interactive.value) return;
   hasValue.value = true;
   const value = currentColorString.value;
   hexInput.value = currentHex.value;
@@ -341,6 +353,7 @@ const applyLive = () => {
 };
 
 const commit = () => {
+  if (!interactive.value) return;
   emit('change', currentColorString.value);
   formItem?.onFieldChange();
 };
@@ -354,13 +367,13 @@ const stopDrag = () => {
 
 /** 每次拖拽只维护一组全局监听，并区分正常释放与系统取消。 */
 const startDrag = (computeValue: (event: PointerEvent) => boolean) => (event: PointerEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   event.preventDefault();
   stopDrag();
   let hasChanged = computeValue(event);
 
   const move = (moveEvent: PointerEvent) => {
-    if (props.disabled) {
+    if (!interactive.value) {
       cleanup();
       return;
     }
@@ -375,7 +388,7 @@ const startDrag = (computeValue: (event: PointerEvent) => boolean) => (event: Po
   };
   const finish = () => {
     cleanup();
-    if (!props.disabled && hasChanged) commit();
+    if (interactive.value && hasChanged) commit();
   };
   const cancel = () => cleanup();
 
@@ -424,7 +437,7 @@ const finishKeyboardChange = () => {
 };
 
 const handleSVKeydown = (event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const step = event.shiftKey ? 0.1 : 0.01;
   if (event.key === 'ArrowLeft') hsva.s = clamp(hsva.s - step, 0, 1);
   else if (event.key === 'ArrowRight') hsva.s = clamp(hsva.s + step, 0, 1);
@@ -436,7 +449,7 @@ const handleSVKeydown = (event: KeyboardEvent) => {
 };
 
 const handleHueKeydown = (event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const step = event.shiftKey || event.key === 'PageUp' || event.key === 'PageDown' ? 10 : 1;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowDown' || event.key === 'PageDown') {
     hsva.h = clamp(hsva.h - step, 0, 360);
@@ -450,7 +463,7 @@ const handleHueKeydown = (event: KeyboardEvent) => {
 };
 
 const handleAlphaKeydown = (event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const step = event.shiftKey || event.key === 'PageUp' || event.key === 'PageDown' ? 0.1 : 0.01;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowDown' || event.key === 'PageDown') {
     hsva.a = clamp(hsva.a - step, 0, 1);
@@ -464,7 +477,7 @@ const handleAlphaKeydown = (event: KeyboardEvent) => {
 };
 
 const handleHexCommit = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const parsed = parseColor(hexInput.value);
   if (!parsed) {
     hexInput.value = hasValue.value ? currentHex.value : '';
@@ -481,7 +494,7 @@ const handleHexCommit = () => {
 };
 
 const selectPredefine = (color: string) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const parsed = parseColor(color);
   if (!parsed) return;
   const { h, s, v } = rgbToHsv(parsed.r, parsed.g, parsed.b);
@@ -525,7 +538,7 @@ const updatePanelPosition = () => {
 };
 
 const open = () => {
-  if (props.disabled || visible.value) return;
+  if (!interactive.value || visible.value) return;
   syncFromValue(props.modelValue);
   visible.value = true;
   emit('visible-change', true);
@@ -540,20 +553,20 @@ const close = () => {
 };
 
 const handleTriggerClick = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   if (visible.value) close();
   else open();
 };
 
 const handleConfirm = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   if (!hasValue.value) applyLive();
   commit();
   close();
 };
 
 const handleClear = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   hasValue.value = false;
   hexInput.value = '';
   emit('update:modelValue', '');
@@ -570,7 +583,7 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleTriggerKeydown = (event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value || event.isComposing) return;
   if (event.key === 'ArrowDown') {
     event.preventDefault();
     open();
@@ -588,12 +601,7 @@ const handleEscape = () => {
 const handleClickOutside = (event: MouseEvent) => {
   if (!visible.value) return;
   const target = event.target as Node;
-  if (
-    rootRef.value &&
-    !rootRef.value.contains(target) &&
-    panelRef.value &&
-    !panelRef.value.contains(target)
-  ) {
+  if (rootRef.value && !rootRef.value.contains(target) && !containsTarget(target)) {
     close();
   }
 };
@@ -610,12 +618,9 @@ watch(visible, isVisible => {
   }
 });
 
-watch(
-  () => props.disabled,
-  isDisabled => {
-    if (isDisabled) close();
-  }
-);
+watch(interactive, canInteract => {
+  if (!canInteract) close();
+});
 
 watch(
   () => props.teleported,

@@ -4,7 +4,8 @@
     :class="groupClasses"
     :style="groupStyles"
     role="radiogroup"
-    :aria-labelledby="hasGroupLabel ? labelId : undefined"
+    v-bind="fieldAriaAttrs"
+    :aria-labelledby="hasGroupLabel ? labelId : fieldAriaAttrs['aria-labelledby']"
     :aria-describedby="ariaDescribedBy"
   >
     <!-- 标签 -->
@@ -79,9 +80,8 @@ import type {
 } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
-import { useFormItem } from '../form/use-form-item';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRadioGroup',
@@ -102,10 +102,14 @@ defineSlots<ExRadioGroupSlots>();
 
 const slots = useSlots();
 const { t } = useI18n();
-const formItem = useFormItem();
-
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
@@ -138,7 +142,7 @@ const ariaDescribedBy = computed(() => {
     ids.push(`${groupId}-error`);
   }
 
-  return ids.length > 0 ? ids.join(' ') : undefined;
+  return mergeAriaIds(...ids, fieldAriaAttrs.value['aria-describedby']);
 });
 
 // 样式类
@@ -147,8 +151,8 @@ const groupClasses = computed(() => {
 
   if (componentSize.value) classes.push(`ex-radio-group--${componentSize.value}`);
   if (props.status) classes.push(`ex-radio-group--${props.status}`);
-  if (props.disabled) classes.push('ex-radio-group--disabled');
-  if (props.readonly) classes.push('ex-radio-group--readonly');
+  if (disabled.value) classes.push('ex-radio-group--disabled');
+  if (readonly.value) classes.push('ex-radio-group--readonly');
   if (props.vertical) classes.push('ex-radio-group--vertical');
   if (props.status === 'error' || showErrorMessage.value) {
     classes.push('ex-radio-group--error');
@@ -164,7 +168,7 @@ const groupStyles = computed(() => {
 
 // 更新值的方法
 const updateValue = (value: RadioValue) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
 
   // 验证
   validateGroup(value);
@@ -213,13 +217,17 @@ provide('radioGroup', {
   },
   size: computed(() => componentSize.value),
   get status() {
-    return props.status;
+    return (
+      (props.status !== 'default' ? props.status : undefined) ||
+      formItem?.status?.value ||
+      props.status
+    );
   },
   get disabled() {
-    return props.disabled;
+    return disabled.value;
   },
   get readonly() {
-    return props.readonly;
+    return readonly.value;
   },
   get required() {
     return props.required;

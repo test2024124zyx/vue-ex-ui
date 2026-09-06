@@ -1,5 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import type { CollapseItemName } from './types';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface CollapseContext {
   activeNames: Ref<CollapseItemName[]>;
@@ -12,4 +13,5 @@ export interface CollapseContext {
 }
 
 /** 折叠面板上下文使用符号键，避免字符串注入冲突。 */
-export const collapseContextKey: InjectionKey<CollapseContext> = Symbol('ex-collapse');
+export const collapseContextKey: InjectionKey<CollapseContext> =
+  createSharedInjectionKey('collapse');

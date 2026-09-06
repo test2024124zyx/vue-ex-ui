@@ -9,9 +9,7 @@
     :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
     :aria-label="ariaLabel || undefined"
-    :aria-labelledby="ariaLabel ? undefined : formItem?.labelId?.value"
-    :aria-describedby="resolvedDescribedBy"
-    :aria-invalid="formItem?.status?.value === 'error' ? 'true' : undefined"
+    v-bind="fieldAriaAttrs"
     :aria-disabled="effectiveDisabled"
     :aria-readonly="effectiveReadonly"
     @mouseleave="handleMouseLeave"
@@ -75,7 +73,7 @@
 import { ref, computed, watch } from 'vue';
 import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRate',
@@ -90,7 +88,7 @@ const props = withDefaults(defineProps<ExRateProps>(), {
   showScore: false,
   showText: false,
   scoreTemplate: '{value}',
-  size: 'medium',
+  size: undefined,
   color: 'var(--ex-color-primary, #00f0ff)',
   voidColor: 'var(--ex-color-text-disabled, #4a5568)',
   disabledVoidColor: 'var(--ex-color-text-disabled, #6b7280)',
@@ -99,14 +97,15 @@ const props = withDefaults(defineProps<ExRateProps>(), {
 const emit = defineEmits<ExRateEmits>();
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
-const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
-const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
+const {
+  formItem,
+  disabled: effectiveDisabled,
+  readonly: effectiveReadonly,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 const normalizedMax = computed(() =>
   Number.isFinite(props.max) && props.max > 0 ? Math.floor(props.max) : 5
-);
-const resolvedDescribedBy = computed(
-  () => [props.ariaDescribedby, formItem?.describedBy?.value].filter(Boolean).join(' ') || undefined
 );
 
 const normalizeValue = (value: number) => {
@@ -122,7 +121,7 @@ const isHovering = ref(false);
 
 // 计算属性
 const rateClasses = computed(() => {
-  const classes = ['ex-rate', `ex-rate--${props.size}`];
+  const classes = ['ex-rate', `ex-rate--${componentSize.value}`];
 
   if (effectiveDisabled.value) classes.push('is-disabled');
   if (effectiveReadonly.value) classes.push('is-readonly');
@@ -144,7 +143,7 @@ const iconSize = computed(() => {
     medium: 20,
     large: 24,
   };
-  return sizeMap[props.size];
+  return sizeMap[componentSize.value];
 });
 
 const displayValue = computed(() => {

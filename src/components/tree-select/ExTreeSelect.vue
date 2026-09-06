@@ -14,10 +14,8 @@
       aria-haspopup="tree"
       :aria-controls="treeId"
       :aria-expanded="visible"
-      :aria-disabled="disabled"
+      v-bind="fieldAriaAttrs"
       :aria-label="ariaLabelledby ? undefined : ariaLabel || placeholder || t('placeholder')"
-      :aria-labelledby="ariaLabelledby"
-      :aria-describedby="ariaDescribedby"
       :tabindex="disabled ? undefined : 0"
       @click="handleTriggerClick"
       @keydown="handleKeydown"
@@ -34,7 +32,7 @@
           >
             <span class="ex-tree-select__tag-label">{{ tag.label }}</span>
             <button
-              v-if="!disabled"
+              v-if="interactive"
               type="button"
               class="ex-tree-select__tag-close"
               :aria-label="t('removeTag')"
@@ -120,6 +118,7 @@
               class="ex-tree-select__search-input"
               :placeholder="t('searchPlaceholder')"
               :aria-label="t('searchPlaceholder')"
+              @keydown="handleSearchKeydown"
             />
           </div>
 
@@ -204,12 +203,12 @@ import type {
 import { useLocale } from '../../locale';
 import {
   useAnimation,
-  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
 } from '../config-provider/composables';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -236,8 +235,13 @@ const props = withDefaults(defineProps<ExTreeSelectProps>(), {
 const emit = defineEmits<ExTreeSelectEmits>();
 
 const { t } = useLocale('treeSelect');
-const componentSize = useComponentSize(computed(() => props.size));
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 const attrs = useAttrs();
 
 const rootRef = ref<HTMLElement>();
@@ -264,13 +268,22 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
+const { styles: popupOverlayStyles, containsTarget } = usePopupOverlay({
+  active: () => visible.value,
+  container: panelRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => {
+    close();
+    triggerRef.value?.focus();
+  },
+});
 const portalEffectClasses = computed(() => ({
   'ex-no-neon': !neonEffect.value,
   'ex-no-animation': !animation.value,
 }));
 const panelStyle = computed<Record<string, string>>(() => ({
   ...panelPositionStyle.value,
-  zIndex: String(dropdownZIndex.value),
+  ...popupOverlayStyles.value,
 }));
 const searchQuery = ref('');
 const expandedKeys = ref<Set<string | number>>(new Set());
@@ -279,7 +292,7 @@ const rootClasses = computed(() => [
   'ex-tree-select',
   `ex-tree-select--${componentSize.value}`,
   {
-    'is-disabled': props.disabled,
+    'is-disabled': disabled.value,
     'is-active': visible.value,
     'ex-tree-select--multiple': props.multiple,
   },
@@ -399,7 +412,7 @@ const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
 };
 
 const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
-  if (flat.node.disabled) return;
+  if (!interactive.value || flat.node.disabled || event.isComposing) return;
 
   const currentIndex = flatNodes.value.findIndex(item => item.node.value === flat.node.value);
   if (currentIndex < 0) return;
@@ -474,7 +487,7 @@ const selectedSingleNode = computed<TreeSelectNode | null>(() =>
 );
 
 const showClear = computed(() => {
-  if (!props.clearable || props.disabled) return false;
+  if (!props.clearable || !interactive.value) return false;
   return props.multiple ? selectedValues.value.length > 0 : props.modelValue != null;
 });
 
@@ -490,7 +503,7 @@ const getAriaChecked = (node: TreeSelectNode): boolean | 'mixed' => {
 
 // ---- 交互 ----
 const toggleExpand = (node: TreeSelectNode) => {
-  if (props.disabled || node.disabled) return;
+  if (!interactive.value || node.disabled) return;
   const next = new Set(expandedKeys.value);
   if (next.has(node.value)) next.delete(node.value);
   else next.add(node.value);
@@ -499,7 +512,7 @@ const toggleExpand = (node: TreeSelectNode) => {
 };
 
 const handleNodeClick = (node: TreeSelectNode) => {
-  if (props.disabled || node.disabled) return;
+  if (!interactive.value || node.disabled) return;
   if (props.multiple) {
     toggleCheck(node);
   } else {
@@ -511,7 +524,7 @@ const handleNodeClick = (node: TreeSelectNode) => {
 };
 
 const toggleCheck = (node: TreeSelectNode) => {
-  if (props.disabled || node.disabled) return;
+  if (!interactive.value || node.disabled) return;
   const next = new Set(checkedSet.value);
   const target = !next.has(node.value);
 
@@ -548,7 +561,7 @@ const toggleCheck = (node: TreeSelectNode) => {
 };
 
 const removeTag = (value: string | number) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const node = nodeMap.value.get(value);
   if (node) {
     // 已选中则执行取消（含级联）
@@ -562,7 +575,7 @@ const removeTag = (value: string | number) => {
 };
 
 const handleClear = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const cleared = props.multiple ? [] : null;
   emit('update:modelValue', cleared);
   emit('change', cleared, props.multiple ? [] : null);
@@ -600,7 +613,7 @@ const updatePanelPosition = () => {
 };
 
 const open = (focusTree = false) => {
-  if (props.disabled) return;
+  if (!interactive.value || visible.value) return;
   visible.value = true;
   emit('visible-change', true);
   nextTick(() => {
@@ -620,7 +633,7 @@ const close = () => {
 };
 
 const handleTriggerClick = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   if (visible.value) close();
   else open();
 };
@@ -631,7 +644,7 @@ const handleBlur = (e: FocusEvent) => {
   formItem?.onFieldBlur();
 };
 const handleKeydown = (e: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value || e.isComposing) return;
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (!visible.value) open(true);
@@ -644,19 +657,28 @@ const handleKeydown = (e: KeyboardEvent) => {
     if (!visible.value) open(true);
   } else if (e.key === 'Escape' && visible.value) {
     e.preventDefault();
+    e.stopPropagation();
     close();
+  }
+};
+
+const handleSearchKeydown = (event: KeyboardEvent) => {
+  if (!interactive.value || event.isComposing) return;
+  if (event.key === 'Escape' && visible.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+    triggerRef.value?.focus();
+  } else if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    focusNodeAt(0);
   }
 };
 
 const handleClickOutside = (event: MouseEvent) => {
   if (!visible.value) return;
   const target = event.target as Node;
-  if (
-    rootRef.value &&
-    !rootRef.value.contains(target) &&
-    panelRef.value &&
-    !panelRef.value.contains(target)
-  ) {
+  if (rootRef.value && !rootRef.value.contains(target) && !containsTarget(target)) {
     close();
   }
 };
@@ -684,12 +706,9 @@ watch(visible, isVisible => {
   }
 });
 
-watch(
-  () => props.disabled,
-  isDisabled => {
-    if (isDisabled) close();
-  }
-);
+watch(interactive, canInteract => {
+  if (!canInteract) close();
+});
 
 watch(
   () => props.teleported,

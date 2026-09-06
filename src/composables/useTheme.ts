@@ -2,6 +2,7 @@ import { getCurrentScope, onScopeDispose, readonly, ref, watch } from 'vue';
 import type { DeepReadonly, Ref } from 'vue';
 import { isDarkTheme, THEME_NAMES } from '../types/theme';
 import type { Theme } from '../types/theme';
+import { createDocumentRuntime } from '../utils/shared-runtime';
 
 export const DEFAULT_THEME: Theme = 'neon-blue';
 export const THEME_STORAGE_KEY = 'ex-ui-theme';
@@ -16,9 +17,14 @@ const readDocumentTheme = (): Theme => {
   return isTheme(theme) ? theme : DEFAULT_THEME;
 };
 
-const currentTheme = ref<Theme>(readDocumentTheme());
-const readonlyTheme = readonly(currentTheme);
-const themeChangeCallbacks = new Set<ThemeChangeCallback>();
+const getThemeRuntime = createDocumentRuntime('theme', () => {
+  const currentTheme = ref<Theme>(readDocumentTheme());
+  return {
+    currentTheme,
+    readonlyTheme: readonly(currentTheme),
+    themeChangeCallbacks: new Set<ThemeChangeCallback>(),
+  };
+});
 
 export function isTheme(value: unknown): value is Theme {
   return typeof value === 'string' && VALID_THEMES.includes(value as Theme);
@@ -39,6 +45,7 @@ export function setTheme(theme: Theme): void {
     throw new TypeError(`[ExUI] 未知主题：${String(theme)}`);
   }
 
+  const { currentTheme, themeChangeCallbacks } = getThemeRuntime();
   const oldTheme = currentTheme.value;
   const changed = oldTheme !== theme;
   currentTheme.value = theme;
@@ -62,7 +69,7 @@ export function setTheme(theme: Theme): void {
 }
 
 export function getTheme(): Theme {
-  return currentTheme.value;
+  return getThemeRuntime().currentTheme.value;
 }
 
 export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
@@ -74,12 +81,13 @@ export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
     }
   }
 
-  const currentIndex = themes.indexOf(currentTheme.value);
+  const currentIndex = themes.indexOf(getTheme());
   const nextTheme = themes[(currentIndex + 1) % themes.length] ?? themes[0];
   if (nextTheme) setTheme(nextTheme);
 }
 
 export function onThemeChange(callback: ThemeChangeCallback): () => void {
+  const { themeChangeCallbacks } = getThemeRuntime();
   themeChangeCallbacks.add(callback);
   const stop = () => themeChangeCallbacks.delete(callback);
 
@@ -95,7 +103,7 @@ export function useTheme(): {
   setTheme: typeof setTheme;
   toggleTheme: typeof toggleTheme;
 } {
-  return { theme: readonlyTheme, setTheme, toggleTheme };
+  return { theme: getThemeRuntime().readonlyTheme, setTheme, toggleTheme };
 }
 
 /** 将系统暗色偏好映射到赛博暗色主题，亮色偏好映射到赛博亮色主题。 */
@@ -179,7 +187,7 @@ export function usePersistedTheme(): {
   if (savedTheme) setTheme(savedTheme);
 
   // Vue 会把同步创建的监听器绑定到当前组件作用域，卸载时自动停止。
-  watch(currentTheme, saveThemeToStorage);
+  watch(getThemeRuntime().currentTheme, saveThemeToStorage);
 
-  return { theme: readonlyTheme, setTheme, toggleTheme };
+  return { theme: getThemeRuntime().readonlyTheme, setTheme, toggleTheme };
 }

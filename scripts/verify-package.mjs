@@ -15,6 +15,10 @@ const requiredFiles = [
   'ex-ui.js',
   'ex-ui.cjs',
   'ex-ui.css',
+  'resolver/index.js',
+  'resolver/index.cjs',
+  'resolver/index.d.ts',
+  'resolver/index.d.cts',
   'noto-sans-sc-chinese-simplified-400-normal.woff2',
   'noto-sans-sc-chinese-simplified-500-normal.woff2',
   'noto-sans-sc-chinese-simplified-700-normal.woff2',
@@ -119,6 +123,18 @@ try {
 
   const esmModule = await import(`${pathToFileURL(join(distRoot, 'ex-ui.js')).href}?verify=1`);
   const publicComponentNames = verifyRuntimeExports(esmModule, 'ESM');
+  const { ExUIResolver } = await import(pathToFileURL(join(distRoot, 'resolver/index.js')).href);
+  const resolver = ExUIResolver();
+  for (const name of publicComponentNames) {
+    const resolved = resolver.resolve(name);
+    if (!resolved || resolved.name !== name) throw new Error(`自动导入缺少公开组件：${name}`);
+    const componentPath = resolved.from.replace('vue-ex-ui/', '');
+    for (const extension of ['js', 'd.ts']) {
+      const file = `${componentPath}/index.${extension}`;
+      await access(join(distRoot, file));
+      requiredFiles.push(file);
+    }
+  }
 
   const packOutput = runNpm(
     ['pack', '--json', '--ignore-scripts', '--pack-destination', temporaryDirectory],
@@ -170,6 +186,7 @@ try {
     [
       "import ExUI, * as ExUIExports from 'vue-ex-ui';",
       "import ExButton from 'vue-ex-ui/es/components/button';",
+      "import { ExUIResolver } from 'vue-ex-ui/resolver';",
       "import { useTheme } from 'vue-ex-ui/es/composables/useTheme';",
       "import { createLocaleProvider } from 'vue-ex-ui/es/locale';",
       "import { deepClone } from 'vue-ex-ui/es/utils';",
@@ -186,6 +203,7 @@ try {
       "const theme: Theme = 'light';",
       'const props: ExButtonProps = {};',
       'void [ExUI, ExButton, useTheme, createLocaleProvider, deepClone, theme, props];',
+      "void ExUIResolver().resolve('ExDateTimePicker');",
       ...publicComponentNames.map(name => `void ExUIExports.${name}.install;`),
       '',
     ].join('\n'),
@@ -218,6 +236,35 @@ try {
     { cwd: consumerDirectory, name: '发布声明消费验证' }
   );
 
+  const resolverCjsSourcePath = join(consumerDirectory, 'resolver.cts');
+  await writeFile(
+    resolverCjsSourcePath,
+    [
+      "import ExUIResolver, { type ExUIResolvedComponent } from 'vue-ex-ui/resolver';",
+      "const component: ExUIResolvedComponent | undefined = ExUIResolver().resolve('ExButton');",
+      'void component;',
+    ].join('\n'),
+    'utf8'
+  );
+  runCommand(
+    process.execPath,
+    [
+      join(projectRoot, 'node_modules/typescript/bin/tsc'),
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      'false',
+      '--module',
+      'Node16',
+      '--moduleResolution',
+      'Node16',
+      '--target',
+      'ES2022',
+      resolverCjsSourcePath,
+    ],
+    { cwd: consumerDirectory, name: 'CommonJS 自动导入解析器声明验证' }
+  );
+
   await writeFile(
     join(consumerDirectory, 'index.html'),
     '<!doctype html><html><body><div id="app"></div><script type="module" src="/consumer.ts"></script></body></html>',
@@ -242,6 +289,8 @@ try {
     runtimeEsmPath,
     [
       "import ExUI, { ExButton, createMessageService } from 'vue-ex-ui';",
+      "import { ExUIResolver } from 'vue-ex-ui/resolver';",
+      "if (ExUIResolver().resolve('ExFormItem')?.from !== 'vue-ex-ui/es/components/form') throw new Error('ESM 解析器映射错误');",
       "if (typeof ExUI.install !== 'function') throw new Error('默认 ESM 插件不可安装');",
       "if (typeof ExButton.install !== 'function') throw new Error('ESM 组件不可安装');",
       "if (typeof createMessageService !== 'function') throw new Error('ESM 服务工厂缺失');",
@@ -259,6 +308,8 @@ try {
     runtimeCjsPath,
     [
       "const ExUI = require('vue-ex-ui');",
+      "const { ExUIResolver } = require('vue-ex-ui/resolver');",
+      "if (ExUIResolver().resolve('ExDateTimePicker')?.from !== 'vue-ex-ui/es/components/datetime-picker') throw new Error('CJS 解析器映射错误');",
       "if (typeof ExUI.default?.install !== 'function') throw new Error('默认 CJS 插件不可安装');",
       "if (typeof ExUI.ExButton?.install !== 'function') throw new Error('CJS 组件不可安装');",
       '',
@@ -269,6 +320,11 @@ try {
     cwd: consumerDirectory,
     name: 'tarball CommonJS 运行时验证',
   });
+  runCommand(
+    process.execPath,
+    [join(projectRoot, 'scripts/verify-mixed-entry.mjs'), consumerDirectory],
+    { cwd: consumerDirectory, name: 'tarball 混合入口的 JSDOM 运行时验证' }
+  );
 } finally {
   // 包消费验证的所有写入都限制在独立临时目录，并在成功或失败后统一清理。
   await rm(temporaryDirectory, { force: true, recursive: true });

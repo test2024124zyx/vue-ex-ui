@@ -10,6 +10,22 @@ export interface CascaderOption {
   children?: CascaderOption[];
   /** 是否禁用 */
   disabled?: boolean;
+  /** 自定义选项内容所需的业务附加字段。 */
+  [key: string]: unknown;
+}
+
+export interface ExCascaderSlots {
+  /** 选项内容；列索引从零开始，选择与展开语义仍由组件维护。 */
+  option?: (scope: {
+    option: CascaderOption;
+    level: number;
+    selected: boolean;
+    expanded: boolean;
+  }) => unknown;
+  /** 搜索结果的完整路径内容。 */
+  'search-result'?: (scope: { labels: string[]; values: Array<string | number> }) => unknown;
+  /** 无匹配搜索结果时的内容。 */
+  empty?: () => unknown;
 }
 
 /**

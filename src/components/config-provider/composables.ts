@@ -5,12 +5,15 @@ import type { ComponentSize, ConfigContext, Theme } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import type { ZIndexLayer } from './z-index';
 import { resolveZIndexLayer } from './z-index';
+import { getTheme } from '../../composables/useTheme';
+import { resolveThemeOverrides } from './theme-overrides';
 
 /** 获取最近一层配置；未使用提供者时返回稳定的只读默认值。 */
 export function useConfig(): ConfigContext {
   return (
     inject(CONFIG_PROVIDER_INJECTION_KEY, null) ?? {
-      theme: computed(() => DEFAULT_CONFIG.theme),
+      theme: computed(getTheme),
+      themeOverrides: computed(() => DEFAULT_CONFIG.themeOverrides),
       locale: computed(() => DEFAULT_CONFIG.locale),
       size: computed(() => DEFAULT_CONFIG.size),
       neonEffect: computed(() => DEFAULT_CONFIG.neonEffect),
@@ -27,6 +30,12 @@ export function useGlobalConfig(): ConfigContext {
 export function useConfigTheme(): ComputedRef<Theme> {
   const config = useConfig();
   return computed(() => unref(config.theme));
+}
+
+/** 浮层使用相同品牌变量；返回只读派生值，避免子组件改写父级配置。 */
+export function useThemeOverrides(): ComputedRef<Record<string, string>> {
+  const config = useConfig();
+  return computed(() => resolveThemeOverrides(config.themeOverrides?.value));
 }
 
 export function useLocale(): ComputedRef<SupportedLocale> {

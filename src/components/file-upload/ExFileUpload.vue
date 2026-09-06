@@ -4,14 +4,19 @@
     :class="uploadClasses"
     role="group"
     :aria-label="rootAriaLabel"
+    :aria-labelledby="field.labelledBy.value"
+    :aria-describedby="field.describedBy.value"
+    :aria-invalid="field.invalid.value || undefined"
+    :aria-disabled="disabled || undefined"
+    @focusout="handleFieldBlur"
   >
     <div
       v-if="drag"
       class="ex-file-upload__drag"
       :class="{ 'is-dragover': isDragOver }"
       role="button"
-      :tabindex="disabled || isLimitReached ? -1 : 0"
-      :aria-disabled="disabled || isLimitReached ? 'true' : undefined"
+      :tabindex="mutationDisabled || isLimitReached ? -1 : 0"
+      :aria-disabled="mutationDisabled || isLimitReached ? 'true' : undefined"
       @click="openFileDialog"
       @keydown.enter.prevent="openFileDialog"
       @keydown.space.prevent="openFileDialog"
@@ -54,11 +59,11 @@
     >
       <slot
         name="trigger"
-        :disabled="disabled || isLimitReached"
+        :disabled="mutationDisabled || isLimitReached"
         :open-file-dialog="openFileDialog"
       >
         <ExButton
-          :disabled="disabled || isLimitReached"
+          :disabled="mutationDisabled || isLimitReached"
           @click="openFileDialog"
         >
           <template #prefix>
@@ -79,7 +84,7 @@
       class="ex-file-upload__input"
       :accept="accept"
       :multiple="multiple"
-      :disabled="disabled || isLimitReached"
+      :disabled="mutationDisabled || isLimitReached"
       @change="handleFileChange"
     />
 
@@ -150,7 +155,7 @@
               size="small"
               shape="circle"
               class="ex-file-upload__list-item-action"
-              :disabled="disabled"
+              :disabled="mutationDisabled"
               :aria-label="t('removeFile', { name: file.name })"
               @click="handleRemove(file)"
             >
@@ -217,7 +222,7 @@
                 size="small"
                 shape="circle"
                 class="ex-file-upload__list-item-action"
-                :disabled="disabled"
+                :disabled="mutationDisabled"
                 :aria-label="t('removeFile', { name: file.name })"
                 @click="handleRemove(file)"
               >
@@ -290,7 +295,7 @@
                 type="text"
                 shape="circle"
                 class="ex-file-upload__list-item-action"
-                :disabled="disabled"
+                :disabled="mutationDisabled"
                 :aria-label="t('removeFile', { name: file.name })"
                 @click="handleRemove(file)"
               >
@@ -313,12 +318,12 @@
         v-if="listType === 'picture-card' && !isLimitReached"
         key="upload-trigger"
         class="ex-file-upload__list-item ex-file-upload__list-item--picture-card ex-file-upload__upload-trigger"
-        :class="{ 'is-dragover': isDragOver, 'is-disabled': disabled }"
+        :class="{ 'is-dragover': isDragOver, 'is-disabled': mutationDisabled }"
       >
         <button
           type="button"
           class="ex-file-upload__upload-trigger-content"
-          :disabled="disabled"
+          :disabled="mutationDisabled"
           :aria-label="buttonText || t('selectFile')"
           @click="openFileDialog"
           @drop.prevent="handleDrop"
@@ -354,6 +359,7 @@ import { computed, defineComponent, h, onBeforeUnmount, ref, shallowRef, watch }
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
+import { useFormFieldState } from '../form/use-form-item';
 import { generateId } from '../../utils/id';
 import { createUploadRequest } from './upload-request';
 import type { UploadRequestHandle } from './upload-request';
@@ -423,6 +429,7 @@ const props = withDefaults(defineProps<ExFileUploadProps>(), {
   showFileList: true,
   listType: 'text',
   disabled: false,
+  readonly: false,
   withCredentials: false,
   timeout: 0,
 });
@@ -431,6 +438,9 @@ const emit = defineEmits<ExFileUploadEmits>();
 defineSlots<ExFileUploadSlots>();
 
 const { t } = useLocale('fileUpload');
+const field = useFormFieldState(props);
+const { disabled } = field;
+const mutationDisabled = computed(() => !field.interactive.value);
 const uploadRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const isDragOver = ref(false);
@@ -449,14 +459,17 @@ const isLimitReached = computed(
     normalizedLimit.value !== undefined && displayedFileList.value.length >= normalizedLimit.value
 );
 const rootAriaLabel = computed(() =>
-  props.ariaLabel ? props.ariaLabel : props.drag ? t('dragHint') : t('uploadGroup')
+  field.labelledBy.value
+    ? undefined
+    : props.ariaLabel || (props.drag ? t('dragHint') : t('uploadGroup'))
 );
 const uploadClasses = computed(() => [
   'ex-file-upload',
   `ex-file-upload--${props.listType}`,
   {
     'ex-file-upload--drag': props.drag,
-    'ex-file-upload--disabled': props.disabled,
+    'ex-file-upload--disabled': disabled.value,
+    'ex-file-upload--readonly': field.readonly.value,
   },
 ]);
 
@@ -544,18 +557,20 @@ watch(
   { deep: true }
 );
 
-watch(
-  () => props.disabled,
-  disabled => {
-    if (disabled) {
-      isDragOver.value = false;
-      invalidatePendingSelections();
+watch(mutationDisabled, disabled => {
+  if (disabled) {
+    isDragOver.value = false;
+    invalidatePendingSelections();
+    // 已发送的上传由显式中止接口管理；尚在解析配置的任务不得再发出请求。
+    for (const [uid, task] of activeUploads) {
+      if (task.handle.pending)
+        abortActiveUpload(uid, field.disabled.value ? 'disabled' : 'readonly');
     }
   }
-);
+});
 
 const openFileDialog = (): boolean => {
-  if (props.disabled || isLimitReached.value || !inputRef.value) return false;
+  if (mutationDisabled.value || isLimitReached.value || !inputRef.value) return false;
   inputRef.value.click();
   return true;
 };
@@ -587,6 +602,13 @@ const validateFile = (file: File): UploadRejection | null => {
 const startUpload = (sourceFile: UploadFile): Promise<UploadResult> => {
   const existing = activeUploads.get(sourceFile.uid);
   if (existing) return existing.result;
+  if (mutationDisabled.value) {
+    return Promise.resolve({
+      uid: sourceFile.uid,
+      outcome: 'ignored',
+      reason: disabled.value ? 'disabled' : 'readonly',
+    });
+  }
 
   const currentFile =
     operationFileList.value.find(file => file.uid === sourceFile.uid) ?? sourceFile;
@@ -709,18 +731,19 @@ const processSelectedFiles = async (files: readonly File[], revision: number): P
   const addedFiles: UploadFile[] = [];
 
   for (const originalFile of files) {
-    if (destroyed.value || revision !== selectionRevision || props.disabled) return;
+    if (destroyed.value || revision !== selectionRevision || mutationDisabled.value) return;
     let candidate = originalFile;
     if (props.beforeAdd) {
       try {
         const result = await props.beforeAdd(originalFile, cloneUploadFileList(nextFiles));
-        if (destroyed.value || revision !== selectionRevision || props.disabled) return;
+        if (destroyed.value || revision !== selectionRevision || mutationDisabled.value) return;
         if (result === false) {
           emitRejection({ code: 'before-add', file: originalFile }, nextFiles);
           continue;
         }
         if (result instanceof File) candidate = result;
       } catch (cause) {
+        if (destroyed.value || revision !== selectionRevision || mutationDisabled.value) return;
         emitRejection({ code: 'before-add-error', file: originalFile, cause }, nextFiles);
         continue;
       }
@@ -747,18 +770,19 @@ const processSelectedFiles = async (files: readonly File[], revision: number): P
     addedFiles.length === 0 ||
     destroyed.value ||
     revision !== selectionRevision ||
-    props.disabled
+    mutationDisabled.value
   ) {
     return;
   }
   nextFiles = [...cloneUploadFileList(operationFileList.value), ...addedFiles];
   const committedFiles = requestFileList(nextFiles);
+  field.formItem?.onFieldChange();
   for (const file of addedFiles) emit('added', { ...file }, cloneUploadFileList(committedFiles));
   if (props.autoUpload) void Promise.all(addedFiles.map(startUpload));
 };
 
 const enqueueFiles = (files: File[]): void => {
-  if (props.disabled || files.length === 0) return;
+  if (mutationDisabled.value || files.length === 0) return;
   const queuedRevision = selectionRevision;
   let acceptedSelection = files;
   if (!props.multiple && files.length > 1) {
@@ -779,7 +803,7 @@ const handleFileChange = (event: Event): void => {
 };
 
 const handleDragOver = (): void => {
-  if (!props.disabled && !isLimitReached.value) isDragOver.value = true;
+  if (!mutationDisabled.value && !isLimitReached.value) isDragOver.value = true;
 };
 
 const handleDragLeave = (event: DragEvent): void => {
@@ -792,20 +816,27 @@ const handleDragLeave = (event: DragEvent): void => {
 
 const handleDrop = (event: DragEvent): void => {
   isDragOver.value = false;
-  if (props.disabled || isLimitReached.value) return;
+  if (mutationDisabled.value || isLimitReached.value) return;
   enqueueFiles(Array.from(event.dataTransfer?.files ?? []));
 };
 
 const handleRemove = (file: UploadFile): void => {
-  if (props.disabled) return;
+  if (mutationDisabled.value) return;
   invalidatePendingSelections();
   abortActiveUpload(file.uid, 'remove');
   requestFileList(operationFileList.value.filter(item => item.uid !== file.uid));
+  field.formItem?.onFieldChange();
   emit('remove-request', file);
 };
 
 const handlePreview = (file: UploadFile): void => {
-  if (!props.disabled) emit('preview-request', file);
+  if (!disabled.value) emit('preview-request', file);
+};
+
+// 只有焦点离开整个上传字段时才触发失焦校验。
+const handleFieldBlur = (event: FocusEvent): void => {
+  if (event.relatedTarget instanceof Node && uploadRef.value?.contains(event.relatedTarget)) return;
+  field.formItem?.onFieldBlur();
 };
 
 const abort = (file?: UploadFile | string): number => {
@@ -817,9 +848,11 @@ const abort = (file?: UploadFile | string): number => {
 };
 
 const requestClear = (): number => {
+  if (mutationDisabled.value) return 0;
   invalidatePendingSelections();
   const abortedCount = abortUploads([...activeUploads.keys()], 'clear');
   requestFileList([]);
+  field.formItem?.onFieldChange();
   return abortedCount;
 };
 

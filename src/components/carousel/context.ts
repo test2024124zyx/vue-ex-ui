@@ -1,5 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import type { CarouselDirection, CarouselEffect } from './types';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface CarouselContext {
   currentIndex: Ref<number>;
@@ -11,4 +12,5 @@ export interface CarouselContext {
 }
 
 /** 使用符号隔离不同组件上下文，避免字符串注入键发生碰撞。 */
-export const carouselContextKey: InjectionKey<CarouselContext> = Symbol('ex-carousel');
+export const carouselContextKey: InjectionKey<CarouselContext> =
+  createSharedInjectionKey('carousel');

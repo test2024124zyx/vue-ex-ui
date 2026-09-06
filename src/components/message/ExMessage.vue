@@ -6,6 +6,7 @@
     <div
       v-show="visible"
       ref="messageRef"
+      :style="themeOverrides"
       v-bind="rootAttrs"
       :class="messageClasses"
       :data-theme="configTheme"
@@ -67,7 +68,12 @@
 import { computed, onMounted, onUnmounted, ref, useAttrs, watch } from 'vue';
 import { useLocale } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
-import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import { normalizeMessageDuration, normalizeMessageType } from './message-utils';
 import type {
@@ -97,6 +103,7 @@ const emit = defineEmits<ExMessageEmits>();
 const attrs = useAttrs();
 const { t } = useLocale('message');
 const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
 const animationEnabled = useAnimation();
 const neonEnabled = useNeonEffect();
 const messageRef = ref<HTMLElement | null>(null);

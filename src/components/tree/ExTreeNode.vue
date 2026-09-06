@@ -149,9 +149,10 @@
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
 import ExCheckbox from '../checkbox/ExCheckbox.vue';
-import { computed, ref, nextTick } from 'vue';
+import { computed, ref, nextTick, inject } from 'vue';
 import type { VNode } from 'vue';
 import type { TreeNode } from './types';
+import { TREE_STATE_KEY } from './state';
 
 interface Props {
   node: TreeNode;
@@ -199,6 +200,7 @@ interface Slots {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 defineSlots<Slots>();
+const stateLookup = inject(TREE_STATE_KEY, undefined);
 
 const isDragOver = ref(false);
 const dropPosition = ref<'before' | 'after' | 'inner' | null>(null);
@@ -209,19 +211,28 @@ const hasChildren = computed(() => {
 });
 
 const isExpanded = computed(() => {
-  return props.expandedKeys.includes(props.node.key);
+  return (
+    stateLookup?.expanded.value.has(props.node.key) ?? props.expandedKeys.includes(props.node.key)
+  );
 });
 
 const isSelected = computed(() => {
-  return props.selectedKeys.includes(props.node.key);
+  return (
+    stateLookup?.selected.value.has(props.node.key) ?? props.selectedKeys.includes(props.node.key)
+  );
 });
 
 const isChecked = computed(() => {
-  return props.checkedKeys.includes(props.node.key);
+  return (
+    stateLookup?.checked.value.has(props.node.key) ?? props.checkedKeys.includes(props.node.key)
+  );
 });
 
 const isHalfChecked = computed(() => {
-  return props.halfCheckedKeys.includes(props.node.key);
+  return (
+    stateLookup?.halfChecked.value.has(props.node.key) ??
+    props.halfCheckedKeys.includes(props.node.key)
+  );
 });
 
 const isDisabled = computed(() => {

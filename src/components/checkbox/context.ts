@@ -1,5 +1,6 @@
 import type { ComputedRef, InjectionKey } from 'vue';
 import type { CheckboxShape, CheckboxSize, CheckboxStatus } from './types';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface CheckboxRegistration {
   getValue: () => string | number | undefined;
@@ -21,4 +22,4 @@ export interface CheckboxGroupContext {
 
 /** 复选框组使用符号上下文，避免与第三方组件的字符串键冲突。 */
 export const checkboxGroupContextKey: InjectionKey<CheckboxGroupContext> =
-  Symbol('ex-checkbox-group');
+  createSharedInjectionKey('checkbox-group');

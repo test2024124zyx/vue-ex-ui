@@ -105,6 +105,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import {
@@ -136,6 +137,7 @@ const attrs = useAttrs();
 const slots = useSlots();
 const { t } = useLocale('loading');
 const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
 const animationEnabled = useAnimation();
 const neonEnabled = useNeonEffect();
 const overlayZIndex = useZIndexLayer('overlay');
@@ -190,7 +192,7 @@ const loadingClasses = computed(() => [
 ]);
 
 const loadingStyles = computed<Record<string, string>>(() => {
-  const styles: Record<string, string> = {};
+  const styles: Record<string, string> = { ...themeOverrides.value };
   const color = normalizeLoadingColor(props.color);
   const zIndex = normalizeLoadingZIndex(props.zIndex);
   if (color) styles['--ex-loading-color'] = color;

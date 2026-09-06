@@ -57,6 +57,10 @@ setTheme('light');
 
 全局主题集合保持为两个值。品牌需要调整颜色时，应在应用容器或业务模块内覆盖语义变量，不要注册第三个 `Theme` 值。
 
+需要让品牌变量同时作用于弹窗与下拉层时，使用 `ExConfigProvider` 的 `theme-overrides`。
+例如 `:theme-overrides="{ '--ex-color-primary': '#ff6b35' }"`，嵌套 Provider 会合并父级覆盖。
+普通祖先元素上的 CSS 变量仍受 DOM 继承范围限制，不会自动跨越 Teleport。
+
 ### CSS 变量覆盖
 
 ```css

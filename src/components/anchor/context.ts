@@ -1,5 +1,6 @@
 import type { InjectionKey, Ref } from 'vue';
 import type { AnchorItem } from './types';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface AnchorContext {
   activeLink: Readonly<Ref<string>>;
@@ -10,4 +11,4 @@ export interface AnchorContext {
 }
 
 /** 使用符号注入键避免与宿主应用的字符串 provide 冲突。 */
-export const ANCHOR_INJECTION_KEY: InjectionKey<AnchorContext> = Symbol('exui-anchor');
+export const ANCHOR_INJECTION_KEY: InjectionKey<AnchorContext> = createSharedInjectionKey('anchor');

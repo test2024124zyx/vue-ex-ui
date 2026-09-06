@@ -105,7 +105,9 @@
                 :size="18"
                 aria-hidden="true"
               />
-              <span>{{ tCascader('noSearchResults') }}</span>
+              <slot name="empty">
+                <span>{{ tCascader('noSearchResults') }}</span>
+              </slot>
             </div>
             <div
               v-else
@@ -143,15 +145,21 @@
                   />
                 </span>
                 <span class="ex-cascader__search-result-content">
-                  <span class="ex-cascader__search-result-label">
-                    {{ result.labels[result.labels.length - 1] }}
-                  </span>
-                  <span
-                    v-if="result.labels.length > 1"
-                    class="ex-cascader__search-result-path"
+                  <slot
+                    name="search-result"
+                    :labels="result.labels"
+                    :values="result.values"
                   >
-                    {{ result.labels.slice(0, -1).join(separator) }}
-                  </span>
+                    <span class="ex-cascader__search-result-label">
+                      {{ result.labels[result.labels.length - 1] }}
+                    </span>
+                    <span
+                      v-if="result.labels.length > 1"
+                      class="ex-cascader__search-result-path"
+                    >
+                      {{ result.labels.slice(0, -1).join(separator) }}
+                    </span>
+                  </slot>
                 </span>
               </button>
             </div>
@@ -241,7 +249,15 @@
                     />
                   </span>
                   <span class="ex-cascader__option-content">
-                    <span class="ex-cascader__option-label">{{ option.label }}</span>
+                    <slot
+                      name="option"
+                      :option="option"
+                      :level="index"
+                      :selected="isSelected(option, index)"
+                      :expanded="isActive(option, index)"
+                    >
+                      <span class="ex-cascader__option-label">{{ option.label }}</span>
+                    </slot>
                   </span>
                   <span
                     v-if="hasChildren(option)"
@@ -267,7 +283,13 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, useAttrs, useId } from 'vue';
-import type { ExCascaderProps, ExCascaderEmits, ExCascaderExposed, CascaderOption } from './types';
+import type {
+  ExCascaderProps,
+  ExCascaderEmits,
+  ExCascaderExposed,
+  ExCascaderSlots,
+  CascaderOption,
+} from './types';
 import { useLocale } from '../../locale';
 import {
   useAnimation,
@@ -280,6 +302,10 @@ import { useFormItem } from '../form/use-form-item';
 import { calculateCascaderDropdownPosition } from './position';
 import { findNextEnabledIndex } from './keyboard';
 import { useCascaderAria } from './use-cascader-aria';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { collectCascaderLeafPaths } from './search';
+import type { CascaderSearchResult } from './search';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExCascader',
@@ -311,6 +337,7 @@ const { t: tCommon } = useLocale('common');
 const attrs = useAttrs();
 const currentPlaceholder = computed(() => props.placeholder || tCascader('placeholder'));
 const emit = defineEmits<ExCascaderEmits>();
+defineSlots<ExCascaderSlots>();
 
 const cascaderRef = ref<HTMLDivElement>();
 const triggerRef = ref<HTMLDivElement>();
@@ -326,9 +353,15 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
+const { styles: popupOverlayStyles, containsTarget: containsPopupTarget } = usePopupOverlay({
+  active: () => visible.value,
+  container: dropdownRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => hide(),
+});
 const dropdownStyle = computed<Record<string, string>>(() => ({
   ...dropdownPositionStyle.value,
-  zIndex: String(dropdownZIndex.value),
+  ...popupOverlayStyles.value,
 }));
 const selectedPath = ref<(string | number)[]>([...props.modelValue]);
 const activePath = ref<(string | number)[]>([...props.modelValue]);
@@ -362,12 +395,6 @@ const getOptionId = (column: number, index: number) =>
 const getSearchResultId = (index: number) => `${dropdownId.value}-search-${index}`;
 const getPathKey = (values: (string | number)[]) =>
   values.map(value => `${typeof value}:${String(value)}`).join('/');
-/** 搜索结果：一条完整的可选路径 */
-interface CascaderSearchResult {
-  labels: string[];
-  values: (string | number)[];
-  disabled: boolean;
-}
 
 const hasSearchQuery = computed(() => props.filterable && searchQuery.value.trim().length > 0);
 const activeDescendant = computed(() => {
@@ -387,31 +414,7 @@ const inputDisplayValue = computed(() => {
   return displayValue.value;
 });
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
-const allLeafPaths = computed<CascaderSearchResult[]>(() => {
-  const results: CascaderSearchResult[] = [];
-
-  const walk = (
-    options: CascaderOption[],
-    labels: string[],
-    values: (string | number)[],
-    disabled: boolean
-  ) => {
-    for (const option of options) {
-      const nextLabels = [...labels, option.label];
-      const nextValues = [...values, option.value];
-      const nextDisabled = disabled || !!option.disabled;
-
-      if (option.children && option.children.length) {
-        walk(option.children, nextLabels, nextValues, nextDisabled);
-      } else {
-        results.push({ labels: nextLabels, values: nextValues, disabled: nextDisabled });
-      }
-    }
-  };
-
-  walk(props.options, [], [], false);
-  return results;
-});
+const allLeafPaths = computed(() => collectCascaderLeafPaths(props.options));
 // 搜索结果是一条完整叶子路径，路径中任意一级标签命中即可显示。
 const searchResults = computed<CascaderSearchResult[]>(() => {
   if (!hasSearchQuery.value) return [];
@@ -668,6 +671,7 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
  * - 打开态：↑↓ 列内移动、→/Enter 展开子级或选中叶子、← 返回上一列、Esc 关闭
  */
 const handleKeydown = (e: KeyboardEvent) => {
+  if (isComposingKeyboardEvent(e)) return;
   if (effectiveDisabled.value || effectiveReadonly.value) return;
   if (hasSearchQuery.value) {
     handleSearchKeydown(e);
@@ -881,7 +885,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
   // 检查点击是否在触发器或下拉面板内
   const isInTrigger = triggerRef.value?.contains(target);
-  const isInDropdown = dropdownRef.value?.contains(target);
+  const isInDropdown = containsPopupTarget(target);
 
   if (!isInTrigger && !isInDropdown) {
     hide();

@@ -120,6 +120,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
@@ -167,6 +168,7 @@ const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
+const themeOverrides = useThemeOverrides();
 const modalRef = ref<HTMLDivElement>();
 const titleId = `ex-modal-title-${useId()}`;
 
@@ -253,7 +255,7 @@ const rootClasses = computed(() => ({
   'ex-modal-root--modeless': !props.mask,
   'ex-modal-root--no-motion': !animation.value,
 }));
-const rootStyles = computed<CSSProperties>(() => {
+const requestedZIndex = computed(() => {
   const fallback =
     Number.isFinite(baseZIndex.value) && baseZIndex.value >= 0
       ? Math.floor(baseZIndex.value)
@@ -262,8 +264,12 @@ const rootStyles = computed<CSSProperties>(() => {
     typeof props.zIndex === 'number' && Number.isFinite(props.zIndex) && props.zIndex >= 0
       ? Math.floor(props.zIndex)
       : fallback;
-  return { zIndex };
+  return zIndex;
 });
+const rootStyles = computed<CSSProperties>(() => ({
+  ...themeOverrides.value,
+  zIndex: overlayZIndex.value,
+}));
 const wrapClasses = computed(() => [
   {
     'ex-modal-wrap--centered': props.centered,
@@ -291,9 +297,10 @@ const modalStyles = computed<CSSProperties>(() =>
   normalizedWidth.value ? { width: normalizedWidth.value } : {}
 );
 
-useOverlay({
+const { zIndex: overlayZIndex } = useOverlay({
   active: () => visible.value,
   container: modalRef,
+  zIndex: () => requestedZIndex.value,
   lockScroll: () => props.mask && props.lockScroll,
   closeOnEscape: () => props.keyboard,
   onEscape: async () => {

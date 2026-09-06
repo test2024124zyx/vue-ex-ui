@@ -6,6 +6,7 @@ export type {
   ExSelectProps,
   ExSelectEmits,
   ExSelectExposed,
+  ExSelectSlots,
   SelectOption,
   SelectOptionGroup,
   SelectOptions,

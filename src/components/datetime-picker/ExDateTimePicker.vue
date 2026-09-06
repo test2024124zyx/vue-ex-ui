@@ -16,8 +16,7 @@
         aria-haspopup="dialog"
         :aria-controls="panelId"
         :aria-expanded="isOpen"
-        aria-readonly="true"
-        :aria-disabled="disabled || readonly"
+        v-bind="fieldAriaAttrs"
         :aria-label="inputAriaLabel"
         @click="togglePanel"
         @keydown="handleInputKeydown"
@@ -342,12 +341,12 @@ import {
 } from '../../utils/date';
 import {
   useAnimation,
-  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
 } from '../config-provider/composables';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import ExIcon from '../icon/ExIcon.vue';
 import type {
   DateTimePickerValue,
@@ -379,18 +378,31 @@ const { t: tCommon } = useLocale('common');
 const { t: tDatePicker } = useLocale('datePicker');
 const { t: tCalendar } = useLocale('calendar');
 const { t: tTimePicker } = useLocale('timePicker');
-const componentSize = useComponentSize(computed(() => props.size));
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
-const formItem = useFormItem();
 const instanceId = useId();
 const panelId = `ex-datetime-picker-panel-${instanceId}`;
 
 const pickerRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const panelRef = ref<HTMLElement>();
+const isOpen = ref(false);
+const { styles: popupOverlayStyles, containsTarget } = usePopupOverlay({
+  active: () => isOpen.value,
+  container: panelRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => closePanel({ restoreFocus: true, discardDraft: true }),
+});
 const panelPositionStyle = ref<CSSProperties>({});
 const portalEffectClasses = computed(() => ({
   'ex-no-neon': !neonEffect.value,
@@ -398,9 +410,8 @@ const portalEffectClasses = computed(() => ({
 }));
 const panelStyle = computed<CSSProperties>(() => ({
   ...panelPositionStyle.value,
-  zIndex: dropdownZIndex.value,
+  ...popupOverlayStyles.value,
 }));
-const isOpen = ref(false);
 const currentDate = ref(new Date());
 const focusedDate = ref(startOfDay(new Date()));
 const selectedDate = ref<Date | null>(null);
@@ -445,8 +456,8 @@ const pickerClasses = computed(() => [
   `ex-datetime-picker--${componentSize.value}`,
   {
     'ex-datetime-picker--range': isRangeMode.value,
-    'ex-datetime-picker--disabled': props.disabled,
-    'ex-datetime-picker--readonly': props.readonly,
+    'ex-datetime-picker--disabled': disabled.value,
+    'ex-datetime-picker--readonly': readonly.value,
     'ex-datetime-picker--open': isOpen.value,
   },
   ...normalizeCustomClass(props.class),
@@ -601,6 +612,7 @@ const clonePickerValue = (value: DateTimePickerValue): DateTimePickerValue => {
 };
 
 const emitCommittedValue = (value: DateTimePickerValue) => {
+  if (!interactive.value) return;
   emit('update:modelValue', clonePickerValue(value));
   emit('change', clonePickerValue(value));
   formItem?.onFieldChange();
@@ -674,7 +686,7 @@ const updatePanelPosition = () => {
 };
 
 const openPanel = (focusCalendar = false) => {
-  if (props.disabled || props.readonly || isOpen.value) return;
+  if (!interactive.value || isOpen.value) return;
   syncFromModel();
   isOpen.value = true;
   emit('visible-change', true);
@@ -696,13 +708,13 @@ const openPanel = (focusCalendar = false) => {
 };
 
 const togglePanel = () => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
   if (isOpen.value) closePanel({ discardDraft: true });
   else openPanel();
 };
 
 const handleInputKeydown = (event: KeyboardEvent) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value || event.isComposing) return;
   if (event.key === 'ArrowDown') {
     event.preventDefault();
     if (!isOpen.value) openPanel(true);
@@ -897,7 +909,7 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleClear = () => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
   selectedDate.value = null;
   rangeStart.value = null;
   rangeEnd.value = null;
@@ -910,7 +922,7 @@ const handleClear = () => {
 const handleClickOutside = (event: PointerEvent) => {
   if (!(event.target instanceof Node)) return;
   const isInsideTrigger = pickerRef.value?.contains(event.target);
-  const isInsidePanel = panelRef.value?.contains(event.target);
+  const isInsidePanel = containsTarget(event.target);
   if (!isInsideTrigger && !isInsidePanel) {
     closePanel({ discardDraft: true });
   }
@@ -918,8 +930,8 @@ const handleClickOutside = (event: PointerEvent) => {
 
 watch([() => props.modelValue, () => props.type], () => syncFromModel(), { immediate: true });
 
-watch([() => props.disabled, () => props.readonly], ([disabled, readonly]) => {
-  if (disabled || readonly) closePanel({ discardDraft: true });
+watch(interactive, canInteract => {
+  if (!canInteract) closePanel({ discardDraft: true });
 });
 
 watch(

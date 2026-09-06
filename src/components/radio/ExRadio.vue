@@ -20,6 +20,10 @@
         :disabled="currentDisabled"
         :readonly="currentReadonly"
         :required="currentRequired"
+        v-bind="fieldAriaAttrs"
+        :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
+        :aria-disabled="currentDisabled"
+        :aria-readonly="currentReadonly"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
@@ -39,6 +43,10 @@
         :disabled="currentDisabled"
         :readonly="currentReadonly"
         :required="currentRequired"
+        v-bind="fieldAriaAttrs"
+        :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
+        :aria-disabled="currentDisabled"
+        :aria-readonly="currentReadonly"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
@@ -108,9 +116,8 @@ import { computed, ref, watch, useSlots, inject } from 'vue';
 import type { ExRadioProps, ExRadioEmits, ExRadioSlots, ExRadioInstance } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
-import { useFormItem } from '../form/use-form-item';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRadio',
@@ -131,11 +138,13 @@ defineSlots<ExRadioSlots>();
 const slots = useSlots();
 const { t } = useI18n();
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 // 注入 RadioGroup 上下文
 const radioGroupContext = inject<{
@@ -160,6 +169,7 @@ const radioValue = computed({
     return radioGroupContext ? radioGroupContext.modelValue.value : props.modelValue;
   },
   set: value => {
+    if (currentDisabled.value || currentReadonly.value) return;
     if (value !== undefined) {
       if (radioGroupContext) {
         radioGroupContext.updateValue(value);
@@ -191,15 +201,20 @@ const currentSize = computed(() => {
 });
 
 const currentStatus = computed(() => {
-  return radioGroupContext?.status || props.status;
+  return (
+    radioGroupContext?.status ||
+    (props.status !== 'default' ? props.status : undefined) ||
+    formItem?.status?.value ||
+    props.status
+  );
 });
 
 const currentDisabled = computed(() => {
-  return radioGroupContext?.disabled || props.disabled;
+  return Boolean(radioGroupContext?.disabled || disabled.value);
 });
 
 const currentReadonly = computed(() => {
-  return radioGroupContext?.readonly || props.readonly;
+  return Boolean(radioGroupContext?.readonly || readonly.value);
 });
 
 const currentRequired = computed(() => {
@@ -268,7 +283,7 @@ const ariaDescribedBy = computed(() => {
     ids.push(`${radioId}-error`);
   }
 
-  return ids.length > 0 ? ids.join(' ') : undefined;
+  return mergeAriaIds(...ids, fieldAriaAttrs.value['aria-describedby']);
 });
 
 // 只读/禁用时拦截点击的默认选中行为（独立模式用 v-model 时 change 守卫为时已晚）

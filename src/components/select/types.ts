@@ -19,6 +19,8 @@ export interface SelectOption {
 }
 
 export interface SelectOptionGroup {
+  /** 分组稳定标识，动态调整组内数据时可保持插槽实例。 */
+  key?: string | number;
   /** 分组标签 */
   label: string;
   /** 分组选项 */
@@ -68,12 +70,27 @@ export interface ExSelectProps {
   /** 自定义样式 */
   style?: string | Record<string, string | number>;
   /**
-   * 是否对选项启用虚拟滚动（仅在「非分组」的扁平选项场景生效）。
+   * 是否对选项启用虚拟滚动，支持普通选项和分组选项。
    * 适用于上千选项的大列表，避免一次性渲染全部 DOM 导致卡顿。默认 false。
    */
   virtual?: boolean;
   /** 虚拟滚动时单个选项的固定高度（像素），默认 44；自定义值必须与实际行高一致 */
   optionHeight?: number;
+}
+
+export interface ExSelectSlots {
+  /** 选项展示内容，不放置独立交互控件；选择语义由外层选项节点维护。 */
+  option?: (scope: { option: SelectOption; index: number; selected: boolean }) => unknown;
+  /** 单选值的展示内容，搜索输入仍使用字符串标签。 */
+  label?: (scope: { option: SelectOption }) => unknown;
+  /** 多选标签内容，删除按钮仍由组件维护。 */
+  tag?: (scope: { option: SelectOption }) => unknown;
+  /** 分组标题内容，虚拟滚动时与普通选项采用同一固定行高。 */
+  group?: (scope: { group: SelectOptionGroup }) => unknown;
+  /** 空列表内容。 */
+  empty?: () => unknown;
+  /** 加载中的内容。 */
+  loading?: () => unknown;
 }
 
 export interface ExSelectEmits {

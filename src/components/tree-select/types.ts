@@ -30,6 +30,8 @@ export interface ExTreeSelectProps {
   checkStrictly?: boolean;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
   /** 触发器原生 ID */

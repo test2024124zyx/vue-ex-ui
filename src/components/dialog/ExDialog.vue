@@ -127,6 +127,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import type { ExDialogEmits, ExDialogExposed, ExDialogProps } from './types';
@@ -165,6 +166,7 @@ const baseZIndex = useZIndexLayer('modal');
 const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
+const themeOverrides = useThemeOverrides();
 const dialogContainerRef = ref<HTMLDivElement>();
 const titleId = `ex-dialog-title-${useId()}`;
 const CONTROLLED_PANEL_ATTRS = new Set(['aria-label', 'aria-labelledby', 'aria-modal', 'role']);
@@ -217,7 +219,10 @@ const wrapperClasses = computed(() => [
     'ex-no-animation': !animation.value,
   },
 ]);
-const wrapperStyles = computed(() => ({ zIndex: props.zIndex ?? baseZIndex.value }));
+const wrapperStyles = computed(() => ({
+  ...themeOverrides.value,
+  zIndex: overlayZIndex.value,
+}));
 const dialogClasses = computed(() => [
   `ex-dialog--${props.size}`,
   `ex-dialog--${props.type}`,
@@ -227,9 +232,10 @@ const dialogClasses = computed(() => [
   },
 ]);
 
-useOverlay({
+const { zIndex: overlayZIndex } = useOverlay({
   active: () => visible.value,
   container: dialogContainerRef,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
   lockScroll: () => props.lockScroll,
   closeOnEscape: () => props.closeOnPressEscape,
   onEscape: async () => {

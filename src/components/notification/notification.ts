@@ -1,5 +1,6 @@
 import { createVNode, inject, isVNode, render } from 'vue';
 import type { AppContext, InjectionKey, VNode } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 import { useComponentServiceScope } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
@@ -42,7 +43,7 @@ interface NotificationRecord {
 
 /** 当前 Vue App 的 Notification 服务注入键。 */
 export const NOTIFICATION_SERVICE_KEY: InjectionKey<NotificationService> =
-  Symbol('ExNotificationService');
+  createSharedInjectionKey('notification-service');
 
 const createContainerStyle = (
   options: ResolvedNotificationOptions

@@ -1,5 +1,6 @@
 import { createApp, h, inject, shallowReactive } from 'vue';
 import type { App, AppContext, InjectionKey, Plugin } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 import { generateId } from '../../utils/id';
 import { useComponentServiceScope } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
@@ -30,7 +31,8 @@ interface LoadingRecord {
 }
 
 /** 当前应用 Loading 服务的注入键。 */
-export const LOADING_SERVICE_KEY: InjectionKey<LoadingService> = Symbol('ExLoadingService');
+export const LOADING_SERVICE_KEY: InjectionKey<LoadingService> =
+  createSharedInjectionKey('loading-service');
 
 class LoadingServiceController implements LoadingService {
   private readonly records = new Map<string, LoadingRecord>();

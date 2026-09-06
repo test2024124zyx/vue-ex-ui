@@ -70,7 +70,8 @@ export interface UploadRejection {
   cause?: unknown;
 }
 
-export type UploadIgnoredReason = 'no-action' | 'missing-raw' | 'not-ready';
+export type UploadIgnoredReason =
+  'no-action' | 'missing-raw' | 'not-ready' | 'disabled' | 'readonly';
 export type UploadOutcome = 'success' | 'error' | 'aborted' | 'ignored';
 
 /** 单个文件上传任务的最终结果。 */
@@ -82,7 +83,8 @@ export interface UploadResult {
   reason?: UploadIgnoredReason;
 }
 
-export type UploadAbortReason = 'manual' | 'remove' | 'clear' | 'external';
+export type UploadAbortReason =
+  'manual' | 'remove' | 'clear' | 'external' | 'disabled' | 'readonly';
 
 /** 文件上传组件属性。 */
 export interface ExFileUploadProps {
@@ -116,8 +118,10 @@ export interface ExFileUploadProps {
   showFileList?: boolean;
   /** 文件列表展示类型。 */
   listType?: UploadListType;
-  /** 是否禁用选择、预览和移除交互。 */
+  /** 禁用选择、预览、移除及程序化上传/清空；继承 Form 状态。 */
   disabled?: boolean;
+  /** 是否只读；保留预览，禁止选择、移除、清空及发起新上传。 */
+  readonly?: boolean;
   /** XHR 是否携带跨域凭证。 */
   withCredentials?: boolean;
   /** XHR 超时时间，单位毫秒；0 表示不限制。 */
@@ -153,11 +157,11 @@ export interface ExFileUploadEmits {
 export interface ExFileUploadExposed {
   /** 打开原生文件选择器；无法操作时返回 false。 */
   openFileDialog: () => boolean;
-  /** 上传指定 ready 文件，未指定时上传全部 ready 文件。 */
+  /** 上传指定 ready 文件，未指定时上传全部；禁用/只读的新任务返回 ignored。 */
   submit: (file?: UploadFile | string) => Promise<UploadResult[]>;
   /** 中止指定任务，未指定时中止全部；返回真实中止数量。 */
   abort: (file?: UploadFile | string) => number;
-  /** 中止全部任务并请求清空列表；返回真实中止数量。 */
+  /** 中止全部任务并请求清空列表；禁用/只读时不操作并返回 0。 */
   requestClear: () => number;
   /** 获取当前真实生效的文件列表快照。 */
   getFiles: () => UploadFile[];

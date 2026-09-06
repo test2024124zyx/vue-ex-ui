@@ -35,6 +35,7 @@
       :readonly="readonly"
       :name="name"
       :aria-label="ariaLabel"
+      v-bind="fieldAriaAttrs"
       :aria-valuemin="ariaValueMin"
       :aria-valuemax="ariaValueMax"
       :aria-valuenow="modelValue ?? undefined"
@@ -112,10 +113,9 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
 import type { DebouncedFunction } from '../../utils/debounce';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -141,10 +141,14 @@ const props = withDefaults(defineProps<ExNumberInputProps>(), {
 const emit = defineEmits<ExNumberInputEmits>();
 
 const { t } = useI18n();
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 blur 自动校验；change 由 FormItem 的 model watch 兜底）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
@@ -159,8 +163,8 @@ const numberInputClasses = computed(() => {
     `ex-number-input--controls-${props.controlsPosition}`,
   ];
 
-  if (props.disabled) classes.push('ex-number-input--disabled');
-  if (props.readonly) classes.push('ex-number-input--readonly');
+  if (disabled.value) classes.push('ex-number-input--disabled');
+  if (readonly.value) classes.push('ex-number-input--readonly');
   if (isFocused.value) classes.push('ex-number-input--focused');
   if (!props.controls) classes.push('ex-number-input--no-controls');
 
@@ -176,13 +180,13 @@ const numberInputStyles = computed(() => {
 });
 
 const isIncreaseDisabled = computed(() => {
-  if (props.readonly) return true;
+  if (!interactive.value) return true;
   if (props.modelValue === null) return false;
   return props.modelValue >= props.max;
 });
 
 const isDecreaseDisabled = computed(() => {
-  if (props.readonly) return true;
+  if (!interactive.value) return true;
   if (props.modelValue === null) return false;
   return props.modelValue <= props.min;
 });
@@ -307,6 +311,10 @@ watch(
 
 // 事件处理
 const handleInput = (event: Event) => {
+  if (!interactive.value) {
+    updateDisplayValue();
+    return;
+  }
   const target = event.target as HTMLInputElement;
   let value = target.value;
 
@@ -331,6 +339,10 @@ const handleInput = (event: Event) => {
 
 const handleChange = (event: Event) => {
   debouncedInput?.cancel();
+  if (!interactive.value) {
+    updateDisplayValue();
+    return;
+  }
   const target = event.target as HTMLInputElement;
   const value = target.value;
 
@@ -338,6 +350,7 @@ const handleChange = (event: Event) => {
   if (parsedValue === null) {
     emit('update:modelValue', null);
     emit('change', null, props.modelValue);
+    formItem?.onFieldChange();
     return;
   }
 
@@ -346,13 +359,14 @@ const handleChange = (event: Event) => {
 
   emit('update:modelValue', validatedValue);
   emit('change', validatedValue, oldValue);
+  formItem?.onFieldChange();
 
   // 更新显示值
   displayValue.value = String(validatedValue);
 };
 
 const handleFocus = (event: FocusEvent) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
   isFocused.value = true;
   emit('focus', event);
 };
@@ -365,7 +379,7 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value || event.isComposing) return;
 
   // 上下箭头键
   if (event.key === 'ArrowUp') {
@@ -398,6 +412,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       const oldValue = props.modelValue;
       emit('update:modelValue', props.min);
       emit('change', props.min, oldValue);
+      formItem?.onFieldChange();
     }
   } else if (event.key === 'End') {
     event.preventDefault();
@@ -405,12 +420,13 @@ const handleKeydown = (event: KeyboardEvent) => {
       const oldValue = props.modelValue;
       emit('update:modelValue', props.max);
       emit('change', props.max, oldValue);
+      formItem?.onFieldChange();
     }
   }
 };
 
 const handleIncrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || props.readonly || isIncreaseDisabled.value) return;
+  if (!interactive.value || isIncreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
@@ -423,10 +439,11 @@ const handleIncrease = (customStepOrEvent?: number | Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue, oldValue);
   emit('increase', newValue);
+  formItem?.onFieldChange();
 };
 
 const handleDecrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || props.readonly || isDecreaseDisabled.value) return;
+  if (!interactive.value || isDecreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
@@ -439,7 +456,15 @@ const handleDecrease = (customStepOrEvent?: number | Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue, oldValue);
   emit('decrease', newValue);
+  formItem?.onFieldChange();
 };
+
+watch(interactive, canInteract => {
+  if (!canInteract) {
+    debouncedInput?.cancel();
+    updateDisplayValue();
+  }
+});
 
 // 卸载时清理防抖待执行的定时器
 onBeforeUnmount(() => {

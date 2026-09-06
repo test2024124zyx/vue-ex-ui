@@ -129,22 +129,13 @@ pnpm add -D unplugin-vue-components
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import Components from 'unplugin-vue-components/vite';
+import { ExUIResolver } from 'vue-ex-ui/resolver';
 
 export default defineConfig({
   plugins: [
     vue(),
     Components({
-      resolvers: [
-        // ExUI 组件解析器
-        componentName => {
-          if (componentName.startsWith('Ex')) {
-            return {
-              name: componentName,
-              from: 'vue-ex-ui',
-            };
-          }
-        },
-      ],
+      resolvers: [ExUIResolver()],
     }),
   ],
 });
@@ -174,12 +165,11 @@ const handleClick = () => {
 </template>
 ```
 
-**注意：** 配合方式二默认仍需引入整包样式 `vue-ex-ui/style.css`；若要样式也按需，
-把解析器的 `from` 指向 `vue-ex-ui/es/components/<kebab-名称>` 并开启 `sideEffects`
-即可自动连带该组件 CSS（见方式三）。
+解析器根据完整的公共组件映射按需加载 JS 与组件 CSS，并自动引入基础主题样式。
+默认不加载品牌字体；需要字体时显式设置 `includeFonts: true`。
 
 ```typescript
-import 'vue-ex-ui/style.css';
+ExUIResolver({ includeFonts: true });
 ```
 
 ### 方式三：组件级按需（JS + CSS 双重按需，生产推荐）
@@ -218,24 +208,13 @@ import { ExInput } from 'vue-ex-ui/es/components/input';
 
 ```typescript
 Components({
-  resolvers: [
-    name => {
-      if (name.startsWith('Ex')) {
-        // ExButton -> button, ExDateTimePicker -> datetime-picker
-        const dir = name
-          .slice(2)
-          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-          .toLowerCase();
-        return { name, from: `vue-ex-ui/es/components/${dir}`, sideEffects: [] };
-      }
-    },
-  ],
+  resolvers: [ExUIResolver()],
 });
 ```
 
-仍需在入口引入一次 `vue-ex-ui/base.css`。少数子组件（如 `ExCheckboxGroup` 属于
-`checkbox`、`ExFormItem` 属于 `form`）目录名与组件名不同，可在解析器中做名称映射，
-或直接采用上面的手动按需导入。
+从 `vue-ex-ui/resolver` 导入 `ExUIResolver`。解析器包含全部公共组件和子组件的目录映射，
+无需自行维护命名转换。入口已手动加载 `vue-ex-ui/base.css` 时可设置
+`ExUIResolver({ includeBaseStyles: false })`；组件自身的 CSS 仍会按需加载。
 :::
 
 ### 体积对比（示意）
@@ -243,7 +222,8 @@ Components({
 | 导入方式                         | JS                   | CSS                               |
 | -------------------------------- | -------------------- | --------------------------------- |
 | 全局 `app.use(ExUI)`             | 全量                 | 全量 `style.css`                  |
-| 方式一/二（主包）                | 按需（Tree Shaking） | 全量 `style.css`                  |
+| 方式一（主包）                   | 按需（Tree Shaking） | 全量 `style.css`                  |
+| 自动导入（`ExUIResolver`）       | 按需                 | 基础样式与组件 CSS 按需加载       |
 | **方式三（`/es/components/*`）** | **按需**             | **按需（base.css + 各组件 CSS）** |
 
 ## 导入工具函数和 Composables
@@ -288,7 +268,7 @@ setLocale('zh-CN');
 | ---------------------- | ---------------------------- | ----------------------- | -------------------- |
 | 全局导入（app.use）    | 全量                         | 全量                    | 快速开发、原型设计   |
 | 按需导入（方式一）     | 仅用到的组件（Tree Shaking） | 全量 `style.css`        | 生产环境             |
-| 自动按需导入（方式二） | 同方式一                     | 全量 `style.css`        | 追求开发体验         |
+| 自动按需导入（方式二） | 仅用到的组件                 | `base.css` + 各组件 CSS | 生产环境、自动导入   |
 | 组件级按需（方式三）   | 仅用到的组件                 | `base.css` + 各组件 CSS | 生产环境（体积最优） |
 
 ## 最佳实践

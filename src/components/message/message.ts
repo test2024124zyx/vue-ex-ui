@@ -1,5 +1,6 @@
 import { createVNode, inject, render } from 'vue';
 import type { AppContext, InjectionKey, VNode } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 import { useComponentServiceScope } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
@@ -38,7 +39,8 @@ interface MessageRecord {
 }
 
 /** 当前 Vue App 的 Message 服务注入键。 */
-export const MESSAGE_SERVICE_KEY: InjectionKey<MessageService> = Symbol('ExMessageService');
+export const MESSAGE_SERVICE_KEY: InjectionKey<MessageService> =
+  createSharedInjectionKey('message-service');
 
 /** 创建队列、配置、DOM 与回调生命周期完全隔离的 Message 服务。 */
 export function createMessageService(appContext?: AppContext): MessageService {

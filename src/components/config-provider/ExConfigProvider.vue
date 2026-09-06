@@ -17,6 +17,8 @@ import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import { LOCALE_INJECTION_KEY } from '../../locale';
 import { provideComponentServiceScope } from './service-scope';
 import { createZIndexCssVariables, normalizeZIndexBase } from './z-index';
+import { getTheme } from '../../composables/useTheme';
+import { resolveThemeOverrides } from './theme-overrides';
 
 defineOptions({
   name: 'ExConfigProvider',
@@ -27,8 +29,11 @@ const props = defineProps<ExConfigProviderProps>();
 const providerRef = ref<HTMLDivElement>();
 const parentConfig = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
 
-// 未显式传入的字段响应式继承最近 Provider，只有根节点使用默认值。
-const theme = computed(() => props.theme ?? parentConfig?.theme.value ?? DEFAULT_CONFIG.theme);
+// 局部显式配置优先；根主题跟随全局状态，避免 Teleport 面板与页面明暗不一致。
+const theme = computed(() => props.theme ?? parentConfig?.theme.value ?? getTheme());
+const themeOverrides = computed(() =>
+  resolveThemeOverrides(parentConfig?.themeOverrides?.value, props.themeOverrides, props.style)
+);
 const locale = computed(() => props.locale ?? parentConfig?.locale.value ?? DEFAULT_CONFIG.locale);
 const size = computed(() => props.size ?? parentConfig?.size.value ?? DEFAULT_CONFIG.size);
 const neonEffect = computed(
@@ -44,6 +49,7 @@ const zIndex = computed(() =>
 // 提供配置上下文
 const configContext: ConfigContext = {
   theme,
+  themeOverrides,
   locale,
   size,
   neonEffect,
@@ -75,6 +81,7 @@ const providerClasses = computed(() => {
 const providerStyles = computed(() => {
   const styles: Record<string, string> = {
     display: 'contents',
+    ...themeOverrides.value,
   };
 
   // z-index 基础值

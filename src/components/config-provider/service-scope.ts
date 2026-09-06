@@ -1,5 +1,6 @@
 import type { AppContext, ComponentInternalInstance, InjectionKey } from 'vue';
 import { getCurrentInstance, inject, onBeforeUnmount, provide } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 type ServiceKey = symbol;
 type ServiceDisposer = (service: unknown) => void;
@@ -20,9 +21,8 @@ export interface ComponentServiceScope {
   disposeAll: () => void;
 }
 
-export const COMPONENT_SERVICE_SCOPE_KEY: InjectionKey<ComponentServiceScope> = Symbol(
-  'exui-component-service-scope'
-);
+export const COMPONENT_SERVICE_SCOPE_KEY: InjectionKey<ComponentServiceScope> =
+  createSharedInjectionKey('component-service-scope');
 
 const createInheritedAppContext = (instance: ComponentInternalInstance): AppContext => ({
   ...instance.appContext,

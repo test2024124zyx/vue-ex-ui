@@ -103,6 +103,10 @@ const submit = async () => {
 
 没有 `action`、缺少原始 `File` 或文件不是 `ready` 状态时，`submit()` 返回 `ignored`，不会伪装为已上传。
 
+`disabled` 与 `readonly` 也继承所在 Form 的状态。禁用或只读时，程序化 `submit()` 不会发起新任务，结果为 `ignored`，原因分别为 `disabled` 或 `readonly`；`requestClear()` 不修改列表并返回 `0`。只读仍可预览已有附件。
+
+状态切换会中止尚在解析上传配置的任务，`aborted` 事件携带对应的 `disabled` 或 `readonly` 原因。已经发出的请求继续执行，仍可通过 `abort()` 显式中止。
+
 ## 动态上传配置与中止
 
 `action`、`headers` 和 `data` 都可按文件异步解析。解析器会收到与 XHR 共用的 `AbortSignal`。
@@ -174,6 +178,7 @@ const resolveHeaders = async (_file, { signal }) => {
 | `show-file-list`    | `boolean`                                              | `true`   |
 | `list-type`         | `'text' \| 'picture' \| 'picture-card'`                | `'text'` |
 | `disabled`          | `boolean`                                              | `false`  |
+| `readonly`          | `boolean`                                              | `false`  |
 | `with-credentials`  | `boolean`                                              | `false`  |
 | `timeout`           | `number`，毫秒                                         | `0`      |
 | `tip`               | `string`                                               | —        |

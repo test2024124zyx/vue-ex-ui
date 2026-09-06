@@ -128,27 +128,31 @@ async function validateRule(
     value = rule.transform(value);
   }
 
-  // 自定义异步验证器
-  if (rule.asyncValidator) {
+  const customValidator = rule.asyncValidator || rule.validator;
+  if (customValidator) {
     return new Promise(resolve => {
-      rule.asyncValidator!(rule, value, (error?: string) => {
-        resolve({
-          valid: !error,
-          error: error || rule.message,
+      let completed = false;
+      const finish = (valid: boolean, error?: string) => {
+        if (completed) return;
+        completed = true;
+        resolve(valid ? { valid: true } : { valid: false, error });
+      };
+      const reject = (error: unknown) => {
+        const message = error instanceof Error ? error.message : error == null ? '' : String(error);
+        finish(false, message || rule.message || t('common.validationError'));
+      };
+      try {
+        const result = customValidator(rule, value, error => {
+          finish(!error, error || rule.message);
         });
-      });
-    });
-  }
-
-  // 自定义验证器
-  if (rule.validator) {
-    return new Promise(resolve => {
-      rule.validator!(rule, value, (error?: string) => {
-        resolve({
-          valid: !error,
-          error: error || rule.message,
-        });
-      });
+        // 回调型验证器返回 undefined 时继续等待；Promise 型验证器必须监听两条完成路径。
+        // 即使 callback 已完成，也必须接住晚到的拒绝，防止未处理异常逸出验证链路。
+        if (result && typeof result.then === 'function') {
+          void Promise.resolve(result).then(() => finish(true), reject);
+        }
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 

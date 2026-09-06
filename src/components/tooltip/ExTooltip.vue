@@ -15,7 +15,7 @@
     <Teleport to="body">
       <Transition :name="transition">
         <div
-          v-if="visible"
+          v-if="overlayActive"
           :id="popperId"
           ref="popperRef"
           :class="tooltipClasses"
@@ -53,6 +53,7 @@ import { computed, ref, watch, nextTick, onMounted, onUnmounted, getCurrentInsta
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import {
   useAnimation,
   useConfigTheme,
@@ -100,6 +101,16 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const tooltipZIndex = useZIndexLayer('tooltip');
+const { styles: tooltipStyles, active: overlayActive } = usePopupOverlay({
+  active: () => visible.value,
+  container: popperRef,
+  zIndex: () => props.zIndex ?? tooltipZIndex.value,
+  restoreFocus: false,
+  onEscape: () => {
+    clearTimers();
+    requestVisible(false);
+  },
+});
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
 
@@ -119,14 +130,6 @@ const tooltipClasses = computed(() => {
   }
 
   return classes;
-});
-
-const tooltipStyles = computed(() => {
-  const styles: Record<string, string> = {
-    zIndex: String(props.zIndex ?? tooltipZIndex.value),
-  };
-
-  return styles;
 });
 
 const arrowStyle = computed(() => {
@@ -280,14 +283,6 @@ const handleScroll = () => {
   updatePosition();
 };
 
-// Esc 关闭（WAI-ARIA tooltip 规范要求）
-const handleEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && visible.value) {
-    clearTimers();
-    requestVisible(false);
-  }
-};
-
 const describedElements = new Map<HTMLElement, string | null>();
 const restoreTriggerDescriptions = () => {
   describedElements.forEach((description, element) => {
@@ -299,7 +294,7 @@ const restoreTriggerDescriptions = () => {
 
 const syncTriggerDescriptions = () => {
   restoreTriggerDescriptions();
-  if (!visible.value || !tooltipRef.value || typeof HTMLElement === 'undefined') return;
+  if (!overlayActive.value || !tooltipRef.value || typeof HTMLElement === 'undefined') return;
   const trigger = Array.from(tooltipRef.value.children).find(
     (child): child is HTMLElement => child instanceof HTMLElement
   );
@@ -313,18 +308,17 @@ const syncTriggerDescriptions = () => {
 
 // 仅在浮层可见时挂载全局监听器
 watch(
-  visible,
+  overlayActive,
   isVisible => {
     nextTick(syncTriggerDescriptions);
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (isVisible) {
+      nextTick(updatePosition);
       window.addEventListener('resize', handleResize);
       window.addEventListener('scroll', handleScroll, true);
-      document.addEventListener('keydown', handleEscape);
     } else {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
-      document.removeEventListener('keydown', handleEscape);
       restoreTriggerDescriptions();
     }
   },
@@ -339,7 +333,6 @@ onUnmounted(() => {
   clearTimers();
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('scroll', handleScroll, true);
-  document.removeEventListener('keydown', handleEscape);
   restoreTriggerDescriptions();
 });
 

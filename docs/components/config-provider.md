@@ -815,14 +815,19 @@ const zIndex = useZIndex(10); // 基础值 + 10
 
 ### ConfigProvider Props
 
-| 属性          | 说明             | 类型                             | 默认值        |
-| ------------- | ---------------- | -------------------------------- | ------------- |
-| `theme`       | 赛博朋克主题     | `'neon-blue' \| 'light'`         | `'neon-blue'` |
-| `locale`      | 语言             | `'zh-CN' \| 'en-US'`             | `'en-US'`     |
-| `size`        | 全局组件尺寸     | `'small' \| 'medium' \| 'large'` | `'medium'`    |
-| `neon-effect` | 是否启用霓虹效果 | `boolean`                        | `true`        |
-| `animation`   | 是否启用动画     | `boolean`                        | `true`        |
-| `z-index`     | z-index 基础值   | `number`                         | `1000`        |
+未指定 `theme` 时继承父级 Provider，根 Provider 跟随 `setTheme()` 的全局主题。
+`theme-overrides` 接收 `ThemeOverrides` 类型的 `--ex-*` CSS 变量，逐层合并；局部显式值优先。
+这些变量也会传递到组件的 Teleport 浮层，既有 `style` 中的 `--ex-*` 变量同样参与合并。
+
+| 属性              | 说明             | 类型                             | 默认值             |
+| ----------------- | ---------------- | -------------------------------- | ------------------ |
+| `theme`           | 赛博朋克主题     | `'neon-blue' \| 'light'`         | 继承父级或全局主题 |
+| `theme-overrides` | 品牌主题变量     | `ThemeOverrides`                 | `{}`               |
+| `locale`          | 语言             | `'zh-CN' \| 'en-US'`             | `'en-US'`          |
+| `size`            | 全局组件尺寸     | `'small' \| 'medium' \| 'large'` | `'medium'`         |
+| `neon-effect`     | 是否启用霓虹效果 | `boolean`                        | `true`             |
+| `animation`       | 是否启用动画     | `boolean`                        | `true`             |
+| `z-index`         | z-index 基础值   | `number`                         | `1000`             |
 
 ### ConfigProvider Slots
 

@@ -109,6 +109,7 @@ import { ref, computed, watch, provide, onBeforeUnmount, nextTick } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
+import { TREE_STATE_KEY } from './state';
 
 defineOptions({
   name: 'ExTree',
@@ -191,21 +192,32 @@ const checkedState = useControllableState<string[]>({
 const effectiveExpandedKeys = expandedState.value;
 const effectiveSelectedKeys = selectedState.value;
 const effectiveCheckedKeys = checkedState.value;
+const expandedKeySet = computed(() => new Set(effectiveExpandedKeys.value));
+const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
+const checkedKeySet = computed(() => new Set(effectiveCheckedKeys.value));
 
-// 节点映射
-const nodeMap = computed(() => {
-  const map = new Map<string, TreeNode>();
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      map.set(node.key, node);
-      if (node.children) {
-        traverse(node.children);
-      }
-    });
-  };
-  traverse(props.data);
-  return map;
+// 一次前序遍历建立节点与父节点索引，数据变化时统一重建。
+const treeIndex = computed(() => {
+  const nodes = new Map<string, TreeNode>();
+  const parents = new Map<string, string>();
+  const pending = props.data
+    .map(node => ({ node, parent: undefined as string | undefined }))
+    .reverse();
+  while (pending.length) {
+    const entry = pending.pop();
+    if (!entry) continue;
+    const { node, parent } = entry;
+    nodes.set(node.key, node);
+    if (parent !== undefined) parents.set(node.key, parent);
+    const children = node.children ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child) pending.push({ node: child, parent: node.key });
+    }
+  }
+  return { nodes, parents };
 });
+const nodeMap = computed(() => treeIndex.value.nodes);
 
 // 过滤后的数据
 const filteredData = computed(() => {
@@ -284,11 +296,7 @@ const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
   const walk = (nodes: TreeNode[], level: number) => {
     for (const node of nodes) {
       result.push({ node, level });
-      if (
-        node.children &&
-        node.children.length > 0 &&
-        effectiveExpandedKeys.value.includes(node.key)
-      ) {
+      if (node.children && node.children.length > 0 && expandedKeySet.value.has(node.key)) {
         walk(node.children, level + 1);
       }
     }
@@ -317,9 +325,7 @@ watch(
     const enabledNodes = nodes.filter(({ node }) => !node.disabled);
     if (enabledNodes.some(({ node }) => node.key === activeKey.value)) return;
 
-    const selectedNode = enabledNodes.find(({ node }) =>
-      effectiveSelectedKeys.value.includes(node.key)
-    );
+    const selectedNode = enabledNodes.find(({ node }) => selectedKeySet.value.has(node.key));
     activeKey.value = selectedNode?.node.key ?? enabledNodes[0]?.node.key ?? null;
   },
   { immediate: true }
@@ -360,26 +366,27 @@ const halfCheckedKeys = computed<string[]>(() => {
     return [];
   }
 
+  const { nodes, parents } = treeIndex.value;
+  const orderedNodes = Array.from(nodes.values());
+  const counts = new Map<string, { total: number; checked: number }>();
   const half = new Set<string>();
-  const checked = new Set(effectiveCheckedKeys.value);
-
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        const childKeys = getAllChildKeys(node);
-        const checkedCount = childKeys.filter(key => checked.has(key)).length;
-
-        if (checkedCount > 0 && checkedCount < childKeys.length) {
-          half.add(node.key);
-        }
-
-        traverse(node.children);
-      }
-    });
-  };
-
-  traverse(props.data);
-  return Array.from(half);
+  // 逆前序保证先汇总孩子；每条父子边只处理一次，时间和空间均为 O(N)。
+  for (let index = orderedNodes.length - 1; index >= 0; index -= 1) {
+    const node = orderedNodes[index];
+    if (!node) continue;
+    const descendants = counts.get(node.key) ?? { total: 0, checked: 0 };
+    if (descendants.checked > 0 && descendants.checked < descendants.total) half.add(node.key);
+    const parent = parents.get(node.key);
+    if (parent === undefined) continue;
+    const parentCount = counts.get(parent) ?? { total: 0, checked: 0 };
+    const checkable = isNodeCheckable(node);
+    parentCount.total += descendants.total + Number(checkable);
+    parentCount.checked +=
+      descendants.checked + Number(checkable && checkedKeySet.value.has(node.key));
+    counts.set(parent, parentCount);
+  }
+  // 查询方法保持原来的前序结果顺序，索引优化不改变对外契约。
+  return orderedNodes.filter(node => half.has(node.key)).map(node => node.key);
 });
 
 // 获取所有子节点的 key
@@ -402,25 +409,11 @@ const getAllChildKeys = (node: TreeNode): string[] => {
 // 获取所有父节点的 key
 const getAllParentKeys = (key: string): string[] => {
   const keys: string[] = [];
-  const findParent = (nodes: TreeNode[], targetKey: string): TreeNode | null => {
-    for (const node of nodes) {
-      if (node.children) {
-        if (node.children.some(child => child.key === targetKey)) {
-          return node;
-        }
-        const parent = findParent(node.children, targetKey);
-        if (parent) return parent;
-      }
-    }
-    return null;
-  };
-
-  let currentKey = key;
-  while (true) {
-    const parent = findParent(props.data, currentKey);
-    if (!parent) break;
-    keys.push(parent.key);
-    currentKey = parent.key;
+  const parents = treeIndex.value.parents;
+  let parent = parents.get(key);
+  while (parent !== undefined) {
+    keys.push(parent);
+    parent = parents.get(parent);
   }
 
   return keys;
@@ -430,7 +423,7 @@ const getAllParentKeys = (key: string): string[] => {
 const handleToggle = (node: TreeNode, expanded: boolean) => {
   if (props.disabled || node.disabled) return;
   const currentKeys = effectiveExpandedKeys.value;
-  const has = currentKeys.includes(node.key);
+  const has = expandedKeySet.value.has(node.key);
   let nextKeys: string[];
 
   if (expanded && !has) {
@@ -453,7 +446,7 @@ const handleSelect = (node: TreeNode, selected: boolean) => {
   let nextKeys: string[];
 
   if (props.multiple) {
-    const has = currentKeys.includes(node.key);
+    const has = selectedKeySet.value.has(node.key);
     if (selected && !has) {
       nextKeys = [...currentKeys, node.key];
     } else if (!selected && has) {
@@ -656,7 +649,7 @@ const filter = (value: string) => {
     const nextKeys = Array.from(toExpand);
     if (
       nextKeys.length !== effectiveExpandedKeys.value.length ||
-      nextKeys.some(key => !effectiveExpandedKeys.value.includes(key))
+      nextKeys.some(key => !expandedKeySet.value.has(key))
     ) {
       expandedState.request(nextKeys);
     }
@@ -666,6 +659,12 @@ const filter = (value: string) => {
 const getElement = () => treeRef.value || null;
 
 // 提供给子组件
+provide(TREE_STATE_KEY, {
+  expanded: expandedKeySet,
+  selected: selectedKeySet,
+  checked: checkedKeySet,
+  halfChecked: computed(() => new Set(halfCheckedKeys.value)),
+});
 provide('tree', {
   props,
   nodeMap,

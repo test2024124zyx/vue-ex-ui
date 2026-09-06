@@ -1,6 +1,8 @@
-import { inject, provide } from 'vue';
+import { computed, inject, provide, useAttrs } from 'vue';
 import type { ComputedRef, InjectionKey } from 'vue';
 import type { FormContext, FormSize, FormValidateStatus } from './types';
+import { useComponentSize } from '../config-provider/composables';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 /**
  * FormItem 提供给表单控件的字段上下文。
@@ -33,10 +35,11 @@ export interface FormItemFieldContext {
 }
 
 export const FORM_ITEM_INJECTION_KEY: InjectionKey<FormItemFieldContext> =
-  Symbol('exFormItemContext');
+  createSharedInjectionKey('form-item');
 
 /** Form 与 FormItem 之间使用独立的注入键，避免与业务层字符串注入发生冲突。 */
-export const FORM_CONTEXT_INJECTION_KEY: InjectionKey<FormContext> = Symbol('exFormContext');
+export const FORM_CONTEXT_INJECTION_KEY: InjectionKey<FormContext> =
+  createSharedInjectionKey('form');
 
 /** FormItem 内部使用：向子控件提供字段上下文 */
 export function provideFormItem(context: FormItemFieldContext): void {
@@ -46,4 +49,57 @@ export function provideFormItem(context: FormItemFieldContext): void {
 /** 表单控件使用：获取所在 FormItem 的字段上下文（不在 FormItem 内时为 null） */
 export function useFormItem(): FormItemFieldContext | null {
   return inject(FORM_ITEM_INJECTION_KEY, null);
+}
+
+interface FormFieldProps {
+  disabled?: boolean;
+  readonly?: boolean;
+  size?: FormSize;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
+  ariaDescribedby?: string;
+}
+
+/** 合并描述 ID 时保留业务补充信息及字段错误，并去除重复引用。 */
+export function mergeAriaIds(...values: Array<unknown>): string | undefined {
+  const ids = values.flatMap(value => (typeof value === 'string' ? value.split(/\s+/) : []));
+  return [...new Set(ids.filter(Boolean))].join(' ') || undefined;
+}
+
+/** 输入控件共同消费字段状态，避免各自遗漏 Form 的只读、禁用及可访问性契约。 */
+export function useFormFieldState(props: FormFieldProps) {
+  const formItem = useFormItem();
+  const attrs = useAttrs();
+  const disabled = computed(() => Boolean(props.disabled || formItem?.disabled?.value));
+  const readonly = computed(() => Boolean(props.readonly || formItem?.readonly?.value));
+  const interactive = computed(() => !disabled.value && !readonly.value);
+  const size = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
+  const labelledBy = computed(() => {
+    const explicit = props.ariaLabelledby || attrs['aria-labelledby'];
+    if (typeof explicit === 'string' && explicit) return explicit;
+    return props.ariaLabel || attrs['aria-label'] ? undefined : formItem?.labelId?.value;
+  });
+  const describedBy = computed(() =>
+    mergeAriaIds(props.ariaDescribedby, attrs['aria-describedby'], formItem?.describedBy?.value)
+  );
+  const invalid = computed(() => formItem?.status?.value === 'error');
+  const ariaAttrs = computed(() => ({
+    'aria-labelledby': labelledBy.value,
+    'aria-describedby': describedBy.value,
+    'aria-invalid': invalid.value || undefined,
+    'aria-errormessage': invalid.value ? formItem?.describedBy?.value : undefined,
+    'aria-disabled': disabled.value || undefined,
+    'aria-readonly': readonly.value || undefined,
+  }));
+  return {
+    formItem,
+    disabled,
+    readonly,
+    interactive,
+    size,
+    labelledBy,
+    describedBy,
+    invalid,
+    ariaAttrs,
+  };
 }

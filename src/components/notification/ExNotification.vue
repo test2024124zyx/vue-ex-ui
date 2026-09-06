@@ -84,7 +84,12 @@
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useLocale } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
-import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import type {
   ExNotificationEmits,
@@ -118,6 +123,7 @@ const emit = defineEmits<ExNotificationEmits>();
 const componentInstance = getCurrentInstance();
 const { t } = useLocale('notification');
 const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
 const animationEnabled = useAnimation();
 const neonEnabled = useNeonEffect();
 const notificationRef = ref<HTMLElement | null>(null);
@@ -151,7 +157,7 @@ const notificationClasses = computed(() => [
 ]);
 const iconClasses = computed(() => [`ex-notification__icon--${props.type}`]);
 const notificationStyles = computed<Record<string, string>>(() => {
-  const styles: Record<string, string> = {};
+  const styles: Record<string, string> = { ...themeOverrides.value };
   if (props.zIndex !== undefined) styles.zIndex = String(props.zIndex);
   if (props.customStyle) Object.assign(styles, props.customStyle);
   return styles;

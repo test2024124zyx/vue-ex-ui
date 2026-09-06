@@ -1,5 +1,6 @@
 import { createApp, h, inject, shallowReactive } from 'vue';
 import type { App, AppContext, InjectionKey } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 import { useComponentServiceScope } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
@@ -240,7 +241,7 @@ export const loadingBar = createLoadingBar();
 
 /** 当前 Vue App 的 LoadingBar 服务注入键。 */
 export const LOADING_BAR_SERVICE_KEY: InjectionKey<LoadingBarService> =
-  Symbol('ExLoadingBarService');
+  createSharedInjectionKey('loading-bar-service');
 
 /** 获取最近 ConfigProvider 或当前 Vue App 的 LoadingBar 服务。 */
 export function useLoadingBarService(): LoadingBarService {

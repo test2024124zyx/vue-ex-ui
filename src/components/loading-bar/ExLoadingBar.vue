@@ -29,7 +29,12 @@
 <script setup lang="ts">
 import { computed, ref, useAttrs } from 'vue';
 import { useLocale } from '../../locale';
-import { useAnimation, useConfigTheme, useNeonEffect } from '../config-provider/composables';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+} from '../config-provider/composables';
 import {
   normalizeLoadingBarHeight,
   normalizeLoadingBarPercentage,
@@ -56,6 +61,7 @@ const props = withDefaults(defineProps<ExLoadingBarProps>(), {
 const attrs = useAttrs();
 const { t } = useLocale('loading');
 const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
 const animationEnabled = useAnimation();
 const neonEnabled = useNeonEffect();
 const loadingBarRef = ref<HTMLDivElement | null>(null);
@@ -99,6 +105,7 @@ const resolvedAriaLabel = computed(() => {
 
 const rootStyles = computed<Record<string, string>>(() => {
   const styles: Record<string, string> = {
+    ...themeOverrides.value,
     '--ex-loading-bar-height': `${normalizedHeight.value}px`,
     '--ex-loading-bar-progress': String(normalizedPercentage.value / 100),
   };

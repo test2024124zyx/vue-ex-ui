@@ -13,9 +13,8 @@
       role="combobox"
       aria-haspopup="dialog"
       :aria-expanded="visible"
-      :aria-disabled="disabled"
+      v-bind="fieldAriaAttrs"
       :aria-label="ariaLabel || t('selectTime')"
-      :aria-describedby="ariaDescribedby"
       :aria-controls="panelId"
       :tabindex="disabled ? undefined : 0"
       @click="handleTriggerClick"
@@ -155,7 +154,7 @@
             <button
               type="button"
               class="ex-time-picker__now"
-              :disabled="disabled || !hasSelectableTime"
+              :disabled="!interactive || !hasSelectableTime"
               @click="selectNow"
             >
               {{ t('now') }}
@@ -163,7 +162,7 @@
             <button
               type="button"
               class="ex-time-picker__confirm"
-              :disabled="disabled || !isDraftSelectable"
+              :disabled="!interactive || !isDraftSelectable"
               @click="handleConfirm"
             >
               {{ t('confirm') }}
@@ -181,12 +180,12 @@ import type { ExTimePickerProps, ExTimePickerEmits, ExTimePickerExposed } from '
 import { useLocale } from '../../locale';
 import {
   useAnimation,
-  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
 } from '../config-provider/composables';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { generateId } from '../../utils/id';
@@ -212,8 +211,13 @@ const props = withDefaults(defineProps<ExTimePickerProps>(), {
 const emit = defineEmits<ExTimePickerEmits>();
 
 const { t } = useLocale('timePicker');
-const componentSize = useComponentSize(computed(() => props.size));
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 const attrs = useAttrs();
 
 const rootRef = ref<HTMLElement>();
@@ -245,13 +249,22 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const dropdownZIndex = useZIndexLayer('dropdown');
+const { styles: popupOverlayStyles, containsTarget } = usePopupOverlay({
+  active: () => visible.value,
+  container: panelRef,
+  zIndex: () => dropdownZIndex.value,
+  onEscape: () => {
+    close();
+    triggerRef.value?.focus();
+  },
+});
 const portalEffectClasses = computed(() => ({
   'ex-no-neon': !neonEffect.value,
   'ex-no-animation': !animation.value,
 }));
 const panelStyle = computed<Record<string, string>>(() => ({
   ...panelPositionStyle.value,
-  zIndex: String(dropdownZIndex.value),
+  ...popupOverlayStyles.value,
 }));
 
 // 当前编辑中的时分秒
@@ -266,7 +279,7 @@ const pad = (n: number): string => String(n).padStart(2, '0');
 const rootClasses = computed(() => [
   'ex-time-picker',
   `ex-time-picker--${componentSize.value}`,
-  { 'is-disabled': props.disabled, 'is-active': visible.value },
+  { 'is-disabled': disabled.value, 'is-active': visible.value },
   ...normalizeCustomClass(props.class),
 ]);
 
@@ -275,7 +288,7 @@ const rootStyle = computed(() => {
   return props.style;
 });
 
-const showClear = computed(() => props.clearable && !props.disabled && !!props.modelValue);
+const showClear = computed(() => props.clearable && interactive.value && !!props.modelValue);
 
 // 解析 modelValue -> draft
 const parseValue = (val: string) => {
@@ -502,7 +515,7 @@ const focusInitialCell = () => {
 };
 
 const open = (focusOptions = false) => {
-  if (props.disabled) return;
+  if (!interactive.value || visible.value) return;
   syncDraftFromValue();
   normalizeDraft();
   visible.value = true;
@@ -521,13 +534,13 @@ const close = () => {
 };
 
 const handleTriggerClick = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   if (visible.value) close();
   else open();
 };
 
 const emitValue = () => {
-  if (props.disabled || !isDraftSelectable.value) return;
+  if (!interactive.value || !isDraftSelectable.value) return;
   const value = formatDraft();
   emit('update:modelValue', value);
   emit('change', value);
@@ -535,7 +548,7 @@ const emitValue = () => {
 };
 
 const selectUnit = (unit: 'h' | 'm' | 's', value: number, disabled: boolean) => {
-  if (props.disabled || disabled) return;
+  if (!interactive.value || disabled) return;
   draft[unit] = value;
   if (!normalizeDependentUnits(unit)) return;
   emitValue();
@@ -543,7 +556,7 @@ const selectUnit = (unit: 'h' | 'm' | 's', value: number, disabled: boolean) => 
 };
 
 const selectNow = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   const now = new Date();
   const selection = findClosestSelectableTime({
     h: now.getHours(),
@@ -559,13 +572,13 @@ const selectNow = () => {
 };
 
 const handleConfirm = () => {
-  if (props.disabled || !isDraftSelectable.value) return;
+  if (!interactive.value || !isDraftSelectable.value) return;
   emitValue();
   close();
 };
 
 const handleClear = () => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
   emit('update:modelValue', '');
   emit('change', '');
   emit('clear');
@@ -580,7 +593,7 @@ const handleBlur = (e: FocusEvent) => {
 };
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value || e.isComposing) return;
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (!visible.value) open(true);
@@ -590,14 +603,16 @@ const handleKeydown = (e: KeyboardEvent) => {
     if (!visible.value) open(true);
   } else if (e.key === 'Escape' && visible.value) {
     e.preventDefault();
+    e.stopPropagation();
     close();
   }
 };
 
 const handleCellKeydown = (unit: TimeUnit, value: number, event: KeyboardEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value || event.isComposing) return;
   if (event.key === 'Escape') {
     event.preventDefault();
+    event.stopPropagation();
     close();
     triggerRef.value?.focus();
     return;
@@ -651,12 +666,7 @@ const handleCellKeydown = (unit: TimeUnit, value: number, event: KeyboardEvent) 
 const handleClickOutside = (event: MouseEvent) => {
   if (!visible.value) return;
   const target = event.target as Node;
-  if (
-    rootRef.value &&
-    !rootRef.value.contains(target) &&
-    panelRef.value &&
-    !panelRef.value.contains(target)
-  ) {
+  if (rootRef.value && !rootRef.value.contains(target) && !containsTarget(target)) {
     close();
   }
 };
@@ -673,12 +683,9 @@ watch(visible, isVisible => {
   }
 });
 
-watch(
-  () => props.disabled,
-  isDisabled => {
-    if (isDisabled) close();
-  }
-);
+watch(interactive, canInteract => {
+  if (!canInteract) close();
+});
 
 watch(
   () => props.teleported,

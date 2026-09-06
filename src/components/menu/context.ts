@@ -1,5 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import type { MenuMode, MenuSelectInfo } from './types';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface MenuContext {
   mode: ComputedRef<MenuMode>;
@@ -14,4 +15,4 @@ export interface MenuContext {
   handleOpenChange: (key: string, open: boolean) => void;
 }
 
-export const MENU_INJECTION_KEY: InjectionKey<MenuContext> = Symbol('ExMenu');
+export const MENU_INJECTION_KEY: InjectionKey<MenuContext> = createSharedInjectionKey('menu');

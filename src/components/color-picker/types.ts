@@ -12,6 +12,8 @@ export interface ExColorPickerProps {
   modelValue?: string;
   /** 是否禁用全部交互。 */
   disabled?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
   /** 组件尺寸。 */
   size?: ColorPickerSize;
   /** 是否展示并输出透明度。 */

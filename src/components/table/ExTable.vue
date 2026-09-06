@@ -462,21 +462,32 @@ const getFixedSide = (column: TableColumn): 'left' | 'right' | undefined => {
   return column.fixed || undefined;
 };
 
-const getFixedOffset = (columnIndex: number, side: 'left' | 'right'): string => {
-  const candidates =
-    side === 'left'
-      ? leafColumns.value.slice(0, columnIndex)
-      : leafColumns.value.slice(columnIndex + 1).reverse();
-  const lengths = candidates
-    .filter(column => getFixedSide(column) === side)
-    .map(column => column.width ?? column.minWidth ?? 0)
-    .map(toCssLength);
-  if (lengths.length === 0) return '0px';
-  if (lengths.every(length => /^\d+(?:\.\d+)?px$/.test(length))) {
-    return `${lengths.reduce((sum, length) => sum + Number.parseFloat(length), 0)}px`;
-  }
-  return `calc(${lengths.join(' + ')})`;
-};
+// 按列构建左右前缀偏移，所有行复用同一结果，列宽变化后自动失效。
+const fixedOffsets = computed(() => {
+  const columns = leafColumns.value;
+  const build = (side: 'left' | 'right') => {
+    const offsets: string[] = Array(columns.length).fill('0px');
+    let pixels = 0;
+    const relativeLengths: string[] = [];
+    const direction = side === 'left' ? 1 : -1;
+    for (
+      let index = side === 'left' ? 0 : columns.length - 1;
+      index >= 0 && index < columns.length;
+      index += direction
+    ) {
+      const column = columns[index];
+      if (!column || getFixedSide(column) !== side) continue;
+      offsets[index] = relativeLengths.length
+        ? `calc(${[...relativeLengths, ...(pixels ? [`${pixels}px`] : [])].join(' + ')})`
+        : `${pixels}px`;
+      const length = toCssLength(column.width ?? column.minWidth ?? 0);
+      if (/^\d+(?:\.\d+)?px$/.test(length)) pixels += Number.parseFloat(length);
+      else relativeLengths.push(length);
+    }
+    return offsets;
+  };
+  return { left: build('left'), right: build('right') };
+});
 
 const getColumnStyle = (column: TableColumn, index = -1, header = false) => {
   const styles: Record<string, string> = {};
@@ -492,7 +503,7 @@ const getColumnStyle = (column: TableColumn, index = -1, header = false) => {
   const fixed = getFixedSide(column);
   if (fixed && index >= 0) {
     styles.position = 'sticky';
-    styles[fixed] = getFixedOffset(index, fixed);
+    styles[fixed] = fixedOffsets.value[fixed][index] ?? '0px';
     styles.zIndex = header ? '3' : '2';
   }
   return styles;
@@ -548,6 +559,10 @@ const sortedRows = computed<IndexedTableRow[]>(() => {
 
   const dataIndex = column.dataIndex || column.key;
   return rows.sort((a, b) => {
+    if (column.sorter) {
+      const result = column.sorter(a.record, b.record);
+      return sortInfo.value.order === 'asc' ? result : -result;
+    }
     const aVal = a.record[dataIndex];
     const bVal = b.record[dataIndex];
 
@@ -675,8 +690,11 @@ watch(
 const rowSelectable = (record: TableDataItem, index: number): boolean =>
   props.isRowSelectable ? props.isRowSelectable(record, index) : true;
 
+// 选中键保留有序数组对外输出，内部成员查询统一复用集合，避免全选时平方级扫描。
+const selectedKeySet = computed(() => new Set(internalSelectedKeys.value));
+
 const isRowSelected = (record: TableDataItem, index: number): boolean =>
-  internalSelectedKeys.value.includes(getRowKey(record, index));
+  selectedKeySet.value.has(getRowKey(record, index));
 
 // 当前展示数据中「可选行」的 key 列表（全选/半选状态以此为准）
 const selectableKeys = computed(() =>
@@ -687,18 +705,15 @@ const selectableKeys = computed(() =>
 
 const allSelected = computed(
   () =>
-    selectableKeys.value.length > 0 &&
-    selectableKeys.value.every(k => internalSelectedKeys.value.includes(k))
+    selectableKeys.value.length > 0 && selectableKeys.value.every(k => selectedKeySet.value.has(k))
 );
 
 const someSelected = computed(
-  () => !allSelected.value && selectableKeys.value.some(k => internalSelectedKeys.value.includes(k))
+  () => !allSelected.value && selectableKeys.value.some(k => selectedKeySet.value.has(k))
 );
 
 const selectedRowsData = computed(() =>
-  props.data.filter((record, index) =>
-    internalSelectedKeys.value.includes(getRowKey(record, index))
-  )
+  props.data.filter((record, index) => selectedKeySet.value.has(getRowKey(record, index)))
 );
 
 const commitSelection = () => {
@@ -714,7 +729,7 @@ const toggleRowSelectionAtIndex = (
   if (props.loading || !rowSelectable(record, sourceIndex)) return;
 
   const key = getRowKey(record, sourceIndex);
-  const currentlySelected = internalSelectedKeys.value.includes(key);
+  const currentlySelected = selectedKeySet.value.has(key);
   const next = selected ?? !currentlySelected;
 
   if (props.selectionType === 'radio') {

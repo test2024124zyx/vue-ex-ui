@@ -1,4 +1,4 @@
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent, h, nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -212,7 +212,8 @@ describe('ExSubMenu', () => {
     expect(document.activeElement).toBe(firstItem);
 
     firstItem?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    await nextTick();
+    // 全局浮层接收 Escape 后，等待受控状态回写及 Dropdown 的关闭焦点恢复完成。
+    await flushPromises();
     expect(title.attributes('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(title.element);
   });

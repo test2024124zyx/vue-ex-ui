@@ -18,6 +18,16 @@
     "./style.css": "./dist/ex-ui.css",
     "./base.css": "./dist/es/assets/style-base.css",
     "./font.css": "./dist/es/assets/style-font.css",
+    "./resolver": {
+      "import": {
+        "types": "./dist/resolver/index.d.ts",
+        "default": "./dist/resolver/index.js"
+      },
+      "require": {
+        "types": "./dist/resolver/index.d.cts",
+        "default": "./dist/resolver/index.cjs"
+      }
+    },
     "./es": {
       "types": "./dist/es/index.d.ts",
       "import": "./dist/es/index.js"
@@ -42,9 +52,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:full && npm run build:es",
+    "build": "npm run build:full && npm run build:es && npm run build:resolver",
     "build:full": "vite build",
     "build:es": "vite build --config vite.config.es.ts",
+    "build:resolver": "vite build --config vite.config.resolver.ts",
     "verify:package": "node scripts/verify-package.mjs",
     "verify:version": "node scripts/verify-version.mjs",
     "verify:tree-shaking": "node scripts/verify-tree-shaking.mjs",

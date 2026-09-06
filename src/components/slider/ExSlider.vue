@@ -68,7 +68,7 @@
         :aria-valuenow="currentValue as number"
         :aria-label="ariaLabel || t('slider.button')"
         :aria-description="ariaDescription"
-        :aria-disabled="disabled"
+        v-bind="fieldAriaAttrs"
         @mousedown="handleThumbMouseDown($event, 0)"
         @touchstart="handleThumbMouseDown($event, 0)"
         @keydown="handleKeyDown($event, 0)"
@@ -99,7 +99,7 @@
           :aria-valuenow="(currentValue as [number, number])[0]"
           :aria-label="getRangeThumbAriaLabel(0)"
           :aria-description="ariaDescription"
-          :aria-disabled="disabled"
+          v-bind="fieldAriaAttrs"
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
@@ -127,7 +127,7 @@
           :aria-valuenow="(currentValue as [number, number])[1]"
           :aria-label="getRangeThumbAriaLabel(1)"
           :aria-description="ariaDescription"
-          :aria-disabled="disabled"
+          v-bind="fieldAriaAttrs"
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
@@ -158,6 +158,8 @@
           :max="max"
           :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.input')"
           @change="handleInputChange"
         />
@@ -171,6 +173,8 @@
           :max="(currentValue as [number, number])[1]"
           :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.startInput')"
           @change="handleInputChange"
         />
@@ -183,6 +187,8 @@
           :max="max"
           :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.endInput')"
           @change="handleInputChange"
         />
@@ -195,7 +201,7 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExSlider',
@@ -212,7 +218,7 @@ const props = withDefaults(defineProps<ExSliderProps>(), {
   showStops: false,
   showTooltip: true,
   tooltipPlacement: 'top',
-  size: 'medium',
+  size: undefined,
   direction: 'horizontal',
   height: '200px',
   reverse: false,
@@ -222,7 +228,14 @@ const emit = defineEmits<ExSliderEmits>();
 const { t } = useI18n();
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 // 失焦：触发 FormItem 的 blur 校验
 const handleThumbBlur = () => {
@@ -254,9 +267,13 @@ const inputEndValue = ref(0);
 
 // 计算属性
 const sliderClasses = computed(() => {
-  const classes = ['ex-slider', `ex-slider--${props.size}`, `ex-slider--${props.direction}`];
+  const classes = [
+    'ex-slider',
+    `ex-slider--${componentSize.value}`,
+    `ex-slider--${props.direction}`,
+  ];
 
-  if (props.disabled) classes.push('ex-slider--disabled');
+  if (disabled.value) classes.push('ex-slider--disabled');
   if (props.range) classes.push('ex-slider--range');
   if (props.reverse) classes.push('ex-slider--reverse');
   if (isDragging.value || isDraggingStart.value || isDraggingEnd.value) {
@@ -464,16 +481,18 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
  * @param commit 是否提交（emit change）：拖拽过程中为 false，仅在松手/键盘/点击时为 true
  */
 const updateValue = (newValue: number | [number, number], commit = true) => {
+  if (!interactive.value) return;
   currentValue.value = newValue;
   emit('update:modelValue', newValue);
   emit('input', newValue);
   if (commit) {
     emit('change', newValue);
+    formItem?.onFieldChange();
   }
 };
 
 const handleTrackClick = (event: MouseEvent | TouchEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
 
   event.preventDefault();
   const { x, y } = getPositionFromEvent(event);
@@ -495,7 +514,7 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
 };
 
 const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -520,7 +539,7 @@ const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number
 };
 
 const handleMouseMove = (event: MouseEvent | TouchEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
 
   if ('touches' in event && event.cancelable) {
     event.preventDefault();
@@ -557,13 +576,14 @@ const handleMouseUp = () => {
   document.removeEventListener('touchcancel', handleMouseUp);
 
   // 拖拽结束时提交一次 change
-  if (wasDragging) {
+  if (wasDragging && interactive.value) {
     emit('change', currentValue.value);
+    formItem?.onFieldChange();
   }
 };
 
 const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
-  if (props.disabled) return;
+  if (!interactive.value || event.isComposing) return;
 
   const { key } = event;
 
@@ -623,6 +643,9 @@ const handleInputChange = () => {
 };
 
 // 监听
+watch(interactive, canInteract => {
+  if (!canInteract) handleMouseUp();
+});
 watch(
   [() => props.modelValue, () => props.range],
   ([newValue, isRange]) => {

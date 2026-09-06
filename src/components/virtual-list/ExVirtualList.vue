@@ -28,7 +28,7 @@
           :ref="el => setItemRef(el as HTMLElement, item.index)"
           class="ex-virtual-list__item"
           :class="{ 'is-last': item.index === dataSource.length - 1 }"
-          :style="itemStyle(item.index)"
+          :style="itemStyle()"
           :role="itemRole"
           :tabindex="getItemTabindex(item.index)"
           :aria-posinset="itemRole ? item.index + 1 : undefined"
@@ -72,10 +72,10 @@ const props = withDefaults(defineProps<ExVirtualListProps>(), {
 
 const emit = defineEmits<ExVirtualListEmits>();
 
-// Refs
+// 容器引用
 const listRef = ref<HTMLElement>();
 
-// State - 使用 shallowRef 优化性能
+// 窗口状态使用浅层引用，避免对大数据集递归转换
 const startIndex = shallowRef(0);
 const endIndex = shallowRef(0);
 const offsetY = shallowRef(0);
@@ -103,7 +103,11 @@ let cacheInitialized = false;
 
 // 项目元素引用 - 用于测量实际高度
 const itemRefs = new Map<number, HTMLElement>();
+const itemIndices = new WeakMap<HTMLElement, number>();
 const resizeObserver = ref<ResizeObserver | null>(null);
+let disposed = false;
+const pendingMeasurements = new Map<number, HTMLElement>();
+let measurementScheduled = false;
 
 // 计算属性
 const containerClasses = computed(() => ['ex-virtual-list', props.className]);
@@ -165,17 +169,6 @@ const getItemHeight = (index: number): number => {
   }
 };
 
-// 更新高度缓存
-const updateHeightCache = (index: number, height: number) => {
-  const oldHeight = heightCache.get(index) || 0;
-  heightCache.set(index, height);
-
-  // 更新缓存的总高度
-  if (cacheInitialized) {
-    cachedTotalHeight.value += height - oldHeight;
-  }
-};
-
 // 构建偏移量缓存（前缀和数组）
 const buildOffsetCache = () => {
   const cache: number[] = [0];
@@ -221,8 +214,8 @@ const totalHeight = computed(() => {
   return cachedTotalHeight.value;
 });
 
-// 二分查找 - 查找第一个偏移量 >= scrollTop 的索引
-const binarySearch = (scrollTop: number): number => {
+// 二分查找边界；起点跳过相等偏移，终点保留相等偏移。
+const findOffsetIndex = (offset: number, skipEqual = false): number => {
   const cache = offsetCache.value;
   let left = 0;
   let right = cache.length - 1;
@@ -231,20 +224,27 @@ const binarySearch = (scrollTop: number): number => {
     const mid = Math.floor((left + right) / 2);
     const midValue = cache[mid];
 
-    if (midValue !== undefined && midValue < scrollTop) {
+    if (midValue !== undefined && (midValue < offset || (skipEqual && midValue === offset))) {
       left = mid + 1;
     } else {
       right = mid;
     }
   }
 
-  return Math.max(0, left - 1);
+  return left;
 };
 
 // 计算可见范围 - 优化版本
 const updateVisibleRange = () => {
   const listEl = listRef.value;
-  if (!listEl || props.dataSource.length === 0) return;
+  if (!listEl || disposed) return;
+  if (props.dataSource.length === 0) {
+    startIndex.value = 0;
+    endIndex.value = 0;
+    offsetY.value = 0;
+    listEl.scrollTop = 0;
+    return;
+  }
 
   // 如果不使用虚拟滚动，渲染所有项目
   if (!shouldUseVirtual.value) {
@@ -254,12 +254,18 @@ const updateVisibleRange = () => {
     return;
   }
 
-  const scrollTop = listEl.scrollTop;
   const clientHeight = listEl.clientHeight;
+  if (normalizedFixedItemHeight.value === undefined && !cacheInitialized) buildOffsetCache();
+  const contentHeight = Number(totalHeight.value);
+  const scrollTop = Math.min(
+    Math.max(0, listEl.scrollTop),
+    Math.max(0, contentHeight - clientHeight)
+  );
+  // 数据缩短或容器增高时，旧滚动位置可能已经超出有效内容。
+  if (scrollTop !== listEl.scrollTop) listEl.scrollTop = scrollTop;
 
   let start: number;
-  // 动态高度未找到视口下界时，应渲染到数据末尾。
-  let end = props.dataSource.length;
+  let end: number;
 
   const fixedItemHeight = normalizedFixedItemHeight.value;
   if (fixedItemHeight !== undefined) {
@@ -272,33 +278,22 @@ const updateVisibleRange = () => {
       buildOffsetCache();
     }
 
-    start = binarySearch(scrollTop);
-
-    // 从 start 开始查找 end
-    const cache = offsetCache.value;
-    const scrollBottom = scrollTop + clientHeight;
-
-    for (let i = start; i < cache.length - 1; i++) {
-      const cacheValue = cache[i];
-      if (cacheValue !== undefined && cacheValue >= scrollBottom) {
-        end = i;
-        break;
-      }
-    }
+    start = Math.max(0, findOffsetIndex(scrollTop, true) - 1);
+    end = findOffsetIndex(scrollTop + clientHeight);
   }
 
   // 应用缓冲区
-  const bufferStart = Math.max(0, start - props.buffer);
-  const bufferEnd = Math.min(props.dataSource.length, end + props.buffer);
+  const buffer = Number.isFinite(props.buffer) ? Math.max(0, Math.floor(props.buffer)) : 0;
+  const bufferStart = Math.max(0, start - buffer);
+  const bufferEnd = Math.min(props.dataSource.length, end + buffer);
 
   // 只在变化时更新
   if (startIndex.value !== bufferStart || endIndex.value !== bufferEnd) {
     startIndex.value = bufferStart;
     endIndex.value = bufferEnd;
-
-    // 使用缓存的偏移量 - O(1)
-    offsetY.value = getOffset(bufferStart);
   }
+  // 高度变化时窗口索引可能不变，偏移仍必须同步更新。
+  offsetY.value = getOffset(bufferStart);
 };
 
 // 可见数据 - 使用 slice 避免重新创建数组
@@ -340,26 +335,28 @@ const setItemRef = (el: HTMLElement | null, index: number) => {
     if (old && resizeObserver.value) {
       resizeObserver.value.unobserve(old);
     }
+    if (old) itemIndices.delete(old);
+    pendingMeasurements.delete(index);
     itemRefs.delete(index);
     return;
   }
 
+  if (itemRefs.get(index) === el) return;
   itemRefs.set(index, el);
+  itemIndices.set(el, index);
 
   // 如果是动态高度，动态观察新出现的节点并测量实际高度
   if (typeof props.itemHeight === 'function') {
     if (resizeObserver.value) {
       resizeObserver.value.observe(el);
     }
-    nextTick(() => {
-      measureItemHeight(index, el);
-    });
+    queueMeasurement(index, el);
   }
 };
 
 // 测量项目实际高度
-const measureItemHeight = (index: number, element: HTMLElement) => {
-  if (!element) return;
+const measureItemHeight = (index: number, element: HTMLElement): boolean => {
+  if (itemRefs.get(index) !== element || index >= props.dataSource.length) return false;
 
   try {
     const actualHeight = element.offsetHeight;
@@ -367,31 +364,46 @@ const measureItemHeight = (index: number, element: HTMLElement) => {
 
     // 如果实际高度与缓存高度不同，更新缓存
     if (actualHeight > 0 && actualHeight !== cachedHeight) {
-      updateHeightCache(index, actualHeight);
-
-      // 重新构建偏移量缓存
-      if (cacheInitialized) {
-        buildOffsetCache();
-      }
+      heightCache.set(index, actualHeight);
+      return true;
     }
   } catch (error) {
     logger.error(`Error measuring height for item ${index}:`, error);
   }
+  return false;
+};
+
+// 同一次渲染和尺寸通知合并测量，只重建一次前缀和，避免逐行触发全量扫描。
+const queueMeasurement = (index: number, element: HTMLElement) => {
+  pendingMeasurements.set(index, element);
+  if (measurementScheduled) return;
+  measurementScheduled = true;
+  nextTick(() => {
+    measurementScheduled = false;
+    if (disposed || typeof props.itemHeight !== 'function') {
+      pendingMeasurements.clear();
+      return;
+    }
+    let changed = false;
+    pendingMeasurements.forEach((element, index) => {
+      changed = measureItemHeight(index, element) || changed;
+    });
+    pendingMeasurements.clear();
+    if (changed) {
+      buildOffsetCache();
+      updateVisibleRange();
+    }
+  });
 };
 
 // 项目样式 - 动态高度时不设置固定高度
-const itemStyle = (index: number): CSSProperties => {
+const itemStyle = (): CSSProperties => {
   const fixedItemHeight = normalizedFixedItemHeight.value;
   if (fixedItemHeight !== undefined) {
     return { height: `${fixedItemHeight}px` };
   }
 
-  // 动态高度时，让内容自然撑开，然后测量
-  const cachedHeight = heightCache.get(index);
-  if (cachedHeight) {
-    return { minHeight: `${cachedHeight}px` };
-  }
-
+  // 缓存只参与虚拟定位，不能作为最小高度阻止真实内容收缩。
   return {};
 };
 
@@ -529,7 +541,12 @@ const refresh = () => {
   cacheInitialized = false;
 
   nextTick(() => {
+    if (disposed) return;
+    if (typeof props.itemHeight === 'function') buildOffsetCache();
     updateVisibleRange();
+    if (typeof props.itemHeight === 'function') {
+      itemRefs.forEach((element, index) => queueMeasurement(index, element));
+    }
   });
 };
 
@@ -604,46 +621,34 @@ const getVisibleRange = () => {
   };
 };
 
-// 设置 ResizeObserver 监听项目尺寸变化
+// 同时监听视口和动态项目，百分比高度及父布局变化无需依赖滚动事件。
 const setupResizeObserver = () => {
   if (typeof ResizeObserver === 'undefined') {
     logger.warn('ResizeObserver is not available');
     return;
   }
 
-  // 只在动态高度时使用 ResizeObserver
-  if (typeof props.itemHeight !== 'function') {
-    return;
-  }
-
   resizeObserver.value = new ResizeObserver(entries => {
-    let needsUpdate = false;
-
+    if (disposed) return;
     for (const entry of entries) {
       const element = entry.target as HTMLElement;
-      const index = Array.from(itemRefs.entries()).find(([, el]) => el === element)?.[0];
-
-      if (index !== undefined) {
-        const newHeight = entry.contentRect.height;
-        const cachedHeight = heightCache.get(index);
-
-        if (newHeight > 0 && newHeight !== cachedHeight) {
-          updateHeightCache(index, newHeight);
-          needsUpdate = true;
-        }
+      if (element === listRef.value) {
+        updateVisibleRange();
+        checkInitialLoadMore();
+        continue;
+      }
+      const index = itemIndices.get(element);
+      if (index !== undefined && typeof props.itemHeight === 'function') {
+        // offsetHeight 与首次测量使用同一边框盒口径，避免分隔线累积误差。
+        queueMeasurement(index, element);
       }
     }
-
-    if (needsUpdate && cacheInitialized) {
-      buildOffsetCache();
-      updateVisibleRange();
-    }
   });
 
-  // 观察所有已渲染的项目
-  itemRefs.forEach(el => {
-    resizeObserver.value?.observe(el);
-  });
+  if (listRef.value) resizeObserver.value.observe(listRef.value);
+  if (typeof props.itemHeight === 'function') {
+    itemRefs.forEach(el => resizeObserver.value?.observe(el));
+  }
 };
 
 // 清理 ResizeObserver
@@ -657,6 +662,7 @@ const cleanupResizeObserver = () => {
 // 生命周期
 onMounted(() => {
   nextTick(() => {
+    if (disposed) return;
     // 动态高度：先构建偏移缓存，使 totalHeight/spacer 初始即正确
     if (typeof props.itemHeight === 'function' && shouldUseVirtual.value) {
       buildOffsetCache();
@@ -668,6 +674,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
+  pendingMeasurements.clear();
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -701,7 +709,19 @@ watch(
   () => {
     // itemHeight 变化时，清除缓存并重新计算
     refresh();
-  }
+    cleanupResizeObserver();
+    setupResizeObserver();
+  },
+  { flush: 'post' }
+);
+
+watch(
+  () => [props.height, props.virtual, props.threshold, props.buffer],
+  () => {
+    updateVisibleRange();
+    checkInitialLoadMore();
+  },
+  { flush: 'post' }
 );
 
 // 监听数据源变化（深度监听可能影响性能，仅在必要时使用）
