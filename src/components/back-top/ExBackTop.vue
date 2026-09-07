@@ -93,6 +93,7 @@ import {
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
+  useThemeOverrides,
 } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import type { ExBackTopProps, ExBackTopEmits, ExBackTopExposed, BackTopScrollInfo } from './types';
@@ -131,6 +132,7 @@ const configTheme = useConfigTheme();
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 const stickyZIndex = useZIndexLayer('sticky');
+const themeOverrides = useThemeOverrides();
 const { t } = useLocale('backTop');
 
 const emit = defineEmits<ExBackTopEmits>();
@@ -190,7 +192,7 @@ const rootClasses = computed(() => [
 ]);
 
 const rootStyle = computed(() => {
-  const base = getPositionStyle(props.position, props.offset);
+  const base = { ...themeOverrides.value, ...getPositionStyle(props.position, props.offset) };
   base.zIndex = props.zIndex ?? stickyZIndex.value;
   if (!props.style) return base;
   // Vue 会规范化样式数组，字符串样式只覆盖同名属性而不会清空固定定位。
@@ -347,6 +349,7 @@ defineExpose<ExBackTopExposed>({
 
 <style scoped lang="scss">
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-back-top {
   position: fixed;
@@ -521,17 +524,19 @@ defineExpose<ExBackTopExposed>({
 }
 
 // Teleport 按钮脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-back-top.ex-no-neon,
-.ex-back-top.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-back-top.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-back-top.ex-no-animation,
-.ex-back-top.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-back-top.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 @media print {

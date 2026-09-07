@@ -9,7 +9,7 @@
     >
       <div
         v-if="shouldRender"
-        v-show="visible"
+        v-show="overlayActive"
         class="ex-modal-root"
         :class="rootClasses"
         :data-theme="configTheme"
@@ -228,7 +228,9 @@ const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
   skipRedundantRequests: true,
 });
 
-const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
+const shouldRender = computed(
+  () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
+);
 const hasTitle = computed(() =>
   slots.title
     ? hasRenderableContent(slots.title())
@@ -297,7 +299,7 @@ const modalStyles = computed<CSSProperties>(() =>
   normalizedWidth.value ? { width: normalizedWidth.value } : {}
 );
 
-const { zIndex: overlayZIndex } = useOverlay({
+const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   active: () => visible.value,
   container: modalRef,
   zIndex: () => requestedZIndex.value,

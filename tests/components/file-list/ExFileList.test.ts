@@ -148,10 +148,16 @@ describe('ExFileList', () => {
           option => option.label
         );
       expect(labels()[0]).toBe('Name');
+      expect(
+        wrapper.findComponent(ExSelect).find('[role="combobox"]').attributes('aria-label')
+      ).toBe('Sort by');
 
       setLocale('zh-CN');
       await nextTick();
       expect(labels()[0]).toBe('名称');
+      expect(
+        wrapper.findComponent(ExSelect).find('[role="combobox"]').attributes('aria-label')
+      ).toBe('排序字段');
     });
   });
 

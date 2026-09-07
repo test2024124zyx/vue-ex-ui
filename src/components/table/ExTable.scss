@@ -79,9 +79,19 @@
   }
 
   .ex-table__body .ex-table__cell {
+    box-sizing: border-box;
+    height: calc(var(--ex-table-row-height) - 1px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // td 的垂直 padding 和内部控件最小内容高度不能撑大固定行高。
+  .ex-table__body > tr:not(.ex-table__spacer-row) > td {
+    box-sizing: border-box;
+    height: var(--ex-table-row-height);
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .ex-table__spacer-row {

@@ -173,3 +173,5 @@ const handleItemClick = (item: BreadcrumbItem, index: number) => {
   emit('click', item, index);
 };
 </script>
+
+<style scoped lang="scss" src="./ExBreadcrumb.scss"></style>

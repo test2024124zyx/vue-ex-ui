@@ -239,6 +239,7 @@ import { useFormItem } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { generateId } from '../../utils/id';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { hasRenderableContent } from '../../utils/vnode';
 import {
   calculateTextareaHeight,
@@ -524,6 +525,10 @@ const restoreSelectionAfterFormat = (
 };
 
 const commitNativeValue = (event: Event): void => {
+  if (effectiveDisabled.value || effectiveReadonly.value) {
+    discardNativeDraft();
+    return;
+  }
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
   const previousValue = target.value;
   const selectionStart = target.selectionStart;
@@ -564,12 +569,28 @@ const commitNativeValue = (event: Event): void => {
 
 let ignoreCompositionInput: string | null = null;
 
+function discardNativeDraft(): void {
+  isComposing.value = false;
+  ignoreCompositionInput = null;
+  displayValue.value = applyFormatter(rawValue.value);
+  if (inputRef.value) inputRef.value.value = displayValue.value;
+}
+
+watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
+  if (disabled || readonly) discardNativeDraft();
+});
+
 const handleCompositionStart = (): void => {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
   isComposing.value = true;
   ignoreCompositionInput = null;
 };
 
 const handleCompositionEnd = (event: CompositionEvent): void => {
+  if (effectiveDisabled.value || effectiveReadonly.value) {
+    discardNativeDraft();
+    return;
+  }
   if (!isComposing.value) return;
   isComposing.value = false;
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -583,6 +604,10 @@ const handleCompositionEnd = (event: CompositionEvent): void => {
 
 const handleInput = (event: Event): void => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  if (effectiveDisabled.value || effectiveReadonly.value) {
+    discardNativeDraft();
+    return;
+  }
   if (isComposing.value) {
     displayValue.value = target.value;
     return;
@@ -595,6 +620,10 @@ const handleInput = (event: Event): void => {
 };
 
 const handleChange = (event: Event): void => {
+  if (effectiveDisabled.value || effectiveReadonly.value) {
+    discardNativeDraft();
+    return;
+  }
   const modelValue = normalizeModelOutput(rawValue.value);
   if (props.modelModifiers?.lazy) emit('update:modelValue', modelValue);
   emit('change', modelValue, event);
@@ -616,7 +645,9 @@ const handleBlur = (event: FocusEvent): void => {
 
 const handleKeydown = (event: KeyboardEvent): void => {
   emit('keydown', event);
-  if (event.key === 'Enter') emit('enter', event);
+  if (event.key === 'Enter' && !isComposing.value && !isComposingKeyboardEvent(event)) {
+    emit('enter', event);
+  }
 };
 
 const handleKeyup = (event: KeyboardEvent): void => {

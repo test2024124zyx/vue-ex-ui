@@ -185,10 +185,15 @@
   animation: ex-cyber-glitch 4s steps(1, end) infinite;
 }
 
-// 配置提供器关闭动画时同步关闭全局扫描线和可选色差效果
-[class~='ex-no-animation'] .ex-app::after,
-[class~='ex-no-animation'].ex-app::after,
-[class~='ex-no-animation'] .ex-cyber-glitch {
+// Provider 使用自己的实例边界规则；手动工具类也不能越过内部的新 Provider。
+$manual-animation-root: '[class~="ex-no-animation"]:not([data-ex-provider])';
+$manual-animation-boundary: ':not(:is(#{$manual-animation-root} [data-ex-provider], #{$manual-animation-root} [data-ex-provider] *))';
+#{$manual-animation-root} .ex-app#{$manual-animation-boundary}::after,
+[class~='ex-no-animation'].ex-app::after {
+  animation: none !important;
+}
+
+#{$manual-animation-root} .ex-cyber-glitch#{$manual-animation-boundary} {
   animation: none !important;
 }
 

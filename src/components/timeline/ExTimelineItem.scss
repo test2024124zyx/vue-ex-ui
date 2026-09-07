@@ -51,22 +51,6 @@
       }
     }
 
-    // 反转顺序：第一项隐藏连接线
-    .ex-timeline--reverse > &:first-child {
-      padding-bottom: 0;
-
-      .ex-timeline-item__tail {
-        display: none;
-      }
-    }
-
-    // 反转顺序时，最后一项需要显示连接线
-    .ex-timeline--reverse > &:last-child {
-      .ex-timeline-item__tail {
-        display: block;
-      }
-    }
-
     // 左侧模式
     &.ex-timeline-item--left {
       grid-template-columns: auto 1fr;
@@ -540,10 +524,7 @@
     &--vertical.ex-timeline-item--alternate {
       grid-template-columns: auto 1fr;
 
-      .ex-timeline-item__content--left {
-        display: none !important;
-      }
-
+      .ex-timeline-item__content--left,
       .ex-timeline-item__content--right {
         display: block !important;
         text-align: left !important;

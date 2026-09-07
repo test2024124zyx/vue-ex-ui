@@ -394,12 +394,10 @@ const startSourceLoad = (): void => {
   })();
 
   sourceLoadPromise = task;
-  if (props.autoCompress) {
-    void task.then(resource => {
-      if (!resource || generation !== sourceGeneration || isDisposed) return;
-      void compress().catch(() => undefined);
-    });
-  }
+  void task.then(resource => {
+    if (!props.autoCompress || !resource || generation !== sourceGeneration || isDisposed) return;
+    void compress().catch(() => undefined);
+  });
 };
 
 const createCompressionOptions = (signal: AbortSignal) => ({
@@ -414,21 +412,41 @@ const createCompressionOptions = (signal: AbortSignal) => ({
   signal,
 });
 
-const runCompression = async (): Promise<CompressResult> => {
-  const resource = sourceResource.value ?? (await sourceLoadPromise);
-  if (!resource) {
-    throw (
-      sourceError.value ?? new ExImageCompressError('LOAD_FAILED', t('imageCompress.loadError'))
+/** 等待源加载的阶段同样可取消，不让重置或卸载留下悬挂的公开调用。 */
+const waitForSource = (signal: AbortSignal): Promise<ImageCompressLoadedResource | null> =>
+  new Promise((resolve, reject) => {
+    const abort = () => reject(new ExImageCompressError('ABORTED', '图片压缩已取消'));
+    if (signal.aborted) return abort();
+    signal.addEventListener('abort', abort, { once: true });
+    void Promise.resolve(sourceResource.value ?? sourceLoadPromise).then(
+      resource => {
+        signal.removeEventListener('abort', abort);
+        resolve(resource);
+      },
+      error => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+      }
     );
-  }
+  });
 
+const runCompression = async (): Promise<CompressResult> => {
   const generation = sourceGeneration;
   const controller = new AbortController();
   compressionController = controller;
   isCompressing.value = true;
-  emit('start');
 
   try {
+    const resource = sourceResource.value ?? (await waitForSource(controller.signal));
+    if (isDisposed || controller.signal.aborted || generation !== sourceGeneration) {
+      throw new ExImageCompressError('ABORTED', '图片压缩已取消');
+    }
+    if (!resource) {
+      throw (
+        sourceError.value ?? new ExImageCompressError('LOAD_FAILED', t('imageCompress.loadError'))
+      );
+    }
+    emit('start');
     const compressed = await compressLoadedImage(
       resource,
       createCompressionOptions(controller.signal)
@@ -557,7 +575,11 @@ watch(
     cancelCompression();
     clearCompressedResult();
     if (props.autoCompress && sourceResource.value && !isDisposed) {
-      void nextTick(() => compress().catch(() => undefined));
+      void nextTick(() => {
+        if (props.autoCompress && sourceResource.value && !isDisposed) {
+          void compress().catch(() => undefined);
+        }
+      });
     }
   }
 );

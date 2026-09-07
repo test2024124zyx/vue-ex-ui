@@ -250,7 +250,8 @@ const validateValue = (value: number): number => {
     if (result > props.max) result = props.max;
   }
 
-  return formatNumber(result);
+  // 精度与区间无法同时满足时，显式数值边界优先，防止舍入重新越界。
+  return Math.min(props.max, Math.max(props.min, formatNumber(result)));
 };
 
 // 解析输入值（增强输入验证）
@@ -278,14 +279,14 @@ const updateDisplayValue = () => {
     displayValue.value = '';
   } else {
     // 应用精度格式化
-    const formattedValue = formatNumber(props.modelValue);
+    const formattedValue = validateValue(props.modelValue);
     displayValue.value = String(formattedValue);
   }
 };
 
 // 监听 modelValue 变化
 watch(
-  () => props.modelValue,
+  [() => props.modelValue, () => props.precision, () => props.min, () => props.max],
   () => {
     updateDisplayValue();
   },
@@ -335,6 +336,7 @@ const handleInput = (event: Event) => {
       emit('input', parsedValue);
     }
   }
+  formItem?.onFieldInput?.();
 };
 
 const handleChange = (event: Event) => {

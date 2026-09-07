@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-drawer-wrapper {
   position: fixed;
@@ -356,15 +357,17 @@
 }
 
 // Teleport 包装器脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-drawer-wrapper.ex-no-neon,
-.ex-drawer-wrapper.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-drawer-wrapper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-drawer-wrapper.ex-no-animation,
-.ex-drawer-wrapper.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-drawer-wrapper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

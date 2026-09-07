@@ -11,10 +11,14 @@ export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T
 export type LocaleMessages = DeepPartial<Locale>;
 export type TranslationParams = Record<string, unknown>;
 
+interface TranslationOptions {
+  locale?: string;
+}
+
 interface LocaleComposer {
   locale: Ref<string>;
   messages: Readonly<Ref<Record<string, Record<string, unknown>>>>;
-  t(key: string, params?: TranslationParams): string;
+  t(key: string, params?: TranslationParams, options?: TranslationOptions): string;
   setLocale?: (locale: SupportedLocale) => void;
 }
 
@@ -73,12 +77,12 @@ function updateLocale(currentLocale: Ref<SupportedLocale>, locale: SupportedLoca
 
 const translateMessages = (
   messages: Record<SupportedLocale, Locale>,
-  locale: SupportedLocale,
+  locale: string,
   key: string,
   params?: TranslationParams
 ): string => {
   const keys = key.split('.');
-  let value: unknown = messages[locale];
+  let value: unknown = isSupportedLocale(locale) ? messages[locale] : undefined;
 
   for (const segment of keys) {
     if (
@@ -105,11 +109,7 @@ const translateMessages = (
     : value;
 };
 
-const translateBuiltIn = (
-  locale: SupportedLocale,
-  key: string,
-  params?: TranslationParams
-): string =>
+const translateBuiltIn = (locale: string, key: string, params?: TranslationParams): string =>
   translateMessages(SUPPORTED_LOCALES as Record<SupportedLocale, Locale>, locale, key, params);
 
 const isMessageRecord = (value: unknown): value is Record<string, unknown> =>
@@ -153,7 +153,8 @@ export function t(key: string, params?: TranslationParams): string {
 const getGlobalComposer = (): LocaleComposer => {
   const runtime = getLocaleRuntime();
   runtime.composer ??= {
-    t: (key, params) => translateBuiltIn(runtime.currentLocale.value, key, params),
+    t: (key, params, options) =>
+      translateBuiltIn(options?.locale ?? runtime.currentLocale.value, key, params),
     locale: runtime.currentLocale,
     messages: computed(
       () => SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>
@@ -167,26 +168,33 @@ const getGlobalComposer = (): LocaleComposer => {
 export function useI18n(): LocaleComposer {
   const globalComposer = getGlobalComposer();
   if (!getCurrentInstance()) return globalComposer;
-  return inject(LOCALE_COMPOSER_INJECTION_KEY, globalComposer);
+  const composer = inject(LOCALE_COMPOSER_INJECTION_KEY, globalComposer);
+  const providedLocale = inject(LOCALE_INJECTION_KEY, null);
+  if (!providedLocale) return composer;
+  return {
+    ...composer,
+    // 写入原翻译器，读取仍遵循最近 Provider 的显式语言约束。
+    locale: computed({
+      get: () => providedLocale.value,
+      set: value => {
+        composer.locale.value = value;
+      },
+    }),
+    // 将语言作为单次翻译选项传递，保留增强翻译能力且不改变其他子树。
+    t: (key, params, options) =>
+      composer.t(key, params, { ...options, locale: options?.locale ?? providedLocale.value }),
+  };
 }
 
 export function useLocale(componentName: keyof Locale) {
-  const providedLocale = inject(LOCALE_INJECTION_KEY, null);
+  const providedLocale = getCurrentInstance() ? inject(LOCALE_INJECTION_KEY, null) : null;
   const appComposer = getCurrentInstance() ? inject(LOCALE_COMPOSER_INJECTION_KEY, null) : null;
 
   if (providedLocale) {
+    const composer = appComposer ?? getGlobalComposer();
     const locale = computed(() => providedLocale.value);
-    const tWithScope = (key: string, params?: TranslationParams) => {
-      const scopedMessages = appComposer
-        ? (appComposer.messages.value as unknown as Record<SupportedLocale, Locale>)
-        : (SUPPORTED_LOCALES as unknown as Record<SupportedLocale, Locale>);
-      return translateMessages(
-        scopedMessages,
-        providedLocale.value,
-        `${componentName}.${key}`,
-        params
-      );
-    };
+    const tWithScope = (key: string, params?: TranslationParams) =>
+      composer.t(`${componentName}.${key}`, params, { locale: providedLocale.value });
     const messages = computed(() => {
       const allMessages = appComposer
         ? appComposer.messages.value
@@ -254,10 +262,15 @@ export function createLocaleProvider(options: LocaleProviderOptions = {}) {
       const composer: LocaleComposer = {
         locale,
         messages: messagesRef,
-        t: (key, params) => {
+        t: (key, params, translationOptions) => {
           const activeComposer = vueI18nComposer.value;
-          if (activeComposer) return params ? activeComposer.t(key, params) : activeComposer.t(key);
-          return translateMessages(messages, locale.value, key, params);
+          if (activeComposer) return activeComposer.t(key, params ?? {}, translationOptions);
+          return translateMessages(
+            messages,
+            translationOptions?.locale ?? locale.value,
+            key,
+            params
+          );
         },
         setLocale: nextLocale => {
           locale.value = nextLocale;

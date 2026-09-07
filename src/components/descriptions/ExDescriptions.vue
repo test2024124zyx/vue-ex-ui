@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { computed, Fragment, useId, useSlots } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import type { CSSProperties, Slots, VNode, VNodeArrayChildren } from 'vue';
 import { useComponentSize } from '../config-provider/composables';
 import type { DescriptionsAlign, DescriptionsClass, ExDescriptionsProps } from './types';
@@ -127,6 +128,7 @@ interface ParsedItem {
 }
 
 const MAX_TABLE_COLUMNS = 1000;
+const HORIZONTAL_CELLS_PER_ITEM = 2;
 const VALID_ALIGNMENTS: readonly DescriptionsAlign[] = ['left', 'center', 'right'];
 
 const normalizePositiveInteger = (value: unknown, fallback: number, maximum: number): number => {
@@ -142,7 +144,13 @@ const normalizePositiveInteger = (value: unknown, fallback: number, maximum: num
 };
 
 const normalizedColumn = computed(() =>
-  normalizePositiveInteger(props.column, 3, MAX_TABLE_COLUMNS)
+  normalizePositiveInteger(
+    props.column,
+    3,
+    props.direction === 'vertical'
+      ? MAX_TABLE_COLUMNS
+      : MAX_TABLE_COLUMNS / HORIZONTAL_CELLS_PER_ITEM
+  )
 );
 
 const normalizeAlign = (
@@ -184,7 +192,7 @@ const flatten = (children: VNodeArrayChildren | undefined): VNode[] => {
   return result;
 };
 
-const items = computed<ParsedItem[]>(() => {
+const items = useRenderComputed<ParsedItem[]>(() => {
   const raw = ((slots as Slots).default?.() ?? []) as VNodeArrayChildren;
   return flatten(raw)
     .filter(isItemVNode)

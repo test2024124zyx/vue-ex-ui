@@ -170,6 +170,32 @@ describe('ExImageCompress', () => {
     return { promise, resolve, reject };
   };
 
+  it.each([false, true])('源加载期间 autoCompress 从 %s 切换后遵循最新属性', async initial => {
+    const task = deferred<ImageCompressLoadedResource>();
+    utilityMocks.loadImageResource.mockReturnValue(task.promise);
+    utilityMocks.compressLoadedImage.mockResolvedValue(createResult());
+    const mounted = mountCompress({ props: { src: '/a.png', autoCompress: initial } });
+    await mounted.setProps({ autoCompress: !initial });
+    task.resolve(createResource('a'));
+    await flushPromises();
+    expect(utilityMocks.compressLoadedImage).toHaveBeenCalledTimes(initial ? 0 : 1);
+  });
+
+  it('reset 中止仍在等待源加载的手动压缩，新的压缩仍可继续', async () => {
+    const task = deferred<ImageCompressLoadedResource>();
+    utilityMocks.loadImageResource.mockReturnValue(task.promise);
+    utilityMocks.compressLoadedImage.mockResolvedValue(createResult());
+    const mounted = mountCompress({ props: { src: '/a.png' } });
+    const api = mounted.vm as unknown as ExImageCompressExposed;
+    const pending = api.compress().catch(error => error);
+    api.reset();
+    task.resolve(createResource('a'));
+    expect(await pending).toMatchObject({ code: 'ABORTED' });
+    expect(utilityMocks.compressLoadedImage).not.toHaveBeenCalled();
+    await api.compress();
+    expect(utilityMocks.compressLoadedImage).toHaveBeenCalledOnce();
+  });
+
   it('加载一次源资源，展示真实预览信息并发出完整 load 载荷', async () => {
     const resource = createResource('source');
     utilityMocks.loadImageResource.mockResolvedValue(resource);

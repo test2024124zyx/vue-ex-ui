@@ -296,10 +296,30 @@ const updateVisibleRange = () => {
   offsetY.value = getOffset(bufferStart);
 };
 
+const getInitialEndIndex = () => {
+  let end = props.dataSource.length;
+  // SSR 与首次水合均按声明的视口估算首屏，不依赖尚不存在的 DOM 尺寸。
+  if (shouldUseVirtual.value) {
+    const height =
+      typeof props.height === 'number' && props.height > 0 ? props.height : DEFAULT_ITEM_HEIGHT_PX;
+    let covered = 0;
+    end = 0;
+    while (end < props.dataSource.length && covered < height) {
+      covered += getItemHeight(end);
+      end += 1;
+    }
+    const buffer = Number.isFinite(props.buffer) ? Math.max(0, Math.floor(props.buffer)) : 0;
+    end = Math.min(props.dataSource.length, end + buffer);
+  }
+  return end;
+};
+// 将首屏估算写入实际窗口，ref 建立时不能暂时清空并重建已有插槽组件。
+endIndex.value = getInitialEndIndex();
+
 // 可见数据 - 使用 slice 避免重新创建数组
 const visibleData = computed(() => {
-  const start = startIndex.value;
-  const end = endIndex.value;
+  const start = shouldUseVirtual.value ? startIndex.value : 0;
+  const end = shouldUseVirtual.value ? endIndex.value : props.dataSource.length;
 
   return props.dataSource.slice(start, end).map((data, i) => ({
     data,
@@ -493,6 +513,13 @@ const focusItem = (index: number) => {
 
 // 列表项采用 roving tabindex，避免大量数据同时进入 Tab 顺序。
 const handleItemKeydown = (event: KeyboardEvent, item: { index: number; data: unknown }) => {
+  if (
+    !itemRole.value ||
+    event.target !== event.currentTarget ||
+    event.isComposing ||
+    event.keyCode === 229
+  )
+    return;
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleItemClick(item);

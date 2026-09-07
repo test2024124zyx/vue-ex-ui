@@ -209,6 +209,7 @@ import {
 } from '../config-provider/composables';
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -301,43 +302,51 @@ const rootClasses = computed(() => [
 const rootStyle = computed(() => (props.style ? props.style : undefined));
 
 // ---- 树结构索引 ----
+interface IndexedNode {
+  node: TreeSelectNode;
+  parent: string | number | null;
+  level: number;
+  index: number;
+  end: number;
+}
 const maps = computed(() => {
   const nodeMap = new Map<string | number, TreeSelectNode>();
   const parentMap = new Map<string | number, string | number | null>();
-  const build = (nodes: TreeSelectNode[], parent: TreeSelectNode | null) => {
-    for (const n of nodes) {
-      nodeMap.set(n.value, n);
-      parentMap.set(n.value, parent ? parent.value : null);
-      if (n.children) build(n.children, n);
+  const entries: IndexedNode[] = [];
+  const indices = new Map<string | number, IndexedNode>();
+  const stack: Array<{ nodes: TreeSelectNode[]; next: number; owner?: IndexedNode }> = [
+    { nodes: props.data, next: 0 },
+  ];
+  // 迭代先序遍历记录子树半开区间，避免深层递归及每个节点重复扫描全部后代。
+  while (stack.length) {
+    const frame = stack[stack.length - 1]!;
+    const node = frame.nodes[frame.next++];
+    if (!node) {
+      if (frame.owner) frame.owner.end = entries.length;
+      stack.pop();
+      continue;
     }
-  };
-  build(props.data, null);
-  return { nodeMap, parentMap };
+    const entry: IndexedNode = {
+      node,
+      parent: frame.owner?.node.value ?? null,
+      level: stack.length - 1,
+      index: entries.length,
+      end: entries.length + 1,
+    };
+    entries.push(entry);
+    indices.set(node.value, entry);
+    nodeMap.set(node.value, node);
+    parentMap.set(node.value, entry.parent);
+    if (node.children?.length) stack.push({ nodes: node.children, next: 0, owner: entry });
+  }
+  return { nodeMap, parentMap, entries, indices };
 });
 const nodeMap = computed(() => maps.value.nodeMap);
 const parentMap = computed(() => maps.value.parentMap);
 
 const getDescendants = (node: TreeSelectNode): TreeSelectNode[] => {
-  const res: TreeSelectNode[] = [];
-  const dfs = (nodes?: TreeSelectNode[]) => {
-    for (const c of nodes ?? []) {
-      res.push(c);
-      if (c.children) dfs(c.children);
-    }
-  };
-  dfs(node.children);
-  return res;
-};
-
-const walk = (
-  nodes: TreeSelectNode[],
-  cb: (node: TreeSelectNode, ancestors: TreeSelectNode[]) => void,
-  ancestors: TreeSelectNode[] = []
-) => {
-  for (const n of nodes) {
-    cb(n, ancestors);
-    if (n.children) walk(n.children, cb, [...ancestors, n]);
-  }
+  const entry = maps.value.indices.get(node.value);
+  return entry ? maps.value.entries.slice(entry.index + 1, entry.end).map(item => item.node) : [];
 };
 
 // ---- 过滤 ----
@@ -346,12 +355,14 @@ const filterActive = computed(() => props.filterable && !!lowerQuery.value);
 const visibleSet = computed<Set<string | number> | null>(() => {
   if (!filterActive.value) return null;
   const set = new Set<string | number>();
-  walk(props.data, (node, ancestors) => {
-    if (node.label.toLowerCase().includes(lowerQuery.value)) {
-      set.add(node.value);
-      ancestors.forEach(a => set.add(a.value));
+  const entries = maps.value.entries;
+  for (let index = entries.length - 1; index >= 0; index--) {
+    const entry = entries[index]!;
+    if (set.has(entry.node.value) || entry.node.label.toLowerCase().includes(lowerQuery.value)) {
+      set.add(entry.node.value);
+      if (entry.parent !== null) set.add(entry.parent);
     }
-  });
+  }
   return set;
 });
 
@@ -364,16 +375,19 @@ interface FlatNode {
 const flatNodes = computed<FlatNode[]>(() => {
   const out: FlatNode[] = [];
   const vset = visibleSet.value;
-  const dfs = (nodes: TreeSelectNode[], level: number) => {
-    for (const node of nodes) {
-      if (vset && !vset.has(node.value)) continue;
-      const hasChildren = !!(node.children && node.children.length);
-      const expanded = filterActive.value ? true : expandedKeys.value.has(node.value);
-      out.push({ node, level, hasChildren, expanded });
-      if (hasChildren && expanded) dfs(node.children!, level + 1);
+  const entries = maps.value.entries;
+  for (let index = 0; index < entries.length;) {
+    const entry = entries[index]!;
+    const { node, level } = entry;
+    if (vset && !vset.has(node.value)) {
+      index = entry.end;
+      continue;
     }
-  };
-  dfs(props.data, 0);
+    const hasChildren = entry.end > index + 1;
+    const expanded = filterActive.value || expandedKeys.value.has(node.value);
+    out.push({ node, level, hasChildren, expanded });
+    index = expanded ? index + 1 : entry.end;
+  }
   return out;
 });
 
@@ -412,7 +426,7 @@ const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
 };
 
 const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
-  if (!interactive.value || flat.node.disabled || event.isComposing) return;
+  if (!interactive.value || flat.node.disabled || isComposingKeyboardEvent(event)) return;
 
   const currentIndex = flatNodes.value.findIndex(item => item.node.value === flat.node.value);
   if (currentIndex < 0) return;
@@ -492,9 +506,20 @@ const showClear = computed(() => {
 });
 
 const isChecked = (node: TreeSelectNode): boolean => checkedSet.value.has(node.value);
+const selectedDescendantSet = computed(() => {
+  const prefix = [0];
+  for (const entry of maps.value.entries) {
+    prefix.push(prefix[prefix.length - 1]! + Number(checkedSet.value.has(entry.node.value)));
+  }
+  return new Set(
+    maps.value.entries
+      .filter(entry => prefix[entry.end]! > prefix[entry.index + 1]!)
+      .map(entry => entry.node.value)
+  );
+});
 const isIndeterminate = (node: TreeSelectNode): boolean => {
   if (props.checkStrictly || isChecked(node)) return false;
-  return getDescendants(node).some(d => checkedSet.value.has(d.value));
+  return selectedDescendantSet.value.has(node.value);
 };
 const getAriaChecked = (node: TreeSelectNode): boolean | 'mixed' => {
   if (isIndeterminate(node)) return 'mixed';
@@ -644,7 +669,7 @@ const handleBlur = (e: FocusEvent) => {
   formItem?.onFieldBlur();
 };
 const handleKeydown = (e: KeyboardEvent) => {
-  if (!interactive.value || e.isComposing) return;
+  if (e.target !== e.currentTarget || !interactive.value || isComposingKeyboardEvent(e)) return;
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (!visible.value) open(true);
@@ -663,7 +688,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 };
 
 const handleSearchKeydown = (event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
   if (event.key === 'Escape' && visible.value) {
     event.preventDefault();
     event.stopPropagation();
@@ -685,7 +710,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 const expandAll = () => {
   const next = new Set<string | number>();
-  walk(props.data, node => {
+  maps.value.entries.forEach(({ node }) => {
     if (!node.disabled && node.children && node.children.length) next.add(node.value);
   });
   expandedKeys.value = next;

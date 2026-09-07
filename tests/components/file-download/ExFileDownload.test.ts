@@ -107,6 +107,7 @@ describe('ExFileDownload', () => {
   let clickedAnchors: Array<{ href: string; download: string }> = [];
   let createObjectURL: ReturnType<typeof vi.fn>;
   let revokeObjectURL: ReturnType<typeof vi.fn>;
+  let pageBase: HTMLBaseElement;
 
   beforeEach(() => {
     wrappers = [];
@@ -123,7 +124,10 @@ describe('ExFileDownload', () => {
       revokeObjectURL: { configurable: true, value: revokeObjectURL },
     });
     vi.stubGlobal('URL', TestURL);
-    vi.stubGlobal('location', new TestURL('https://app.example/page'));
+    // 使用真实文档基础地址，保持组件和浏览器链接的相对 URL 解析一致。
+    pageBase = document.createElement('base');
+    pageBase.href = 'https://app.example/page';
+    document.head.prepend(pageBase);
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
       this: HTMLAnchorElement
     ) {
@@ -134,6 +138,7 @@ describe('ExFileDownload', () => {
   afterEach(() => {
     wrappers.reverse().forEach(wrapper => wrapper.unmount());
     wrappers = [];
+    pageBase.remove();
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();

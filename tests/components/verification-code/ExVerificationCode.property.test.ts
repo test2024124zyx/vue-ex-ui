@@ -958,8 +958,8 @@ describe('Properties 15-18: rendering and public contracts', () => {
   });
 
   it.each([
-    ['numeric', 'numeric', '[0-9]*'],
-    ['alphanumeric', 'text', undefined],
+    ['numeric', 'numeric', '[0-9]{6}'],
+    ['alphanumeric', 'text', '[A-Za-z0-9]{6}'],
   ] as const)('maps %s mode to truthful mobile input attributes', (mode, inputmode, pattern) => {
     const wrapper = mount(ExVerificationCode, { props: { length: 6, inputMode: mode } });
     const input = wrapper.get('.ex-verification-code__hidden-input');

@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue';
+import { onScopeDispose, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 
 export type VisibilityGuard = () => boolean | Promise<boolean>;
@@ -51,6 +51,15 @@ export function useGuardedVisibility(
   let openRevision = 0;
   let closeRevision = 0;
   let pendingClose: Promise<boolean> | null = null;
+  let disposed = false;
+
+  // 销毁撤销全部异步意图，迟到的守卫不能再触发业务回调。
+  onScopeDispose(() => {
+    disposed = true;
+    openRevision += 1;
+    closeRevision += 1;
+    pendingClose = null;
+  });
 
   /** 守卫异常等同于拒绝本次状态变化，并交由组件事件显式暴露。 */
   const runGuard = (
@@ -67,7 +76,7 @@ export function useGuardedVisibility(
       return Promise.resolve(result).then(
         value => value !== false,
         error => {
-          options.onGuardError?.(error, phase);
+          if (!disposed) options.onGuardError?.(error, phase);
           return false;
         }
       );
@@ -92,7 +101,7 @@ export function useGuardedVisibility(
     if (visible.value) return;
 
     const applyGuardResult = (allowed: boolean): void => {
-      if (revision !== openRevision || !options.modelValue()) return;
+      if (disposed || revision !== openRevision || !options.modelValue()) return;
       if (!allowed) {
         options.requestModelValue(false);
         return;
@@ -111,6 +120,7 @@ export function useGuardedVisibility(
   watch(options.modelValue, applyModelValue, { immediate: true });
 
   const requestOpen = (): void => {
+    if (disposed) return;
     if (options.modelValue()) {
       // 打开意图只撤销关闭任务，不使仍在执行的 beforeOpen 失效。
       closeRevision += 1;
@@ -121,6 +131,7 @@ export function useGuardedVisibility(
   };
 
   const requestClose = (): Promise<boolean> => {
+    if (disposed) return Promise.resolve(false);
     if (options.skipRedundantRequests && !options.modelValue()) return Promise.resolve(false);
     if (pendingClose) return pendingClose;
 
@@ -132,6 +143,7 @@ export function useGuardedVisibility(
         typeof guardResult === 'boolean' ? guardResult : await Promise.resolve(guardResult);
       if (!allowed) return false;
       if (
+        disposed ||
         modelRevision !== openRevision ||
         operationRevision !== closeRevision ||
         (options.skipRedundantRequests && !options.modelValue())

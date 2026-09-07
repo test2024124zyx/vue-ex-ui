@@ -189,6 +189,7 @@ import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { generateId } from '../../utils/id';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExTimePicker',
@@ -334,7 +335,7 @@ interface Cell {
 }
 const buildCells = (max: number, step: number, disabledList: number[]): Cell[] => {
   const cells: Cell[] = [];
-  const normalizedStep = Number.isFinite(step) && step > 0 ? Math.floor(step) : 1;
+  const normalizedStep = Number.isFinite(step) ? Math.floor(Math.max(1, step)) : 1;
   for (let i = 0; i <= max; i += normalizedStep) {
     cells.push({ value: i, disabled: disabledList.includes(i) });
   }
@@ -593,7 +594,7 @@ const handleBlur = (e: FocusEvent) => {
 };
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (!interactive.value || e.isComposing) return;
+  if (e.target !== e.currentTarget || !interactive.value || isComposingKeyboardEvent(e)) return;
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (!visible.value) open(true);
@@ -609,7 +610,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 };
 
 const handleCellKeydown = (unit: TimeUnit, value: number, event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
   if (event.key === 'Escape') {
     event.preventDefault();
     event.stopPropagation();
@@ -685,6 +686,13 @@ watch(visible, isVisible => {
 
 watch(interactive, canInteract => {
   if (!canInteract) close();
+});
+
+watch([() => props.modelValue, () => props.format], () => {
+  syncDraftFromValue();
+  if (!visible.value) return;
+  normalizeDraft();
+  nextTick(scrollSelectedIntoView);
 });
 
 watch(

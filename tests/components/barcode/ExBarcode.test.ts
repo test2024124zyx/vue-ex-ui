@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExBarcode from '../../../src/components/barcode/ExBarcode.vue';
 import type { ExBarcodeExposed } from '../../../src/components/barcode/types';
@@ -18,6 +18,34 @@ describe('ExBarcode', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('生成尚未完成时不导出空 SVG，并提供加载状态', async () => {
+    mockedGenerate.mockImplementation(() => new Promise(() => undefined));
+    const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:pending');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const wrapper = mount(ExBarcode, { props: { value: 'pending' } });
+    const api = wrapper.vm as unknown as ExBarcodeExposed;
+    const result = api.toDataURL();
+    api.download();
+    const calls = create.mock.calls.length;
+    await nextTick();
+    const busy = wrapper.attributes('aria-busy');
+    const status = wrapper.find('[role="status"]').exists();
+    wrapper.unmount();
+    expect(await result).toBe('');
+    expect(calls).toBe(0);
+    expect(busy).toBe('true');
+    expect(status).toBe(true);
+  });
+
+  it('失败状态通过 alert 向辅助技术反馈', async () => {
+    mockedGenerate.mockRejectedValueOnce(new Error('invalid'));
+    const wrapper = mount(ExBarcode, { props: { value: 'invalid' } });
+    await flushPromises();
+    expect(wrapper.find('[role="alert"]').text()).toContain('invalid');
+    expect(wrapper.attributes('aria-busy')).toBeUndefined();
+    wrapper.unmount();
   });
 
   it('挂载与影响绘制的属性变化都会重新生成条码', async () => {

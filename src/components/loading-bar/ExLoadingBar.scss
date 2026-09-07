@@ -1,3 +1,5 @@
+@use '../../styles/effect-boundary' as *;
+
 .ex-loading-bar {
   position: fixed;
   inset-block-start: 0;
@@ -128,6 +130,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ex-loading-bar-fade-enter-active,
+  .ex-loading-bar-fade-leave-active,
   .ex-loading-bar__bar {
     transition: none;
     will-change: auto;
@@ -136,6 +140,13 @@
   .ex-loading-bar__glow,
   .ex-loading-bar__flow {
     animation: none;
+  }
+}
+
+.ex-loading-bar.ex-loading-bar--no-animation {
+  @include effect-boundary {
+    animation: none;
+    transition: none;
   }
 }
 

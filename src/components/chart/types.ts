@@ -65,6 +65,10 @@ export interface ChartInstance {
   showLoading(type?: string, opts?: Record<string, unknown>): void;
   hideLoading(): void;
   getDataURL(opts?: Record<string, unknown>): string;
+  getOption(): ChartOption;
+  getWidth(): number;
+  getHeight(): number;
+  dispatchAction(payload: Record<string, unknown>): void;
   convertToPixel(finder: unknown, value: unknown): number | number[];
   convertFromPixel(finder: unknown, value: unknown): number | number[];
 }
@@ -184,7 +188,7 @@ export interface ExChartExposed {
     pixelRatio?: number;
     backgroundColor?: string;
   }) => string;
-  /** 获取图表 SVG 字符串 */
+  /** 获取当前图表的 SVG 数据 URL，支持 Canvas 与 SVG 主实例 */
   getSvgDataURL: () => string;
   /** 转换坐标到像素 */
   convertToPixel: (finder: unknown, value: unknown) => number | number[];

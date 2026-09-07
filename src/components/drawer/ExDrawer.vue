@@ -7,7 +7,7 @@
     >
       <div
         v-if="shouldRender"
-        v-show="visible"
+        v-show="overlayActive"
         class="ex-drawer-wrapper"
         :class="wrapperClasses"
         :data-theme="configTheme"
@@ -16,7 +16,7 @@
         <Transition name="ex-drawer-mask-fade">
           <div
             v-if="mask && shouldRender"
-            v-show="visible"
+            v-show="overlayActive"
             class="ex-drawer-mask"
             @click="handleMaskClick"
           ></div>
@@ -25,7 +25,7 @@
         <Transition :name="`ex-drawer-slide-${placement}`">
           <div
             v-if="shouldRender"
-            v-show="visible"
+            v-show="overlayActive"
             ref="panelRef"
             v-bind="panelAttrs"
             :class="drawerClasses"
@@ -186,7 +186,9 @@ const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
   onGuardError: (error, phase) => emit('guardError', error, phase),
 });
 
-const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
+const shouldRender = computed(
+  () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
+);
 const hasTitle = computed(() => Boolean(props.title || slots.title));
 const accessibleLabel = computed(() => {
   const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
@@ -239,7 +241,7 @@ const sizeStyles = computed<CSSProperties>(() => {
 });
 const drawerStyles = computed(() => [sizeStyles.value, props.customStyle]);
 
-const { zIndex: overlayZIndex } = useOverlay({
+const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   active: () => visible.value,
   container: panelRef,
   zIndex: () => props.zIndex ?? baseZIndex.value,

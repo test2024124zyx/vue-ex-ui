@@ -109,7 +109,7 @@ const updatePosition = () => {
 
     placeholderStyle.value = {
       width: `${rect.width}px`,
-      height: `${rect.height}px`,
+      height: `${contentRef.value?.getBoundingClientRect().height ?? rect.height}px`,
     };
 
     const styles: Record<string, string | number> = {
@@ -223,7 +223,7 @@ watch(
   }
 );
 
-watch([() => props.offsetTop, () => props.offsetBottom, () => props.zIndex], () => {
+watch([() => props.offsetTop, () => props.offsetBottom, () => props.zIndex, stickyZIndex], () => {
   updatePosition();
 });
 

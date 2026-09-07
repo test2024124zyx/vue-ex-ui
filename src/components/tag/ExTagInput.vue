@@ -1,6 +1,7 @@
 <template>
   <button
     v-if="!isEditing"
+    ref="buttonRef"
     type="button"
     :class="buttonClasses"
     :aria-label="buttonTextComputed"
@@ -34,8 +35,7 @@
         :placeholder="placeholderComputed"
         :maxlength="maxlength"
         @blur="handleBlur"
-        @keydown.enter.prevent="handleConfirm"
-        @keydown.esc.prevent="handleCancel"
+        @keydown="handleKeydown"
       />
       <button
         type="button"
@@ -82,6 +82,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useComponentSize } from '../config-provider/composables';
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExTagInput',
@@ -104,6 +105,7 @@ const INPUT_ICON_SIZES = {
 } as const;
 
 const inputRef = ref<HTMLInputElement>();
+const buttonRef = ref<HTMLButtonElement>();
 const wrapperRef = ref<HTMLElement>();
 const isEditing = ref(false);
 const inputValue = ref('');
@@ -145,6 +147,22 @@ const startEdit = () => {
   });
 };
 
+const finishEditing = (restoreFocus = true) => {
+  isEditing.value = false;
+  if (restoreFocus) nextTick(() => buttonRef.value?.focus());
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (isComposingKeyboardEvent(event)) return;
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    handleConfirm();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    handleCancel();
+  }
+};
+
 const handleConfirm = () => {
   const value = inputValue.value.trim();
 
@@ -164,13 +182,13 @@ const handleConfirm = () => {
   emit('confirm', value);
   inputValue.value = '';
   duplicateValue.value = '';
-  isEditing.value = false;
+  finishEditing();
 };
 
-const handleCancel = () => {
+const handleCancel = (eventOrRestoreFocus: Event | boolean = true) => {
   inputValue.value = '';
   duplicateValue.value = '';
-  isEditing.value = false;
+  finishEditing(eventOrRestoreFocus !== false);
   emit('cancel');
 };
 
@@ -182,7 +200,7 @@ const handleBlur = (event: FocusEvent) => {
   }
 
   if (isEditing.value) {
-    handleCancel();
+    handleCancel(false);
   }
 };
 </script>

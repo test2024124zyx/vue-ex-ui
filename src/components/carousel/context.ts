@@ -6,7 +6,7 @@ export interface CarouselContext {
   currentIndex: Ref<number>;
   direction: ComputedRef<CarouselDirection>;
   effect: ComputedRef<CarouselEffect>;
-  registerItem: (uid: number, element: HTMLElement) => void;
+  registerItem: (uid: number, element?: HTMLElement) => void;
   unregisterItem: (uid: number) => void;
   getItemIndex: (uid: number) => number;
 }

@@ -45,10 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onBeforeMount, onBeforeUnmount, ref, useAttrs } from 'vue';
+import { computed, inject, onBeforeMount, onBeforeUnmount, ref, useAttrs, watch } from 'vue';
 import { buildSecureRel, normalizeLinkHref } from '../link/link-utils';
 import { hasRenderableContent } from '../../utils/vnode';
-import { MENU_INJECTION_KEY } from './context';
+import { MENU_INJECTION_KEY, MENU_BRANCH_VISIBLE_KEY } from './context';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { moveMenuFocus, type MenuFocusDirection } from './menu-utils';
 import type { ExMenuItemEmits, ExMenuItemExposed, ExMenuItemProps, ExMenuItemSlots } from './types';
 
@@ -68,6 +69,10 @@ const props = withDefaults(defineProps<ExMenuItemProps>(), {
 const emit = defineEmits<ExMenuItemEmits>();
 const attrs = useAttrs();
 const menuContext = inject(MENU_INJECTION_KEY, null);
+const ancestorVisible = inject(
+  MENU_BRANCH_VISIBLE_KEY,
+  computed(() => true)
+);
 const itemRef = ref<HTMLLIElement | null>(null);
 const actionRef = ref<HTMLAnchorElement | HTMLButtonElement | null>(null);
 
@@ -76,13 +81,14 @@ const normalizedHref = computed(() => normalizeLinkHref(props.href));
 const effectiveDisabled = computed(
   () => props.disabled || (isLink.value && normalizedHref.value === undefined)
 );
+const focusDisabled = computed(() => effectiveDisabled.value || !ancestorVisible.value);
 const secureRel = computed(() => buildSecureRel(props.rel, props.target));
 const actionTag = computed(() => (isLink.value ? 'a' : 'button'));
 const isActive = computed(() => menuContext?.activeKey.value === props.itemKey);
 const hasIcon = computed(() => hasRenderableContent(slots.icon?.()));
 const tabIndex = computed(() =>
   menuContext
-    ? menuContext.getTabIndex(props.itemKey, effectiveDisabled.value)
+    ? menuContext.getTabIndex(props.itemKey, focusDisabled.value)
     : effectiveDisabled.value
       ? -1
       : 0
@@ -121,9 +127,16 @@ const rootAttrs = computed(() =>
 
 let unregisterFocusable: (() => void) | undefined;
 onBeforeMount(() => {
-  unregisterFocusable = menuContext?.registerFocusable(props.itemKey, effectiveDisabled);
+  unregisterFocusable = menuContext?.registerFocusable(props.itemKey, focusDisabled);
 });
 onBeforeUnmount(() => unregisterFocusable?.());
+watch(
+  () => props.itemKey,
+  () => {
+    unregisterFocusable?.();
+    unregisterFocusable = menuContext?.registerFocusable(props.itemKey, focusDisabled);
+  }
+);
 
 const handleClick = (event: MouseEvent): void => {
   if (effectiveDisabled.value) {
@@ -154,7 +167,7 @@ const focusDirectionForEvent = (
 };
 
 const handleKeydown = (event: KeyboardEvent): void => {
-  if (effectiveDisabled.value) return;
+  if (effectiveDisabled.value || event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   if (isLink.value && event.key === ' ') {
     event.preventDefault();
     actionRef.value?.click();

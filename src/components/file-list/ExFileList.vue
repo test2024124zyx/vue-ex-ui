@@ -36,6 +36,7 @@
           <ExSelect
             :model-value="effectiveSortField"
             :options="sortOptions"
+            :aria-label="t('sortBy')"
             size="small"
             class="ex-file-list__sort-select"
             @update:model-value="handleSortFieldChange"

@@ -1,4 +1,5 @@
 @use '../../styles/tokens' as *;
+@use '../../styles/effect-boundary' as *;
 
 // ============================================================================
 // TimePicker 时间选择器
@@ -213,15 +214,17 @@
 }
 
 // Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-time-picker__panel.ex-no-neon,
-.ex-time-picker__panel.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-time-picker__panel.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-time-picker__panel.ex-no-animation,
-.ex-time-picker__panel.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-time-picker__panel.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

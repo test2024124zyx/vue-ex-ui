@@ -46,7 +46,7 @@
           v-for="(mark, key) in normalizedMarks"
           :key="key"
           class="ex-slider__mark"
-          :style="getMarkStyle(Number(key))"
+          :style="[getMarkStyle(Number(key)), mark.style]"
         >
           <div class="ex-slider__mark-label">
             {{ mark.label }}
@@ -63,6 +63,7 @@
         :style="getThumbStyle(currentValue as number)"
         :tabindex="disabled ? -1 : 0"
         role="slider"
+        :aria-orientation="direction"
         :aria-valuemin="min"
         :aria-valuemax="max"
         :aria-valuenow="currentValue as number"
@@ -73,6 +74,8 @@
         @touchstart="handleThumbMouseDown($event, 0)"
         @keydown="handleKeyDown($event, 0)"
         @blur="handleThumbBlur"
+        @mouseenter="isHovering = true"
+        @mouseleave="isHovering = false"
       >
         <!-- 提示信息 -->
         <div
@@ -94,6 +97,7 @@
           :style="getThumbStyle((currentValue as [number, number])[0])"
           :tabindex="disabled ? -1 : 0"
           role="slider"
+          :aria-orientation="direction"
           :aria-valuemin="min"
           :aria-valuemax="(currentValue as [number, number])[1]"
           :aria-valuenow="(currentValue as [number, number])[0]"
@@ -104,6 +108,8 @@
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
           @blur="handleThumbBlur"
+          @mouseenter="isHoveringStart = true"
+          @mouseleave="isHoveringStart = false"
         >
           <div
             v-if="showTooltip && (isDraggingStart || isHoveringStart)"
@@ -116,12 +122,12 @@
 
         <!-- 结束手柄 -->
         <div
-          ref="thumbEndRef"
           class="ex-slider__thumb ex-slider__thumb--end"
           :class="{ 'is-dragging': isDraggingEnd }"
           :style="getThumbStyle((currentValue as [number, number])[1])"
           :tabindex="disabled ? -1 : 0"
           role="slider"
+          :aria-orientation="direction"
           :aria-valuemin="(currentValue as [number, number])[0]"
           :aria-valuemax="max"
           :aria-valuenow="(currentValue as [number, number])[1]"
@@ -132,6 +138,8 @@
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
           @blur="handleThumbBlur"
+          @mouseenter="isHoveringEnd = true"
+          @mouseleave="isHoveringEnd = false"
         >
           <div
             v-if="showTooltip && (isDraggingEnd || isHoveringEnd)"
@@ -198,10 +206,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
 import { useFormFieldState } from '../form/use-form-item';
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 
 defineOptions({
   name: 'ExSlider',
@@ -247,7 +256,6 @@ const sliderRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
 const thumbRef = ref<HTMLDivElement>();
 const thumbStartRef = ref<HTMLDivElement>();
-const thumbEndRef = ref<HTMLDivElement>();
 
 // State
 const currentValue = ref<number | [number, number]>(props.modelValue);
@@ -280,14 +288,11 @@ const sliderClasses = computed(() => {
     classes.push('is-dragging');
   }
 
-  return classes;
+  return [...classes, ...normalizeCustomClass(props.class)];
 });
 
 const sliderStyles = computed(() => {
-  if (props.direction === 'vertical') {
-    return { height: props.height };
-  }
-  return undefined;
+  return [props.direction === 'vertical' ? { height: props.height } : {}, props.style];
 });
 
 const trackWrapperStyle = computed(() => {
@@ -320,11 +325,11 @@ const barStyle = computed(() => {
 
     if (isVertical) {
       return isReverse
-        ? { top: `${100 - endPercent}%`, height: `${endPercent - startPercent}%` }
+        ? { top: `${startPercent}%`, height: `${endPercent - startPercent}%` }
         : { bottom: `${startPercent}%`, height: `${endPercent - startPercent}%` };
     }
     return isReverse
-      ? { right: `${100 - endPercent}%`, width: `${endPercent - startPercent}%` }
+      ? { right: `${startPercent}%`, width: `${endPercent - startPercent}%` }
       : { left: `${startPercent}%`, width: `${endPercent - startPercent}%` };
   }
 });
@@ -647,7 +652,7 @@ watch(interactive, canInteract => {
   if (!canInteract) handleMouseUp();
 });
 watch(
-  [() => props.modelValue, () => props.range],
+  [() => props.modelValue, () => props.range, () => props.min, () => props.max, effectiveStep],
   ([newValue, isRange]) => {
     const scalarValue = Array.isArray(newValue) ? newValue[0] : newValue;
     const normalizedScalar = roundToStep(scalarValue ?? props.min);
@@ -671,24 +676,6 @@ watch(
   },
   { immediate: true, flush: 'sync' }
 );
-
-// 悬停事件
-onMounted(() => {
-  if (thumbRef.value) {
-    thumbRef.value.addEventListener('mouseenter', () => (isHovering.value = true));
-    thumbRef.value.addEventListener('mouseleave', () => (isHovering.value = false));
-  }
-
-  if (thumbStartRef.value) {
-    thumbStartRef.value.addEventListener('mouseenter', () => (isHoveringStart.value = true));
-    thumbStartRef.value.addEventListener('mouseleave', () => (isHoveringStart.value = false));
-  }
-
-  if (thumbEndRef.value) {
-    thumbEndRef.value.addEventListener('mouseenter', () => (isHoveringEnd.value = true));
-    thumbEndRef.value.addEventListener('mouseleave', () => (isHoveringEnd.value = false));
-  }
-});
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousemove', handleMouseMove);

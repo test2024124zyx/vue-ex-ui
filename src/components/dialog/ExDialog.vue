@@ -10,7 +10,7 @@
     >
       <div
         v-if="shouldRender"
-        v-show="visible"
+        v-show="overlayActive"
         class="ex-dialog-wrapper"
         :class="wrapperClasses"
         :data-theme="configTheme"
@@ -27,7 +27,7 @@
         <Transition name="ex-dialog-zoom">
           <div
             v-if="shouldRender"
-            v-show="visible"
+            v-show="overlayActive"
             ref="dialogContainerRef"
             v-bind="panelAttrs"
             class="ex-dialog"
@@ -194,7 +194,9 @@ const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
   onGuardError: (error, phase) => emit('guardError', error, phase),
 });
 
-const shouldRender = computed(() => visible.value || (hasOpened.value && !props.destroyOnClose));
+const shouldRender = computed(
+  () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
+);
 const hasTitle = computed(() => Boolean(props.title || slots.title));
 const accessibleLabel = computed(() => {
   const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
@@ -232,7 +234,7 @@ const dialogClasses = computed(() => [
   },
 ]);
 
-const { zIndex: overlayZIndex } = useOverlay({
+const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   active: () => visible.value,
   container: dialogContainerRef,
   zIndex: () => props.zIndex ?? baseZIndex.value,

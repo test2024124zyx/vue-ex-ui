@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="ex-preview-fade">
       <div
-        v-if="visible"
+        v-if="overlayActive"
         ref="previewRef"
         :class="previewClasses"
         :data-theme="configTheme"
@@ -335,6 +335,28 @@
               {{ t('downloadFile') }}
             </ExButton>
           </div>
+          <div
+            v-if="
+              currentUrl &&
+              ['video', 'audio', 'pdf'].includes(currentType) &&
+              mediaState === 'loading'
+            "
+            class="ex-file-preview__media-status"
+            role="status"
+          >
+            {{ t('loading') }}
+          </div>
+          <div
+            v-else-if="
+              currentUrl &&
+              ['video', 'audio', 'pdf'].includes(currentType) &&
+              mediaState === 'error'
+            "
+            class="ex-file-preview__media-error"
+            role="alert"
+          >
+            {{ t('loadFailed') }}
+          </div>
         </div>
 
         <div
@@ -360,6 +382,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import { useControllableState } from '../../composables/useControllableState';
@@ -415,11 +438,16 @@ defineSlots<ExFilePreviewSlots>();
 
 const { t } = useLocale('filePreview');
 const baseZIndex = useZIndexLayer('modal');
+const themeOverrides = useThemeOverrides();
 const configTheme = useConfigTheme();
 const animation = useAnimation();
 const neonEffect = useNeonEffect();
 const previewRef = ref<HTMLDivElement>();
-const { files: fileList, sourceFailure } = usePreviewSources(
+const {
+  files: fileList,
+  sourceFailure,
+  ready: sourcesReady,
+} = usePreviewSources(
   () => props.file,
   () => props.files
 );
@@ -443,7 +471,7 @@ const currentUrl = computed(() =>
 const dialogLabel = computed(() =>
   props.ariaLabel ? props.ariaLabel : currentFile.value?.name || t('preview')
 );
-const previewStyle = computed(() => ({ zIndex: props.zIndex ?? baseZIndex.value }));
+const previewStyle = computed(() => ({ ...themeOverrides.value, zIndex: overlayZIndex.value }));
 const previewClasses = computed(() => [
   'ex-file-preview',
   {
@@ -542,12 +570,14 @@ const requestClose = (): void => {
   emit('close-request');
 };
 
-useOverlay({
+const { active: overlayActive, zIndex: overlayZIndex } = useOverlay({
   active: () => props.visible,
   container: previewRef,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
   lockScroll: () => props.lockScroll,
   closeOnEscape: () => props.closeOnEscape,
   onEscape: () => requestClose(),
+  onParentClose: requestClose,
   restoreFocus: true,
 });
 
@@ -610,7 +640,7 @@ type MediaState = 'idle' | 'loading' | 'ready' | 'error';
 const mediaState = ref<MediaState>('idle');
 
 watch(
-  [() => props.visible, currentType, currentUrl],
+  [overlayActive, currentType, currentUrl],
   ([visible, type, url]) => {
     mediaState.value =
       visible && url && (type === 'image' || type === 'video' || type === 'audio' || type === 'pdf')
@@ -646,9 +676,9 @@ const handleMediaError = (cause: Event): void => {
 
 let reportedInvalidSource = '';
 watch(
-  [() => props.visible, currentFile, currentUrl, currentIndex, sourceFailure],
-  ([visible, file, url, index, failure]) => {
-    if (!visible || !file || url) {
+  [() => props.visible, currentFile, currentUrl, currentIndex, sourceFailure, sourcesReady],
+  ([visible, file, url, index, failure, ready]) => {
+    if (!ready || !visible || !file || url) {
       reportedInvalidSource = '';
       return;
     }
@@ -783,9 +813,17 @@ const loadTextContent = async (
 };
 
 watch(
-  [() => props.visible, currentFile, currentType, currentUrl, currentIndex, normalizedMaxTextBytes],
-  ([visible, file, type, url, index, byteLimit]) => {
-    if (visible && file && url && (type === 'text' || type === 'code')) {
+  [
+    overlayActive,
+    currentFile,
+    currentType,
+    currentUrl,
+    currentIndex,
+    normalizedMaxTextBytes,
+    sourcesReady,
+  ],
+  ([visible, file, type, url, index, byteLimit, ready]) => {
+    if (ready && visible && file && url && (type === 'text' || type === 'code')) {
       void loadTextContent(url, file, index, byteLimit);
       return;
     }

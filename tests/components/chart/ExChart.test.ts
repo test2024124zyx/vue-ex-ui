@@ -7,13 +7,15 @@ import { CONFIG_PROVIDER_INJECTION_KEY } from '../../../src/components/config-pr
 import {
   createDefaultDataZoom,
   createDefaultLegend,
+  createDefaultToolbox,
   createDefaultTooltip,
   formatNumber,
 } from '../../../src/components/chart/utils';
 import * as echarts from 'echarts';
 
 // Mock echarts
-vi.mock('echarts', () => ({
+vi.mock('echarts', async importOriginal => ({
+  color: (await importOriginal<typeof import('echarts')>()).color,
   default: {
     init: vi.fn(() => ({
       setOption: vi.fn(),
@@ -72,10 +74,265 @@ describe('ExChart', () => {
     expect((dataZoom[0]!.textStyle as Record<string, unknown>).color).toBe('#1a2332');
   });
 
+  it('保留多组件数组与单对象 dataZoom 的 ECharts 配置形式', async () => {
+    const legend = [
+      { id: 'primary', left: 2 },
+      { id: 'secondary', right: 2 },
+    ];
+    const toolbox = [{ id: 'tools', left: 5 }];
+    const dataZoom = { type: 'inside', yAxisIndex: 0, start: 25, end: 75 };
+    wrapper = mount(ExChart, {
+      props: {
+        option: { ...defaultOption, legend, toolbox, dataZoom },
+        showDataZoom: true,
+        showToolbox: true,
+      },
+    });
+    await flushPromises();
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    const actual = instance.setOption.mock.calls.at(-1)?.[0];
+    expect(actual.legend).toEqual(legend.map(item => expect.objectContaining(item)));
+    expect(actual.toolbox).toEqual(toolbox.map(item => expect.objectContaining(item)));
+    expect(actual.dataZoom).toEqual(dataZoom);
+    expect(legend).toEqual([
+      { id: 'primary', left: 2 },
+      { id: 'secondary', right: 2 },
+    ]);
+  });
+
+  it('原生加载颜色解析为 Canvas 可用值并读取当前品牌变量', async () => {
+    const { parse } = await import('zrender/lib/tool/color.js');
+    wrapper = mount(ExChart, { props: { option: defaultOption } });
+    await flushPromises();
+    const instance = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    (wrapper.vm as unknown as { showLoading: () => void }).showLoading();
+    expect(parse(instance.showLoading.mock.calls.at(-1)?.[1].color)).toBeDefined();
+    wrapper
+      .find<HTMLElement>('.ex-chart__container')
+      .element.style.setProperty('--ex-color-primary', '#aa0033');
+    (wrapper.vm as unknown as { showLoading: () => void }).showLoading();
+    expect(instance.showLoading.mock.calls.at(-1)?.[1].color).toBe('#aa0033');
+  });
+
+  it('主题 token 同步到标题、扇区边框和全部附属控件，并保留显式业务颜色', async () => {
+    const { default: ExConfigProvider } =
+      await import('../../../src/components/config-provider/ExConfigProvider.vue');
+    const state = reactive({ option: defaultOption });
+    wrapper = mount(ExConfigProvider, {
+      props: {
+        themeOverrides: {
+          '--ex-color-primary': 'rgb(170, 0, 51)',
+          '--ex-color-text-primary': '#112233',
+          '--ex-color-text-secondary': '#334455',
+          '--ex-color-bg-elevated': '#abcdef',
+          '--ex-color-border-secondary': '#6789ab',
+        },
+      },
+      slots: {
+        default: () => h(ExChart, { option: state.option, showToolbox: true, showDataZoom: true }),
+      },
+    });
+    await flushPromises();
+    const theme = vi.mocked(echarts.init).mock.calls.at(-1)?.[1] as {
+      title: { textStyle: { color: string } };
+      pie: { itemStyle: { borderColor: string } };
+    };
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    const option = main.setOption.mock.calls.at(-1)?.[0];
+    expect(theme.title.textStyle.color).toBe('#112233');
+    expect(theme.pie.itemStyle.borderColor).toBe('#abcdef');
+    expect(option.legend.textStyle.color).toBe('#112233');
+    expect(option.legend.pageTextStyle.color).toBe('#334455');
+    expect(option.tooltip.backgroundColor).toBe('#abcdef');
+    expect(option.toolbox.emphasis.iconStyle.borderColor).toBe('rgb(170, 0, 51)');
+    expect(option.dataZoom[0].borderColor).toBe('#6789ab');
+    const { parse } = await import('zrender/lib/tool/color.js');
+    expect(parse(option.dataZoom[0].fillerColor)).toBeDefined();
+    state.option = { ...defaultOption, tooltip: { backgroundColor: 'pink' } };
+    await nextTick();
+    expect(main.setOption.mock.calls.at(-1)?.[0].tooltip.backgroundColor).toBe('pink');
+  });
+
+  it('使用真实 ECharts SVG 渲染器导出并销毁临时实例', async () => {
+    const real = await vi.importActual<typeof import('echarts')>('echarts');
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      measureText: (value: string) => ({ width: value.length * 8 }),
+    } as unknown as CanvasRenderingContext2D);
+    wrapper = mount(ExChart, { props: { option: defaultOption } });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    Object.assign(main, {
+      getOption: () => defaultOption,
+      getWidth: () => 640,
+      getHeight: () => 360,
+    });
+    const temporary = real.init(null, undefined, {
+      renderer: 'svg',
+      ssr: true,
+      width: 640,
+      height: 360,
+    });
+    const dispose = vi.spyOn(temporary, 'dispose');
+    vi.mocked(echarts.init).mockReturnValueOnce(temporary as never);
+    try {
+      const uri = (wrapper.vm as unknown as { getSvgDataURL: () => string }).getSvgDataURL();
+      const svg = new DOMParser().parseFromString(
+        decodeURIComponent(uri.split(',')[1]!),
+        'image/svg+xml'
+      );
+      expect(svg.querySelector('parsererror')).toBeNull();
+      expect(svg.documentElement.tagName).toBe('svg');
+      expect(svg.documentElement.getAttribute('width')).toBe('640');
+      expect(svg.querySelectorAll('path').length).toBeGreaterThan(0);
+      expect(svg.documentElement.textContent).toContain('Mon');
+      expect(dispose).toHaveBeenCalledOnce();
+    } finally {
+      if (!temporary.isDisposed()) temporary.dispose();
+      context.mockRestore();
+    }
+  });
+
+  it('特殊系列仍完整传给渲染器，但不产生未经确认的键盘导航点', async () => {
+    const renderItem = () => ({ type: 'rect', shape: { x: 0, y: 0, width: 20, height: 20 } });
+    const option = { series: [{ type: 'custom', data: [7], renderItem }] };
+    wrapper = mount(ExChart, { props: { option } });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    expect(main.setOption.mock.calls.at(-1)?.[0].series).toMatchObject(option.series);
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+    expect(wrapper.attributes('role')).toBe('img');
+  });
+
+  it('Canvas 主实例也能导出当前交互状态的真实 SVG，临时实例始终销毁', async () => {
+    wrapper = mount(ExChart, { props: { option: defaultOption } });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    const current = {
+      ...defaultOption,
+      legend: [{ selected: { a: false } }],
+      dataZoom: [{ start: 25, end: 75 }],
+    };
+    Object.assign(main, {
+      getOption: vi.fn(() => current),
+      getWidth: () => 800,
+      getHeight: () => 400,
+    });
+    const temporary = {
+      ...main,
+      dispose: vi.fn(),
+      setOption: vi.fn(),
+      renderToSVGString: vi.fn(
+        () => '<svg xmlns="http://www.w3.org/2000/svg"><text>current</text></svg>'
+      ),
+    };
+    vi.mocked(echarts.init).mockReturnValueOnce(temporary);
+    const api = wrapper.vm as unknown as { getSvgDataURL: () => string };
+    const result = api.getSvgDataURL();
+    expect(result).toMatch(/^data:image\/svg\+xml/);
+    expect(decodeURIComponent(result.split(',')[1]!)).toContain('current');
+    expect(echarts.init).toHaveBeenLastCalledWith(
+      null,
+      expect.any(Object),
+      expect.objectContaining({ renderer: 'svg', ssr: true, width: 800, height: 400 })
+    );
+    expect(temporary.setOption).toHaveBeenCalledWith(
+      expect.objectContaining(current),
+      expect.any(Object)
+    );
+    expect(temporary.dispose).toHaveBeenCalledOnce();
+    expect(main.dispose).not.toHaveBeenCalled();
+    temporary.renderToSVGString.mockImplementationOnce(() => {
+      throw new Error('export failed');
+    });
+    vi.mocked(echarts.init).mockReturnValueOnce(temporary);
+    expect(api.getSvgDataURL()).toBe('');
+    expect(wrapper.emitted('error')?.at(-1)?.[0]).toMatchObject({ message: 'export failed' });
+    expect(temporary.dispose).toHaveBeenCalledTimes(2);
+  });
+
   it('格式化负数时同样使用数量级且归一化非法小数位', () => {
     expect(formatNumber(-1_500, 1)).toBe('-1.5K');
     expect(formatNumber(-2_500_000, Number.NaN)).toBe('-2.50M');
     expect(formatNumber(12.34, -4)).toBe('12');
+  });
+
+  it('工具箱默认文本使用当前语言，并允许传入最近 Provider 的翻译器', async () => {
+    const { setLocale } = await import('../../../src/locale');
+    setLocale('en-US');
+    expect(createDefaultToolbox().feature).toMatchObject({
+      saveAsImage: { title: 'Save as Image' },
+      dataZoom: { title: { zoom: 'Zoom area' } },
+    });
+    expect(createDefaultToolbox('light', key => `local:${key}`).feature).toMatchObject({
+      restore: { title: 'local:chart.restore' },
+    });
+  });
+
+  it('键盘导航调用当前实例动作，并让公开 setOption、clear 同步替代数据', async () => {
+    wrapper = mount(ExChart, { props: { option: defaultOption } });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    const dispatchAction = vi.fn();
+    Object.assign(main, { dispatchAction });
+    const navigation = wrapper.find('[role="listbox"]');
+    await navigation.trigger('focus');
+    expect(dispatchAction).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'highlight', seriesIndex: 0, dataIndex: 0 })
+    );
+    await navigation.trigger('keydown', { key: 'ArrowRight' });
+    await navigation.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('click')?.at(-1)?.[0]).toMatchObject({
+      seriesIndex: 0,
+      dataIndex: 1,
+      value: 200,
+      name: 'Tue',
+    });
+    await navigation.trigger('keydown', { key: 'Escape' });
+    expect(dispatchAction).toHaveBeenLastCalledWith({ type: 'hideTip' });
+    Object.assign(main, { getOption: () => ({ series: [{ name: 'new', data: [8] }] }) });
+    (wrapper.vm as unknown as { setOption: (option: object) => void }).setOption({
+      series: [{ data: [8] }],
+    });
+    await nextTick();
+    expect(wrapper.find('[role="option"]').text()).toBe('new: 8');
+    (wrapper.vm as unknown as { clear: () => void }).clear();
+    await nextTick();
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+  });
+
+  it('父 Modal 中第一次 Escape 清除图表高亮，第二次才请求关闭对话框', async () => {
+    const { default: ExModal } = await import('../../../src/components/modal/ExModal.vue');
+    wrapper = mount(ExModal, {
+      attachTo: document.body,
+      props: { modelValue: true },
+      slots: { default: () => h(ExChart, { option: defaultOption }) },
+    });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    Object.assign(main, { dispatchAction: vi.fn() });
+    const navigation = wrapper.findComponent(ExChart).find('[role="listbox"]');
+    await navigation.trigger('focus');
+    await navigation.trigger('keydown', { key: 'Escape' });
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    await navigation.trigger('keydown', { key: 'Escape' });
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+  });
+
+  it('父 Modal 保留图表实例时隐藏外置提示并取消键盘高亮', async () => {
+    const { default: ExModal } = await import('../../../src/components/modal/ExModal.vue');
+    wrapper = mount(ExModal, {
+      attachTo: document.body,
+      props: { modelValue: true },
+      slots: { default: () => h(ExChart, { option: defaultOption }) },
+    });
+    await flushPromises();
+    const main = vi.mocked(echarts.init).mock.results.at(-1)!.value;
+    const dispatchAction = vi.fn();
+    Object.assign(main, { dispatchAction });
+    await wrapper.findComponent(ExChart).find('[role="listbox"]').trigger('focus');
+    await wrapper.setProps({ modelValue: false });
+    expect(dispatchAction).toHaveBeenLastCalledWith({ type: 'hideTip' });
+    expect(main.dispose).not.toHaveBeenCalled();
   });
 
   beforeEach(() => {

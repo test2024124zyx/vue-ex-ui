@@ -1,4 +1,5 @@
 @use '../../styles/performance' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-loading {
   --ex-loading-size: 40px;
@@ -22,24 +23,30 @@
   &--no-animation {
     transition: none;
 
-    .ex-loading__spinner-circle,
-    .ex-loading__spinner-circle svg,
-    .ex-loading__dot,
-    .ex-loading__pulse-ring,
-    .ex-loading__bar,
-    .ex-loading__neon-ring,
-    .ex-loading__neon-ring::before {
+    @include effect-descendants(
+      (
+        '.ex-loading__spinner-circle',
+        '.ex-loading__spinner-circle svg',
+        '.ex-loading__dot',
+        '.ex-loading__pulse-ring',
+        '.ex-loading__bar',
+        '.ex-loading__neon-ring'
+      )
+    ) {
+      animation: none;
+    }
+
+    @include effect-descendants('.ex-loading__neon-ring', '::before') {
       animation: none;
     }
   }
 
   &--no-neon {
-    .ex-loading__spinner-circle circle,
-    .ex-loading__neon-ring {
+    @include effect-descendants(('.ex-loading__spinner-circle circle', '.ex-loading__neon-ring')) {
       filter: none;
     }
 
-    .ex-loading__dot {
+    @include effect-descendants('.ex-loading__dot') {
       box-shadow: none;
     }
   }
@@ -293,7 +300,17 @@
   }
 }
 
+.ex-loading--no-animation {
+  @include effect-descendants('.ex-loading__pulse-ring') {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ex-loading__pulse-ring {
+    opacity: 1;
+  }
+
   .ex-loading__spinner-circle,
   .ex-loading__spinner-circle svg,
   .ex-loading__dot,

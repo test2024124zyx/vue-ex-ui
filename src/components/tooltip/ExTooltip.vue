@@ -54,6 +54,7 @@ import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
 import {
   useAnimation,
   useConfigTheme,
@@ -167,6 +168,13 @@ const updatePosition = () => {
   popperRef.value.style.left = `${left}px`;
 };
 
+const schedulePosition = useFloatingAutoUpdate(
+  overlayActive,
+  [tooltipRef, popperRef],
+  [() => props.placement, () => props.offset, () => props.customClass],
+  updatePosition
+);
+
 const commitVisible = (nextVisible: boolean) => {
   if (visible.value === nextVisible) return;
   visible.value = nextVisible;
@@ -276,11 +284,11 @@ const handlePopperLeave = () => {
 };
 
 const handleResize = () => {
-  updatePosition();
+  schedulePosition();
 };
 
 const handleScroll = () => {
-  updatePosition();
+  schedulePosition();
 };
 
 const describedElements = new Map<HTMLElement, string | null>();

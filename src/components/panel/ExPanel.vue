@@ -7,8 +7,7 @@
     :aria-label="accessibleLabel"
     :aria-busy="loading ? 'true' : undefined"
     :tabindex="isInteractive ? 0 : undefined"
-    @keydown.enter="triggerPanelClick"
-    @keydown.space.prevent="triggerPanelClick"
+    @keydown="triggerPanelClick"
   >
     <span
       v-if="loading"
@@ -89,6 +88,8 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useRenderComputed } from '../../composables/useRenderComputed';
+import { useComponentSize } from '../config-provider/composables';
 import { computed, getCurrentInstance, ref, useSlots } from 'vue';
 import { useLocale } from '../../locale';
 import type { ExPanelProps, ExPanelExposed } from './types';
@@ -107,9 +108,12 @@ const slots = useSlots();
 const panelRef = ref<HTMLDivElement>();
 const componentInstance = getCurrentInstance();
 const { t } = useLocale('common');
+const componentSize = useComponentSize(computed(() => props.size));
 const accessibleLabel = computed(() => props.ariaLabel?.trim() || props.title?.trim() || undefined);
-const isInteractive = computed(
-  () => props.hoverable && Boolean(componentInstance?.vnode.props?.onClick)
+const isInteractive = useRenderComputed(
+  () =>
+    props.hoverable &&
+    Boolean(componentInstance?.vnode.props?.onClick || componentInstance?.vnode.props?.onClickOnce)
 );
 const panelRole = computed(() => {
   if (isInteractive.value) return 'button';
@@ -117,7 +121,7 @@ const panelRole = computed(() => {
 });
 
 // 计算属性
-const hasHeader = computed(() => {
+const hasHeader = useRenderComputed(() => {
   return !!(
     props.title ||
     props.subtitle ||
@@ -132,7 +136,7 @@ const panelClasses = computed(() => {
   const classes = ['ex-panel'];
 
   if (props.type) classes.push(`ex-panel--${props.type}`);
-  if (props.size) classes.push(`ex-panel--${props.size}`);
+  classes.push(`ex-panel--${componentSize.value}`);
   if (props.shadow) classes.push(`ex-panel--shadow-${props.shadow}`);
   if (!props.bordered) classes.push('ex-panel--borderless');
   if (props.hoverable) classes.push('ex-panel--hoverable');
@@ -151,8 +155,18 @@ const panelStyles = computed(() => {
 
 // 暴露的方法
 const getElement = () => panelRef.value || null;
-const triggerPanelClick = (): void => {
-  if (isInteractive.value) panelRef.value?.click();
+const triggerPanelClick = (event: KeyboardEvent): void => {
+  if (
+    event.target !== event.currentTarget ||
+    event.isComposing ||
+    event.keyCode === 229 ||
+    props.loading ||
+    !isInteractive.value ||
+    (event.key !== 'Enter' && event.key !== ' ')
+  )
+    return;
+  event.preventDefault();
+  panelRef.value?.click();
 };
 
 defineExpose<ExPanelExposed>({

@@ -143,6 +143,7 @@ import {
   getCurrentInstance,
   onBeforeUnmount,
   onMounted,
+  nextTick,
 } from 'vue';
 import type {
   ExCheckboxProps,
@@ -417,12 +418,12 @@ const restoreNativeState = (target: HTMLInputElement) => {
 
 // 事件处理
 const handleChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
   if (currentDisabled.value || currentReadonly.value) {
     event.preventDefault();
+    restoreNativeState(target);
     return;
   }
-
-  const target = event.target as HTMLInputElement;
 
   if (checkboxGroupContext && props.value !== undefined) {
     // CheckboxGroup 模式
@@ -442,6 +443,8 @@ const handleChange = (event: Event) => {
     emit('change', value, event);
     formItem?.onFieldChange();
   }
+  // 等待父组件处理更新后恢复原生状态，兼容接受、拒绝及转换值的受控场景。
+  void nextTick(() => restoreNativeState(target));
 };
 
 const handleFocus = (event: FocusEvent) => {

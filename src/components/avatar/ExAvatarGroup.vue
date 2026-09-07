@@ -47,6 +47,7 @@
 import { Fragment, computed, isVNode, useSlots } from 'vue';
 import type { Component, VNode } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { useI18n } from '../../locale';
 import AvatarGroupItem from './AvatarGroupItem';
 import ExAvatar from './ExAvatar.vue';
@@ -84,7 +85,9 @@ const isAvatarVNode = (vnode: VNode): boolean => {
   return component.name === 'ExAvatar' || component.__name === 'ExAvatar';
 };
 
-const avatars = computed(() => flattenVNodes(slots.default?.() ?? []).filter(isAvatarVNode));
+const avatars = useRenderComputed(() =>
+  flattenVNodes(slots.default?.() ?? []).filter(isAvatarVNode)
+);
 const visibleLimit = computed(() => {
   if (props.maxCount === undefined) return Number.POSITIVE_INFINITY;
   if (!Number.isFinite(props.maxCount)) return 0;

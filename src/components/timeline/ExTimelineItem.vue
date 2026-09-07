@@ -62,7 +62,10 @@
       </div>
 
       <!-- 右侧内容区 -->
-      <div class="ex-timeline-item__content ex-timeline-item__content--right">
+      <div
+        v-if="mode !== 'alternate' || !isRightSide"
+        class="ex-timeline-item__content ex-timeline-item__content--right"
+      >
         <div
           v-if="timestamp && timestampPosition === 'top' && (mode !== 'alternate' || !isRightSide)"
           class="ex-timeline-item__timestamp ex-timeline-item__timestamp--top"
@@ -134,6 +137,7 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useI18n } from '../../locale';
 import { computed, inject, ref, onMounted, onUpdated } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
 import type { ComputedRef } from 'vue';
 import type {
   ExTimelineItemProps,
@@ -149,7 +153,6 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExTimelineItemProps>(), {
   type: 'default',
-  size: 'medium',
   timestampPosition: 'bottom',
   hollow: false,
   hideLine: false,
@@ -158,6 +161,7 @@ const props = withDefaults(defineProps<ExTimelineItemProps>(), {
 
 const emit = defineEmits<ExTimelineItemEmits>();
 const { t } = useI18n();
+const componentSize = useComponentSize(computed(() => props.size));
 
 const itemRef = ref<HTMLDivElement>();
 const itemIndex = ref(0);
@@ -187,7 +191,7 @@ const itemClasses = computed(() => {
     'ex-timeline-item',
     `ex-timeline-item--${direction.value}`,
     `ex-timeline-item--${props.type}`,
-    `ex-timeline-item--${props.size}`,
+    `ex-timeline-item--${componentSize.value}`,
   ];
 
   if (direction.value === 'vertical') {

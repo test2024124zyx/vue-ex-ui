@@ -78,6 +78,7 @@ import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
 import {
   useAnimation,
   useConfigTheme,
@@ -210,6 +211,13 @@ const updatePosition = () => {
   popperRef.value.style.left = `${left}px`;
 };
 
+const schedulePosition = useFloatingAutoUpdate(
+  overlayActive,
+  [popoverRef, popperRef],
+  [() => props.placement, () => props.offset, () => props.width, () => props.customStyle],
+  updatePosition
+);
+
 const commitVisible = (nextVisible: boolean) => {
   if (visible.value === nextVisible) return;
   visible.value = nextVisible;
@@ -338,15 +346,11 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 const handleResize = () => {
-  if (visible.value) {
-    updatePosition();
-  }
+  schedulePosition();
 };
 
 const handleScroll = () => {
-  if (visible.value) {
-    updatePosition();
-  }
+  schedulePosition();
 };
 
 interface TriggerAriaSnapshot {

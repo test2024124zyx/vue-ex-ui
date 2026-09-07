@@ -22,7 +22,7 @@
       <!-- 预设变体模式（count 控制重复渲染的骨架块数量） -->
       <template v-else>
         <div
-          v-for="n in count"
+          v-for="n in normalizedCount"
           :key="n"
           class="ex-skeleton__repeat"
         >
@@ -52,11 +52,11 @@
 
               <!-- 段落 -->
               <div
-                v-if="rows > 0"
+                v-if="computedRows > 0"
                 class="ex-skeleton__paragraph"
               >
                 <div
-                  v-for="(_row, index) in rows"
+                  v-for="(_row, index) in computedRows"
                   :key="index"
                   class="ex-skeleton__row"
                   :style="getRowStyle(index)"
@@ -86,7 +86,7 @@
                 />
                 <div class="ex-skeleton__paragraph">
                   <div
-                    v-for="rowIndex in Math.max(1, rows)"
+                    v-for="rowIndex in computedRows"
                     :key="rowIndex"
                     class="ex-skeleton__row"
                     :style="getRowStyle(rowIndex - 1)"
@@ -101,7 +101,7 @@
             >
               <div class="ex-skeleton__table-header ex-skeleton__title" />
               <div
-                v-for="rowIndex in Math.max(1, rows)"
+                v-for="rowIndex in computedRows"
                 :key="rowIndex"
                 class="ex-skeleton__table-row ex-skeleton__row"
               />
@@ -118,7 +118,7 @@
                 variant === 'paragraph' ||
                 variant === 'article' ||
                 (variant === 'text' && hasExplicitRows) ||
-                (title && rows > 0)
+                (title && computedRows > 0)
               "
               class="ex-skeleton__paragraph"
             >
@@ -159,6 +159,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { computed, getCurrentInstance, ref } from 'vue';
 import type { ExSkeletonProps, ExSkeletonExposed } from './types';
 import { useLocale } from '../../locale';
@@ -184,7 +185,7 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
 const { t } = useLocale('skeleton');
 const skeletonRef = ref<HTMLDivElement>();
 const instance = getCurrentInstance();
-const hasExplicitRows = computed(() => {
+const hasExplicitRows = useRenderComputed(() => {
   void props.rows;
   const vnodeProps = instance?.vnode.props;
   return Boolean(vnodeProps && Object.prototype.hasOwnProperty.call(vnodeProps, 'rows'));
@@ -221,7 +222,7 @@ const skeletonStyles = computed(() => {
 
   if (props.style) {
     if (typeof props.style === 'string') {
-      return props.style;
+      return [styles, props.style];
     }
     Object.assign(styles, props.style);
   }
@@ -270,12 +271,11 @@ const elementStyle = computed(() => {
   return styles;
 });
 
-const computedRows = computed(() => {
-  if (props.variant === 'paragraph' || props.variant === 'article') {
-    return props.rows || 3;
-  }
-  return props.rows;
-});
+// 渲染数量必须为有限非负整数，零表示明确不渲染该部分。
+const normalizeCount = (value: number, fallback: number): number =>
+  Number.isFinite(value) && value >= 0 ? Math.trunc(value) : fallback;
+const normalizedCount = computed(() => normalizeCount(props.count, 1));
+const computedRows = computed(() => normalizeCount(props.rows, 3));
 
 const getRowStyle = (index: number) => {
   const styles: Record<string, string> = {};

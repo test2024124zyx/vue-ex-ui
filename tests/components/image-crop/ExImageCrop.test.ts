@@ -179,6 +179,40 @@ describe('ExImageCrop', () => {
     cropMocks.renderCrop.mockReset();
   });
 
+  it.each([
+    { minZoom: 2, maxZoom: 4, expected: 2 },
+    { minZoom: 0.1, maxZoom: 0.5, expected: 0.5 },
+  ])('初始和重置缩放遵循 $minZoom 到 $maxZoom 的边界', async ({ minZoom, maxZoom, expected }) => {
+    const mounted = await mountCrop({ minZoom, maxZoom });
+    const api = mounted.vm as unknown as ExImageCropExposed;
+    expect((await api.crop()).zoom).toBe(expected);
+    api.zoomIn();
+    api.reset();
+    expect((await api.crop()).zoom).toBe(expected);
+  });
+
+  it('容器尺寸变化的绘制失败进入错误事件，恢复有效尺寸后继续裁剪', async () => {
+    const mounted = await mountCrop();
+    const api = mounted.vm as unknown as ExImageCropExposed;
+    const previous = api.getArea();
+    cropMocks.drawCropPreview.mockImplementationOnce(() => {
+      throw new ExImageCropError('INVALID_DIMENSION', 'oversized');
+    });
+    expect(() =>
+      resizeCallback?.(
+        [{ contentRect: { width: 10000, height: 10000 } } as ResizeObserverEntry],
+        {} as ResizeObserver
+      )
+    ).not.toThrow();
+    expect(mounted.emitted('error')?.at(-1)?.[0]).toMatchObject({ code: 'INVALID_DIMENSION' });
+    expect(api.getArea()).toEqual(previous);
+    resizeCallback?.(
+      [{ contentRect: { width: 800, height: 600 } } as ResizeObserverEntry],
+      {} as ResizeObserver
+    );
+    await expect(api.crop()).resolves.toHaveProperty('blob');
+  });
+
   it('加载一次资源、建立布局并发出不可变尺寸快照', async () => {
     const resource = createResource('loaded');
     resourceMocks.loadBrowserImageResource.mockResolvedValueOnce(resource);
@@ -199,6 +233,17 @@ describe('ExImageCrop', () => {
     const area = (current.vm as unknown as ExImageCropExposed).getArea();
     area.x = -999;
     expect((current.vm as unknown as ExImageCropExposed).getArea().x).not.toBe(-999);
+  });
+
+  it('密集网格不随行列数分配 DOM，保持固定绘制节点', async () => {
+    const mounted = await mountCrop({ gridRows: 1000, gridCols: 1000 });
+    const grid = mounted.find('.ex-image-crop__grid');
+    expect(grid.element.childElementCount).toBeLessThanOrEqual(2);
+    expect((grid.element as HTMLElement).style.getPropertyValue('--ex-crop-grid-rows')).toBe(
+      '1000'
+    );
+    await mounted.setProps({ gridRows: 1, gridCols: 1 });
+    expect((grid.element as HTMLElement).style.getPropertyValue('--ex-crop-grid-rows')).toBe('1');
   });
 
   it('来源竞态只接受最新结果并释放过期资源', async () => {

@@ -21,6 +21,7 @@
         :readonly="currentReadonly"
         :required="currentRequired"
         v-bind="fieldAriaAttrs"
+        :aria-label="getAriaLabel()"
         :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
         :aria-disabled="currentDisabled"
         :aria-readonly="currentReadonly"
@@ -44,6 +45,7 @@
         :readonly="currentReadonly"
         :required="currentRequired"
         v-bind="fieldAriaAttrs"
+        :aria-label="getAriaLabel()"
         :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
         :aria-disabled="currentDisabled"
         :aria-readonly="currentReadonly"
@@ -112,7 +114,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, useSlots, inject } from 'vue';
+import { computed, ref, watch, useSlots, inject, useAttrs } from 'vue';
 import type { ExRadioProps, ExRadioEmits, ExRadioSlots, ExRadioInstance } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
@@ -136,6 +138,9 @@ const emit = defineEmits<ExRadioEmits>();
 defineSlots<ExRadioSlots>();
 
 const slots = useSlots();
+const attrs = useAttrs();
+const getAriaLabel = () =>
+  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : undefined;
 const { t } = useI18n();
 
 const {

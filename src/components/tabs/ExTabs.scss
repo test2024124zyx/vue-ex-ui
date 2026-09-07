@@ -363,6 +363,15 @@
 // 无障碍支持
 // ============================================================================
 
+.ex-tabs:not(.ex-tabs--animated) {
+  .ex-tabs__indicator,
+  .ex-tabs__tab,
+  .ex-tabs__tab-close {
+    transition: none;
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ex-tabs__nav,
   .ex-tabs__tab,

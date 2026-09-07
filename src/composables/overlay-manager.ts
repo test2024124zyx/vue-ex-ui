@@ -9,9 +9,24 @@ const FOCUSABLE_SELECTOR =
 const isVisibleFocusable = (element: HTMLElement): boolean => {
   if (element.hasAttribute('disabled') || element.getAttribute('aria-hidden') === 'true')
     return false;
-  if (element.tabIndex < 0 || element.hidden || element.closest('[inert]')) return false;
-  const style = window.getComputedStyle(element);
-  return style.display !== 'none' && style.visibility !== 'hidden';
+  if (element.tabIndex < 0) return false;
+  // 控件自身的样式不能反映 display:none、hidden 和 inert 的祖先。
+  for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
+    if (
+      ancestor.hidden ||
+      ancestor.hasAttribute('inert') ||
+      ancestor.getAttribute('aria-hidden') === 'true'
+    )
+      return false;
+    const style = element.ownerDocument.defaultView?.getComputedStyle(ancestor);
+    if (
+      style?.display === 'none' ||
+      style?.visibility === 'hidden' ||
+      style?.visibility === 'collapse'
+    )
+      return false;
+  }
+  return true;
 };
 
 const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
@@ -73,6 +88,7 @@ const getOverlayRuntime = createDocumentRuntime('overlay', owner => ({
   originalBodyOverflow: '',
   originalBodyPaddingRight: '',
   keydownHandler: null as ((event: KeyboardEvent) => void) | null,
+  localEscapeHandlers: new WeakMap<HTMLElement, { active: () => boolean; close: () => void }>(),
 }));
 const OVERLAY_LAYER_STEP = 1;
 const MAXIMUM_CSS_Z_INDEX = 2_147_483_647;
@@ -86,11 +102,40 @@ const handleGlobalKeydown = (
 ) => {
   if (event.key !== 'Escape' || isComposingKeyboardEvent(event) || event.defaultPrevented) return;
   const top = [...runtime.overlayStack].reverse().find(isOverlayPresent);
+  // 展开的内联控件先处理自身 Escape；归属之外的面板不能截获当前栈顶事件。
+  const localBoundary = event
+    .composedPath()
+    .find(
+      target =>
+        target instanceof HTMLElement &&
+        runtime.localEscapeHandlers.get(target)?.active() &&
+        (!top || getOverlayOwnedContainers(top).some(container => container.contains(target)))
+    );
+  if (localBoundary instanceof HTMLElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    runtime.localEscapeHandlers.get(localBoundary)?.close();
+    return;
+  }
   if (!top?.canEscape()) return;
   event.preventDefault();
   event.stopPropagation();
   void top.onEscape();
 };
+
+/** 为浮层内部的内联展开控件提供先于父层的 Escape 处理权，不新增视觉层级。 */
+export function registerOverlayEscapeBoundary(
+  element: HTMLElement,
+  active: () => boolean,
+  close: () => void
+): () => void {
+  const handlers = getOverlayRuntime().localEscapeHandlers;
+  const handler = { active, close };
+  handlers.set(element, handler);
+  return () => {
+    if (handlers.get(element) === handler) handlers.delete(element);
+  };
+}
 
 /** 注册浮层并返回注销函数；注销结果表示该浮层关闭前是否位于栈顶。 */
 export function registerOverlay(entry: OverlayStackEntry): () => boolean {

@@ -1,4 +1,16 @@
 // 为 JSDOM 补齐组件运行时依赖的浏览器 API。
+if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = function (leftOrOptions?: number | ScrollToOptions, top?: number) {
+    if (typeof leftOrOptions === 'number') {
+      this.scrollLeft = leftOrOptions;
+      if (top !== undefined) this.scrollTop = top;
+    } else {
+      if (leftOrOptions?.left !== undefined) this.scrollLeft = leftOrOptions.left;
+      if (leftOrOptions?.top !== undefined) this.scrollTop = leftOrOptions.top;
+    }
+  };
+}
+
 class ResizeObserverStub {
   constructor(_callback: ResizeObserverCallback) {}
   observe(_target: Element): void {}

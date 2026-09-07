@@ -320,8 +320,8 @@
   }
 
   .ex-virtual-list__item {
-    // 移动端增加触摸目标大小
-    min-height: 44px;
+    // 行高由虚拟窗口的统一计算决定，不能在移动端单独放大。
+    min-height: 0;
 
     &:hover::before {
       // 移动端禁用悬停指示条

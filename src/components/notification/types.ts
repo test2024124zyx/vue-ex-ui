@@ -19,6 +19,10 @@ export interface ExNotificationProps {
   offset?: number;
   position?: NotificationPosition;
   dangerouslyUseHTMLString?: boolean;
+  /** 点击监听器参与交互状态更新，仍通过 @click 注册。 */
+  onClick?: (() => void) | Array<() => void>;
+  /** 单次点击监听器由 Vue 事件分发器执行。 */
+  onClickOnce?: (() => void) | Array<() => void>;
 }
 
 export interface ExNotificationEmits {

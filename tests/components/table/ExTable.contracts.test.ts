@@ -132,6 +132,8 @@ describe('ExTable 数据计算与扩展契约', () => {
     expect(wrapper.emitted('selection-change')?.at(-1)?.[1]).toEqual(
       rows.filter(row => selectedKeys.includes(row.key))
     );
+    // 受控表格只有收到父级回写后，下一次全选操作才会请求取消。
+    await wrapper.setProps({ selectedRowKeys: selectedKeys });
     methods.toggleAllSelection();
     expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['other-page', 1500]);
     wrapper.unmount();

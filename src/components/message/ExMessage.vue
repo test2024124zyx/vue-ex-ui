@@ -13,9 +13,9 @@
       :role="liveRole"
       :aria-live="ariaLive"
       aria-atomic="true"
-      @mouseenter="pauseTimer"
-      @mouseleave="resumeTimer"
-      @focusin="pauseTimer"
+      @mouseenter="pauseTimer('hover')"
+      @mouseleave="resumeTimer('hover')"
+      @focusin="pauseTimer('focus')"
       @focusout="handleFocusOut"
     >
       <span
@@ -159,7 +159,8 @@ const rootAttrs = computed(() =>
 let timer: number | undefined;
 let startedAt = 0;
 let remaining = normalizedDuration.value;
-let paused = false;
+type PauseReason = 'hover' | 'focus';
+const pauseReasons = new Set<PauseReason>();
 
 const clearTimer = (): void => {
   if (timer === undefined || typeof window === 'undefined') return;
@@ -177,7 +178,7 @@ const close = (): boolean => {
 
 const startTimer = (): void => {
   clearTimer();
-  if (typeof window === 'undefined' || !visible.value || paused || remaining <= 0) {
+  if (typeof window === 'undefined' || !visible.value || pauseReasons.size > 0 || remaining <= 0) {
     return;
   }
 
@@ -188,30 +189,31 @@ const startTimer = (): void => {
   }, remaining);
 };
 
-const pauseTimer = (): void => {
-  if (paused) return;
-  paused = true;
+const pauseTimer = (reason: PauseReason): void => {
+  if (pauseReasons.has(reason)) return;
+  const wasPaused = pauseReasons.size > 0;
+  pauseReasons.add(reason);
+  if (wasPaused) return;
   if (timer === undefined || typeof window === 'undefined') return;
   window.clearTimeout(timer);
   timer = undefined;
   remaining = Math.max(0, remaining - (Date.now() - startedAt));
 };
 
-const resumeTimer = (): void => {
-  if (!paused) return;
-  paused = false;
+const resumeTimer = (reason: PauseReason): void => {
+  if (!pauseReasons.delete(reason) || pauseReasons.size > 0) return;
   startTimer();
 };
 
 const handleFocusOut = (event: FocusEvent): void => {
   if (event.relatedTarget instanceof Node && messageRef.value?.contains(event.relatedTarget))
     return;
-  resumeTimer();
+  resumeTimer('focus');
 };
 
 watch(normalizedDuration, duration => {
   remaining = duration;
-  if (!paused) startTimer();
+  if (pauseReasons.size === 0) startTimer();
 });
 
 const handleAfterLeave = (): void => emit('destroy');

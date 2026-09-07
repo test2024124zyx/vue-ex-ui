@@ -44,6 +44,7 @@ const props = withDefaults(defineProps<ExFormProps>(), {
   readonly: false,
   validateOnRuleChange: true,
   scrollToError: true,
+  scrollIntoViewOptions: true,
   focusToError: true,
 });
 
@@ -246,7 +247,7 @@ async function validate(
     // 滚动到第一个错误字段，并将键盘焦点交给对应控件。
     if (!valid && props.scrollToError && errors.length > 0 && errors[0]) {
       await nextTick();
-      scrollToField(errors[0].field);
+      scrollToField(errors[0].field, props.scrollIntoViewOptions);
       if (props.focusToError) {
         focusField(errors[0].field);
       }

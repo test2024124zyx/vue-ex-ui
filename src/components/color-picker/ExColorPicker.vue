@@ -13,7 +13,7 @@
       :class="{ 'is-empty': !hasValue }"
       aria-haspopup="dialog"
       :aria-controls="panelId"
-      :aria-label="t('trigger')"
+      :aria-label="(attrs['aria-label'] as string | undefined) || t('trigger')"
       v-bind="fieldAriaAttrs"
       :aria-expanded="visible"
       :disabled="disabled"
@@ -192,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, reactive, ref, useId, watch } from 'vue';
+import { computed, nextTick, onUnmounted, reactive, ref, useId, useAttrs, watch } from 'vue';
 import type { ExColorPickerEmits, ExColorPickerExposed, ExColorPickerProps } from './types';
 import { clamp, formatColor, hsvToRgb, opaqueRgb, parseColor, rgbToHsv } from './utils';
 import type { RGBA } from './utils';
@@ -225,6 +225,7 @@ const props = withDefaults(defineProps<ExColorPickerProps>(), {
 });
 
 const emit = defineEmits<ExColorPickerEmits>();
+const attrs = useAttrs();
 const { t } = useLocale('colorPicker');
 const {
   formItem,

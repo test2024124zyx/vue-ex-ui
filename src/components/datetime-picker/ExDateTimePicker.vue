@@ -161,6 +161,7 @@
                   :key="day.key"
                   class="ex-datetime-picker__day-cell"
                   role="gridcell"
+                  :aria-selected="day.isSelected"
                 >
                   <button
                     type="button"
@@ -169,7 +170,6 @@
                     :disabled="day.disabled"
                     :tabindex="!day.disabled && isSameDay(day.date, focusedDate) ? 0 : -1"
                     :aria-label="formatDate(day.date, 'YYYY-MM-DD')"
-                    :aria-selected="day.isSelected"
                     :aria-current="day.isToday ? 'date' : undefined"
                     @click="selectDate(day.date)"
                     @focus="focusedDate = new Date(day.date)"
@@ -447,9 +447,10 @@ const effectiveFormat = computed(
 const hasValue = computed(() =>
   isRangeMode.value ? Boolean(rangeStart.value || rangeEnd.value) : Boolean(selectedDate.value)
 );
-const canConfirm = computed(() =>
-  isRangeMode.value ? Boolean(rangeStart.value && rangeEnd.value) : Boolean(selectedDate.value)
-);
+const canConfirm = computed(() => {
+  const dates = isRangeMode.value ? [rangeStart.value, rangeEnd.value] : [selectedDate.value];
+  return interactive.value && dates.every(date => date !== null && !isDateDisabled(date));
+});
 
 const pickerClasses = computed(() => [
   'ex-datetime-picker',
@@ -829,8 +830,10 @@ const updateEndTime = () => {
 const handleConfirm = () => {
   if (!canConfirm.value) return;
   updateStartTime();
+  if (!canConfirm.value) return;
   if (isRangeMode.value) {
     updateEndTime();
+    if (!canConfirm.value) return;
     if (rangeStart.value && rangeEnd.value) commitRange(rangeStart.value, rangeEnd.value);
   } else if (selectedDate.value) {
     commitSingle(selectedDate.value);

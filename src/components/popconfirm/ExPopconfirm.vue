@@ -7,7 +7,6 @@
     :aria-label="title || t('confirm')"
     :custom-class="popupClasses"
     :custom-style="popupStyle"
-    @update:model-value="handleVisibleChange"
   >
     <!-- 触发元素 -->
     <slot></slot>
@@ -76,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import type { ExPopconfirmProps, ExPopconfirmEmits, ExPopconfirmExposed } from './types';
 import { useLocale } from '../../locale';
 import ExPopover from '../popover/ExPopover.vue';
@@ -104,6 +103,8 @@ const { t } = useLocale('dialog');
 
 const popoverVisible = ref(false);
 const confirmPending = ref(false);
+let confirmationRevision = 0;
+let disposed = false;
 const effectiveConfirmLoading = computed(() => props.confirmLoading || confirmPending.value);
 
 // 计算属性
@@ -136,12 +137,38 @@ const defaultIcon = computed(() => {
 const customIconUrl = computed(() => props.icon);
 
 // 事件处理
-const handleVisibleChange = (visible: boolean) => {
-  emit('update:visible', visible);
-};
+watch(
+  popoverVisible,
+  visible => {
+    confirmationRevision += 1;
+    confirmPending.value = false;
+    emit('update:visible', visible);
+  },
+  { flush: 'sync' }
+);
+
+watch(
+  () => props.disabled,
+  disabled => {
+    if (disabled) popoverVisible.value = false;
+  }
+);
+
+onBeforeUnmount(() => {
+  disposed = true;
+  confirmationRevision += 1;
+});
 
 const handleConfirm = async () => {
-  if (props.disabled || props.confirmLoading || confirmPending.value) return;
+  if (
+    disposed ||
+    !popoverVisible.value ||
+    props.disabled ||
+    props.confirmLoading ||
+    confirmPending.value
+  )
+    return;
+  const revision = ++confirmationRevision;
   confirmPending.value = true;
   try {
     if (props.beforeConfirm) {
@@ -149,12 +176,13 @@ const handleConfirm = async () => {
       if (result === false) return;
     }
 
+    if (disposed || revision !== confirmationRevision || !popoverVisible.value) return;
     emit('confirm');
     popoverVisible.value = false;
   } catch (error) {
-    emit('confirm-error', error);
+    if (!disposed && revision === confirmationRevision) emit('confirm-error', error);
   } finally {
-    confirmPending.value = false;
+    if (revision === confirmationRevision) confirmPending.value = false;
   }
 };
 
@@ -166,7 +194,7 @@ const handleCancel = () => {
 
 // 暴露的方法
 const show = () => {
-  if (props.disabled) return;
+  if (disposed || props.disabled) return;
   popoverVisible.value = true;
 };
 

@@ -141,9 +141,10 @@ const cellsStyle = computed(() => {
 
 // 计算属性：隐藏输入框的属性
 const hiddenInputAttrs = computed(() => {
+  const charset = props.inputMode === 'numeric' ? '[0-9]' : '[A-Za-z0-9]';
   return {
     inputmode: (props.inputMode === 'numeric' ? 'numeric' : 'text') as 'numeric' | 'text',
-    pattern: props.inputMode === 'numeric' ? '[0-9]*' : undefined,
+    pattern: `${charset}{${normalizedLength.value}}`,
     autocomplete: 'one-time-code' as const,
   };
 });
@@ -212,6 +213,21 @@ watch(
   }
 );
 
+watch([() => props.mask, () => props.maskDelay], () => {
+  if (maskDelayTimer) clearTimeout(maskDelayTimer);
+  maskDelayTimer = null;
+  lastInputIndex.value = -1;
+});
+
+// 原生输入保留完整验证码，既支持浏览器校验，也向辅助技术提供真实字段值。
+watch([currentValue, focusedIndex], async () => {
+  await nextTick();
+  const input = hiddenInputRef.value;
+  if (!input) return;
+  input.value = currentValue.value;
+  input.setSelectionRange(focusedIndex.value, Math.min(focusedIndex.value + 1, input.value.length));
+});
+
 /**
  * 更新值并触发事件
  */
@@ -274,13 +290,32 @@ function handleInput(event: Event) {
   if (!field.interactive.value) return;
 
   const input = event.target as HTMLInputElement;
-  const value = input.value;
+  const nativeEvent = event as InputEvent;
+  if (nativeEvent.isComposing) return;
+  const replacement = Boolean(nativeEvent.inputType && nativeEvent.data === null);
+  const value = nativeEvent.data ?? input.value;
 
-  if (!value) return;
+  // 自动填充、剪切等替换事件提供整个原生值；普通字符输入继续按当前格子编辑。
+  if (replacement) {
+    const chars = filterValidChars(value, props.inputMode)
+      .slice(0, normalizedLength.value)
+      .split('');
+    cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
+    focusedIndex.value = Math.min(chars.length, normalizedLength.value - 1);
+    lastInputIndex.value = -1;
+    updateValue();
+    input.value = currentValue.value;
+    return;
+  }
+
+  if (!value) {
+    input.value = currentValue.value;
+    return;
+  }
 
   const chars = filterValidChars(value, props.inputMode);
   if (!chars) {
-    input.value = '';
+    input.value = currentValue.value;
     return;
   }
 
@@ -296,7 +331,7 @@ function handleInput(event: Event) {
     if (isValidChar(char, props.inputMode)) {
       const targetIndex = focusedIndex.value + offset;
       cells.value[targetIndex] = char;
-      lastInputIndex.value = targetIndex;
+      lastInputIndex.value = props.maskDelay > 0 ? targetIndex : -1;
     }
   });
 
@@ -306,6 +341,7 @@ function handleInput(event: Event) {
       if (maskDelayTimer) clearTimeout(maskDelayTimer);
       maskDelayTimer = setTimeout(() => {
         lastInputIndex.value = -1;
+        maskDelayTimer = null;
       }, props.maskDelay);
     }
 
@@ -315,7 +351,7 @@ function handleInput(event: Event) {
     updateValue();
   }
 
-  input.value = '';
+  input.value = currentValue.value;
 }
 
 /**
@@ -612,7 +648,8 @@ defineExpose<ExVerificationCodeExposed>({
         :id="inputId"
         ref="hiddenInputRef"
         class="ex-verification-code__hidden-input"
-        type="text"
+        :type="isMasked ? 'password' : 'text'"
+        :value="currentValue"
         :inputmode="hiddenInputAttrs.inputmode"
         :pattern="hiddenInputAttrs.pattern"
         :autocomplete="hiddenInputAttrs.autocomplete"

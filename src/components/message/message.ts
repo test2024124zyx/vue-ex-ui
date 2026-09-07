@@ -170,6 +170,7 @@ export function createMessageService(appContext?: AppContext): MessageService {
   ): MessageInstance => {
     const options = resolveMessageOptions(input, globalConfig, forcedType);
     assertBrowserEnvironment();
+    closeStaleRecords();
 
     const grouped = findGroupedMessage(options);
     if (grouped) return { id: grouped.id, close: grouped.close };

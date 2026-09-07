@@ -19,6 +19,7 @@
     <div class="ex-pagination__items">
       <!-- 上一页按钮 -->
       <button
+        type="button"
         class="ex-pagination__item ex-pagination__prev"
         :disabled="disabled || currentPage <= 1"
         :aria-label="t('prev')"
@@ -54,6 +55,7 @@
         <!-- 首页 -->
         <button
           v-if="totalPages > 0"
+          type="button"
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === 1 }"
           :disabled="disabled"
@@ -67,6 +69,7 @@
         <!-- 向前省略号 -->
         <button
           v-if="showPrevMore"
+          type="button"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
           :aria-label="t('prev5')"
@@ -90,6 +93,7 @@
         <button
           v-for="page in pagers"
           :key="page"
+          type="button"
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === page }"
           :disabled="disabled"
@@ -103,6 +107,7 @@
         <!-- 向后省略号 -->
         <button
           v-if="showNextMore"
+          type="button"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
           :aria-label="t('next5')"
@@ -125,6 +130,7 @@
         <!-- 末页 -->
         <button
           v-if="totalPages > 1"
+          type="button"
           class="ex-pagination__item"
           :class="{ 'ex-pagination__item--active': currentPage === totalPages }"
           :disabled="disabled"
@@ -138,6 +144,7 @@
 
       <!-- 下一页按钮 -->
       <button
+        type="button"
         class="ex-pagination__item ex-pagination__next"
         :disabled="disabled || currentPage >= totalPages"
         :aria-label="t('next')"
@@ -157,7 +164,7 @@
       class="ex-pagination__sizes"
     >
       <select
-        v-model.number="currentPageSize"
+        :value="currentPageSize"
         class="ex-pagination__size-select"
         :disabled="disabled"
         :aria-label="t('pageSize')"
@@ -226,7 +233,7 @@ const { t } = useLocale('pagination');
 const paginationRef = ref<HTMLDivElement>();
 
 const normalizePageSize = (value: number) => {
-  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 10;
+  return Number.isFinite(value) && value > 0 ? Math.max(1, Math.floor(value)) : 10;
 };
 
 const normalizedTotal = computed(() => {
@@ -400,14 +407,15 @@ const handleNextMore = () => {
 };
 
 // 每页条数改变
-const handleSizeChange = () => {
-  const newPageSize = normalizePageSize(currentPageSize.value);
+const handleSizeChange = (event: Event) => {
+  if (props.disabled) return;
+  // 容量变化会同步更新总页数，必须先保存旧数据位置。
+  const firstItemIndex = Math.max(0, (currentPage.value - 1) * currentPageSize.value);
+  const newPageSize = normalizePageSize(Number((event.target as HTMLSelectElement).value));
   currentPageSize.value = newPageSize;
   emit('update:pageSize', newPageSize);
 
   // 重新计算当前页，保持数据位置
-  const oldPageSize = normalizePageSize(props.pageSize);
-  const firstItemIndex = Math.max(0, (currentPage.value - 1) * oldPageSize);
   const newPage =
     totalPages.value === 0
       ? 0

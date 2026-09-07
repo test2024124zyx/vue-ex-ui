@@ -12,6 +12,19 @@ import { ExFileDownloadError } from '../../../src/components/file-download/error
 
 describe('FileDownload 下载工具', () => {
   describe('下载地址', () => {
+    it('相对地址遵循页面 base 元素，显式 base 参数仍优先', () => {
+      const base = document.createElement('base');
+      base.href = 'https://cdn.example/assets/';
+      document.head.prepend(base);
+      try {
+        expect(normalizeDownloadUrl('manual.pdf')).toBe('https://cdn.example/assets/manual.pdf');
+        expect(normalizeDownloadUrl('manual.pdf', 'https://override.example/')).toBe(
+          'https://override.example/manual.pdf'
+        );
+      } finally {
+        base.remove();
+      }
+    });
     it('规范化相对地址并保留允许的 HTTP、HTTPS 与 Blob 协议', () => {
       expect(normalizeDownloadUrl(' ./files/a.zip ', 'https://app.example/path/')).toBe(
         'https://app.example/path/files/a.zip'

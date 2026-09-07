@@ -54,6 +54,21 @@ describe('locale provider', () => {
     expect(getCurrentLocale()).toBe('zh-CN');
   });
 
+  it('setup 外的作用域翻译器响应全局语言且不调用组件注入', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const scoped = useLocale('pagination');
+      expect(scoped.t('pagination')).toBe('Pagination');
+      setLocale('zh-CN');
+      await nextTick();
+      expect(scoped.locale.value).toBe('zh-CN');
+      expect(scoped.t('pagination')).toBe('分页');
+      expect(warning).not.toHaveBeenCalled();
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
   it('内置中英文语言包拥有完全一致的深层键且叶子均为字符串', () => {
     expect(collectLocalePaths(zhCN).sort()).toEqual(collectLocalePaths(enUS).sort());
   });
@@ -121,6 +136,111 @@ describe('locale provider', () => {
     expect(zhCN.pagination.pagination).toBe('分页');
     await wrapper.setProps({ locale: 'en-US' });
     expect(wrapper.text()).toBe('Pagination|Total 3 items');
+  });
+
+  it.each([false, true])('Provider 内可写语言继续更新原翻译器：App 隔离=%s', async isolated => {
+    let composer: ReturnType<typeof useI18n> | undefined;
+    const probe = defineComponent({
+      setup() {
+        composer = useI18n();
+        return () => h('span', composer!.t('common.confirm'));
+      },
+    });
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrapper = mount(ExConfigProvider, {
+      slots: { default: () => h(probe) },
+      global: { plugins: isolated ? [createLocaleProvider({ locale: 'en-US' })] : [] },
+    });
+
+    try {
+      composer!.locale.value = 'zh-CN';
+      await nextTick();
+      expect(composer!.locale.value).toBe('zh-CN');
+      expect(wrapper.text()).toBe(zhCN.common.confirm);
+      expect(getCurrentLocale()).toBe(isolated ? 'en-US' : 'zh-CN');
+      expect(warning).not.toHaveBeenCalled();
+    } finally {
+      wrapper.unmount();
+      warning.mockRestore();
+    }
+  });
+
+  it('写入语言更新 App 状态，但显式 Provider 语言继续控制子树读取', async () => {
+    let appComposer: ReturnType<typeof useI18n> | undefined;
+    let childComposer: ReturnType<typeof useI18n> | undefined;
+    const child = defineComponent({
+      setup() {
+        childComposer = useI18n();
+        return () => h('span', childComposer!.t('common.confirm'));
+      },
+    });
+    const parent = defineComponent({
+      setup() {
+        appComposer = useI18n();
+        return () => h(ExConfigProvider, { locale: 'zh-CN' }, () => h(child));
+      },
+    });
+    const wrapper = mount(parent, {
+      global: { plugins: [createLocaleProvider({ locale: 'zh-CN' })] },
+    });
+
+    try {
+      childComposer!.locale.value = 'en-US';
+      await nextTick();
+      expect(appComposer!.locale.value).toBe('en-US');
+      expect(childComposer!.locale.value).toBe('zh-CN');
+      expect(wrapper.text()).toBe(zhCN.common.confirm);
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it.each(['composer', 'scoped'] as const)(
+    'Provider 保留增强翻译的消息链接和参数：%s',
+    async mode => {
+      const probe = defineComponent({
+        setup() {
+          const composer = useI18n();
+          const scoped = useLocale('pagination');
+          return () =>
+            h(
+              'span',
+              mode === 'composer'
+                ? composer.t('pagination.pagination', { total: 3 })
+                : scoped.t('pagination', { total: 3 })
+            );
+        },
+      });
+      const wrapper = mount(ExConfigProvider, {
+        props: { locale: 'zh-CN' },
+        slots: { default: () => h(probe) },
+        global: {
+          plugins: [
+            createLocaleProvider({
+              locale: 'zh-CN',
+              messages: { pagination: { pagination: '{total} @:common.confirm' } },
+            }),
+          ],
+        },
+      });
+
+      try {
+        await vi.waitFor(() => expect(wrapper.text()).toBe(`3 ${zhCN.common.confirm}`));
+        await wrapper.setProps({ locale: 'en-US' });
+        expect(wrapper.text()).toBe(enUS.pagination.pagination);
+        await wrapper.setProps({ locale: 'zh-CN' });
+        expect(wrapper.text()).toBe(`3 ${zhCN.common.confirm}`);
+      } finally {
+        wrapper.unmount();
+      }
+    }
+  );
+
+  it('轻量翻译器允许按调用指定语言且不改写全局状态', () => {
+    const composer = useI18n();
+    expect(composer.t('common.confirm', {}, { locale: 'zh-CN' })).toBe(zhCN.common.confirm);
+    expect(composer.locale.value).toBe('en-US');
+    expect(composer.t('common.confirm')).toBe(enUS.common.confirm);
   });
 
   it.each([42, { nested: '错误结构' }])('拒绝运行时非字符串翻译叶子：%o', invalidLeaf => {

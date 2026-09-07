@@ -4,37 +4,58 @@
     :class="providerClasses"
     :style="providerStyles"
     :data-theme="theme"
+    :data-ex-provider="providerId"
   >
+    <EffectStyles />
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, inject, provide, ref } from 'vue';
+import { computed, getCurrentInstance, h, inject, provide, ref } from 'vue';
 import type { ExConfigProviderProps, ConfigContext } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
-import { LOCALE_INJECTION_KEY } from '../../locale';
+import { LOCALE_INJECTION_KEY, useLocale } from '../../locale';
+import { createProviderEffectStyles } from './effect-styles';
 import { provideComponentServiceScope } from './service-scope';
 import { createZIndexCssVariables, normalizeZIndexBase } from './z-index';
 import { getTheme } from '../../composables/useTheme';
 import { resolveThemeOverrides } from './theme-overrides';
+import { generateUUID } from '../../utils/id';
 
 defineOptions({
   name: 'ExConfigProvider',
 });
 
-const props = defineProps<ExConfigProviderProps>();
+const props = withDefaults(defineProps<ExConfigProviderProps>(), {
+  animation: undefined,
+  neonEffect: undefined,
+});
 
 const providerRef = ref<HTMLDivElement>();
 const parentConfig = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
+const inheritedLocale = useLocale('common').locale;
+// 独立 App 的 useId 会重复；使用文档内唯一标识，并在水合 setup 中复用服务端根节点。
+const hydrationRoot = getCurrentInstance()?.vnode.el;
+const hydrationId =
+  hydrationRoot?.nodeType === 1 ? hydrationRoot.getAttribute('data-ex-provider') : null;
+const providerId =
+  typeof hydrationId === 'string' && /^[0-9a-f]+(?:-[0-9a-f]+)*$/.test(hydrationId)
+    ? hydrationId
+    : generateUUID();
+const EffectStyles = () =>
+  // CSS 是内部规则与已校验标识组成，避免 SSR 把 style 原始文本中的引号转成 HTML 实体。
+  h('style', {
+    innerHTML: createProviderEffectStyles(providerId, animation.value, neonEffect.value),
+  });
 
 // 局部显式配置优先；根主题跟随全局状态，避免 Teleport 面板与页面明暗不一致。
 const theme = computed(() => props.theme ?? parentConfig?.theme.value ?? getTheme());
 const themeOverrides = computed(() =>
   resolveThemeOverrides(parentConfig?.themeOverrides?.value, props.themeOverrides, props.style)
 );
-const locale = computed(() => props.locale ?? parentConfig?.locale.value ?? DEFAULT_CONFIG.locale);
+const locale = computed(() => props.locale ?? parentConfig?.locale.value ?? inheritedLocale.value);
 const size = computed(() => props.size ?? parentConfig?.size.value ?? DEFAULT_CONFIG.size);
 const neonEffect = computed(
   () => props.neonEffect ?? parentConfig?.neonEffect.value ?? DEFAULT_CONFIG.neonEffect
@@ -85,9 +106,7 @@ const providerStyles = computed(() => {
   };
 
   // z-index 基础值
-  if (zIndex.value !== DEFAULT_CONFIG.zIndex) {
-    Object.assign(styles, createZIndexCssVariables(zIndex.value));
-  }
+  Object.assign(styles, createZIndexCssVariables(zIndex.value));
 
   // 合并用户自定义样式
   if (props.style) {
@@ -116,45 +135,6 @@ defineExpose({
 
 .ex-config-provider {
   display: contents;
-}
-
-// 禁用霓虹效果
-.ex-no-neon {
-  :deep([class^='ex-']),
-  :deep([class*=' ex-']) {
-    box-shadow: none !important;
-    text-shadow: none !important;
-    filter: none !important;
-  }
-
-  // 头像的渐变伪元素不属于阴影，需要显式关闭霓虹层。
-  :deep(.ex-avatar--clickable::before) {
-    display: none !important;
-  }
-}
-
-// 禁用动画
-.ex-no-animation {
-  :deep([class^='ex-']),
-  :deep([class*=' ex-']) {
-    transition: none !important;
-    animation: none !important;
-  }
-
-  // 伪元素撕裂层不继承宿主节点的 animation 属性，需要单独关闭。
-  :deep(.ex-typography--glitch::before),
-  :deep(.ex-typography--glitch::after) {
-    animation: none !important;
-  }
-
-  // 全局关闭动画时同时移除头像和头像组的状态变换。
-  :deep(.ex-avatar--clickable:hover),
-  :deep(.ex-avatar--clickable:active),
-  :deep(.ex-avatar--clickable > .ex-avatar__image:hover),
-  :deep(.ex-avatar-group__overflow:hover),
-  :deep(.ex-avatar-group__overflow:active) {
-    transform: none !important;
-  }
 }
 
 // 尊重用户的动画偏好

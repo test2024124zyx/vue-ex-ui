@@ -9,6 +9,62 @@ describe('ExCode', () => {
     vi.restoreAllMocks();
   });
 
+  it('卸载后复制完成不再发出事件或安排提示计时器', async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn(
+          () =>
+            new Promise<void>(resolve => {
+              finish = resolve;
+            })
+        ),
+      },
+    });
+    const wrapper = mount(ExCode, { props: { code: 'a' } });
+    const pending = (wrapper.vm as unknown as ExCodeExposed).copy();
+    wrapper.unmount();
+    const count = vi.getTimerCount();
+    finish();
+    try {
+      expect(await pending).toBe(false);
+      expect(vi.getTimerCount()).toBe(count);
+      expect(wrapper.emitted('copy')).toBeUndefined();
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  it('较早的复制完成不覆盖较新复制失败的结果', async () => {
+    let finish!: () => void;
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi
+          .fn()
+          .mockImplementationOnce(
+            () =>
+              new Promise<void>(resolve => {
+                finish = resolve;
+              })
+          )
+          .mockRejectedValueOnce(new Error('denied')),
+      },
+    });
+    const wrapper = mount(ExCode, { props: { code: 'a' } });
+    const api = wrapper.vm as unknown as ExCodeExposed;
+    const first = api.copy();
+    expect(await api.copy()).toBe(false);
+    finish();
+    expect(await first).toBe(false);
+    expect(wrapper.emitted('copy')).toBeUndefined();
+    expect(wrapper.emitted('copy-error')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
   it('默认 plaintext 应按纯文本渲染，不生成高亮 token', () => {
     const code = '<span class="danger" onclick="alert(1)">文本</span>';
     const wrapper = mount(ExCode, {

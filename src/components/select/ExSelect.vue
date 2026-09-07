@@ -614,9 +614,16 @@ const virtualHeight = computed(() => {
 // 键盘导航后将高亮项滚动进可视区域（虚拟滚动时按索引滚动）
 const scrollHoverIntoView = () => {
   if (hoverIndex.value < 0) return;
-  if (useVirtual.value) {
-    nextTick(() => virtualListRef.value?.scrollToIndex(getVirtualRowIndex(hoverIndex.value)));
-  }
+  nextTick(() => {
+    if (!dropdownVisible.value || hoverIndex.value < 0) return;
+    if (useVirtual.value) {
+      virtualListRef.value?.scrollToIndex(getVirtualRowIndex(hoverIndex.value));
+    } else {
+      dropdownRef.value
+        ?.querySelector<HTMLElement>(`[id="${getOptionId(hoverIndex.value)}"]`)
+        ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+  });
 };
 
 // 在过滤后的列表里查找下一个/上一个可用（未禁用）选项索引
@@ -893,6 +900,21 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 // 监听下拉状态：仅在下拉打开时挂载全局监听器
+watch(
+  () =>
+    flatFilteredOptions.value.map(option => ({ value: option.value, disabled: option.disabled })),
+  (options, previous) => {
+    if (!dropdownVisible.value) {
+      hoverIndex.value = -1;
+      return;
+    }
+    const activeValue = previous[hoverIndex.value]?.value;
+    const retained = options.findIndex(option => option.value === activeValue && !option.disabled);
+    hoverIndex.value = retained >= 0 ? retained : findEnabledIndex(-1, 1);
+    scrollHoverIntoView();
+  }
+);
+
 watch(dropdownVisible, visible => {
   if (visible) {
     nextTick(() => {
@@ -902,6 +924,7 @@ watch(dropdownVisible, visible => {
       if (hoverIndex.value < 0 && initialOption) {
         hoverIndex.value = getOptionIndex(initialOption);
       }
+      scrollHoverIntoView();
     });
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('resize', handleViewportChange);

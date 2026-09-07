@@ -1,4 +1,4 @@
-import { computed, inject, nextTick, onBeforeUnmount, provide, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, provide, ref, watch } from 'vue';
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import {
   createFocusTrap,
@@ -16,9 +16,17 @@ import { createSharedInjectionKey } from '../utils/shared-runtime';
 const OVERLAY_PARENT_KEY: InjectionKey<OverlayStackEntry> =
   createSharedInjectionKey('overlay-parent');
 
+/** 内联控件读取所在浮层作用域，便于父层隐藏时清理第三方提示和高亮。 */
+export function useOverlayParentActive(): ComputedRef<boolean> {
+  const parent = inject(OVERLAY_PARENT_KEY, undefined);
+  return computed(() => parent?.active?.() ?? true);
+}
+
 export interface UseOverlayOptions {
   /** 浮层真实打开状态。 */
   active: () => boolean;
+  /** 布局容器在非浮层模式仍可展示后代；省略时沿用 active。 */
+  scopeActive?: () => boolean;
   /** 对话框或面板容器。 */
   container: Ref<HTMLElement | undefined>;
   /** 语义层级下限；实际层级会随父层级和打开顺序动态提升。 */
@@ -54,13 +62,19 @@ export interface UseOverlayReturn {
 /** 统一管理浮层栈、滚动锁定、焦点圈闭、Escape 与焦点恢复。 */
 export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   const parent = inject(OVERLAY_PARENT_KEY, undefined);
-  const active = computed(() => options.active() && (parent?.active?.() ?? true));
+  const disposed = ref(false);
+  const active = computed(
+    () => !disposed.value && options.active() && (parent?.active?.() ?? true)
+  );
   const zIndex = computed(() => resolveOverlayZIndex(entry, options.zIndex?.() ?? 0));
   const entry: OverlayStackEntry = {
     parent,
-    active: () => active.value,
+    active: () =>
+      !disposed.value &&
+      (options.scopeActive?.() ?? options.active()) &&
+      (parent?.active?.() ?? true),
     container: () => options.container.value,
-    zIndex: () => zIndex.value,
+    zIndex: () => (active.value ? zIndex.value : (parent?.zIndex?.() ?? -1)),
     trapFocus: () => options.trapFocus?.() !== false,
     canEscape: () => options.closeOnEscape?.() !== false,
     onEscape: () => options.onEscape?.(),
@@ -99,7 +113,7 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
   };
 
   const activate = () => {
-    if (typeof document === 'undefined') return;
+    if (disposed.value || typeof document === 'undefined') return;
     const revision = ++activationRevision;
     if (options.restoreFocus) {
       previousActiveElement =
@@ -165,7 +179,10 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
     }
   );
 
-  onBeforeUnmount(deactivate);
+  onBeforeUnmount(() => {
+    disposed.value = true;
+    deactivate();
+  });
 
   const containsTarget = (target: Node | null) =>
     getOverlayOwnedContainers(entry).some(container => container.contains(target));

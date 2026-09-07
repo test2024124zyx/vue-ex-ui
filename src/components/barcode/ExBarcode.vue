@@ -3,19 +3,22 @@
     ref="barcodeRef"
     :class="barcodeClasses"
     :style="barcodeStyles"
-    role="img"
+    :role="loading || error ? 'group' : 'img'"
     :aria-label="barcodeAriaLabel"
+    :aria-busy="loading || undefined"
   >
     <!-- SVG 容器 -->
     <svg
       ref="svgRef"
       class="ex-barcode__svg"
+      aria-hidden="true"
     />
 
     <!-- 加载状态 -->
     <div
       v-if="loading"
       class="ex-barcode__loading"
+      role="status"
     >
       <div class="ex-barcode__loading-spinner" />
       <p class="ex-barcode__loading-text">
@@ -27,6 +30,7 @@
     <div
       v-if="error"
       class="ex-barcode__error"
+      role="alert"
     >
       <slot
         name="error"
@@ -132,7 +136,9 @@ const barcodeClasses = computed(() => {
 
 const barcodeAriaLabel = computed(() => {
   if (props.ariaLabel) return props.ariaLabel;
-  return props.value.length <= MAX_BARCODE_VALUE_LENGTH ? `Barcode: ${props.value}` : 'Barcode';
+  return props.value.length <= MAX_BARCODE_VALUE_LENGTH
+    ? `${t('barcode.label')}: ${props.value}`
+    : t('barcode.label');
 });
 
 const barcodeStyles = computed(() => {
@@ -160,7 +166,7 @@ const generate = async (): Promise<void> => {
   if (!props.value || !svgRef.value) {
     loading.value = false;
     error.value = true;
-    errorMessage.value = 'Invalid value';
+    errorMessage.value = t('barcode.invalidValue');
     return;
   }
 
@@ -197,7 +203,7 @@ const generate = async (): Promise<void> => {
         valid: (valid: boolean) => {
           if (!valid && requestId === generationId && !disposed) {
             error.value = true;
-            errorMessage.value = 'Invalid barcode value for format';
+            errorMessage.value = t('barcode.invalidValue');
           }
         },
       })
@@ -205,7 +211,7 @@ const generate = async (): Promise<void> => {
   } catch (err) {
     if (requestId !== generationId || disposed) return;
     error.value = true;
-    errorMessage.value = err instanceof Error ? err.message : 'Generation failed';
+    errorMessage.value = err instanceof Error ? err.message : t('barcode.error');
   } finally {
     if (requestId === generationId && !disposed) loading.value = false;
   }
@@ -297,7 +303,7 @@ const renderExportCanvas = async (svg: SVGSVGElement): Promise<HTMLCanvasElement
 // 下载条码
 const download = (filename?: string): void => {
   const svg = svgRef.value;
-  if (!svg || error.value) return;
+  if (!svg || loading.value || error.value || disposed) return;
 
   void renderExportCanvas(svg).then(canvas => {
     if (!canvas || disposed) return;
@@ -311,6 +317,8 @@ const download = (filename?: string): void => {
           link.download = filename || `barcode-${Date.now()}.png`;
           link.href = downloadUrl;
           link.click();
+        } catch {
+          // toBlob 的异步回调也须独立兜底，确保下载失败不会变成未捕获异常。
         } finally {
           if (downloadUrl) revokeObjectUrl(downloadUrl);
         }
@@ -324,7 +332,7 @@ const download = (filename?: string): void => {
 // 获取条码数据URL（SVG→canvas 为异步绘制，必须等 img.onload 后再读取，故返回 Promise）
 const toDataURL = async (type: 'image/png' | 'image/jpeg' = 'image/png'): Promise<string> => {
   const svg = svgRef.value;
-  if (!svg || error.value) return '';
+  if (!svg || loading.value || error.value || disposed) return '';
   const canvas = await renderExportCanvas(svg);
   if (!canvas || disposed) return '';
 

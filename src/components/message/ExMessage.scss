@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 /* 服务宿主只负责堆叠与定位，交互由每条消息自身承接。 */
 :global(.ex-message-container) {
@@ -152,6 +153,21 @@
   .ex-message {
     width: 100%;
     max-width: none;
+  }
+}
+
+.ex-message.ex-message--no-animation {
+  @include effect-boundary {
+    animation: none;
+    transition: none;
+  }
+}
+
+.ex-message.ex-message--no-neon {
+  @include effect-boundary {
+    box-shadow: none;
+    text-shadow: none;
+    filter: none;
   }
 }
 

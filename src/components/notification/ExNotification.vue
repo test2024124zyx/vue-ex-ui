@@ -14,8 +14,7 @@
       aria-atomic="true"
       :tabindex="hasClickHandler ? 0 : undefined"
       @click="handleClick"
-      @keydown.enter="handleKeyboardClick"
-      @keydown.space.prevent="handleKeyboardClick"
+      @keydown="handleKeyboardClick"
       @mouseenter="pauseTimer('hover')"
       @mouseleave="resumeTimer('hover')"
       @focusin="pauseTimer('focus')"
@@ -81,9 +80,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, type EmitFn } from 'vue';
 import { useLocale } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import {
   useAnimation,
   useConfigTheme,
@@ -119,8 +119,8 @@ const props = withDefaults(defineProps<ExNotificationProps>(), {
   position: 'top-right',
   dangerouslyUseHTMLString: false,
 });
-const emit = defineEmits<ExNotificationEmits>();
-const componentInstance = getCurrentInstance();
+// click 监听影响渲染，单独按属性更新；其他事件继续声明，所有事件仍由 Vue 分发。
+const emit: EmitFn<ExNotificationEmits> = defineEmits(['close', 'destroy'] as string[]);
 const { t } = useLocale('notification');
 const configTheme = useConfigTheme();
 const themeOverrides = useThemeOverrides();
@@ -139,7 +139,7 @@ const defaultIconMap: Record<NotificationType, string> = {
 const defaultIcon = computed(() => defaultIconMap[props.type]);
 const liveRole = computed(() => (props.type === 'error' ? 'alert' : 'status'));
 const ariaLive = computed(() => (props.type === 'error' ? 'assertive' : 'polite'));
-const hasClickHandler = computed(() => Boolean(componentInstance?.vnode.props?.onClick));
+const hasClickHandler = computed(() => Boolean(props.onClick || props.onClickOnce));
 const sanitizedContent = computed(() =>
   props.dangerouslyUseHTMLString ? sanitizeHtml(props.content) : props.content
 );
@@ -222,8 +222,16 @@ const handleClick = (): void => {
   if (hasClickHandler.value) emit('click');
 };
 
-const handleKeyboardClick = (): void => {
-  if (hasClickHandler.value) emit('click');
+const handleKeyboardClick = (event: KeyboardEvent): void => {
+  if (
+    event.target !== event.currentTarget ||
+    event.defaultPrevented ||
+    isComposingKeyboardEvent(event)
+  )
+    return;
+  if (!hasClickHandler.value || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  emit('click');
 };
 
 watch(

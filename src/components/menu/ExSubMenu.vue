@@ -160,6 +160,8 @@ import {
   nextTick,
   onBeforeMount,
   onBeforeUnmount,
+  onMounted,
+  provide,
   ref,
   useAttrs,
   useId,
@@ -167,7 +169,9 @@ import {
 } from 'vue';
 import ExDropdown from '../dropdown/ExDropdown.vue';
 import { hasRenderableContent } from '../../utils/vnode';
-import { MENU_INJECTION_KEY } from './context';
+import { MENU_INJECTION_KEY, MENU_BRANCH_VISIBLE_KEY } from './context';
+import { registerOverlayEscapeBoundary } from '../../composables/overlay-manager';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { getDirectMenuActions, moveMenuFocus } from './menu-utils';
 import type { ExSubMenuEmits, ExSubMenuExposed, ExSubMenuProps, ExSubMenuSlots } from './types';
 
@@ -185,6 +189,10 @@ const props = withDefaults(defineProps<ExSubMenuProps>(), {
 const emit = defineEmits<ExSubMenuEmits>();
 const attrs = useAttrs();
 const menuContext = inject(MENU_INJECTION_KEY, null);
+const ancestorVisible = inject(
+  MENU_BRANCH_VISIBLE_KEY,
+  computed(() => true)
+);
 const subMenuRef = ref<HTMLLIElement | null>(null);
 const titleButtonRef = ref<HTMLButtonElement | null>(null);
 const submenuListRef = ref<HTMLUListElement | null>(null);
@@ -196,9 +204,13 @@ const isHorizontal = computed(() => menuContext?.mode.value === 'horizontal');
 const isOpen = computed(() =>
   menuContext ? menuContext.openKeys.value.includes(props.itemKey) : internalOpen.value
 );
+provide(
+  MENU_BRANCH_VISIBLE_KEY,
+  computed(() => ancestorVisible.value && isOpen.value && !menuContext?.collapsed.value)
+);
 const hasIcon = computed(() => hasRenderableContent(slots.icon?.()));
 const tabIndex = computed(() =>
-  menuContext ? menuContext.getTabIndex(props.itemKey, props.disabled) : props.disabled ? -1 : 0
+  menuContext ? menuContext.getTabIndex(props.itemKey, disabled.value) : disabled.value ? -1 : 0
 );
 const subMenuClasses = computed(() => [
   'ex-submenu',
@@ -228,11 +240,28 @@ const rootAttrs = computed(() =>
 );
 
 let unregisterFocusable: (() => void) | undefined;
-const disabled = computed(() => props.disabled);
+const disabled = computed(() => props.disabled || !ancestorVisible.value);
 onBeforeMount(() => {
   unregisterFocusable = menuContext?.registerFocusable(props.itemKey, disabled);
 });
 onBeforeUnmount(() => unregisterFocusable?.());
+watch(
+  () => props.itemKey,
+  () => {
+    unregisterFocusable?.();
+    unregisterFocusable = menuContext?.registerFocusable(props.itemKey, disabled);
+  }
+);
+let unregisterEscape: (() => void) | undefined;
+onMounted(() => {
+  if (subMenuRef.value)
+    unregisterEscape = registerOverlayEscapeBoundary(
+      subMenuRef.value,
+      () => !isHorizontal.value && isOpen.value && ancestorVisible.value,
+      closeAndRestoreFocus
+    );
+});
+onBeforeUnmount(() => unregisterEscape?.());
 
 const focusBoundaryItem = (boundary: 'first' | 'last'): void => {
   const list = submenuListRef.value;
@@ -300,7 +329,7 @@ const closeAndRestoreFocus = (): void => {
 };
 
 const handleTitleKeydown = (event: KeyboardEvent): void => {
-  if (props.disabled) return;
+  if (props.disabled || event.defaultPrevented || isComposingKeyboardEvent(event)) return;
 
   if (event.key === 'Home' || event.key === 'End') {
     if (moveTitleFocus(event.key === 'Home' ? 'first' : 'last')) event.preventDefault();
@@ -330,11 +359,13 @@ const handleTitleKeydown = (event: KeyboardEvent): void => {
   }
   if (['Escape', 'Esc'].includes(event.key) && isOpen.value) {
     event.preventDefault();
+    event.stopPropagation();
     closeAndRestoreFocus();
   }
 };
 
 const handleListKeydown = (event: KeyboardEvent): void => {
+  if (event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   if (!['Escape', 'Esc', 'ArrowLeft', 'Left'].includes(event.key)) return;
   event.preventDefault();
   event.stopPropagation();

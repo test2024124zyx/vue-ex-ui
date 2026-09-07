@@ -152,12 +152,8 @@
                 />
                 <ExRadio
                   v-else
-                  :model-value="
-                    isRowSelected(record, sourceIndex)
-                      ? getRowKey(record, sourceIndex)
-                      : '__ex_none__'
-                  "
-                  :value="getRowKey(record, sourceIndex)"
+                  :model-value="isRowSelected(record, sourceIndex)"
+                  :value="true"
                   :disabled="loading || !rowSelectable(record, sourceIndex)"
                   :aria-label="t('selectRowAria', { index: index + 1 })"
                   @update:model-value="() => toggleRowSelectionAtIndex(record, sourceIndex, true)"
@@ -180,7 +176,7 @@
                   :index="index"
                   :column="column"
                 >
-                  {{ getCellValue(record, column, index) }}
+                  <CellContent :value="getCellValue(record, column, index)" />
                 </slot>
               </div>
             </td>
@@ -245,7 +241,8 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import ExCheckbox from '../checkbox/ExCheckbox.vue';
 import ExRadio from '../radio/ExRadio.vue';
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, isVNode, toDisplayString } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
 import type {
   ExTableProps,
   ExTableEmits,
@@ -261,7 +258,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExTableProps>(), {
-  size: 'medium',
   bordered: false,
   striped: false,
   hoverable: true,
@@ -282,6 +278,13 @@ const emit = defineEmits<ExTableEmits>();
 const tableRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();
 const { t } = useLocale('table');
+const componentSize = useComponentSize(computed(() => props.size));
+const CellContent = ({ value }: { value: unknown }) =>
+  isVNode(value)
+    ? value
+    : Array.isArray(value) && value.every(isVNode)
+      ? value
+      : toDisplayString(value);
 const sortInfo = ref<TableSortInfo>({ key: '', order: null });
 
 // 虚拟滚动：当前滚动位置
@@ -289,7 +292,11 @@ const scrollTop = ref(0);
 
 // 计算属性
 const tableClasses = computed(() => {
-  const classes = ['ex-table', `ex-table--${props.size}`, `ex-table--layout-${props.layout}`];
+  const classes = [
+    'ex-table',
+    `ex-table--${componentSize.value}`,
+    `ex-table--layout-${props.layout}`,
+  ];
 
   if (props.bordered) classes.push('ex-table--bordered');
   if (props.striped) classes.push('ex-table--striped');
@@ -303,9 +310,8 @@ const tableClasses = computed(() => {
 });
 
 const tableStyles = computed(() => {
-  if (!props.style) return undefined;
-  if (typeof props.style === 'string') return props.style;
-  return props.style;
+  const layout = props.virtual ? { '--ex-table-row-height': `${normalizedRowHeight.value}px` } : {};
+  return [layout, props.style];
 });
 
 const containerStyle = computed(() => {
@@ -673,25 +679,24 @@ onBeforeUnmount(() => {
 // 行选择 (Row Selection)
 // ============================================================================
 
-const sameKeys = (a: Array<string | number>, b: Array<string | number>) =>
-  a.length === b.length && a.every((k, i) => k === b[i]);
-
-// 内部维护选中 keys，初始化自 prop 并随 prop 变化同步（支持受控 v-model:selectedRowKeys）
+// 受控时展示父级确认值，内部副本只用于切回非受控时承接最近值。
 const internalSelectedKeys = ref<Array<string | number>>([...(props.selectedRowKeys ?? [])]);
 watch(
   () => props.selectedRowKeys,
   keys => {
-    if (keys && !sameKeys(keys, internalSelectedKeys.value)) {
+    if (keys !== undefined) {
       internalSelectedKeys.value = [...keys];
     }
-  }
+  },
+  { deep: true }
 );
+const effectiveSelectedKeys = computed(() => props.selectedRowKeys ?? internalSelectedKeys.value);
 
 const rowSelectable = (record: TableDataItem, index: number): boolean =>
   props.isRowSelectable ? props.isRowSelectable(record, index) : true;
 
 // 选中键保留有序数组对外输出，内部成员查询统一复用集合，避免全选时平方级扫描。
-const selectedKeySet = computed(() => new Set(internalSelectedKeys.value));
+const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
 
 const isRowSelected = (record: TableDataItem, index: number): boolean =>
   selectedKeySet.value.has(getRowKey(record, index));
@@ -712,13 +717,14 @@ const someSelected = computed(
   () => !allSelected.value && selectableKeys.value.some(k => selectedKeySet.value.has(k))
 );
 
-const selectedRowsData = computed(() =>
-  props.data.filter((record, index) => selectedKeySet.value.has(getRowKey(record, index)))
-);
-
-const commitSelection = () => {
-  emit('update:selectedRowKeys', [...internalSelectedKeys.value]);
-  emit('selection-change', [...internalSelectedKeys.value], selectedRowsData.value);
+const getSelectedRows = (keys: Array<string | number>) => {
+  const selected = new Set(keys);
+  return props.data.filter((record, index) => selected.has(getRowKey(record, index)));
+};
+const commitSelection = (keys: Array<string | number>) => {
+  if (props.selectedRowKeys === undefined) internalSelectedKeys.value = [...keys];
+  emit('update:selectedRowKeys', [...keys]);
+  emit('selection-change', [...keys], getSelectedRows(keys));
 };
 
 const toggleRowSelectionAtIndex = (
@@ -731,21 +737,22 @@ const toggleRowSelectionAtIndex = (
   const key = getRowKey(record, sourceIndex);
   const currentlySelected = selectedKeySet.value.has(key);
   const next = selected ?? !currentlySelected;
+  let keys: Array<string | number>;
 
   if (props.selectionType === 'radio') {
-    if (next) internalSelectedKeys.value = [key];
-    else if (currentlySelected) internalSelectedKeys.value = [];
+    if (next) keys = [key];
+    else if (currentlySelected) keys = [];
     else return;
   } else if (next && !currentlySelected) {
-    internalSelectedKeys.value = [...internalSelectedKeys.value, key];
+    keys = [...effectiveSelectedKeys.value, key];
   } else if (!next && currentlySelected) {
-    internalSelectedKeys.value = internalSelectedKeys.value.filter(k => k !== key);
+    keys = effectiveSelectedKeys.value.filter(k => k !== key);
   } else {
     return; // 状态未变化
   }
 
-  emit('select', record, next, selectedRowsData.value);
-  commitSelection();
+  emit('select', record, next, getSelectedRows(keys));
+  commitSelection(keys);
 };
 
 const toggleRowSelection: ExTableExposed['toggleRowSelection'] = (record, selected) => {
@@ -756,23 +763,23 @@ const toggleRowSelection: ExTableExposed['toggleRowSelection'] = (record, select
 const toggleAllSelection: ExTableExposed['toggleAllSelection'] = () => {
   if (props.loading) return;
   const shouldSelectAll = !allSelected.value;
+  let keys: Array<string | number>;
   if (shouldSelectAll) {
     // 合并已有选中（保留不在当前可选列表中的 key），再加入全部可选行
-    const merged = new Set(internalSelectedKeys.value);
+    const merged = new Set(effectiveSelectedKeys.value);
     selectableKeys.value.forEach(k => merged.add(k));
-    internalSelectedKeys.value = Array.from(merged);
+    keys = Array.from(merged);
   } else {
     const toRemove = new Set(selectableKeys.value);
-    internalSelectedKeys.value = internalSelectedKeys.value.filter(k => !toRemove.has(k));
+    keys = effectiveSelectedKeys.value.filter(k => !toRemove.has(k));
   }
-  emit('select-all', shouldSelectAll, selectedRowsData.value);
-  commitSelection();
+  emit('select-all', shouldSelectAll, getSelectedRows(keys));
+  commitSelection(keys);
 };
 
 const clearSelection: ExTableExposed['clearSelection'] = () => {
-  if (internalSelectedKeys.value.length === 0) return;
-  internalSelectedKeys.value = [];
-  commitSelection();
+  if (effectiveSelectedKeys.value.length === 0) return;
+  commitSelection([]);
 };
 
 // 事件处理

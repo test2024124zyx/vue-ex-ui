@@ -41,6 +41,16 @@ const OPPOSITE: Record<PopperSide, PopperSide> = {
 };
 
 const VIEWPORT_PADDING = 8;
+const PLACEMENT_ALIASES: Record<string, PopperPlacement> = {
+  topLeft: 'top-start',
+  topRight: 'top-end',
+  bottomLeft: 'bottom-start',
+  bottomRight: 'bottom-end',
+  leftTop: 'left-start',
+  leftBottom: 'left-end',
+  rightTop: 'right-start',
+  rightBottom: 'right-end',
+};
 
 /**
  * 计算浮层相对视口的 fixed 坐标（配合 position: fixed 使用）
@@ -59,7 +69,7 @@ export function calcPopperPosition(
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  const parts = placement.split('-');
+  const parts = (PLACEMENT_ALIASES[placement] ?? placement).split('-');
   const rawSide = parts[0] ?? 'top';
   const rawAlign = parts[1];
   let side: PopperSide = (

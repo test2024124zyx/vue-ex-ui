@@ -14,7 +14,7 @@
       @keydown="handleTriggerKeydown"
     >
       <slot
-        :open="isVisible"
+        :open="overlayActive"
         :disabled="disabled"
         :trigger-props="triggerProps"
       ></slot>
@@ -23,7 +23,7 @@
     <Teleport to="body">
       <Transition name="ex-dropdown-fade">
         <div
-          v-show="isVisible"
+          v-show="overlayActive"
           :id="menuId"
           ref="menuRef"
           :class="menuClasses"
@@ -67,7 +67,8 @@ import {
   useNeonEffect,
   useZIndexLayer,
 } from '../config-provider/composables';
-import { useOverlay } from '../../composables/useOverlay';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { computeFloatingPosition } from '../../utils/floating';
 import type { FloatingRect } from '../../utils/floating';
 import { DROPDOWN_INJECTION_KEY } from './context';
@@ -145,6 +146,7 @@ let resizeObserver: ResizeObserver | null = null;
 let focusMenuWhenOpened = false;
 let restoreFocusWhenClosed = false;
 let lastTriggerElement: HTMLElement | null = null;
+let disposed = false;
 
 const normalizedTrigger = computed<DropdownTrigger>(() =>
   TRIGGERS.has(props.trigger) ? props.trigger : 'hover'
@@ -168,11 +170,11 @@ const menuClasses = computed(() => [
 ]);
 const menuStyles = computed<CSSProperties>(() => ({
   ...menuPositionStyles.value,
-  zIndex: props.zIndex ?? baseZIndex.value,
+  ...popupStyles.value,
 }));
 const triggerProps = computed(() => ({
   'aria-haspopup': 'menu' as const,
-  'aria-expanded': isVisible.value,
+  'aria-expanded': overlayActive.value,
   'aria-controls': menuId,
   'aria-disabled': props.disabled ? (true as const) : undefined,
 }));
@@ -306,7 +308,7 @@ const toFloatingRect = (rect: DOMRect): FloatingRect => ({
 
 /** 立即读取布局并更新 fixed 菜单坐标；滚动和缩放事件通过 rAF 合并调用。 */
 const updatePosition = () => {
-  if (!triggerRef.value || !menuRef.value || typeof window === 'undefined') return;
+  if (disposed || !triggerRef.value || !menuRef.value || typeof window === 'undefined') return;
   const point = contextPoint.value;
   const contextOffset = finiteDelay(props.offset, 0);
   const reference: FloatingRect = point
@@ -363,12 +365,13 @@ const schedulePosition = () => {
 
 const handlePointerOutside = (event: Event) => {
   if (!(event.target instanceof Node)) return;
-  if (dropdownRef.value?.contains(event.target) || menuRef.value?.contains(event.target)) return;
+  if (dropdownRef.value?.contains(event.target) || containsTarget(event.target)) return;
   requestHide(false);
 };
 
 const attachPositionListeners = () => {
-  if (listenersAttached || typeof window === 'undefined') return;
+  if (disposed || !overlayActive.value || listenersAttached || typeof window === 'undefined')
+    return;
   document.addEventListener('pointerdown', handlePointerOutside, true);
   window.addEventListener('resize', schedulePosition);
   window.addEventListener('scroll', schedulePosition, true);
@@ -446,7 +449,7 @@ const handleContextMenu = (event: MouseEvent) => {
 };
 
 const handleTriggerKeydown = (event: KeyboardEvent) => {
-  if (props.disabled || event.defaultPrevented) return;
+  if (props.disabled || event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
   event.preventDefault();
   rememberTriggerElement(event);
@@ -459,7 +462,7 @@ const handleTriggerKeydown = (event: KeyboardEvent) => {
 };
 
 const handleMenuKeydown = (event: KeyboardEvent) => {
-  if (event.defaultPrevented) return;
+  if (event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault();
@@ -511,14 +514,16 @@ const handleDataItemClick = (item: DropdownItemData) => {
   if (!item.disabled) emit('item-click', item);
 };
 
-useOverlay({
-  active: () => isVisible.value,
+const {
+  active: overlayActive,
+  styles: popupStyles,
+  containsTarget,
+} = usePopupOverlay({
+  active: () => isVisible.value && !props.disabled,
   container: menuRef,
-  lockScroll: () => false,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
   closeOnEscape: () => true,
   onEscape: () => requestHide(true),
-  trapFocus: () => false,
-  autoFocus: () => false,
   restoreFocus: false,
 });
 
@@ -531,7 +536,7 @@ watch(
 );
 
 watch(
-  isVisible,
+  overlayActive,
   visible => {
     if (!visible) {
       detachPositionListeners();
@@ -541,6 +546,7 @@ watch(
       return;
     }
     nextTick(() => {
+      if (disposed || !overlayActive.value) return;
       attachPositionListeners();
       updatePosition();
       if (focusMenuWhenOpened) focusMenu();
@@ -568,6 +574,18 @@ watch(
   { immediate: true }
 );
 
+watch(
+  [
+    () => props.offset,
+    () => props.viewportPadding,
+    () => props.flip,
+    () => props.matchTriggerWidth,
+  ],
+  () => {
+    if (overlayActive.value) schedulePosition();
+  }
+);
+
 const show = () => {
   contextPoint.value = null;
   requestShow(false);
@@ -576,6 +594,7 @@ const hide = () => requestHide(false);
 const getElement = () => dropdownRef.value ?? null;
 
 onBeforeUnmount(() => {
+  disposed = true;
   clearHoverTimer();
   detachPositionListeners();
 });

@@ -49,6 +49,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, useSlots } from 'vue';
 import type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed } from './types';
 import { hasRenderableContent } from '../../utils/vnode';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { getFirstGrapheme } from '../../utils/text';
 import { useLocale } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -79,7 +80,7 @@ const { t } = useLocale('badge');
 const componentSize = useComponentSize(computed(() => props.size));
 
 // 计算属性
-const hasSlotContent = computed(() => hasRenderableContent(slots.default?.({})));
+const hasSlotContent = useRenderComputed(() => hasRenderableContent(slots.default?.({})));
 
 const isStatusMode = computed(() => {
   return !!props.status && !hasSlotContent.value;

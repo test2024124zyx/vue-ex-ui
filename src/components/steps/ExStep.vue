@@ -8,8 +8,7 @@
     :aria-current="isCurrent ? 'step' : undefined"
     :aria-disabled="props.disabled"
     @click="handleClick"
-    @keydown.enter="handleClick"
-    @keydown.space.prevent="handleClick"
+    @keydown="handleKeydown"
   >
     <!-- 步骤头部 -->
     <div class="ex-step__head">
@@ -94,6 +93,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, onBeforeUnmount, ref } from 'vue';
 import type { ExStepProps, ExStepExposed, StepsContext } from './types';
 import ExIcon from '../icon/ExIcon.vue';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExStep',
@@ -248,6 +248,18 @@ const handleClick = () => {
   if (!props.disabled && isClickable.value) {
     stepsContext.onStepClick(stepIndex.value, props.clickable === true);
   }
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (
+    event.target !== event.currentTarget ||
+    event.defaultPrevented ||
+    isComposingKeyboardEvent(event)
+  )
+    return;
+  if (!isClickable.value || props.disabled || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  handleClick();
 };
 
 // 暴露的方法

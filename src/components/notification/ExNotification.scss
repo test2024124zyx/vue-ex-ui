@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/component-mixins' as *;
 @use '../../styles/performance' as *;
 
@@ -143,8 +144,7 @@
     }
   }
 
-  &--no-animation,
-  &--no-animation &__close {
+  &--no-animation {
     transition: none;
     animation: none;
   }
@@ -357,6 +357,21 @@
 // ============================================================================
 // 减少动画偏好
 // ============================================================================
+
+.ex-notification.ex-notification--no-animation {
+  @include effect-boundary {
+    animation: none;
+    transition: none;
+  }
+}
+
+.ex-notification.ex-notification--no-neon {
+  @include effect-boundary {
+    box-shadow: none;
+    text-shadow: none;
+    filter: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .ex-notification {

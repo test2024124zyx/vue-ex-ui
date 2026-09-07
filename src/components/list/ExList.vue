@@ -136,6 +136,7 @@
 
 <script setup lang="ts">
 import { computed, ref, useAttrs } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { useI18n, useLocale } from '../../locale';
 import ExEmpty from '../empty/ExEmpty.vue';
 import ExIcon from '../icon/ExIcon.vue';
@@ -167,7 +168,7 @@ const globalSize = useComponentSize(computed(() => props.size));
 const normalizedSize = computed(() => normalizeListSize(globalSize.value));
 
 const OBSOLETE_ATTRS = new Set(['virtual', 'itemheight', 'height']);
-const rootAttrs = computed(() =>
+const rootAttrs = useRenderComputed(() =>
   Object.fromEntries(
     Object.entries(attrs).filter(
       // 使用正则兼容组件库当前的 ES 构建目标，同时识别 kebab-case 旧属性。

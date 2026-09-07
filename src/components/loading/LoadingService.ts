@@ -255,7 +255,22 @@ export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options
       return;
     }
 
-    directiveInstances.set(element, service.show(config));
+    const instance = service.show(config);
+    // 遮罩关闭也会销毁服务实例，弱引用表必须同步移除，才能再次创建。
+    const forget = () => {
+      if (directiveInstances.get(element) === instance) directiveInstances.delete(element);
+    };
+    const close = instance.close;
+    const destroy = instance.destroy;
+    instance.close = () => {
+      forget();
+      close();
+    };
+    instance.destroy = () => {
+      forget();
+      destroy();
+    };
+    directiveInstances.set(element, instance);
   };
 
   app.directive<HTMLElement, LoadingDirectiveValue>('loading', {

@@ -16,6 +16,7 @@
     <!-- 开关主体 -->
     <div
       class="ex-switch__core"
+      :class="{ 'is-checked': isChecked }"
       :style="coreStyle"
     >
       <!-- 内联文本 -->
@@ -84,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useSlots } from 'vue';
+import { ref, computed, useSlots, nextTick } from 'vue';
 import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance } from './types';
 import { useFormFieldState } from '../form/use-form-item';
 
@@ -201,6 +202,10 @@ const handleChange = (event: Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue);
   formItem?.onFieldChange();
+  // 使用本轮渲染后的模型恢复原生 checked，父组件拒绝更新时也保持一致。
+  void nextTick(() => {
+    target.checked = isChecked.value;
+  });
 };
 
 const handleFocus = (event: FocusEvent) => {

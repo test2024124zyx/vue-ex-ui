@@ -1,4 +1,6 @@
 const enUS = {
+  // 评分控件
+  rate: { label: 'Rating' },
   // Common
   common: {
     confirm: 'Confirm',
@@ -113,6 +115,7 @@ const enUS = {
 
   // Barcode
   barcode: {
+    label: 'Barcode',
     generating: 'Generating...',
     error: 'Barcode generation failed',
     download: 'Download Barcode',
@@ -616,6 +619,7 @@ const enUS = {
   },
 
   fileList: {
+    sortBy: 'Sort by',
     empty: 'No files',
     loading: 'Loading...',
     searchPlaceholder: 'Search files...',
@@ -669,6 +673,15 @@ const enUS = {
 
   // Chart
   chart: {
+    dataZoom: 'Zoom area',
+    dataZoomRestore: 'Restore zoom',
+    line: 'Line',
+    bar: 'Bar',
+    stack: 'Stack',
+    tiled: 'Unstack',
+    keyboardInstructions:
+      'Use arrow keys to explore data, Home and End to jump, Enter to activate, and Escape to clear the highlight.',
+    dataNavigation: 'Chart data navigation',
     chart: 'Chart',
     loading: 'Chart loading...',
     noData: 'No Data',

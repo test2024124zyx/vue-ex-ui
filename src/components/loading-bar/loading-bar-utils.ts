@@ -6,6 +6,7 @@ import type {
 } from './types';
 
 export const DEFAULT_LOADING_BAR_HEIGHT = 3;
+export const MIN_LOADING_BAR_HEIGHT = 1;
 export const MAX_LOADING_BAR_HEIGHT = 16;
 export const INITIAL_LOADING_BAR_PERCENTAGE = 4;
 export const MAX_TRICKLE_PERCENTAGE = 90;
@@ -23,7 +24,7 @@ export function normalizeLoadingBarHeight(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     return DEFAULT_LOADING_BAR_HEIGHT;
   }
-  return Math.min(MAX_LOADING_BAR_HEIGHT, value);
+  return Math.max(MIN_LOADING_BAR_HEIGHT, Math.min(MAX_LOADING_BAR_HEIGHT, value));
 }
 
 export function normalizeLoadingBarZIndex(value: unknown): number | undefined {

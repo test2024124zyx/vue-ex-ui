@@ -80,6 +80,7 @@
           ref="dropdownRef"
           class="ex-cascader__dropdown"
           :class="{
+            [`ex-cascader--${componentSize}`]: true,
             'ex-cascader__dropdown--inline': !teleported,
             'ex-no-neon': !neonEffect,
             'ex-no-animation': !animation,

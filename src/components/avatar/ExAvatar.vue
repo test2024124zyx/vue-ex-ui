@@ -70,6 +70,7 @@ import { computed, ref, useSlots, watch } from 'vue';
 import type { Slots } from 'vue';
 import { getFirstGrapheme } from '../../utils/text';
 import { hasRenderableContent } from '../../utils/vnode';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import type { ExAvatarProps, ExAvatarEmits, ExAvatarExposed } from './types';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -122,7 +123,7 @@ const showImage = computed(() => {
 const displayText = computed(() => {
   return getFirstGrapheme(props.text ?? '');
 });
-const hasIconSlot = computed<boolean>(() => hasRenderableContent(slots.icon?.({})));
+const hasIconSlot = useRenderComputed(() => hasRenderableContent(slots.icon?.({})));
 
 // 国际化计算属性
 const computedAlt = computed(() => {
@@ -254,7 +255,7 @@ const reload = () => {
 };
 
 watch(
-  () => props.src,
+  () => [props.src, props.srcset, props.sizes],
   () => {
     // 新图片地址必须获得独立加载机会，不能继承上一地址的失败状态。
     imageError.value = false;

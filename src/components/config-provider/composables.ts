@@ -1,6 +1,6 @@
 import { computed, inject, unref } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
-import type { SupportedLocale } from '../../locale';
+import { useI18n, type SupportedLocale } from '../../locale';
 import type { ComponentSize, ConfigContext, Theme } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import type { ZIndexLayer } from './z-index';
@@ -10,11 +10,12 @@ import { resolveThemeOverrides } from './theme-overrides';
 
 /** 获取最近一层配置；未使用提供者时返回稳定的只读默认值。 */
 export function useConfig(): ConfigContext {
+  const composer = useI18n();
   return (
     inject(CONFIG_PROVIDER_INJECTION_KEY, null) ?? {
       theme: computed(getTheme),
       themeOverrides: computed(() => DEFAULT_CONFIG.themeOverrides),
-      locale: computed(() => DEFAULT_CONFIG.locale),
+      locale: computed(() => composer.locale.value as SupportedLocale),
       size: computed(() => DEFAULT_CONFIG.size),
       neonEffect: computed(() => DEFAULT_CONFIG.neonEffect),
       animation: computed(() => DEFAULT_CONFIG.animation),

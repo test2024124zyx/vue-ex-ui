@@ -29,7 +29,7 @@
   transform-origin: center;
 }
 
-.ex-icon__content > svg,
+.ex-icon__content > :deep(svg),
 .ex-icon__image,
 .ex-icon__image-mask {
   display: block;
@@ -37,13 +37,13 @@
   height: 100%;
 }
 
-.ex-icon__content > svg {
+.ex-icon__content > :deep(svg) {
   overflow: visible;
   fill: currentColor;
   stroke: currentColor;
 }
 
-.ex-icon__content > i {
+.ex-icon__content > :deep(i) {
   display: inline-block;
   color: currentColor;
   font-size: 1em;

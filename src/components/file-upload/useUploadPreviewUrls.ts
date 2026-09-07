@@ -1,4 +1,4 @@
-import { onBeforeUnmount, shallowRef } from 'vue';
+import { onBeforeUnmount, onMounted, shallowRef } from 'vue';
 import type { UploadFile } from './types';
 
 interface OwnedPreviewUrl {
@@ -10,6 +10,8 @@ interface OwnedPreviewUrl {
 export function useUploadPreviewUrls() {
   const ownedUrls = new Map<string, OwnedPreviewUrl>();
   const revision = shallowRef(0);
+  let mounted = false;
+  let currentFiles: readonly UploadFile[] = [];
 
   const revokeEntry = (uid: string): void => {
     const entry = ownedUrls.get(uid);
@@ -25,6 +27,9 @@ export function useUploadPreviewUrls() {
   };
 
   const synchronize = (files: readonly UploadFile[]): void => {
+    currentFiles = files;
+    // 对象地址无法跨 SSR 与浏览器共享，挂载前仅记录最新文件快照。
+    if (!mounted) return;
     const visibleUids = new Set(files.map(file => file.uid));
     for (const uid of ownedUrls.keys()) {
       if (!visibleUids.has(uid)) revokeEntry(uid);
@@ -59,7 +64,15 @@ export function useUploadPreviewUrls() {
     revision.value += 1;
   };
 
-  onBeforeUnmount(clear);
+  onMounted(() => {
+    mounted = true;
+    synchronize(currentFiles);
+  });
+  onBeforeUnmount(() => {
+    mounted = false;
+    currentFiles = [];
+    clear();
+  });
 
   return { synchronize, getPreviewUrl, clear };
 }

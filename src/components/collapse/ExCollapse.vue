@@ -108,9 +108,13 @@ const setActiveNames = (names: CollapseActiveName) => {
 };
 
 // 监听 modelValue 变化
-watch([() => props.modelValue, () => props.accordion], ([newValue]) => {
-  activeNames.value = normalizeActiveNames(newValue);
-});
+watch(
+  [() => props.modelValue, () => props.accordion],
+  ([newValue]) => {
+    activeNames.value = normalizeActiveNames(newValue);
+  },
+  { deep: true }
+);
 
 const registerItem = (name: CollapseItemName, uid: number) => {
   const existingUid = registeredItems.get(name);

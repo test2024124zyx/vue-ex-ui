@@ -23,7 +23,7 @@
         @touchend="handleTouchEnd"
         @touchcancel="resetTouch"
       >
-        <slot />
+        <SlotContent />
       </div>
 
       <!-- 前一个按钮 -->
@@ -96,6 +96,7 @@ import { computed, ref, onMounted, onBeforeUnmount, provide, watch } from 'vue';
 import type { ExCarouselProps, ExCarouselEmits, ExCarouselExposed } from './types';
 import { useI18n } from '../../locale';
 import { carouselContextKey } from './context';
+import { useSlotItems } from '../../composables/useSlotItems';
 
 defineOptions({
   name: 'ExCarousel',
@@ -140,14 +141,22 @@ const { t } = useI18n();
 
 const carouselRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
-const currentIndex = ref(
+const requestedIndex = ref(
   Number.isFinite(modelValue.value) ? Math.max(0, Math.trunc(modelValue.value)) : 0
 );
+const currentIndex = computed({
+  get: () => normalizeIndex(requestedIndex.value),
+  set: (value: number) => {
+    requestedIndex.value = value;
+  },
+});
 const isHovering = ref(false);
 const isFocusWithin = ref(false);
 const prefersReducedMotion = ref(false);
 const autoplayTimer = ref<number>();
-const itemCount = ref(0);
+const { items: slotItems, SlotContent } = useSlotItems('ExCarouselItem');
+const mountedItemCount = ref(0);
+const itemCount = computed(() => Math.max(slotItems.value.length, mountedItemCount.value));
 const isTransitioning = ref(false);
 let transitionTimer: number | undefined;
 let mounted = false;
@@ -174,10 +183,10 @@ const normalizeIndex = (value: number, count = itemCount.value): number => {
 };
 
 const reconcileCurrentIndex = (emitCorrection: boolean) => {
-  const nextIndex = normalizeIndex(currentIndex.value);
-  if (nextIndex === currentIndex.value) return;
+  const nextIndex = normalizeIndex(requestedIndex.value);
+  if (nextIndex === requestedIndex.value) return;
 
-  const previousIndex = currentIndex.value;
+  const previousIndex = requestedIndex.value;
   currentIndex.value = nextIndex;
   if (emitCorrection) {
     emit('update:modelValue', nextIndex);
@@ -194,12 +203,12 @@ const syncItemOrder = () => {
   const orderChanged =
     orderedUids.length !== itemUids.value.length ||
     orderedUids.some((uid, index) => uid !== itemUids.value[index]);
-  const previousCount = itemCount.value;
+  const previousCount = mountedItemCount.value;
 
   if (orderChanged) {
     itemUids.value = orderedUids;
   }
-  itemCount.value = orderedUids.length;
+  mountedItemCount.value = orderedUids.length;
 
   if (itemCount.value < previousCount) {
     reconcileCurrentIndex(true);
@@ -209,7 +218,11 @@ const syncItemOrder = () => {
   }
 };
 
-const registerItem = (uid: number, element: HTMLElement) => {
+const registerItem = (uid: number, element?: HTMLElement) => {
+  if (!element) {
+    if (!itemUids.value.includes(uid)) itemUids.value.push(uid);
+    return;
+  }
   const previousElement = itemElements.get(uid);
   if (previousElement && previousElement !== element) {
     elementUids.delete(previousElement);
@@ -353,7 +366,8 @@ const startAutoplay = () => {
     !autoplay.value ||
     itemCount.value <= 1 ||
     prefersReducedMotion.value ||
-    isFocusWithin.value
+    isFocusWithin.value ||
+    (isHovering.value && pauseOnHover.value)
   ) {
     return;
   }
@@ -500,13 +514,9 @@ watch(modelValue, newValue => {
   if (clamped !== newValue) {
     emit('update:modelValue', clamped);
   }
-  if (clamped !== currentIndex.value) {
-    if (itemCount.value > 0) {
-      const oldIndex = currentIndex.value;
-      currentIndex.value = clamped;
-      emit('change', clamped, oldIndex);
-    }
-  }
+  const oldIndex = currentIndex.value;
+  requestedIndex.value = Number.isFinite(newValue) ? Math.max(0, Math.trunc(newValue)) : 0;
+  if (itemCount.value > 0 && clamped !== oldIndex) emit('change', clamped, oldIndex);
 });
 
 // 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）

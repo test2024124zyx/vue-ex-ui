@@ -208,7 +208,7 @@ const quarterActivity = activity.filter(item => item.date <= '2025-03-31');
 | `showMonthLabels` | 是否显示月份                    | `boolean`                                           | `true`          |
 | `showWeekLabels`  | 是否显示星期                    | `boolean`                                           | `true`          |
 | `showTooltip`     | 是否显示悬停或聚焦提示          | `boolean`                                           | `true`          |
-| `gap`             | 单元格间距，限制在 0–4 像素     | `number`                                            | `4`             |
+| `gap`             | 单元格间距，限制在 0–64 像素    | `number`                                            | `4`             |
 | `radius`          | 单元格圆角                      | `number`                                            | `2`             |
 | `maxValue`        | 正数色阶上限                    | `number`                                            | 可见数据最大值  |
 | `emptyText`       | 空状态文案                      | `string`                                            | 本地化文案      |
@@ -246,8 +246,8 @@ const quarterActivity = activity.filter(item => item.date <= '2025-03-31');
 
 | 按键                                 | 行为              |
 | ------------------------------------ | ----------------- |
-| `ArrowLeft` / `ArrowRight`           | 前一天 / 后一天   |
-| `ArrowUp` / `ArrowDown`              | 上一周 / 下一周   |
+| `ArrowLeft` / `ArrowRight`           | 上一周 / 下一周   |
+| `ArrowUp` / `ArrowDown`              | 前一天 / 后一天   |
 | `Home` / `End`                       | 当前周首日 / 末日 |
 | `Ctrl` 或 `Command` + `Home` / `End` | 范围首日 / 末日   |
 | `Enter` / `Space`                    | 激活当前日期      |

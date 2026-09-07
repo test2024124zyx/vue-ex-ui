@@ -161,8 +161,7 @@ const handleScroll = (): void => {
 };
 
 const handleLinkClick = (item: AnchorItem): void => {
-  activeLink.value = item.href;
-  activeElement.value = item.element;
+  setActiveFromScroll(item.href);
   emit('click', item.href, item);
   scrollTo(item.href);
   void updateInkPosition();

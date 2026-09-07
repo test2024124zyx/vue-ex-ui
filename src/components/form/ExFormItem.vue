@@ -131,6 +131,7 @@ const initialValue = ref<unknown>(undefined);
 let latestValidationId = 0;
 let isMounted = false;
 let validationScheduled = false;
+let resettingField = false;
 type FieldValidationTrigger = 'blur' | 'change' | 'input';
 const pendingValidationTriggers = new Set<FieldValidationTrigger>();
 
@@ -142,10 +143,10 @@ const generatedId = generateId('ex-form-item');
 watch(
   () => (formContext && props.prop ? getFieldValue(formContext.model, props.prop) : undefined),
   () => {
-    if (!formContext || !props.prop) return;
+    if (!formContext || !props.prop || resettingField) return;
     scheduleFieldValidation('change');
   },
-  { deep: true }
+  { deep: true, flush: 'sync' }
 );
 
 // 计算属性
@@ -350,7 +351,7 @@ function scheduleFieldValidation(trigger: FieldValidationTrigger) {
     validationScheduled = false;
     const triggers = Array.from(pendingValidationTriggers);
     pendingValidationTriggers.clear();
-    if (!isMounted || !props.prop || !formContext) return;
+    if (!isMounted || !props.prop || !formContext || triggers.length === 0) return;
     await validateFieldMethod(triggers);
   });
 }
@@ -435,7 +436,13 @@ function resetFieldMethod() {
   if (!props.prop || !formContext) return;
 
   invalidateFieldValidation();
-  setFieldValue(formContext.model, props.prop, initialValue.value);
+  // 重置时复制快照，且仅屏蔽本次写入，后续同步修改仍然可以触发校验。
+  resettingField = true;
+  try {
+    setFieldValue(formContext.model, props.prop, deepClone(initialValue.value));
+  } finally {
+    resettingField = false;
+  }
   clearValidationState();
 }
 

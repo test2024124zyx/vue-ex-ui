@@ -179,14 +179,11 @@
               y2="100%"
             >
               <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
+                v-for="(stop, index) in waveGradientStops"
+                :key="index"
+                :offset="stop.offset"
+                :stop-color="stop.color"
+                :stop-opacity="stop.opacity"
               />
             </linearGradient>
           </defs>
@@ -211,7 +208,9 @@
             <path
               ref="wavePath2Ref"
               class="ex-progress__wave-path ex-progress__wave-path--secondary"
-              :fill="waveColor"
+              :fill="
+                Array.isArray(props.color) ? `url(#ex-wave-gradient-${componentId})` : waveColor
+              "
               :opacity="0.4"
               :d="rectWavePaths.secondary"
             />
@@ -257,14 +256,11 @@
               y2="100%"
             >
               <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
+                v-for="(stop, index) in waveGradientStops"
+                :key="index"
+                :offset="stop.offset"
+                :stop-color="stop.color"
+                :stop-opacity="stop.opacity"
               />
             </linearGradient>
           </defs>
@@ -288,7 +284,11 @@
             <path
               ref="waveCirclePath2Ref"
               class="ex-progress__wave-circle-path ex-progress__wave-circle-path--secondary"
-              :fill="waveColor"
+              :fill="
+                Array.isArray(props.color)
+                  ? `url(#ex-wave-circle-gradient-${componentId})`
+                  : waveColor
+              "
               :opacity="0.4"
               :d="circleWavePaths.secondary"
             />
@@ -300,7 +300,11 @@
             :cy="circleWidth / 2"
             :r="circleRadius"
             fill="none"
-            :stroke="circleColor"
+            :stroke="
+              Array.isArray(props.color)
+                ? `url(#ex-wave-circle-gradient-${componentId})`
+                : circleColor
+            "
             :stroke-width="2"
             class="ex-progress__wave-circle-border"
           />
@@ -324,6 +328,7 @@ import type { ExProgressProps, ExProgressEmits, ExProgressExposed } from './type
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
 import ExIcon from '../icon/ExIcon.vue';
+import { useAnimation } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExProgress',
@@ -359,6 +364,7 @@ defineEmits<ExProgressEmits>();
 // 国际化
 const { t: _t } = useLocale('progress');
 const progressRef = ref<HTMLDivElement>();
+const animationEnabled = useAnimation();
 
 // 波浪进度条相关 refs
 const wavePath1Ref = ref<SVGPathElement>();
@@ -371,6 +377,7 @@ let waveOffset = 0;
 let waveAnimationFrame: number | null = null;
 let prefersReducedMotion = false;
 let reducedMotionQuery: MediaQueryList | null = null;
+let disposed = false;
 const componentId = generateId();
 
 // 计算属性
@@ -397,7 +404,7 @@ const progressStyles = computed(() => {
 });
 
 const percentage = computed(() => {
-  const val = Math.max(0, Math.min(100, props.percentage));
+  const val = Number.isFinite(props.percentage) ? Math.max(0, Math.min(100, props.percentage)) : 0;
   return val;
 });
 
@@ -555,6 +562,7 @@ const waveContainerStyle = computed(() => {
 });
 
 const waveColor = computed(() => {
+  if (typeof props.color === 'function') return props.color(percentage.value);
   if (props.color && typeof props.color === 'string') {
     return props.color;
   }
@@ -565,6 +573,15 @@ const waveColor = computed(() => {
 
   return 'var(--ex-color-primary)';
 });
+
+const waveGradientStops = computed(() =>
+  Array.isArray(props.color)
+    ? gradientStops.value.map(stop => ({ ...stop, opacity: 0.8 }))
+    : [
+        { offset: '0%', color: waveColor.value, opacity: 0.64 },
+        { offset: '100%', color: waveColor.value, opacity: 0.8 },
+      ]
+);
 
 // 波浪效果相关计算属性已移除（预留功能暂不实现）
 
@@ -645,7 +662,14 @@ function updateWaveAnimation() {
 }
 
 function startWaveAnimation() {
-  if (!props.waveAnimated || prefersReducedMotion) return;
+  if (
+    disposed ||
+    !animationEnabled.value ||
+    !props.waveAnimated ||
+    prefersReducedMotion ||
+    !['wave', 'wave-circle'].includes(props.type)
+  )
+    return;
   // 防止重复启动导致多个 RAF 循环叠加
   if (waveAnimationFrame !== null) return;
 
@@ -685,6 +709,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   stopWaveAnimation();
   reducedMotionQuery?.removeEventListener?.('change', handleReducedMotionChange);
   reducedMotionQuery = null;
@@ -715,17 +740,15 @@ watch(
 );
 
 // 监听动画开关
-watch(
-  () => props.waveAnimated,
-  newValue => {
-    if (newValue) {
-      startWaveAnimation();
-    } else {
-      stopWaveAnimation();
-      updateWaveAnimation();
-    }
+watch([() => props.waveAnimated, animationEnabled], ([waveAnimated, animation]) => {
+  const newValue = waveAnimated && animation;
+  if (newValue) {
+    startWaveAnimation();
+  } else {
+    stopWaveAnimation();
+    updateWaveAnimation();
   }
-);
+});
 
 // 方法
 const getElement = () => progressRef.value || null;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import type { CSSProperties } from 'vue';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
@@ -64,12 +65,12 @@ const descriptionText = computed(() => {
   return t(TYPE_DESCRIPTION_KEY[normalizedType.value]);
 });
 
-const hasImageSlot = computed(() => hasRenderableContent(slots.image?.()));
-const hasDescriptionSlot = computed(() => hasRenderableContent(slots.description?.()));
+const hasImageSlot = useRenderComputed(() => hasRenderableContent(slots.image?.()));
+const hasDescriptionSlot = useRenderComputed(() => hasRenderableContent(slots.description?.()));
 const hasDescription = computed(
   () => hasDescriptionSlot.value || descriptionText.value.trim().length > 0
 );
-const hasFooter = computed(() => hasRenderableContent(slots.default?.()));
+const hasFooter = useRenderComputed(() => hasRenderableContent(slots.default?.()));
 
 const emptyClasses = computed(() => [
   'ex-empty',

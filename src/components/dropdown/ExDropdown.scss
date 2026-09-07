@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-dropdown {
   position: relative;
@@ -83,15 +84,17 @@
 }
 
 // Teleport 菜单脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-dropdown__menu.ex-no-neon,
-.ex-dropdown__menu.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-dropdown__menu.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-dropdown__menu.ex-no-animation,
-.ex-dropdown__menu.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-dropdown__menu.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

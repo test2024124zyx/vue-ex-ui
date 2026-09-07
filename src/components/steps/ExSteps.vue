@@ -6,7 +6,7 @@
     role="navigation"
     :aria-label="ariaLabel || 'Steps navigation'"
   >
-    <slot />
+    <SlotContent />
   </div>
 </template>
 
@@ -14,6 +14,7 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onMounted, onUpdated, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
+import { useSlotItems } from '../../composables/useSlotItems';
 
 defineOptions({
   name: 'ExSteps',
@@ -31,6 +32,7 @@ const props = withDefaults(defineProps<ExStepsProps>(), {
 const emit = defineEmits<ExStepsEmits>();
 
 const stepsRef = ref<HTMLDivElement>();
+const { items: slotItems, SlotContent } = useSlotItems('ExStep');
 // 按注册顺序保存各步骤的唯一标识；索引通过 indexOf 实时计算，
 // 这样动态增删/重排步骤后 isLast、状态判断等都会自动更新（避免自增计数器永久漂移）。
 const stepUids = ref<symbol[]>([]);
@@ -121,7 +123,7 @@ const stepsContext: StepsContext = {
   size: computed(() => props.size),
   progressDot: computed(() => props.progressDot),
   clickable: computed(() => props.clickable),
-  stepCount: computed(() => stepUids.value.length),
+  stepCount: computed(() => Math.max(slotItems.value.length, stepUids.value.length)),
   registerStep,
   unregisterStep,
   getStepIndex,
@@ -134,7 +136,7 @@ provide('exSteps', stepsContext);
 const getElement = () => stepsRef.value || null;
 
 const goTo = (index: number) => {
-  if (index >= 0 && index < stepUids.value.length) {
+  if (Number.isInteger(index) && index >= 0 && index < stepUids.value.length) {
     emit('change', index);
   }
 };

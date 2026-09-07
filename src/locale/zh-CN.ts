@@ -1,6 +1,8 @@
 import type { BuiltInLocale } from './en-US';
 
 const zhCN = {
+  // 评分控件
+  rate: { label: '评分' },
   // 通用
   common: {
     confirm: '确认',
@@ -115,6 +117,7 @@ const zhCN = {
 
   // 条码
   barcode: {
+    label: '条形码',
     generating: '生成中...',
     error: '条码生成失败',
     download: '下载条码',
@@ -618,6 +621,7 @@ const zhCN = {
   },
 
   fileList: {
+    sortBy: '排序字段',
     empty: '暂无文件',
     loading: '加载中...',
     searchPlaceholder: '搜索文件...',
@@ -671,6 +675,14 @@ const zhCN = {
 
   // 图表
   chart: {
+    dataZoom: '区域缩放',
+    dataZoomRestore: '还原缩放',
+    line: '折线图',
+    bar: '柱状图',
+    stack: '堆叠',
+    tiled: '取消堆叠',
+    keyboardInstructions: '使用方向键浏览数据，Home 和 End 跳至首尾，Enter 激活，Escape 清除高亮。',
+    dataNavigation: '图表数据导航',
     chart: '图表',
     loading: '图表加载中...',
     noData: '暂无数据',

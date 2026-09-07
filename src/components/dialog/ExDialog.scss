@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/tokens' as *;
 
 // ============================================================================
@@ -253,7 +254,8 @@
   }
 
   &:focus-visible {
-    outline: none;
+    outline: 2px solid var(--ex-color-primary);
+    outline-offset: 2px;
     @include neon-glow('pink', 'md');
   }
 
@@ -360,15 +362,17 @@
 // 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
 
 // Teleport 包装器脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-dialog-wrapper.ex-no-neon,
-.ex-dialog-wrapper.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-dialog-wrapper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-dialog-wrapper.ex-no-animation,
-.ex-dialog-wrapper.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-dialog-wrapper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

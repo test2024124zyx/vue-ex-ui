@@ -16,3 +16,5 @@ export interface MenuContext {
 }
 
 export const MENU_INJECTION_KEY: InjectionKey<MenuContext> = createSharedInjectionKey('menu');
+export const MENU_BRANCH_VISIBLE_KEY: InjectionKey<Readonly<Ref<boolean>>> =
+  createSharedInjectionKey('menu-branch-visible');

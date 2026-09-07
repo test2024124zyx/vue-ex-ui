@@ -11,15 +11,17 @@
     :aria-checked="checkable ? (isHalfChecked ? 'mixed' : isChecked) : undefined"
     :aria-disabled="isDisabled"
     :aria-level="level + 1"
+    :aria-posinset="position"
+    :aria-setsize="setSize"
     :draggable="draggable && !isDisabled"
     @focus="handleFocus"
     @keydown="handleKeydown"
-    @dragstart="handleDragStart"
-    @dragenter="handleDragEnter"
-    @dragleave="handleDragLeave"
-    @dragover="handleDragOver"
-    @drop="handleDrop"
-    @dragend="handleDragEnd"
+    @dragstart.stop="handleDragStart"
+    @dragenter.stop="handleDragEnter"
+    @dragleave.stop="handleDragLeave"
+    @dragover.stop="handleDragOver"
+    @drop.stop="handleDrop"
+    @dragend.stop="handleDragEnd"
   >
     <div
       class="ex-tree-node__content"
@@ -170,6 +172,9 @@ interface Props {
   disabled: boolean;
   /** 扁平模式：不递归渲染子节点（供虚拟滚动使用） */
   flat?: boolean;
+  /** 虚拟节点显式携带同级集合位置。 */
+  position?: number;
+  setSize?: number;
 }
 
 interface Emits {
@@ -177,7 +182,11 @@ interface Emits {
   (e: 'select', node: TreeNode, selected: boolean): void;
   (e: 'check', node: TreeNode, checked: boolean): void;
   (e: 'focus-node', node: TreeNode): void;
-  (e: 'navigate', node: TreeNode, key: 'ArrowDown' | 'ArrowUp' | 'Home' | 'End'): void;
+  (
+    e: 'navigate',
+    node: TreeNode,
+    key: 'ArrowDown' | 'ArrowUp' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+  ): void;
   (e: 'node-click', node: TreeNode, event: MouseEvent): void;
   (e: 'node-contextmenu', node: TreeNode, event: MouseEvent): void;
   (e: 'node-drag-start', node: TreeNode, event: DragEvent): void;
@@ -310,11 +319,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       if (hasChildren.value && !isExpanded.value) {
         emit('toggle', props.node, true);
       } else if (hasChildren.value && isExpanded.value) {
-        nextTick(() => {
-          nodeRootRef.value
-            ?.querySelector<HTMLElement>('.ex-tree-node__children > .ex-tree-node[role="treeitem"]')
-            ?.focus();
-        });
+        emit('navigate', props.node, key);
       }
       break;
     }
@@ -323,11 +328,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       if (hasChildren.value && isExpanded.value) {
         emit('toggle', props.node, false);
       } else {
-        (
-          nodeRootRef.value?.parentElement?.closest(
-            '.ex-tree-node[role="treeitem"]'
-          ) as HTMLElement | null
-        )?.focus();
+        emit('navigate', props.node, key);
       }
       break;
     }

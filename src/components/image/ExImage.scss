@@ -1,5 +1,6 @@
 @use 'sass:map';
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/tokens' as tokens;
 
 .ex-image {
@@ -233,17 +234,19 @@
 }
 
 // 预览层被 Teleport 到 body 后，需要在自身恢复 ConfigProvider 的效果开关。
-.ex-image-preview.ex-no-neon,
-.ex-image-preview.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-image-preview.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-image-preview.ex-no-animation,
-.ex-image-preview.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-image-preview.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .ex-image-preview__img {

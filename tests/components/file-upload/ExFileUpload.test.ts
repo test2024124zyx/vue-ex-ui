@@ -116,6 +116,49 @@ describe('ExFileUpload', () => {
     await flushPromises();
   };
 
+  it('同 UID 替换原始文件会中止旧上传，不污染替换文件', async () => {
+    const old = asUploadFile(makeFile('old.png', 'image/png'));
+    const wrapper = mountUpload({ props: { action: '/upload', fileList: [old] } });
+    const pending = (wrapper.vm as unknown as ExFileUploadExposed).submit();
+    await flushPromises();
+    const replacement = {
+      ...old,
+      name: 'new.png',
+      raw: makeFile('new.png', 'image/png'),
+      status: 'success' as const,
+    };
+    await wrapper.setProps({ fileList: [replacement] });
+    const request = MockXHR.instances[0]!;
+    request.triggerLoad(200, '{"url":"/old-result.png"}');
+    await pending;
+    expect(request.abort).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('success')).toBeUndefined();
+    expect(wrapper.emitted('update:fileList')?.at(-1)?.[0]).not.toEqual([
+      expect.objectContaining({ name: 'new.png', status: 'ready' }),
+    ]);
+  });
+
+  it('隐藏卡片文件列表仍保留可打开文件选择器的入口', async () => {
+    const wrapper = mountUpload({ props: { listType: 'picture-card', showFileList: false } });
+    const click = vi.spyOn(wrapper.find('input').element, 'click');
+    await wrapper.find('button,[role="button"]').trigger('click');
+    expect(click).toHaveBeenCalledOnce();
+  });
+
+  it('替换文件与旧响应在同一轮完成时，已结束的网络请求仍不能提交旧结果', async () => {
+    const old = asUploadFile(makeFile('old.png', 'image/png'));
+    const wrapper = mountUpload({ props: { action: '/upload', fileList: [old] } });
+    const pending = (wrapper.vm as unknown as ExFileUploadExposed).submit();
+    await flushPromises();
+    const changed = wrapper.setProps({
+      fileList: [{ ...old, raw: makeFile('new.png', 'image/png') }],
+    });
+    MockXHR.instances[0]!.triggerLoad(200, '{"url":"/old.png"}');
+    await changed;
+    expect((await pending)[0]?.outcome).toBe('aborted');
+    expect(wrapper.emitted('success')).toBeUndefined();
+  });
+
   beforeEach(() => {
     setLocale('en-US');
     MockXHR.instances = [];

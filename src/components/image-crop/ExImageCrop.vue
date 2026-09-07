@@ -197,21 +197,9 @@
           <div
             v-if="showGrid"
             class="ex-image-crop__grid"
+            :style="{ '--ex-crop-grid-rows': gridRows, '--ex-crop-grid-cols': gridCols }"
             aria-hidden="true"
-          >
-            <span
-              v-for="row in gridRows - 1"
-              :key="`row-${row}`"
-              class="ex-image-crop__grid-line ex-image-crop__grid-line--horizontal"
-              :style="{ top: `${(row / gridRows) * 100}%` }"
-            ></span>
-            <span
-              v-for="column in gridCols - 1"
-              :key="`column-${column}`"
-              class="ex-image-crop__grid-line ex-image-crop__grid-line--vertical"
-              :style="{ left: `${(column / gridCols) * 100}%` }"
-            ></span>
-          </div>
+          ></div>
 
           <button
             v-for="direction in handleDirections"
@@ -484,7 +472,7 @@ const loadSource = async (): Promise<void> => {
   displayError.value = '';
   configurationValid.value = true;
   isLoading.value = true;
-  zoom.value = 1;
+  zoom.value = Math.min(props.maxZoom, Math.max(props.minZoom, 1));
   rotation.value = 0;
 
   try {
@@ -534,9 +522,10 @@ const rotateLeft = (): void => updateRotation(rotation.value - 90);
 
 const reset = (): void => {
   if (!resource.value) return;
-  const zoomChanged = zoom.value !== 1;
+  const initialZoom = Math.min(props.maxZoom, Math.max(props.minZoom, 1));
+  const zoomChanged = zoom.value !== initialZoom;
   const rotationChanged = rotation.value !== 0;
-  zoom.value = 1;
+  zoom.value = initialZoom;
   rotation.value = 0;
   displayError.value = '';
   rebuildLayout('initialize');
@@ -729,8 +718,20 @@ const updateContainerSize = (size: CropSize): void => {
     return;
   }
   const hadLayout = Boolean(layout.value);
+  const previousSize = containerSize.value;
+  const previousLayout = layout.value;
+  const previousArea = cropArea.value;
   containerSize.value = { width: size.width, height: size.height };
-  rebuildLayout(hadLayout ? 'preserve-source' : 'initialize');
+  try {
+    rebuildLayout(hadLayout ? 'preserve-source' : 'initialize');
+    displayError.value = '';
+  } catch (error) {
+    // 无效画布尺寸不能提交半成品布局；保留上次有效裁剪，等待容器恢复。
+    containerSize.value = previousSize;
+    layout.value = previousLayout;
+    cropArea.value = previousArea;
+    reportError(error, 'ENCODE_FAILED');
+  }
 };
 
 const measureContainer = (): void => {

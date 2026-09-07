@@ -55,6 +55,7 @@
 
 <script setup lang="ts">
 import { computed, useAttrs, useSlots, type CSSProperties } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { hasRenderableContent } from '../../utils/vnode';
 import {
   createIconMaskUrl,
@@ -83,7 +84,7 @@ const attrs = useAttrs();
 const slots = useSlots();
 
 const rootTag = computed(() => (props.clickable ? 'button' : 'span'));
-const hasSlotContent = computed(() => hasRenderableContent(slots.default?.({})));
+const hasSlotContent = useRenderComputed(() => hasRenderableContent(slots.default?.({})));
 const builtinIconBody = computed(() => (props.icon ? getBuiltinIcon(props.icon) : ''));
 const fontIconClasses = computed(() => getFontIconClasses(props.name, props.prefix));
 const hasVisual = computed(
@@ -121,7 +122,7 @@ const imageMaskStyle = computed<CSSProperties>(
     }) as CSSProperties
 );
 
-const attributeLabel = computed(() => {
+const attributeLabel = useRenderComputed(() => {
   const value = attrs['aria-label'];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 });

@@ -63,7 +63,9 @@
                     :tabindex="activeDate === day.source.date ? 0 : -1"
                     :aria-label="day.accessibleLabel"
                     :aria-describedby="
-                      activeTooltipCell?.source.date === day.source.date ? tooltipId : undefined
+                      tooltipActive && activeTooltipCell?.source.date === day.source.date
+                        ? tooltipId
+                        : undefined
                     "
                     @click="handleCellClick(day, $event)"
                     @keydown="handleCellKeydown(day, $event)"
@@ -143,7 +145,7 @@
 
     <Teleport to="body">
       <div
-        v-if="activeTooltipCell"
+        v-if="tooltipActive && activeTooltipCell"
         :id="tooltipId"
         ref="tooltipRef"
         :class="tooltipClasses"
@@ -178,6 +180,7 @@ import {
   type StyleValue,
 } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useOverlay } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { computeFloatingPosition, type FloatingPlacement } from '../../utils/floating';
 import { generateId } from '../../utils/id';
@@ -185,6 +188,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
@@ -231,6 +235,7 @@ const configTheme = useConfigTheme();
 const animation = useAnimation();
 const neonEffect = useNeonEffect();
 const tooltipZIndex = useZIndexLayer('tooltip');
+const themeOverrides = useThemeOverrides();
 const { t, locale } = useLocale('heatmap');
 const heatmapRef = ref<HTMLDivElement>();
 const tooltipRef = ref<HTMLDivElement>();
@@ -263,8 +268,9 @@ const tooltipClasses = computed(() => [
   },
 ]);
 const tooltipStyle = computed<CSSProperties>(() => ({
+  ...themeOverrides.value,
   ...tooltipPositionStyle.value,
-  zIndex: tooltipZIndex.value,
+  zIndex: overlayZIndex.value,
 }));
 
 const cellSize = computed(() => CELL_SIZES[props.size]);
@@ -381,6 +387,23 @@ const activeTooltipCell = computed(() => {
   return cellByDate.value.get(requestedTooltipDate.value) ?? null;
 });
 
+const dismissTooltip = () => {
+  hoveredDate.value = null;
+  focusedDate.value = null;
+};
+
+const { active: tooltipActive, zIndex: overlayZIndex } = useOverlay({
+  active: () => Boolean(activeTooltipCell.value),
+  container: tooltipRef,
+  zIndex: () => tooltipZIndex.value,
+  lockScroll: () => false,
+  trapFocus: () => false,
+  autoFocus: () => false,
+  closeOnEscape: () => true,
+  onEscape: dismissTooltip,
+  onParentClose: dismissTooltip,
+});
+
 const toEventData = (cell: HeatmapCalendarCell): HeatmapDataItem => {
   const { dateValue: _dateValue, inRange: _inRange, hasData: _hasData, ...data } = cell;
   return data;
@@ -426,8 +449,7 @@ const focusCell = (index: number) => {
 
 const handleCellKeydown = (day: HeatmapViewCell, event: KeyboardEvent) => {
   if (event.key === 'Escape') {
-    hoveredDate.value = null;
-    focusedDate.value = null;
+    dismissTooltip();
     return;
   }
 
@@ -500,9 +522,9 @@ const detachTooltipListeners = () => {
 };
 
 watch(
-  activeTooltipCell,
-  day => {
-    if (!day) {
+  [activeTooltipCell, tooltipActive],
+  ([day, active]) => {
+    if (!day || !active) {
       detachTooltipListeners();
       return;
     }

@@ -41,6 +41,7 @@ if (!carousel) {
 }
 
 // 元素挂载后注册真实 DOM，父组件据此处理动态重排与删除。
+carousel.registerItem(uid);
 onMounted(() => {
   if (itemRef.value) carousel.registerItem(uid, itemRef.value);
 });

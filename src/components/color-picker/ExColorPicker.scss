@@ -1,4 +1,5 @@
 @use '../../styles/tokens' as *;
+@use '../../styles/effect-boundary' as *;
 
 // 透明色背景使用棋盘格，确保浅色与深色主题下均能辨识透明区域。
 @mixin checkerboard {
@@ -368,15 +369,17 @@
 }
 
 // Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-color-picker__panel.ex-no-neon,
-.ex-color-picker__panel.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-color-picker__panel.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-color-picker__panel.ex-no-animation,
-.ex-color-picker__panel.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-color-picker__panel.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -236,8 +236,12 @@ describe('ExDateTimePicker', () => {
     expect(input().element.value).toBe('2024-05-15 09:00:00');
 
     await openPanel();
-    expect(dayButton('2024-05-15').getAttribute('aria-selected')).toBe('true');
-    expect(dayButton('2024-05-20').getAttribute('aria-selected')).toBe('false');
+    expect(
+      dayButton('2024-05-15').closest('[role="gridcell"]')?.getAttribute('aria-selected')
+    ).toBe('true');
+    expect(
+      dayButton('2024-05-20').closest('[role="gridcell"]')?.getAttribute('aria-selected')
+    ).toBe('false');
   });
 
   it('Escape 关闭面板并把焦点归还输入框', async () => {

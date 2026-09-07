@@ -84,7 +84,8 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, getCurrentInstance, ref } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
+import { computed, ref, type EmitFn } from 'vue';
 import type { ExCardProps, ExCardEmits, ExCardExposed } from './types';
 import { useI18n } from '../../locale';
 
@@ -94,28 +95,28 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExCardProps>(), {
   type: 'default',
-  size: 'medium',
   shadow: 'base',
   bordered: true,
   hoverable: false,
   loading: false,
 });
 
-const emit = defineEmits<ExCardEmits>();
+// click 影响渲染，作为响应式属性接收；保留 Vue 分发以兼容 once 和错误处理。
+const emit: EmitFn<ExCardEmits> = defineEmits([] as string[]);
 const { t } = useI18n();
 
 const cardRef = ref<HTMLDivElement>();
-const instance = getCurrentInstance();
+const componentSize = useComponentSize(computed(() => props.size));
 
 // 仅在实际注册 click 监听器时提供按钮语义，静态卡片不会进入 Tab 顺序。
-const hasClickListener = (): boolean => Boolean(instance?.vnode.props?.onClick);
+const hasClickListener = (): boolean => Boolean(props.onClick || props.onClickOnce);
 
 // 计算属性
 const cardClasses = computed(() => {
   const classes = [
     'ex-card',
     `ex-card--${props.type}`,
-    `ex-card--${props.size}`,
+    `ex-card--${componentSize.value}`,
     `ex-card--shadow-${props.shadow}`,
   ];
 

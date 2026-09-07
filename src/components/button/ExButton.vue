@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { computed, onMounted, ref, useAttrs, useSlots, watch } from 'vue';
 import { getFirstGrapheme } from '../../utils/text';
 import { getPlainTextContent } from '../../utils/vnode';
@@ -101,7 +102,7 @@ const glowEnabled = computed(
   () => neonEffect.value && (props.glow ?? defaultGlowTypes.has(props.type))
 );
 
-const plainSlotText = computed(() => getPlainTextContent(slots.default?.({})));
+const plainSlotText = useRenderComputed(() => getPlainTextContent(slots.default?.({})));
 const circleSlotText = computed(() =>
   props.shape === 'circle' && plainSlotText.value !== undefined
     ? plainSlotText.value.trim()
@@ -118,7 +119,7 @@ const glitchText = computed(() => {
 
   return text || undefined;
 });
-const nativeAriaLabel = computed(() => {
+const nativeAriaLabel = useRenderComputed(() => {
   const value = attrs['aria-label'];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 });
@@ -132,7 +133,7 @@ const resolvedAriaLabel = computed(() => {
 
   return undefined;
 });
-const showDefaultContent = computed(
+const showDefaultContent = useRenderComputed(
   () => Boolean(slots.default) && !(props.shape === 'circle' && props.loading)
 );
 

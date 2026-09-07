@@ -137,6 +137,43 @@ afterEach(() => {
 });
 
 describe('ExWatermark', () => {
+  it('默认文字随语言变化重新绘制，显式文字保持调用者内容', async () => {
+    const { setLocale } = await import('../../../src/locale');
+    setLocale('en-US');
+    const wrapper = mount(ExWatermark, { props: { fullPage: false } });
+    try {
+      await waitAsync();
+      setLocale('zh-CN');
+      await waitAsync();
+      expect(contexts.flatMap(context => context.fillText.mock.calls).at(-1)?.[0]).toBe('示例水印');
+      await wrapper.setProps({ text: 'custom' });
+      await waitAsync();
+      setLocale('en-US');
+      await waitAsync();
+      expect(contexts.flatMap(context => context.fillText.mock.calls).at(-1)?.[0]).toBe('custom');
+    } finally {
+      wrapper.unmount();
+      setLocale('en-US');
+    }
+  });
+
+  it('防修改模式完整恢复容器的 hidden 与 aria-hidden 属性', async () => {
+    const wrapper = mount(ExWatermark, {
+      attachTo: document.body,
+      props: { antiTamper: true, fullPage: false, text: 'a' },
+    });
+    try {
+      await waitAsync();
+      const element = wrapper.element as HTMLElement;
+      element.hidden = true;
+      element.setAttribute('aria-hidden', 'true');
+      await waitAsync();
+      expect(element.hidden).toBe(false);
+      expect(element.getAttribute('aria-hidden')).toBeNull();
+    } finally {
+      wrapper.unmount();
+    }
+  });
   it('导出可安装组件', () => {
     expect(InstallableWatermark.name).toBe('ExWatermark');
     expect(InstallableWatermark.install).toBeInstanceOf(Function);

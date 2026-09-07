@@ -1,5 +1,5 @@
 import { nextTick, onMounted, onUnmounted, ref, toRefs, watch } from 'vue';
-import { useConfigTheme } from '../config-provider/composables';
+import { useConfigTheme, useThemeOverrides } from '../config-provider/composables';
 import { useTheme } from '../../composables/useTheme';
 import { throttle } from '../../utils/throttle';
 import { normalizeNumber, renderWatermarkTile } from './watermark-utils';
@@ -9,6 +9,7 @@ interface ElementSnapshot {
   className: string;
   style: string | null;
   ariaHidden: string | null;
+  hidden: string | null;
 }
 
 interface WatermarkCallbacks {
@@ -25,6 +26,7 @@ const captureElement = (element: HTMLElement): ElementSnapshot => ({
   className: element.className,
   style: element.getAttribute('style'),
   ariaHidden: element.getAttribute('aria-hidden'),
+  hidden: element.getAttribute('hidden'),
 });
 
 const restoreAttribute = (element: HTMLElement, name: string, value: string | null): void => {
@@ -46,6 +48,7 @@ export function useWatermark(
   const tileWidth = ref(0);
   const tileHeight = ref(0);
   const configTheme = useConfigTheme();
+  const themeOverrides = useThemeOverrides();
   const { theme: documentTheme } = useTheme();
 
   let mounted = false;
@@ -94,6 +97,7 @@ export function useWatermark(
 
   /** 重绘当前水印；只提交最后一次异步请求的结果。 */
   const refresh = async (): Promise<void> => {
+    if (!mounted) return;
     const requestId = ++renderRequestId;
     renderController?.abort();
     const controller = new AbortController();
@@ -143,10 +147,12 @@ export function useWatermark(
 
     container.className = containerSnapshot.className;
     restoreAttribute(container, 'style', containerSnapshot.style);
+    restoreAttribute(container, 'aria-hidden', containerSnapshot.ariaHidden);
+    restoreAttribute(container, 'hidden', containerSnapshot.hidden);
     overlay.className = overlaySnapshot.className;
     restoreAttribute(overlay, 'style', overlaySnapshot.style);
     restoreAttribute(overlay, 'aria-hidden', overlaySnapshot.ariaHidden);
-    overlay.hidden = false;
+    restoreAttribute(overlay, 'hidden', overlaySnapshot.hidden);
     observeProtectedElements();
 
     if (wasRemoved) callbacks.onRemove?.();
@@ -203,7 +209,6 @@ export function useWatermark(
     type,
     repeat,
     staggered,
-    text,
     width,
     height,
     fontFamily,
@@ -228,7 +233,6 @@ export function useWatermark(
       type,
       repeat,
       staggered,
-      text,
       width,
       height,
       fontFamily,
@@ -251,10 +255,17 @@ export function useWatermark(
     { deep: true }
   );
 
-  watch([configTheme, documentTheme], async () => {
-    await nextTick();
-    await refresh();
-  });
+  // 翻译函数会读取最近 Provider 的语言；显式文字则不会因语言变化重绘。
+  watch(resolveText, () => void refresh(), { deep: true });
+
+  watch(
+    [configTheme, documentTheme, themeOverrides],
+    async () => {
+      await nextTick();
+      await refresh();
+    },
+    { deep: true }
+  );
 
   watch(
     () => [

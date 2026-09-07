@@ -2,6 +2,7 @@
 import { computed, useSlots } from 'vue';
 import type { CSSProperties } from 'vue';
 import { hasRenderableContent } from '../../utils/vnode';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import type { DividerOrientation, DividerPresetSize, DividerType, ExDividerProps } from './types';
 
 defineOptions({ name: 'ExDivider' });
@@ -44,7 +45,7 @@ const normalizedSize = computed<DividerPresetSize | number>(() => {
   return PRESET_SIZES.has(props.size) ? props.size : 'default';
 });
 const isVertical = computed(() => normalizedType.value === 'vertical');
-const hasTitle = computed(() =>
+const hasTitle = useRenderComputed(() =>
   isVertical.value ? false : hasRenderableContent(slots.default?.({}))
 );
 

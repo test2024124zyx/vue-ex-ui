@@ -121,7 +121,7 @@ describe('ExVerificationCode regressions', () => {
 
     input.element.value = '---';
     await input.trigger('input');
-    expect(input.element.value).toBe('');
+    expect(input.element.value).toBe('12');
 
     await wrapper.setProps({ inputMode: 'alphanumeric' });
     input.element.value = 'A-9';

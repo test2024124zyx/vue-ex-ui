@@ -1,4 +1,4 @@
-import { nextTick, onBeforeUnmount, shallowRef, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 import type { ShallowRef } from 'vue';
 import { ExFilePreviewError } from './errors';
 import type { PreviewFile, PreviewSource } from './types';
@@ -11,6 +11,7 @@ export interface PreviewSourceFailure {
 export interface UsePreviewSourcesReturn {
   files: ShallowRef<PreviewFile[]>;
   sourceFailure: ShallowRef<PreviewSourceFailure | null>;
+  ready: ShallowRef<boolean>;
 }
 
 const isBlobSource = (source: PreviewSource): source is Blob =>
@@ -32,6 +33,7 @@ export function usePreviewSources(
 ): UsePreviewSourcesReturn {
   const files = shallowRef<PreviewFile[]>([]);
   const sourceFailure = shallowRef<PreviewSourceFailure | null>(null);
+  const ready = shallowRef(false);
   let ownedObjectUrls: string[] = [];
 
   const revokeObjectUrls = (urls: string[]): void => {
@@ -58,6 +60,9 @@ export function usePreviewSources(
         name: getBlobName(source),
         mimeType: source.type || undefined,
       };
+
+      // 服务端也可能提供 Blob URL API，但对象地址只属于挂载后的浏览器文档。
+      if (!ready.value) return file;
 
       try {
         if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
@@ -86,21 +91,24 @@ export function usePreviewSources(
     void nextTick(() => revokeObjectUrls(previousObjectUrls));
   };
 
-  watch(
-    () => {
-      const multipleSources = getFiles();
-      if (multipleSources?.length) return multipleSources;
-      const singleSource = getFile();
-      return singleSource === undefined ? [] : [singleSource];
-    },
-    synchronizeSources,
-    { deep: true, immediate: true }
-  );
+  const getSources = (): PreviewSource[] => {
+    const multipleSources = getFiles();
+    if (multipleSources?.length) return multipleSources;
+    const singleSource = getFile();
+    return singleSource === undefined ? [] : [singleSource];
+  };
+
+  watch(getSources, synchronizeSources, { deep: true, immediate: true });
+
+  onMounted(() => {
+    ready.value = true;
+    synchronizeSources(getSources());
+  });
 
   onBeforeUnmount(() => {
     revokeObjectUrls(ownedObjectUrls);
     ownedObjectUrls = [];
   });
 
-  return { files, sourceFailure };
+  return { files, sourceFailure, ready };
 }

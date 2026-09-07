@@ -22,11 +22,13 @@
       >
         <div :style="{ transform: `translateY(${topSpacerHeight}px)` }">
           <ExTreeNode
-            v-for="{ node, level } in virtualNodes"
+            v-for="{ node, level, position, setSize } in virtualNodes"
             :key="node.key"
             flat
             :node="node"
             :level="level"
+            :position="position"
+            :set-size="setSize"
             :style="{ height: `${safeItemHeight}px` }"
             :expanded-keys="effectiveExpandedKeys"
             :selected-keys="effectiveSelectedKeys"
@@ -143,6 +145,21 @@ defineSlots<ExTreeSlots>();
 
 const treeRef = ref<HTMLDivElement>();
 const viewportRef = ref<HTMLDivElement>();
+const measuredViewportHeight = ref(0);
+let viewportObserver: ResizeObserver | undefined;
+watch(
+  viewportRef,
+  element => {
+    viewportObserver?.disconnect();
+    measuredViewportHeight.value = element?.clientHeight ?? 0;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    viewportObserver = new ResizeObserver(() => {
+      measuredViewportHeight.value = element.clientHeight;
+    });
+    viewportObserver.observe(element);
+  },
+  { flush: 'post' }
+);
 const filterValue = ref('');
 
 const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
@@ -280,7 +297,7 @@ const safeVirtualBuffer = computed(() =>
 const safeViewportHeight = computed(() =>
   typeof props.height === 'number' && Number.isFinite(props.height) && props.height > 0
     ? props.height
-    : 400
+    : measuredViewportHeight.value || 400
 );
 const viewportStyle = computed(() => ({
   height:
@@ -291,17 +308,32 @@ const viewportStyle = computed(() => ({
 }));
 
 // 扁平化所有当前可见节点（携带层级），仅展开的分支才向下递归
-const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
-  const result: { node: TreeNode; level: number }[] = [];
-  const walk = (nodes: TreeNode[], level: number) => {
-    for (const node of nodes) {
-      result.push({ node, level });
-      if (node.children && node.children.length > 0 && expandedKeySet.value.has(node.key)) {
-        walk(node.children, level + 1);
+interface VisibleTreeNode {
+  node: TreeNode;
+  level: number;
+  position: number;
+  setSize: number;
+}
+const flattenedNodes = computed<VisibleTreeNode[]>(() => {
+  const result: VisibleTreeNode[] = [];
+  const stack = filteredData.value
+    .map((node, index, nodes) => ({ node, level: 0, position: index + 1, setSize: nodes.length }))
+    .reverse();
+  while (stack.length) {
+    const item = stack.pop()!;
+    result.push(item);
+    const children = item.node.children;
+    if (children && expandedKeySet.value.has(item.node.key)) {
+      for (let index = children.length - 1; index >= 0; index -= 1) {
+        stack.push({
+          node: children[index]!,
+          level: item.level + 1,
+          position: index + 1,
+          setSize: children.length,
+        });
       }
     }
-  };
-  walk(filteredData.value, 0);
+  }
   return result;
 });
 
@@ -309,8 +341,11 @@ const virtualRange = computed(() => {
   const total = flattenedNodes.value.length;
   const viewport = safeViewportHeight.value;
   const buffer = safeVirtualBuffer.value;
-  const start = Math.max(0, Math.floor(scrollTop.value / safeItemHeight.value) - buffer);
   const visibleCount = Math.ceil(viewport / safeItemHeight.value) + buffer * 2;
+  const start = Math.min(
+    Math.max(0, total - visibleCount),
+    Math.max(0, Math.floor(scrollTop.value / safeItemHeight.value) - buffer)
+  );
   const end = Math.min(total, start + visibleCount);
   return { start, end };
 });
@@ -342,6 +377,14 @@ const renderedActiveKey = computed(() => {
 
 const topSpacerHeight = computed(() => virtualRange.value.start * safeItemHeight.value);
 const totalSpacerHeight = computed(() => flattenedNodes.value.length * safeItemHeight.value);
+watch([totalSpacerHeight, safeViewportHeight], () => {
+  const bounded = Math.min(
+    scrollTop.value,
+    Math.max(0, totalSpacerHeight.value - safeViewportHeight.value)
+  );
+  scrollTop.value = bounded;
+  if (viewportRef.value) viewportRef.value.scrollTop = bounded;
+});
 
 let virtualRaf: number | null = null;
 const handleVirtualScroll = (e: Event) => {
@@ -354,6 +397,7 @@ const handleVirtualScroll = (e: Event) => {
 };
 
 onBeforeUnmount(() => {
+  viewportObserver?.disconnect();
   if (virtualRaf !== null) {
     cancelAnimationFrame(virtualRaf);
     virtualRaf = null;
@@ -519,14 +563,24 @@ const focusNodeByKey = (key: string) => {
   });
 };
 
-const handleNavigate = (node: TreeNode, key: 'ArrowDown' | 'ArrowUp' | 'Home' | 'End') => {
+const handleNavigate = (
+  node: TreeNode,
+  key: 'ArrowDown' | 'ArrowUp' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+) => {
   const enabledNodes = flattenedNodes.value.filter(item => !item.node.disabled);
   const currentIndex = enabledNodes.findIndex(item => item.node.key === node.key);
-  let target = enabledNodes[currentIndex];
+  let target: VisibleTreeNode | undefined = enabledNodes[currentIndex];
   if (key === 'ArrowDown') target = enabledNodes[currentIndex + 1];
   else if (key === 'ArrowUp') target = enabledNodes[currentIndex - 1];
   else if (key === 'Home') target = enabledNodes[0];
   else if (key === 'End') target = enabledNodes[enabledNodes.length - 1];
+  else if (key === 'ArrowRight') {
+    const child = node.children?.find(item => !item.disabled);
+    target = enabledNodes.find(item => item.node.key === child?.key);
+  } else if (key === 'ArrowLeft') {
+    const parent = treeIndex.value.parents.get(node.key);
+    target = enabledNodes.find(item => item.node.key === parent);
+  }
   if (!target || target.node.key === node.key) return;
 
   activeKey.value = target.node.key;

@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 $select-option-height: 44px;
 $select-clear-target: 32px;
@@ -573,17 +574,19 @@ $select-touch-target: 44px;
 }
 
 // Teleport 到 body 后不再处于 ConfigProvider 的 DOM 子树，需显式继承全局效果开关。
-.ex-select__dropdown.ex-no-neon,
-.ex-select__dropdown.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-select__dropdown.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-select__dropdown.ex-no-animation,
-.ex-select__dropdown.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-select__dropdown.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 @keyframes option-fade-in {

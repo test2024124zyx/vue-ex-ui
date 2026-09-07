@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/tokens' as *;
 
 .ex-datetime-picker {
@@ -471,15 +472,17 @@
 }
 
 // Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-datetime-picker__dropdown.ex-no-neon,
-.ex-datetime-picker__dropdown.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-datetime-picker__dropdown.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-datetime-picker__dropdown.ex-no-animation,
-.ex-datetime-picker__dropdown.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-datetime-picker__dropdown.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

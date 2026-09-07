@@ -963,26 +963,32 @@ const handleFinished = () => {
 
 ### Methods
 
-| 方法名           | 说明                | 参数                                          |
-| ---------------- | ------------------- | --------------------------------------------- |
-| getInstance      | 获取 ECharts 实例   | —                                             |
-| getElement       | 获取图表 DOM 元素   | —                                             |
-| resize           | 手动调整图表大小    | (opts?: ResizeOpts)                           |
-| clear            | 清空图表            | —                                             |
-| dispose          | 销毁图表实例        | —                                             |
-| setOption        | 设置图表配置        | (option: EChartsOption, opts?: SetOptionOpts) |
-| showLoading      | 显示加载动画        | (type?: string, opts?: object)                |
-| hideLoading      | 隐藏加载动画        | —                                             |
-| getDataURL       | 获取图表数据 URL    | (opts?: object)                               |
-| getSvgDataURL    | 获取图表 SVG 字符串 | —                                             |
-| convertToPixel   | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
-| convertFromPixel | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
+| 方法名           | 说明                                           | 参数                                          |
+| ---------------- | ---------------------------------------------- | --------------------------------------------- |
+| getInstance      | 获取 ECharts 实例                              | —                                             |
+| getElement       | 获取图表 DOM 元素                              | —                                             |
+| resize           | 手动调整图表大小                               | (opts?: ResizeOpts)                           |
+| clear            | 清空图表                                       | —                                             |
+| dispose          | 销毁图表实例                                   | —                                             |
+| setOption        | 设置图表配置                                   | (option: EChartsOption, opts?: SetOptionOpts) |
+| showLoading      | 显示加载动画                                   | (type?: string, opts?: object)                |
+| hideLoading      | 隐藏加载动画                                   | —                                             |
+| getDataURL       | 获取图表数据 URL                               | (opts?: object)                               |
+| getSvgDataURL    | 获取当前图表 SVG 数据 URL（Canvas/SVG 均支持） | —                                             |
+| convertToPixel   | 转换坐标                                       | (finder: ConvertFinder, value: unknown)       |
+| convertFromPixel | 转换坐标                                       | (finder: ConvertFinder, value: unknown)       |
 
 ### Slots
 
 | 插槽名 | 说明             |
 | ------ | ---------------- |
 | empty  | 自定义空状态内容 |
+
+### 键盘导航
+
+普通折线、柱状、饼图、散点等可从 `series.data` 或直接 `dataset.source` 解析的数据，会提供单一 Tab 入口。方向键移动数据点，Home/End 跳到首尾，Enter/Space 触发当前数据点的 `click`，Escape 清除高亮和提示，Tab/Shift+Tab 离开图表。
+
+解析会保留系列与数据的真实索引、当前图例隐藏状态、分类轴绑定、`encode` 和按行组织的数据集。自定义、层级及其他特殊系列，以及依赖 `dataset.transform` 的数据，目前不提供自动键盘导航；渲染和原有鼠标交互不受影响。
 
 <style scoped>
 .demo-container {

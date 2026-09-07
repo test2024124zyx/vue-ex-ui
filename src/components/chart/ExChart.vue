@@ -4,7 +4,7 @@
     :style="chartStyles"
     :aria-label="ariaLabel || t('chart.chart')"
     :aria-busy="loading || undefined"
-    role="img"
+    :role="navigationItems.length ? 'group' : 'img'"
   >
     <!-- ECharts 容器 - 始终存在 -->
     <div
@@ -31,6 +31,12 @@
         <ex-empty :description="t('chart.noData')" />
       </slot>
     </div>
+    <ExChartDataNavigation
+      v-if="chartInstance && parentOverlayActive && !loading && navigationItems.length"
+      :items="navigationItems"
+      @highlight="highlightNavigationItem"
+      @activate="activateNavigationItem"
+    />
   </div>
 </template>
 
@@ -46,9 +52,21 @@ import type {
   ExChartExposed,
 } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize, useGlobalConfig } from '../config-provider/composables';
 import {
-  getChartTheme,
+  useComponentSize,
+  useGlobalConfig,
+  useThemeOverrides,
+} from '../config-provider/composables';
+import {
+  mergeChartComponent,
+  resolveChartColor,
+  resolveChartTheme,
+  resolveChartPalette,
+} from './chart-runtime';
+import { getChartNavigationItems, type ChartNavigationItem } from './chart-accessibility';
+import ExChartDataNavigation from './ExChartDataNavigation.vue';
+import { useOverlayParentActive } from '../../composables/useOverlay';
+import {
   applyNeonGlow,
   createDefaultDataZoom,
   createDefaultLegend,
@@ -80,9 +98,18 @@ const props = withDefaults(defineProps<ExChartProps>(), {
 
 const emit = defineEmits<ExChartEmits>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const componentSize = useComponentSize(computed(() => props.size));
 const globalConfig = useGlobalConfig();
+const themeOverrides = useThemeOverrides();
+const parentOverlayActive = useOverlayParentActive();
+const controlPalette = () =>
+  resolveChartPalette(
+    globalConfig.theme.value,
+    chartRef.value,
+    themeOverrides.value,
+    echartsModule?.color?.modifyAlpha
+  );
 
 // 引用
 const chartRef = ref<HTMLDivElement>();
@@ -90,10 +117,13 @@ const chartInstance = shallowRef<ChartInstance | null>(null);
 const resizeObserver = ref<ResizeObserver | null>(null);
 const resizeTimer = ref<number | null>(null);
 const prefersReducedMotion = ref(false);
+const navigationItems = shallowRef<ChartNavigationItem[]>([]);
+let highlightedItem: ChartNavigationItem | null = null;
 // 异步初始化竞态控制：序号 + 卸载标记
 let initSeq = 0;
 let isUnmounted = false;
 let reducedMotionQuery: MediaQueryList | null = null;
+let echartsModule: typeof import('echarts') | null = null;
 
 // 计算属性
 const chartClasses = computed(() => {
@@ -163,7 +193,12 @@ const initChart = async () => {
     }
 
     // 获取主题配置（使用全局主题）
-    const themeConfig = getChartTheme(globalConfig.theme.value);
+    echartsModule = echartsLib;
+    const themeConfig = resolveChartTheme(
+      globalConfig.theme.value,
+      chartRef.value,
+      themeOverrides.value
+    );
 
     // 初始化 ECharts 实例
     chartInstance.value = echartsLib.init(chartRef.value, themeConfig, {
@@ -205,12 +240,69 @@ const cloneSeries = (series: ChartOption['series']): ChartOption['series'] => {
   };
 };
 
+const syncNavigationItems = (fallback = props.option) => {
+  const option = chartInstance.value?.getOption?.() ?? fallback;
+  const items = getChartNavigationItems(option);
+  // finished 可能由高亮动作触发，相同数据不重复通知导航器，避免动作反馈循环。
+  const previous = navigationItems.value;
+  if (
+    items.length === previous.length &&
+    items.every((item, index) => {
+      const old = previous[index]!;
+      return (
+        item.seriesIndex === old.seriesIndex &&
+        item.dataIndex === old.dataIndex &&
+        item.label === old.label &&
+        JSON.stringify(item.value) === JSON.stringify(old.value)
+      );
+    })
+  )
+    return;
+  navigationItems.value = items;
+};
+
+const highlightNavigationItem = (item: ChartNavigationItem | null) => {
+  const instance = chartInstance.value;
+  if (!instance) return;
+  if (highlightedItem)
+    instance.dispatchAction?.({
+      type: 'downplay',
+      seriesIndex: highlightedItem.seriesIndex,
+      dataIndex: highlightedItem.dataIndex,
+    });
+  highlightedItem = item;
+  if (!item) {
+    instance.dispatchAction?.({ type: 'hideTip' });
+    return;
+  }
+  instance.dispatchAction?.({
+    type: 'highlight',
+    seriesIndex: item.seriesIndex,
+    dataIndex: item.dataIndex,
+  });
+  instance.dispatchAction?.({
+    type: 'showTip',
+    seriesIndex: item.seriesIndex,
+    dataIndex: item.dataIndex,
+  });
+};
+
+const activateNavigationItem = (item: ChartNavigationItem) => {
+  highlightNavigationItem(item);
+  emit('click', { ...item, componentType: 'series' });
+};
+
+watch(parentOverlayActive, active => {
+  if (!active) highlightNavigationItem(null);
+});
+
 // 更新图表
 const updateChart = () => {
   if (!chartInstance.value || !props.option) return;
 
   try {
     // 合并配置
+    const palette = controlPalette();
     let mergedOption: ChartOption = {
       ...props.option,
       series: cloneSeries(props.option.series),
@@ -222,27 +314,33 @@ const updateChart = () => {
           : 1000,
     };
 
-    mergedOption.toolbox = {
-      ...(props.showToolbox ? createDefaultToolbox(globalConfig.theme.value) : {}),
-      ...asComponentOption(props.option.toolbox),
-      show: props.showToolbox,
-    };
-    mergedOption.legend = {
-      ...(props.showLegend ? createDefaultLegend(globalConfig.theme.value) : {}),
-      ...asComponentOption(props.option.legend),
-      show: props.showLegend,
-    };
-    mergedOption.tooltip = {
-      ...(props.showTooltip ? createDefaultTooltip(globalConfig.theme.value) : {}),
-      appendToBody: true,
-      confine: false,
-      ...asComponentOption(props.option.tooltip),
-      show: props.showTooltip,
-    };
+    mergedOption.toolbox = mergeChartComponent(
+      props.option.toolbox,
+      props.showToolbox ? createDefaultToolbox(globalConfig.theme.value, t, palette) : {},
+      props.showToolbox
+    );
+    mergedOption.legend = mergeChartComponent(
+      props.option.legend,
+      props.showLegend ? createDefaultLegend(globalConfig.theme.value, palette) : {},
+      props.showLegend
+    );
+    mergedOption.tooltip = mergeChartComponent(
+      props.option.tooltip,
+      {
+        ...(props.showTooltip ? createDefaultTooltip(globalConfig.theme.value, palette) : {}),
+        appendToBody: true,
+        confine: false,
+      },
+      props.showTooltip
+    );
     mergedOption.dataZoom = props.showDataZoom
       ? Array.isArray(props.option.dataZoom) && props.option.dataZoom.length > 0
         ? props.option.dataZoom.map(item => ({ ...asComponentOption(item) }))
-        : createDefaultDataZoom(globalConfig.theme.value)
+        : props.option.dataZoom &&
+            typeof props.option.dataZoom === 'object' &&
+            !Array.isArray(props.option.dataZoom)
+          ? { ...asComponentOption(props.option.dataZoom) }
+          : createDefaultDataZoom(globalConfig.theme.value, palette)
       : [];
 
     // 应用霓虹发光效果（使用全局配置）
@@ -255,6 +353,7 @@ const updateChart = () => {
       notMerge: true,
       lazyUpdate: true,
     });
+    syncNavigationItems(mergedOption);
   } catch (error) {
     emit('error', error as Error);
   }
@@ -291,16 +390,19 @@ const bindEvents = () => {
 
   // 绑定数据缩放事件
   chartInstance.value?.on('datazoom', params => {
+    syncNavigationItems();
     emit('datazoom', params as ChartEventParams);
   });
 
   // 绑定图例选择改变事件
   chartInstance.value?.on('legendselectchanged', params => {
+    syncNavigationItems();
     emit('legendselectchanged', params as ChartEventParams);
   });
 
   // 渲染完成事件
   chartInstance.value.on('finished', () => {
+    syncNavigationItems();
     emit('finished');
   });
 };
@@ -356,7 +458,9 @@ const resize = (opts?: { width?: number | 'auto'; height?: number | 'auto' }) =>
 };
 
 const clear = () => {
+  highlightNavigationItem(null);
   chartInstance.value?.clear();
+  navigationItems.value = [];
 };
 
 const dispose = () => {
@@ -365,6 +469,8 @@ const dispose = () => {
     chartInstance.value.dispose();
     chartInstance.value = null;
   }
+  navigationItems.value = [];
+  highlightedItem = null;
 };
 
 const setOption = (
@@ -377,14 +483,31 @@ const setOption = (
   }
 ) => {
   chartInstance.value?.setOption(option, opts);
+  syncNavigationItems(option);
 };
 
 const showLoading = (type?: string, opts?: object) => {
+  const light = globalConfig.theme.value === 'light';
   const defaultOpts = {
     text: props.loadingText || t('chart.loading'),
-    color: 'var(--ex-color-primary)',
-    textColor: 'var(--ex-color-text-primary)',
-    maskColor: 'rgba(var(--ex-color-bg-primary-rgb), 0.8)',
+    color: resolveChartColor(
+      chartRef.value,
+      '--ex-color-primary',
+      light ? '#1668dc' : '#00f0ff',
+      themeOverrides.value
+    ),
+    textColor: resolveChartColor(
+      chartRef.value,
+      '--ex-color-text-primary',
+      light ? '#1a2332' : '#e6f0ff',
+      themeOverrides.value
+    ),
+    maskColor: resolveChartColor(
+      chartRef.value,
+      '--ex-color-bg-surface',
+      light ? '#ffffff' : '#0f1720',
+      themeOverrides.value
+    ),
     zlevel: 0,
     ...opts,
   };
@@ -400,11 +523,42 @@ const getDataURL = (opts?: {
   pixelRatio?: number;
   backgroundColor?: string;
 }) => {
+  if (opts?.type === 'svg') return getSvgDataURL(opts);
   return chartInstance.value?.getDataURL(opts) || '';
 };
 
-const getSvgDataURL = () => {
-  return chartInstance.value?.getDataURL({ type: 'svg' }) || '';
+const getSvgDataURL = (options?: { backgroundColor?: string }) => {
+  const instance = chartInstance.value;
+  if (!instance || !echartsModule || isUnmounted) return '';
+  let temporary: ReturnType<typeof echartsModule.init> | null = null;
+  try {
+    // 独立 SVG 实例复制当前图例/缩放等交互状态，主 Canvas 实例不切换或重建。
+    temporary = echartsModule.init(
+      null,
+      resolveChartTheme(globalConfig.theme.value, chartRef.value, themeOverrides.value),
+      {
+        ...props.initOptions,
+        renderer: 'svg',
+        ssr: true,
+        width: instance.getWidth(),
+        height: instance.getHeight(),
+      }
+    );
+    temporary.setOption(
+      {
+        ...instance.getOption(),
+        ...(options?.backgroundColor ? { backgroundColor: options.backgroundColor } : {}),
+        animation: false,
+      },
+      { notMerge: true, lazyUpdate: false }
+    );
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(temporary.renderToSVGString())}`;
+  } catch (error) {
+    emit('error', error instanceof Error ? error : new Error(String(error)));
+    return '';
+  } finally {
+    temporary?.dispose();
+  }
 };
 
 const convertToPixel = (finder: unknown, value: unknown) => {
@@ -442,15 +596,28 @@ watch(
 // 加载状态由模板中的 ExLoading 遮罩统一呈现，避免与 echarts 原生 loading 双重叠加；
 // showLoading/hideLoading 仍作为公开方法保留，供需要时手动调用。
 
+watch(locale, () => {
+  if (!chartInstance.value) return;
+  // 仅更新语言相关配置，保留用户当前图例选择与缩放状态。
+  chartInstance.value.setOption({
+    toolbox: mergeChartComponent(
+      props.option.toolbox,
+      props.showToolbox ? createDefaultToolbox(globalConfig.theme.value, t, controlPalette()) : {},
+      props.showToolbox
+    ),
+  });
+});
+
 // 监听全局主题变化
 watch(
-  () => globalConfig.theme.value,
+  [() => globalConfig.theme.value, themeOverrides],
   () => {
     // 重新初始化图表以应用新主题
     nextTick(() => {
       initChart();
     });
-  }
+  },
+  { deep: true }
 );
 
 watch(

@@ -341,6 +341,9 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // 复制提示定时器（卸载时清理，防止悬挂 / 叠加）。
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
+let copyRevision = 0;
+let disposed = false;
+const COPY_FEEDBACK_DURATION = 2000;
 
 // 降级复制：navigator.clipboard 不可用（非安全上下文 / 旧浏览器）时回退到 execCommand。
 const fallbackCopy = (text: string): boolean => {
@@ -362,6 +365,8 @@ const fallbackCopy = (text: string): boolean => {
 };
 
 const handleCopy = async (): Promise<boolean> => {
+  if (disposed || typeof navigator === 'undefined' || typeof document === 'undefined') return false;
+  const revision = ++copyRevision;
   const codeSnapshot = currentCode.value;
   copied.value = false;
   if (copyTimer) {
@@ -376,6 +381,8 @@ const handleCopy = async (): Promise<boolean> => {
     } else {
       success = fallbackCopy(codeSnapshot);
     }
+    // 剪贴板 Promise 无法中止，仅允许最新且仍挂载的请求提交交互状态。
+    if (disposed || revision !== copyRevision) return false;
     if (!success) {
       emit('copy-error', new Error(t('code.copyFailed')));
       return false;
@@ -387,15 +394,18 @@ const handleCopy = async (): Promise<boolean> => {
     copyTimer = setTimeout(() => {
       copied.value = false;
       copyTimer = null;
-    }, 2000);
+    }, COPY_FEEDBACK_DURATION);
     return true;
   } catch (error) {
+    if (disposed || revision !== copyRevision) return false;
     emit('copy-error', error instanceof Error ? error : new Error(String(error)));
     return false;
   }
 };
 
 onBeforeUnmount(() => {
+  disposed = true;
+  copyRevision += 1;
   if (copyTimer) clearTimeout(copyTimer);
 });
 

@@ -54,7 +54,7 @@
     </div>
 
     <div
-      v-else-if="listType !== 'picture-card'"
+      v-else-if="listType !== 'picture-card' || !showFileList"
       class="ex-file-upload__button"
     >
       <slot
@@ -528,9 +528,17 @@ const getFileItemClass = (file: UploadFile) => [
 
 const abortActiveUpload = (uid: string, reason: UploadAbortReason): boolean => {
   const task = activeUploads.get(uid);
-  if (!task || !task.handle.abort()) return false;
+  if (!task) return false;
+  const aborted = task.handle.abort();
+  // 网络完成和 Vue 属性同步可能位于同一微任务轮次；外部替换仍须撤销提交权。
+  if (!aborted && reason !== 'external') return false;
   activeUploads.delete(uid);
-  const patched = patchFile(uid, { status: 'ready', percent: 0, error: undefined });
+  const current = operationFileList.value.find(file => file.uid === uid);
+  // 外部替换同 UID 的原始文件后，旧任务只能结束自身，不能重置新文件状态。
+  const patched =
+    current?.raw === task.file.raw
+      ? patchFile(uid, { status: 'ready', percent: 0, error: undefined })
+      : null;
   const file = patched?.file ?? { ...task.file, status: 'ready', percent: 0, error: undefined };
   const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
   emit('aborted', file, files, reason);
@@ -546,8 +554,10 @@ watch(
     invalidatePendingSelections();
     if (nextFiles !== undefined) {
       operationFileList.value = cloneUploadFileList(nextFiles);
-      const currentUids = new Set(nextFiles.map(file => file.uid));
-      const removedTaskUids = [...activeUploads.keys()].filter(uid => !currentUids.has(uid));
+      const currentFiles = new Map(nextFiles.map(file => [file.uid, file]));
+      const removedTaskUids = [...activeUploads]
+        .filter(([uid, task]) => currentFiles.get(uid)?.raw !== task.file.raw)
+        .map(([uid]) => uid);
       abortUploads(removedTaskUids, 'external');
     } else if (previousFiles !== undefined) {
       internalFileList.value = cloneUploadFileList(previousFiles);

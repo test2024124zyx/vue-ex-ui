@@ -37,6 +37,9 @@ describe('ExAffix', () => {
     vi.spyOn(wrapper.element, 'getBoundingClientRect').mockReturnValue(
       rect({ top: 105, bottom: 145, left: 120, right: 320, width: 200, height: 40 })
     );
+    vi.spyOn(wrapper.get('.ex-affix__content').element, 'getBoundingClientRect').mockReturnValue(
+      rect({ top: 105, bottom: 145, left: 120, right: 320, width: 200, height: 40 })
+    );
 
     (wrapper.vm as unknown as ExAffixExposed).updatePosition();
     await nextTick();

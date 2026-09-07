@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-popover {
   display: inline-block;
@@ -202,15 +203,17 @@
 }
 
 // Teleport 浮层脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
-.ex-popover__popper.ex-no-neon,
-.ex-popover__popper.ex-no-neon * {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+.ex-popover__popper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
-.ex-popover__popper.ex-no-animation,
-.ex-popover__popper.ex-no-animation * {
-  transition: none !important;
-  animation: none !important;
+.ex-popover__popper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

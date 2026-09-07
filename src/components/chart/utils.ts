@@ -1,5 +1,6 @@
 import type { ChartComponentOption, ChartGradient, ChartOption, ChartSeriesOption } from './types';
 import type { Theme } from '../../types/theme';
+import { t as translate } from '../../locale';
 
 const DARK_CHART_PALETTE = [
   '#00f0ff',
@@ -35,12 +36,14 @@ interface ChartThemePalette {
   border: string;
 }
 
-interface ChartPalette {
+export interface ChartPalette {
   text: string;
   mutedText: string;
   accent: string;
   surface: string;
   border: string;
+  accentFill?: string;
+  accentArea?: string;
 }
 
 const getThemePalette = (theme: Theme): ChartThemePalette => {
@@ -68,8 +71,8 @@ const getThemePalette = (theme: Theme): ChartThemePalette => {
 /**
  * 获取与全局双主题契约一致的图表主题配置。
  */
-export function getChartTheme(theme: Theme): object {
-  const palette = getThemePalette(theme);
+export function getChartTheme(theme: Theme, overrides: Partial<ChartThemePalette> = {}): object {
+  const palette = { ...getThemePalette(theme), ...overrides };
 
   return {
     color: palette.series,
@@ -191,7 +194,7 @@ export function applyNeonGlow(option: ChartOption, theme: Theme): ChartOption {
 /**
  * 获取图表附属控件使用的语义调色板。
  */
-const getChartPalette = (theme: Theme): ChartPalette => {
+export const getChartPalette = (theme: Theme): ChartPalette => {
   if (theme === 'light') {
     return {
       text: '#1a2332',
@@ -255,34 +258,38 @@ export function formatNumber(value: number, decimals = 2): string {
 /**
  * 生成默认工具栏配置。
  */
-export function createDefaultToolbox(theme: Theme = 'neon-blue'): ChartComponentOption {
-  const palette = getChartPalette(theme);
+export function createDefaultToolbox(
+  theme: Theme = 'neon-blue',
+  t: (key: string) => string = translate,
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
 
   return {
     feature: {
       saveAsImage: {
-        title: '保存为图片',
+        title: t('chart.saveAsImage'),
         pixelRatio: 2,
       },
       dataView: {
-        title: '数据视图',
+        title: t('chart.dataView'),
         readOnly: false,
       },
       restore: {
-        title: '还原',
+        title: t('chart.restore'),
       },
       dataZoom: {
         title: {
-          zoom: '区域缩放',
-          back: '区域缩放还原',
+          zoom: t('chart.dataZoom'),
+          back: t('chart.dataZoomRestore'),
         },
       },
       magicType: {
         title: {
-          line: '切换为折线图',
-          bar: '切换为柱状图',
-          stack: '切换为堆叠',
-          tiled: '切换为平铺',
+          line: t('chart.line'),
+          bar: t('chart.bar'),
+          stack: t('chart.stack'),
+          tiled: t('chart.tiled'),
         },
         type: ['line', 'bar', 'stack'],
       },
@@ -301,8 +308,11 @@ export function createDefaultToolbox(theme: Theme = 'neon-blue'): ChartComponent
 /**
  * 生成默认数据缩放配置。
  */
-export function createDefaultDataZoom(theme: Theme = 'neon-blue'): ChartComponentOption[] {
-  const palette = getChartPalette(theme);
+export function createDefaultDataZoom(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption[] {
+  const palette = { ...getChartPalette(theme), ...overrides };
 
   return [
     {
@@ -315,7 +325,7 @@ export function createDefaultDataZoom(theme: Theme = 'neon-blue'): ChartComponen
         color: palette.text,
       },
       borderColor: palette.border,
-      fillerColor: `${palette.accent}33`,
+      fillerColor: palette.accentFill ?? `${palette.accent}33`,
       handleStyle: {
         color: palette.accent,
         borderColor: palette.accent,
@@ -328,7 +338,7 @@ export function createDefaultDataZoom(theme: Theme = 'neon-blue'): ChartComponen
           color: palette.accent,
         },
         areaStyle: {
-          color: `${palette.accent}4d`,
+          color: palette.accentArea ?? `${palette.accent}4d`,
         },
       },
     },
@@ -344,8 +354,11 @@ export function createDefaultDataZoom(theme: Theme = 'neon-blue'): ChartComponen
 /**
  * 生成默认图例配置。
  */
-export function createDefaultLegend(theme: Theme = 'neon-blue'): ChartComponentOption {
-  const palette = getChartPalette(theme);
+export function createDefaultLegend(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
 
   return {
     textStyle: {
@@ -363,8 +376,11 @@ export function createDefaultLegend(theme: Theme = 'neon-blue'): ChartComponentO
 /**
  * 生成默认提示框配置。
  */
-export function createDefaultTooltip(theme: Theme = 'neon-blue'): ChartComponentOption {
-  const palette = getChartPalette(theme);
+export function createDefaultTooltip(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
 
   return {
     trigger: 'axis',

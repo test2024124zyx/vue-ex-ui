@@ -197,73 +197,78 @@
         role="grid"
       >
         <div
-          v-for="cell in weekCells"
-          :key="cell.date.getTime()"
-          :class="getCellClasses(cell)"
-          role="gridcell"
-          :tabindex="isCellFocusable(cell) ? 0 : -1"
-          :aria-selected="isDateSelected(cell.date)"
-          :aria-disabled="cell.disabled"
-          :data-date="getDateTimestamp(cell.date)"
-          @click="handleDateClick(cell)"
-          @keydown="handleCellKeydown(cell, $event)"
+          class="ex-calendar__grid-row"
+          role="row"
         >
-          <div class="ex-calendar__date-content">
-            <div class="ex-calendar__date-info">
-              <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span
-                v-if="cell.holiday"
-                class="ex-calendar__holiday"
-              >
-                {{ cell.holiday }}
-              </span>
-              <span
-                v-else-if="cell.solarTerm"
-                class="ex-calendar__solar-term"
-              >
-                {{ cell.solarTerm }}
-              </span>
-              <span
-                v-else-if="showLunar && cell.lunar"
-                class="ex-calendar__lunar"
-              >
-                {{ cell.lunar }}
-              </span>
-            </div>
-
-            <div
-              v-if="cell.checkedIn"
-              class="ex-calendar__check-in"
-            >
-              <ExIcon
-                icon="checkbox-circle-fill"
-                :size="16"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-
           <div
-            v-if="cell.events.length > 0"
-            class="ex-calendar__events"
+            v-for="cell in weekCells"
+            :key="cell.date.getTime()"
+            :class="getCellClasses(cell)"
+            role="gridcell"
+            :tabindex="isCellFocusable(cell) ? 0 : -1"
+            :aria-selected="isDateSelected(cell.date)"
+            :aria-disabled="cell.disabled"
+            :data-date="getDateTimestamp(cell.date)"
+            @click="handleDateClick(cell)"
+            @keydown="handleCellKeydown(cell, $event)"
           >
-            <button
-              v-for="event in cell.events.slice(0, 2)"
-              :key="event.id"
-              type="button"
-              :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
-              @click.stop="handleEventClick(event, cell.date)"
-              @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
-              @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
-            >
-              <span class="ex-calendar__event-dot" />
-              <span class="ex-calendar__event-title">{{ event.title }}</span>
-            </button>
+            <div class="ex-calendar__date-content">
+              <div class="ex-calendar__date-info">
+                <span class="ex-calendar__date-number">{{ cell.day }}</span>
+                <span
+                  v-if="cell.holiday"
+                  class="ex-calendar__holiday"
+                >
+                  {{ cell.holiday }}
+                </span>
+                <span
+                  v-else-if="cell.solarTerm"
+                  class="ex-calendar__solar-term"
+                >
+                  {{ cell.solarTerm }}
+                </span>
+                <span
+                  v-else-if="showLunar && cell.lunar"
+                  class="ex-calendar__lunar"
+                >
+                  {{ cell.lunar }}
+                </span>
+              </div>
+
+              <div
+                v-if="cell.checkedIn"
+                class="ex-calendar__check-in"
+              >
+                <ExIcon
+                  icon="checkbox-circle-fill"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </div>
+            </div>
+
             <div
-              v-if="cell.events.length > 2"
-              class="ex-calendar__event-more"
+              v-if="cell.events.length > 0"
+              class="ex-calendar__events"
             >
-              +{{ cell.events.length - 2 }}
+              <button
+                v-for="event in cell.events.slice(0, 2)"
+                :key="event.id"
+                type="button"
+                :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
+                @click.stop="handleEventClick(event, cell.date)"
+                @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+                @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
+              >
+                <span class="ex-calendar__event-dot" />
+                <span class="ex-calendar__event-title">{{ event.title }}</span>
+              </button>
+              <div
+                v-if="cell.events.length > 2"
+                class="ex-calendar__event-more"
+              >
+                +{{ cell.events.length - 2 }}
+              </div>
             </div>
           </div>
         </div>
@@ -290,73 +295,80 @@
         role="grid"
       >
         <div
-          v-for="cell in calendarCells"
-          :key="cell.date.getTime()"
-          :class="getCellClasses(cell)"
-          role="gridcell"
-          :tabindex="isCellFocusable(cell) ? 0 : -1"
-          :aria-selected="isDateSelected(cell.date)"
-          :aria-disabled="cell.disabled"
-          :data-date="getDateTimestamp(cell.date)"
-          @click="handleDateClick(cell)"
-          @keydown="handleCellKeydown(cell, $event)"
+          v-for="(week, index) in calendarRows"
+          :key="index"
+          class="ex-calendar__grid-row"
+          role="row"
         >
-          <div class="ex-calendar__date-content">
-            <div class="ex-calendar__date-info">
-              <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span
-                v-if="cell.holiday"
-                class="ex-calendar__holiday"
-              >
-                {{ cell.holiday }}
-              </span>
-              <span
-                v-else-if="cell.solarTerm"
-                class="ex-calendar__solar-term"
-              >
-                {{ cell.solarTerm }}
-              </span>
-              <span
-                v-else-if="showLunar && cell.lunar"
-                class="ex-calendar__lunar"
-              >
-                {{ cell.lunar }}
-              </span>
-            </div>
-
-            <div
-              v-if="cell.checkedIn"
-              class="ex-calendar__check-in"
-            >
-              <ExIcon
-                icon="checkbox-circle-fill"
-                :size="16"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-
           <div
-            v-if="cell.events.length > 0"
-            class="ex-calendar__events"
+            v-for="cell in week"
+            :key="cell.date.getTime()"
+            :class="getCellClasses(cell)"
+            role="gridcell"
+            :tabindex="isCellFocusable(cell) ? 0 : -1"
+            :aria-selected="isDateSelected(cell.date)"
+            :aria-disabled="cell.disabled"
+            :data-date="getDateTimestamp(cell.date)"
+            @click="handleDateClick(cell)"
+            @keydown="handleCellKeydown(cell, $event)"
           >
-            <button
-              v-for="event in cell.events.slice(0, 3)"
-              :key="event.id"
-              type="button"
-              :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
-              @click.stop="handleEventClick(event, cell.date)"
-              @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
-              @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
-            >
-              <span class="ex-calendar__event-dot" />
-              <span class="ex-calendar__event-title">{{ event.title }}</span>
-            </button>
+            <div class="ex-calendar__date-content">
+              <div class="ex-calendar__date-info">
+                <span class="ex-calendar__date-number">{{ cell.day }}</span>
+                <span
+                  v-if="cell.holiday"
+                  class="ex-calendar__holiday"
+                >
+                  {{ cell.holiday }}
+                </span>
+                <span
+                  v-else-if="cell.solarTerm"
+                  class="ex-calendar__solar-term"
+                >
+                  {{ cell.solarTerm }}
+                </span>
+                <span
+                  v-else-if="showLunar && cell.lunar"
+                  class="ex-calendar__lunar"
+                >
+                  {{ cell.lunar }}
+                </span>
+              </div>
+
+              <div
+                v-if="cell.checkedIn"
+                class="ex-calendar__check-in"
+              >
+                <ExIcon
+                  icon="checkbox-circle-fill"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </div>
+            </div>
+
             <div
-              v-if="cell.events.length > 3"
-              class="ex-calendar__event-more"
+              v-if="cell.events.length > 0"
+              class="ex-calendar__events"
             >
-              +{{ cell.events.length - 3 }}
+              <button
+                v-for="event in cell.events.slice(0, 3)"
+                :key="event.id"
+                type="button"
+                :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
+                @click.stop="handleEventClick(event, cell.date)"
+                @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+                @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
+              >
+                <span class="ex-calendar__event-dot" />
+                <span class="ex-calendar__event-title">{{ event.title }}</span>
+              </button>
+              <div
+                v-if="cell.events.length > 3"
+                class="ex-calendar__event-more"
+              >
+                +{{ cell.events.length - 3 }}
+              </div>
             </div>
           </div>
         </div>
@@ -409,11 +421,12 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, shallowRef, onMounted, nextTick } from 'vue';
+import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
 import { parseLocalDate, setMonthClamped, setYearClamped } from '../../utils/date';
+import { CALENDAR_WEEK_LENGTH, useCalendarKeyboard } from './use-calendar-keyboard';
 import type {
   ExCalendarProps,
   ExCalendarEmits,
@@ -427,7 +440,6 @@ defineOptions({
   name: 'ExCalendar',
 });
 
-const FOCUS_SEARCH_LIMIT_DAYS = 366;
 const props = withDefaults(defineProps<ExCalendarProps>(), {
   mode: 'month',
   events: () => [],
@@ -808,8 +820,20 @@ const getCellClasses = (cell: CalendarDateCell) => {
   return classes;
 };
 
-const isCellFocusable = (cell: CalendarDateCell): boolean =>
-  !cell.disabled && getDateTimestamp(cell.date) === focusedDateTimestamp.value;
+const calendarRows = computed(() =>
+  Array.from({ length: Math.ceil(calendarCells.value.length / CALENDAR_WEEK_LENGTH) }, (_, index) =>
+    calendarCells.value.slice(index * CALENDAR_WEEK_LENGTH, (index + 1) * CALENDAR_WEEK_LENGTH)
+  )
+);
+const { isCellFocusable, handleCellKeydown } = useCalendarKeyboard({
+  currentDate,
+  focusedDate: focusedDateTimestamp,
+  element: calendarRef,
+  cells: computed(() => (activeMode.value === 'week' ? weekCells.value : calendarCells.value)),
+  timestamp: getDateTimestamp,
+  isDisabled: date => Boolean(props.disabledDate?.(date)),
+  select: cell => handleDateClick(cell),
+});
 
 // 方法
 const handleDateClick = (cell: CalendarDateCell) => {
@@ -827,54 +851,8 @@ const handleEventClick = (event: CalendarEvent, date: Date) => {
   emit('event-click', event, date);
 };
 
-const focusCalendarDate = (date: Date): void => {
-  let target = new Date(date);
-  const direction = target.getTime() >= currentDate.value.getTime() ? 1 : -1;
-  let enabledTarget: Date | null = null;
-  for (let attempts = 0; attempts < FOCUS_SEARCH_LIMIT_DAYS; attempts++) {
-    if (!props.disabledDate?.(target)) {
-      enabledTarget = target;
-      break;
-    }
-    target.setDate(target.getDate() + direction);
-  }
-
-  if (!enabledTarget) return;
-
-  focusedDateTimestamp.value = getDateTimestamp(enabledTarget);
-  currentDate.value = new Date(enabledTarget);
-  void nextTick(() => {
-    calendarRef.value
-      ?.querySelector<HTMLElement>(`[data-date="${focusedDateTimestamp.value}"]`)
-      ?.focus();
-  });
-};
-
-// 日期网格支持标准方向键、行首行尾以及翻页导航。
-const handleCellKeydown = (cell: CalendarDateCell, event: KeyboardEvent) => {
-  if (cell.disabled) return;
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    handleDateClick(cell);
-    return;
-  }
-
-  const target = new Date(cell.date);
-  if (event.key === 'ArrowLeft') target.setDate(target.getDate() - 1);
-  else if (event.key === 'ArrowRight') target.setDate(target.getDate() + 1);
-  else if (event.key === 'ArrowUp') target.setDate(target.getDate() - 7);
-  else if (event.key === 'ArrowDown') target.setDate(target.getDate() + 7);
-  else if (event.key === 'Home') target.setDate(target.getDate() - target.getDay());
-  else if (event.key === 'End') target.setDate(target.getDate() + (6 - target.getDay()));
-  else if (event.key === 'PageUp') target.setMonth(target.getMonth() - 1);
-  else if (event.key === 'PageDown') target.setMonth(target.getMonth() + 1);
-  else return;
-
-  event.preventDefault();
-  focusCalendarDate(target);
-};
-
 const selectDate = (date: Date) => {
+  if (props.disabledDate?.(date)) return;
   focusedDateTimestamp.value = getDateTimestamp(date);
   internalSelectedDate.value = new Date(date);
   currentDate.value = new Date(date);
@@ -883,6 +861,7 @@ const selectDate = (date: Date) => {
 
 const goToday = () => {
   const today = new Date();
+  if (props.disabledDate?.(today)) return;
   todayDate.value = new Date(today);
   focusedDateTimestamp.value = getDateTimestamp(today);
   currentDate.value = today;

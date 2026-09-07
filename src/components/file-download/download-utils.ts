@@ -8,10 +8,10 @@ const UNICODE_FILENAME_FORMAT_CONTROLS =
   /[\u00ad\u061c\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g;
 
 const runtimeBaseUrl = (): string => {
+  if (typeof document !== 'undefined' && document.baseURI) return document.baseURI;
   if (typeof globalThis.location !== 'undefined' && globalThis.location.href) {
     return globalThis.location.href;
   }
-  if (typeof document !== 'undefined' && document.baseURI) return document.baseURI;
   return 'http://localhost/';
 };
 

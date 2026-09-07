@@ -94,7 +94,7 @@
 
     <!-- 标签页内容 -->
     <div class="ex-tabs__content">
-      <slot></slot>
+      <SlotContent />
     </div>
   </div>
 </template>
@@ -106,6 +106,8 @@ import { computed, ref, provide, watch, nextTick, onMounted, onBeforeUnmount } f
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
 import { generateId } from '../../utils/id';
 import { useLocale } from '../../locale';
+import { useSlotItems } from '../../composables/useSlotItems';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExTabs',
@@ -133,8 +135,27 @@ interface PaneInfo {
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
-const panes = ref<PaneInfo[]>([]);
-const activeTab = ref(props.modelValue);
+const registeredPanes = ref<PaneInfo[]>([]);
+const { items: slotItems, SlotContent } = useSlotItems('ExTabPane');
+const slotPanes = computed<PaneInfo[]>(() =>
+  slotItems.value.map(node => ({
+    name: node.props?.name as string | number,
+    label: node.props?.label as string | undefined,
+    disabled: node.props?.disabled === true || node.props?.disabled === '',
+    closable: node.props?.closable === true || node.props?.closable === '',
+  }))
+);
+const panes = computed(() => {
+  const names = new Set(slotPanes.value.map(pane => pane.name));
+  return [...slotPanes.value, ...registeredPanes.value.filter(pane => !names.has(pane.name))];
+});
+const selectedTab = ref(props.modelValue);
+const activeTab = computed({
+  get: () => selectedTab.value ?? panes.value.find(pane => !pane.disabled)?.name,
+  set: (value: string | number | undefined) => {
+    selectedTab.value = value;
+  },
+});
 // 每个 Tabs 实例唯一前缀，避免多实例间 tab/panel 的 id 冲突
 const tabsUid = generateId('ex-tabs');
 const encodePaneName = (name: string | number) => {
@@ -152,16 +173,12 @@ provide('getTabId', getTabId);
 provide('getPanelId', getPanelId);
 provide('activeTab', activeTab);
 provide('registerPane', (pane: PaneInfo) => {
-  panes.value.push(pane);
-  if (activeTab.value === undefined && !pane.disabled) {
-    activeTab.value = pane.name;
-  }
+  if (!slotPanes.value.some(item => item.name === pane.name)) registeredPanes.value.push(pane);
 });
 provide('updatePane', (registeredName: string | number, pane: PaneInfo) => {
-  const target = panes.value.find(current => current.name === registeredName);
-  if (!target) return;
+  const target = registeredPanes.value.find(current => current.name === registeredName);
   const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
-  Object.assign(target, pane);
+  if (target) Object.assign(target, pane);
   if (activeNameChanged) {
     activeTab.value = pane.name;
     emit('update:modelValue', pane.name);
@@ -170,25 +187,38 @@ provide('updatePane', (registeredName: string | number, pane: PaneInfo) => {
 });
 let isTabsUnmounting = false;
 provide('unregisterPane', (name: string | number) => {
-  const index = panes.value.findIndex(p => p.name === name);
-  if (index > -1) {
-    const wasActive = activeTab.value === name;
-    panes.value.splice(index, 1);
-    if (wasActive && !isTabsUnmounting) {
+  registeredPanes.value = registeredPanes.value.filter(pane => pane.name !== name);
+});
+
+onMounted(() =>
+  watch(
+    panes,
+    (nextPanes, previousPanes) => {
+      if (
+        isTabsUnmounting ||
+        selectedTab.value === undefined ||
+        nextPanes.some(pane => pane.name === selectedTab.value)
+      )
+        return;
+      const index = Math.max(
+        0,
+        previousPanes.findIndex(pane => pane.name === selectedTab.value)
+      );
       const nextPane =
-        panes.value.slice(index).find(pane => !pane.disabled) ||
-        panes.value
+        nextPanes.slice(index).find(pane => !pane.disabled) ||
+        nextPanes
           .slice(0, index)
           .reverse()
           .find(pane => !pane.disabled);
+      activeTab.value = nextPane?.name;
       if (nextPane) {
-        activeTab.value = nextPane.name;
         emit('update:modelValue', nextPane.name);
         emit('change', nextPane.name);
       }
-    }
-  }
-});
+    },
+    { flush: 'post' }
+  )
+);
 
 // 计算属性
 const tabsClasses = computed(() => {
@@ -242,6 +272,8 @@ const updateIndicator = async () => {
 
   await nextTick();
 
+  if (isTabsUnmounting || !navRef.value) return;
+
   const activeTabEl = navRef.value.querySelector('.ex-tabs__tab--active') as HTMLElement;
   if (!activeTabEl) return;
 
@@ -293,6 +325,7 @@ const focusTab = (pane: PaneInfo) => {
 
 // 键盘导航：Enter/Space 激活；方向键在标签间移动（依据 position 决定横/纵向）；Home/End 跳首尾
 const handleTabKeydown = (pane: PaneInfo, event: KeyboardEvent) => {
+  if (event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleTabClick(pane, event);
@@ -360,9 +393,19 @@ watch(
   }
 );
 
-watch(activeTab, () => {
-  updateIndicator();
-});
+onMounted(() =>
+  watch(activeTab, () => {
+    updateIndicator();
+  })
+);
+
+onMounted(() =>
+  watch(
+    [() => JSON.stringify(panes.value), () => props.position, () => props.size, () => props.type],
+    updateIndicator,
+    { flush: 'post' }
+  )
+);
 
 // 生命周期
 let resizeObserver: ResizeObserver | null = null;

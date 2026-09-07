@@ -7,6 +7,7 @@ import {
   useAnimation,
   useConfigTheme,
   useNeonEffect,
+  useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
@@ -37,6 +38,7 @@ const configTheme = useConfigTheme();
 const animation = useAnimation();
 const neonEffect = useNeonEffect();
 const previewZIndex = useZIndexLayer('modal');
+const themeOverrides = useThemeOverrides();
 
 const rootRef = ref<HTMLDivElement>();
 const mainImageRef = ref<HTMLImageElement>();
@@ -81,7 +83,10 @@ const imageStyles = computed<CSSProperties>(
       '--ex-image-fit': props.fit,
     }) as CSSProperties
 );
-const previewStyles = computed<CSSProperties>(() => ({ zIndex: previewZIndex.value }));
+const previewStyles = computed<CSSProperties>(() => ({
+  ...themeOverrides.value,
+  zIndex: overlayZIndex.value,
+}));
 const previewClasses = computed(() => [
   'ex-image-preview',
   {
@@ -141,25 +146,25 @@ onMounted(async () => {
   reconcileMainImageStatus(props.src);
 });
 
-useOverlay({
+const { active: overlayActive, zIndex: overlayZIndex } = useOverlay({
   active: () => previewVisible.value,
   container: overlayRef,
+  zIndex: () => previewZIndex.value,
   closeOnEscape: () => true,
   onEscape: closePreview,
+  onParentClose: closePreview,
   restoreFocus: true,
 });
 
-watch(
-  () => props.src,
-  async source => {
-    status.value = source ? 'loading' : 'idle';
-    closePreview();
+watch([() => props.src, () => props.srcset, () => props.sizes], async ([source]) => {
+  mainImageRevision.value += 1;
+  status.value = source ? 'loading' : 'idle';
+  closePreview();
 
-    if (!source) return;
-    await nextTick();
-    reconcileMainImageStatus(source);
-  }
-);
+  if (!source) return;
+  await nextTick();
+  reconcileMainImageStatus(source);
+});
 
 watch(
   () => props.preview,
@@ -306,7 +311,7 @@ defineExpose<ExImageExposed>({
       :disabled="!canPreview"
       :aria-label="previewTriggerLabel"
       aria-haspopup="dialog"
-      :aria-expanded="previewVisible"
+      :aria-expanded="overlayActive"
       @click.stop="openPreview"
     >
       <span
@@ -325,7 +330,7 @@ defineExpose<ExImageExposed>({
     <Teleport to="body">
       <Transition name="ex-image-preview-fade">
         <div
-          v-if="previewVisible"
+          v-if="overlayActive"
           ref="overlayRef"
           :class="previewClasses"
           :style="previewStyles"

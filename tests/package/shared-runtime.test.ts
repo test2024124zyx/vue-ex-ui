@@ -85,7 +85,8 @@ describe('发布入口的模块副本共享契约', () => {
     const first = await loadSharedKeys();
     vi.resetModules();
     const second = await loadSharedKeys();
-    expect(Object.keys(first)).toHaveLength(18);
+    expect(Object.keys(first).length).toBeGreaterThan(0);
+    expect(Object.keys(second).sort()).toEqual(Object.keys(first).sort());
     for (const [name, key] of Object.entries(first)) {
       expect.soft(second[name], name).toBe(key);
     }

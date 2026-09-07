@@ -8,7 +8,7 @@
     :aria-valuemin="0"
     :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
-    :aria-label="ariaLabel || undefined"
+    :aria-label="ariaLabel || (fieldAriaAttrs['aria-labelledby'] ? undefined : t('label'))"
     v-bind="fieldAriaAttrs"
     :aria-disabled="effectiveDisabled"
     :aria-readonly="effectiveReadonly"
@@ -37,12 +37,20 @@
               icon="star-line"
               :size="iconSize"
               :color="voidColor"
-            />
+            >
+              <i
+                v-if="effectiveVoidIconClass"
+                :class="effectiveVoidIconClass"
+              ></i>
+            </ex-icon>
           </slot>
         </span>
 
         <!-- 选中的图标 -->
-        <span class="ex-rate__icon ex-rate__icon--active">
+        <span
+          class="ex-rate__icon ex-rate__icon--active"
+          :style="getActiveStyle(item)"
+        >
           <slot
             name="icon-active"
             :index="item"
@@ -52,7 +60,6 @@
               icon="star-fill"
               :size="iconSize"
               :color="effectiveDisabled ? disabledVoidColor : color"
-              :style="getActiveStyle(item)"
             />
           </slot>
         </span>
@@ -63,6 +70,7 @@
     <span
       v-if="showScore || showText"
       class="ex-rate__text"
+      :style="{ color: textColor }"
     >
       {{ displayText }}
     </span>
@@ -74,6 +82,7 @@ import { ref, computed, watch } from 'vue';
 import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useFormFieldState } from '../form/use-form-item';
+import { useLocale } from '../../locale';
 
 defineOptions({
   name: 'ExRate',
@@ -95,6 +104,7 @@ const props = withDefaults(defineProps<ExRateProps>(), {
 });
 
 const emit = defineEmits<ExRateEmits>();
+const { t } = useLocale('rate');
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
 const {
@@ -145,6 +155,11 @@ const iconSize = computed(() => {
   };
   return sizeMap[componentSize.value];
 });
+
+// 类名只替换当前状态的未选中图形，外部插槽优先，空类名保留内置图标。
+const effectiveVoidIconClass = computed(() =>
+  (effectiveDisabled.value ? props.disabledVoidIconClass : props.voidIconClass)?.trim()
+);
 
 const displayValue = computed(() => {
   return isHovering.value ? hoverValue.value : currentValue.value;
@@ -221,8 +236,6 @@ function handleMouseMove(item: number, event: MouseEvent) {
 }
 
 function handleMouseLeave() {
-  if (effectiveDisabled.value || effectiveReadonly.value) return;
-
   isHovering.value = false;
   hoverValue.value = -1;
 }
@@ -288,6 +301,10 @@ watch(
 
 watch([normalizedMax, () => props.allowHalf], () => {
   currentValue.value = normalizeValue(currentValue.value);
+});
+
+watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
+  if (disabled || readonly) handleMouseLeave();
 });
 
 // 暴露方法
