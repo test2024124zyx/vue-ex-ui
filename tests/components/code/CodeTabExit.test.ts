@@ -97,7 +97,8 @@ describe('代码编辑区的键盘退出', () => {
       attachTo: document.body,
       props: { modelValue: true, showClose: false, showFooter: false },
       slots: {
-        default: () => h(ExCode, { code: 'x', editable: true, copyable: false, showLanguage: false }),
+        default: () =>
+          h(ExCode, { code: 'x', editable: true, copyable: false, showLanguage: false }),
       },
     });
     await flushPromises();

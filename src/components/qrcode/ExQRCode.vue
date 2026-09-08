@@ -10,6 +10,8 @@
     <canvas
       ref="canvasRef"
       class="ex-qrcode__canvas"
+      :width="normalizedSize"
+      :height="normalizedSize"
       aria-hidden="true"
     />
 

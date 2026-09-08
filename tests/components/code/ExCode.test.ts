@@ -153,14 +153,17 @@ describe('ExCode', () => {
   it('可编辑模式应同步 v-model 事件、行号与暴露方法', async () => {
     const code = ref('let count = 1;');
     const parent = mount({
-      render: () => h(ExCode, {
-        code: code.value,
-        language: 'javascript',
-        editable: true,
-        lineNumbers: true,
-        copyable: false,
-        'onUpdate:code': (value: string) => { code.value = value; },
-      }),
+      render: () =>
+        h(ExCode, {
+          code: code.value,
+          language: 'javascript',
+          editable: true,
+          lineNumbers: true,
+          copyable: false,
+          'onUpdate:code': (value: string) => {
+            code.value = value;
+          },
+        }),
     });
     const wrapper = parent.findComponent(ExCode);
 

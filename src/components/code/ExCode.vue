@@ -303,7 +303,10 @@ watch(
 );
 watch(() => [props.editable, props.readonly], resetTabExit);
 
-interface EditorSelection { start: number; end: number }
+interface EditorSelection {
+  start: number;
+  end: number;
+}
 interface PendingEditorChange {
   value: string;
   base: string;
@@ -328,14 +331,23 @@ const syncEditor = (request?: PendingEditorChange) => {
   const element = textareaRef.value;
   if (!element || compositionElement === element) return;
   element.value = currentCode.value;
-  const selection = request && (currentCode.value === request.value
-    ? request.next
-    : currentCode.value === request.base ? request.previous : undefined);
+  const selection =
+    request &&
+    (currentCode.value === request.value
+      ? request.next
+      : currentCode.value === request.base
+        ? request.previous
+        : undefined);
   if (selection) element.setSelectionRange(selection.start, selection.end);
 };
 
 // 原生输入先回退到已确认值，只有本次请求被确认时才恢复请求对应的光标。
-const applyEditorChange = (next: string, selStart: number, selEnd: number, previous?: EditorSelection) => {
+const applyEditorChange = (
+  next: string,
+  selStart: number,
+  selEnd: number,
+  previous?: EditorSelection
+) => {
   const element = textareaRef.value;
   if (!element) return;
   const request: PendingEditorChange = {
@@ -354,7 +366,10 @@ const applyEditorChange = (next: string, selStart: number, selEnd: number, previ
 const handleInput = (event: Event) => {
   const element = event.target as HTMLTextAreaElement;
   if (element !== textareaRef.value || !props.editable) return;
-  if (props.readonly) { syncEditor(); return; }
+  if (props.readonly) {
+    syncEditor();
+    return;
+  }
   if ((event as InputEvent).isComposing && compositionElement !== element) {
     syncEditor();
     return;
@@ -366,7 +381,11 @@ const handleInput = (event: Event) => {
   if (lastCompositionValue !== undefined) {
     const duplicate = element.value === lastCompositionValue || element.value === currentCode.value;
     lastCompositionValue = undefined;
-    if (duplicate) return;
+    if (duplicate) {
+      // 最终 input 可能迟于父级拒绝回退，去重时仍须恢复确认内容及原选区。
+      syncEditor(pendingEditorChange);
+      return;
+    }
   }
   const previous = beforeInputSelection;
   beforeInputSelection = undefined;
@@ -389,7 +408,10 @@ const handleCompositionEnd = (event: CompositionEvent) => {
   lastCompositionValue = value;
   const previous = beforeInputSelection;
   beforeInputSelection = undefined;
-  if (props.readonly || !props.editable) { syncEditor(); return; }
+  if (props.readonly || !props.editable) {
+    syncEditor();
+    return;
+  }
   applyEditorChange(value, element.selectionStart, element.selectionEnd, previous);
 };
 const resetEditorSession = () => {
@@ -403,11 +425,15 @@ const resetEditorSession = () => {
 };
 watch(() => [props.editable, props.readonly], resetEditorSession, { flush: 'sync' });
 watch(textareaRef, resetEditorSession, { flush: 'sync' });
-watch(currentCode, () => {
-  const request = pendingEditorChange;
-  syncEditor(request);
-  pendingEditorChange = undefined;
-}, { flush: 'post' });
+watch(
+  currentCode,
+  () => {
+    const request = pendingEditorChange;
+    syncEditor(request);
+    pendingEditorChange = undefined;
+  },
+  { flush: 'post' }
+);
 
 // 编辑增强：Tab 缩进 / Shift+Tab 反缩进，支持多行选区按行处理。
 const handleKeydown = (event: KeyboardEvent) => {

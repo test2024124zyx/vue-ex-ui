@@ -6,7 +6,10 @@ import type { ExCodeExposed } from '../../../src/components/code/types';
 
 describe('Code 受控值', () => {
   let wrapper: VueWrapper | undefined;
-  afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); });
+  afterEach(() => {
+    wrapper?.unmount();
+    vi.restoreAllMocks();
+  });
 
   it('拒绝原生输入时回退 textarea，高亮、公开值和复制仍读取已确认内容', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -53,7 +56,16 @@ describe('Code 受控值', () => {
 
   it('真实 v-model 父级回写更新内容，外部替换不会采用旧请求的选区', async () => {
     const code = ref('before');
-    wrapper = mount({ render: () => h(ExCode, { code: code.value, editable: true, 'onUpdate:code': (value: string) => { code.value = value; } }) });
+    wrapper = mount({
+      render: () =>
+        h(ExCode, {
+          code: code.value,
+          editable: true,
+          'onUpdate:code': (value: string) => {
+            code.value = value;
+          },
+        }),
+    });
     const child = wrapper.findComponent(ExCode);
     await child.get('textarea').setValue('accepted');
     expect((child.vm as unknown as ExCodeExposed).getCode()).toBe('accepted');
@@ -87,6 +99,12 @@ describe('Code 受控值', () => {
     expect(wrapper.emitted('update:code')).toEqual([['b中文se']]);
     expect(element.value).toBe('base');
     expect([element.selectionStart, element.selectionEnd]).toEqual([1, 2]);
+    // 部分浏览器在 compositionend 后才派发最终 input，不能重新暴露被拒绝的草稿。
+    element.value = 'b中文se';
+    await editor.trigger('input', { isComposing: false });
+    expect(element.value).toBe('base');
+    expect([element.selectionStart, element.selectionEnd]).toEqual([1, 2]);
+    expect(wrapper.emitted('update:code')).toEqual([['b中文se']]);
   });
 
   it('组合期间切换只读或替换编辑节点会丢弃旧草稿和迟到事件', async () => {

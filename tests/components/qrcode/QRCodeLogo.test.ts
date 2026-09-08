@@ -77,6 +77,32 @@ describe('二维码中心 Logo 导出', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:logo-0');
   });
 
+  it('首次合成按照二维码的正方形视口计算位置，避免默认 Canvas 宽高比使 Logo 偏移', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement
+    ) {
+      if (this instanceof HTMLCanvasElement) {
+        return new DOMRect(10, 20, 180, (180 * this.height) / this.width);
+      }
+      if (this.classList.contains('ex-qrcode__icon')) return new DOMRect(80, 90, 40, 40);
+      return new DOMRect();
+    });
+    wrapper = mount(ExQRCode, {
+      props: { value: 'first-layout', size: 200 },
+      slots: { icon: '<img src="/brand.png">' },
+    });
+    await flushPromises();
+    const image = LogoImage.instances[0]!;
+    image.onload?.();
+    await flushPromises();
+
+    const [, x, y, width, height] = drawImage.mock.calls.find(([source]) => source === image)!;
+    expect(x + width / 2).toBeCloseTo(100);
+    expect(y + height / 2).toBeCloseTo(100);
+    expect(width / height).toBeCloseTo(2);
+    expect(api().toDataURL()).toContain('data:image/png');
+  });
+
   it('换源使旧加载失效，卸载取消当前加载且不产生滞后事件', async () => {
     const src = ref('/first.png');
     wrapper = mount(ExQRCode, {
