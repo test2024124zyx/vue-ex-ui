@@ -97,19 +97,21 @@ import type { ExCarouselProps, ExCarouselEmits, ExCarouselExposed } from './type
 import { useI18n } from '../../locale';
 import { carouselContextKey } from './context';
 import { useSlotItems } from '../../composables/useSlotItems';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCarousel',
 });
 
 const DEFAULT_AUTOPLAY_INTERVAL = 3000;
+const TRANSITION_DURATION_MS = 300;
 const GESTURE_INTENT_THRESHOLD_PX = 12;
 const SWIPE_TRIGGER_THRESHOLD_PX = 50;
 
 // 注意：布尔类型 prop 未传时 Vue 默认转为 false，因此必须用 withDefaults 显式给出真值默认，
 // 否则 `props.xxx ?? true` 会因 `false ?? true === false` 而失效（导致指示器不显示、循环失效等）
 const props = withDefaults(defineProps<ExCarouselProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   height: '400px',
   autoplay: true,
   interval: DEFAULT_AUTOPLAY_INTERVAL,
@@ -123,7 +125,6 @@ const props = withDefaults(defineProps<ExCarouselProps>(), {
 });
 
 // 设置默认值
-const modelValue = computed(() => props.modelValue ?? 0);
 const height = computed(() => props.height ?? '400px');
 const autoplay = computed(() => props.autoplay ?? true);
 const interval = computed(() => props.interval ?? DEFAULT_AUTOPLAY_INTERVAL);
@@ -141,15 +142,12 @@ const { t } = useI18n();
 
 const carouselRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
-const requestedIndex = ref(
-  Number.isFinite(modelValue.value) ? Math.max(0, Math.trunc(modelValue.value)) : 0
-);
-const currentIndex = computed({
-  get: () => normalizeIndex(requestedIndex.value),
-  set: (value: number) => {
-    requestedIndex.value = value;
-  },
+const carouselState = useControllableState<number>({
+  controlledValue: () => props.modelValue,
+  defaultValue: 0,
 });
+const requestedIndex = carouselState.value;
+const currentIndex = computed(() => normalizeIndex(requestedIndex.value));
 const isHovering = ref(false);
 const isFocusWithin = ref(false);
 const prefersReducedMotion = ref(false);
@@ -187,7 +185,7 @@ const reconcileCurrentIndex = (emitCorrection: boolean) => {
   if (nextIndex === requestedIndex.value) return;
 
   const previousIndex = requestedIndex.value;
-  currentIndex.value = nextIndex;
+  carouselState.request(nextIndex);
   if (emitCorrection) {
     emit('update:modelValue', nextIndex);
     emit('change', nextIndex, previousIndex);
@@ -323,17 +321,11 @@ const goTo = (index: number) => {
 
   if (newIndex === currentIndex.value) return;
 
-  isTransitioning.value = true;
   const oldIndex = currentIndex.value;
-  currentIndex.value = newIndex;
+  carouselState.request(newIndex);
 
   emit('update:modelValue', newIndex);
   emit('change', newIndex, oldIndex);
-
-  transitionTimer = window.setTimeout(() => {
-    isTransitioning.value = false;
-    transitionTimer = undefined;
-  }, 300);
 };
 
 const next = () => {
@@ -508,16 +500,33 @@ const handleTouchEnd = (e: TouchEvent) => {
   resetTouch();
 };
 
-// 监听 modelValue 变化（受控）：直接同步 currentIndex，绕过过渡锁，避免脱节
-watch(modelValue, newValue => {
-  const clamped = normalizeIndex(newValue);
-  if (clamped !== newValue) {
-    emit('update:modelValue', clamped);
+// 外部越界值只发修正请求；父级回写不重复触发用户 change 事件。
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (newValue === undefined) return;
+    const clamped = normalizeIndex(newValue);
+    if (clamped !== newValue) {
+      emit('update:modelValue', clamped);
+    }
   }
-  const oldIndex = currentIndex.value;
-  requestedIndex.value = Number.isFinite(newValue) ? Math.max(0, Math.trunc(newValue)) : 0;
-  if (itemCount.value > 0 && clamped !== oldIndex) emit('change', clamped, oldIndex);
-});
+);
+
+// 只有已确认索引产生真实切换时才锁定过渡，拒绝请求不会阻断后续操作。
+watch(
+  carouselState.value,
+  (nextIndex, previousIndex) => {
+    if (!mounted || normalizeIndex(nextIndex) === normalizeIndex(previousIndex)) return;
+    if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
+    isTransitioning.value = !prefersReducedMotion.value;
+    if (!isTransitioning.value) return;
+    transitionTimer = window.setTimeout(() => {
+      isTransitioning.value = false;
+      transitionTimer = undefined;
+    }, TRANSITION_DURATION_MS);
+  },
+  { flush: 'sync' }
+);
 
 // 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）
 watch([autoplay, interval, pauseOnHover], () => {

@@ -22,7 +22,7 @@ export type CarouselEffect = 'slide' | 'fade';
  * 轮播组件属性接口
  */
 export interface ExCarouselProps {
-  /** 当前激活的索引 */
+  /** 当前索引；显式传入后切换和自动播放只请求更新，undefined 使用内部状态。 */
   modelValue?: number;
   /** 轮播高度 */
   height?: string | number;

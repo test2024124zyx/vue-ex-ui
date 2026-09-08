@@ -102,7 +102,10 @@ describe('ExTabs', () => {
 
   it('基础线性标签切换后指示条应该跟随标签的真实位置移动', async () => {
     const wrapper = mount(ExTabs, {
-      props: { modelValue: 'tab1' },
+      props: {
+        modelValue: 'tab1',
+        'onUpdate:modelValue': (value: string | number) => wrapper.setProps({ modelValue: value }),
+      },
       slots: {
         default: () => [
           h(ExTabPane, { name: 'tab1', label: 'Tab 1' }, () => 'Content 1'),

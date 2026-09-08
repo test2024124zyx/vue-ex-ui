@@ -563,6 +563,16 @@ const handleDownload = () => {
 | ------ | ------------- |
 | `icon` | 中心图标/Logo |
 
+中心 Logo 支持单个图片、自包含的内联 SVG 或 Canvas，可通过无额外内容的容器包装；其他 HTML、额外文字或多个图形会触发 `error`。图片需要允许跨域读取；SVG 中的外部资源应先内嵌，不支持 `foreignObject`。Logo 会与二维码一起合成，`download` 与 `toDataURL` 的结果包含 Logo。
+
+图片加载、换源和插槽变化期间，`toDataURL` 返回空字符串，`download` 不启动下载。Canvas 的像素绘制不产生 DOM 变化，更新像素后调用并等待 `refresh()`；直接导出检测到像素变化时也会返回空字符串并安排重建，避免返回旧 Logo。同步导出失败返回空字符串并触发 `error`，不会导出缺失 Logo 的半成品。
+
+### QRCode Events
+
+| 事件名  | 说明                                  | 参数                     |
+| ------- | ------------------------------------- | ------------------------ |
+| `error` | 二维码生成、Logo 加载、合成或导出失败 | `(error: Error) => void` |
+
 ### QRCode Methods
 
 | 方法名       | 说明                       | 类型                                             |

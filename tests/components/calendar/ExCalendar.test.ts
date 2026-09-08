@@ -244,6 +244,8 @@ describe('ExCalendar', () => {
     expect(wrapper.findAll('.ex-calendar__year-month')).toHaveLength(12);
     await wrapper.findAll('.ex-calendar__year-month')[4].trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('update:mode')?.at(-1)).toEqual(['month']);
+    expect(wrapper.classes()).toContain('ex-calendar--year');
+    await wrapper.setProps({ mode: 'month' });
     expect(wrapper.classes()).toContain('ex-calendar--month');
 
     await wrapper.setProps({ mode: 'day' });

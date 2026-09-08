@@ -108,6 +108,7 @@ import { generateId } from '../../utils/id';
 import { useLocale } from '../../locale';
 import { useSlotItems } from '../../composables/useSlotItems';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExTabs',
@@ -149,13 +150,14 @@ const panes = computed(() => {
   const names = new Set(slotPanes.value.map(pane => pane.name));
   return [...slotPanes.value, ...registeredPanes.value.filter(pane => !names.has(pane.name))];
 });
-const selectedTab = ref(props.modelValue);
-const activeTab = computed({
-  get: () => selectedTab.value ?? panes.value.find(pane => !pane.disabled)?.name,
-  set: (value: string | number | undefined) => {
-    selectedTab.value = value;
-  },
+const tabState = useControllableState<string | number | undefined>({
+  controlledValue: () => props.modelValue,
+  defaultValue: undefined,
 });
+const selectedTab = tabState.value;
+const activeTab = computed(
+  () => selectedTab.value ?? panes.value.find(pane => !pane.disabled)?.name
+);
 // 每个 Tabs 实例唯一前缀，避免多实例间 tab/panel 的 id 冲突
 const tabsUid = generateId('ex-tabs');
 const encodePaneName = (name: string | number) => {
@@ -180,12 +182,13 @@ provide('updatePane', (registeredName: string | number, pane: PaneInfo) => {
   const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
   if (target) Object.assign(target, pane);
   if (activeNameChanged) {
-    activeTab.value = pane.name;
+    tabState.request(pane.name);
     emit('update:modelValue', pane.name);
     emit('change', pane.name);
   }
 });
 let isTabsUnmounting = false;
+let removalRequest: { name: string | number; nextName: string | number } | undefined;
 provide('unregisterPane', (name: string | number) => {
   registeredPanes.value = registeredPanes.value.filter(pane => pane.name !== name);
 });
@@ -200,17 +203,18 @@ onMounted(() =>
         nextPanes.some(pane => pane.name === selectedTab.value)
       )
         return;
-      const index = Math.max(
-        0,
-        previousPanes.findIndex(pane => pane.name === selectedTab.value)
-      );
+      const index = previousPanes.findIndex(pane => pane.name === selectedTab.value);
+      // 同一轮卸载会多次更新注册列表，已移除的项只发一次替代请求。
+      if (index < 0) return;
       const nextPane =
         nextPanes.slice(index).find(pane => !pane.disabled) ||
         nextPanes
           .slice(0, index)
           .reverse()
           .find(pane => !pane.disabled);
-      activeTab.value = nextPane?.name;
+      if (removalRequest?.name === selectedTab.value && removalRequest?.nextName === nextPane?.name)
+        return;
+      tabState.request(nextPane?.name);
       if (nextPane) {
         emit('update:modelValue', nextPane.name);
         emit('change', nextPane.name);
@@ -275,7 +279,10 @@ const updateIndicator = async () => {
   if (isTabsUnmounting || !navRef.value) return;
 
   const activeTabEl = navRef.value.querySelector('.ex-tabs__tab--active') as HTMLElement;
-  if (!activeTabEl) return;
+  if (!activeTabEl) {
+    indicatorStyle.value = { display: 'none' };
+    return;
+  }
 
   const isVertical = props.position === 'left' || props.position === 'right';
   const activeTabRect = activeTabEl.getBoundingClientRect();
@@ -303,7 +310,7 @@ const updateIndicator = async () => {
 const handleTabClick = (pane: PaneInfo, event: MouseEvent | KeyboardEvent) => {
   if (pane.disabled) return;
 
-  activeTab.value = pane.name;
+  tabState.request(pane.name);
   emit('update:modelValue', pane.name);
   emit('change', pane.name);
 
@@ -373,7 +380,13 @@ const handleTabRemove = (name: string | number) => {
         .reverse()
         .find(pane => !pane.disabled);
     if (nextPane) {
-      activeTab.value = nextPane.name;
+      // 点击关闭已请求替代项，本轮真实卸载无需再次发出相同请求。
+      const pending = { name, nextName: nextPane.name };
+      removalRequest = pending;
+      nextTick(() => {
+        if (removalRequest === pending) removalRequest = undefined;
+      });
+      tabState.request(nextPane.name);
       emit('update:modelValue', nextPane.name);
       emit('change', nextPane.name);
     }
@@ -383,15 +396,6 @@ const handleTabRemove = (name: string | number) => {
 const handleTabAdd = () => {
   emit('tab-add');
 };
-
-// 监听
-watch(
-  () => props.modelValue,
-  val => {
-    activeTab.value = val;
-    updateIndicator();
-  }
-);
 
 onMounted(() =>
   watch(activeTab, () => {

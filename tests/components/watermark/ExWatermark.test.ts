@@ -137,6 +137,35 @@ afterEach(() => {
 });
 
 describe('ExWatermark', () => {
+  it('保留有符号偏移，动态移动不重绘瓦片且不放开负间距', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        text: 'a',
+        offsetX: -24.5,
+        offsetY: -12,
+        gapX: -8,
+        gapY: -16,
+        angle: 0,
+        staggered: false,
+      },
+    });
+    try {
+      await waitAsync();
+      const overlay = wrapper.get('.ex-watermark__overlay').element as HTMLElement;
+      expect(overlay.style.backgroundPosition).toBe('-24.5px -12px');
+      expect(overlay.style.backgroundSize).toBe('10px 16px');
+      const drawCount = contexts.length;
+      await wrapper.setProps({ offsetX: 8, offsetY: -3.25 });
+      await waitAsync();
+      expect(overlay.style.backgroundPosition).toBe('8px -3.25px');
+      expect(contexts).toHaveLength(drawCount);
+      await wrapper.setProps({ offsetX: Number.NaN, offsetY: Number.NEGATIVE_INFINITY });
+      expect(overlay.style.backgroundPosition).toBe('0px 0px');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it('默认文字随语言变化重新绘制，显式文字保持调用者内容', async () => {
     const { setLocale } = await import('../../../src/locale');
     setLocale('en-US');

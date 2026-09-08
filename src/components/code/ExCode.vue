@@ -102,17 +102,32 @@
           v-if="editable"
           ref="textareaRef"
           class="ex-code__textarea"
-          :value="currentCode"
+          :value="compositionDraft ?? currentCode"
           :readonly="readonly"
           :aria-label="editorAriaLabel"
+          :aria-describedby="readonly ? undefined : editorInstructionsId"
           wrap="soft"
           spellcheck="false"
           autocapitalize="off"
           autocomplete="off"
           autocorrect="off"
           @input="handleInput"
+          @beforeinput="rememberSelection"
+          @compositionstart="handleCompositionStart"
+          @compositionend="handleCompositionEnd"
           @keydown="handleKeydown"
+          @focus="resetTabExit"
+          @blur="resetTabExit"
         />
+        <span
+          v-if="editable && !readonly"
+          :id="editorInstructionsId"
+          class="ex-code__editor-instructions"
+          role="status"
+          aria-live="polite"
+        >
+          {{ t(tabExitArmed ? 'code.tabExitReady' : 'code.tabExitInstructions') }}
+        </span>
       </div>
     </div>
   </div>
@@ -121,19 +136,22 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { tokenizeToLines } from './highlighter';
 import { normalizeLineNumber, normalizeTabSize, parseHighlightedLines } from './line-utils';
+import { registerOverlayEscapeBoundary } from '../../composables/overlay-manager';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCode',
 });
 
 const props = withDefaults(defineProps<ExCodeProps>(), {
-  code: '',
+  code: undefined,
   language: 'plaintext',
   theme: 'neon',
   lineNumbers: false,
@@ -153,18 +171,23 @@ const { t } = useI18n();
 const rootRef = ref<HTMLDivElement>();
 const textareaRef = ref<HTMLTextAreaElement>();
 const copied = ref(false);
+const compositionDraft = ref<string>();
 
-// 内部维护当前代码，支持受控（:code）与双向（v-model:code）。
-const currentCode = ref(props.code);
-watch(
-  () => props.code,
-  val => {
-    if (val !== currentCode.value) currentCode.value = val;
-  }
-);
+// 显式传入 code 时只发出请求，高亮、复制和公开读取始终服从父级确认值。
+const codeState = useControllableState<string>({
+  controlledValue: () => props.code,
+  defaultValue: '',
+  onChange: value => {
+    emit('update:code', value);
+    emit('change', value);
+  },
+});
+const currentCode = codeState.value;
 
 // 同步高亮：纯函数、零依赖、无异步加载，逐字符即时高亮，编辑不卡顿。
-const renderLines = computed(() => tokenizeToLines(currentCode.value, props.language));
+const renderLines = computed(() =>
+  tokenizeToLines(compositionDraft.value ?? currentCode.value, props.language)
+);
 const normalizedStartLine = computed(() => normalizeLineNumber(props.startLine));
 const normalizedTabSize = computed(() => normalizeTabSize(props.tabSize));
 
@@ -252,31 +275,155 @@ const hasHeader = computed(() => Boolean(props.filename) || props.showLanguage |
 const rootAriaLabel = computed(() => `${languageLabel.value} ${t('code.codeBlock')}`);
 const editorAriaLabel = computed(() => t('code.editor'));
 const copyAriaLabel = computed(() => (copied.value ? t('code.copied') : t('code.copy')));
+const editorInstructionsId = useId();
+const tabExitArmed = ref(false);
+const resetTabExit = () => {
+  tabExitArmed.value = false;
+};
+let releaseEscapeBoundary: (() => void) | undefined;
 
-// 编辑输入：更新内部代码并派发事件（高亮随 computed 同步刷新）。
-const emitChange = (val: string) => {
-  currentCode.value = val;
-  emit('update:code', val);
-  emit('change', val);
+// 捕获阶段先处理编辑器退出约定，避免同一次 Escape 关闭所属对话框。
+watch(
+  textareaRef,
+  element => {
+    releaseEscapeBoundary?.();
+    releaseEscapeBoundary = element
+      ? registerOverlayEscapeBoundary(
+          element,
+          () => props.editable && !props.readonly && !tabExitArmed.value,
+          () => {
+            tabExitArmed.value = true;
+          },
+          () => props.editable && !props.readonly && !tabExitArmed.value
+        )
+      : undefined;
+    resetTabExit();
+  },
+  { flush: 'sync' }
+);
+watch(() => [props.editable, props.readonly], resetTabExit);
+
+interface EditorSelection { start: number; end: number }
+interface PendingEditorChange {
+  value: string;
+  base: string;
+  next: EditorSelection;
+  previous: EditorSelection;
+  revision: number;
+}
+let beforeInputSelection: EditorSelection | undefined;
+let pendingEditorChange: PendingEditorChange | undefined;
+let editRevision = 0;
+let compositionElement: HTMLTextAreaElement | undefined;
+let lastCompositionValue: string | undefined;
+const readSelection = (element: HTMLTextAreaElement): EditorSelection => ({
+  start: element.selectionStart,
+  end: element.selectionEnd,
+});
+const rememberSelection = (event: Event) => {
+  if (event.target !== textareaRef.value || compositionElement) return;
+  beforeInputSelection = readSelection(event.target as HTMLTextAreaElement);
+};
+const syncEditor = (request?: PendingEditorChange) => {
+  const element = textareaRef.value;
+  if (!element || compositionElement === element) return;
+  element.value = currentCode.value;
+  const selection = request && (currentCode.value === request.value
+    ? request.next
+    : currentCode.value === request.base ? request.previous : undefined);
+  if (selection) element.setSelectionRange(selection.start, selection.end);
 };
 
-const handleInput = (event: Event) => {
-  emitChange((event.target as HTMLTextAreaElement).value);
-};
-
-// 在受控 textarea 上替换内容并恢复光标 / 选区（需等 DOM 同步后再设置）。
-const applyEditorChange = (next: string, selStart: number, selEnd: number) => {
-  emitChange(next);
+// 原生输入先回退到已确认值，只有本次请求被确认时才恢复请求对应的光标。
+const applyEditorChange = (next: string, selStart: number, selEnd: number, previous?: EditorSelection) => {
+  const element = textareaRef.value;
+  if (!element) return;
+  const request: PendingEditorChange = {
+    value: next,
+    base: currentCode.value,
+    next: { start: selStart, end: selEnd },
+    previous: previous ?? readSelection(element),
+    revision: ++editRevision,
+  };
+  pendingEditorChange = request;
+  codeState.request(next);
   nextTick(() => {
-    const ta = textareaRef.value;
-    if (!ta) return;
-    ta.selectionStart = selStart;
-    ta.selectionEnd = selEnd;
+    if (request.revision === editRevision) syncEditor(request);
   });
 };
+const handleInput = (event: Event) => {
+  const element = event.target as HTMLTextAreaElement;
+  if (element !== textareaRef.value || !props.editable) return;
+  if (props.readonly) { syncEditor(); return; }
+  if ((event as InputEvent).isComposing && compositionElement !== element) {
+    syncEditor();
+    return;
+  }
+  if (compositionElement === element) {
+    compositionDraft.value = element.value;
+    return;
+  }
+  if (lastCompositionValue !== undefined) {
+    const duplicate = element.value === lastCompositionValue || element.value === currentCode.value;
+    lastCompositionValue = undefined;
+    if (duplicate) return;
+  }
+  const previous = beforeInputSelection;
+  beforeInputSelection = undefined;
+  applyEditorChange(element.value, element.selectionStart, element.selectionEnd, previous);
+};
+const handleCompositionStart = (event: CompositionEvent) => {
+  const element = event.target as HTMLTextAreaElement;
+  if (element !== textareaRef.value || !props.editable || props.readonly) return;
+  compositionElement = element;
+  compositionDraft.value = element.value;
+  beforeInputSelection ??= readSelection(element);
+  lastCompositionValue = undefined;
+};
+const handleCompositionEnd = (event: CompositionEvent) => {
+  const element = event.target as HTMLTextAreaElement;
+  if (element !== compositionElement || element !== textareaRef.value) return;
+  const value = element.value;
+  compositionElement = undefined;
+  compositionDraft.value = undefined;
+  lastCompositionValue = value;
+  const previous = beforeInputSelection;
+  beforeInputSelection = undefined;
+  if (props.readonly || !props.editable) { syncEditor(); return; }
+  applyEditorChange(value, element.selectionStart, element.selectionEnd, previous);
+};
+const resetEditorSession = () => {
+  editRevision += 1;
+  pendingEditorChange = undefined;
+  beforeInputSelection = undefined;
+  compositionElement = undefined;
+  compositionDraft.value = undefined;
+  lastCompositionValue = undefined;
+  syncEditor();
+};
+watch(() => [props.editable, props.readonly], resetEditorSession, { flush: 'sync' });
+watch(textareaRef, resetEditorSession, { flush: 'sync' });
+watch(currentCode, () => {
+  const request = pendingEditorChange;
+  syncEditor(request);
+  pendingEditorChange = undefined;
+}, { flush: 'post' });
 
 // 编辑增强：Tab 缩进 / Shift+Tab 反缩进，支持多行选区按行处理。
 const handleKeydown = (event: KeyboardEvent) => {
+  if (isComposingKeyboardEvent(event) || props.readonly) return;
+  if (event.key === 'Tab' && tabExitArmed.value) {
+    // 父层可能圈闭到同一元素而不触发 blur，这次 Tab 仍已消耗放行资格。
+    resetTabExit();
+    return;
+  }
+  if (event.defaultPrevented) return;
+  if (event.key === 'Escape' && !tabExitArmed.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    tabExitArmed.value = true;
+    return;
+  }
   if (event.key !== 'Tab' || props.readonly) return;
   event.preventDefault();
 
@@ -404,6 +551,7 @@ const handleCopy = async (): Promise<boolean> => {
 };
 
 onBeforeUnmount(() => {
+  releaseEscapeBoundary?.();
   disposed = true;
   copyRevision += 1;
   if (copyTimer) clearTimeout(copyTimer);

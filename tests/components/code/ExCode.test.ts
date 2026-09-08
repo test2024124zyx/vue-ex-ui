@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { h, nextTick, ref } from 'vue';
 import ExCode from '../../../src/components/code/ExCode.vue';
 import type { ExCodeExposed } from '../../../src/components/code/types';
 
@@ -151,15 +151,18 @@ describe('ExCode', () => {
   });
 
   it('可编辑模式应同步 v-model 事件、行号与暴露方法', async () => {
-    const wrapper = mount(ExCode, {
-      props: {
-        code: 'let count = 1;',
+    const code = ref('let count = 1;');
+    const parent = mount({
+      render: () => h(ExCode, {
+        code: code.value,
         language: 'javascript',
         editable: true,
         lineNumbers: true,
         copyable: false,
-      },
+        'onUpdate:code': (value: string) => { code.value = value; },
+      }),
     });
+    const wrapper = parent.findComponent(ExCode);
 
     const nextCode = 'let count = 1;\ncount += 1;';
     await wrapper.find('textarea').setValue(nextCode);

@@ -55,3 +55,8 @@ export interface ExQRCodeExposed {
   /** 刷新二维码 */
   refresh: () => Promise<void>;
 }
+
+export interface ExQRCodeEmits {
+  /** 二维码生成、Logo 加载或导出失败时触发 */
+  error: [error: Error];
+}

@@ -28,7 +28,7 @@ export type CodeTheme = 'dark' | 'light' | 'neon';
 
 /** 代码组件属性。 */
 export interface ExCodeProps {
-  /** 展示或编辑的代码内容。 */
+  /** 展示或编辑的代码内容；传入时严格受控，未传时内部维护空字符串初始值。 */
   code?: string;
   /** 语法高亮语言。 */
   language?: CodeLanguage;
@@ -68,7 +68,7 @@ export interface ExCodeEmits {
   copy: [code: string];
   /** 剪贴板写入失败。 */
   'copy-error': [error: Error];
-  /** 编辑内容实时更新。 */
+  /** 请求更新编辑内容，受控模式等待父级回写后生效。 */
   'update:code': [code: string];
   /** 编辑内容发生变化。 */
   change: [code: string];

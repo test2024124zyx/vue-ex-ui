@@ -22,9 +22,9 @@ export interface ExWatermarkProps {
   gapX?: number;
   /** 垂直间距（px） */
   gapY?: number;
-  /** 水平偏移（px） */
+  /** 水平偏移（px），负数向左移动；非有限值按 0 处理 */
   offsetX?: number;
-  /** 垂直偏移（px） */
+  /** 垂直偏移（px），负数向上移动；非有限值按 0 处理 */
   offsetY?: number;
   /** CSS z-index 层级 */
   zIndex?: number;

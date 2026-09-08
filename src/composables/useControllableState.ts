@@ -39,16 +39,23 @@ export function useControllableState<T>(
   ) as ShallowRef<T>;
 
   const isControlled = computed(() => options.controlledValue() !== undefined);
-  const value = computed(() => options.controlledValue() ?? internalValue.value);
-
-  watch(options.controlledValue, (nextValue, previousValue) => {
-    if (nextValue !== undefined) {
-      internalValue.value = clone(nextValue);
-    } else if (previousValue !== undefined) {
-      // 解除受控时从最后一次已生效的外部值继续，避免跳回陈旧默认值。
-      internalValue.value = clone(previousValue);
-    }
+  const value = computed(() => {
+    const controlledValue = options.controlledValue();
+    return controlledValue === undefined ? internalValue.value : controlledValue;
   });
+
+  watch(
+    options.controlledValue,
+    (nextValue, previousValue) => {
+      if (nextValue !== undefined) {
+        internalValue.value = clone(nextValue);
+      } else if (previousValue !== undefined) {
+        // 同步继承最后一次外部值，避免延迟快照覆盖解除控制后的合法请求。
+        internalValue.value = clone(previousValue);
+      }
+    },
+    { flush: 'sync' }
+  );
 
   const request = (nextValue: T): void => {
     const snapshot = clone(nextValue);

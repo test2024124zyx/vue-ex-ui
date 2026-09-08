@@ -5,7 +5,7 @@ export type RateSize = 'small' | 'medium' | 'large';
 
 // 评分组件属性
 export interface ExRateProps {
-  /** 绑定值 */
+  /** 评分值；显式传入后交互和公开写方法只请求更新，undefined 使用内部状态。 */
   modelValue?: number;
   /** 最大分值 */
   max?: number;
@@ -27,7 +27,7 @@ export interface ExRateProps {
   voidColor?: string;
   /** 禁用时的颜色 */
   disabledVoidColor?: string;
-  /** 图标类名数组 */
+  /** 按星位索引使用的选中图标类名；空缺回退内置图标，icon-active 插槽优先。 */
   iconClasses?: string[];
   /** 未选中图标类名 */
   voidIconClass?: string;

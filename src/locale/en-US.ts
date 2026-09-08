@@ -503,6 +503,8 @@ const enUS = {
     readonly: 'Read Only',
     codeBlock: 'code block',
     editor: 'Code editor',
+    tabExitInstructions: 'Press Escape, then Tab or Shift+Tab to leave the code editor.',
+    tabExitReady: 'Tab and Shift+Tab now leave the code editor.',
   },
 
   // Carousel

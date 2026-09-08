@@ -207,14 +207,15 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
 import type { ExPaginationProps, ExPaginationEmits, ExPaginationExposed } from './types';
 import { useLocale } from '../../locale';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExPagination',
 });
 
 const props = withDefaults(defineProps<ExPaginationProps>(), {
-  current: 1,
-  pageSize: 10,
+  current: undefined,
+  pageSize: undefined,
   pageSizeOptions: () => [10, 20, 30, 50, 100],
   showSizeChanger: false,
   showQuickJumper: false,
@@ -240,7 +241,11 @@ const normalizedTotal = computed(() => {
   return Number.isFinite(props.total) && props.total > 0 ? Math.floor(props.total) : 0;
 });
 
-const currentPageSize = ref(normalizePageSize(props.pageSize));
+const sizeState = useControllableState<number>({
+  controlledValue: () => props.pageSize,
+  defaultValue: 10,
+});
+const currentPageSize = computed(() => normalizePageSize(sizeState.value.value));
 
 // 计算总页数
 const totalPages = computed(() => {
@@ -254,7 +259,11 @@ const normalizePage = (value: number, pageCount = totalPages.value) => {
   return Math.max(1, Math.min(pageCount, page));
 };
 
-const currentPage = ref(normalizePage(props.current));
+const pageState = useControllableState<number>({
+  controlledValue: () => props.current,
+  defaultValue: 1,
+});
+const currentPage = computed(() => normalizePage(pageState.value.value));
 const jumpValue = ref(currentPage.value);
 
 // 计算当前页的数据范围
@@ -345,39 +354,26 @@ const paginationStyles = computed(() => {
   return props.style;
 });
 
-// 监听外部变化
-watch(
-  [() => props.current, totalPages],
-  ([val, pageCount]) => {
-    const normalizedPage = normalizePage(val, pageCount);
-    if (normalizedPage !== currentPage.value) {
-      currentPage.value = normalizedPage;
-      jumpValue.value = normalizedPage;
-    }
-  },
-  { flush: 'sync' }
-);
-
-watch(
-  () => props.pageSize,
-  val => {
-    const normalizedSize = normalizePageSize(val);
-    if (normalizedSize !== currentPageSize.value) {
-      currentPageSize.value = normalizedSize;
-    }
-  }
-);
+// 输入草稿跟随已确认页码；非受控状态在数据范围收缩时收敛。
+watch(currentPage, page => {
+  jumpValue.value = page;
+});
+watch(totalPages, () => {
+  if (!pageState.isControlled.value) pageState.request(currentPage.value);
+});
 
 // 页码改变
 const handlePageChange = (page: number) => {
+  if (props.disabled) return;
   if (!Number.isFinite(page) || page < 1 || page > totalPages.value || page === currentPage.value) {
     return;
   }
 
-  currentPage.value = page;
-  jumpValue.value = page;
-  emit('update:current', page);
-  emit('change', page, currentPageSize.value);
+  const normalizedPage = normalizePage(page);
+  pageState.request(normalizedPage);
+  jumpValue.value = currentPage.value;
+  emit('update:current', normalizedPage);
+  emit('change', normalizedPage, currentPageSize.value);
 };
 
 // 上一页
@@ -411,27 +407,30 @@ const handleSizeChange = (event: Event) => {
   if (props.disabled) return;
   // 容量变化会同步更新总页数，必须先保存旧数据位置。
   const firstItemIndex = Math.max(0, (currentPage.value - 1) * currentPageSize.value);
+  const previousPage = currentPage.value;
   const newPageSize = normalizePageSize(Number((event.target as HTMLSelectElement).value));
-  currentPageSize.value = newPageSize;
+  sizeState.request(newPageSize);
   emit('update:pageSize', newPageSize);
+  // 原生 select 会先改变 DOM，受控请求未获接受时恢复外部已确认容量。
+  (event.target as HTMLSelectElement).value = String(currentPageSize.value);
 
   // 重新计算当前页，保持数据位置
+  const nextPageCount = Math.ceil(normalizedTotal.value / newPageSize);
   const newPage =
-    totalPages.value === 0
-      ? 0
-      : Math.min(Math.floor(firstItemIndex / newPageSize) + 1, totalPages.value);
+    nextPageCount === 0 ? 0 : Math.min(Math.floor(firstItemIndex / newPageSize) + 1, nextPageCount);
 
-  if (newPage !== currentPage.value) {
-    currentPage.value = newPage;
-    jumpValue.value = newPage;
+  if (newPage !== previousPage) {
+    pageState.request(newPage);
+    jumpValue.value = currentPage.value;
     emit('update:current', newPage);
   }
 
-  emit('change', currentPage.value, newPageSize);
+  emit('change', newPage, newPageSize);
 };
 
 // 快速跳转
 const handleJump = () => {
+  if (props.disabled) return;
   // 输入被清空时 v-model.number 会得到 NaN，需先拦截，否则会越过 handlePageChange 的边界守卫
   const raw = Number(jumpValue.value);
   if (!Number.isFinite(raw) || totalPages.value === 0) {

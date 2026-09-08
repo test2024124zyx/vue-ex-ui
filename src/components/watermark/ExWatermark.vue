@@ -77,9 +77,11 @@ const overlayStyle = computed(() => {
         ? `${tileWidth.value}px ${tileHeight.value}px`
         : undefined,
     backgroundRepeat: props.repeat ? 'repeat' : 'no-repeat',
-    backgroundPosition: `${normalizeNumber(props.offsetX, 0)}px ${normalizeNumber(
+    // 偏移是有方向的位置，不能复用间距等尺寸的非负下界。
+    backgroundPosition: `${normalizeNumber(props.offsetX, 0, Number.NEGATIVE_INFINITY)}px ${normalizeNumber(
       props.offsetY,
-      0
+      0,
+      Number.NEGATIVE_INFINITY
     )}px`,
     opacity: normalizeNumber(props.opacity, 0.3, 0, 1),
   };

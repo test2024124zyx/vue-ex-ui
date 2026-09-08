@@ -1,9 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, h, nextTick, type PropType } from 'vue';
+import { defineComponent, effectScope, h, nextTick, ref, type PropType } from 'vue';
 import { useControllableState } from '../../src/composables/useControllableState';
 
 describe('useControllableState', () => {
+  it('解除受控后的同轮合法请求不会被延迟快照覆盖', async () => {
+    const scope = effectScope();
+    const controlled = ref<number | undefined>(5);
+    const state = scope.run(() =>
+      useControllableState({ controlledValue: () => controlled.value, defaultValue: 0 })
+    )!;
+    try {
+      controlled.value = undefined;
+      state.request(9);
+      expect(state.value.value).toBe(9);
+      await nextTick();
+      expect(state.value.value).toBe(9);
+    } finally {
+      scope.stop();
+    }
+  });
+
+  it('null 是已确认的受控空值，同步读取及解除控制均不能回退旧值', async () => {
+    const scope = effectScope();
+    const controlled = ref<string | null | undefined>('selected');
+    const state = scope.run(() =>
+      useControllableState<string | null>({
+        controlledValue: () => controlled.value,
+        defaultValue: 'default',
+      })
+    )!;
+    try {
+      controlled.value = null;
+      expect(state.value.value).toBeNull();
+      state.request('rejected');
+      expect(state.value.value).toBeNull();
+      await nextTick();
+      controlled.value = undefined;
+      await nextTick();
+      expect(state.value.value).toBeNull();
+      state.request('accepted');
+      expect(state.value.value).toBe('accepted');
+    } finally {
+      scope.stop();
+    }
+  });
+
   it('非受控模式立即提交内部状态并通知调用方', async () => {
     const changes: string[] = [];
     const Host = defineComponent({

@@ -21,13 +21,14 @@ import type {
   CollapseActiveName,
 } from './types';
 import { collapseContextKey } from './context';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCollapse',
 });
 
 const props = withDefaults(defineProps<ExCollapseProps>(), {
-  modelValue: () => [],
+  modelValue: undefined,
   accordion: false,
   bordered: true,
   disabled: false,
@@ -48,7 +49,12 @@ const normalizeActiveNames = (
   return accordion ? uniqueNames.slice(0, 1) : uniqueNames;
 };
 
-const activeNames = ref<CollapseItemName[]>(normalizeActiveNames(props.modelValue));
+const collapseState = useControllableState<CollapseActiveName>({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => [],
+  clone: value => (Array.isArray(value) ? [...value] : value),
+});
+const activeNames = computed(() => normalizeActiveNames(collapseState.value.value));
 const registeredItems = new Map<CollapseItemName, number>();
 
 // 计算属性
@@ -95,7 +101,7 @@ const handleItemClick = (name: CollapseItemName) => {
 
 const commitActiveNames = (names: CollapseActiveName) => {
   const normalizedNames = normalizeActiveNames(names);
-  activeNames.value = normalizedNames;
+  collapseState.request(normalizedNames);
   const emitValue: CollapseActiveName = props.accordion
     ? (normalizedNames[0] ?? null)
     : normalizedNames;
@@ -107,13 +113,12 @@ const setActiveNames = (names: CollapseActiveName) => {
   commitActiveNames(names);
 };
 
-// 监听 modelValue 变化
+// 非受控模式切换手风琴后保留实际生效的项，避免再次切换时旧项重新展开。
 watch(
-  [() => props.modelValue, () => props.accordion],
-  ([newValue]) => {
-    activeNames.value = normalizeActiveNames(newValue);
-  },
-  { deep: true }
+  () => props.accordion,
+  () => {
+    if (!collapseState.isControlled.value) collapseState.request(activeNames.value);
+  }
 );
 
 const registerItem = (name: CollapseItemName, uid: number) => {

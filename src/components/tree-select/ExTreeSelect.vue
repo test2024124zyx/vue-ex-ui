@@ -32,7 +32,7 @@
           >
             <span class="ex-tree-select__tag-label">{{ tag.label }}</span>
             <button
-              v-if="interactive"
+              v-if="interactive && !isNodeDisabled(tag)"
               type="button"
               class="ex-tree-select__tag-close"
               :aria-label="t('removeTag')"
@@ -136,15 +136,15 @@
               :ref="element => setNodeRef(flat.node.value, element)"
               class="ex-tree-select__node"
               :class="{
-                'is-selected': !multiple && flat.node.value === modelValue,
-                'is-disabled': flat.node.disabled,
+                'is-selected': !multiple && flat.node.value === currentValue,
+                'is-disabled': flat.disabled,
               }"
               role="treeitem"
-              :tabindex="flat.node.disabled ? -1 : activeNodeValue === flat.node.value ? 0 : -1"
+              :tabindex="flat.disabled ? -1 : activeNodeValue === flat.node.value ? 0 : -1"
               :aria-expanded="flat.hasChildren ? flat.expanded : undefined"
-              :aria-selected="multiple ? undefined : flat.node.value === modelValue"
+              :aria-selected="multiple ? undefined : flat.node.value === currentValue"
               :aria-checked="multiple ? getAriaChecked(flat.node) : undefined"
-              :aria-disabled="flat.node.disabled || undefined"
+              :aria-disabled="flat.disabled || undefined"
               :aria-level="flat.level + 1"
               :style="{ paddingLeft: `${flat.level * 18 + 8}px` }"
               @click="handleNodeClick(flat.node)"
@@ -199,6 +199,7 @@ import type {
   ExTreeSelectEmits,
   ExTreeSelectExposed,
   TreeSelectNode,
+  TreeSelectValue,
 } from './types';
 import { useLocale } from '../../locale';
 import {
@@ -211,6 +212,7 @@ import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useControllableState } from '../../composables/useControllableState';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -219,7 +221,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExTreeSelectProps>(), {
-  modelValue: null,
   data: () => [],
   multiple: false,
   checkStrictly: false,
@@ -234,6 +235,12 @@ const props = withDefaults(defineProps<ExTreeSelectProps>(), {
 });
 
 const emit = defineEmits<ExTreeSelectEmits>();
+const { value: currentValue, request: requestValue } = useControllableState<TreeSelectValue>({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => (props.multiple ? [] : null),
+  clone: value => (Array.isArray(value) ? [...value] : value),
+  onChange: value => emit('update:modelValue', value),
+});
 
 const { t } = useLocale('treeSelect');
 const {
@@ -304,6 +311,7 @@ const rootStyle = computed(() => (props.style ? props.style : undefined));
 // ---- 树结构索引 ----
 interface IndexedNode {
   node: TreeSelectNode;
+  disabled: boolean;
   parent: string | number | null;
   level: number;
   index: number;
@@ -328,6 +336,7 @@ const maps = computed(() => {
     }
     const entry: IndexedNode = {
       node,
+      disabled: Boolean(node.disabled) || Boolean(frame.owner?.disabled),
       parent: frame.owner?.node.value ?? null,
       level: stack.length - 1,
       index: entries.length,
@@ -343,6 +352,11 @@ const maps = computed(() => {
 });
 const nodeMap = computed(() => maps.value.nodeMap);
 const parentMap = computed(() => maps.value.parentMap);
+// 交互状态从当前完整路径索引读取，搜索、旧展开状态及批量操作共享同一禁用边界。
+const isNodeDisabled = (node: TreeSelectNode) =>
+  maps.value.indices.get(node.value)?.disabled ?? true;
+const isValueDisabled = (value: string | number) =>
+  Boolean(maps.value.indices.get(value)?.disabled);
 
 const getDescendants = (node: TreeSelectNode): TreeSelectNode[] => {
   const entry = maps.value.indices.get(node.value);
@@ -368,6 +382,7 @@ const visibleSet = computed<Set<string | number> | null>(() => {
 
 interface FlatNode {
   node: TreeSelectNode;
+  disabled: boolean;
   level: number;
   hasChildren: boolean;
   expanded: boolean;
@@ -385,7 +400,7 @@ const flatNodes = computed<FlatNode[]>(() => {
     }
     const hasChildren = entry.end > index + 1;
     const expanded = filterActive.value || expandedKeys.value.has(node.value);
-    out.push({ node, level, hasChildren, expanded });
+    out.push({ node, level, hasChildren, expanded, disabled: entry.disabled });
     index = expanded ? index + 1 : entry.end;
   }
   return out;
@@ -396,11 +411,9 @@ const activeNodeValue = ref<string | number | null>(null);
 watch(
   flatNodes,
   nodes => {
-    const current = nodes.find(
-      item => item.node.value === activeNodeValue.value && !item.node.disabled
-    );
+    const current = nodes.find(item => item.node.value === activeNodeValue.value && !item.disabled);
     if (!current) {
-      activeNodeValue.value = nodes.find(item => !item.node.disabled)?.node.value ?? null;
+      activeNodeValue.value = nodes.find(item => !item.disabled)?.node.value ?? null;
     }
   },
   { immediate: true }
@@ -416,7 +429,7 @@ const setNodeRef = (value: string | number, element: unknown) => {
 
 const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
   let target = flatNodes.value[index];
-  while (target?.node.disabled) {
+  while (target?.disabled) {
     index += direction;
     target = flatNodes.value[index];
   }
@@ -426,7 +439,7 @@ const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
 };
 
 const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
-  if (!interactive.value || flat.node.disabled || isComposingKeyboardEvent(event)) return;
+  if (!interactive.value || isNodeDisabled(flat.node) || isComposingKeyboardEvent(event)) return;
 
   const currentIndex = flatNodes.value.findIndex(item => item.node.value === flat.node.value);
   if (currentIndex < 0) return;
@@ -484,7 +497,7 @@ const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
 
 // ---- 选中状态 ----
 const selectedValues = computed<Array<string | number>>(() =>
-  props.multiple && Array.isArray(props.modelValue) ? props.modelValue : []
+  props.multiple && Array.isArray(currentValue.value) ? currentValue.value : []
 );
 const checkedSet = computed(() => new Set(selectedValues.value));
 const selectedNodes = computed<TreeSelectNode[]>(() =>
@@ -495,14 +508,16 @@ const displayTags = computed<TreeSelectNode[]>(() =>
 );
 const collapsedCount = computed(() => selectedNodes.value.length - displayTags.value.length);
 const selectedSingleNode = computed<TreeSelectNode | null>(() =>
-  !props.multiple && props.modelValue != null
-    ? (nodeMap.value.get(props.modelValue as string | number) ?? null)
+  !props.multiple && currentValue.value != null
+    ? (nodeMap.value.get(currentValue.value as string | number) ?? null)
     : null
 );
 
 const showClear = computed(() => {
   if (!props.clearable || !interactive.value) return false;
-  return props.multiple ? selectedValues.value.length > 0 : props.modelValue != null;
+  return props.multiple
+    ? selectedValues.value.some(value => !isValueDisabled(value))
+    : currentValue.value != null && !isValueDisabled(currentValue.value as string | number);
 });
 
 const isChecked = (node: TreeSelectNode): boolean => checkedSet.value.has(node.value);
@@ -528,7 +543,7 @@ const getAriaChecked = (node: TreeSelectNode): boolean | 'mixed' => {
 
 // ---- 交互 ----
 const toggleExpand = (node: TreeSelectNode) => {
-  if (!interactive.value || node.disabled) return;
+  if (!interactive.value || isNodeDisabled(node)) return;
   const next = new Set(expandedKeys.value);
   if (next.has(node.value)) next.delete(node.value);
   else next.add(node.value);
@@ -537,11 +552,11 @@ const toggleExpand = (node: TreeSelectNode) => {
 };
 
 const handleNodeClick = (node: TreeSelectNode) => {
-  if (!interactive.value || node.disabled) return;
+  if (!interactive.value || isNodeDisabled(node)) return;
   if (props.multiple) {
     toggleCheck(node);
   } else {
-    emit('update:modelValue', node.value);
+    requestValue(node.value);
     emit('change', node.value, node);
     formItem?.onFieldChange();
     close();
@@ -549,7 +564,7 @@ const handleNodeClick = (node: TreeSelectNode) => {
 };
 
 const toggleCheck = (node: TreeSelectNode) => {
-  if (!interactive.value || node.disabled) return;
+  if (!interactive.value || isNodeDisabled(node)) return;
   const next = new Set(checkedSet.value);
   const target = !next.has(node.value);
 
@@ -557,7 +572,7 @@ const toggleCheck = (node: TreeSelectNode) => {
     if (target) next.add(node.value);
     else next.delete(node.value);
   } else {
-    const affected = [node, ...getDescendants(node)].filter(n => !n.disabled);
+    const affected = [node, ...getDescendants(node)].filter(n => !isNodeDisabled(n));
     affected.forEach(n => {
       if (target) next.add(n.value);
       else next.delete(n.value);
@@ -566,17 +581,17 @@ const toggleCheck = (node: TreeSelectNode) => {
     let parentVal = parentMap.value.get(node.value) ?? null;
     while (parentVal != null) {
       const parent = nodeMap.value.get(parentVal);
-      if (!parent) break;
-      const children = (parent.children ?? []).filter(c => !c.disabled);
+      if (!parent || isNodeDisabled(parent)) break;
+      const children = (parent.children ?? []).filter(c => !isNodeDisabled(c));
       const allChecked = children.length > 0 && children.every(c => next.has(c.value));
-      if (!parent.disabled && allChecked) next.add(parent.value);
+      if (allChecked) next.add(parent.value);
       else next.delete(parent.value);
       parentVal = parentMap.value.get(parentVal) ?? null;
     }
   }
 
   const arr = [...next];
-  emit('update:modelValue', arr);
+  requestValue(arr);
   emit(
     'change',
     arr,
@@ -593,17 +608,24 @@ const removeTag = (value: string | number) => {
     if (checkedSet.value.has(value)) toggleCheck(node);
   } else {
     const arr = selectedValues.value.filter(v => v !== value);
-    emit('update:modelValue', arr);
+    requestValue(arr);
     emit('change', arr, []);
     formItem?.onFieldChange();
   }
 };
 
 const handleClear = () => {
-  if (!interactive.value) return;
-  const cleared = props.multiple ? [] : null;
-  emit('update:modelValue', cleared);
-  emit('change', cleared, props.multiple ? [] : null);
+  if (!showClear.value) return;
+  // 全局清空只能移除可交互值，禁用分支的外部已选值继续展示并保留。
+  const cleared = props.multiple ? selectedValues.value.filter(isValueDisabled) : null;
+  requestValue(cleared);
+  emit(
+    'change',
+    cleared,
+    cleared
+      ?.map(value => nodeMap.value.get(value))
+      .filter((node): node is TreeSelectNode => !!node) ?? null
+  );
   emit('clear');
   formItem?.onFieldChange();
   close();
@@ -645,7 +667,7 @@ const open = (focusTree = false) => {
     updatePanelPosition();
     if (props.filterable) searchInputRef.value?.focus();
     else if (focusTree) {
-      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.node.disabled);
+      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.disabled);
       focusNodeAt(firstEnabledIndex, 1);
     }
   });
@@ -674,7 +696,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     e.preventDefault();
     if (!visible.value) open(true);
     else if (!props.filterable) {
-      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.node.disabled);
+      const firstEnabledIndex = flatNodes.value.findIndex(item => !item.disabled);
       focusNodeAt(firstEnabledIndex, 1);
     }
   } else if (e.key === 'Enter' || (e.key === ' ' && !props.filterable)) {
@@ -709,14 +731,14 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 const expandAll = () => {
-  const next = new Set<string | number>();
-  maps.value.entries.forEach(({ node }) => {
-    if (!node.disabled && node.children && node.children.length) next.add(node.value);
+  const next = new Set([...expandedKeys.value].filter(isValueDisabled));
+  maps.value.entries.forEach(({ node, disabled: nodeDisabled }) => {
+    if (!nodeDisabled && node.children && node.children.length) next.add(node.value);
   });
   expandedKeys.value = next;
 };
 const collapseAll = () => {
-  expandedKeys.value = new Set();
+  expandedKeys.value = new Set([...expandedKeys.value].filter(isValueDisabled));
 };
 
 watch(visible, isVisible => {

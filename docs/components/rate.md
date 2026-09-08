@@ -246,6 +246,10 @@ const value8 = ref(4);
 
 ### Props
 
+显式传入 `modelValue` 后，点击、键盘和公开写方法只发出更新请求，父级回写才改变评分；未传入时由组件内部管理。
+
+`iconClasses` 按星位索引替换选中图标，例如 `['first-star', 'second-star']` 分别用于前两颗星，空项回退内置图标。`voidIconClass` 和 `disabledVoidIconClass` 分别用于普通和禁用状态的空星；对应图标插槽优先于类名。`textColor` 设置分数或文字的颜色。
+
 | 属性                 | 说明               | 类型                             | 默认值      |
 | -------------------- | ------------------ | -------------------------------- | ----------- |
 | modelValue / v-model | 绑定值             | `number`                         | `0`         |

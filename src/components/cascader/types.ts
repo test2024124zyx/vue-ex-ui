@@ -8,7 +8,7 @@ export interface CascaderOption {
   label: string;
   /** 子选项 */
   children?: CascaderOption[];
-  /** 是否禁用 */
+  /** 是否禁用；禁用节点及其整个子树均不可交互 */
   disabled?: boolean;
   /** 自定义选项内容所需的业务附加字段。 */
   [key: string]: unknown;
@@ -42,8 +42,8 @@ export type CascaderSize = 'small' | 'medium' | 'large';
  * 级联选择器组件属性接口
  */
 export interface ExCascaderProps {
-  /** 当前选中值 */
-  modelValue?: (string | number)[];
+  /** 当前选中值；undefined 为非受控，null 为显式受控空值 */
+  modelValue?: (string | number)[] | null;
   /** 真实输入控件的标识 */
   id?: string;
   /** 选项数据 */

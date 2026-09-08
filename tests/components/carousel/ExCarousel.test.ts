@@ -265,7 +265,7 @@ describe('ExCarousel', () => {
     try {
       const wrapper = mountCarousel();
       await nextTick();
-      await wrapper.setProps({ loop: false });
+      await wrapper.setProps({ loop: false, modelValue: undefined });
       const exposed = wrapper.vm as unknown as ExCarouselExposed;
 
       exposed.prev();

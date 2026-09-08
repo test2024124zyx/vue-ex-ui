@@ -421,8 +421,8 @@ DOM 防篡改只能提高删除水印的成本，无法阻止截屏、重新绘�
 | angle | 顺时针旋转角度（度） | `number` | `-30` |
 | gapX | 旋转包围盒之间的水平净间距（px） | `number` | `120` |
 | gapY | 旋转包围盒之间的垂直净间距（px） | `number` | `120` |
-| offsetX | 背景图案水平偏移（px） | `number` | `0` |
-| offsetY | 背景图案垂直偏移（px） | `number` | `0` |
+| offsetX | 背景图案水平偏移（px），支持负数向左移动 | `number` | `0` |
+| offsetY | 背景图案垂直偏移（px），支持负数向上移动 | `number` | `0` |
 | zIndex | 覆盖层级；未传时继承 ConfigProvider 的 watermark 语义层 | `number` | `1000` |
 | opacity | 覆盖层透明度，运行时限制在 0–1 | `number` | `0.3` |
 | pointerEvents | 覆盖层鼠标事件策略 | `'none' \| 'auto'` | `'none'` |

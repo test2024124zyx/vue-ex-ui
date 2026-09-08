@@ -207,6 +207,7 @@ describe('ExRate', () => {
       wrapper = mount(ExRate, {
         props: {
           modelValue: 0,
+          'onUpdate:modelValue': (value: number) => wrapper.setProps({ modelValue: value }),
         },
       });
       const vm = wrapper.vm as unknown as ExRateInstance;

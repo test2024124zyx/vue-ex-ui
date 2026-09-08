@@ -20,6 +20,18 @@ export interface TagProps {
 }
 
 export interface ExTagInputProps {
+  /** 禁用时禁止开始编辑或提交，继承 Form 的禁用状态。 */
+  disabled?: boolean;
+  /** 只读时禁止新增标签，继承 Form 的只读状态。 */
+  readonly?: boolean;
+  /** 当前可见字段控件的 ID。 */
+  id?: string;
+  /** 字段的显式可访问名称。 */
+  ariaLabel?: string;
+  /** 字段名称元素的 ID。 */
+  ariaLabelledby?: string;
+  /** 附加描述元素的 ID。 */
+  ariaDescribedby?: string;
   /** 按钮文本 */
   buttonText?: string;
   /** 输入框占位符 */

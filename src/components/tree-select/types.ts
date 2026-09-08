@@ -6,7 +6,7 @@ export interface TreeSelectNode {
   label: string;
   /** 子节点 */
   children?: TreeSelectNode[];
-  /** 是否禁用 */
+  /** 是否禁用；禁用节点及其整个子树均不可交互 */
   disabled?: boolean;
 }
 
@@ -20,7 +20,7 @@ export type TreeSelectValue = string | number | Array<string | number> | null;
  * TreeSelect 组件属性
  */
 export interface ExTreeSelectProps {
-  /** 绑定值：单选为值，多选为值数组 */
+  /** 绑定值：单选为值、多选为数组；undefined 为非受控，null 为显式受控空值 */
   modelValue?: TreeSelectValue;
   /** 树形数据 */
   data?: TreeSelectNode[];

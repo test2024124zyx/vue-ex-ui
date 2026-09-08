@@ -505,6 +505,8 @@ const zhCN = {
     readonly: '只读',
     codeBlock: '代码块',
     editor: '代码编辑器',
+    tabExitInstructions: '按 Escape 后，再按 Tab 或 Shift+Tab 离开代码编辑器。',
+    tabExitReady: '现在可按 Tab 或 Shift+Tab 离开代码编辑器。',
   },
 
   // 走马灯

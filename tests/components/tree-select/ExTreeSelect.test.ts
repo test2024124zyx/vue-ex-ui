@@ -199,7 +199,7 @@ describe('ExTreeSelect', () => {
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('级联选择不应该加入禁用祖先', async () => {
+  it('禁用祖先的搜索后代不应该允许级联选择', async () => {
     mountTS({
       data: [
         {
@@ -223,7 +223,7 @@ describe('ExTreeSelect', () => {
     document.querySelectorAll<HTMLElement>('.ex-tree-select__node')[1]!.click();
     await nextTick();
 
-    expect(wrapper!.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['child']);
+    expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('禁用节点的展开箭头不应该改变展开状态', async () => {

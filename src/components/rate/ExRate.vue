@@ -60,7 +60,12 @@
               icon="star-fill"
               :size="iconSize"
               :color="effectiveDisabled ? disabledVoidColor : color"
-            />
+            >
+              <i
+                v-if="iconClasses?.[item - 1]?.trim()"
+                :class="iconClasses?.[item - 1]?.trim()"
+              ></i>
+            </ex-icon>
           </slot>
         </span>
       </span>
@@ -83,13 +88,14 @@ import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useFormFieldState } from '../form/use-form-item';
 import { useLocale } from '../../locale';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExRate',
 });
 
 const props = withDefaults(defineProps<ExRateProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   max: 5,
   disabled: false,
   readonly: false,
@@ -125,7 +131,11 @@ const normalizeValue = (value: number) => {
 };
 
 // 响应式状态
-const currentValue = ref(normalizeValue(props.modelValue));
+const ratingState = useControllableState<number>({
+  controlledValue: () => props.modelValue,
+  defaultValue: 0,
+});
+const currentValue = computed(() => normalizeValue(ratingState.value.value));
 const hoverValue = ref(-1);
 const isHovering = ref(false);
 
@@ -260,7 +270,7 @@ function resetCurrentValue() {
 function commitValue(value: number) {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
   const normalizedValue = normalizeValue(value);
-  currentValue.value = normalizedValue;
+  ratingState.request(normalizedValue);
   emit('update:modelValue', normalizedValue);
   emit('change', normalizedValue);
   formItem?.onFieldChange();
@@ -291,16 +301,8 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
-// 监听 modelValue 变化
-watch(
-  () => props.modelValue,
-  newValue => {
-    currentValue.value = normalizeValue(newValue);
-  }
-);
-
 watch([normalizedMax, () => props.allowHalf], () => {
-  currentValue.value = normalizeValue(currentValue.value);
+  if (!ratingState.isControlled.value) ratingState.request(currentValue.value);
 });
 
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {

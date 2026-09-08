@@ -10,7 +10,7 @@ export type CollapseActiveName = CollapseItemName | CollapseItemName[] | null;
 
 /** 折叠面板属性。 */
 export interface ExCollapseProps {
-  /** 当前激活项。 */
+  /** 当前激活项；显式值（含 null、空数组）等待父级回写，undefined 使用内部状态。 */
   modelValue?: CollapseActiveName;
   /** 是否限制为同时展开一个面板。 */
   accordion?: boolean;

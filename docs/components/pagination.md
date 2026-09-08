@@ -20,7 +20,7 @@ const handleChange = (page, pageSize) => {
 
 ## 基础用法
 
-基础的分页用法。
+基础的分页用法。显式传入 `current` 或 `page-size` 后，相应状态只在父级回写时更新；未传入的状态由组件内部管理。仅控制 `page-size` 时，改变容量仍会立即调整内部页码，而容量等待父级接受。
 
 ::: raw
 
@@ -276,17 +276,14 @@ const current6 = ref(1);
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <ExPagination
-    :current="1"
     :total="100"
     size="small"
   />
   <ExPagination
-    :current="1"
     :total="100"
     size="medium"
   />
   <ExPagination
-    :current="1"
     :total="100"
     size="large"
   />
@@ -303,17 +300,14 @@ const current6 = ref(1);
     style="display: flex; flex-direction: column; gap: 24px;"
   >
     <ExPagination
-      :current="1"
       :total="100"
       size="small"
     />
     <ExPagination
-      :current="1"
       :total="100"
       size="medium"
     />
     <ExPagination
-      :current="1"
       :total="100"
       size="large"
     />
@@ -331,17 +325,14 @@ const current6 = ref(1);
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <ExPagination
-    :current="1"
     :total="100"
     align="left"
   />
   <ExPagination
-    :current="1"
     :total="100"
     align="center"
   />
   <ExPagination
-    :current="1"
     :total="100"
     align="right"
   />
@@ -358,17 +349,14 @@ const current6 = ref(1);
     style="display: flex; flex-direction: column; gap: 24px;"
   >
     <ExPagination
-      :current="1"
       :total="100"
       align="left"
     />
     <ExPagination
-      :current="1"
       :total="100"
       align="center"
     />
     <ExPagination
-      :current="1"
       :total="100"
       align="right"
     />
@@ -386,7 +374,6 @@ const current6 = ref(1);
 
 <div class="demo-container">
   <ExPagination
-    :current="1"
     :total="500"
     :total-text="(total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条数据`"
   />
@@ -400,7 +387,6 @@ const current6 = ref(1);
 <template>
   <div class="demo-container">
     <ExPagination
-      :current="1"
       :total="500"
       :total-text="(total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条数据`"
     />
@@ -461,7 +447,6 @@ const current6 = ref(1);
   <div>
     <p style="margin: 0 0 12px; color: var(--ex-color-text-secondary);">总数 15 条（多页，显示）：</p>
     <ExPagination
-      :current="1"
       :total="15"
       :page-size="10"
       hide-on-single-page
@@ -495,7 +480,6 @@ const current6 = ref(1);
         总数 15 条（多页，显示）：
       </p>
       <ExPagination
-        :current="1"
         :total="15"
         :page-size="10"
         hide-on-single-page
@@ -532,9 +516,7 @@ const current6 = ref(1);
     </div>
   </div>
   <ExPagination
-    :current="1"
     :total="1000"
-    :page-size="10"
     show-size-changer
     show-quick-jumper
     size="large"
@@ -583,9 +565,7 @@ const current6 = ref(1);
       </div>
     </div>
     <ExPagination
-      :current="1"
       :total="1000"
-      :page-size="10"
       show-size-changer
       show-quick-jumper
       size="large"

@@ -420,6 +420,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useControllableState } from '../../composables/useControllableState';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
@@ -441,7 +442,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExCalendarProps>(), {
-  mode: 'month',
   events: () => [],
   showToday: true,
   fullscreen: false,
@@ -479,12 +479,26 @@ const SSR_CALENDAR_ANCHOR = new Date(2000, 0, 1);
 const initialModelDate = props.modelValue instanceof Date ? new Date(props.modelValue) : null;
 const currentDate = ref(initialModelDate ?? new Date(SSR_CALENDAR_ANCHOR));
 const todayDate = ref<Date | null>(null);
-const internalSelectedDate = ref<Date | null>(null);
+const { value: selectedDate, request: requestSelectedDate } = useControllableState<Date | null>({
+  controlledValue: () => props.modelValue,
+  defaultValue: null,
+  clone: value => (value ? new Date(value) : null),
+});
 const focusedDateTimestamp = ref<number | null>(null);
+let mounted = false;
+
+// 清空只重置浏览锚点和今日标记，不生成选择事件，也不把今天写为选中值。
+const resetViewToToday = () => {
+  const today = new Date();
+  todayDate.value = new Date(today);
+  currentDate.value = today;
+  focusedDateTimestamp.value = getDateTimestamp(today);
+};
 
 onMounted(() => {
+  mounted = true;
   todayDate.value = new Date();
-  if (props.modelValue === undefined) currentDate.value = new Date(todayDate.value);
+  if (props.modelValue == null) resetViewToToday();
   if (focusedDateTimestamp.value === null) {
     focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
   }
@@ -493,21 +507,18 @@ onMounted(() => {
 // undefined 表示非受控；null 是受控的明确清空值。单元格计算直接读取数据源，
 // 避免通过额外版本号驱动视图，确保受控值变化能可靠触发模板更新。
 const getSelectedTimestamp = (): number | null => {
-  const selected = props.modelValue === undefined ? internalSelectedDate.value : props.modelValue;
+  const selected = selectedDate.value;
   if (!selected) return null;
 
   const normalized = new Date(selected);
   normalized.setHours(0, 0, 0, 0);
   return normalized.getTime();
 };
-// 内部视图模式：初始化自 props.mode，支持 v-model:mode；外部不接管时按钮也能切换
-const activeMode = ref<CalendarMode>(props.mode);
-watch(
-  () => props.mode,
-  m => {
-    activeMode.value = m;
-  }
-);
+// 显式 mode 等待父级确认，未提供时由组件内部管理视图模式。
+const { value: activeMode, request: requestMode } = useControllableState<CalendarMode>({
+  controlledValue: () => props.mode,
+  defaultValue: 'month',
+});
 
 // 视图模式选项
 const modes = computed(() => [
@@ -840,7 +851,7 @@ const handleDateClick = (cell: CalendarDateCell) => {
   if (cell.disabled) return;
 
   focusedDateTimestamp.value = getDateTimestamp(cell.date);
-  internalSelectedDate.value = new Date(cell.date);
+  requestSelectedDate(cell.date);
   currentDate.value = new Date(cell.date);
   emit('update:modelValue', cell.date);
   emit('select', cell.date, cell);
@@ -854,7 +865,7 @@ const handleEventClick = (event: CalendarEvent, date: Date) => {
 const selectDate = (date: Date) => {
   if (props.disabledDate?.(date)) return;
   focusedDateTimestamp.value = getDateTimestamp(date);
-  internalSelectedDate.value = new Date(date);
+  requestSelectedDate(date);
   currentDate.value = new Date(date);
   emit('update:modelValue', date);
 };
@@ -865,12 +876,12 @@ const goToday = () => {
   todayDate.value = new Date(today);
   focusedDateTimestamp.value = getDateTimestamp(today);
   currentDate.value = today;
-  internalSelectedDate.value = today;
+  requestSelectedDate(today);
   emit('update:modelValue', today);
 };
 
 const changeMode = (newMode: CalendarMode) => {
-  activeMode.value = newMode;
+  requestMode(newMode);
   emit('update:mode', newMode);
   emit('mode-change', newMode);
 };
@@ -957,6 +968,8 @@ watch(
     if (newValue instanceof Date) {
       currentDate.value = new Date(newValue);
       focusedDateTimestamp.value = getDateTimestamp(newValue);
+    } else if (newValue === null && mounted) {
+      resetViewToToday();
     } else if (newValue === null && focusedDateTimestamp.value === null) {
       focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
     }

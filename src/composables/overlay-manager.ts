@@ -88,7 +88,14 @@ const getOverlayRuntime = createDocumentRuntime('overlay', owner => ({
   originalBodyOverflow: '',
   originalBodyPaddingRight: '',
   keydownHandler: null as ((event: KeyboardEvent) => void) | null,
-  localEscapeHandlers: new WeakMap<HTMLElement, { active: () => boolean; close: () => void }>(),
+  localEscapeHandlers: new WeakMap<
+    HTMLElement,
+    {
+      active: () => boolean;
+      close: () => void;
+      ownsTab?: (event: KeyboardEvent) => boolean;
+    }
+  >(),
 }));
 const OVERLAY_LAYER_STEP = 1;
 const MAXIMUM_CSS_Z_INDEX = 2_147_483_647;
@@ -127,10 +134,11 @@ const handleGlobalKeydown = (
 export function registerOverlayEscapeBoundary(
   element: HTMLElement,
   active: () => boolean,
-  close: () => void
+  close: () => void,
+  ownsTab?: (event: KeyboardEvent) => boolean
 ): () => void {
   const handlers = getOverlayRuntime().localEscapeHandlers;
-  const handler = { active, close };
+  const handler = { active, close, ownsTab };
   handlers.set(element, handler);
   return () => {
     if (handlers.get(element) === handler) handlers.delete(element);
@@ -209,6 +217,20 @@ export function createFocusTrap(
     if (event.key !== 'Tab' || event.defaultPrevented) return;
     const containers = getContainers();
     if (containers.length === 0) return;
+    const handlers = getOverlayRuntime().localEscapeHandlers;
+    // 编辑器消费的 Tab 先留给本地处理；放行后仍按所属浮层的焦点顺序移动。
+    if (
+      isComposingKeyboardEvent(event) ||
+      event
+        .composedPath()
+        .some(
+          target =>
+            target instanceof HTMLElement &&
+            containers.some(owner => owner.contains(target)) &&
+            handlers.get(target)?.ownsTab?.(event)
+        )
+    )
+      return;
     const focusable = [...new Set(containers.flatMap(getFocusableElements))];
     if (focusable.length === 0) {
       event.preventDefault();

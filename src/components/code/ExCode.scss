@@ -9,6 +9,15 @@
   border-radius: var(--ex-radius-lg);
   overflow: hidden;
 
+  &__editor-instructions {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   // 统一字体度量令牌：行号 / 高亮层 / 编辑层共用，保证三层像素级对齐。
   --ex-code-font-size: var(--ex-text-sm);
   --ex-code-line-height: 1.6;

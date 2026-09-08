@@ -92,7 +92,9 @@ const code = ref(`function greet(name) {
 
 ## 原位编辑
 
-编辑模式支持 `v-model:code`、Tab 缩进、Shift+Tab 反缩进和多行选区。
+编辑模式支持 `v-model:code`、Tab 缩进、Shift+Tab 反缩进和多行选区。按 Escape 后，下一次 Tab 或 Shift+Tab 会按浏览器原生焦点顺序离开编辑区；重新聚焦后恢复缩进操作。只读模式始终保留原生 Tab。在对话框内，第一次 Escape 进入退出状态，再次 Escape 交给父浮层处理。
+
+传入 `code`（包括空字符串）时为严格受控模式：输入及缩进只发出更新请求，父级回写后才提交显示值；拒绝时恢复原生输入框和选区。未传 `code` 时内部维护内容，初始为空字符串。输入法组合期间保留临时草稿，结束后再请求提交；复制和 `getCode()` 始终读取已确认内容。
 
 ::: raw
 
@@ -180,7 +182,7 @@ const longCode = Array.from(
 
 | 属性              | 说明                                   | 类型                          | 默认值        |
 | ----------------- | -------------------------------------- | ----------------------------- | ------------- |
-| `code`            | 代码内容，支持 `v-model:code`          | `string`                      | `''`          |
+| `code`            | 受控代码内容，支持 `v-model:code`      | `string`                      | `undefined`   |
 | `language`        | 内置语法高亮语言                       | `CodeLanguage`                | `'plaintext'` |
 | `theme`           | 代码块主题                             | `'dark' \| 'light' \| 'neon'` | `'neon'`      |
 | `line-numbers`    | 是否显示行号                           | `boolean`                     | `false`       |
