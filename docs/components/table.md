@@ -22,6 +22,11 @@ const data = [
   { key: 5, rank: '5', player: 'Player005', score: 8720, kd: '2.1', winRate: '58%' },
 ]
 
+const scrollGroupCount = 3
+const scrollData = Array.from({ length: scrollGroupCount }, (_, group) =>
+  data.map(row => ({ ...row, key: `${group}-${row.key}` }))
+).flat()
+
 // 装备数据
 const equipmentColumns = [
   { key: 'name', title: '装备名称', dataIndex: 'name', width: 200 },
@@ -43,6 +48,17 @@ const loading = ref(false)
 
 // 行选择演示
 const selectedKeys = ref([1, 3])
+const radioKeys = ref([])
+const disabledKeys = ref([])
+const selectionColumns = [
+  { key: 'player', title: '玩家', dataIndex: 'player' },
+  { key: 'role', title: '职业', dataIndex: 'role' },
+]
+const selectionData = [
+  { key: 1, player: 'Player001', role: '战士' },
+  { key: 2, player: 'Player002', role: '法师' },
+  { key: 3, player: 'Player003', role: '游侠' },
+]
 const onSelectionChange = (keys, rows) => {
   console.log('已选 key：', keys, '已选行：', rows)
 }
@@ -528,9 +544,9 @@ const data = [
 
 ::: raw
 <div class="demo-container">
-  <ExTable 
-    :columns="columns" 
-    :data="[...data, ...data, ...data]" 
+  <ExTable
+    :columns="columns"
+    :data="scrollData"
     :max-height="300"
     bordered
   />
@@ -555,12 +571,16 @@ const data = [
   { key: 4, rank: '4', player: 'Player004', score: 8950, kd: '2.3', winRate: '60%' },
   { key: 5, rank: '5', player: 'Player005', score: 8720, kd: '2.1', winRate: '58%' },
 ];
+const scrollGroupCount = 3;
+const scrollData = Array.from({ length: scrollGroupCount }, (_, group) =>
+  data.map(row => ({ ...row, key: `${group}-${row.key}` }))
+).flat();
 </script>
 
 <template>
   <ExTable
     :columns="columns"
-    :data="[...data, ...data, ...data]"
+    :data="scrollData"
     :max-height="300"
     bordered
   />
@@ -752,22 +772,91 @@ const onSelectionChange = (keys, rows: TableDataItem[]) => {
 
 设置 `selection-type="radio"` 切换为单选（表头不再显示全选框）。
 
+::: raw
+<div class="demo-container">
+  <ex-table v-model:selected-row-keys="radioKeys" :columns="selectionColumns" :data="selectionData" selectable selection-type="radio" />
+  <p role="status">当前单选：{{ radioKeys.join(', ') || '未选择' }}</p>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExTable :columns="columns" :data="data" selectable selection-type="radio" />
+<script setup>
+import { ref } from 'vue';
+
+const radioKeys = ref([]);
+const selectionColumns = [
+  { key: 'player', title: '玩家', dataIndex: 'player' },
+  { key: 'role', title: '职业', dataIndex: 'role' },
+];
+const selectionData = [
+  { key: 1, player: 'Player001', role: '战士' },
+  { key: 2, player: 'Player002', role: '法师' },
+  { key: 3, player: 'Player003', role: '游侠' },
+];
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-table
+      v-model:selected-row-keys="radioKeys"
+      :columns="selectionColumns"
+      :data="selectionData"
+      selectable
+      selection-type="radio"
+    />
+    <p role="status">当前单选：{{ radioKeys.join(', ') || '未选择' }}</p>
+  </div>
+</template>
 ```
+
+:::
 
 ### 禁用某些行的选择
 
-通过 `is-row-selectable` 返回 `false` 来禁用指定行的选择（全选也会跳过这些行）。
+通过 `is-row-selectable` 返回 `false` 来禁用指定行的选择。此处的法师行不可选，全选也会跳过它；选择状态与上方单选演示独立。
+
+::: raw
+<div class="demo-container">
+  <ex-table v-model:selected-row-keys="disabledKeys" :columns="selectionColumns" :data="selectionData" selectable :is-row-selectable="record => record.role !== '法师'" />
+  <p role="status">已选：{{ disabledKeys.join(', ') || '未选择' }}</p>
+</div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<ExTable
-  :columns="columns"
-  :data="data"
-  selectable
-  :is-row-selectable="record => record.role !== '法师'"
-/>
+<script setup>
+import { ref } from 'vue';
+
+const disabledKeys = ref([]);
+const selectionColumns = [
+  { key: 'player', title: '玩家', dataIndex: 'player' },
+  { key: 'role', title: '职业', dataIndex: 'role' },
+];
+const selectionData = [
+  { key: 1, player: 'Player001', role: '战士' },
+  { key: 2, player: 'Player002', role: '法师' },
+  { key: 3, player: 'Player003', role: '游侠' },
+];
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-table
+      v-model:selected-row-keys="disabledKeys"
+      :columns="selectionColumns"
+      :data="selectionData"
+      selectable
+      :is-row-selectable="record => record.role !== '法师'"
+    />
+    <p role="status">已选：{{ disabledKeys.join(', ') || '未选择' }}</p>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 

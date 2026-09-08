@@ -17,6 +17,21 @@ const data = [
 const expandedKeys = ref(['documents'])
 const selectedKeys = ref([])
 const checkedKeys = ref([])
+const checkExpandedKeys = ref(['documents'])
+const customData = [
+  {
+    key: 'documents', label: '文档', data: { status: '已同步' },
+    children: [
+      { key: 'report', label: 'report.pdf', data: { status: '待审核' } },
+      { key: 'notes', label: 'notes.txt', data: { status: '已同步' } },
+    ],
+  },
+]
+const virtualCount = 2000
+const largeTree = Array.from({ length: virtualCount }, (_, index) => ({
+  key: `file-${index + 1}`, label: `文件 ${index + 1}.txt`,
+}))
+const virtualSelectedKeys = ref([])
 </script>
 
 ## 基础用法
@@ -74,7 +89,7 @@ const selectedKeys = ref<string[]>([]);
 
 <div class="demo-container">
   <ExTree
-    v-model:expanded-keys="expandedKeys"
+    v-model:expanded-keys="checkExpandedKeys"
     v-model:checked-keys="checkedKeys"
     :data="data"
     checkable
@@ -101,14 +116,14 @@ const data: TreeNode[] = [
   },
   { key: 'images', label: '图片', children: [{ key: 'photo', label: 'photo.png' }] },
 ];
-const expandedKeys = ref<string[]>(['documents']);
+const checkExpandedKeys = ref<string[]>(['documents']);
 const checkedKeys = ref<string[]>([]);
 </script>
 
 <template>
   <div class="demo-container">
     <ExTree
-      v-model:expanded-keys="expandedKeys"
+      v-model:expanded-keys="checkExpandedKeys"
       v-model:checked-keys="checkedKeys"
       :data="data"
       checkable
@@ -123,32 +138,92 @@ const checkedKeys = ref<string[]>([]);
 
 ## 自定义节点内容
 
-```vue
-<template>
-  <ExTree
-    :data="data"
-    :default-expanded-keys="['documents']"
-  >
+::: raw
+<div class="demo-container">
+  <ex-tree :data="customData" :default-expanded-keys="['documents']">
     <template #default="{ node }">
       <span>{{ node.label }} · {{ node.data?.status }}</span>
     </template>
-  </ExTree>
+  </ex-tree>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+const customData = [
+  {
+    key: 'documents',
+    label: '文档',
+    data: { status: '已同步' },
+    children: [
+      { key: 'report', label: 'report.pdf', data: { status: '待审核' } },
+      { key: 'notes', label: 'notes.txt', data: { status: '已同步' } },
+    ],
+  },
+];
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-tree
+      :data="customData"
+      :default-expanded-keys="['documents']"
+    >
+      <template #default="{ node }">
+        <span>{{ node.label }} · {{ node.data?.status }}</span>
+      </template>
+    </ex-tree>
+  </div>
 </template>
 ```
+
+:::
 
 ## 虚拟滚动
 
+渲染 2000 个独立文件节点，视口只保留可见范围与缓冲区。滚动到底部或使用方向键移动焦点，可以检查最后一项是否可达。
+
+::: raw
+<div class="demo-container">
+  <ex-tree v-model:selected-keys="virtualSelectedKeys" :data="largeTree" virtual :height="320" :item-height="28" :virtual-buffer="6" />
+  <p role="status">共 {{ virtualCount }} 项，已选：{{ virtualSelectedKeys.join(', ') || '未选择' }}</p>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const virtualCount = 2000;
+const largeTree = Array.from({ length: virtualCount }, (_, index) => ({
+  key: `file-${index + 1}`,
+  label: `文件 ${index + 1}.txt`,
+}));
+const virtualSelectedKeys = ref([]);
+</script>
+
 <template>
-  <ExTree
-    :data="largeTree"
-    virtual
-    :height="400"
-    :item-height="28"
-    :virtual-buffer="6"
-  />
+  <div class="demo-container">
+    <ex-tree
+      v-model:selected-keys="virtualSelectedKeys"
+      :data="largeTree"
+      virtual
+      :height="320"
+      :item-height="28"
+      :virtual-buffer="6"
+    />
+    <p role="status">
+      共 {{ virtualCount }} 项，已选：{{ virtualSelectedKeys.join(', ') || '未选择' }}
+    </p>
+  </div>
 </template>
 ```
+
+:::
 
 ## Props
 

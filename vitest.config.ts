@@ -12,7 +12,12 @@ export default defineConfig({
     testTimeout: 15000,
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{ts,vue}'],
+      // 文档新增的交互状态与 HTTP 服务同样纳入可执行代码覆盖率门禁。
+      include: [
+        'src/**/*.{ts,vue}',
+        'docs/.vitepress/demo-server.ts',
+        'docs/.vitepress/demos/**/*.ts',
+      ],
       exclude: ['src/**/types.ts', 'src/**/*.d.ts'],
       // 可执行源代码的覆盖率门禁，类型声明文件不参与分母。
       thresholds: {

@@ -3,27 +3,63 @@
 `ExFilePreview` 可预览图片、视频、音频、PDF、文本和代码文件。组件接受 URL 描述、`Blob` 或 `File`，并提供受控导航与图片变换状态。
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 
 const visible = ref(false)
 const currentIndex = ref(0)
 const scale = ref(1)
 const rotate = ref(0)
-const files = [
-  {
-    url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200',
-    name: 'arena.jpg',
-    type: 'image',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200',
-    name: 'console.jpg',
-    type: 'image',
-  },
-]
+const files = ['#0f4c81', '#287c6f'].map((color, index) => ({
+  url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="${color}"/><circle cx="320" cy="180" r="100" fill="#f7d060"/><text x="320" y="340" text-anchor="middle" fill="white" font-size="32">Preview ${index + 1}</text></svg>`)}`,
+  name: `preview-${index + 1}.svg`,
+  type: 'image',
+}))
 
-const handleDownloadRequest = file => {
-  console.log('download request', file)
+const blobVisible = ref(false)
+const selectedFile = shallowRef()
+const openBlobPreview = () => {
+  selectedFile.value = new Blob(['这是在浏览器中创建的 Blob。\n替换为本地文件时，组件会释放旧的对象地址。'], { type: 'text/plain' })
+  blobVisible.value = true
+}
+const handleFileChange = event => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  selectedFile.value = file
+  blobVisible.value = true
+  event.target.value = ''
+}
+
+const textVisible = ref(false)
+const textIndex = ref(0)
+const textFiles = shallowRef([])
+const maxTextBytes = 512 * 1024
+const openTextPreview = () => {
+  textFiles.value = [
+    new File(['文件预览演示\n\n这是一份在浏览器内生成的文本。\n使用左右按钮切换到 TypeScript 代码。'], 'readme.txt', { type: 'text/plain' }),
+    new File(['interface User {\n  name: string;\n}\n\nconst greet = (user: User) => `你好，${user.name}`;\n'], 'greeting.ts', { type: 'text/typescript' }),
+  ]
+  textIndex.value = 0
+  textVisible.value = true
+}
+
+const downloadVisible = ref(false)
+const downloadSource = shallowRef()
+const downloadFile = shallowRef()
+const downloadRef = ref()
+const downloadStatus = ref('打开预览后，点击工具栏下载按钮。')
+const openDownloadPreview = () => {
+  downloadSource.value = new File(['这是可下载的本地演示文件。\n文件在浏览器内创建，无需外部下载服务。'], 'preview-download.txt', { type: 'text/plain' })
+  downloadVisible.value = true
+}
+const handleDownloadRequest = async file => {
+  downloadFile.value = file
+  await nextTick()
+  const result = await downloadRef.value.download()
+  downloadStatus.value = result.outcome === 'triggered'
+    ? `已将 ${file.name} 的下载交给浏览器，请查看浏览器下载记录。`
+    : result.outcome === 'error'
+      ? `下载失败：${result.error.message}`
+      : `下载状态：${result.outcome}`
 }
 </script>
 
@@ -38,7 +74,7 @@ const handleDownloadRequest = file => {
     v-model:scale="scale"
     v-model:rotate="rotate"
     :files="files"
-    @download-request="handleDownloadRequest"
+    :show-download="false"
   />
 </div>
 :::
@@ -54,22 +90,11 @@ const visible = ref(false);
 const currentIndex = ref(0);
 const scale = ref(1);
 const rotate = ref(0);
-const files: PreviewFile[] = [
-  {
-    url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200',
-    name: 'arena.jpg',
-    type: 'image',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200',
-    name: 'console.jpg',
-    type: 'image',
-  },
-];
-
-const handleDownloadRequest = (file: PreviewFile) => {
-  console.log('download request', file);
-};
+const files: PreviewFile[] = ['#0f4c81', '#287c6f'].map((color, index) => ({
+  url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="${color}"/><circle cx="320" cy="180" r="100" fill="#f7d060"/><text x="320" y="340" text-anchor="middle" fill="white" font-size="32">Preview ${index + 1}</text></svg>`)}`,
+  name: `preview-${index + 1}.svg`,
+  type: 'image',
+}));
 </script>
 
 <template>
@@ -81,7 +106,7 @@ const handleDownloadRequest = (file: PreviewFile) => {
       v-model:scale="scale"
       v-model:rotate="rotate"
       :files="files"
-      @download-request="handleDownloadRequest"
+      :show-download="false"
     />
   </div>
 </template>
@@ -93,30 +118,64 @@ const handleDownloadRequest = (file: PreviewFile) => {
 
 ## Blob 与 File
 
+直接预览浏览器生成的 `Blob`，或选择自己的本地文件。文件仅在当前浏览器读取。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="openBlobPreview">预览 Blob 文本</ex-button>
+  <label class="file-input-label">
+    选择本地文件
+    <input type="file" accept="image/*,video/*,audio/*,application/pdf,text/*,.json,.ts,.js" @change="handleFileChange" />
+  </label>
+  <ex-file-preview v-model:visible="blobVisible" :file="selectedFile" :show-download="false" />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 
-const visible = ref(false);
-const selectedFile = ref<File>();
+const blobVisible = ref(false);
+const selectedFile = shallowRef<Blob>();
 
-const handleChange = (event: Event) => {
-  selectedFile.value = (event.target as HTMLInputElement).files?.[0];
-  visible.value = Boolean(selectedFile.value);
+const openBlobPreview = () => {
+  selectedFile.value = new Blob(
+    ['这是在浏览器中创建的 Blob。\n替换为本地文件时，组件会释放旧的对象地址。'],
+    { type: 'text/plain' }
+  );
+  blobVisible.value = true;
+};
+const handleFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  selectedFile.value = file;
+  blobVisible.value = true;
+  input.value = '';
 };
 </script>
 
 <template>
-  <input
-    type="file"
-    @change="handleChange"
-  />
-  <ExFilePreview
-    v-model:visible="visible"
+  <ex-button @click="openBlobPreview">预览 Blob 文本</ex-button>
+  <label class="file-input-label">
+    选择本地文件
+    <input
+      type="file"
+      accept="image/*,video/*,audio/*,application/pdf,text/*,.json,.ts,.js"
+      @change="handleFileChange"
+    />
+  </label>
+  <ex-file-preview
+    v-model:visible="blobVisible"
     :file="selectedFile"
+    :show-download="false"
   />
 </template>
 ```
+
+:::
 
 组件会为 `Blob`/`File` 创建对象地址，并在来源替换或组件卸载时释放。文件的 `type` 会作为 MIME 类型参与预览类型识别。
 
@@ -124,13 +183,62 @@ const handleChange = (event: Event) => {
 
 文本和代码通过 `fetch` 读取，并受 `max-text-bytes` 限制。非 2xx 响应、读取失败或内容超限都会触发结构化 `error` 事件；切换文件会中止旧请求。
 
+::: raw
+<div class="demo-container">
+  <ex-button @click="openTextPreview">预览文本与代码</ex-button>
+  <ex-file-preview
+    v-model:visible="textVisible"
+    v-model:current-index="textIndex"
+    :files="textFiles"
+    :max-text-bytes="maxTextBytes"
+    :show-download="false"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFilePreview
-  v-model:visible="visible"
-  :file="{ url: '/logs/latest.log', name: 'latest.log', type: 'text' }"
-  :max-text-bytes="512 * 1024"
-/>
+<script setup lang="ts">
+import { ref, shallowRef } from 'vue';
+
+const textVisible = ref(false);
+const textIndex = ref(0);
+const textFiles = shallowRef<File[]>([]);
+const maxTextBytes = 512 * 1024;
+const openTextPreview = () => {
+  textFiles.value = [
+    new File(
+      ['文件预览演示\n\n这是一份在浏览器内生成的文本。\n使用左右按钮切换到 TypeScript 代码。'],
+      'readme.txt',
+      { type: 'text/plain' }
+    ),
+    new File(
+      [
+        'interface User {\n  name: string;\n}\n\nconst greet = (user: User) => `你好，${user.name}`;\n',
+      ],
+      'greeting.ts',
+      { type: 'text/typescript' }
+    ),
+  ];
+  textIndex.value = 0;
+  textVisible.value = true;
+};
+</script>
+
+<template>
+  <ex-button @click="openTextPreview">预览文本与代码</ex-button>
+  <ex-file-preview
+    v-model:visible="textVisible"
+    v-model:current-index="textIndex"
+    :files="textFiles"
+    :max-text-bytes="maxTextBytes"
+    :show-download="false"
+  />
+</template>
 ```
+
+:::
 
 代码预览提供逐行行号，不声明语法高亮能力。需要语法高亮时，请使用 `ExCode` 组件。
 
@@ -138,9 +246,81 @@ const handleChange = (event: Event) => {
 
 内置下载按钮只触发 `download-request`。鉴权、文件名、错误提示和下载结果均由业务下载服务处理。
 
+下面把请求接入 `ExFileDownload`。文本文件在浏览器中生成，点击预览工具栏的下载按钮后会创建真实下载，并在页面显示交接结果。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="openDownloadPreview">打开可下载预览</ex-button>
+  <ex-file-preview
+    v-model:visible="downloadVisible"
+    :file="downloadSource"
+    @download-request="handleDownloadRequest"
+  />
+  <ex-file-download
+    v-show="false"
+    ref="downloadRef"
+    :url="downloadFile?.url || ''"
+    :filename="downloadFile?.name"
+    transport="link"
+  />
+  <output aria-live="polite">{{ downloadStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFilePreview v-model:visible="visible" :file="file" @download-request="downloadService.request" />
+<script setup lang="ts">
+import { nextTick, ref, shallowRef } from 'vue';
+import type { ExFileDownloadExposed, PreviewFile } from 'vue-ex-ui';
+
+const downloadVisible = ref(false);
+const downloadSource = shallowRef<File>();
+const downloadFile = shallowRef<PreviewFile>();
+const downloadRef = ref<ExFileDownloadExposed>();
+const downloadStatus = ref('打开预览后，点击工具栏下载按钮。');
+const openDownloadPreview = () => {
+  downloadSource.value = new File(
+    ['这是可下载的本地演示文件。\n文件在浏览器内创建，无需外部下载服务。'],
+    'preview-download.txt',
+    { type: 'text/plain' }
+  );
+  downloadVisible.value = true;
+};
+const handleDownloadRequest = async (file: PreviewFile) => {
+  downloadFile.value = file;
+  await nextTick();
+  const result = await downloadRef.value!.download();
+  downloadStatus.value =
+    result.outcome === 'triggered'
+      ? `已将 ${file.name} 的下载交给浏览器，请查看浏览器下载记录。`
+      : result.outcome === 'error'
+        ? `下载失败：${result.error.message}`
+        : `下载状态：${result.outcome}`;
+};
+</script>
+
+<template>
+  <ex-button @click="openDownloadPreview">打开可下载预览</ex-button>
+  <ex-file-preview
+    v-model:visible="downloadVisible"
+    :file="downloadSource"
+    @download-request="handleDownloadRequest"
+  />
+  <ex-file-download
+    v-show="false"
+    ref="downloadRef"
+    :url="downloadFile?.url || ''"
+    :filename="downloadFile?.name"
+    transport="link"
+  />
+  <output aria-live="polite">{{ downloadStatus }}</output>
+</template>
 ```
+
+:::
+
+`triggered` 表示浏览器已经接管链接，不表示文件已保存成功。`Blob` 对象地址由预览组件持有，在更换来源或卸载时释放。
 
 ## 键盘操作
 
@@ -239,10 +419,17 @@ const handleChange = (event: Event) => {
 
 <style scoped>
 .demo-container {
+  display: grid;
+  gap: 16px;
   margin: 16px 0;
   padding: 24px;
   background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+}
+
+.file-input-label {
+  display: grid;
+  gap: 8px;
 }
 </style>

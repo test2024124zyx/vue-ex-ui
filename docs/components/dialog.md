@@ -3,42 +3,15 @@
 在保留当前页面状态的情况下，告知用户并承载相关操作。
 
 <script setup>
-import { ref } from 'vue'
+import { useDialogDemos } from '../.vitepress/demos/useDialogDemos'
 
-const dialogVisible = ref(false)
-const dialogVisible2 = ref(false)
-const dialogVisible3 = ref(false)
-const dialogVisible4 = ref(false)
-const dialogVisible5 = ref(false)
-const dialogVisible6 = ref(false)
-const dialogVisible7 = ref(false)
-const dialogVisible8 = ref(false)
-const dialogVisible9 = ref(false)
-const dialogVisible10 = ref(false)
-const dialogVisible11 = ref(false)
-const dialogVisible12 = ref(false)
-const dialogVisible13 = ref(false)
-const dialogVisible14 = ref(false)
-const dialogVisible15 = ref(false)
-const confirmLoading = ref(false)
-const hasUnsavedChanges = ref(true)
-
-const handleConfirm = () => {
-  confirmLoading.value = true
-  setTimeout(() => {
-    confirmLoading.value = false
-    dialogVisible8.value = false
-  }, 2000)
-}
-
-const handleBeforeClose = async () => {
-  // 如果有未保存的更改，阻止关闭
-  if (hasUnsavedChanges.value) {
-    console.log('有未保存的内容，阻止关闭')
-    return false
-  }
-  return true
-}
+const {
+  dialogVisible, dialogVisible2, dialogVisible3, dialogVisible4, dialogVisible5,
+  dialogVisible6, dialogVisible7, dialogVisible8, dialogVisible9, dialogVisible10,
+  dialogVisible11, dialogVisible12, dialogVisible13, dialogVisible14, dialogVisible15,
+  outerDialogVisible, innerDialogVisible, confirmLoading, hasUnsavedChanges,
+  handleConfirm, handleBeforeClose,
+} = useDialogDemos()
 </script>
 
 ## 基础用法
@@ -390,7 +363,7 @@ const dialogVisible11 = ref(false);
 
 ## 自定义底部
 
-通过 `footer` 插槽可以自定义底部内容。
+通过 `footer` 插槽可以自定义底部内容。提交期间阻止关闭，完成后由示例更新显隐状态。
 
 ::: raw
 
@@ -400,14 +373,17 @@ const dialogVisible11 = ref(false);
     v-model="dialogVisible8" 
     title="确认操作"
     type="warning"
-    :confirm-loading="confirmLoading"
-    @confirm="handleConfirm"
+    :before-close="() => !confirmLoading"
   >
     <template #icon>
       <img src="https://api.iconify.design/ri/alert-line.svg" alt="警告" width="24" height="24" />
     </template>
     <p>您确定要执行此操作吗？</p>
     <p>此操作将会删除所有相关数据，且不可恢复。</p>
+    <template #footer>
+      <ExButton :disabled="confirmLoading" @click="dialogVisible8 = false">暂不删除</ExButton>
+      <ExButton type="danger" :loading="confirmLoading" @click="handleConfirm">确认删除</ExButton>
+    </template>
   </ExDialog>
 </div>
 
@@ -428,8 +404,7 @@ const dialogVisible11 = ref(false);
     v-model="dialogVisible8"
     title="确认操作"
     type="warning"
-    :confirm-loading="confirmLoading"
-    @confirm="handleConfirm"
+    :before-close="() => !confirmLoading"
   >
     <template #icon>
       <img
@@ -441,22 +416,43 @@ const dialogVisible11 = ref(false);
     </template>
     <p>您确定要执行此操作吗？</p>
     <p>此操作将会删除所有相关数据，且不可恢复。</p>
+    <template #footer>
+      <ExButton
+        :disabled="confirmLoading"
+        @click="dialogVisible8 = false"
+      >
+        暂不删除
+      </ExButton>
+      <ExButton
+        type="danger"
+        :loading="confirmLoading"
+        @click="handleConfirm"
+      >
+        确认删除
+      </ExButton>
+    </template>
   </ExDialog>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 
+const SUBMIT_DELAY_MS = 2000;
 const dialogVisible8 = ref(false);
 const confirmLoading = ref(false);
+let submitTimer;
 
 const handleConfirm = () => {
+  if (confirmLoading.value) return;
   confirmLoading.value = true;
-  setTimeout(() => {
+  // 模拟异步提交；自定义底部负责在完成后关闭对话框。
+  submitTimer = setTimeout(() => {
+    submitTimer = undefined;
     confirmLoading.value = false;
     dialogVisible8.value = false;
-  }, 2000);
+  }, SUBMIT_DELAY_MS);
 };
+onBeforeUnmount(() => clearTimeout(submitTimer));
 </script>
 ```
 
@@ -594,11 +590,11 @@ const dialogVisible12 = ref(false);
 ::: raw
 
 <div class="demo-container">
-  <ExButton type="primary" @click="dialogVisible4 = true">打开外层对话框</ExButton>
-  <ExDialog v-model="dialogVisible4" title="外层对话框">
+  <ExButton type="primary" @click="outerDialogVisible = true">打开外层对话框</ExButton>
+  <ExDialog v-model="outerDialogVisible" title="外层对话框">
     <p>这是外层对话框的内容。</p>
-    <ExButton type="primary" @click="dialogVisible5 = true">打开内层对话框</ExButton>
-    <ExDialog v-model="dialogVisible5" title="内层对话框" :z-index="1060">
+    <ExButton type="primary" @click="innerDialogVisible = true">打开内层对话框</ExButton>
+    <ExDialog v-model="innerDialogVisible" title="内层对话框">
       <p>这是内层对话框的内容。</p>
     </ExDialog>
   </ExDialog>
@@ -612,27 +608,26 @@ const dialogVisible12 = ref(false);
 <template>
   <ExButton
     type="primary"
-    @click="dialogVisible4 = true"
+    @click="outerDialogVisible = true"
   >
     打开外层对话框
   </ExButton>
 
   <ExDialog
-    v-model="dialogVisible4"
+    v-model="outerDialogVisible"
     title="外层对话框"
   >
     <p>这是外层对话框的内容。</p>
     <ExButton
       type="primary"
-      @click="dialogVisible5 = true"
+      @click="innerDialogVisible = true"
     >
       打开内层对话框
     </ExButton>
 
     <ExDialog
-      v-model="dialogVisible5"
+      v-model="innerDialogVisible"
       title="内层对话框"
-      :z-index="1060"
     >
       <p>这是内层对话框的内容。</p>
     </ExDialog>
@@ -642,8 +637,8 @@ const dialogVisible12 = ref(false);
 <script setup>
 import { ref } from 'vue';
 
-const dialogVisible4 = ref(false);
-const dialogVisible5 = ref(false);
+const outerDialogVisible = ref(false);
+const innerDialogVisible = ref(false);
 </script>
 ```
 

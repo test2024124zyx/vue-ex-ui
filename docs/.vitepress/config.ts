@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress';
+import { docsDemoPlugin } from './demo-server';
 
 export default defineConfig({
   title: 'ExUI',
@@ -20,6 +21,7 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [docsDemoPlugin()],
     css: {
       preprocessorOptions: {
         scss: {

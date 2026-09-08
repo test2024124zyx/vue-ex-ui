@@ -3,8 +3,8 @@
 用于路由切换、异步请求等全局进度反馈。命令式服务默认挂载到 `document.body`，声明式组件留在当前 Vue 渲染树中。
 
 <script setup>
-import { onBeforeUnmount } from 'vue'
-import { loadingBar } from '../../src/components/loading-bar'
+import { onBeforeUnmount, ref } from 'vue'
+import { createLoadingBar, loadingBar } from '../../src/components/loading-bar'
 
 const start = () => loadingBar.start()
 const finish = () => loadingBar.finish()
@@ -22,7 +22,11 @@ const resetAppearance = () => {
   loadingBar.destroy()
 }
 
-onBeforeUnmount(() => loadingBar.destroy())
+const routeLoadingBar = createLoadingBar({ height: 6, color: '#8b5cf6' })
+const visible = ref(true)
+const percentage = ref(40)
+const status = ref('loading')
+onBeforeUnmount(() => { loadingBar.destroy(); routeLoadingBar.destroy() })
 </script>
 
 ## 全局服务
@@ -42,19 +46,44 @@ onBeforeUnmount(() => loadingBar.destroy())
 
 ```vue
 <script setup lang="ts">
+import { onBeforeUnmount } from 'vue';
 import { loadingBar } from 'vue-ex-ui';
 
-const load = async () => {
-  loadingBar.start();
-  try {
-    await fetchData();
-    loadingBar.finish();
-  } catch (error) {
-    loadingBar.error();
-    throw error;
-  }
-};
+const start = () => loadingBar.start();
+const finish = () => loadingBar.finish();
+const fail = () => loadingBar.error();
+const warn = () => loadingBar.warning();
+onBeforeUnmount(() => loadingBar.destroy());
 </script>
+
+<template>
+  <div class="demo-container">
+    <ExButton
+      type="primary"
+      @click="start"
+    >
+      开始
+    </ExButton>
+    <ExButton
+      type="success"
+      @click="finish"
+    >
+      完成
+    </ExButton>
+    <ExButton
+      type="danger"
+      @click="fail"
+    >
+      失败
+    </ExButton>
+    <ExButton
+      type="warning"
+      @click="warn"
+    >
+      警告
+    </ExButton>
+  </div>
+</template>
 ```
 
 :::
@@ -76,8 +105,23 @@ const load = async () => {
 ::: details 查看示例代码
 
 ```vue
-import { loadingBar } from 'vue-ex-ui'; loadingBar.update(35); loadingBar.update(80);
-loadingBar.update(100);
+<script setup>
+import { onBeforeUnmount } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
+
+const update = percentage => loadingBar.update(percentage);
+onBeforeUnmount(() => loadingBar.destroy());
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExButton @click="update(0)">0%</ExButton>
+    <ExButton @click="update(25)">25%</ExButton>
+    <ExButton @click="update(50)">50%</ExButton>
+    <ExButton @click="update(75)">75%</ExButton>
+    <ExButton @click="update(100)">100%</ExButton>
+  </div>
+</template>
 ```
 
 :::
@@ -94,8 +138,32 @@ loadingBar.update(100);
 ::: details 查看示例代码
 
 ```vue
-import { loadingBar } from 'vue-ex-ui'; loadingBar.config({ height: 5, zIndex: 1200, color:
-percentage => (percentage < 50 ? '#29abe2' : '#10b981'), });
+<script setup>
+import { onBeforeUnmount } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
+
+const useCustomAppearance = () => {
+  loadingBar.config({ color: '#ff007f', height: 5, zIndex: 1200 });
+  loadingBar.start();
+};
+const resetAppearance = () => {
+  loadingBar.config({ color: undefined, height: 3, zIndex: undefined });
+  loadingBar.destroy();
+};
+onBeforeUnmount(() => loadingBar.destroy());
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExButton
+      type="primary"
+      @click="useCustomAppearance"
+    >
+      应用配置并开始
+    </ExButton>
+    <ExButton @click="resetAppearance">恢复默认并清理</ExButton>
+  </div>
+</template>
 ```
 
 :::
@@ -106,16 +174,38 @@ percentage => (percentage < 50 ? '#29abe2' : '#10b981'), });
 
 需要隔离多个应用或微前端的状态时，使用 `createLoadingBar()`。销毁后同一服务仍可重新使用。
 
+::: raw
+<div class="demo-container">
+  <ex-button @click="routeLoadingBar.start()">开始独立服务</ex-button>
+  <ex-button @click="routeLoadingBar.update(60)">独立进度 60%</ex-button>
+  <ex-button @click="routeLoadingBar.finish()">完成独立服务</ex-button>
+  <ex-button @click="routeLoadingBar.destroy()">销毁独立服务</ex-button>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup lang="ts">
 import { onBeforeUnmount } from 'vue';
 import { createLoadingBar } from 'vue-ex-ui';
 
-const routeLoadingBar = createLoadingBar({ height: 2 });
+const routeLoadingBar = createLoadingBar({ height: 6, color: '#8b5cf6' });
 
 onBeforeUnmount(() => routeLoadingBar.destroy());
 </script>
+
+<template>
+  <div class="demo-container">
+    <ex-button @click="routeLoadingBar.start()">开始独立服务</ex-button>
+    <ex-button @click="routeLoadingBar.update(60)">独立进度 60%</ex-button>
+    <ex-button @click="routeLoadingBar.finish()">完成独立服务</ex-button>
+    <ex-button @click="routeLoadingBar.destroy()">销毁独立服务</ex-button>
+  </div>
+</template>
 ```
+
+:::
 
 安装 `ExLoadingBar` 或完整组件库后，每个 Vue App 会获得独立的 `this.$loadingBar`。在
 ConfigProvider 子树的 `setup()` 中使用 `useLoadingBarService()` 可继承主题和 z-index，
@@ -123,23 +213,59 @@ ConfigProvider 子树的 `setup()` 中使用 `useLoadingBarService()` 可继承�
 
 ## 声明式组件
 
+此示例将进度条留在局部容器中，便于同时调整进度、终态和显隐。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="visible = !visible">{{ visible ? '隐藏' : '显示' }}</ex-button>
+  <ex-button @click="percentage = Math.max(0, percentage - 20)">减少 20%</ex-button>
+  <ex-button @click="percentage = Math.min(100, percentage + 20)">增加 20%</ex-button>
+  <label>状态 <select v-model="status"><option value="loading">加载中</option><option value="success">成功</option><option value="error">失败</option><option value="warning">警告</option></select></label>
+  <p role="status">当前进度 {{ percentage }}%</p>
+  <ex-loading-bar :visible="visible" :percentage="percentage" :status="status" :height="6" aria-label="数据同步进度" style="position: relative; width: 100%;" />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { LoadingBarStatus } from 'vue-ex-ui';
 
 const visible = ref(true);
 const percentage = ref(40);
+const status = ref<LoadingBarStatus>('loading');
 </script>
 
 <template>
-  <ExLoadingBar
-    :visible="visible"
-    :percentage="percentage"
-    status="loading"
-    aria-label="数据同步进度"
-  />
+  <div class="demo-container">
+    <ex-button @click="visible = !visible">{{ visible ? '隐藏' : '显示' }}</ex-button>
+    <ex-button @click="percentage = Math.max(0, percentage - 20)">减少 20%</ex-button>
+    <ex-button @click="percentage = Math.min(100, percentage + 20)">增加 20%</ex-button>
+    <label>
+      状态
+      <select v-model="status">
+        <option value="loading">加载中</option>
+        <option value="success">成功</option>
+        <option value="error">失败</option>
+        <option value="warning">警告</option>
+      </select>
+    </label>
+    <p role="status">当前进度 {{ percentage }}%</p>
+    <ex-loading-bar
+      :visible="visible"
+      :percentage="percentage"
+      :status="status"
+      :height="6"
+      aria-label="数据同步进度"
+      style="position: relative; width: 100%;"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 路由集成
 

@@ -3,8 +3,10 @@
 悬浮出现在页面角落，显示全局的通知提醒消息。
 
 <script setup>
-import { ref } from 'vue'
+import { h, onBeforeUnmount } from 'vue'
 import { notification } from '../../src/components/notification'
+
+onBeforeUnmount(() => notification.closeAll())
 
 const showInfo = () => {
   notification.info({
@@ -39,6 +41,14 @@ const showTopLeft = () => {
     title: '左上角通知',
     content: '这条通知显示在左上角',
     position: 'top-left',
+  })
+}
+
+const showTopRight = () => {
+  notification.info({
+    title: '右上角通知',
+    content: '这条通知显示在右上角',
+    position: 'top-right',
   })
 }
 
@@ -80,6 +90,13 @@ const showHtml = () => {
     title: 'HTML 内容',
     content: '<strong>加粗文本</strong> 和 <em>斜体文本</em>',
     dangerouslyUseHTMLString: true,
+  })
+}
+
+const showVNode = () => {
+  notification.info({
+    title: '结构化内容',
+    content: h('a', { href: '#基础用法' }, '查看使用方式'),
   })
 }
 
@@ -226,7 +243,7 @@ const showError = () => {
 
 ::: raw
 <div class="demo-container">
-  <ex-button @click="showInfo">右上角（默认）</ex-button>
+  <ex-button @click="showTopRight">右上角</ex-button>
   <ex-button @click="showTopLeft">左上角</ex-button>
   <ex-button @click="showBottomRight">右下角</ex-button>
   <ex-button @click="showBottomLeft">左下角</ex-button>
@@ -246,6 +263,14 @@ const showError = () => {
 <script setup>
 import { notification } from 'vue-ex-ui';
 
+const showTopRight = () => {
+  notification.info({
+    title: '右上角通知',
+    content: '这条通知显示在右上角',
+    position: 'top-right',
+  });
+};
+
 const showTopLeft = () => {
   notification.info({
     title: '左上角通知',
@@ -261,6 +286,14 @@ const showBottomRight = () => {
     position: 'bottom-right',
   });
 };
+
+const showBottomLeft = () => {
+  notification.info({
+    title: '左下角通知',
+    content: '这条通知显示在左下角',
+    position: 'bottom-left',
+  });
+};
 </script>
 ```
 
@@ -268,7 +301,7 @@ const showBottomRight = () => {
 
 ## 自定义时长
 
-自定义通知显示时长。
+自定义通知显示时长。常驻且不显示关闭按钮的通知可以通过“关闭所有”示例清理，离开本页也会清理通知。
 
 ::: raw
 <div class="demo-container">
@@ -286,7 +319,10 @@ const showBottomRight = () => {
 </template>
 
 <script setup>
+import { onBeforeUnmount } from 'vue';
 import { notification } from 'vue-ex-ui';
+
+onBeforeUnmount(() => notification.closeAll());
 
 const showCustomDuration = () => {
   notification.info({
@@ -299,7 +335,7 @@ const showCustomDuration = () => {
 const showNonClosable = () => {
   notification.info({
     title: '不可关闭',
-    content: '这条通知不会自动关闭',
+    content: '这条通知不会自动关闭，也没有关闭按钮',
     duration: 0,
     closable: false,
   });
@@ -347,14 +383,37 @@ const showHtml = () => {
 `dangerouslyUseHTMLString` 同时使用。
 :::
 
-```ts
-import { h, notification } from 'vue-ex-ui';
+## VNode 内容
 
-notification.info({
-  title: '构建完成',
-  content: h('a', { href: '/artifacts' }, '查看产物'),
-});
+使用 Vue 的 `h` 函数创建带语义和交互的内容。链接会定位到本页的基础用法。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="showVNode">VNode 内容</ex-button>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ex-button @click="showVNode">VNode 内容</ex-button>
+</template>
+
+<script setup>
+import { h } from 'vue';
+import { notification } from 'vue-ex-ui';
+
+const showVNode = () => {
+  notification.info({
+    title: '结构化内容',
+    content: h('a', { href: '#基础用法' }, '查看使用方式'),
+  });
+};
+</script>
 ```
+
+:::
 
 ## 带回调
 
@@ -416,6 +475,8 @@ const showWithCallback = () => {
 ```vue
 <template>
   <ex-button @click="showInfo">显示通知</ex-button>
+  <ex-button @click="showSuccess">显示通知</ex-button>
+  <ex-button @click="showWarning">显示通知</ex-button>
   <ex-button
     type="danger"
     @click="closeAll"
@@ -431,6 +492,20 @@ const showInfo = () => {
   notification.info({
     title: '信息提示',
     content: '这是一条信息通知',
+  });
+};
+
+const showSuccess = () => {
+  notification.success({
+    title: '操作成功',
+    content: '您的操作已成功完成',
+  });
+};
+
+const showWarning = () => {
+  notification.warning({
+    title: '警告',
+    content: '请注意，此操作可能有风险',
   });
 };
 

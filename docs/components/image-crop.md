@@ -1,7 +1,7 @@
 # ImageCrop 图片裁剪
 
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
@@ -21,6 +21,21 @@ const latestResult = ref(null)
 const handleCrop = result => {
   latestResult.value = result
 }
+
+const ratioResult = ref(null)
+const circleResult = ref(null)
+const handleRatioCrop = result => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url)
+  ratioResult.value = { ...result, url: URL.createObjectURL(result.blob) }
+}
+const handleCircleCrop = result => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url)
+  circleResult.value = { ...result, url: URL.createObjectURL(result.blob) }
+}
+onBeforeUnmount(() => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url)
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url)
+})
 </script>
 
 ## 基础用法
@@ -83,26 +98,179 @@ const handleCrop = (result: CropResult) => {
 
 ## 固定比例
 
+拖动选区或调整大小时保持 16:9。点击“确认裁剪”可查看实际输出及像素尺寸。
+
+::: raw
+<div class="crop-demo">
+  <ex-image-crop :src="demoSource" :aspect-ratio="16 / 9" @crop="handleRatioCrop" />
+  <template v-if="ratioResult">
+    <img class="cropped-preview" :src="ratioResult.url" alt="16:9 裁剪结果" />
+    <output class="crop-result" aria-live="polite">
+      输出：{{ ratioResult.outputSize.width }} × {{ ratioResult.outputSize.height }}，{{ ratioResult.blob.size }} B
+    </output>
+  </template>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
+
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
+
+const ratioResult = ref<(CropResult & { url: string }) | null>(null);
+const handleRatioCrop = (result: CropResult) => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url);
+  ratioResult.value = { ...result, url: URL.createObjectURL(result.blob) };
+};
+onBeforeUnmount(() => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url);
+});
+</script>
+
 <template>
-  <ExImageCrop
-    :src="source"
-    :aspect-ratio="16 / 9"
-  />
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      :aspect-ratio="16 / 9"
+      @crop="handleRatioCrop"
+    />
+    <template v-if="ratioResult">
+      <img
+        class="cropped-preview"
+        :src="ratioResult.url"
+        alt="16:9 裁剪结果"
+      />
+      <output
+        class="crop-result"
+        aria-live="polite"
+      >
+        输出：{{ ratioResult.outputSize.width }} × {{ ratioResult.outputSize.height }}，{{
+          ratioResult.blob.size
+        }}
+        B
+      </output>
+    </template>
+  </div>
 </template>
+
+<style scoped>
+.crop-demo {
+  display: grid;
+  gap: 12px;
+}
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+</style>
 ```
+
+:::
 
 ## 圆形裁剪
 
+圆形选区始终为 1:1，PNG 输出保留圆外透明区域。下方预览展示真实输出图片，连续裁剪会释放上一次的预览地址。
+
+::: raw
+<div class="crop-demo">
+  <ex-image-crop :src="demoSource" shape="circle" output-type="image/png" @crop="handleCircleCrop" />
+  <template v-if="circleResult">
+    <img class="cropped-preview" :src="circleResult.url" alt="圆形 PNG 裁剪结果" />
+    <output class="crop-result" aria-live="polite">
+      输出：{{ circleResult.outputSize.width }} × {{ circleResult.outputSize.height }}，{{ circleResult.blob.type }}
+    </output>
+  </template>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
+
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
+
+const circleResult = ref<(CropResult & { url: string }) | null>(null);
+const handleCircleCrop = (result: CropResult) => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url);
+  circleResult.value = { ...result, url: URL.createObjectURL(result.blob) };
+};
+onBeforeUnmount(() => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url);
+});
+</script>
+
 <template>
-  <ExImageCrop
-    :src="avatar"
-    shape="circle"
-    output-type="image/png"
-  />
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      shape="circle"
+      output-type="image/png"
+      @crop="handleCircleCrop"
+    />
+    <template v-if="circleResult">
+      <img
+        class="cropped-preview"
+        :src="circleResult.url"
+        alt="圆形 PNG 裁剪结果"
+      />
+      <output
+        class="crop-result"
+        aria-live="polite"
+      >
+        输出：{{ circleResult.outputSize.width }} × {{ circleResult.outputSize.height }}，{{
+          circleResult.blob.type
+        }}
+      </output>
+    </template>
+  </div>
 </template>
+
+<style scoped>
+.crop-demo {
+  display: grid;
+  gap: 12px;
+}
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+</style>
 ```
+
+:::
 
 ## API
 
@@ -199,5 +367,11 @@ interface CropResult {
 .crop-result {
   color: var(--ex-color-text-secondary);
   font-size: 14px;
+}
+
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
 }
 </style>

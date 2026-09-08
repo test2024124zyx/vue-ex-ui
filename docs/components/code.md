@@ -8,11 +8,17 @@ import { ref } from 'vue'
 const code = ref(`function greet(name) {
   return \`Hello, \${name}!\`
 }`)
+const editableCode = ref(code.value)
 
 const longCode = Array.from(
   { length: 24 },
   (_, index) => `const item${index + 1} = createItem(${index + 1})`
 ).join('\n')
+const exampleCode = 'const total = [1, 2, 3].reduce((sum, value) => sum + value, 0)'
+const runResult = ref('尚未运行')
+const runExample = () => {
+  runResult.value = `运行结果：${[1, 2, 3].reduce((sum, value) => sum + value, 0)}`
+}
 </script>
 
 ## 基础用法
@@ -99,7 +105,7 @@ const code = ref(`function greet(name) {
 ::: raw
 
 <div class="vp-raw demo-container">
-  <ex-code v-model:code="code" language="javascript" line-numbers editable :tab-size="2" />
+  <ex-code v-model:code="editableCode" language="javascript" line-numbers editable :tab-size="2" />
 </div>
 :::
 
@@ -109,7 +115,7 @@ const code = ref(`function greet(name) {
 <script setup>
 import { ref } from 'vue';
 
-const code = ref(`function greet(name) {
+const editableCode = ref(`function greet(name) {
   return \`Hello, \${name}!\`
 }`);
 </script>
@@ -117,7 +123,7 @@ const code = ref(`function greet(name) {
 <template>
   <div class="vp-raw demo-container">
     <ex-code
-      v-model:code="code"
+      v-model:code="editableCode"
       language="javascript"
       line-numbers
       editable
@@ -165,16 +171,60 @@ const longCode = Array.from(
 
 ## 文件名与自定义操作
 
+自定义操作执行此处固定的求和示例，并在下方显示结果。
+
+::: raw
+<div class="vp-raw demo-container">
+  <ex-code :code="exampleCode" language="typescript" filename="example.ts">
+    <template #icon>
+      <ex-icon icon="file-text-line" />
+    </template>
+    <template #actions>
+      <ex-button size="small" @click="runExample">运行求和</ex-button>
+    </template>
+  </ex-code>
+  <p role="status">{{ runResult }}</p>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExCode :code="code" language="typescript" filename="example.ts">
-  <template #icon>
-    <ExIcon icon="file-text-line" />
-  </template>
-  <template #actions>
-    <button type="button">运行</button>
-  </template>
-</ExCode>
+<script setup>
+import { ref } from 'vue';
+
+const exampleCode = 'const total = [1, 2, 3].reduce((sum, value) => sum + value, 0)';
+const runResult = ref('尚未运行');
+const runExample = () => {
+  runResult.value = `运行结果：${[1, 2, 3].reduce((sum, value) => sum + value, 0)}`;
+};
+</script>
+
+<template>
+  <div class="vp-raw demo-container">
+    <ex-code
+      :code="exampleCode"
+      language="typescript"
+      filename="example.ts"
+    >
+      <template #icon>
+        <ex-icon icon="file-text-line" />
+      </template>
+      <template #actions>
+        <ex-button
+          size="small"
+          @click="runExample"
+        >
+          运行求和
+        </ex-button>
+      </template>
+    </ex-code>
+    <p role="status">{{ runResult }}</p>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 

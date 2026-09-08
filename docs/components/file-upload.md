@@ -3,16 +3,97 @@
 `ExFileUpload` 提供文件选择、拖拽校验、列表状态和可中止的 XHR multipart 上传。上传结果会区分成功、失败、中止和未启动。
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { compressImage } from '../../src/components/image-compress'
+import { DEMO_SERVICE_PREFIX } from '../.vitepress/demo-contract'
 
 const files = ref([])
 const uploadRef = ref()
+const manualFiles = ref([])
+const autoFiles = ref([])
+const dynamicFiles = ref([])
+const dynamicRef = ref()
+const serviceReady = ref(false)
+const serviceMessage = ref('正在检查演示服务…')
+const serviceController = new AbortController()
+const conversionController = new AbortController()
+const rejectAuto = ref(false)
+const autoAction = computed(() => `${DEMO_SERVICE_PREFIX}/upload${rejectAuto.value ? '?outcome=error' : ''}`)
+const autoStatus = ref('选择文件后自动发送。')
+const manualStatus = ref('选择文件后点击开始上传。')
+const dynamicStatus = ref('选择文件后先解析上传配置，可在解析或传输期间中止。')
+const tickets = new WeakMap()
+
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: serviceController.signal })
+    const ready = response.ok && (await response.json()).demo === true
+    if (serviceController.signal.aborted) return
+    serviceReady.value = ready
+  } catch {
+    if (serviceController.signal.aborted) return
+    serviceReady.value = false
+  }
+  serviceMessage.value = serviceReady.value
+    ? '演示服务已连接。仅接收测试文件并返回大小与摘要，不保存文件。'
+    : '演示服务不可用。请在仓库运行 npm run docs:dev 或 npm run docs:preview 后重试。'
+})
+onBeforeUnmount(() => { serviceController.abort(); conversionController.abort() })
+
+const getTicket = signal => {
+  if (!tickets.has(signal)) {
+    tickets.set(signal, fetch(`${DEMO_SERVICE_PREFIX}/ticket`, { signal }).then(response => {
+      if (!response.ok) throw new Error(`配置解析失败：HTTP ${response.status}`)
+      return response.json()
+    }))
+  }
+  return tickets.get(signal)
+}
+const resolveAction = async (_file, { signal }) => (await getTicket(signal)).action
+const resolveHeaders = async (_file, { signal }) => (await getTicket(signal)).headers
+const resolveData = async file => ({ filename: file.name })
+const cancelDynamic = () => { dynamicStatus.value = `已中止 ${dynamicRef.value?.abort() ?? 0} 个任务` }
+const cancelManual = () => { manualStatus.value = `已中止 ${uploadRef.value?.abort() ?? 0} 个任务` }
+const pictureFiles = ref([])
+const pictureVisible = ref(false)
+const previewFile = ref()
+const convertedFiles = ref([])
+const conversionStatus = ref('选择图片后先转换为 WebP，再加入列表。')
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const MAX_IMAGE_DIMENSION = 800
+const OUTPUT_QUALITY = 0.8
+
+const previewPicture = file => {
+  previewFile.value = file.raw
+  pictureVisible.value = Boolean(file.raw)
+}
+const removePicture = file => {
+  pictureFiles.value = pictureFiles.value.filter(item => item.uid !== file.uid)
+}
+const convertImage = async file => {
+  const result = await compressImage(file, {
+    mode: 'dimension', maxWidth: MAX_IMAGE_DIMENSION, maxHeight: MAX_IMAGE_DIMENSION,
+    outputType: 'image/webp', quality: OUTPUT_QUALITY, signal: conversionController.signal,
+  })
+  return new File([result.blob], `${file.name.replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp' })
+}
+const reportConversion = file => {
+  conversionStatus.value = `${file.name} · ${file.type} · ${file.size} 字节`
+}
+const reportConversionError = rejection => {
+  conversionStatus.value = `未加入文件：${rejection.code}`
+}
 
 const submit = async () => {
   const results = await uploadRef.value?.submit()
-  console.log(results)
+  if (serviceController.signal.aborted) return
+  manualStatus.value = results?.length ? results.map(result => `${result.outcome}${result.reason ? `：${result.reason}` : ''}`).join('；') : '没有可提交的文件'
 }
 </script>
+
+网络示例使用随仓库提供的同源演示服务；分段处理用于观察进度和中止。纯静态部署需同时接入该服务，或将示例地址替换为自己的测试接口。
+
+<p role="status">{{ serviceMessage }}</p>
 
 ## 选择文件
 
@@ -55,51 +136,168 @@ const files = ref<UploadFile[]>([]);
 
 ## 自动上传
 
+::: raw
+<div class="demo-container">
+  <label><input v-model="rejectAuto" type="checkbox" /> 演示服务端拒绝（HTTP 422）</label>
+  <ex-file-upload
+    v-model:file-list="autoFiles"
+    :action="autoAction"
+    :disabled="!serviceReady"
+    :max-file-size="MAX_IMAGE_BYTES"
+    @progress="file => (autoStatus = `上传进度：${file.percent}%`)"
+    @success="response => (autoStatus = JSON.stringify(response))"
+    @error="error => (autoStatus = error.message)"
+  />
+  <output aria-live="polite">{{ autoStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFileUpload
-  v-model:file-list="files"
-  action="/api/files"
-  method="POST"
-  :headers="{ Authorization: token }"
-  :data="{ folderId }"
-  :timeout="30_000"
-  @progress="handleProgress"
-  @success="handleSuccess"
-  @error="handleError"
-/>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const autoFiles = ref([]);
+const rejectAuto = ref(false);
+const autoStatus = ref('选择文件后自动发送。');
+const serviceReady = ref(false);
+const controller = new AbortController();
+const autoAction = computed(
+  () => `${DEMO_SERVICE_PREFIX}/upload${rejectAuto.value ? '?outcome=error' : ''}`
+);
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) autoStatus.value = '演示服务不可用';
+  } catch {
+    if (controller.signal.aborted) return;
+    autoStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
+</script>
+
+<template>
+  <div class="demo-container">
+    <label>
+      <input
+        v-model="rejectAuto"
+        type="checkbox"
+      />
+      演示服务端拒绝（HTTP 422）
+    </label>
+    <ex-file-upload
+      v-model:file-list="autoFiles"
+      :action="autoAction"
+      :disabled="!serviceReady"
+      :max-file-size="MAX_IMAGE_BYTES"
+      @progress="file => (autoStatus = `上传进度：${file.percent}%`)"
+      @success="response => (autoStatus = JSON.stringify(response))"
+      @error="error => (autoStatus = error.message)"
+    />
+    <output aria-live="polite">{{ autoStatus }}</output>
+  </div>
+</template>
 ```
+
+:::
 
 只有 HTTP 2xx 响应会触发 `success`。HTTP 状态错误、网络错误、超时、配置错误和响应解析错误都会产生 `ExFileUploadError`。
 
 ## 手动上传与结果
 
-```vue
-<template>
-  <ExFileUpload
+::: raw
+<div class="demo-container">
+  <ex-file-upload
     ref="uploadRef"
-    v-model:file-list="files"
-    action="/api/files"
+    v-model:file-list="manualFiles"
+    :action="`${DEMO_SERVICE_PREFIX}/upload`"
+    :disabled="!serviceReady"
     :auto-upload="false"
+    :max-file-size="MAX_IMAGE_BYTES"
     multiple
   />
-  <ExButton @click="submit">开始上传</ExButton>
-</template>
+  <ex-button :disabled="!serviceReady" @click="submit">开始上传</ex-button>
+  <ex-button :disabled="!serviceReady" @click="cancelManual">中止上传</ex-button>
+  <output aria-live="polite">{{ manualStatus }}</output>
+</div>
+:::
 
-<script setup lang="ts">
-import { ref } from 'vue';
-import type { ExFileUploadExposed, UploadFile } from 'vue-ex-ui';
+::: details 查看示例代码
 
-const uploadRef = ref<ExFileUploadExposed>();
-const files = ref<UploadFile[]>([]);
+```vue
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const uploadRef = ref();
+const manualFiles = ref([]);
+const manualStatus = ref('选择文件后点击开始上传。');
+const serviceReady = ref(false);
+const controller = new AbortController();
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) manualStatus.value = '演示服务不可用';
+  } catch {
+    if (controller.signal.aborted) return;
+    manualStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
 const submit = async () => {
   const results = await uploadRef.value?.submit();
-  for (const result of results ?? []) {
-    if (result.outcome === 'error') console.error(result.error);
-  }
+  if (controller.signal.aborted) return;
+  manualStatus.value = results?.length
+    ? results
+        .map(result => `${result.outcome}${result.reason ? `：${result.reason}` : ''}`)
+        .join('；')
+    : '没有可提交的文件';
+};
+const cancelManual = () => {
+  manualStatus.value = `已中止 ${uploadRef.value?.abort() ?? 0} 个任务`;
 };
 </script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-upload
+      ref="uploadRef"
+      v-model:file-list="manualFiles"
+      :action="`${DEMO_SERVICE_PREFIX}/upload`"
+      :disabled="!serviceReady"
+      :auto-upload="false"
+      :max-file-size="MAX_IMAGE_BYTES"
+      multiple
+    />
+    <ex-button
+      :disabled="!serviceReady"
+      @click="submit"
+    >
+      开始上传
+    </ex-button>
+    <ex-button
+      :disabled="!serviceReady"
+      @click="cancelManual"
+    >
+      中止上传
+    </ex-button>
+    <output aria-live="polite">{{ manualStatus }}</output>
+  </div>
+</template>
 ```
+
+:::
 
 没有 `action`、缺少原始 `File` 或文件不是 `ready` 状态时，`submit()` 返回 `ignored`，不会伪装为已上传。
 
@@ -111,40 +309,164 @@ const submit = async () => {
 
 `action`、`headers` 和 `data` 都可按文件异步解析。解析器会收到与 XHR 共用的 `AbortSignal`。
 
+::: raw
+<div class="demo-container">
+  <ex-file-upload
+    ref="dynamicRef"
+    v-model:file-list="dynamicFiles"
+    :disabled="!serviceReady"
+    :action="resolveAction"
+    :headers="resolveHeaders"
+    :data="resolveData"
+    :max-file-size="MAX_IMAGE_BYTES"
+    @success="response => (dynamicStatus = JSON.stringify(response))"
+    @error="error => (dynamicStatus = error.message)"
+  />
+  <ex-button :disabled="!serviceReady" @click="cancelDynamic">中止配置解析或传输</ex-button>
+  <output aria-live="polite">{{ dynamicStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFileUpload v-model:file-list="files" :action="resolveAction" :headers="resolveHeaders" />
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const dynamicFiles = ref([]);
+const dynamicRef = ref();
+const dynamicStatus = ref('选择文件后先解析上传配置，可在解析或传输期间中止。');
+const serviceReady = ref(false);
+const controller = new AbortController();
+const tickets = new WeakMap();
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) dynamicStatus.value = '演示服务不可用';
+  } catch {
+    if (controller.signal.aborted) return;
+    dynamicStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
+const getTicket = signal => {
+  if (!tickets.has(signal)) {
+    tickets.set(
+      signal,
+      fetch(`${DEMO_SERVICE_PREFIX}/ticket`, { signal }).then(response => {
+        if (!response.ok) throw new Error(`配置解析失败：HTTP ${response.status}`);
+        return response.json();
+      })
+    );
+  }
+  return tickets.get(signal);
+};
+const resolveAction = async (_file, { signal }) => (await getTicket(signal)).action;
+const resolveHeaders = async (_file, { signal }) => (await getTicket(signal)).headers;
+const resolveData = async file => ({ filename: file.name });
+const cancelDynamic = () => {
+  dynamicStatus.value = `已中止 ${dynamicRef.value?.abort() ?? 0} 个任务`;
+};
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-upload
+      ref="dynamicRef"
+      v-model:file-list="dynamicFiles"
+      :disabled="!serviceReady"
+      :action="resolveAction"
+      :headers="resolveHeaders"
+      :data="resolveData"
+      :max-file-size="MAX_IMAGE_BYTES"
+      @success="response => (dynamicStatus = JSON.stringify(response))"
+      @error="error => (dynamicStatus = error.message)"
+    />
+    <ex-button
+      :disabled="!serviceReady"
+      @click="cancelDynamic"
+    >
+      中止配置解析或传输
+    </ex-button>
+    <output aria-live="polite">{{ dynamicStatus }}</output>
+  </div>
+</template>
 ```
 
-```ts
-const resolveAction = async (file, { signal }) => {
-  const response = await fetch(`/api/upload-ticket?name=${encodeURIComponent(file.name)}`, {
-    signal,
-  });
-  return (await response.json()).uploadUrl;
-};
-
-const resolveHeaders = async (_file, { signal }) => {
-  const token = await getUploadToken({ signal });
-  return { Authorization: `Bearer ${token}` };
-};
-```
+:::
 
 调用 `abort(fileOrUid)` 可在动态配置解析或 XHR 传输阶段中止任务，并返回真实中止数量。中止后的文件恢复为 `ready`，可以再次提交。
 
 ## 拖拽和图片列表
 
+这些图片仅在当前页面选择、预览和移除，不发起上传。各示例使用独立列表。
+
+::: raw
+<div class="demo-container">
+  <ex-file-upload
+    v-model:file-list="pictureFiles"
+    :auto-upload="false"
+    drag
+    multiple
+    list-type="picture-card"
+    accept="image/*"
+    :limit="8"
+    :max-file-size="MAX_IMAGE_BYTES"
+    @preview-request="previewPicture"
+    @remove-request="removePicture"
+  />
+  <ex-file-preview v-model:visible="pictureVisible" :file="previewFile" :show-download="false" />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFileUpload
-  v-model:file-list="files"
-  drag
-  multiple
-  list-type="picture-card"
-  accept="image/*"
-  :limit="8"
-  @preview-request="handlePreviewRequest"
-  @remove-request="handleRemoveRequest"
-/>
+<script setup>
+import { ref } from 'vue';
+
+const pictureFiles = ref([]);
+const pictureVisible = ref(false);
+const previewFile = ref();
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const previewPicture = file => {
+  previewFile.value = file.raw;
+  pictureVisible.value = Boolean(file.raw);
+};
+const removePicture = file => {
+  pictureFiles.value = pictureFiles.value.filter(item => item.uid !== file.uid);
+};
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-upload
+      v-model:file-list="pictureFiles"
+      :auto-upload="false"
+      drag
+      multiple
+      list-type="picture-card"
+      accept="image/*"
+      :limit="8"
+      :max-file-size="MAX_IMAGE_BYTES"
+      @preview-request="previewPicture"
+      @remove-request="removePicture"
+    />
+    <ex-file-preview
+      v-model:visible="pictureVisible"
+      :file="previewFile"
+      :show-download="false"
+    />
+  </div>
+</template>
 ```
+
+:::
 
 本地图片缩略图使用对象地址；文件移除、来源替换或组件卸载时会自动释放，不会把 base64 内容写入公开列表。
 
@@ -152,9 +474,73 @@ const resolveHeaders = async (_file, { signal }) => {
 
 `before-add` 在文件加入列表前运行。返回 `false` 会产生 `before-add` 拒绝；返回新 `File` 后，组件会对替换文件重新执行 `accept` 和大小校验；异常会保留在 `before-add-error.cause`。
 
+::: raw
+<div class="demo-container">
+  <ex-file-upload
+    v-model:file-list="convertedFiles"
+    :auto-upload="false"
+    :before-add="convertImage"
+    accept="image/*"
+    :max-file-size="MAX_IMAGE_BYTES"
+    @added="reportConversion"
+    @rejected="reportConversionError"
+  />
+  <output aria-live="polite">{{ conversionStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExFileUpload v-model:file-list="files" :before-add="compressImage" accept="image/*" />
+<script setup>
+import { ref, onBeforeUnmount } from 'vue';
+import { compressImage } from 'vue-ex-ui';
+
+const convertedFiles = ref([]);
+const conversionStatus = ref('选择图片后先转换为 WebP，再加入列表。');
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 800;
+const OUTPUT_QUALITY = 0.8;
+const conversionController = new AbortController();
+onBeforeUnmount(() => conversionController.abort());
+const convertImage = async file => {
+  const result = await compressImage(file, {
+    mode: 'dimension',
+    maxWidth: MAX_IMAGE_DIMENSION,
+    maxHeight: MAX_IMAGE_DIMENSION,
+    outputType: 'image/webp',
+    quality: OUTPUT_QUALITY,
+    signal: conversionController.signal,
+  });
+  return new File([result.blob], `${file.name.replace(/\.[^.]+$/, '')}.webp`, {
+    type: 'image/webp',
+  });
+};
+const reportConversion = file => {
+  conversionStatus.value = `${file.name} · ${file.type} · ${file.size} 字节`;
+};
+const reportConversionError = rejection => {
+  conversionStatus.value = `未加入文件：${rejection.code}`;
+};
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-upload
+      v-model:file-list="convertedFiles"
+      :auto-upload="false"
+      :before-add="convertImage"
+      accept="image/*"
+      :max-file-size="MAX_IMAGE_BYTES"
+      @added="reportConversion"
+      @rejected="reportConversionError"
+    />
+    <output aria-live="polite">{{ conversionStatus }}</output>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 
@@ -238,10 +624,18 @@ const resolveHeaders = async (_file, { signal }) => {
 
 <style scoped>
 .demo-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin: 16px 0;
   padding: 24px;
   background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+}
+
+output {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
 }
 </style>

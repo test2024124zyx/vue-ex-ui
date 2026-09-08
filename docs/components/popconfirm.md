@@ -3,16 +3,31 @@
 点击元素，弹出气泡式的确认框。
 
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount } from 'vue'
 
-const confirmLoading = ref(false)
+const SUBMIT_DELAY_MS = 2000
+let submitTimer
+let resolveSubmit
 
-const handleConfirm = () => {
-  confirmLoading.value = true
-  setTimeout(() => {
-    confirmLoading.value = false
-  }, 2000)
+// 模拟提交请求；组件在 Promise 完成前保持打开并显示加载状态。
+const beforeSubmit = () => {
+  // 气泡关闭后再次提交时，先结束上一轮模拟请求。
+  clearTimeout(submitTimer)
+  resolveSubmit?.(false)
+  return new Promise(resolve => {
+    resolveSubmit = resolve
+    submitTimer = setTimeout(() => {
+      submitTimer = undefined
+      resolveSubmit = undefined
+      resolve(true)
+    }, SUBMIT_DELAY_MS)
+  })
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(submitTimer)
+  resolveSubmit?.(false)
+})
 
 const beforeConfirm = () => {
   // 使用浏览器原生确认对话框进行二次确认
@@ -431,15 +446,14 @@ const beforeConfirm = () => {
 
 ## 确认加载状态
 
-通过 `confirmLoading` 属性可以让确认按钮处于加载状态。
+`before-confirm` 返回 Promise 时，组件会保持气泡打开并自动显示加载状态，成功后触发 `confirm` 并关闭。下面用两秒延时模拟提交；返回 `false` 可保留气泡。`confirm-loading` 适合由外部状态控制按钮加载，不应在 `confirm` 事件触发后才开始异步等待。
 
 ::: raw
 
 <div class="demo-container">
   <ExPopconfirm 
     title="确定要提交吗？"
-    :confirm-loading="confirmLoading"
-    @confirm="handleConfirm"
+    :before-confirm="beforeSubmit"
   >
     <ExButton type="primary">提交</ExButton>
   </ExPopconfirm>
@@ -453,24 +467,38 @@ const beforeConfirm = () => {
 <template>
   <ExPopconfirm
     title="确定要提交吗？"
-    :confirm-loading="confirmLoading"
-    @confirm="handleConfirm"
+    :before-confirm="beforeSubmit"
   >
     <ExButton type="primary">提交</ExButton>
   </ExPopconfirm>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onBeforeUnmount } from 'vue';
 
-const confirmLoading = ref(false);
+const SUBMIT_DELAY_MS = 2000;
+let submitTimer;
+let resolveSubmit;
 
-const handleConfirm = () => {
-  confirmLoading.value = true;
-  setTimeout(() => {
-    confirmLoading.value = false;
-  }, 2000);
+// 模拟提交请求；组件在 Promise 完成前保持打开并显示加载状态。
+const beforeSubmit = () => {
+  // 气泡关闭后再次提交时，先结束上一轮模拟请求。
+  clearTimeout(submitTimer);
+  resolveSubmit?.(false);
+  return new Promise(resolve => {
+    resolveSubmit = resolve;
+    submitTimer = setTimeout(() => {
+      submitTimer = undefined;
+      resolveSubmit = undefined;
+      resolve(true);
+    }, SUBMIT_DELAY_MS);
+  });
 };
+
+onBeforeUnmount(() => {
+  clearTimeout(submitTimer);
+  resolveSubmit?.(false);
+});
 </script>
 ```
 

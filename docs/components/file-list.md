@@ -34,6 +34,25 @@ const searchValue = ref('')
 const sortField = ref('name')
 const sortOrder = ref('asc')
 const currentPage = ref(1)
+const actionStatus = ref('选择文件操作后，这里会显示请求内容。')
+const reportAction = (action, file) => {
+  actionStatus.value = `${action}请求：${file.name}`
+}
+
+const defaultFiles = [
+  { id: 'report', name: 'report.txt', size: 2048, type: 'text/plain', modifiedTime: '2026-07-10T09:00:00Z' },
+  { id: 'notes', name: 'notes.txt', size: 1024, type: 'text/plain', modifiedTime: '2026-07-09T09:00:00Z' },
+  { id: 'budget', name: 'budget.csv', size: 4096, type: 'text/csv', modifiedTime: '2026-07-08T09:00:00Z' },
+]
+const defaultSelection = ref(['report'])
+const pageSize = 4
+const paginationPage = ref(1)
+const paginatedFiles = Array.from({ length: 12 }, (_, index) => ({
+  id: `document-${index + 1}`,
+  name: `document-${String(index + 1).padStart(2, '0')}.txt`,
+  size: (index + 1) * 1024,
+  type: 'text/plain',
+}))
 </script>
 
 ## 基础用法
@@ -50,10 +69,11 @@ const currentPage = ref(1)
     :files="files"
     selectable
     multiple
-    @preview-request="file => console.log('preview request', file)"
-    @download-request="file => console.log('download request', file)"
-    @delete-request="file => console.log('delete request', file)"
+    @preview-request="file => reportAction('预览', file)"
+    @download-request="file => reportAction('下载', file)"
+    @delete-request="file => reportAction('删除', file)"
   />
+  <output aria-live="polite">{{ actionStatus }}</output>
 </div>
 :::
 
@@ -95,6 +115,10 @@ const searchValue = ref('');
 const sortField = ref<SortField>('name');
 const sortOrder = ref<SortOrder>('asc');
 const currentPage = ref(1);
+const actionStatus = ref('选择文件操作后，这里会显示请求内容。');
+const reportAction = (action: string, file: FileItem) => {
+  actionStatus.value = `${action}请求：${file.name}`;
+};
 </script>
 
 <template>
@@ -109,10 +133,11 @@ const currentPage = ref(1);
       :files="files"
       selectable
       multiple
-      @preview-request="file => console.log('preview request', file)"
-      @download-request="file => console.log('download request', file)"
-      @delete-request="file => console.log('delete request', file)"
+      @preview-request="file => reportAction('预览', file)"
+      @download-request="file => reportAction('下载', file)"
+      @delete-request="file => reportAction('删除', file)"
     />
+    <output aria-live="polite">{{ actionStatus }}</output>
   </div>
 </template>
 ```
@@ -121,33 +146,127 @@ const currentPage = ref(1);
 
 ## 非受控初始值
 
-```vue
-<template>
-  <ExFileList
-    :files="files"
+初始以网格展示并选中 `report.txt`。清空搜索可查看其他文件；切换视图或选择文件后，组件自行管理后续状态。下方文本仅观察选择事件，不回写控制值。
+
+::: raw
+<div class="demo-container">
+  <ex-file-list
+    :files="defaultFiles"
     default-view-mode="grid"
     :default-selected-ids="['report']"
     default-search-value="report"
     default-sort-field="modifiedTime"
     default-sort-order="desc"
     :default-current-page="1"
+    :show-actions="false"
     selectable
+    @update:selected-ids="defaultSelection = $event"
   />
+  <output aria-live="polite">已选：{{ defaultSelection.join('、') || '无' }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { FileItem } from 'vue-ex-ui';
+
+const defaultFiles: FileItem[] = [
+  {
+    id: 'report',
+    name: 'report.txt',
+    size: 2048,
+    type: 'text/plain',
+    modifiedTime: '2026-07-10T09:00:00Z',
+  },
+  {
+    id: 'notes',
+    name: 'notes.txt',
+    size: 1024,
+    type: 'text/plain',
+    modifiedTime: '2026-07-09T09:00:00Z',
+  },
+  {
+    id: 'budget',
+    name: 'budget.csv',
+    size: 4096,
+    type: 'text/csv',
+    modifiedTime: '2026-07-08T09:00:00Z',
+  },
+];
+const defaultSelection = ref(['report']);
+</script>
+
+<template>
+  <ex-file-list
+    :files="defaultFiles"
+    default-view-mode="grid"
+    :default-selected-ids="['report']"
+    default-search-value="report"
+    default-sort-field="modifiedTime"
+    default-sort-order="desc"
+    :default-current-page="1"
+    :show-actions="false"
+    selectable
+    @update:selected-ids="defaultSelection = $event"
+  />
+  <output aria-live="polite">已选：{{ defaultSelection.join('、') || '无' }}</output>
 </template>
 ```
+
+:::
 
 ## 分页
 
-```vue
-<template>
-  <ExFileList
-    v-model:current-page="currentPage"
-    :files="files"
-    :page-size="20"
+共 12 个文件，每页 4 个。页码由 `v-model:current-page` 回写，切换页码可以看到不同文件。
+
+::: raw
+<div class="demo-container">
+  <ex-file-list
+    v-model:current-page="paginationPage"
+    :files="paginatedFiles"
+    :page-size="pageSize"
+    :show-actions="false"
     show-pagination
   />
+  <output aria-live="polite">第 {{ paginationPage }} 页，共 {{ paginatedFiles.length }} 个文件</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { FileItem } from 'vue-ex-ui';
+
+const pageSize = 4;
+const paginationPage = ref(1);
+const paginatedFiles: FileItem[] = Array.from({ length: 12 }, (_, index) => ({
+  id: `document-${index + 1}`,
+  name: `document-${String(index + 1).padStart(2, '0')}.txt`,
+  size: (index + 1) * 1024,
+  type: 'text/plain',
+}));
+</script>
+
+<template>
+  <ex-file-list
+    v-model:current-page="paginationPage"
+    :files="paginatedFiles"
+    :page-size="pageSize"
+    :show-actions="false"
+    show-pagination
+  />
+  <output aria-live="polite">
+    第 {{ paginationPage }} 页，共 {{ paginatedFiles.length }} 个文件
+  </output>
 </template>
 ```
+
+:::
 
 ## Props
 

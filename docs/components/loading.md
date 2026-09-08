@@ -1,33 +1,61 @@
 # Loading 加载
 
+<script setup>
+import { onBeforeUnmount, ref } from 'vue'
+import { createLoadingService, destroyLoading, hideLoading, showLoading } from '../../src/components/loading'
+
+const visible = ref(false)
+const closeCount = ref(0)
+const busy = ref(false)
+const syncing = ref(false)
+const serviceTarget = ref()
+const serviceStatus = ref('尚未创建实例')
+const imageLoading = createLoadingService({ type: 'pulse' })
+let request
+const startLocal = () => {
+  if (!serviceTarget.value) return
+  request?.destroy()
+  request = imageLoading.show({ target: serviceTarget.value, text: '刷新内容' })
+  serviceStatus.value = '局部实例已显示'
+}
+const updateLocal = () => {
+  if (!request) return
+  request.updateConfig({ type: 'dots', text: '正在同步最新内容' })
+  serviceStatus.value = '配置已更新'
+}
+const hideLocal = () => { if (!request) return; request.hide(); serviceStatus.value = '局部实例已隐藏' }
+const resumeLocal = () => { if (!request) return; request.show(); serviceStatus.value = '局部实例已恢复' }
+const destroyLocal = () => {
+  imageLoading.destroyAll()
+  request = undefined
+  serviceStatus.value = '局部实例已销毁'
+}
+const showSingleton = () => showLoading({ text: '提交中，点击遮罩关闭', maskClosable: true })
+onBeforeUnmount(() => { imageLoading.destroyAll(); destroyLoading() })
+</script>
+
 ## 局部加载
 
 目标容器会在浮层显示期间自动获得定位上下文。
 
 ::: raw
 <div id="loading-basic" style="height: 180px; background: var(--ex-color-bg-tertiary); border-radius: var(--ex-radius-base);"></div>
-<ExLoading target="#loading-basic" text="正在加载数据" />
+<ex-loading target="#loading-basic" text="正在加载数据" />
 :::
 
 ::: details 查看示例代码
 
 ```vue
 <template>
-  <section
-    ref="target"
-    class="content"
-  ></section>
-  <ExLoading
-    :target="target"
+  <div
+    id="loading-basic"
+    style="height: 180px; background: var(--ex-color-bg-tertiary); border-radius: var(--ex-radius-base);"
+  ></div>
+  <ex-loading
+    target="#loading-basic"
     text="正在加载数据"
   />
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-
-const target = ref<HTMLElement>();
-</script>
 ```
 
 :::
@@ -43,105 +71,284 @@ const target = ref<HTMLElement>();
   <div id="loading-neon" style="height: 120px; background: var(--ex-color-bg-tertiary);"></div>
 </div>
 
-<ExLoading target="#loading-spinner" type="spinner" text="Spinner" />
-<ExLoading target="#loading-dots" type="dots" text="Dots" />
-<ExLoading target="#loading-pulse" type="pulse" text="Pulse" />
-<ExLoading target="#loading-bars" type="bars" text="Bars" />
-<ExLoading target="#loading-neon" type="neon" text="Neon" />
+<ex-loading target="#loading-spinner" type="spinner" text="Spinner" />
+<ex-loading target="#loading-dots" type="dots" text="Dots" />
+<ex-loading target="#loading-pulse" type="pulse" text="Pulse" />
+<ex-loading target="#loading-bars" type="bars" text="Bars" />
+<ex-loading target="#loading-neon" type="neon" text="Neon" />
 :::
 
 ::: details 查看示例代码
 
 ```vue
-<ExLoading type="spinner" />
-<ExLoading type="dots" />
-<ExLoading type="pulse" />
-<ExLoading type="bars" />
-<ExLoading type="neon" />
+<template>
+  <div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"
+  >
+    <div
+      id="loading-spinner"
+      style="height: 120px; background: var(--ex-color-bg-tertiary);"
+    ></div>
+    <div
+      id="loading-dots"
+      style="height: 120px; background: var(--ex-color-bg-tertiary);"
+    ></div>
+    <div
+      id="loading-pulse"
+      style="height: 120px; background: var(--ex-color-bg-tertiary);"
+    ></div>
+    <div
+      id="loading-bars"
+      style="height: 120px; background: var(--ex-color-bg-tertiary);"
+    ></div>
+    <div
+      id="loading-neon"
+      style="height: 120px; background: var(--ex-color-bg-tertiary);"
+    ></div>
+  </div>
+  <ex-loading
+    target="#loading-spinner"
+    type="spinner"
+    text="Spinner"
+  />
+  <ex-loading
+    target="#loading-dots"
+    type="dots"
+    text="Dots"
+  />
+  <ex-loading
+    target="#loading-pulse"
+    type="pulse"
+    text="Pulse"
+  />
+  <ex-loading
+    target="#loading-bars"
+    type="bars"
+    text="Bars"
+  />
+  <ex-loading
+    target="#loading-neon"
+    type="neon"
+    text="Neon"
+  />
+</template>
 ```
 
 :::
 
 ## 尺寸与颜色
 
-```vue
-<ExLoading size="small" color="#29abe2" />
-<ExLoading size="medium" color="#ff3bd1" />
-<ExLoading size="large" />
-```
+::: raw
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+  <div id="loading-small" style="height: 140px;"></div>
+  <div id="loading-medium" style="height: 140px;"></div>
+  <div id="loading-large" style="height: 140px;"></div>
+</div>
+<ex-loading target="#loading-small" size="small" color="#29abe2" text="小号蓝色" />
+<ex-loading target="#loading-medium" size="medium" color="#ff3bd1" text="中号粉色" />
+<ex-loading target="#loading-large" size="large" text="大号主题色" />
+:::
 
-## 受控全屏加载
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExButton @click="visible = true">开始处理</ExButton>
-  <ExLoading
+  <div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"
+  >
+    <div
+      id="loading-small"
+      style="height: 140px;"
+    ></div>
+    <div
+      id="loading-medium"
+      style="height: 140px;"
+    ></div>
+    <div
+      id="loading-large"
+      style="height: 140px;"
+    ></div>
+  </div>
+  <ex-loading
+    target="#loading-small"
+    size="small"
+    color="#29abe2"
+    text="小号蓝色"
+  />
+  <ex-loading
+    target="#loading-medium"
+    size="medium"
+    color="#ff3bd1"
+    text="中号粉色"
+  />
+  <ex-loading
+    target="#loading-large"
+    size="large"
+    text="大号主题色"
+  />
+</template>
+```
+
+:::
+
+## 受控全屏加载
+
+点击按钮打开全屏加载，点击遮罩关闭。
+
+::: raw
+<ex-button @click="visible = true">开始处理</ex-button>
+<ex-loading v-model:visible="visible" fullscreen mask-closable type="neon" text="正在处理，点击遮罩关闭" @close="closeCount++" />
+<p role="status">用户已关闭 {{ closeCount }} 次</p>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ex-button @click="visible = true">开始处理</ex-button>
+  <ex-loading
     v-model:visible="visible"
     fullscreen
     mask-closable
     type="neon"
-    text="正在处理"
-    @close="handleClose"
+    text="正在处理，点击遮罩关闭"
+    @close="closeCount++"
   />
+  <p role="status">用户已关闭 {{ closeCount }} 次</p>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 
 const visible = ref(false);
-const handleClose = () => {
-  // 记录由用户发起的关闭。
-};
+const closeCount = ref(0);
 </script>
 ```
 
-`mask="false"` 时浮层不拦截底层交互，也不会锁定页面滚动。
+:::
+
+`:mask="false"` 时浮层不拦截底层交互，也不会锁定页面滚动。
 
 ## 自定义内容
 
-```vue
-<ExLoading text="资源加载中">
+::: raw
+<div id="loading-custom" style="height: 180px;"></div>
+<ex-loading target="#loading-custom" text="资源加载中">
   <template #spinner>
-    <ExIcon icon="loader-4-line" :size="40" />
+    <ex-icon icon="loader-4-line" :size="40" />
   </template>
   正在准备资源
-</ExLoading>
+</ex-loading>
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div
+    id="loading-custom"
+    style="height: 180px;"
+  ></div>
+  <ex-loading
+    target="#loading-custom"
+    text="资源加载中"
+  >
+    <template #spinner>
+      <ex-icon
+        icon="loader-4-line"
+        :size="40"
+      />
+    </template>
+    正在准备资源
+  </ex-loading>
+</template>
 ```
+
+:::
 
 ## 服务
 
 未提供 `target` 时创建全屏实例；局部实例必须提供当前文档中的目标元素或有效选择器。
 
-```ts
-import {
-  createLoadingService,
-  destroyLoading,
-  hideLoading,
-  loadingService,
-  showLoading,
-} from 'vue-ex-ui';
+::: raw
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+  <ex-button @click="startLocal">创建局部实例</ex-button>
+  <ex-button @click="updateLocal">更新配置</ex-button>
+  <ex-button @click="hideLocal">隐藏</ex-button>
+  <ex-button @click="resumeLocal">恢复</ex-button>
+  <ex-button @click="destroyLocal">销毁局部实例</ex-button>
+  <ex-button @click="showSingleton">显示全屏单例</ex-button>
+  <ex-button @click="hideLoading">隐藏单例</ex-button>
+</div>
+<div ref="serviceTarget" style="height: 180px; margin-top: 12px;">局部服务目标区域</div>
+<p role="status">{{ serviceStatus }}</p>
+:::
 
-const request = loadingService.show({ text: '请求中' });
-request.updateConfig({ type: 'dots', text: '仍在处理' });
-request.hide();
-request.show();
-request.close();
+::: details 查看示例代码
 
-const local = loadingService.show({ target: '#content', text: '刷新内容' });
-local.destroy();
+```vue
+<script setup>
+import { onBeforeUnmount, ref } from 'vue';
+import { createLoadingService, destroyLoading, hideLoading, showLoading } from 'vue-ex-ui';
 
-// 单例会复用当前实例并同步最新配置。
-showLoading({ text: '提交中' });
-showLoading({ type: 'bars', text: '正在确认' });
-hideLoading();
-destroyLoading();
+const serviceTarget = ref();
+const serviceStatus = ref('尚未创建实例');
+const imageLoading = createLoadingService({ type: 'pulse' });
+let request;
+const startLocal = () => {
+  if (!serviceTarget.value) return;
+  request?.destroy();
+  request = imageLoading.show({ target: serviceTarget.value, text: '刷新内容' });
+  serviceStatus.value = '局部实例已显示';
+};
+const updateLocal = () => {
+  if (!request) return;
+  request.updateConfig({ type: 'dots', text: '正在同步最新内容' });
+  serviceStatus.value = '配置已更新';
+};
+const hideLocal = () => {
+  if (!request) return;
+  request.hide();
+  serviceStatus.value = '局部实例已隐藏';
+};
+const resumeLocal = () => {
+  if (!request) return;
+  request.show();
+  serviceStatus.value = '局部实例已恢复';
+};
+const destroyLocal = () => {
+  imageLoading.destroyAll();
+  request = undefined;
+  serviceStatus.value = '局部实例已销毁';
+};
+const showSingleton = () => showLoading({ text: '提交中，点击遮罩关闭', maskClosable: true });
+onBeforeUnmount(() => {
+  imageLoading.destroyAll();
+  destroyLoading();
+});
+</script>
 
-// 独立服务拥有独立的实例集合与默认值。
-const imageLoading = createLoadingService({ type: 'pulse', mask: false });
-imageLoading.show({ target: '#gallery' });
-imageLoading.hideAll();
-imageLoading.destroyAll();
+<template>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <ex-button @click="startLocal">创建局部实例</ex-button>
+    <ex-button @click="updateLocal">更新配置</ex-button>
+    <ex-button @click="hideLocal">隐藏</ex-button>
+    <ex-button @click="resumeLocal">恢复</ex-button>
+    <ex-button @click="destroyLocal">销毁局部实例</ex-button>
+    <ex-button @click="showSingleton">显示全屏单例</ex-button>
+    <ex-button @click="hideLoading">隐藏单例</ex-button>
+  </div>
+  <div
+    ref="serviceTarget"
+    style="height: 180px; margin-top: 12px;"
+  >
+    局部服务目标区域
+  </div>
+  <p role="status">{{ serviceStatus }}</p>
+</template>
 ```
+
+:::
 
 在 ConfigProvider 子树的 `setup()` 中调用 `useLoadingService()`，实例会继承最近的语言、
 主题与 z-index，并随 Provider 卸载清理。直接导入的 `loadingService` 是模块级便捷单例；
@@ -151,17 +358,42 @@ imageLoading.destroyAll();
 
 完整安装组件库后可使用指令。对象绑定会在更新时同步配置。
 
+::: raw
+<ex-button @click="busy = !busy">{{ busy ? '停止加载' : '布尔绑定加载' }}</ex-button>
+<ex-button @click="syncing = !syncing">{{ syncing ? '停止同步' : '对象绑定同步' }}</ex-button>
+<section v-loading="busy" style="height: 140px; margin-top: 12px;">布尔绑定目标</section>
+<section v-loading="{ loading: syncing, config: { type: 'dots', text: '同步中', mask: true } }" style="height: 140px; margin-top: 12px;">对象绑定目标</section>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const busy = ref(false);
+const syncing = ref(false);
+</script>
+
 <template>
-  <section v-loading="busy"></section>
+  <ex-button @click="busy = !busy">{{ busy ? '停止加载' : '布尔绑定加载' }}</ex-button>
+  <ex-button @click="syncing = !syncing">{{ syncing ? '停止同步' : '对象绑定同步' }}</ex-button>
   <section
-    v-loading="{
-      loading: syncing,
-      config: { type: 'dots', text: '同步中', mask: true },
-    }"
-  ></section>
+    v-loading="busy"
+    style="height: 140px; margin-top: 12px;"
+  >
+    布尔绑定目标
+  </section>
+  <section
+    v-loading="{ loading: syncing, config: { type: 'dots', text: '同步中', mask: true } }"
+    style="height: 140px; margin-top: 12px;"
+  >
+    对象绑定目标
+  </section>
 </template>
 ```
+
+:::
 
 ## API
 

@@ -7,6 +7,10 @@ import { ref } from 'vue'
 
 const activeNames = ref(['profile'])
 const activeName = ref('profile')
+const borderlessNames = ref(['enabled'])
+const extraNames = ref(['notice'])
+const managingNotice = ref(false)
+const receiveNotice = ref(true)
 </script>
 
 ## 基础用法
@@ -125,15 +129,17 @@ const activeName = ref('profile');
 ::: raw
 
 <div class="demo-container">
-  <ExCollapse v-model="activeNames">
+  <ExCollapse v-model="extraNames">
     <ExCollapseItem name="notice">
       <template #title>通知设置</template>
       <template #extra>
-        <ExButton size="small" text>管理</ExButton>
+        <ExButton size="small" text @click="managingNotice = !managingNotice">{{ managingNotice ? '结束管理' : '管理' }}</ExButton>
       </template>
       通知设置内容。
     </ExCollapseItem>
   </ExCollapse>
+  <label v-if="managingNotice"><input v-model="receiveNotice" type="checkbox" /> 接收通知</label>
+  <p role="status">通知{{ receiveNotice ? '已开启' : '已关闭' }}</p>
 </div>
 
 :::
@@ -144,25 +150,36 @@ const activeName = ref('profile');
 <script setup>
 import { ref } from 'vue';
 
-const activeNames = ref(['profile']);
+const extraNames = ref(['notice']);
+const managingNotice = ref(false);
+const receiveNotice = ref(true);
 </script>
 
 <template>
   <div class="demo-container">
-    <ExCollapse v-model="activeNames">
+    <ExCollapse v-model="extraNames">
       <ExCollapseItem name="notice">
         <template #title>通知设置</template>
         <template #extra>
           <ExButton
             size="small"
             text
+            @click="managingNotice = !managingNotice"
           >
-            管理
+            {{ managingNotice ? '结束管理' : '管理' }}
           </ExButton>
         </template>
         通知设置内容。
       </ExCollapseItem>
     </ExCollapse>
+    <label v-if="managingNotice">
+      <input
+        v-model="receiveNotice"
+        type="checkbox"
+      />
+      接收通知
+    </label>
+    <p role="status">通知{{ receiveNotice ? '已开启' : '已关闭' }}</p>
   </div>
 </template>
 ```
@@ -171,12 +188,49 @@ const activeNames = ref(['profile']);
 
 ## 禁用与无边框
 
+::: raw
+<div class="demo-container">
+  <ex-collapse v-model="borderlessNames" :bordered="false">
+    <ex-collapse-item name="enabled" title="可用面板">此面板可以展开和收起。</ex-collapse-item>
+    <ex-collapse-item name="disabled" title="禁用面板" disabled>此面板禁止交互。</ex-collapse-item>
+  </ex-collapse>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
-<ExCollapse v-model="activeNames" :bordered="false">
-  <ExCollapseItem name="enabled" title="可用面板">内容</ExCollapseItem>
-  <ExCollapseItem name="disabled" title="禁用面板" disabled>内容</ExCollapseItem>
-</ExCollapse>
+<script setup>
+import { ref } from 'vue';
+
+const borderlessNames = ref(['enabled']);
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-collapse
+      v-model="borderlessNames"
+      :bordered="false"
+    >
+      <ex-collapse-item
+        name="enabled"
+        title="可用面板"
+      >
+        此面板可以展开和收起。
+      </ex-collapse-item>
+      <ex-collapse-item
+        name="disabled"
+        title="禁用面板"
+        disabled
+      >
+        此面板禁止交互。
+      </ex-collapse-item>
+    </ex-collapse>
+  </div>
+</template>
 ```
+
+:::
 
 ## API
 

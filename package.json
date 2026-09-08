@@ -69,7 +69,7 @@
     "typecheck": "vue-tsc -p tsconfig.json --noEmit && vue-tsc -p tsconfig.tests.json --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
+    "docs:preview": "vite preview --config docs/.vitepress/preview.config.ts",
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "verify:release": "npm run verify:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run verify:tree-shaking && npm run build && npm run verify:package && npm run docs:build && npm run audit:production",
     "prepublishOnly": "npm run verify:release",

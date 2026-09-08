@@ -8,6 +8,7 @@ const box1 = () => (typeof document !== 'undefined' ? document.getElementById('b
 const box2 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-2') : null)
 const box3 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-3') : null)
 const box4 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-4') : null)
+const shapeBox = () => (typeof document !== 'undefined' ? document.getElementById('bt-shapes') : null)
 </script>
 
 ## 基础用法
@@ -180,22 +181,63 @@ const box3 = () => (typeof document !== 'undefined' ? document.getElementById('b
 
 `shape` 支持 `circle` / `square` / `rounded`，`size` 支持 `small` / `medium` / `large`。
 
+向下滚动后，三种按钮分别出现在视口左下、中下、右下位置。点击任一个可回到此容器顶部，其他演示区域的滚动位置不会改变。
+
+::: raw
+<div class="demo-container">
+  <div id="bt-shapes" style="height: 240px; overflow: auto;">
+    <div style="height: 900px; padding: 16px;">向下滚动，比较圆形小号、圆角中号和方形大号按钮。</div>
+  </div>
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="circle" size="small" position="bottom-left" />
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="rounded" size="medium" position="bottom-center" />
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="square" size="large" position="bottom-right" />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+const shapeBox = () =>
+  typeof document !== 'undefined' ? document.getElementById('bt-shapes') : null;
+</script>
+
 <template>
-  <ExBackTop
-    shape="circle"
-    size="small"
-  />
-  <ExBackTop
-    shape="rounded"
-    size="medium"
-  />
-  <ExBackTop
-    shape="square"
-    size="large"
-  />
+  <div class="demo-container">
+    <div
+      id="bt-shapes"
+      style="height: 240px; overflow: auto;"
+    >
+      <div style="height: 900px; padding: 16px;">
+        向下滚动，比较圆形小号、圆角中号和方形大号按钮。
+      </div>
+    </div>
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="circle"
+      size="small"
+      position="bottom-left"
+    />
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="rounded"
+      size="medium"
+      position="bottom-center"
+    />
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="square"
+      size="large"
+      position="bottom-right"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 自定义图标 / 内容
 

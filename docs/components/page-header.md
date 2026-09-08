@@ -3,11 +3,20 @@
 页面顶部的标题区域，集成返回按钮、面包屑、标签、头像与操作区，并提供丰富的插槽用于深度自定义。
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const tab = ref(0)
-const onBack = () => { /* 演示用，实际可调用 history.back() */ }
-const onCrumb = (path, index) => console.log('breadcrumb:', path, index)
+const fixedHeader = ref(true)
+const backCount = ref(0)
+const onBack = () => { backCount.value++ }
+const crumbPath = ref('尚未选择面包屑')
+const onCrumb = path => { crumbPath.value = path }
+const orderTitle = ref('订单 #1024')
+const editingOrder = ref(false)
+const orderDownloadUrl = computed(() => `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify({ id: 1024, title: orderTitle.value }, null, 2))}`)
+const projectCount = ref(1)
+const tabContent = ['项目详情', '项目成员', '项目设置']
+const customBackCount = ref(0)
 
 const breadcrumb = [
   { title: '首页', path: '/' },
@@ -23,11 +32,12 @@ const avatar = { alt: 'U', size: 'medium' }
 
 ## 基础用法
 
-最简单的标题 + 副标题，可选返回按钮。
+最简单的标题 + 副标题，可选返回按钮。此处记录返回请求次数，接入路由时可在相同事件里执行导航。
 
 ::: raw
 <div class="demo-container">
   <ExPageHeader title="页面标题" subtitle="副标题说明" show-back @back="onBack" />
+  <p role="status">收到 {{ backCount }} 次返回请求</p>
 </div>
 :::
 
@@ -39,12 +49,18 @@ const avatar = { alt: 'U', size: 'medium' }
     title="页面标题"
     subtitle="副标题说明"
     show-back
-    @back="handleBack"
+    @back="onBack"
   />
+  <p role="status">收到 {{ backCount }} 次返回请求</p>
 </template>
 
 <script setup>
-const handleBack = () => history.back();
+import { ref } from 'vue';
+
+const backCount = ref(0);
+const onBack = () => {
+  backCount.value++;
+};
 </script>
 ```
 
@@ -57,22 +73,34 @@ const handleBack = () => history.back();
 ::: raw
 <div class="demo-container">
   <ExPageHeader title="详情页" :breadcrumb="breadcrumb" @breadcrumb-click="onCrumb" />
+  <p role="status">当前目标：{{ crumbPath }}</p>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const breadcrumb = [
+  { title: '首页', path: '/' },
+  { title: '列表', path: '/list' },
+  { title: '详情' },
+];
+const crumbPath = ref('尚未选择面包屑');
+const onCrumb = path => {
+  crumbPath.value = path;
+};
+</script>
+
 <template>
   <ExPageHeader
     title="详情页"
-    :breadcrumb="[
-      { title: '首页', path: '/' },
-      { title: '列表', path: '/list' },
-      { title: '详情' },
-    ]"
-    @breadcrumb-click="(path, index) => router.push(path)"
+    :breadcrumb="breadcrumb"
+    @breadcrumb-click="onCrumb"
   />
+  <p role="status">当前目标：{{ crumbPath }}</p>
 </template>
 ```
 
@@ -91,14 +119,20 @@ const handleBack = () => history.back();
 ::: details 查看示例代码
 
 ```vue
+<script setup>
+const tags = [
+  { text: '运行中', type: 'success' },
+  { text: '高优先级', type: 'danger' },
+];
+const avatar = { alt: 'U', size: 'medium' };
+</script>
+
 <template>
   <ExPageHeader
     title="用户中心"
-    :tags="[
-      { text: '运行中', type: 'success' },
-      { text: '高优先级', type: 'danger' },
-    ]"
-    :avatar="{ src: '/avatar.png', size: 'medium' }"
+    subtitle="account@example.com"
+    :tags="tags"
+    :avatar="avatar"
   />
 </template>
 ```
@@ -111,34 +145,55 @@ const handleBack = () => history.back();
 
 ::: raw
 <div class="demo-container">
-  <ExPageHeader title="订单 #1024" subtitle="2026-06-17 创建" show-back @back="onBack">
+  <ExPageHeader :title="orderTitle" subtitle="2026-06-17 创建">
     <template #extra>
-      <ExButton size="small">编辑</ExButton>
-      <ExButton size="small" type="primary">导出</ExButton>
+      <ExButton size="small" @click="editingOrder = !editingOrder">{{ editingOrder ? '完成编辑' : '编辑' }}</ExButton>
+      <a :href="orderDownloadUrl" download="order-1024.json">导出订单 JSON</a>
     </template>
   </ExPageHeader>
+  <ex-input v-if="editingOrder" v-model="orderTitle" aria-label="订单标题" />
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
+<script setup>
+import { computed, ref } from 'vue';
+
+const orderTitle = ref('订单 #1024');
+const editingOrder = ref(false);
+const orderDownloadUrl = computed(
+  () =>
+    `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify({ id: 1024, title: orderTitle.value }, null, 2))}`
+);
+</script>
+
 <template>
   <ExPageHeader
-    title="订单 #1024"
+    :title="orderTitle"
     subtitle="2026-06-17 创建"
-    show-back
   >
     <template #extra>
-      <ExButton size="small">编辑</ExButton>
       <ExButton
         size="small"
-        type="primary"
+        @click="editingOrder = !editingOrder"
       >
-        导出
+        {{ editingOrder ? '完成编辑' : '编辑' }}
       </ExButton>
+      <a
+        :href="orderDownloadUrl"
+        download="order-1024.json"
+      >
+        导出订单 JSON
+      </a>
     </template>
   </ExPageHeader>
+  <ex-input
+    v-if="editingOrder"
+    v-model="orderTitle"
+    aria-label="订单标题"
+  />
 </template>
 ```
 
@@ -155,10 +210,10 @@ const handleBack = () => history.back();
     :breadcrumb="breadcrumb"
   >
     <template #extra>
-      <ExButton size="small" type="primary">新建</ExButton>
+      <ExButton size="small" type="primary" @click="projectCount++">新建项目</ExButton>
     </template>
     <p style="margin: 0; color: var(--ex-color-text-secondary);">
-      这里是位于标题下方的补充描述内容，可放置统计信息、说明文字等。
+      当前共有 {{ projectCount }} 个项目，正在查看：{{ tabContent[tab] }}。
     </p>
     <template #footer>
       <ExTabs v-model="tab">
@@ -180,14 +235,38 @@ const handleBack = () => history.back();
 ::: details 查看示例代码
 
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const tab = ref(0);
+const projectCount = ref(1);
+const tabContent = ['项目详情', '项目成员', '项目设置'];
+const breadcrumb = [
+  { title: '首页', path: '/' },
+  { title: '列表', path: '/list' },
+  { title: '详情' },
+];
+</script>
+
 <template>
   <ExPageHeader
     title="项目概览"
     :breadcrumb="breadcrumb"
   >
-    <p>位于标题下方的补充描述内容。</p>
+    <template #extra>
+      <ExButton
+        size="small"
+        type="primary"
+        @click="projectCount++"
+      >
+        新建项目
+      </ExButton>
+    </template>
+    <p style="margin: 0; color: var(--ex-color-text-secondary);">
+      当前共有 {{ projectCount }} 个项目，正在查看：{{ tabContent[tab] }}。
+    </p>
     <template #footer>
-      <ExTabs v-model="activeTab">
+      <ExTabs v-model="tab">
         <ExTabPane
           :name="0"
           label="详情"
@@ -195,6 +274,10 @@ const handleBack = () => history.back();
         <ExTabPane
           :name="1"
           label="成员"
+        />
+        <ExTabPane
+          :name="2"
+          label="设置"
         />
       </ExTabs>
     </template>
@@ -212,7 +295,7 @@ const handleBack = () => history.back();
 <div class="demo-container">
   <ExPageHeader>
     <template #back>
-      <ExButton size="small" type="text">← 返回列表</ExButton>
+      <ExButton size="small" text @click="customBackCount++">← 返回列表</ExButton>
     </template>
     <template #title>
       <span style="color: var(--ex-color-primary);">自定义标题</span>
@@ -221,26 +304,38 @@ const handleBack = () => history.back();
       <span>带有自定义渲染的副标题</span>
     </template>
   </ExPageHeader>
+  <p role="status">自定义按钮已触发 {{ customBackCount }} 次返回请求</p>
 </div>
 :::
 
 ::: details 查看示例代码
 
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const customBackCount = ref(0);
+</script>
+
 <template>
   <ExPageHeader>
     <template #back>
       <ExButton
-        type="text"
-        @click="goBack"
+        size="small"
+        text
+        @click="customBackCount++"
       >
         ← 返回列表
       </ExButton>
     </template>
     <template #title>
-      <span class="my-title">自定义标题</span>
+      <span style="color: var(--ex-color-primary);">自定义标题</span>
+    </template>
+    <template #subtitle>
+      <span>带有自定义渲染的副标题</span>
     </template>
   </ExPageHeader>
+  <p role="status">自定义按钮已触发 {{ customBackCount }} 次返回请求</p>
 </template>
 ```
 
@@ -251,14 +346,60 @@ const handleBack = () => history.back();
 `fixed` 让页头固定在视口顶部。省略 `z-index` 时继承最近 ConfigProvider 的
 基础层级 + 20；只有需要脱离该层级体系时才显式覆盖。
 
+演示容器通过 `transform` 建立独立的固定定位区域，滚动正文时页头保持在区域顶部。关闭固定后可对比普通页头随内容滚动的行为。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="fixedHeader = !fixedHeader">{{ fixedHeader ? '关闭固定' : '开启固定' }}</ex-button>
+  <div style="transform: translateZ(0); margin-top: 16px;">
+    <div style="height: 260px; overflow: auto;">
+      <ex-page-header title="固定页头" :fixed="fixedHeader" :height="72" />
+      <div :style="{ paddingTop: fixedHeader ? '88px' : '16px', minHeight: '800px' }">
+        <p>向下滚动此区域，观察页头位置。</p>
+        <p v-for="index in 12" :key="index">正文段落 {{ index }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const fixedHeader = ref(true);
+</script>
+
 <template>
-  <ExPageHeader
-    title="固定页头"
-    fixed
-  />
+  <div class="demo-container">
+    <ex-button @click="fixedHeader = !fixedHeader">
+      {{ fixedHeader ? '关闭固定' : '开启固定' }}
+    </ex-button>
+    <div style="transform: translateZ(0); margin-top: 16px;">
+      <div style="height: 260px; overflow: auto;">
+        <ex-page-header
+          title="固定页头"
+          :fixed="fixedHeader"
+          :height="72"
+        />
+        <div :style="{ paddingTop: fixedHeader ? '88px' : '16px', minHeight: '800px' }">
+          <p>向下滚动此区域，观察页头位置。</p>
+          <p
+            v-for="index in 12"
+            :key="index"
+          >
+            正文段落 {{ index }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 ```
+
+:::
 
 ## API
 
