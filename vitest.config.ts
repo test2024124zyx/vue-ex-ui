@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'node:path';
 
@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // 独立基准使用 Node 测试运行器，不应被 Vitest 重复发现和执行。
+    exclude: [...configDefaults.exclude, 'benchmarks/**'],
     setupFiles: ['./vitest.setup.ts'],
     // 虚拟列表大数据场景在覆盖率插桩下需要更长的稳定窗口，避免误报超时。
     testTimeout: 15000,

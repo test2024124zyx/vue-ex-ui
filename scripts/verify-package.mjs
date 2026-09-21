@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { verifyBrowserBundle } from './verify-browser-bundle.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distRoot = join(projectRoot, 'dist');
@@ -179,6 +180,7 @@ try {
   });
 
   await mkdir(consumerDirectory);
+  await verifyBrowserBundle(consumerDirectory);
   const sourcePath = join(consumerDirectory, 'consumer.ts');
   const tsconfigPath = join(consumerDirectory, 'tsconfig.json');
   await writeFile(

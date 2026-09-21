@@ -33,7 +33,6 @@
     border-radius: 12px;
     background: var(--ex-color-bg-tertiary);
     @include safe-transition(all);
-    @include gpu-accelerate;
 
     // 霓虹发光效果
     &::before {
@@ -61,7 +60,6 @@
     background: var(--ex-color-white);
     box-shadow: 0 2px 4px var(--ex-color-black-alpha-20);
     @include safe-transition(all);
-    @include gpu-accelerate;
   }
 
   // ============================================================================
@@ -516,13 +514,7 @@
 .ex-switch {
   contain: layout style;
 
-  &__core {
-    @include gpu-accelerate;
-
-    &:not(:hover):not(:focus) {
-      @include remove-gpu-accelerate;
-    }
-  }
+  // 大量静止开关不预先提升图层，保留原有位移、缩放与加载动画。
 
   @include low-end-device {
     &__core {

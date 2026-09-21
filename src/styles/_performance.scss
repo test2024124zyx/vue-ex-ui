@@ -117,12 +117,9 @@
   }
 }
 
-// GPU 加速优化
+// 合成提示不覆盖业务变换，也不强制为静态元素创建三维上下文。
 @mixin gpu-accelerate {
-  transform: translateZ(0);
   will-change: transform;
-  backface-visibility: hidden;
-  perspective: 1000px;
 }
 
 // 移除 GPU 加速（动画结束后）

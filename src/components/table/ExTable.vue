@@ -161,10 +161,10 @@
               </div>
             </td>
             <td
-              v-for="(column, colIndex) in leafColumns"
+              v-for="{ column, classes, style } in bodyColumns"
               :key="column.key"
-              :class="getBodyCellClasses(column)"
-              :style="getColumnStyle(column, colIndex)"
+              :class="classes"
+              :style="style"
               :data-label="column.title"
               :title="getCellTitle(record, column, index)"
             >
@@ -252,6 +252,7 @@ import type {
   TableSortInfo,
 } from './types';
 import { useLocale } from '../../locale';
+import { useTableCells } from './use-table-cells';
 
 defineOptions({
   name: 'ExTable',
@@ -520,12 +521,17 @@ const getRowKey = (record: TableDataItem, index: number): string | number => {
   return typeof value === 'string' || typeof value === 'number' ? value : index;
 };
 
-const getCellValue = (record: TableDataItem, column: TableColumn, index = 0) => {
-  if (column.render) {
-    return column.render(record[column.dataIndex || column.key], record, index);
-  }
-  return record[column.dataIndex || column.key];
-};
+const { getCellValue, revision: cellRevision } = useTableCells(() => props.data);
+
+// 每次表格更新只按列计算样式，兼容普通列对象原地修改后触发父级更新。
+const bodyColumns = computed(() => {
+  void cellRevision.value;
+  return leafColumns.value.map((column, index) => ({
+    column,
+    classes: getBodyCellClasses(column),
+    style: getColumnStyle(column, index),
+  }));
+});
 
 const getCellTitle = (record: TableDataItem, column: TableColumn, index: number) => {
   if (!column.ellipsis) return undefined;

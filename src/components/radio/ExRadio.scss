@@ -121,7 +121,6 @@
     border-radius: 50%;
     background: var(--ex-color-white);
     @include safe-transition(all, var(--ex-motion-duration-fast));
-    @include gpu-accelerate;
   }
 
   // ============================================================================
@@ -455,13 +454,7 @@
 .ex-radio {
   contain: layout style;
 
-  &__box {
-    @include gpu-accelerate;
-
-    &:not(:hover):not(:focus) {
-      @include remove-gpu-accelerate;
-    }
-  }
+  // 静止控件不保留额外合成层，实际动画由浏览器按需处理。
 
   @include low-end-device {
     &__box {

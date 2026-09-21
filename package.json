@@ -7,12 +7,16 @@
     "dist"
   ],
   "main": "./dist/ex-ui.cjs",
-  "module": "./dist/ex-ui.js",
+  "module": "./dist/es/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/ex-ui.js",
+      "node": {
+        "import": "./dist/ex-ui.js",
+        "require": "./dist/ex-ui.cjs"
+      },
+      "import": "./dist/es/index.js",
       "require": "./dist/ex-ui.cjs"
     },
     "./style.css": "./dist/ex-ui.css",

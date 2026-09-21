@@ -10,7 +10,9 @@
     "bench:stress": "node run.mjs --rounds=1 --modes=page --cycles=30 --output=stress",
     "probe:table": "node diagnose.mjs",
     "probe:scroll": "node scroll-diagnose.mjs",
-    "probe:pack": "node pack-diagnose.mjs"
+    "probe:pack": "node pack-diagnose.mjs",
+    "build:extended": "node build-extended.mjs",
+    "bench:extended": "node run-extended.mjs"
   },
   "dependencies": {
     "ant-design-vue": "4.2.6",

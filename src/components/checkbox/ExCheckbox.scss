@@ -483,15 +483,7 @@
   // 使用 CSS containment 优化性能
   contain: layout style;
 
-  &__box {
-    // GPU 加
-    @include gpu-accelerate;
-
-    // 动画结束后移GPU 加
-    &:not(:hover):not(:focus) {
-      @include remove-gpu-accelerate;
-    }
-  }
+  // 浏览器会按实际 transform 动画进行合成，静止复选框不预先提升图层。
 
   // 低端设备优化
   @include low-end-device {
