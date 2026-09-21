@@ -168,7 +168,20 @@
               :data-label="column.title"
               :title="getCellTitle(record, column, index)"
             >
-              <div class="ex-table__cell">
+              <!-- 普通文本直接渲染到现有容器，避免按单元格分配内容组件。 -->
+              <div
+                v-if="
+                  !$slots[column.slot || `cell-${column.key}`] &&
+                  isTextContent(getCellValue(record, column, index))
+                "
+                class="ex-table__cell"
+              >
+                {{ getCellValue(record, column, index) }}
+              </div>
+              <div
+                v-else
+                class="ex-table__cell"
+              >
                 <slot
                   :name="column.slot || `cell-${column.key}`"
                   :record="record"
@@ -259,6 +272,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExTableProps>(), {
+  immutable: false,
   bordered: false,
   striped: false,
   hoverable: true,
@@ -280,6 +294,8 @@ const tableRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();
 const { t } = useLocale('table');
 const componentSize = useComponentSize(computed(() => props.size));
+// 对象和数组保留内容组件，使深层响应式更新继续局限在单元格内部。
+const isTextContent = (value: unknown) => value === null || typeof value !== 'object';
 const CellContent = ({ value }: { value: unknown }) =>
   isVNode(value)
     ? value
@@ -521,7 +537,10 @@ const getRowKey = (record: TableDataItem, index: number): string | number => {
   return typeof value === 'string' || typeof value === 'number' ? value : index;
 };
 
-const { getCellValue, revision: cellRevision } = useTableCells(() => props.data);
+const { getCellValue, revision: cellRevision } = useTableCells(
+  () => props.data,
+  () => props.immutable
+);
 
 // 每次表格更新只按列计算样式，兼容普通列对象原地修改后触发父级更新。
 const bodyColumns = computed(() => {

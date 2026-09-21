@@ -145,6 +145,12 @@ export interface ExTableProps {
   columns: TableColumn[];
   /** 表格数据 */
   data: TableDataItem[];
+  /**
+   * 显式启用不可变行缓存，默认关闭以兼容原地修改后重新传入数组。
+   * 开启后，修改普通行或其嵌套数据时须替换行对象；渲染器的外部状态须使用响应式值。
+   * 引用与显示索引未变的行复用格式化结果，换位、列配置和响应式依赖变化仍会更新。
+   */
+  immutable?: boolean;
   /** 表格尺寸 */
   size?: TableSize;
   /** 是否显示边框 */

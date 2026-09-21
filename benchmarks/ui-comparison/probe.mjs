@@ -18,7 +18,7 @@ createApp({
       await nextTick(); await frame(); await frame();
       const delta = calls - committedCalls;
       committedCalls = calls;
-      return { calls: delta, totalCalls: calls, dataRows: data.value.length,
+      return { calls: delta, totalCalls: calls, dataRows: data.value.length, columnCount: definitions.length,
         renderedCustomers: (document.body.innerText.match(/客户 \d{5}/g) || []).length,
         elements: document.querySelectorAll('*').length };
     }
@@ -28,7 +28,7 @@ createApp({
         const started = performance.now();
         data.value = data.value.map((row, index) => index === 0 ? { ...row, amount: row.amount + 1 } : row);
         await nextTick();
-        return { commitMs: performance.now() - started, ...await snapshot() };
+        return { commitMs: performance.now() - started, firstAmount: data.value[0]?.amount, ...await snapshot() };
       },
     };
     onMounted(async () => { window.__probeReady = await snapshot(); });

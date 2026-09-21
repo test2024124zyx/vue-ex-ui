@@ -31,7 +31,7 @@ export function denseControls(virtual = false) {
   };
 }
 
-export function virtualTable() {
+export function virtualTable(immutable = false) {
   const data = ref(Array.from({ length: DATA_SCALES.table }, (_, id) => ({
     id, name: `订单 ${String(id).padStart(5, '0')}`, amount: id + 100, count: id % 5,
   })));
@@ -52,6 +52,7 @@ export function virtualTable() {
     actions: {
       resetCalls: () => { renderCalls = 0; },
       updateFirst: () => { data.value[0].amount += 1; },
+      replaceFirst: () => { data.value = data.value.map((row, index) => index === 0 ? { ...row, amount: row.amount + 1 } : row); },
       updateOffscreen: () => { data.value.at(-1).amount += 1; },
       reverse: () => { data.value.reverse(); },
       shrink: () => { data.value = original.slice(0, 2); },
@@ -61,7 +62,7 @@ export function virtualTable() {
     },
     render: () => h(ExTable, { data: data.value, columns, rowKey: 'id', selectable: true,
       selectedRowKeys: selected.value, 'onUpdate:selectedRowKeys': value => { selected.value = value; },
-      virtual: true, virtualHeight: DATA_SCALES.height, rowHeight: DATA_SCALES.rowHeight }),
+      virtual: true, immutable, virtualHeight: DATA_SCALES.height, rowHeight: DATA_SCALES.rowHeight }),
   };
 }
 

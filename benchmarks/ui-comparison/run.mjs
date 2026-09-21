@@ -16,6 +16,8 @@ const { values } = parseArgs({ options: {
   cycles: { type: 'string', default: String(CONFIG.cycles) },
   output: { type: 'string', default: 'baseline' },
   theme: { type: 'string', default: 'light' },
+  immutable: { type: 'boolean', default: false },
+  compareImmutable: { type: 'boolean', default: false },
   profile: { type: 'boolean', default: false },
   network: { type: 'string', default: 'local' },
   browser: { type: 'string', default: 'chromium' },
@@ -23,6 +25,8 @@ const { values } = parseArgs({ options: {
 const rounds = Number(values.rounds);
 const cycleCount = Number(values.cycles);
 const libraries = values.libraries.split(',');
+if (values.compareImmutable) assert.deepEqual(libraries, ['exui'], '不可变模式成对对照仅支持 ExUI');
+const immutableVariants = values.compareImmutable ? [false, true] : [values.immutable];
 const modes = values.modes.split(',');
 const TRANSITION_WAIT = 400;
 const ACTION_TIMEOUT = 30000;
@@ -41,6 +45,8 @@ const manifest = {
   browserMode: values.browser, graphics,
   viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1,
   cpuThrottle: Number(values.throttle), rounds, cycleCount, theme: values.theme,
+  immutable: values.immutable,
+  immutableVariants,
   network: values.network === 'fast3g' ? { latencyMs: 150, downloadBitsPerSecond: 1600000, uploadBitsPerSecond: 750000 } : 'localhost unthrottled',
   cache: 'cold browser context, gzip localhost; warm reload measured separately',
   timing: 'commitMs includes Vue nextTick; paintMs uses two rAF and is a paint opportunity proxy, not field INP',
@@ -99,7 +105,7 @@ async function scrollTest(page) {
   });
 }
 
-async function runCase(library, mode, round) {
+async function runCase(library, mode, round, immutable) {
   const context = await browser.newContext({ viewport: manifest.viewport, deviceScaleFactor: 1, locale: 'zh-CN' });
   const page = await context.newPage();
   page.setDefaultTimeout(ACTION_TIMEOUT);
@@ -113,17 +119,18 @@ async function runCase(library, mode, round) {
     await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150,
       downloadThroughput: 1600000 / 8, uploadThroughput: 750000 / 8 });
   }
-  const record = { library, mode, round, errors };
+  const record = { library, mode, round, immutable, errors };
+  const artifactName = `${library}-${mode}${immutable ? '-immutable' : ''}`;
   try {
     if (values.profile) { await cdp.send('Profiler.enable'); await cdp.send('Profiler.start'); }
-    await page.goto(`${server.origin}/${library}/?mode=${mode}&theme=${values.theme}`, { waitUntil: 'load' });
+    await page.goto(`${server.origin}/${library}/?mode=${mode}&theme=${values.theme}&immutable=${immutable ? 1 : 0}`, { waitUntil: 'load' });
     await page.waitForFunction(() => window.__ready);
     record.initial = await page.evaluate(() => ({ ...window.__ready, observer: JSON.parse(JSON.stringify(window.__observed)),
       resources: performance.getEntriesByType('resource').map(entry => entry.toJSON()),
       navigation: performance.getEntriesByType('navigation')[0].toJSON(), elements: document.querySelectorAll('*').length }));
     record.startMetrics = metricMap(await cdp.send('Performance.getMetrics'));
     record.renderedRows = await verifyTable(page, mode, mode === 'page' ? CONFIG.pageSize : CONFIG.totalRows);
-    if (round === 0) await page.screenshot({ path: resolve(output, `${library}-${mode}.png`), fullPage: true });
+    if (round === 0) await page.screenshot({ path: resolve(output, `${artifactName}.png`), fullPage: true });
 
     process.stdout.write(`${library}/${mode}/${round}: 校验排序、筛选和选择\n`);
     await clickAction(page, 'sort', 'sort');
@@ -142,9 +149,12 @@ async function runCase(library, mode, round) {
     const checkboxSelector = { exui: '.ex-checkbox', element: '.el-checkbox', naive: '.n-checkbox', ant: '.ant-checkbox-wrapper' }[library];
     await page.locator(`[data-table] ${checkboxSelector}`).first().click();
     assert.equal((await snapshot(page)).selected.length, 1);
+    if (library === 'exui') assert.equal(await page.locator('[data-table] input[type="checkbox"]').first().isChecked(), true);
     await page.evaluate(() => window.__bench.select());
     assert.equal((await snapshot(page)).selected.length, 0);
+    if (library === 'exui') assert.equal(await page.locator('[data-table] input[type="checkbox"]').first().isChecked(), false);
     await clickAction(page, 'update', 'update');
+    if (library === 'exui') assert.equal(await page.locator('.ex-table__row').first().locator('[data-label="金额"]').innerText(), String((await snapshot(page)).first.amount));
     // 改为降序后滚到底部，验证虚拟表格确实能到达最后一条业务数据。
     await page.evaluate(() => window.__bench.sort());
     record.scroll = await scrollTest(page);
@@ -175,7 +185,7 @@ async function runCase(library, mode, round) {
     await page.waitForTimeout(TRANSITION_WAIT);
     await clickAction(page, 'validate', 'validate');
     assert.equal((await snapshot(page)).validation, '校验通过');
-    if (round === 0) await page.screenshot({ path: resolve(output, `${library}-${mode}-form.png`), fullPage: true });
+    if (round === 0) await page.screenshot({ path: resolve(output, `${artifactName}-form.png`), fullPage: true });
     await clickAction(page, 'close', 'modalClose');
     await page.waitForTimeout(TRANSITION_WAIT);
     record.heapBeforeCycles = await heap(cdp, page);
@@ -198,19 +208,19 @@ async function runCase(library, mode, round) {
     record.heapAfterUnmount = await heap(cdp, page);
     if (values.profile) {
       const { profile } = await cdp.send('Profiler.stop');
-      await writeFile(resolve(output, `${library}-${mode}-${round}.cpuprofile`), JSON.stringify(profile));
+      await writeFile(resolve(output, `${artifactName}-${round}.cpuprofile`), JSON.stringify(profile));
     }
     assert.deepEqual(errors, []);
     await page.reload({ waitUntil: 'load' });
     await page.waitForFunction(() => window.__ready);
     record.warm = await page.evaluate(() => ({ ...window.__ready, resources: performance.getEntriesByType('resource').map(entry => entry.toJSON()) }));
     results.push(record);
-    process.stdout.write(`${JSON.stringify({ library, mode, round, ready: record.initial.at, elements: record.initial.elements,
+    process.stdout.write(`${JSON.stringify({ library, mode, round, immutable, ready: record.initial.at, elements: record.initial.elements,
       heapMiB: record.heapBeforeCycles.usedSize / 1024 ** 2, cyclesDeltaKiB: (record.heapAfterCycles.usedSize - record.heapBeforeCycles.usedSize) / 1024 })}\n`);
   } catch (error) {
-    const failure = { library, mode, round, error: String(error), stack: error.stack, pageErrors: errors };
+    const failure = { library, mode, round, immutable, error: String(error), stack: error.stack, pageErrors: errors };
     failures.push(failure);
-    await page.screenshot({ path: resolve(output, `${library}-${mode}-${round}-failure.png`), fullPage: true }).catch(() => {});
+    await page.screenshot({ path: resolve(output, `${artifactName}-${round}-failure.png`), fullPage: true }).catch(() => {});
     console.error(JSON.stringify(failure));
   } finally {
     await context.close();
@@ -224,15 +234,17 @@ try {
     const ordered = libraries.map((_, index) => libraries[(index + round) % libraries.length]);
     for (const mode of modes) for (const library of ordered) {
       if (library === 'ant' && mode === 'virtual') continue;
-      await runCase(library, mode, round);
+      // 同一轮交替两种数据模式，下一轮反转次序以降低运行时段带来的偏差。
+      const variants = round % 2 === 0 ? immutableVariants : [...immutableVariants].reverse();
+      for (const immutable of variants) await runCase(library, mode, round, immutable);
     }
   }
   const summaries = [];
-  for (const mode of modes) for (const library of libraries) {
-    const samples = results.filter(item => item.library === library && item.mode === mode);
+  for (const mode of modes) for (const library of libraries) for (const immutable of immutableVariants) {
+    const samples = results.filter(item => item.library === library && item.mode === mode && item.immutable === immutable);
     if (!samples.length) continue;
     const actions = [...new Set(samples.flatMap(item => item.final.measurements.map(action => action.name)))];
-    summaries.push({ library, mode,
+    summaries.push({ library, mode, immutable,
       readyMs: summarize(samples.map(item => item.initial.at)), warmMs: summarize(samples.map(item => item.warm.at)),
       elements: summarize(samples.map(item => item.initial.elements)),
       scriptMs: summarize(samples.map(item => item.startMetrics.ScriptDuration * 1000)),

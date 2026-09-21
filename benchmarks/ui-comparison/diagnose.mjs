@@ -1,4 +1,5 @@
 import { build } from 'vite';
+import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -7,7 +8,10 @@ import { serve } from './server.mjs';
 import { CONFIG } from './workload.mjs';
 
 const root = import.meta.dirname;
-const { values } = parseArgs({ options: { output: { type: 'string', default: 'diagnostics' } } });
+const { values } = parseArgs({ options: {
+  output: { type: 'string', default: 'diagnostics' },
+  immutable: { type: 'boolean', default: false },
+} });
 const output = resolve(root, 'results', values.output);
 await mkdir(output, { recursive: true });
 const records = [];
@@ -28,11 +32,15 @@ try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     for (const virtual of [false, true]) {
       if (virtual && library === 'ant') continue;
-      await page.goto(`${server.origin}/probe-${library}/probe.html?count=${virtual ? CONFIG.virtualRows : CONFIG.totalRows}&virtual=${virtual ? 1 : 0}`);
+      await page.goto(`${server.origin}/probe-${library}/probe.html?count=${virtual ? CONFIG.virtualRows : CONFIG.totalRows}&virtual=${virtual ? 1 : 0}&immutable=${values.immutable ? 1 : 0}`);
       await page.waitForFunction(() => window.__probeReady);
       const initial = await page.evaluate(() => window.__probeReady);
       const update = await page.evaluate(() => window.__probe.updateOne());
-      records.push({ library, virtual, initial, update });
+      if (library === 'exui') {
+        assert.equal(await page.locator('.ex-table__row').first().locator('.ex-table__body-cell').nth(3).innerText(), String(update.firstAmount));
+        if (values.immutable) assert.equal(update.calls, initial.columnCount, '不可变模式应仅重算更新行的单元格');
+      }
+      records.push({ library, virtual, immutable: library === 'exui' && values.immutable, initial, update });
     }
     await page.close();
   }

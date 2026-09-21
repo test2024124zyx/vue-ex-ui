@@ -13,6 +13,8 @@ import { CONFIG } from '../workload.mjs';
 
 // 列定义保持稳定，避免基准自身制造额外的列重建开销。
 const cache = new WeakMap();
+// 模式显式进入基准 URL；默认测量继续沿用可变数据兼容路径。
+const immutable = new URLSearchParams(location.search).get('immutable') === '1';
 export default {
   name: 'Ex UI',
   virtualSupported: true,
@@ -25,7 +27,7 @@ export default {
   table(data, columns, virtual) {
     if (!cache.has(columns)) cache.set(columns, columns.map(column => ({ ...column, render: (_, row) => column.render(row) })));
     return h(ExTable, { data, columns: cache.get(columns), rowKey: 'id', maxHeight: CONFIG.viewportHeight,
-      virtual, virtualHeight: CONFIG.viewportHeight, rowHeight: CONFIG.rowHeight });
+      virtual, immutable, virtualHeight: CONFIG.viewportHeight, rowHeight: CONFIG.rowHeight });
   },
   modal: (modelValue, update, children) => h(ExModal, { modelValue, 'onUpdate:modelValue': update, title: '编辑订单资料', width: 960,
     destroyOnClose: true, showFooter: false, bodyStyle: { maxHeight: '650px', overflow: 'auto' } }, { default: children }),

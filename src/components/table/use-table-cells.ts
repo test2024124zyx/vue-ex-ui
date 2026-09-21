@@ -10,20 +10,21 @@ interface CachedCell {
   rawValue?: unknown;
   revision?: number;
   lastSeen: number;
+  immutable: boolean;
 }
 
 /** 单元格值按记录和列隔离，响应式依赖决定哪些格式化结果需要重新计算。 */
-export function useTableCells(data: () => TableDataItem[]) {
+export function useTableCells(data: () => TableDataItem[], immutable: () => boolean) {
   const revision = ref(0);
   const dataRevision = ref(0);
   let renderRevision = 0;
   const records = new Map<TableDataItem, Map<TableColumn, CachedCell>>();
 
-  // 新数组可能携带绕过响应式代理的原地修改，整体替换时必须重新验证缓存。
+  // 默认模式中，新数组可能携带绕过响应式代理的修改，必须重新验证缓存。
   watch(
     data,
     () => {
-      dataRevision.value += 1;
+      if (!immutable()) dataRevision.value += 1;
     },
     { flush: 'sync' }
   );
@@ -50,22 +51,31 @@ export function useTableCells(data: () => TableDataItem[]) {
     const field = column.dataIndex || column.key;
     const render = column.render;
     if (!render) return record[field];
+    const immutableMode = immutable();
     let cells = records.get(record);
     if (!cells) {
       cells = new Map();
       records.set(record, cells);
     }
     let cell = cells.get(column);
-    if (!cell || cell.index !== index || cell.field !== field || cell.render !== render) {
+    if (
+      !cell ||
+      cell.index !== index ||
+      cell.field !== field ||
+      cell.render !== render ||
+      cell.immutable !== immutableMode
+    ) {
       cell = {
         index,
         field,
         render,
         lastSeen: renderRevision,
+        immutable: immutableMode,
       };
-      if (isReactive(record)) {
+      if (immutableMode || isReactive(record)) {
         cell.value = computed(() => {
-          void dataRevision.value;
+          // 不可变模式跳过数组整体失效，但继续追踪渲染函数读取的响应式外部状态。
+          if (!immutableMode) void dataRevision.value;
           return render(record[field], record, index);
         });
       }

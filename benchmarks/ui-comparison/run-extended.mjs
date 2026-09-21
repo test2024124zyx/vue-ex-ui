@@ -172,7 +172,10 @@ const cases = {
     await page.screenshot({ path: resolve(output, `dense-controls${virtual ? '-virtual' : ''}.png`) });
     return { idleStyles: styles, scrollFrames: summarize(scrolling.frames) };
   },
-  async table(page) {
+  async tableImmutable(page) {
+    return cases.table(page, undefined, true);
+  },
+  async table(page, _cdp, immutable = false) {
     assert.ok(await page.locator('.ex-table__row').count() < 40);
     await run(page, 'resetCalls');
     await run(page, 'updateFirst');
@@ -181,6 +184,10 @@ const cases = {
     await run(page, 'resetCalls');
     await run(page, 'updateOffscreen');
     assert.equal((await state(page)).renderCalls, 0);
+    await run(page, 'resetCalls');
+    await run(page, 'replaceFirst');
+    assert.equal((await state(page)).renderCalls, immutable ? 1 : await page.locator('.ex-table__row').count());
+    assert.ok(await page.locator('.ex-table__row').first().innerText().then(text => text.includes('102元')));
     await page.locator('.ex-table__row .ex-checkbox').first().click();
     assert.deepEqual((await state(page)).selected, [0]);
     await run(page, 'resizeColumn');

@@ -7,7 +7,7 @@ import { themeInheritance } from './scenarios/theme-scene.mjs';
 import './style.css';
 import './extended.css';
 
-const factories = { controls: denseControls, controlsVirtual: () => denseControls(true), table: virtualTable, select: groupedSelect, tree: virtualTree, workflow: formWorkflow, themes: themeInheritance };
+const factories = { controls: denseControls, controlsVirtual: () => denseControls(true), table: virtualTable, tableImmutable: () => virtualTable(true), select: groupedSelect, tree: virtualTree, workflow: formWorkflow, themes: themeInheritance };
 const scene = new URLSearchParams(location.search).get('scene') || 'controls';
 const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
 
