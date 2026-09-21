@@ -1,0 +1,26 @@
+{
+  "name": "ex-ui-browser-comparison",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 --test-coverage-include=workload.mjs workload.test.mjs",
+    "build": "node build.mjs",
+    "bench": "node run.mjs",
+    "bench:slow": "node run.mjs --rounds=3 --modes=page --cycles=0 --throttle=4 --network=fast3g --output=slow",
+    "bench:stress": "node run.mjs --rounds=1 --modes=page --cycles=30 --output=stress",
+    "probe:table": "node diagnose.mjs",
+    "probe:scroll": "node scroll-diagnose.mjs",
+    "probe:pack": "node pack-diagnose.mjs"
+  },
+  "dependencies": {
+    "ant-design-vue": "4.2.6",
+    "element-plus": "2.14.6",
+    "naive-ui": "2.45.3",
+    "vue": "3.5.43"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.8",
+    "playwright": "1.63.0",
+    "vite": "8.2.1"
+  }
+}

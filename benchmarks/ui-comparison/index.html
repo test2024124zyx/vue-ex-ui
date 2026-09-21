@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>组件库业务性能对比</title>
+    <script>
+      // 在模块下载和组件挂载之前开始采集，保留真正的页面启动成本。
+      window.__observed = { longtasks: [], paints: [], events: [], shifts: [] };
+      for (const [type, key] of [['longtask', 'longtasks'], ['paint', 'paints'], ['event', 'events'], ['layout-shift', 'shifts']]) {
+        try {
+          new PerformanceObserver(list => window.__observed[key].push(...list.getEntries().map(entry => entry.toJSON())))
+            .observe({ type, buffered: true, durationThreshold: 16 });
+        } catch {}
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>

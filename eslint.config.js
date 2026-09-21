@@ -11,6 +11,9 @@ export default tseslint.config(
       'coverage/**',
       'docs/.vitepress/cache/**',
       'docs/.vitepress/dist/**',
+      // 独立浏览器基准的编译产物和机器采样数据不作为源代码检查。
+      'benchmarks/ui-comparison/dist/**',
+      'benchmarks/ui-comparison/results/**',
     ],
   },
   js.configs.recommended,
