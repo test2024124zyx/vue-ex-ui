@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.tests.json",
+  "compilerOptions": { "allowImportingTsExtensions": true },
+  "include": ["./*.ts", "../../src/**/*.d.ts", "../../vitest.config.ts"],
+  "exclude": ["../../node_modules", "../../dist"]
+}
