@@ -170,8 +170,8 @@ describe('v2 样式系统边界', { timeout: STYLE_COMPILATION_TIMEOUT_MS }, () 
     expect(groupCss).toContain('var(--ex-color-accent-alpha-20)');
     expect(groupCss).not.toContain('rgba(var(--ex-color-neon-');
     expect(variablesCss).toContain('--ex-avatar-spacing: 8px;');
-    expect(variablesCss).toContain('--ex-avatar-bg-icon: var(--ex-color-primary-alpha-10);');
-    expect(variablesCss).toContain('--ex-avatar-group-border-color: var(--ex-color-bg-primary);');
+    expect(css).toContain('var(--ex-avatar-bg-icon, var(--ex-color-primary-alpha-10))');
+    expect(groupCss).toContain('var(--ex-avatar-group-border-color, var(--ex-color-bg-primary))');
   });
 
   it('Button 的幽灵和文本变体保持不同的视觉契约', () => {
@@ -217,7 +217,7 @@ describe('v2 样式系统边界', { timeout: STYLE_COMPILATION_TIMEOUT_MS }, () 
     expect(css).toContain('env(safe-area-inset-top');
     expect(css).toContain('var(--ex-image-preview-fade-duration)');
     expect(css).not.toContain('transition: opacity 160ms ease');
-    expect(variablesCss).toContain('--ex-image-error-text-color: var(--ex-color-text-secondary)');
+    expect(css).toContain('var(--ex-image-error-text-color, var(--ex-color-text-secondary))');
     expect(variablesCss).toContain('--ex-image-preview-trigger-min-size: 44px');
   });
 

@@ -8,6 +8,14 @@
 @use 'sass:color';
 @use 'tokens' as *;
 
+// 组件默认值在消费处解析，避免根节点提前解析主题别名；显式全局覆盖仍然优先。
+@function component-var($component, $name) {
+  @if not map.has-key($components, $component, $name) {
+    @error '未知组件变量：#{$component}.#{$name}';
+  }
+  @return var(--ex-#{$component}-#{$name}, #{map.get($components, $component, $name)});
+}
+
 // ============================================================================
 // 单位转换函数 (Unit Conversion Functions)
 // ============================================================================

@@ -5,13 +5,20 @@ import { serve } from './server.mjs';
 import { summarize } from './workload.mjs';
 
 const useGpu = process.argv.includes('--gpu');
-const output = resolve(import.meta.dirname, useGpu ? 'results/scroll-hardware' : 'results/scroll-diagnostics');
+const controls = process.argv.includes('--controls');
+const output = resolve(import.meta.dirname, controls ? `results/controls-${useGpu ? 'hardware' : 'software'}` : useGpu ? 'results/scroll-hardware' : 'results/scroll-diagnostics');
 await mkdir(output, { recursive: true });
 const server = await serve();
 const browser = await chromium.launch({ channel: useGpu ? 'chromium' : undefined });
 const records = [];
 // 这些覆盖只用于定位浏览器渲染成本，不修改组件库，也不当作已实现的优化。
-const variants = {
+const variants = controls ? {
+  unchecked: '',
+  checked: '',
+  noEffects: '[data-scroll] *,[data-scroll] *::before,[data-scroll] *::after{box-shadow:none!important;text-shadow:none!important;filter:none!important;backdrop-filter:none!important}',
+  noAnimation: '[data-scroll] *,[data-scroll] *::before,[data-scroll] *::after{animation:none!important;transition:none!important}',
+  noContain: '[data-scroll] .ex-checkbox,[data-scroll] .ex-radio,[data-scroll] .ex-switch{contain:none!important}',
+} : {
   baseline: '',
   fixedLayout: '.ex-table__main{table-layout:fixed!important}',
   noEffects: '[data-table] *,[data-table] *::before,[data-table] *::after{box-shadow:none!important;text-shadow:none!important;filter:none!important;backdrop-filter:none!important;animation:none!important;transition:none!important}',
@@ -41,8 +48,9 @@ try {
     const ordered = names.map((_, index) => names[(index + round) % names.length]);
     for (const name of ordered) {
       const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-      await page.goto(`${server.origin}/exui/?mode=full`);
-      await page.waitForFunction(() => window.__ready);
+      await page.goto(`${server.origin}/${controls ? 'extended/extended.html?scene=controls' : 'exui/?mode=full'}`);
+      await page.waitForFunction(controls => controls ? window.__extendedReady : window.__ready, controls);
+      if (controls && name !== 'unchecked') await page.evaluate(() => window.__extended.run('toggleAll'));
       if (variants[name]) await page.addStyleTag({ content: variants[name] });
       await page.mouse.move(0, 0);
       await page.waitForTimeout(500);
@@ -55,8 +63,8 @@ try {
       const layerCount = layers.length || null;
       await cdp.send('LayerTree.disable');
       if (round === 0) await cdp.send('Tracing.start', { categories: 'devtools.timeline,blink.user_timing', transferMode: 'ReturnAsStream' });
-      const data = await page.evaluate(async () => {
-        const scroller = document.querySelector('.ex-table__container');
+      const data = await page.evaluate(async controls => {
+        const scroller = document.querySelector(controls ? '[data-scroll]' : '.ex-table__container');
         const frames = [];
         let previous = performance.now();
         for (let step = 0; step < 60; step++) {
@@ -66,8 +74,8 @@ try {
           frames.push(now - previous);
           previous = now;
         }
-        return { frames, scrollHeight: scroller.scrollHeight, rowHeight: document.querySelector('.ex-table__row').getBoundingClientRect().height };
-      });
+        return { frames, scrollHeight: scroller.scrollHeight, rowHeight: document.querySelector(controls ? '.control-row' : '.ex-table__row').getBoundingClientRect().height };
+      }, controls);
       let timeline = null;
       if (round === 0) {
         const trace = await stopTrace(cdp);

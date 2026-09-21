@@ -137,6 +137,9 @@
 // 组件特定变量 (Component Specific Variables)
 // ============================================================================
 
+// 主题相关的组件默认值由 component-var() 在使用处解析，不能在根节点固化。
+// 同名 CSS 变量保留为覆盖入口，支持用户在 :root、局部容器或 Provider 显式配置。
+
 :root {
   // 按钮组件
   --ex-button-height-sm: var(--ex-size-sm);
@@ -188,12 +191,6 @@
   --ex-card-padding-md: var(--ex-spacing-6);
   --ex-card-padding-lg: var(--ex-spacing-8);
   --ex-card-radius: var(--ex-radius-lg);
-  --ex-card-shadow: var(--ex-shadow-md);
-  --ex-card-filter-shadow-sm: drop-shadow(0 1px 2px var(--ex-color-black-alpha-30));
-  --ex-card-filter-shadow-base: drop-shadow(0 1px 3px var(--ex-color-black-alpha-30));
-  --ex-card-filter-shadow-md: drop-shadow(0 4px 6px var(--ex-color-black-alpha-30));
-  --ex-card-filter-shadow-lg: drop-shadow(0 8px 12px var(--ex-color-black-alpha-30));
-  --ex-card-filter-shadow-xl: drop-shadow(0 12px 20px var(--ex-color-black-alpha-40));
 
   // 模态框组件
   --ex-modal-width-small: #{map.get($components, modal, width-small)};
@@ -201,10 +198,6 @@
   --ex-modal-width-large: #{map.get($components, modal, width-large)};
   --ex-modal-padding: #{map.get($components, modal, padding)};
   --ex-modal-radius: #{map.get($components, modal, radius)};
-  --ex-modal-background: #{map.get($components, modal, background)};
-  --ex-modal-border-color: #{map.get($components, modal, border-color)};
-  --ex-modal-mask-background: #{map.get($components, modal, mask-background)};
-  --ex-modal-shadow: #{map.get($components, modal, shadow)};
 
   // 头像组件
   --ex-avatar-size-small: #{map.get($components, avatar, size-small)};
@@ -217,14 +210,6 @@
   --ex-avatar-spacing: #{map.get($components, avatar, spacing)};
   // 保留旧变量，避免已有主题在升级后失去间距配置。
   --ex-avatar-overlap: var(--ex-avatar-spacing);
-  --ex-avatar-bg-default: #{map.get($components, avatar, bg-default)};
-  --ex-avatar-bg-icon: #{map.get($components, avatar, bg-icon)};
-  --ex-avatar-bg-icon-hover: #{map.get($components, avatar, bg-icon-hover)};
-  --ex-avatar-bg-text: #{map.get($components, avatar, bg-text)};
-  --ex-avatar-bg-text-hover: #{map.get($components, avatar, bg-text-hover)};
-  --ex-avatar-text-color: #{map.get($components, avatar, text-color)};
-  --ex-avatar-border-color: #{map.get($components, avatar, border-color)};
-  --ex-avatar-group-border-color: #{map.get($components, avatar, group-border-color)};
   --ex-avatar-z-index: #{map.get($components, avatar, z-index)};
 
   // 图片组件
@@ -247,7 +232,6 @@
   --ex-image-error-icon-size: #{map.get($components, image, error-icon-size)};
   --ex-image-error-icon-size-compact: #{map.get($components, image, error-icon-size-compact)};
   --ex-image-error-icon-opacity: #{map.get($components, image, error-icon-opacity)};
-  --ex-image-error-text-color: #{map.get($components, image, error-text-color)};
   --ex-image-error-compact-padding: #{map.get($components, image, error-compact-padding)};
   --ex-image-retry-min-size: #{map.get($components, image, retry-min-size)};
   --ex-image-retry-padding-x: #{map.get($components, image, retry-padding-x)};
@@ -326,8 +310,6 @@
   --ex-badge-status-dot-ring-width: 1px;
 
   // 分割线组件
-  --ex-divider-color: #{map.get($components, divider, color)};
-  --ex-divider-text-color: #{map.get($components, divider, text-color)};
   --ex-divider-font-size: #{map.get($components, divider, font-size)};
   --ex-divider-margin: #{map.get($components, divider, margin)};
   --ex-divider-vertical-margin: #{map.get($components, divider, vertical-margin)};

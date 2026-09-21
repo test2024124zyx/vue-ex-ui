@@ -2,12 +2,24 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import { serve } from './server.mjs';
 import { summarize } from './workload.mjs';
 
-const output = resolve(import.meta.dirname, 'results/extended');
+const { values } = parseArgs({ options: {
+  rounds: { type: 'string', default: '3' },
+  scenes: { type: 'string' },
+  output: { type: 'string', default: 'extended' },
+  cycles: { type: 'string', default: '20' },
+  heap: { type: 'boolean', default: false },
+} });
+const output = resolve(import.meta.dirname, 'results', values.output);
 const TRANSITION_MS = 400;
-const ROUNDS = 3;
+const ROUNDS = Number(values.rounds);
+const CYCLES = Number(values.cycles);
+const MEMORY_INTERVAL = 20;
+assert.ok(Number.isInteger(ROUNDS) && ROUNDS > 0, '轮次必须是正整数');
+assert.ok(Number.isInteger(CYCLES) && CYCLES > 0, '开关次数必须是正整数');
 await mkdir(output, { recursive: true });
 const server = await serve();
 const browser = await chromium.launch({ channel: 'chromium' });
@@ -20,6 +32,32 @@ const state = page => page.evaluate(() => window.__extended.state());
 async function memory(cdp) {
   await cdp.send('HeapProfiler.collectGarbage');
   return { ...await cdp.send('Runtime.getHeapUsage'), ...await cdp.send('Memory.getDOMCounters') };
+}
+
+async function heapSnapshot(cdp, cycle) {
+  const chunks = [];
+  const receive = event => chunks.push(event.chunk);
+  cdp.on('HeapProfiler.addHeapSnapshotChunk', receive);
+  try {
+    await cdp.send('HeapProfiler.takeHeapSnapshot', { reportProgress: false });
+  } finally {
+    cdp.off('HeapProfiler.addHeapSnapshotChunk', receive);
+  }
+  const content = chunks.join('');
+  await writeFile(resolve(output, `workflow-${cycle}.heapsnapshot`), content);
+  const snapshot = JSON.parse(content);
+  const fields = snapshot.snapshot.meta.node_fields;
+  const types = snapshot.snapshot.meta.node_types[fields.indexOf('type')];
+  const counts = {};
+  for (let index = 0; index < snapshot.nodes.length; index += fields.length) {
+    const type = types[snapshot.nodes[index + fields.indexOf('type')]];
+    const name = snapshot.strings[snapshot.nodes[index + fields.indexOf('name')]];
+    const key = `${type}:${name}`;
+    const entry = counts[key] ||= { count: 0, bytes: 0 };
+    entry.count++;
+    entry.bytes += snapshot.nodes[index + fields.indexOf('self_size')];
+  }
+  return { cycle, counts };
 }
 
 async function scroll(page, selector) {
@@ -39,8 +77,72 @@ async function scroll(page, selector) {
 }
 
 const cases = {
-  async controls(page) {
-    assert.equal(await page.locator('.control-row').count(), 1500);
+  async themes(page) {
+    await page.locator('[data-theme-sample="local"] .ex-image__error').waitFor();
+    const observations = [];
+    const check = async (label, explicitAliases = false) => {
+      await page.waitForTimeout(TRANSITION_MS);
+      const results = await page.evaluate(explicitAliases => {
+        const checks = [
+          ['.ex-modal-content', 'backgroundColor', '--ex-modal-background', '--ex-color-bg-elevated'],
+          ['.ex-modal-content', 'borderTopColor', '--ex-modal-border-color', '--ex-color-border-primary'],
+          ['.ex-modal-content', 'boxShadow', '--ex-modal-shadow', '--ex-shadow-2xl'],
+          ['.ex-modal-mask', 'backgroundColor', '--ex-modal-mask-background', '--ex-color-black-alpha-70'],
+        ];
+        for (const scope of ['local', 'nested']) {
+          const prefix = `[data-theme-sample="${scope}"]`;
+          checks.push(
+            [`${prefix} > .ex-avatar`, 'color', '--ex-avatar-text-color', '--ex-color-text-primary'],
+            [`${prefix} > .ex-avatar`, 'backgroundColor', '--ex-avatar-bg-text', '--ex-color-accent-alpha-10'],
+            [`${prefix} .ex-avatar-group .ex-avatar`, 'borderTopColor', '--ex-avatar-group-border-color', '--ex-color-bg-primary'],
+            [`${prefix} .ex-image__error`, 'color', '--ex-image-error-text-color', '--ex-color-text-secondary'],
+            [`${prefix} .ex-divider`, 'color', '--ex-divider-text-color', '--ex-color-text-primary'],
+            [`${prefix} .ex-divider__line`, 'borderTopColor', '--ex-divider-color', '--ex-color-border-primary'],
+            [`${prefix} .ex-card`, 'filter', '--ex-card-filter-shadow-md', 'drop-shadow(0 4px 6px var(--ex-color-black-alpha-30))'],
+          );
+        }
+        return checks.map(([selector, property, variable, fallback]) => {
+          const target = document.querySelector(selector);
+          if (!target) throw new Error(`找不到主题样本 ${selector}`);
+          const probe = document.createElement('span');
+          const defaultValue = fallback.startsWith('--') ? `var(${fallback})` : fallback;
+          probe.style[property] = explicitAliases ? `var(${variable}, ${defaultValue})` : defaultValue;
+          // 霓虹弹窗会在基础阴影后叠加语义光晕，验证时保留真实的组合效果。
+          if (property === 'boxShadow' && target.closest('.ex-modal--neon')) {
+            probe.style.boxShadow += ', 0 0 var(--ex-spacing-5) var(--ex-modal-glow-color)';
+          }
+          target.append(probe);
+          const expected = getComputedStyle(probe)[property];
+          probe.remove();
+          return { selector, property, actual: getComputedStyle(target)[property], expected };
+        });
+      }, explicitAliases);
+      for (const item of results) assert.equal(item.actual, item.expected, `${label}: ${item.selector} ${item.property}`);
+      observations.push({ label, results });
+    };
+    await check('嵌套局部亮色与 Teleport');
+    assert.equal(await page.locator('.ex-modal-content').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(255, 255, 255)');
+    await run(page, 'dark'); await check('动态深色主题');
+    await run(page, 'semanticOverride'); await check('局部语义变量覆盖');
+    await run(page, 'reset'); await run(page, 'light');
+    const globalStyle = await page.addStyleTag({ content: ':root { --ex-modal-background: #112233; --ex-avatar-text-color: #223344; --ex-divider-color: #334455; --ex-image-error-text-color: #445566; --ex-card-filter-shadow-md: drop-shadow(0 1px 2px #556677); }' });
+    await check('全局组件变量覆盖', true);
+    assert.equal(await page.locator('.ex-modal-content').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(17, 34, 51)');
+    await globalStyle.evaluate(style => document.head.prepend(style));
+    await check('全局覆盖先于组件样式加载', true);
+    await run(page, 'componentOverride'); await check('Provider 显式覆盖优先于全局', true);
+    assert.equal(await page.locator('.ex-modal-content').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(170, 187, 204)');
+    await run(page, 'reset'); await globalStyle.evaluate(style => style.remove());
+    await check('移除覆盖后恢复局部主题');
+    await page.screenshot({ path: resolve(output, 'theme-inheritance.png') });
+    return { observations };
+  },
+  async controlsVirtual(page) {
+    return cases.controls(page, undefined, true);
+  },
+  async controls(page, _cdp, virtual = false) {
+    if (virtual) assert.ok(await page.locator('.control-row').count() < 30);
+    else assert.equal(await page.locator('.control-row').count(), 1500);
     const styles = await page.locator('[data-row="1"]').evaluate(row =>
       ['.ex-checkbox__box', '.ex-radio__box', '.ex-radio__dot', '.ex-switch__core', '.ex-switch__action'].map(selector => {
         const element = row.querySelector(selector);
@@ -56,9 +158,18 @@ const cases = {
     assert.deepEqual(await state(page), { selected: 2, checks: 1, switches: 1 });
     await run(page, 'toggleAll');
     assert.deepEqual(await state(page), { selected: 2, checks: 1499, switches: 1499 });
-    const scrolling = await scroll(page, '[data-scroll]');
+    const scroller = virtual ? '.ex-virtual-list__wrapper' : '[data-scroll]';
+    const scrolling = await scroll(page, scroller);
     assert.ok(scrolling.end > 0);
-    await page.screenshot({ path: resolve(output, 'dense-controls.png') });
+    assert.ok(await page.locator(scroller).innerText().then(text => text.includes('配置 1499')));
+    if (virtual) {
+      assert.equal(await page.locator('[data-row="1499"] input[type="checkbox"]').first().isChecked(), true);
+      await page.locator(scroller).evaluate(element => { element.scrollTop = 0; });
+      await page.locator('[data-row="1"]').waitFor();
+      assert.equal(await page.locator('[data-row="1"] input[type="checkbox"]').first().isChecked(), false);
+      assert.equal(await page.locator('[data-row="2"] input[type="radio"]').isChecked(), true);
+    }
+    await page.screenshot({ path: resolve(output, `dense-controls${virtual ? '-virtual' : ''}.png`) });
     return { idleStyles: styles, scrollFrames: summarize(scrolling.frames) };
   },
   async table(page) {
@@ -171,19 +282,30 @@ const cases = {
     assert.equal(current.bodyOverflow, '');
     assert.equal(current.focusedId, 'workflow-trigger');
     const before = await memory(cdp);
-    for (let cycle = 0; cycle < 20; cycle++) {
+    const checkpoints = [{ cycle: 0, ...before }];
+    const snapshots = [];
+    for (let cycle = 0; cycle < CYCLES; cycle++) {
       await run(page, 'open'); await page.waitForTimeout(TRANSITION_MS);
       await run(page, 'close'); await page.waitForTimeout(TRANSITION_MS);
+      if ((cycle + 1) % MEMORY_INTERVAL === 0) {
+        // 专项堆分析清空基准自身的累积记录，避免把测量数据误判为组件泄漏。
+        if (values.heap) await page.evaluate(() => { window.__extended.measurements.length = 0; performance.clearResourceTimings(); });
+        checkpoints.push({ cycle: cycle + 1, ...await memory(cdp) });
+        if (values.heap && (cycle + 1 === MEMORY_INTERVAL || cycle + 1 === CYCLES)) snapshots.push(await heapSnapshot(cdp, cycle + 1));
+      }
     }
     const after = await memory(cdp);
     assert.ok(after.nodes <= before.nodes + 10, '关闭后仍残留表单节点');
     assert.ok(after.jsEventListeners <= before.jsEventListeners + 10, '关闭后仍残留监听器');
-    return { before, after, issues, final: await state(page) };
+    return { before, after, checkpoints, snapshots, issues, final: await state(page) };
   },
 };
 
 try {
-  for (let round = 0; round < ROUNDS; round++) for (const [scene, verify] of Object.entries(cases)) {
+  const scenes = values.scenes?.split(',') || Object.keys(cases);
+  for (const scene of scenes) assert.ok(cases[scene], `未知场景 ${scene}`);
+  for (let round = 0; round < ROUNDS; round++) for (const scene of scenes) {
+    const verify = cases[scene];
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, locale: 'zh-CN' });
     page.setDefaultTimeout(30000);
     const errors = [];
@@ -199,7 +321,7 @@ try {
       const measurements = await page.evaluate(() => window.__extended.measurements);
       await page.evaluate(() => window.__extended.unmount());
       await page.waitForTimeout(TRANSITION_MS);
-      assert.equal(await page.locator('main > section, .ex-table, .ex-tree, .ex-select, [role="dialog"]').count(), 0);
+      assert.equal(await page.locator('main > section, .ex-table, .ex-tree, .ex-select, .ex-virtual-list, [role="dialog"]').count(), 0);
       records.push({ scene, round, initial, detail, measurements, afterUnmount: await memory(cdp) });
       process.stdout.write(`${scene}/${round}: ${detail.issues?.length ? '发现问题' : '通过'} ${JSON.stringify(initial)}\n`);
     } catch (error) {

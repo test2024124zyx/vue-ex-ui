@@ -6,6 +6,7 @@
 @use 'sass:meta';
 @use 'sass:string';
 @use 'tokens' as *;
+@use 'functions' as *;
 
 // ============================================================================
 // 响应式混合器 (Responsive Mixins)
@@ -566,7 +567,7 @@
   background: var(--ex-color-bg-surface);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-card-radius);
-  box-shadow: var(--ex-card-shadow);
+  box-shadow: component-var(card, shadow);
   overflow: hidden;
 }
 

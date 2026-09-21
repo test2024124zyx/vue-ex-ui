@@ -408,6 +408,12 @@ $components: (
       padding-md: map.get($spacing, 6),
       padding-lg: map.get($spacing, 8),
       radius: map.get($radius, lg),
+      shadow: var(--ex-shadow-md),
+      filter-shadow-sm: drop-shadow(0 1px 2px var(--ex-color-black-alpha-30)),
+      filter-shadow-base: drop-shadow(0 1px 3px var(--ex-color-black-alpha-30)),
+      filter-shadow-md: drop-shadow(0 4px 6px var(--ex-color-black-alpha-30)),
+      filter-shadow-lg: drop-shadow(0 8px 12px var(--ex-color-black-alpha-30)),
+      filter-shadow-xl: drop-shadow(0 12px 20px var(--ex-color-black-alpha-40)),
     ),
 
   // 模态框
@@ -492,8 +498,8 @@ $components: (
 
   // 分割线
   divider: (
-      color: map.get($colors, border-primary),
-      text-color: map.get($colors, text-primary),
+      color: var(--ex-color-border-primary),
+      text-color: var(--ex-color-text-primary),
       font-size: 16px,
       margin: 24px 0,
       vertical-margin: 0 8px,

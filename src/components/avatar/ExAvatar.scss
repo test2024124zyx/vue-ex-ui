@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/functions' as *;
 
 .ex-avatar {
   position: relative;
@@ -12,9 +13,9 @@
   font-weight: var(--ex-font-medium);
   font-family: inherit;
   line-height: 1;
-  color: var(--ex-avatar-text-color);
-  background-color: var(--ex-avatar-bg-default);
-  border: var(--ex-avatar-border-width) solid var(--ex-avatar-border-color);
+  color: component-var(avatar, text-color);
+  background-color: component-var(avatar, bg-default);
+  border: var(--ex-avatar-border-width) solid component-var(avatar, border-color);
   box-sizing: border-box;
   padding: 0;
   appearance: none;
@@ -88,13 +89,13 @@
   }
 
   &--icon {
-    background: var(--ex-avatar-bg-icon);
+    background: component-var(avatar, bg-icon);
     color: var(--ex-color-primary);
   }
 
   &--text {
-    background: var(--ex-avatar-bg-text);
-    color: var(--ex-avatar-text-color);
+    background: component-var(avatar, bg-text);
+    color: component-var(avatar, text-color);
   }
 
   // 仅在设备支持悬停时提供悬停动效，避免触摸设备产生粘滞状态。
@@ -108,12 +109,12 @@
     }
 
     &--icon.ex-avatar--clickable:hover {
-      background: var(--ex-avatar-bg-icon-hover);
+      background: component-var(avatar, bg-icon-hover);
       color: var(--ex-color-primary-hover);
     }
 
     &--text.ex-avatar--clickable:hover {
-      background: var(--ex-avatar-bg-text-hover);
+      background: component-var(avatar, bg-text-hover);
     }
 
     &--clickable > &__image:hover {

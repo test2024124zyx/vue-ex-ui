@@ -1,12 +1,14 @@
 import { build } from 'vite';
 import { chromium } from 'playwright';
 import { resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { serve } from './server.mjs';
 import { CONFIG } from './workload.mjs';
 
 const root = import.meta.dirname;
-const output = resolve(root, 'results/diagnostics');
+const { values } = parseArgs({ options: { output: { type: 'string', default: 'diagnostics' } } });
+const output = resolve(root, 'results', values.output);
 await mkdir(output, { recursive: true });
 const records = [];
 // 诊断单独构建运行，调用计数和 CSS 覆盖采集不进入正式性能数据。

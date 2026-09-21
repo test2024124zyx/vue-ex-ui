@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/functions' as *;
 
 .ex-modal-root {
   position: fixed;
@@ -19,7 +20,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: var(--ex-modal-mask-background);
+  background: component-var(modal, mask-background);
   touch-action: none;
 }
 
@@ -45,7 +46,7 @@
 }
 
 .ex-modal {
-  --ex-modal-accent: var(--ex-modal-border-color);
+  --ex-modal-accent: #{component-var(modal, border-color)};
   --ex-modal-accent-soft: transparent;
   --ex-modal-glow-color: transparent;
 
@@ -101,7 +102,7 @@
   &--neon {
     .ex-modal-content {
       box-shadow:
-        var(--ex-modal-shadow),
+        component-var(modal, shadow),
         0 0 var(--ex-spacing-5) var(--ex-modal-glow-color);
 
       &::before,
@@ -140,10 +141,10 @@
 .ex-modal-content {
   position: relative;
   overflow: hidden;
-  background: var(--ex-modal-background);
+  background: component-var(modal, background);
   border: 1px solid var(--ex-modal-accent);
   border-radius: var(--ex-modal-radius);
-  box-shadow: var(--ex-modal-shadow);
+  box-shadow: component-var(modal, shadow);
 }
 
 .ex-modal-header {

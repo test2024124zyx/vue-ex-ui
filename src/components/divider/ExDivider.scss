@@ -7,7 +7,7 @@
   margin: var(--ex-divider-margin, 24px 0);
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
-  color: var(--ex-color-text-primary);
+  color: var(--ex-divider-text-color, var(--ex-color-text-primary));
 
   &--horizontal {
     flex-direction: row;
