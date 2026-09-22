@@ -7,7 +7,12 @@ const FOCUSABLE_SELECTOR =
   'a[href], area[href], button, input, select, textarea, [tabindex], audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])';
 
 const isVisibleFocusable = (element: HTMLElement): boolean => {
-  if (element.hasAttribute('disabled') || element.getAttribute('aria-hidden') === 'true')
+  // :disabled 包含 fieldset 的继承禁用语义，并保留首个 legend 的原生例外。
+  if (
+    element.matches(':disabled') ||
+    element.hasAttribute('disabled') ||
+    element.getAttribute('aria-hidden') === 'true'
+  )
     return false;
   if (element.tabIndex < 0) return false;
   // 控件自身的样式不能反映 display:none、hidden 和 inert 的祖先。

@@ -6,7 +6,16 @@ test('数据集确定、主键唯一，业务字段完整', () => {
   const rows = makeRows(CONFIG.totalRows);
   assert.deepEqual(rows, makeRows(CONFIG.totalRows));
   assert.equal(new Set(rows.map(row => row.id)).size, CONFIG.totalRows);
-  assert.deepEqual(Object.keys(rows[0]), ['id', 'customer', 'region', 'amount', 'status', 'owner', 'date', 'priority']);
+  assert.deepEqual(Object.keys(rows[0]), [
+    'id',
+    'customer',
+    'region',
+    'amount',
+    'status',
+    'owner',
+    'date',
+    'priority',
+  ]);
   assert.deepEqual(makeRows(0), []);
 });
 
@@ -16,7 +25,9 @@ test('搜索、排序和分页共同生效且不改变原始数据', () => {
   const matches = selectRows(rows, { query: '客户 000', sort: 'asc', page: 1, pageSize: 10 });
   assert.equal(matches.total, 99);
   assert.equal(matches.rows.length, 10);
-  assert.ok(matches.rows.every((row, index) => index === 0 || row.amount >= matches.rows[index - 1].amount));
+  assert.ok(
+    matches.rows.every((row, index) => index === 0 || row.amount >= matches.rows[index - 1].amount)
+  );
   const reverse = selectRows(rows, { query: '', sort: 'desc', page: 2, pageSize: 20 });
   assert.equal(reverse.rows.length, 20);
   assert.ok(reverse.rows[0].amount >= reverse.rows[19].amount);

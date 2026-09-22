@@ -391,7 +391,7 @@ async function validateFieldMethod(trigger?: string | string[]): Promise<FormIte
   isValidating.value = true;
 
   try {
-    const result = await validateField(filteredRules, value, props.prop);
+    const result = await validateField(filteredRules, value, props.prop, t);
 
     if (validationId !== latestValidationId) {
       return { valid: false, outOfDate: true };

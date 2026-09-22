@@ -139,6 +139,8 @@ describe('公共核心工具', () => {
 
     expect(result.nested).toEqual({ first: 1, second: 2 });
     expect(result.date).toBe(replacementDate);
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+    expect((result as unknown as { polluted?: boolean }).polluted).toBeUndefined();
     expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
   });

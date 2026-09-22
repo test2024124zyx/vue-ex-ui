@@ -164,34 +164,56 @@ const sanitizeAttributes = (
   return safeAttributes;
 };
 
-/** 递归过滤节点，未知标签只去掉标签本身，保持原有文本语义。 */
-const sanitizeNodes = (nodes: ParsedNode[]): ParsedNode[] => {
-  const safeNodes: ParsedNode[] = [];
+interface SerializationFrame {
+  nodes: ParsedNode[];
+  index: number;
+  closingTag?: string;
+}
 
-  for (const node of nodes) {
-    if (node.type === ElementType.Text) {
-      safeNodes.push(node);
+const SERIALIZATION_OPTIONS = { encodeEntities: 'utf8', selfClosingTags: true } as const;
+
+/** 显式深度优先遍历，同时过滤和序列化，避免过滤器与依赖序列化器的递归栈限制。 */
+const serializeSanitizedNodes = (nodes: ParsedNode[]): string => {
+  const stack: SerializationFrame[] = [{ nodes, index: 0 }];
+  const output: string[] = [];
+
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1]!;
+    const node = frame.nodes[frame.index++];
+    if (!node) {
+      if (frame.closingTag) output.push(frame.closingTag);
+      stack.pop();
       continue;
     }
-
+    if (node.type === ElementType.Text) {
+      // 浅克隆断开原始父节点；xmp/plaintext 等被移除后，文本必须重新按 HTML 文本转义。
+      output.push(render(node.cloneNode(false), SERIALIZATION_OPTIONS));
+      continue;
+    }
     if (!isElementNode(node)) continue;
 
     const tagName = node.name.toLowerCase();
     if (DROP_CONTENT_TAGS.has(tagName)) continue;
-
-    const children = sanitizeNodes(node.children);
     if (!ALLOWED_TAGS.has(tagName)) {
-      safeNodes.push(...children);
+      stack.push({ nodes: node.children, index: 0 });
       continue;
     }
 
-    node.name = tagName;
-    node.attribs = sanitizeAttributes(tagName, node.attribs);
-    node.children = children;
-    safeNodes.push(node);
+    // 只让依赖序列化单个空壳，继续复用其属性转义和 HTML 空元素规则。
+    const shell = node.cloneNode(false);
+    shell.name = tagName;
+    shell.attribs = sanitizeAttributes(tagName, node.attribs);
+    const markup = render(shell, SERIALIZATION_OPTIONS);
+    const closingTag = `</${tagName}>`;
+    if (markup.endsWith(closingTag)) {
+      output.push(markup.slice(0, -closingTag.length));
+      stack.push({ nodes: node.children, index: 0, closingTag });
+    } else {
+      output.push(markup);
+    }
   }
 
-  return safeNodes;
+  return output.join('');
 };
 
 /**
@@ -202,8 +224,7 @@ const sanitizeNodes = (nodes: ParsedNode[]): ParsedNode[] => {
 export function sanitizeHtml(html: string): string {
   // htmlparser2 与 dom-serializer 均可在浏览器和 SSR 使用，避免 Node-only 的 PostCSS 依赖。
   const document = parseDocument(html, { decodeEntities: true, lowerCaseTags: true });
-  const safeNodes = sanitizeNodes(document.children);
-  return render(safeNodes, { encodeEntities: 'utf8', selfClosingTags: true });
+  return serializeSanitizedNodes(document.children);
 }
 
 /**

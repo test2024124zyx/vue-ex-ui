@@ -19,21 +19,47 @@ for (const library of libraries) {
     configFile: false,
     logLevel: 'warn',
     base: `/${library}/`,
-    resolve: { alias: {
-      '@adapter': resolve(root, 'adapters', `${library}.mjs`),
-      vue: resolve(root, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
-    }, dedupe: ['vue'] },
-    build: { outDir: resolve(root, 'dist', library), emptyOutDir: true, sourcemap: true,
-      target: 'es2020', minify: true, cssCodeSplit: true },
+    resolve: {
+      alias: {
+        '@adapter': resolve(root, 'adapters', `${library}.mjs`),
+        vue: resolve(root, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
+      },
+      dedupe: ['vue'],
+    },
+    build: {
+      outDir: resolve(root, 'dist', library),
+      emptyOutDir: true,
+      sourcemap: true,
+      target: 'es2020',
+      minify: true,
+      cssCodeSplit: true,
+    },
   });
   const chunks = (Array.isArray(result) ? result : [result]).flatMap(item => item.output);
-  const files = chunks.filter(item => !item.fileName.endsWith('.map')).map(item => {
-    const bytes = Buffer.from(item.type === 'chunk' ? item.code : item.source);
-    return { file: item.fileName, bytes: bytes.length, gzip: gzipSync(bytes).length, brotli: brotliCompressSync(bytes).length };
-  });
-  const modules = chunks.filter(item => item.type === 'chunk').flatMap(item => Object.entries(item.modules).map(([id, info]) => ({ id, renderedLength: info.renderedLength })))
+  const files = chunks
+    .filter(item => !item.fileName.endsWith('.map'))
+    .map(item => {
+      const bytes = Buffer.from(item.type === 'chunk' ? item.code : item.source);
+      return {
+        file: item.fileName,
+        bytes: bytes.length,
+        gzip: gzipSync(bytes).length,
+        brotli: brotliCompressSync(bytes).length,
+      };
+    });
+  const modules = chunks
+    .filter(item => item.type === 'chunk')
+    .flatMap(item =>
+      Object.entries(item.modules).map(([id, info]) => ({
+        id,
+        renderedLength: info.renderedLength,
+      }))
+    )
     .sort((a, b) => b.renderedLength - a.renderedLength);
   records.push({ library, buildMs: performance.now() - started, files, modules });
   process.stdout.write(`${library} ${JSON.stringify(files)}\n`);
 }
-await writeFile(resolve(output, 'build.json'), JSON.stringify({ dependencies: packages.dependencies, records }, null, 2));
+await writeFile(
+  resolve(output, 'build.json'),
+  JSON.stringify({ dependencies: packages.dependencies, records }, null, 2)
+);

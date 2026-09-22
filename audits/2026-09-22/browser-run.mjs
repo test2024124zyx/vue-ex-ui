@@ -48,7 +48,11 @@ const resourceSamples = [];
 const consoleErrors = [];
 const manifest = {
   revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-  sourceRevision: '289cd707c0b334959fa5062af55183193fcc2e60',
+  sourceState: 'working-tree',
+  workingTreeStatus: execFileSync('git', ['status', '--porcelain=v1'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).trim(),
   startedAt: new Date().toISOString(),
   os: release(),
   cpu: cpus()[0].model,
@@ -193,6 +197,11 @@ try {
   });
 
   const payloads = [
+    // 原始文本包装不能让消毒后的文字重新被当成可执行元素。
+    ...['xmp', 'noembed', 'noframes', 'plaintext'].map(
+      tag =>
+        `<${tag}><img src="data:image/png;base64,AAAA" onerror="window.auditExecuted=true"></${tag}>`
+    ),
     '<img src="data:image/png;base64,AAAA" onerror="window.auditExecuted=true">',
     '<svg><g onload="window.auditExecuted=true"></g></svg>',
     '<a href="java&#x09;script:window.auditExecuted=true">链接</a>',
@@ -200,7 +209,7 @@ try {
     '<noscript><p title="</noscript><img src=x onerror=window.auditExecuted=true>">',
     '<iframe srcdoc="<script>parent.auditExecuted=true</script>"></iframe>',
   ];
-  await check('HTML-SECURITY', '真实浏览器解析六组本地恶意 HTML', async () => {
+  await check('HTML-SECURITY', `真实浏览器解析 ${payloads.length} 组本地恶意 HTML`, async () => {
     const observations = [];
     for (const html of payloads) {
       await page.evaluate(() => {

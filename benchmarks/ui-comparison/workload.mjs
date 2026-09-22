@@ -29,19 +29,25 @@ export function makeRows(count) {
 
 export function selectRows(source, { query = '', sort = '', page = 1, pageSize = 0 }) {
   let rows = query ? source.filter(row => row.customer.includes(query)) : source;
-  if (sort) rows = [...rows].sort((a, b) => sort === 'asc' ? a.amount - b.amount : b.amount - a.amount);
+  if (sort)
+    rows = [...rows].sort((a, b) => (sort === 'asc' ? a.amount - b.amount : b.amount - a.amount));
   const total = rows.length;
   return { total, rows: pageSize ? rows.slice((page - 1) * pageSize, page * pageSize) : rows };
 }
 
 export function updateRows(rows, count) {
-  return rows.map((row, index) => index < count ? { ...row, amount: row.amount + CONFIG.amountIncrement } : row);
+  return rows.map((row, index) =>
+    index < count ? { ...row, amount: row.amount + CONFIG.amountIncrement } : row
+  );
 }
 
 export function makeFields(valid) {
-  return Object.fromEntries(Array.from({ length: CONFIG.fieldCount }, (_, index) => [
-    `field${index}`, valid ? `业务资料 ${index}` : '',
-  ]));
+  return Object.fromEntries(
+    Array.from({ length: CONFIG.fieldCount }, (_, index) => [
+      `field${index}`,
+      valid ? `业务资料 ${index}` : '',
+    ])
+  );
 }
 
 export function summarize(values) {

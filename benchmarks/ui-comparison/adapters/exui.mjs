@@ -18,20 +18,61 @@ const immutable = new URLSearchParams(location.search).get('immutable') === '1';
 export default {
   name: 'Ex UI',
   virtualSupported: true,
-  provider: (theme, children) => h(ExConfigProvider, { theme, locale: 'zh-CN' }, { default: children }),
+  provider: (theme, children) =>
+    h(ExConfigProvider, { theme, locale: 'zh-CN' }, { default: children }),
   button: (text, onClick, attrs = {}) => h(ExButton, { onClick, ...attrs }, () => text),
   tag: text => h(ExTag, {}, () => text),
-  checkbox: (modelValue, update) => h(ExCheckbox, { modelValue, 'onUpdate:modelValue': update, 'aria-label': '选择订单' }),
-  input: (modelValue, update, attrs = {}) => h(ExInput, { modelValue, 'onUpdate:modelValue': update, ...attrs }),
-  select: (modelValue, update, options) => h(ExSelect, { modelValue, 'onUpdate:modelValue': update, options, searchable: true, virtual: true, placeholder: '选择客户' }),
+  checkbox: (modelValue, update) =>
+    h(ExCheckbox, { modelValue, 'onUpdate:modelValue': update, 'aria-label': '选择订单' }),
+  input: (modelValue, update, attrs = {}) =>
+    h(ExInput, { modelValue, 'onUpdate:modelValue': update, ...attrs }),
+  select: (modelValue, update, options) =>
+    h(ExSelect, {
+      modelValue,
+      'onUpdate:modelValue': update,
+      options,
+      searchable: true,
+      virtual: true,
+      placeholder: '选择客户',
+    }),
   table(data, columns, virtual) {
-    if (!cache.has(columns)) cache.set(columns, columns.map(column => ({ ...column, render: (_, row) => column.render(row) })));
-    return h(ExTable, { data, columns: cache.get(columns), rowKey: 'id', maxHeight: CONFIG.viewportHeight,
-      virtual, immutable, virtualHeight: CONFIG.viewportHeight, rowHeight: CONFIG.rowHeight });
+    if (!cache.has(columns))
+      cache.set(
+        columns,
+        columns.map(column => ({ ...column, render: (_, row) => column.render(row) }))
+      );
+    return h(ExTable, {
+      data,
+      columns: cache.get(columns),
+      rowKey: 'id',
+      maxHeight: CONFIG.viewportHeight,
+      virtual,
+      immutable,
+      virtualHeight: CONFIG.viewportHeight,
+      rowHeight: CONFIG.rowHeight,
+    });
   },
-  modal: (modelValue, update, children) => h(ExModal, { modelValue, 'onUpdate:modelValue': update, title: '编辑订单资料', width: 960,
-    destroyOnClose: true, showFooter: false, bodyStyle: { maxHeight: '650px', overflow: 'auto' } }, { default: children }),
-  form: (ref, model, rules, children) => h(ExForm, { ref, model, rules, layout: 'vertical', scrollToError: false, focusToError: false }, { default: children }),
-  formItem: (prop, label, children) => h(ExFormItem, { key: prop, prop, label }, { default: children }),
+  modal: (modelValue, update, children) =>
+    h(
+      ExModal,
+      {
+        modelValue,
+        'onUpdate:modelValue': update,
+        title: '编辑订单资料',
+        width: 960,
+        destroyOnClose: true,
+        showFooter: false,
+        bodyStyle: { maxHeight: '650px', overflow: 'auto' },
+      },
+      { default: children }
+    ),
+  form: (ref, model, rules, children) =>
+    h(
+      ExForm,
+      { ref, model, rules, layout: 'vertical', scrollToError: false, focusToError: false },
+      { default: children }
+    ),
+  formItem: (prop, label, children) =>
+    h(ExFormItem, { key: prop, prop, label }, { default: children }),
   validate: async form => (await form.validate()).valid,
 };

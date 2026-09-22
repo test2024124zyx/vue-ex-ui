@@ -10,7 +10,8 @@ function isEmptyValue(value: unknown): boolean {
 type BuiltinValidatorFn = (
   rule: FormRule,
   value: unknown,
-  callback: (error?: string) => void
+  callback: (error?: string) => void,
+  translate?: typeof t
 ) => void;
 
 const UNSAFE_FIELD_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
@@ -68,7 +69,7 @@ export function getFieldValue(model: Record<string, unknown>, prop: string): unk
 export function setFieldValue(model: Record<string, unknown>, prop: string, value: unknown): void {
   const keys = parseFieldPath(prop);
   if (!keys) return;
-  const lastKey = keys.at(-1)!;
+  const lastKey = keys[keys.length - 1]!;
   let target: FieldContainer = model;
 
   for (let index = 0; index < keys.length - 1; index += 1) {
@@ -98,11 +99,12 @@ export function resetField(
 export async function validateField(
   rules: FormRule[],
   value: unknown,
-  field: string
+  field: string,
+  translate: typeof t = t
 ): Promise<{ valid: boolean; error?: string }> {
   for (const rule of rules) {
     try {
-      const result = await validateRule(rule, value, field);
+      const result = await validateRule(rule, value, field, translate);
       if (!result.valid) {
         return result;
       }
@@ -121,7 +123,8 @@ export async function validateField(
 async function validateRule(
   rule: FormRule,
   value: unknown,
-  _field: string
+  _field: string,
+  translate: typeof t
 ): Promise<{ valid: boolean; error?: string }> {
   // 转换值
   if (rule.transform) {
@@ -139,7 +142,7 @@ async function validateRule(
       };
       const reject = (error: unknown) => {
         const message = error instanceof Error ? error.message : error == null ? '' : String(error);
-        finish(false, message || rule.message || t('common.validationError'));
+        finish(false, message || rule.message || translate('common.validationError'));
       };
       try {
         const result = customValidator(rule, value, error => {
@@ -160,12 +163,14 @@ async function validateRule(
   const validators = getBuiltinValidators(rule);
   for (const validator of validators) {
     const result = await new Promise<{ valid: boolean; error?: string }>(resolve => {
-      validator(rule, value, (error?: string) => {
-        resolve({
-          valid: !error,
-          error: error || rule.message,
-        });
-      });
+      validator(
+        rule,
+        value,
+        (error?: string) => {
+          resolve({ valid: !error, error: error || rule.message });
+        },
+        translate
+      );
     });
 
     if (!result.valid) {
@@ -248,28 +253,29 @@ function getBuiltinValidators(rule: FormRule): BuiltinValidatorFn[] {
   return validators;
 }
 
-// 内置验证器
+// 翻译器由调用链显式传递，异步校验与多 App 不借助可串扰的全局临时状态。
+// 独立调用内置验证器仍默认使用全局翻译器，保留既有三参数调用契约。
 export const builtinValidators: BuiltinValidators = {
-  required(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  required(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
-      callback(rule.message || t('validators.required'));
+      callback(rule.message || translate('validators.required'));
       return;
     }
 
     if (Array.isArray(value) && value.length === 0) {
-      callback(rule.message || t('validators.required'));
+      callback(rule.message || translate('validators.required'));
       return;
     }
 
     if (typeof value === 'string' && rule.whitespace !== false && value.trim() === '') {
-      callback(rule.message || t('validators.required'));
+      callback(rule.message || translate('validators.required'));
       return;
     }
 
     callback();
   },
 
-  type(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  type(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -299,14 +305,14 @@ export const builtinValidators: BuiltinValidators = {
     })();
 
     if (!valid) {
-      callback(rule.message || t('validators.type'));
+      callback(rule.message || translate('validators.type'));
       return;
     }
 
     callback();
   },
 
-  email(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  email(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -314,14 +320,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(String(value))) {
-      callback(rule.message || t('validators.email'));
+      callback(rule.message || translate('validators.email'));
       return;
     }
 
     callback();
   },
 
-  url(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  url(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -331,39 +337,39 @@ export const builtinValidators: BuiltinValidators = {
       new URL(String(value));
       callback();
     } catch {
-      callback(rule.message || t('validators.url'));
+      callback(rule.message || translate('validators.url'));
     }
   },
 
-  number(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  number(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!Number.isFinite(Number(value))) {
-      callback(rule.message || t('validators.number'));
+      callback(rule.message || translate('validators.number'));
       return;
     }
 
     callback();
   },
 
-  integer(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  integer(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!Number.isInteger(Number(value))) {
-      callback(rule.message || t('validators.integer'));
+      callback(rule.message || translate('validators.integer'));
       return;
     }
 
     callback();
   },
 
-  float(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  float(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -371,14 +377,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const num = Number(value);
     if (!Number.isFinite(num)) {
-      callback(rule.message || t('validators.number'));
+      callback(rule.message || translate('validators.number'));
       return;
     }
 
     callback();
   },
 
-  min(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  min(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -386,14 +392,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const length = Array.isArray(value) ? value.length : String(value).length;
     if (length < rule.min!) {
-      callback(rule.message || t('validators.min', { min: rule.min! }));
+      callback(rule.message || translate('validators.min', { min: rule.min! }));
       return;
     }
 
     callback();
   },
 
-  max(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  max(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -401,14 +407,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const length = Array.isArray(value) ? value.length : String(value).length;
     if (length > rule.max!) {
-      callback(rule.message || t('validators.max', { max: rule.max! }));
+      callback(rule.message || translate('validators.max', { max: rule.max! }));
       return;
     }
 
     callback();
   },
 
-  minValue(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  minValue(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -416,14 +422,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const num = Number(value);
     if (isNaN(num) || num < rule.minValue!) {
-      callback(rule.message || t('validators.minValue', { min: rule.minValue! }));
+      callback(rule.message || translate('validators.minValue', { min: rule.minValue! }));
       return;
     }
 
     callback();
   },
 
-  maxValue(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  maxValue(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -431,14 +437,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const num = Number(value);
     if (isNaN(num) || num > rule.maxValue!) {
-      callback(rule.message || t('validators.maxValue', { max: rule.maxValue! }));
+      callback(rule.message || translate('validators.maxValue', { max: rule.maxValue! }));
       return;
     }
 
     callback();
   },
 
-  len(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  len(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -446,14 +452,14 @@ export const builtinValidators: BuiltinValidators = {
 
     const length = Array.isArray(value) ? value.length : String(value).length;
     if (length !== rule.len) {
-      callback(rule.message || t('validators.len', { len: rule.len! }));
+      callback(rule.message || translate('validators.len', { len: rule.len! }));
       return;
     }
 
     callback();
   },
 
-  pattern(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  pattern(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
@@ -463,21 +469,21 @@ export const builtinValidators: BuiltinValidators = {
     const matches = rule.pattern!.test(String(value));
     rule.pattern!.lastIndex = 0;
     if (!matches) {
-      callback(rule.message || t('validators.pattern'));
+      callback(rule.message || translate('validators.pattern'));
       return;
     }
 
     callback();
   },
 
-  enum(rule: FormRule, value: unknown, callback: (error?: string) => void) {
+  enum(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
     if (isEmptyValue(value)) {
       callback();
       return;
     }
 
     if (!rule.enum || !rule.enum.includes(value)) {
-      callback(rule.message || t('validators.enum'));
+      callback(rule.message || translate('validators.enum'));
       return;
     }
 

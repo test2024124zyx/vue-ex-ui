@@ -17,10 +17,16 @@ const isPlainRecord = (value: unknown): value is Record<PropertyKey, unknown> =>
 /** 深度合并普通对象；特殊对象按值替换，并阻止原型污染键。 */
 export function deepMerge<T>(target: T, ...sources: Partial<T>[]): T {
   if (!isPlainRecord(target)) return (sources[sources.length - 1] ?? target) as T;
-  const result: Record<PropertyKey, unknown> = Object.assign(
-    Object.create(Object.getPrototypeOf(target) as object | null) as Record<PropertyKey, unknown>,
-    target
-  );
+  const result = Object.create(Object.getPrototypeOf(target) as object | null) as Record<
+    PropertyKey,
+    unknown
+  >;
+  // 目标也属于输入边界；先过滤再复制，避免 Object.assign 触发 __proto__ setter。
+  for (const key of Reflect.ownKeys(target)) {
+    if (UNSAFE_MERGE_KEYS.has(key) || !Object.prototype.propertyIsEnumerable.call(target, key))
+      continue;
+    result[key] = target[key];
+  }
 
   for (const source of sources) {
     if (!isPlainRecord(source)) continue;
