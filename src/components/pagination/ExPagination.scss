@@ -6,7 +6,10 @@
 // ============================================================================
 
 .ex-pagination {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   gap: var(--ex-spacing-3);
   font-family: var(--ex-font-secondary);
@@ -44,14 +47,39 @@
   color: var(--ex-color-text-secondary);
   font-size: var(--ex-text-sm);
   font-weight: var(--ex-font-medium);
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 // 分页按钮组
 .ex-pagination__items {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
+  justify-content: inherit;
   gap: var(--ex-spacing-2);
+
+  > .ex-pagination__item {
+    flex-shrink: 0;
+    width: var(--ex-pagination-measured-item-width);
+  }
+}
+
+.ex-pagination__measure {
+  position: absolute;
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout;
+  height: 0;
+  overflow: hidden;
+
+  .ex-pagination__item {
+    flex-shrink: 0;
+    font-weight: var(--ex-font-bold);
+  }
 }
 
 // 分页按钮
@@ -69,6 +97,7 @@
   color: var(--ex-color-text-primary);
   font-size: var(--ex-text-sm);
   font-weight: var(--ex-font-medium);
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
   @include transition(all);
 
@@ -448,7 +477,7 @@
 
 // 触摸设备优化
 @media (hover: none) and (pointer: coarse) {
-  .ex-pagination__item {
+  .ex-pagination .ex-pagination__item {
     min-width: 44px; // 增大触摸目标
     height: 44px;
   }

@@ -4,6 +4,7 @@ import dts from 'vite-plugin-dts';
 import { libInjectCss } from 'vite-plugin-lib-inject-css';
 import { dirname, relative, resolve } from 'node:path';
 import { glob } from 'glob';
+import browserTargets from './browser-targets.json';
 
 /**
  * 按需打包构建（per-component packaging）
@@ -75,7 +76,8 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2020',
+    target: browserTargets,
+    cssTarget: browserTargets,
     outDir: 'dist/es',
     emptyOutDir: true,
     cssCodeSplit: true,

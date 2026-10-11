@@ -21,12 +21,14 @@ ExUI 致力于为赛博朋克风格应用提供一套完整的UI解决方案，�
 
 ## 浏览器支持
 
-ExUI 支持所有现代浏览器：
+ExUI 的最低浏览器版本如下（移动端需使用对应版本或更新的浏览器内核）：
 
-- Chrome >= 88
-- Firefox >= 78
-- Safari >= 14
-- Edge >= 88
+- Chrome >= 108
+- Firefox >= 121
+- Safari >= 16（含 iOS / iPadOS Safari）
+- Edge >= 108
+
+该下限依据组件实际使用的 [`inert`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/inert)、[`:has()`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:has)、[动态视口单位](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length)和[容器查询](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@container)确定。构建使用相同的 JavaScript 与 CSS 浏览器目标；库不注入全局 API polyfill。宿主应用的可选依赖和嵌入式 WebView 也需满足相应运行时要求。
 
 ## 版本
 

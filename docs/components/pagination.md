@@ -56,7 +56,7 @@ const current1 = ref(1);
 
 ## 更多页码
 
-当页数较多时，会自动折叠显示。
+当页数较多时，会自动折叠显示。`show-pages` 是页码数量上限（奇数，至少 3）；分页器会按容器的实际宽度减少相邻页码，始终保留首页、末页、当前页和前后翻页。空间不足时省略号跳转按钮也会隐藏；恢复宽度后自动恢复，不改变当前页或触发 `change`。极窄容器中无法容纳的必要控件会换行。
 
 ::: raw
 
@@ -582,23 +582,23 @@ const current6 = ref(1);
 
 ### Pagination Props
 
-| 属性                              | 说明                       | 类型                                                 | 默认值                  |
-| --------------------------------- | -------------------------- | ---------------------------------------------------- | ----------------------- |
-| `current` / `v-model:current`     | 当前页码                   | `number`                                             | `1`                     |
-| `page-size` / `v-model:page-size` | 每页条数                   | `number`                                             | `10`                    |
-| `total`                           | 数据总数                   | `number`                                             | —                       |
-| `page-size-options`               | 每页条数选项               | `number[]`                                           | `[10, 20, 30, 50, 100]` |
-| `show-size-changer`               | 是否显示每页条数选择器     | `boolean`                                            | `false`                 |
-| `show-quick-jumper`               | 是否显示快速跳转           | `boolean`                                            | `false`                 |
-| `show-total`                      | 是否显示总数               | `boolean`                                            | `true`                  |
-| `total-text`                      | 总数文本模板函数           | `(total: number, range: [number, number]) => string` | —                       |
-| `disabled`                        | 是否禁用                   | `boolean`                                            | `false`                 |
-| `simple`                          | 是否简洁模式               | `boolean`                                            | `false`                 |
-| `size`                            | 尺寸                       | `'small' \| 'medium' \| 'large'`                     | `'medium'`              |
-| `align`                           | 对齐方式                   | `'left' \| 'center' \| 'right'`                      | `'left'`                |
-| `show-pages`                      | 显示的页码按钮数量（奇数） | `number`                                             | `7`                     |
-| `hide-on-single-page`             | 是否隐藏单页               | `boolean`                                            | `false`                 |
-| `aria-label`                      | 无障碍标签                 | `string`                                             | —                       |
+| 属性                              | 说明                                             | 类型                                                 | 默认值                  |
+| --------------------------------- | ------------------------------------------------ | ---------------------------------------------------- | ----------------------- |
+| `current` / `v-model:current`     | 当前页码                                         | `number`                                             | `1`                     |
+| `page-size` / `v-model:page-size` | 每页条数                                         | `number`                                             | `10`                    |
+| `total`                           | 数据总数                                         | `number`                                             | —                       |
+| `page-size-options`               | 每页条数选项                                     | `number[]`                                           | `[10, 20, 30, 50, 100]` |
+| `show-size-changer`               | 是否显示每页条数选择器                           | `boolean`                                            | `false`                 |
+| `show-quick-jumper`               | 是否显示快速跳转                                 | `boolean`                                            | `false`                 |
+| `show-total`                      | 是否显示总数                                     | `boolean`                                            | `true`                  |
+| `total-text`                      | 总数文本模板函数                                 | `(total: number, range: [number, number]) => string` | —                       |
+| `disabled`                        | 是否禁用                                         | `boolean`                                            | `false`                 |
+| `simple`                          | 是否简洁模式                                     | `boolean`                                            | `false`                 |
+| `size`                            | 尺寸                                             | `'small' \| 'medium' \| 'large'`                     | `'medium'`              |
+| `align`                           | 对齐方式                                         | `'left' \| 'center' \| 'right'`                      | `'left'`                |
+| `show-pages`                      | 页码按钮数量上限（奇数，至少 3），窄容器自动减少 | `number`                                             | `7`                     |
+| `hide-on-single-page`             | 是否隐藏单页                                     | `boolean`                                            | `false`                 |
+| `aria-label`                      | 无障碍标签                                       | `string`                                             | —                       |
 
 ### Pagination Events
 

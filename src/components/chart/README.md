@@ -200,15 +200,15 @@ const formatted = formatNumber(1234567); // "1.23M"
 
 ## 浏览器兼容性
 
-- Chrome >= 90
-- Firefox >= 88
-- Safari >= 14
-- Edge >= 90
+- Chrome >= 108
+- Firefox >= 121
+- Safari >= 16
+- Edge >= 108
 
 ## 依赖
 
-- Vue 3.4+
-- ECharts 6.0+
+- Vue ^3.5.41
+- ECharts ^6.1.0
 
 ## 许可证
 

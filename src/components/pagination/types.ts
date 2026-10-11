@@ -36,7 +36,7 @@ export interface ExPaginationProps {
   size?: PaginationSize;
   /** 对齐方式 */
   align?: PaginationAlign;
-  /** 显示的页码按钮数量（奇数） */
+  /** 页码按钮数量上限（奇数，至少 3）；容器变窄时自动减少，保留首尾和当前页 */
   showPages?: number;
   /** 是否隐藏单页 */
   hideOnSinglePage?: boolean;

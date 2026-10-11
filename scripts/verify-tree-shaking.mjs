@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import vue from '@vitejs/plugin-vue';
 import { build } from 'vite';
+import browserTargets from '../browser-targets.json' with { type: 'json' };
 
 const projectRoot = resolve(import.meta.dirname, '..');
 const fixture = resolve(projectRoot, 'tests/fixtures/tree-shaking/root-named-import.ts');
@@ -13,7 +14,8 @@ const result = await build({
   build: {
     write: false,
     minify: false,
-    target: 'es2020',
+    target: browserTargets,
+    cssTarget: browserTargets,
     lib: {
       entry: fixture,
       formats: ['es'],

@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { UserConfig } from 'vite';
-import { isFullStyleEntryId } from '../../vite.config';
+import viteFullConfig, { isFullStyleEntryId } from '../../vite.config';
 import viteEsConfig from '../../vite.config.es';
 
 interface PackageManifest {
@@ -39,9 +39,28 @@ describe('发布配置契约', () => {
 
   it('两类 Vite 产物都通过 Vite 8 的 build.target 声明编译目标', () => {
     const esConfig = viteEsConfig as UserConfig;
+    const fullConfig = viteFullConfig as UserConfig;
 
-    expect(esConfig.build?.target).toBe('es2020');
+    const minimumBrowsers = ['chrome108', 'edge108', 'firefox121', 'safari16'];
+    expect(esConfig.build?.target).toEqual(minimumBrowsers);
+    expect(fullConfig.build?.target).toEqual(minimumBrowsers);
+    expect(esConfig.build?.cssTarget).toEqual(minimumBrowsers);
+    expect(fullConfig.build?.cssTarget).toEqual(minimumBrowsers);
     expect(esConfig.esbuild).not.toMatchObject({ target: expect.anything() });
+  });
+
+  it('各入口文档对最低浏览器版本给出一致承诺', async () => {
+    for (const path of ['docs/guide/index.md', 'src/components/chart/README.md']) {
+      const content = await readFile(resolve(projectRoot, path), 'utf8');
+      for (const requirement of [
+        'Chrome >= 108',
+        'Edge >= 108',
+        'Firefox >= 121',
+        'Safari >= 16',
+      ]) {
+        expect(content).toContain(requirement);
+      }
+    }
   });
 
   it('包版本、许可证与发布来源元数据保持一致', async () => {

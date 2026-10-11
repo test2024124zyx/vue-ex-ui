@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { cpus, release } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { build, preview } from 'vite';
+import { paginationBrowserCases } from './pagination-browser-cases.mjs';
+import browserTargets from '../../browser-targets.json' with { type: 'json' };
 import {
   chromium,
   firefox,
@@ -29,7 +31,12 @@ await build({
   root: import.meta.dirname,
   configFile: false,
   logLevel: 'warn',
-  build: { outDir: buildDirectory, emptyOutDir: true, target: 'es2020' },
+  build: {
+    outDir: buildDirectory,
+    emptyOutDir: true,
+    target: browserTargets,
+    cssTarget: browserTargets,
+  },
 });
 const server = await preview({
   root: import.meta.dirname,
@@ -46,6 +53,7 @@ const results = [];
 const performanceSamples = [];
 const resourceSamples = [];
 const consoleErrors = [];
+let activeCheck = 'startup';
 const manifest = {
   revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceState: 'working-tree',
@@ -69,7 +77,7 @@ const manifest = {
 const context = await browser.newContext({ viewport: manifest.viewport, deviceScaleFactor: 1 });
 const page = await context.newPage();
 page.setDefaultTimeout(ACTION_TIMEOUT);
-page.on('pageerror', error => consoleErrors.push(String(error)));
+page.on('pageerror', error => consoleErrors.push({ check: activeCheck, message: String(error) }));
 await page.goto(origin);
 await page.waitForFunction(() => window.__audit);
 const cdp = engine === 'chromium' ? await context.newCDPSession(page) : null;
@@ -79,6 +87,7 @@ const snap = () => page.evaluate(() => window.__audit.snapshot());
 const active = () => page.evaluate(() => document.activeElement?.id);
 
 async function check(id, name, run) {
+  activeCheck = id;
   try {
     const evidence = await run();
     results.push({ id, name, status: 'passed', evidence });
@@ -349,6 +358,11 @@ try {
     }));
     assert.ok(dimensions.scrollWidth <= dimensions.width, JSON.stringify(dimensions));
     return dimensions;
+  });
+  await paginationBrowserCases({ browser, page, mount, check, output, origin });
+  await check('BROWSER-ERRORS', '整个浏览器回归期间没有未捕获页面异常', async () => {
+    assert.deepEqual(consoleErrors, []);
+    return { count: consoleErrors.length };
   });
 } finally {
   await writeFile(

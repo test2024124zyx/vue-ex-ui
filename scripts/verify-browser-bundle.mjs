@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { build } from 'vite';
+import browserTargets from '../browser-targets.json' with { type: 'json' };
 
 // 以已发布产物的单组件消费体积为基线，预算包含基础主题但不包含外置 Vue。
 const SINGLE_BUTTON_BUDGET = { javascript: 60_000, css: 90_000 };
@@ -33,7 +34,8 @@ export async function verifyBrowserBundle(consumerDirectory) {
     build: {
       write: false,
       minify: true,
-      target: 'es2020',
+      target: browserTargets,
+      cssTarget: browserTargets,
       lib: { entry, formats: ['es'], cssFileName: 'single-button' },
       rollupOptions: {
         external: ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-javascript'],

@@ -16,7 +16,11 @@
     </div>
 
     <!-- 分页按钮组 -->
-    <div class="ex-pagination__items">
+    <div
+      ref="itemsRef"
+      class="ex-pagination__items"
+      :style="itemsStyle"
+    >
       <!-- 上一页按钮 -->
       <button
         type="button"
@@ -68,7 +72,7 @@
 
         <!-- 向前省略号 -->
         <button
-          v-if="showPrevMore"
+          v-if="layout.previousMore"
           type="button"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
@@ -91,7 +95,7 @@
 
         <!-- 中间页码 -->
         <button
-          v-for="page in pagers"
+          v-for="page in layout.pages"
           :key="page"
           type="button"
           class="ex-pagination__item"
@@ -106,7 +110,7 @@
 
         <!-- 向后省略号 -->
         <button
-          v-if="showNextMore"
+          v-if="layout.nextMore"
           type="button"
           class="ex-pagination__item ex-pagination__item--more"
           :disabled="disabled"
@@ -158,6 +162,21 @@
       </button>
     </div>
 
+    <!-- 测量节点不参与布局和无障碍树，保留字体、主题与触摸尺寸的真实宽度。 -->
+    <span
+      ref="measureRef"
+      class="ex-pagination__measure"
+      aria-hidden="true"
+    >
+      <span class="ex-pagination__item">{{ totalPages }}</span>
+      <span class="ex-pagination__item">
+        <ExIcon
+          icon="arrow-left-s-line"
+          :size="16"
+        />
+      </span>
+    </span>
+
     <!-- 每页条数选择器 -->
     <div
       v-if="showSizeChanger && !simple"
@@ -208,6 +227,7 @@ import { computed, ref, watch } from 'vue';
 import type { ExPaginationProps, ExPaginationEmits, ExPaginationExposed } from './types';
 import { useLocale } from '../../locale';
 import { useControllableState } from '../../composables/useControllableState';
+import { useResponsivePagination } from './useResponsivePagination';
 
 defineOptions({
   name: 'ExPagination',
@@ -232,6 +252,8 @@ const emit = defineEmits<ExPaginationEmits>();
 
 const { t } = useLocale('pagination');
 const paginationRef = ref<HTMLDivElement>();
+const itemsRef = ref<HTMLDivElement>();
+const measureRef = ref<HTMLSpanElement>();
 
 const normalizePageSize = (value: number) => {
   return Number.isFinite(value) && value > 0 ? Math.max(1, Math.floor(value)) : 10;
@@ -282,54 +304,11 @@ const totalDisplayText = computed(() => {
   return t('total', { total: props.total });
 });
 
-// 计算显示的页码
-const pagers = computed(() => {
-  const pageCount = totalPages.value;
-  const currentPageNum = currentPage.value;
-  const showPagesCount = props.showPages;
-
-  if (pageCount <= showPagesCount) {
-    // 总页数小于等于显示页数，显示所有页码（除了首尾）
-    const pages: number[] = [];
-    for (let i = 2; i < pageCount; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
-  // 计算中间显示的页码
-  const halfShow = Math.floor((showPagesCount - 2) / 2);
-  let start = currentPageNum - halfShow;
-  let end = currentPageNum + halfShow;
-
-  if (start < 2) {
-    start = 2;
-    end = start + showPagesCount - 3;
-  }
-
-  if (end > pageCount - 1) {
-    end = pageCount - 1;
-    start = end - showPagesCount + 3;
-  }
-
-  const pages: number[] = [];
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  return pages;
-});
-
-// 是否显示向前省略号
-const showPrevMore = computed(() => {
-  const firstPager = pagers.value[0];
-  return pagers.value.length > 0 && firstPager !== undefined && firstPager > 2;
-});
-
-// 是否显示向后省略号
-const showNextMore = computed(() => {
-  const lastPager = pagers.value[pagers.value.length - 1];
-  return pagers.value.length > 0 && lastPager !== undefined && lastPager < totalPages.value - 1;
+const { itemsStyle, layout } = useResponsivePagination(paginationRef, itemsRef, measureRef, {
+  total: totalPages,
+  current: currentPage,
+  showPages: () => props.showPages,
+  simple: () => props.simple,
 });
 
 // 样式类

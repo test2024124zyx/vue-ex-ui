@@ -67,6 +67,8 @@ async function mount(scene, config = {}) {
     theme: config.theme ?? 'light',
     rows: makeRows(config.rows ?? 100),
     counter: 0,
+    current: config.current ?? 1,
+    containerWidth: config.containerWidth ?? '100%',
   });
   form = ref();
   inputEvents = [];
@@ -178,7 +180,35 @@ async function mount(scene, config = {}) {
           duration: 0,
         }),
       ];
-    if (scene === 'pagination') return h(ExPagination, { total: 100 });
+    if (scene === 'pagination')
+      return h(
+        'div',
+        {
+          id: 'pagination-container',
+          style: { width: state.containerWidth, maxWidth: '100%' },
+        },
+        [
+          h(ExPagination, {
+            total: config.total ?? 100,
+            current: state.current,
+            size: config.size ?? 'medium',
+            align: config.align ?? 'left',
+            showPages: config.showPages ?? 7,
+            showTotal: config.showTotal ?? true,
+            showSizeChanger: config.showSizeChanger ?? false,
+            showQuickJumper: config.showQuickJumper ?? false,
+            simple: config.simple ?? false,
+            disabled: config.disabled ?? false,
+            totalText: config.longText
+              ? () => '分页总数与当前数据范围会随容器宽度自然换行而保持完整可读'
+              : undefined,
+            'onUpdate:current': value => {
+              state.current = value;
+              state.counter++;
+            },
+          }),
+        ]
+      );
     return [
       h(ExButton, {}, () => '确认'),
       input(),

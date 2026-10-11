@@ -2,6 +2,7 @@ import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { dirname, relative, resolve } from 'node:path';
+import browserTargets from './browser-targets.json';
 
 /// <reference types="vitest" />
 
@@ -69,7 +70,8 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2020',
+    target: browserTargets,
+    cssTarget: browserTargets,
     lib: {
       entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'ExUI',
