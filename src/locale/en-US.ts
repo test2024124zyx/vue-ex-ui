@@ -150,6 +150,14 @@ const enUS = {
 
   // Table
   table: {
+    editError: 'Unable to save this row. Please retry.',
+    editConflict: 'This row changed while editing. Cancel and edit the latest record.',
+    editCell: 'Edit {column}',
+    actions: 'Actions',
+    resizeColumn: 'Resize {column}',
+    moveColumnBefore: 'Move {column} before the previous column',
+    moveColumnAfter: 'Move {column} after the next column',
+    reorderColumn: 'Reorder {column}',
     loading: 'Loading...',
     empty: 'No Data',
     selectAll: 'Select All',
@@ -405,6 +413,8 @@ const enUS = {
 
   // Selector
   selector: {
+    loadError: 'Unable to load options. Please retry.',
+    retry: 'Retry',
     placeholder: 'Select',
     searchPlaceholder: 'Search...',
     noData: 'No Data',
@@ -414,6 +424,13 @@ const enUS = {
     selectedCount: '{count} selected',
     removeTagAria: 'Remove {label}',
     comboboxLabel: 'Select option',
+  },
+
+  // 树节点异步加载
+  tree: {
+    loading: 'Loading child nodes',
+    loadError: 'Failed to load child nodes',
+    retryLoad: 'Retry loading',
   },
 
   // Skeleton

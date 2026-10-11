@@ -10,6 +10,8 @@ export type {
   SelectOption,
   SelectOptionGroup,
   SelectOptions,
+  SelectRemoteContext,
+  SelectRemoteLoader,
   SelectSize,
 } from './types';
 

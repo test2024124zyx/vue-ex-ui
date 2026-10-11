@@ -21,6 +21,7 @@
       :aria-expanded="searchable ? undefined : dropdownVisible"
       :aria-controls="searchable ? undefined : dropdownId"
       :aria-disabled="searchable ? undefined : effectiveDisabled"
+      :aria-busy="searchable ? undefined : remoteLoading"
       :aria-activedescendant="searchable ? undefined : activeDescendantId"
       :tabindex="effectiveDisabled || searchable ? undefined : 0"
       @click="handleTriggerClick"
@@ -79,6 +80,7 @@
             :aria-invalid="ariaInvalid"
             :aria-readonly="effectiveReadonly"
             :aria-expanded="dropdownVisible"
+            :aria-busy="remoteLoading"
             :aria-controls="dropdownId"
             :aria-activedescendant="activeDescendantId"
             :placeholder="selectedValues.length ? '' : currentPlaceholder"
@@ -88,6 +90,8 @@
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleSearch"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
             @keydown.stop="handleKeydown"
           />
           <span
@@ -117,6 +121,7 @@
             :aria-invalid="ariaInvalid"
             :aria-readonly="effectiveReadonly"
             :aria-expanded="dropdownVisible"
+            :aria-busy="remoteLoading"
             :aria-controls="dropdownId"
             :aria-activedescendant="activeDescendantId"
             :placeholder="
@@ -131,6 +136,8 @@
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleSearch"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
             @keydown.stop="handleKeydown"
           />
           <span
@@ -202,19 +209,16 @@
       <Transition name="ex-select-dropdown">
         <div
           v-if="dropdownVisible"
-          :id="dropdownId"
           ref="dropdownRef"
           class="ex-select__dropdown"
           :data-theme="configTheme"
           :class="dropdownClasses"
-          role="listbox"
-          :aria-labelledby="controlId"
-          :aria-multiselectable="multiple || undefined"
           :style="[dropdownStyles, popupOverlayStyles]"
         >
           <!-- 分组标题与选项共享固定行高，键盘导航仍只计算可选项。 -->
           <ExVirtualList
             v-if="useVirtual"
+            v-bind="listboxAttrs"
             ref="virtualListRef"
             class="ex-select__options ex-select__options--virtual"
             wrapper-role="presentation"
@@ -269,8 +273,8 @@
 
           <ul
             v-else
+            v-bind="listboxAttrs"
             class="ex-select__options"
-            role="presentation"
           >
             <template
               v-for="item in filteredOptions"
@@ -348,20 +352,42 @@
 
             <!-- 加载中（远程搜索） -->
             <li
-              v-if="loading"
+              v-if="remoteLoading"
               class="ex-select__loading"
+              role="presentation"
             >
               <slot name="loading">{{ t('loading') }}</slot>
             </li>
 
             <!-- 无数据 -->
             <li
-              v-else-if="filteredOptions.length === 0"
+              v-else-if="!remoteFailure && filteredOptions.length === 0"
               class="ex-select__empty"
+              role="presentation"
             >
               <slot name="empty">{{ t('noData') }}</slot>
             </li>
           </ul>
+          <div
+            v-if="remoteFailure"
+            class="ex-select__remote-error"
+            @keydown="handleRetryKeydown"
+          >
+            <slot
+              name="error"
+              :error="remoteFailure.error"
+              :retry="retryRemote"
+            >
+              <span role="alert">{{ t('loadError') }}</span>
+              <button
+                type="button"
+                class="ex-select__retry"
+                @click="retryRemote"
+              >
+                {{ t('retry') }}
+              </button>
+            </slot>
+          </div>
         </div>
       </Transition>
     </Teleport>
@@ -380,7 +406,6 @@ import type {
   SelectValue,
 } from './types';
 import { useLocale } from '../../locale';
-import { debounce } from '../../utils/debounce';
 import {
   useAnimation,
   useComponentSize,
@@ -401,6 +426,8 @@ import { getOptionKey, isGroup, useSelectOptions } from './use-select-options';
 import type { SelectVirtualRow } from './use-select-options';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import { useSelectAria } from './use-select-aria';
+import { useSelectRemote } from './use-select-remote';
 
 defineOptions({
   name: 'ExSelect',
@@ -447,6 +474,7 @@ const virtualListRef = ref<InstanceType<typeof ExVirtualList>>();
 // State
 const dropdownVisible = ref(false);
 const searchQuery = ref('');
+const composing = ref(false);
 const hoverIndex = ref(-1);
 const dropdownStyles = ref<Record<string, string>>({});
 const configTheme = useConfigTheme();
@@ -457,7 +485,7 @@ const { styles: popupOverlayStyles, containsTarget: containsPopupTarget } = useP
   active: () => dropdownVisible.value,
   container: dropdownRef,
   zIndex: () => dropdownZIndex.value,
-  onEscape: () => hideDropdown(),
+  onEscape: () => hideDropdown(true),
 });
 const availableDropdownHeight = ref(SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT);
 
@@ -470,70 +498,14 @@ const activeDescendantId = computed(() =>
   hoverIndex.value >= 0 ? getOptionId(hoverIndex.value) : undefined
 );
 
-// 合并外部与 FormItem 提供的可访问性 ID，避免重复引用同一个节点。
-const mergeAriaIds = (...values: Array<string | undefined>): string | undefined => {
-  const ids = values.flatMap(value => value?.split(/\s+/) ?? []).filter(Boolean);
-  return ids.length > 0 ? Array.from(new Set(ids)).join(' ') : undefined;
-};
-
-const readAttr = (name: string): string | undefined => {
-  const value = attrs[name];
-  if (typeof value === 'string' && value.trim()) return value.trim();
-  if (value === true) return 'true';
-  if (value === false) return 'false';
-  return undefined;
-};
-
-// 仅把未被组件显式处理的属性转发给真正的交互节点。
-const triggerAttrs = computed<Record<string, unknown>>(() => {
-  const forwarded = { ...attrs };
-  delete forwarded.class;
-  delete forwarded.style;
-  return forwarded;
-});
-
-const externalAriaLabel = computed(() => readAttr('aria-label'));
-const labelledBy = computed(() =>
-  mergeAriaIds(
-    readAttr('aria-labelledby'),
-    externalAriaLabel.value ? undefined : formItem?.labelId?.value
-  )
-);
-const describedBy = computed(() =>
-  mergeAriaIds(readAttr('aria-describedby'), formItem?.describedBy?.value)
-);
-const errorMessageId = computed(() => {
-  const externalId = readAttr('aria-errormessage');
-  if (externalId) return externalId;
-  if (formItem?.status?.value === 'error' && formItem.errorMessage?.value) {
-    return formItem.describedBy?.value;
-  }
-  return undefined;
-});
-type AriaInvalidValue = 'true' | 'false' | 'grammar' | 'spelling';
-
-const ariaInvalid = computed<AriaInvalidValue | undefined>(() => {
-  const externalValue = readAttr('aria-invalid');
-  if (
-    externalValue === 'true' ||
-    externalValue === 'false' ||
-    externalValue === 'grammar' ||
-    externalValue === 'spelling'
-  ) {
-    return externalValue;
-  }
-  return formItem?.status?.value === 'error' ? 'true' : undefined;
-});
-
 const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
 const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
 const inheritedStatus = computed(() => formItem?.status?.value || '');
 const currentPlaceholder = computed(
   () => props.placeholder || (props.searchable ? t('searchPlaceholder') : t('placeholder'))
 );
-const accessibleLabel = computed(
-  () => externalAriaLabel.value || (labelledBy.value ? undefined : currentPlaceholder.value)
-);
+const { triggerAttrs, labelledBy, describedBy, errorMessageId, ariaInvalid, accessibleLabel } =
+  useSelectAria(attrs, formItem, currentPlaceholder);
 const normalizedOptionHeight = computed(() => {
   const value = Number(props.optionHeight);
   return Number.isFinite(value) && value >= SELECT_DEFAULT_OPTION_HEIGHT
@@ -544,10 +516,29 @@ const normalizedMultipleLimit = computed(() => {
   const value = Number(props.multipleLimit);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 });
-const normalizedRemoteDebounce = computed(() => {
-  const value = Number(props.remoteDebounce);
-  return Number.isFinite(value) && value >= 0 ? value : SELECT_DEFAULT_REMOTE_DEBOUNCE;
-});
+const remote = useSelectRemote(
+  props,
+  searchQuery,
+  dropdownVisible,
+  () => effectiveDisabled.value || effectiveReadonly.value,
+  (error, query) => emit('remote-error', error, query)
+);
+const { options: sourceOptions, loading: remoteLoading, failure: remoteFailure } = remote;
+const listboxAttrs = computed(() => ({
+  id: dropdownId.value,
+  role: 'listbox',
+  'data-theme': configTheme.value,
+  'aria-labelledby': controlId.value,
+  'aria-multiselectable': props.multiple || undefined,
+  'aria-busy': remoteLoading.value,
+  style: popupOverlayStyles.value,
+}));
+const retryRemote = () => {
+  if (!remoteFailure.value) return;
+  // 默认重试按钮在请求开始后卸载，先将焦点归还给稳定存在的输入控件。
+  focus();
+  remote.retry();
+};
 
 const dropdownClasses = computed(() => [
   {
@@ -590,7 +581,7 @@ const {
   virtualRows,
   getVirtualRowIndex,
   useVirtual,
-} = useSelectOptions(props, searchQuery);
+} = useSelectOptions(props, searchQuery, sourceOptions, remoteLoading);
 
 // 折叠标签时实际展示的标签与被折叠数量
 const displayTags = computed<SelectOption[]>(() =>
@@ -686,13 +677,14 @@ const handleTriggerClick = () => {
   }
 };
 
-const showDropdown = () => {
+const showDropdown = (loadRemote = true) => {
   if (effectiveDisabled.value || effectiveReadonly.value || dropdownVisible.value) return;
 
   availableDropdownHeight.value = SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT;
   dropdownStyles.value = {};
   dropdownVisible.value = true;
   emit('visible-change', true);
+  if (loadRemote) remote.open();
 
   nextTick(() => {
     updateDropdownPosition();
@@ -702,7 +694,10 @@ const showDropdown = () => {
   });
 };
 
-const hideDropdown = () => {
+const hideDropdown = (restoreFocus = false) => {
+  if (restoreFocus && dropdownRef.value?.contains(document.activeElement)) focus();
+  remote.cancel();
+  composing.value = false;
   if (!dropdownVisible.value) {
     searchQuery.value = '';
     hoverIndex.value = -1;
@@ -743,7 +738,10 @@ const handleSelect = (option: SelectOption) => {
     );
     formItem?.onFieldChange();
     // 多选保持下拉打开；清空搜索词以便继续筛选
-    if (props.searchable) searchQuery.value = '';
+    if (props.searchable) {
+      searchQuery.value = '';
+      remote.open();
+    }
     return;
   }
 
@@ -786,38 +784,53 @@ const handleBlur = (event: FocusEvent) => {
   formItem?.onFieldBlur();
 };
 
-// 远程搜索：防抖触发父级的 remoteMethod
-let triggerRemote = debounce((query: string) => {
-  props.remoteMethod?.(query);
-}, normalizedRemoteDebounce.value);
-
-watch(normalizedRemoteDebounce, delay => {
-  triggerRemote.cancel();
-  triggerRemote = debounce((query: string) => {
-    props.remoteMethod?.(query);
-  }, delay);
-});
-
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
   if (!disabled && !readonly) return;
-  triggerRemote.cancel();
   hideDropdown();
 });
 
-const handleSearch = () => {
-  if (effectiveDisabled.value || effectiveReadonly.value) return;
+const handleSearch = (event?: Event) => {
+  if (
+    effectiveDisabled.value ||
+    effectiveReadonly.value ||
+    composing.value ||
+    (event instanceof InputEvent && event.isComposing)
+  )
+    return;
   // 过滤结果变化后重置高亮，避免索引指向已被过滤掉的选项
   hoverIndex.value = -1;
   if (!dropdownVisible.value) {
-    showDropdown();
+    showDropdown(false);
   }
-  if (props.remote && props.remoteMethod) {
-    triggerRemote(searchQuery.value);
-  }
+  remote.search(searchQuery.value);
+};
+
+const handleCompositionStart = () => {
+  composing.value = true;
+  remote.cancel();
+};
+const handleCompositionEnd = (event: CompositionEvent) => {
+  composing.value = false;
+  searchQuery.value = (event.target as HTMLInputElement).value;
+  handleSearch();
+};
+
+const handleRetryKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape' && event.key !== 'Tab') return;
+  if (event.key === 'Escape' || event.shiftKey) event.preventDefault();
+  if (event.key === 'Escape') event.stopPropagation();
+  if (event.key === 'Escape' || event.shiftKey || !event.defaultPrevented) focus();
+  if (event.key === 'Escape' || !event.shiftKey) hideDropdown();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (effectiveDisabled.value || effectiveReadonly.value || isComposingKeyboardEvent(event)) return;
+  if (
+    effectiveDisabled.value ||
+    effectiveReadonly.value ||
+    composing.value ||
+    isComposingKeyboardEvent(event)
+  )
+    return;
 
   switch (event.key) {
     case 'ArrowDown':
@@ -866,6 +879,10 @@ const handleKeydown = (event: KeyboardEvent) => {
       // 空格仅在非搜索模式下触发（搜索输入框中空格属于正常输入）
       if (event.key === ' ' && props.searchable) return;
       event.preventDefault();
+      if (remoteFailure.value) {
+        retryRemote();
+        return;
+      }
       if (dropdownVisible.value && hoverIndex.value >= 0) {
         const hovered = flatFilteredOptions.value[hoverIndex.value];
         if (hovered && !hovered.disabled) {
@@ -884,6 +901,16 @@ const handleKeydown = (event: KeyboardEvent) => {
       break;
 
     case 'Tab':
+      if (remoteFailure.value && !event.shiftKey) {
+        const retryButton = dropdownRef.value?.querySelector<HTMLElement>(
+          '.ex-select__remote-error button:not([disabled]), .ex-select__remote-error [tabindex="0"]'
+        );
+        if (retryButton) {
+          event.preventDefault();
+          retryButton.focus();
+          return;
+        }
+      }
       hideDropdown();
       break;
   }
@@ -941,8 +968,6 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
   window.removeEventListener('resize', handleViewportChange);
   window.removeEventListener('scroll', handleViewportChange, true);
-  // 清理远程搜索防抖待执行的定时器
-  triggerRemote.cancel();
 });
 
 // 暴露的方法
@@ -967,6 +992,7 @@ defineExpose<ExSelectExposed>({
   blur,
   showDropdown,
   hideDropdown,
+  retryRemote,
 });
 </script>
 

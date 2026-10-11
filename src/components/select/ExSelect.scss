@@ -462,6 +462,38 @@ $select-touch-target: 44px;
     font-size: var(--ex-text-sm);
   }
 
+  &__remote-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-4);
+    color: var(--ex-color-text-secondary);
+    text-align: center;
+    font-size: var(--ex-text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  &__retry {
+    min-height: $select-touch-target;
+    padding: var(--ex-spacing-1) var(--ex-spacing-4);
+    border: 1px solid var(--ex-color-neon-blue-500);
+    border-radius: var(--ex-radius-sm);
+    background: transparent;
+    color: var(--ex-color-text-primary);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.12);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-400);
+      outline-offset: 2px;
+    }
+  }
+
   // 响应式
   @include mobile {
     width: 100%;

@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import type { Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { ExSelectProps, SelectOption, SelectOptionGroup, SelectOptions } from './types';
 import { useRemoteOptionCache } from './use-option-cache';
 
@@ -46,11 +46,16 @@ export function indexSelectOptions(options: SelectOptions) {
 }
 
 /** 选择器的数据查询统一使用缓存索引，避免每一渲染行重复扫描全部选项。 */
-export function useSelectOptions(props: ExSelectProps, searchQuery: Ref<string>) {
-  const sourceIndex = computed(() => indexSelectOptions(props.options ?? []));
+export function useSelectOptions(
+  props: ExSelectProps,
+  searchQuery: Ref<string>,
+  source: ComputedRef<SelectOptions> = computed(() => props.options ?? []),
+  loading: ComputedRef<boolean> = computed(() => Boolean(props.loading))
+) {
+  const sourceIndex = computed(() => indexSelectOptions(source.value));
   const flatOptions = computed(() => sourceIndex.value.flat);
   const filteredOptions = computed<SelectOptions>(() => {
-    const options = props.options ?? [];
+    const options = source.value;
     if (props.remote || !props.searchable || !searchQuery.value) return options;
     const query = searchQuery.value.toLowerCase();
     const matches = (option: SelectOption) =>
@@ -63,7 +68,7 @@ export function useSelectOptions(props: ExSelectProps, searchQuery: Ref<string>)
     });
   });
   const filteredIndex = computed(() =>
-    filteredOptions.value === props.options
+    filteredOptions.value === source.value
       ? sourceIndex.value
       : indexSelectOptions(filteredOptions.value)
   );
@@ -95,7 +100,7 @@ export function useSelectOptions(props: ExSelectProps, searchQuery: Ref<string>)
   const getVirtualRowIndex = (optionIndex: number) =>
     filteredIndex.value.rowIndices[optionIndex] ?? optionIndex;
   const useVirtual = computed(() =>
-    Boolean(props.virtual && !props.loading && flatFilteredOptions.value.length)
+    Boolean(props.virtual && !loading.value && flatFilteredOptions.value.length)
   );
   return {
     filteredOptions,

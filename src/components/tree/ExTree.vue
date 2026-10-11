@@ -112,6 +112,7 @@ import { useControllableState } from '../../composables/useControllableState';
 import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
 import { TREE_STATE_KEY } from './state';
+import { useTreeLoader } from './use-tree-loader';
 
 defineOptions({
   name: 'ExTree',
@@ -143,6 +144,14 @@ const props = withDefaults(defineProps<ExTreeProps>(), {
 const emit = defineEmits<ExTreeEmits>();
 defineSlots<ExTreeSlots>();
 
+const loader = useTreeLoader({
+  props,
+  onLoad: handleLoadedChildren,
+  onError: (error, node) => emit('load-error', error, node),
+});
+const treeData = computed(() => loader.tree.value.data);
+const { reloadNode, cancelNodeLoad, getNodeLoadState } = loader;
+
 const treeRef = ref<HTMLDivElement>();
 const viewportRef = ref<HTMLDivElement>();
 const measuredViewportHeight = ref(0);
@@ -170,26 +179,26 @@ const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
   }
   return null;
 };
-const activeKey = ref<string | null>(findFirstEnabledKey(props.data));
+const activeKey = ref<string | null>(findFirstEnabledKey(treeData.value));
 
 const collectExpandableKeys = (nodes: readonly TreeNode[]): string[] => {
   const keys: string[] = [];
-  const visit = (items: readonly TreeNode[]) => {
-    for (const node of items) {
-      if (!node.disabled && node.children && node.children.length > 0) {
-        keys.push(node.key);
-        visit(node.children);
-      }
+  const pending = [...nodes].reverse();
+  while (pending.length) {
+    const node = pending.pop()!;
+    if (!node.disabled && loader.isExpandable(node)) {
+      keys.push(node.key);
+      const children = node.children ?? [];
+      for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
     }
-  };
-  visit(nodes);
+  }
   return keys;
 };
 
 const expandedState = useControllableState<string[]>({
   controlledValue: () => props.expandedKeys,
   defaultValue: () =>
-    props.defaultExpandAll ? collectExpandableKeys(props.data) : [...props.defaultExpandedKeys],
+    props.defaultExpandAll ? collectExpandableKeys(treeData.value) : [...props.defaultExpandedKeys],
   clone: keys => [...keys],
   onChange: keys => emit('update:expandedKeys', keys),
 });
@@ -213,11 +222,18 @@ const expandedKeySet = computed(() => new Set(effectiveExpandedKeys.value));
 const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
 const checkedKeySet = computed(() => new Set(effectiveCheckedKeys.value));
 
+// 仅在受控展开值实际生效后加载；数据变更与加载后的可见树统一走这一入口。
+watch(
+  [() => [...effectiveExpandedKeys.value], treeData, () => props.disabled, () => props.loadData],
+  () => loader.syncExpanded(effectiveExpandedKeys.value),
+  { immediate: true }
+);
+
 // 一次前序遍历建立节点与父节点索引，数据变化时统一重建。
 const treeIndex = computed(() => {
   const nodes = new Map<string, TreeNode>();
   const parents = new Map<string, string>();
-  const pending = props.data
+  const pending = treeData.value
     .map(node => ({ node, parent: undefined as string | undefined }))
     .reverse();
   while (pending.length) {
@@ -239,7 +255,7 @@ const nodeMap = computed(() => treeIndex.value.nodes);
 // 过滤后的数据
 const filteredData = computed(() => {
   if (!filterValue.value || !props.filterNodeMethod) {
-    return props.data;
+    return treeData.value;
   }
 
   const filter = (nodes: TreeNode[]): TreeNode[] => {
@@ -260,7 +276,7 @@ const filteredData = computed(() => {
     return result;
   };
 
-  return filter(props.data);
+  return filter(treeData.value);
 });
 
 // 样式类
@@ -438,14 +454,13 @@ const isNodeCheckable = (node: TreeNode): boolean => !node.disabled && node.chec
 
 const getAllChildKeys = (node: TreeNode): string[] => {
   const keys: string[] = [];
-  const traverse = (n: TreeNode) => {
-    if (isNodeCheckable(n)) keys.push(n.key);
-    if (n.children) {
-      n.children.forEach(traverse);
-    }
-  };
-  if (node.children) {
-    node.children.forEach(traverse);
+  const pending = [...(node.children ?? [])].reverse();
+  // 异步返回可以包含深层完整子树，迭代遍历保留前序契约并避免调用栈溢出。
+  while (pending.length) {
+    const child = pending.pop()!;
+    if (isNodeCheckable(child)) keys.push(child.key);
+    const children = child.children ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
   }
   return keys;
 };
@@ -544,6 +559,16 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
   checkedState.request(nextKeys);
   emit('check', [...nextKeys], node, checked);
 };
+
+function handleLoadedChildren(node: TreeNode, children: TreeNode[]) {
+  // 加载结束时读取真实勾选状态，避免旧请求复活已经取消的选择。
+  if (props.checkable && !props.checkStrictly && checkedKeySet.value.has(node.key)) {
+    const next = new Set(effectiveCheckedKeys.value);
+    getAllChildKeys(node).forEach(key => next.add(key));
+    if (next.size !== effectiveCheckedKeys.value.length) checkedState.request([...next]);
+  }
+  emit('load', node, children);
+}
 
 // 处理节点点击
 const handleNodeClick = (node: TreeNode, event: MouseEvent) => {
@@ -676,7 +701,7 @@ const getNode = (key: string): TreeNode | null => {
 };
 
 const requestExpandAll = () => {
-  expandedState.request(collectExpandableKeys(props.data));
+  expandedState.request(collectExpandableKeys(treeData.value));
 };
 
 const requestCollapseAll = () => {
@@ -699,7 +724,7 @@ const filter = (value: string) => {
         }
       }
     };
-    walk(props.data, []);
+    walk(treeData.value, []);
     const nextKeys = Array.from(toExpand);
     if (
       nextKeys.length !== effectiveExpandedKeys.value.length ||
@@ -718,6 +743,9 @@ provide(TREE_STATE_KEY, {
   selected: selectedKeySet,
   checked: checkedKeySet,
   halfChecked: computed(() => new Set(halfCheckedKeys.value)),
+  isExpandable: loader.isExpandable,
+  getLoadState: getNodeLoadState,
+  reload: reloadNode,
 });
 provide('tree', {
   props,
@@ -725,6 +753,9 @@ provide('tree', {
 });
 
 defineExpose<ExTreeExposed>({
+  reloadNode,
+  cancelNodeLoad,
+  getNodeLoadState,
   getSelectedNodes,
   getCheckedNodes,
   getHalfCheckedNodes,

@@ -29,6 +29,17 @@ export interface SelectOptionGroup {
 
 export type SelectOptions = Array<SelectOption | SelectOptionGroup>;
 
+/** 单次托管远程查询的取消信号；请求实现应将其传给 fetch 等底层客户端。 */
+export interface SelectRemoteContext {
+  signal: AbortSignal;
+}
+
+/** 返回本次查询完整的选项集合，组件负责取消、乱序保护和错误状态。 */
+export type SelectRemoteLoader = (
+  query: string,
+  context: SelectRemoteContext
+) => Promise<SelectOptions>;
+
 /** 选择器绑定值：单选为标量，多选为数组 */
 export type SelectValue = string | number | null | Array<string | number>;
 
@@ -51,11 +62,13 @@ export interface ExSelectProps {
   clearable?: boolean;
   /** 是否可搜索 */
   searchable?: boolean;
-  /** 是否为远程搜索（由 remoteMethod 拉取选项；关闭本地过滤） */
+  /** 是否为远程搜索；关闭本地过滤 */
   remote?: boolean;
   /** 远程搜索方法：输入变化时调用，父级据此更新 options */
   remoteMethod?: (query: string) => void;
-  /** 加载中（远程搜索时由父级控制） */
+  /** 托管异步查询；与 remoteMethod 同时提供时优先使用，options 用于初始值回显 */
+  remoteLoader?: SelectRemoteLoader;
+  /** 外部加载状态；与托管请求的加载状态合并 */
   loading?: boolean;
   /** 远程搜索防抖（毫秒），默认 300 */
   remoteDebounce?: number;
@@ -91,6 +104,8 @@ export interface ExSelectSlots {
   empty?: () => unknown;
   /** 加载中的内容。 */
   loading?: () => unknown;
+  /** 远程查询失败时的内容；默认只展示通用提示，不输出原始错误。 */
+  error?: (scope: { error: unknown; retry: () => void }) => unknown;
 }
 
 export interface ExSelectEmits {
@@ -108,6 +123,8 @@ export interface ExSelectEmits {
   (e: 'blur', event: FocusEvent): void;
   /** 下拉显示状态变化 */
   (e: 'visible-change', visible: boolean): void;
+  /** 当前远程查询失败；主动取消或过期请求不会触发。 */
+  (e: 'remote-error', error: unknown, query: string): void;
 }
 
 export interface ExSelectExposed {
@@ -119,4 +136,6 @@ export interface ExSelectExposed {
   showDropdown: () => void;
   /** 隐藏下拉菜单 */
   hideDropdown: () => void;
+  /** 下拉打开且查询失败时立即重试最近失败的查询。 */
+  retryRemote: () => void;
 }

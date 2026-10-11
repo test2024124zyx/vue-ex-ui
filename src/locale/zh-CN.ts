@@ -152,6 +152,14 @@ const zhCN = {
 
   // 表格
   table: {
+    editError: '保存失败，请重试',
+    editConflict: '记录已在编辑期间更新，请取消后重新编辑',
+    editCell: '编辑{column}',
+    actions: '操作',
+    resizeColumn: '调整{column}列宽',
+    moveColumnBefore: '将{column}移到前一列之前',
+    moveColumnAfter: '将{column}移到后一列之后',
+    reorderColumn: '调整{column}列顺序',
     loading: '加载中...',
     empty: '暂无数据',
     selectAll: '全选',
@@ -407,6 +415,8 @@ const zhCN = {
 
   // 选择器
   selector: {
+    loadError: '加载失败，请重试',
+    retry: '重试',
     placeholder: '请选择',
     searchPlaceholder: '搜索...',
     noData: '暂无数据',
@@ -416,6 +426,13 @@ const zhCN = {
     selectedCount: '已选 {count} 项',
     removeTagAria: '移除 {label}',
     comboboxLabel: '选择一个选项',
+  },
+
+  // 树节点异步加载
+  tree: {
+    loading: '正在加载子节点',
+    loadError: '子节点加载失败',
+    retryLoad: '重试加载',
   },
 
   // 骨架屏

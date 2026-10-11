@@ -22,7 +22,42 @@ const DOWNLOAD_ROWS_PER_CHUNK = 128;
 const DOWNLOAD_CHUNK = Buffer.from(
   'id,name,status\n1,ExUI,complete\n'.repeat(DOWNLOAD_ROWS_PER_CHUNK)
 );
-const SUPPORTED_PATHS = new Set(['health', 'ticket', 'upload', 'download']);
+const SUPPORTED_PATHS = new Set(['health', 'ticket', 'upload', 'download', 'select-options']);
+const SELECT_QUERY_MAX_LENGTH = 100;
+const SELECT_LIMIT_MAX = 50;
+const SELECT_LIMIT_DEFAULT = 20;
+const SELECT_QUERY_PARAMETERS = new Set(['query', 'limit', 'outcome']);
+const SELECT_OPTIONS = [
+  { value: 'shanghai', label: '上海客户成功中心' },
+  { value: 'shenzhen', label: '深圳交付中心' },
+  { value: 'hangzhou', label: '杭州研发中心' },
+  { value: 'chengdu', label: '成都运营中心' },
+  { value: 'beijing', label: '北京服务中心' },
+  { value: 'wuhan', label: '武汉研发中心' },
+];
+
+/** 只接受明确且有界的查询参数，不把演示接口变成任意数据查询或错误回显入口。 */
+const parseSelectQuery = (parameters: URLSearchParams) => {
+  for (const key of parameters.keys()) {
+    if (!SELECT_QUERY_PARAMETERS.has(key) || parameters.getAll(key).length !== 1) {
+      throw new TypeError('无效或重复的查询参数');
+    }
+  }
+  const query = parameters.get('query') ?? '';
+  const limitText = parameters.get('limit') ?? String(SELECT_LIMIT_DEFAULT);
+  const limit = Number(limitText);
+  const outcome = parameters.get('outcome') ?? 'success';
+  if (
+    query.length > SELECT_QUERY_MAX_LENGTH ||
+    !/^\d+$/.test(limitText) ||
+    limit < 1 ||
+    limit > SELECT_LIMIT_MAX ||
+    !['success', 'error'].includes(outcome)
+  ) {
+    throw new TypeError('查询参数超出允许范围');
+  }
+  return { query: query.trim().toLowerCase(), limit, outcome };
+};
 
 const sendJson = (response: ServerResponse, status: number, value: unknown) => {
   if (response.destroyed || response.writableEnded) return;
@@ -107,6 +142,17 @@ export const createDemoMiddleware = (timings: Partial<DemoTimings> = {}) => {
     request.once('aborted', abort);
     const run = async () => {
       if (path === 'health') return sendJson(response, 200, { demo: true });
+      if (path === 'select-options') {
+        const { query, limit, outcome } = parseSelectQuery(url.searchParams);
+        await delay(timing.resolveDelayMs, undefined, { signal: controller.signal });
+        if (outcome === 'error') {
+          return sendJson(response, 503, { error: '本次为演示中的查询服务不可用' });
+        }
+        const options = SELECT_OPTIONS.filter(option =>
+          option.label.toLowerCase().includes(query)
+        ).slice(0, limit);
+        return sendJson(response, 200, options);
+      }
       if (path === 'ticket') {
         await delay(timing.resolveDelayMs, undefined, { signal: controller.signal });
         return sendJson(response, 200, {

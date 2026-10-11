@@ -106,6 +106,35 @@ describe('选择浮层在业务弹窗中的组合交互', () => {
     expect(document.querySelector('.ex-select__dropdown')).toBeNull();
   });
 
+  it('远程错误重试按钮的 Tab 尊重父弹窗已经完成的焦点移动', async () => {
+    wrapper = mount(ExModal, {
+      props: { modelValue: true, showClose: false, showFooter: false },
+      slots: {
+        default: () => [
+          h('button', { id: 'first-field' }, '前一项'),
+          h(ExSelect, {
+            searchable: true,
+            remote: true,
+            remoteLoader: async () => Promise.reject(new Error('查询失败')),
+          }),
+          h('button', { id: 'next-field' }, '下一项'),
+        ],
+      },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    await wrapper.findComponent(ExSelect).find('input').trigger('click');
+    await flushPromises();
+    const retry = document.querySelector<HTMLButtonElement>('.ex-select__retry')!;
+    retry.focus();
+    retry.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    );
+    await flushPromises();
+    expect(document.activeElement?.id).toBe('first-field');
+    expect(document.querySelector('.ex-select__dropdown')).toBeNull();
+  });
+
   it.each(['popover', 'tooltip'])('父弹窗隐藏时受控 %s 不保留悬空面板', async kind => {
     wrapper = mount(ExModal, {
       props: { modelValue: true },

@@ -10,6 +10,7 @@
     :aria-selected="selectable ? isSelected : undefined"
     :aria-checked="checkable ? (isHalfChecked ? 'mixed' : isChecked) : undefined"
     :aria-disabled="isDisabled"
+    :aria-busy="loadState.status === 'loading' || undefined"
     :aria-level="level + 1"
     :aria-posinset="position"
     :aria-setsize="setSize"
@@ -35,7 +36,14 @@
         @click.stop="handleToggle"
       >
         <ExIcon
-          v-if="isExpanded"
+          v-if="loadState.status === 'loading'"
+          icon="loader-4-line"
+          :size="16"
+          class="ex-tree-node__loading-icon"
+          aria-hidden="true"
+        />
+        <ExIcon
+          v-else-if="isExpanded"
           icon="arrow-down-s-line"
           :size="16"
           aria-hidden="true"
@@ -98,6 +106,30 @@
       <span class="ex-tree-node__label">
         <slot :node="node">{{ node.label }}</slot>
       </span>
+      <span
+        v-if="loadState.status === 'loading'"
+        class="ex-tree-node__status"
+        role="status"
+      >
+        {{ t('loading') }}
+      </span>
+      <span
+        v-else-if="loadState.status === 'error'"
+        class="ex-tree-node__status ex-tree-node__status--error"
+        role="status"
+      >
+        {{ t('loadError') }}
+      </span>
+      <button
+        v-if="loadState.status === 'error'"
+        type="button"
+        class="ex-tree-node__retry"
+        :disabled="isDisabled"
+        :aria-label="`${node.label}: ${t('retryLoad')}`"
+        @click.stop="handleRetry"
+      >
+        {{ t('retryLoad') }}
+      </button>
     </div>
 
     <!-- 子节点（虚拟滚动 flat 模式下由父级统一扁平渲染，这里不再递归） -->
@@ -155,6 +187,8 @@ import { computed, ref, nextTick, inject } from 'vue';
 import type { VNode } from 'vue';
 import type { TreeNode } from './types';
 import { TREE_STATE_KEY } from './state';
+import { useLocale } from '../../locale';
+import { useAnimation } from '../config-provider/composables';
 
 interface Props {
   node: TreeNode;
@@ -210,14 +244,30 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 defineSlots<Slots>();
 const stateLookup = inject(TREE_STATE_KEY, undefined);
+const { t } = useLocale('tree');
+const animation = useAnimation();
 
 const isDragOver = ref(false);
 const dropPosition = ref<'before' | 'after' | 'inner' | null>(null);
 const nodeRootRef = ref<HTMLElement>();
 
 const hasChildren = computed(() => {
-  return props.node.children && props.node.children.length > 0;
+  return stateLookup?.isExpandable(props.node) ?? Boolean(props.node.children?.length);
 });
+const loadState = computed(() => stateLookup?.getLoadState(props.node.key) ?? { status: 'idle' });
+const handleRetry = () => {
+  if (isDisabled.value) return;
+  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  const restoreFocus = focused?.classList.contains('ex-tree-node__retry');
+  void stateLookup?.reload(props.node.key).then(() => {
+    nextTick(() => {
+      // 重试按钮成功后消失时恢复节点焦点；用户已移到其他控件时不抢夺焦点。
+      if (restoreFocus && !focused?.isConnected && document.activeElement === document.body) {
+        nodeRootRef.value?.focus();
+      }
+    });
+  });
+};
 
 const isExpanded = computed(() => {
   return (
@@ -255,6 +305,7 @@ const nodeClasses = computed(() => {
       'ex-tree-node--expanded': isExpanded.value,
       'ex-tree-node--selected': isSelected.value,
       'ex-tree-node--disabled': isDisabled.value,
+      'ex-tree-node--no-animation': !animation.value,
       'ex-tree-node--drag-over': isDragOver.value,
       [`ex-tree-node--drop-${dropPosition.value}`]: dropPosition.value,
     },
@@ -316,7 +367,9 @@ const handleKeydown = (event: KeyboardEvent) => {
     }
     case 'ArrowRight': {
       event.preventDefault();
-      if (hasChildren.value && !isExpanded.value) {
+      if (loadState.value.status === 'error') {
+        handleRetry();
+      } else if (hasChildren.value && !isExpanded.value) {
         emit('toggle', props.node, true);
       } else if (hasChildren.value && isExpanded.value) {
         emit('navigate', props.node, key);
@@ -529,6 +582,59 @@ const handleDragEnd = (event: DragEvent) => {
 
   &__children {
     margin-left: 0;
+  }
+
+  &__status {
+    overflow: hidden;
+    font-size: var(--ex-text-xs);
+    color: var(--ex-color-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &--error {
+      color: var(--ex-color-danger);
+    }
+  }
+
+  &__retry {
+    flex-shrink: 0;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border);
+    border-radius: var(--ex-radius-sm);
+    background: var(--ex-color-bg-primary);
+    color: var(--ex-color-primary);
+    font: inherit;
+    font-size: var(--ex-text-xs);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  &__loading-icon {
+    animation: ex-tree-loading var(--ex-motion-duration-slow) linear infinite;
+  }
+
+  &--no-animation &__loading-icon {
+    animation: none;
+  }
+}
+
+@keyframes ex-tree-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-tree-node__loading-icon {
+    animation: none;
   }
 }
 </style>

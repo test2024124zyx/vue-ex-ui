@@ -563,9 +563,9 @@ describe('ExSelect', () => {
       await trigger.trigger('click');
       await nextTick();
       const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
-      expect(trigger.attributes('aria-controls')).toBe(dropdown.id);
-      expect(dropdown.getAttribute('role')).toBe('listbox');
-      expect(dropdown.querySelectorAll('[role="listbox"]').length).toBe(0);
+      const listbox = dropdown.querySelector('[role="listbox"]')!;
+      expect(trigger.attributes('aria-controls')).toBe(listbox.id);
+      expect(dropdown.querySelectorAll('[role="listbox"]').length).toBe(1);
       expect(dropdown.querySelector('.ex-select__option')?.getAttribute('aria-disabled')).toBe(
         null
       );

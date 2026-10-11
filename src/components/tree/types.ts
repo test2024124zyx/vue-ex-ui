@@ -24,12 +24,29 @@ export interface TreeNode {
   data?: unknown;
 }
 
+/** 异步子节点请求的取消上下文。 */
+export interface TreeLoadContext {
+  /** 收起、重载、数据替换或卸载时取消；加载函数也应将信号传给请求。 */
+  signal: AbortSignal;
+}
+
+/** 返回当前节点的完整子节点列表，空数组表示已确认没有子节点。 */
+export type TreeLoadData = (node: TreeNode, context: TreeLoadContext) => Promise<TreeNode[]>;
+
+/** 节点加载状态快照；取消恢复 idle，失败保留 error 供调用方展示。 */
+export interface TreeNodeLoadState {
+  status: 'idle' | 'loading' | 'loaded' | 'error';
+  error?: unknown;
+}
+
 /**
  * 树组件属性
  */
 export interface ExTreeProps {
   /** 树节点数据 */
   data: TreeNode[];
+  /** 异步加载子节点；isLeaf:false 的未知分支在展开后首次加载。 */
+  loadData?: TreeLoadData;
   /** 默认展开的节点 key 数组 */
   defaultExpandedKeys?: string[];
   /** 展开的节点 key 数组（受控） */
@@ -82,6 +99,10 @@ export interface ExTreeProps {
  * 树组件事件
  */
 export interface ExTreeEmits {
+  /** 子节点成功加载并纳入当前树后触发。 */
+  load: [node: TreeNode, children: TreeNode[]];
+  /** 请求或返回数据校验失败时触发；取消不会触发。 */
+  'load-error': [error: unknown, node: TreeNode];
   /** 展开/收起节点时触发 */
   'update:expandedKeys': [keys: string[]];
   /** 选中节点时触发 */
@@ -124,6 +145,12 @@ export interface ExTreeSlots {
  * 树组件暴露的方法
  */
 export interface ExTreeExposed {
+  /** 重新加载节点，保留旧子树直到成功；取消、失败或节点不可加载时返回 false。 */
+  reloadNode: (key: string) => Promise<boolean>;
+  /** 取消节点正在进行的请求，不清除已成功加载的数据。 */
+  cancelNodeLoad: (key: string) => boolean;
+  /** 获取节点加载状态的隔离快照。 */
+  getNodeLoadState: (key: string) => TreeNodeLoadState;
   /** 获取当前选中的节点 */
   getSelectedNodes: () => TreeNode[];
   /** 获取当前勾选的节点 */

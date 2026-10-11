@@ -147,6 +147,7 @@ export default defineConfig({
             { text: 'Empty 空状态', link: '/components/empty' },
             { text: 'Progress 进度组件', link: '/components/progress' },
             { text: 'Table 表格', link: '/components/table' },
+            { text: 'Table 高级能力', link: '/components/table-advanced' },
             { text: 'Tabs 选项卡', link: '/components/tabs' },
             { text: 'Panel 面板', link: '/components/panel' },
             { text: 'Code 代码', link: '/components/code' },

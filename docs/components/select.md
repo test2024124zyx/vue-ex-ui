@@ -11,6 +11,8 @@ const members = ref(['lin', 'zhou'])
 const searchable = ref(null)
 const longValue = ref(null)
 const remoteValue = ref(null)
+const managedRemoteValue = ref(null)
+const failNextRemote = ref(false)
 const virtualValue = ref(null)
 
 const departmentOptions = [
@@ -52,6 +54,17 @@ const handleRemoteSearch = query => {
   remoteOptions.value = keyword
     ? remoteSource.filter(option => option.label.toLowerCase().includes(keyword))
     : remoteSource
+}
+
+const loadRemoteOptions = async (query, { signal }) => {
+  const parameters = new URLSearchParams({ query })
+  if (failNextRemote.value) {
+    parameters.set('outcome', 'error')
+    failNextRemote.value = false
+  }
+  const response = await fetch(`/__exui_demo__/select-options?${parameters}`, { signal })
+  if (!response.ok) throw new Error(`查询失败：HTTP ${response.status}`)
+  return response.json()
 }
 
 const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
@@ -205,7 +218,7 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 
 ## 远程搜索
 
-远程模式由父组件控制 `options`。组件会缓存已经见过的选项，因此当前值不在最新查询结果中时仍能显示正确标签。
+传统 `remoteMethod(query)` 模式由父组件控制 `options` 和 `loading`，适用于已有请求状态管理的页面。组件缓存已经见过的选项，当前值不在最新查询结果中时仍能显示正确标签。以下示例展示这一兼容接口，筛选数据在页面内维护。
 
 ::: raw
 
@@ -239,6 +252,73 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 ```
 
 :::
+
+## 托管异步查询
+
+`remoteLoader(query, { signal })` 返回本次查询的完整选项数组。组件负责防抖、加载、失败重试，以及新查询、关闭、禁用、只读或卸载时的取消；即使请求客户端没有遵守 `signal`，过期结果也不会覆盖当前列表。输入法合成期间暂停查询，提交后查询完整文字。
+
+本例通过文档服务发出真实 HTTP 请求并在服务端筛选。点击“让下一次查询失败”后再打开或输入，可以检查错误状态和重试恢复。该服务随 `npm run docs:dev` 和 `npm run docs:preview` 启动；部署为纯静态站点时需要提供对应服务。
+
+::: raw
+
+<div class="vp-raw demo-container select-column">
+  <ex-select
+    v-model="managedRemoteValue"
+    remote
+    searchable
+    clearable
+    :remote-loader="loadRemoteOptions"
+    placeholder="远程搜索城市或中心"
+  />
+  <ex-button :disabled="failNextRemote" @click="failNextRemote = true">
+    {{ failNextRemote ? '下一次查询将失败' : '让下一次查询失败' }}
+  </ex-button>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const managedRemoteValue = ref(null);
+const failNextRemote = ref(false);
+const loadRemoteOptions = async (query, { signal }) => {
+  const parameters = new URLSearchParams({ query });
+  if (failNextRemote.value) {
+    parameters.set('outcome', 'error');
+    failNextRemote.value = false;
+  }
+  const response = await fetch(`/__exui_demo__/select-options?${parameters}`, { signal });
+  if (!response.ok) throw new Error(`查询失败：HTTP ${response.status}`);
+  return response.json();
+};
+</script>
+
+<template>
+  <ex-select
+    v-model="managedRemoteValue"
+    remote
+    searchable
+    clearable
+    :remote-loader="loadRemoteOptions"
+    placeholder="远程搜索城市或中心"
+  />
+  <ex-button
+    :disabled="failNextRemote"
+    @click="failNextRemote = true"
+  >
+    {{ failNextRemote ? '下一次查询将失败' : '让下一次查询失败' }}
+  </ex-button>
+</template>
+```
+
+:::
+
+托管模式每次打开都会查询当前搜索词，空字符串也是合法查询。输入新词时立即移除旧结果，等待当前结果返回后再允许选择；已选标签会保留。多选完成一次选择后清空查询词并重新加载，单选完成或清空则关闭并取消请求。`options` 可提供初始已选项的标签；首次请求以后列表由 `remoteLoader` 的结果管理，`modelValue` 始终受控。
+
+同时传入 `remoteLoader` 和 `remoteMethod` 时只调用前者。组件不会展示原始错误内容；业务可以监听 `remote-error`，或通过 `error` 插槽获得 `{ error, retry }` 定制恢复入口。按 `Enter` 可重试，`Tab` 可进入默认重试按钮，`Shift+Tab` 返回输入框。
 
 ## 虚拟滚动
 
@@ -294,12 +374,13 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 | `searchable`     | 是否可搜索                                                     | `boolean`                                          | `false`      |
 | `remote`         | 是否关闭本地过滤并启用远程搜索                                 | `boolean`                                          | `false`      |
 | `remoteMethod`   | 远程查询回调                                                   | `(query: string) => void`                          | —            |
-| `loading`        | 是否显示加载状态                                               | `boolean`                                          | `false`      |
+| `remoteLoader`   | 托管异步查询；优先于 `remoteMethod`                            | `SelectRemoteLoader`                               | —            |
+| `loading`        | 外部加载状态，与托管请求状态合并                               | `boolean`                                          | `false`      |
 | `remoteDebounce` | 远程查询防抖时间                                               | `number`                                           | `300`        |
 | `multiple`       | 是否多选                                                       | `boolean`                                          | `false`      |
 | `multipleLimit`  | 多选数量上限，`0` 表示不限                                     | `number`                                           | `0`          |
 | `collapseTags`   | 是否折叠多选标签                                               | `boolean`                                          | `false`      |
-| `virtual`        | 是否启用扁平选项虚拟滚动                                       | `boolean`                                          | `false`      |
+| `virtual`        | 是否启用普通或分组选项虚拟滚动                                 | `boolean`                                          | `false`      |
 | `optionHeight`   | 虚拟选项固定高度；必须与自定义行样式一致，且不小于触摸目标高度 | `number`                                           | `44`         |
 
 ### Events
@@ -313,15 +394,39 @@ const virtualOptions = Array.from({ length: 1000 }, (_, index) => ({
 | `focus`             | `(event: FocusEvent)`                                                                                                      |
 | `blur`              | `(event: FocusEvent)`                                                                                                      |
 | `visible-change`    | `(visible: boolean)`                                                                                                       |
+| `remote-error`      | `(error: unknown, query: string)`；取消和过期请求不触发                                                                    |
+
+### Slots
+
+| 名称      | 参数                          | 说明                                        |
+| --------- | ----------------------------- | ------------------------------------------- |
+| `option`  | `{ option, index, selected }` | 选项内容，普通和虚拟列表共享                |
+| `group`   | `{ group }`                   | 分组标题                                    |
+| `label`   | `{ option }`                  | 非搜索单选的选中内容                        |
+| `tag`     | `{ option }`                  | 多选标签内容                                |
+| `loading` | —                             | 加载内容                                    |
+| `empty`   | —                             | 空列表内容                                  |
+| `error`   | `{ error, retry }`            | 托管查询失败内容，重试入口位于 `listbox` 外 |
+
+### Remote Types
+
+```ts
+interface SelectRemoteContext {
+  signal: AbortSignal;
+}
+
+type SelectRemoteLoader = (query: string, context: SelectRemoteContext) => Promise<SelectOptions>;
+```
 
 ### Exposes
 
-| 方法           | 类型         |
-| -------------- | ------------ |
-| `focus`        | `() => void` |
-| `blur`         | `() => void` |
-| `showDropdown` | `() => void` |
-| `hideDropdown` | `() => void` |
+| 方法           | 类型                                           |
+| -------------- | ---------------------------------------------- |
+| `focus`        | `() => void`                                   |
+| `blur`         | `() => void`                                   |
+| `showDropdown` | `() => void`                                   |
+| `hideDropdown` | `() => void`                                   |
+| `retryRemote`  | `() => void`，下拉打开且存在失败查询时立即重试 |
 
 <style scoped>
 .select-row {
