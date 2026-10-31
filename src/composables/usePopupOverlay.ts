@@ -22,6 +22,8 @@ export function usePopupOverlay(
   });
   const styles = computed<Record<string, string>>(() => ({
     ...themeOverrides.value,
+    // 传送到 body 后不再继承触发区域的字体，显式消费可覆盖的主题字体变量。
+    fontFamily: 'var(--ex-font-secondary)',
     zIndex: String(overlay.zIndex.value),
   }));
   return { ...overlay, styles };

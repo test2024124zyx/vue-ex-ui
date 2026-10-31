@@ -332,6 +332,9 @@ const app = createApp({
         locale: 'zh-CN',
         size: params.get('size') === 'small' ? 'small' : 'medium',
         animation: false,
+        themeOverrides: params.has('font')
+          ? { '--ex-font-secondary': params.get('font')! }
+          : undefined,
       },
       () =>
         h('main', { class: 'ex-app', 'data-component': moduleName }, [
