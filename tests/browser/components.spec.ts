@@ -178,7 +178,11 @@ for (const component of modules) {
         );
         // 成功场景也保留真实截图，供逐组件检查排版、间距、色彩及浮层位置。
         await page.screenshot({
-          path: resolve('.tmp/visual-acceptance', testInfo.project.name, `${component}-${viewport.name}-${theme}.png`),
+          path: resolve(
+            '.tmp/visual-acceptance',
+            testInfo.project.name,
+            `${component}-${viewport.name}-${theme}.png`
+          ),
           fullPage: true,
           animations: 'disabled',
         });

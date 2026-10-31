@@ -627,13 +627,23 @@ const handleNodeContextmenu = (node: TreeNode, event: MouseEvent) => {
 // 拖拽相关
 const TREE_DRAG_TYPE = 'application/x-ex-ui-tree';
 let dragSession: { node: TreeNode; token: string } | undefined;
-watch([() => props.draggable, () => props.disabled, treeData], () => {
+const clearDragSession = () => {
   dragSession = undefined;
-});
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('dragstart', clearDragSession, true);
+    document.removeEventListener('dragend', clearDragSession, true);
+  }
+};
+watch([() => props.draggable, () => props.disabled, treeData], clearDragSession);
+onBeforeUnmount(clearDragSession);
 const handleNodeDragStart = (node: TreeNode, event: DragEvent) => {
   if (!event.dataTransfer || !props.draggable || props.disabled) return;
+  clearDragSession();
   dragSession = { node, token: generateId('ex-tree-drag') };
   event.dataTransfer.setData(TREE_DRAG_TYPE, dragSession.token);
+  // 下次文档拖拽和本次结束都会撤销会话，避免兼容缺失自定义格式时接受旧来源。
+  document.addEventListener('dragstart', clearDragSession, true);
+  document.addEventListener('dragend', clearDragSession, true);
   emit('node-drag-start', node, event);
 };
 
@@ -646,7 +656,7 @@ const handleNodeDragLeave = (node: TreeNode, event: DragEvent) => {
 };
 
 const handleNodeDragEnd = (node: TreeNode, event: DragEvent) => {
-  dragSession = undefined;
+  clearDragSession();
   emit('node-drag-end', node, event);
 };
 
@@ -658,10 +668,12 @@ const handleNodeDrop = (
 ) => {
   // 只接受当前树发起的拖拽，保证事件中的 dragNode 始终是完整原始节点。
   const session = dragSession;
-  dragSession = undefined;
+  clearDragSession();
+  const token = event.dataTransfer?.getData(TREE_DRAG_TYPE);
   if (
     !session ||
-    event.dataTransfer?.getData(TREE_DRAG_TYPE) !== session.token ||
+    !event.dataTransfer ||
+    (token && token !== session.token) ||
     session.node.key !== dragNode.key
   )
     return;

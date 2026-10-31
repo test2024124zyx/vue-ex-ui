@@ -60,7 +60,7 @@ describe('静态树结构与拖拽来源边界', () => {
     }
   );
 
-  it('跨树同 key 拖拽和过期会话不能冒充当前树源节点，同树拖拽仍可完成', async () => {
+  it('自定义拖拽格式丢失时，仍拒绝跨树与过期会话并允许当前树拖拽', async () => {
     const a = mount(ExTree, {
       props: { data: [{ key: 'same', label: '外部节点' }], draggable: true },
     });
@@ -77,7 +77,7 @@ describe('静态树结构与拖拽来源边界', () => {
     const payload = new Map<string, string>();
     const transfer = {
       setData: (type: string, value: string) => payload.set(type, value),
-      getData: (type: string) => payload.get(type) ?? '',
+      getData: (type: string) => (type === 'text/plain' ? (payload.get(type) ?? '') : ''),
     };
     const target = b.get('[data-node-key="target"]');
     vi.spyOn(target.element, 'getBoundingClientRect').mockReturnValue({
@@ -94,6 +94,10 @@ describe('静态树结构与拖拽来源边界', () => {
     await b.get('[data-node-key="same"]').trigger('dragstart', { dataTransfer: transfer });
     await drop();
     expect(b.emitted('node-drop')?.[0]?.[0]).toMatchObject({ label: '当前节点' });
+    await drop();
+    expect(b.emitted('node-drop')).toHaveLength(1);
+    await b.get('[data-node-key="same"]').trigger('dragstart', { dataTransfer: transfer });
+    document.dispatchEvent(new Event('dragstart', { bubbles: true }));
     await drop();
     expect(b.emitted('node-drop')).toHaveLength(1);
   });

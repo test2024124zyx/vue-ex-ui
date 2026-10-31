@@ -57,7 +57,10 @@ test('程序化重置不依赖失焦，撤销标签草稿及仍按住鼠标的�
   await page.mouse.move(thumb!.x + thumb!.width / 2, thumb!.y + thumb!.height / 2);
   await page.mouse.down();
   await page.mouse.move(track!.x + track!.width * 0.8, track!.y + track!.height / 2);
-  await expect(page.locator('.ex-slider [role="slider"]')).not.toHaveAttribute('aria-valuenow', '10');
+  await expect(page.locator('.ex-slider [role="slider"]')).not.toHaveAttribute(
+    'aria-valuenow',
+    '10'
+  );
   await page.locator('#reset-form').evaluate((button: HTMLButtonElement) => button.click());
   await page.mouse.move(track!.x + track!.width * 0.9, track!.y + track!.height / 2);
   await page.mouse.up();
@@ -78,11 +81,23 @@ test('分页等待容量确认，空跳页恢复原值，锚点和浮层语义�
   await page.locator('#tooltip-trigger').click();
   await expect(page.getByRole('tooltip')).toBeVisible();
   await page.locator('#change-description').click();
-  await expect(page.locator('#tooltip-trigger')).toHaveAttribute('aria-describedby', /当前错误.*ex-tooltip/);
+  await expect(page.locator('#tooltip-trigger')).toHaveAttribute(
+    'aria-describedby',
+    /当前错误.*ex-tooltip/
+  );
   await page.locator('#tooltip-trigger').click();
   await expect(page.locator('#tooltip-trigger')).toHaveAttribute('aria-describedby', '当前错误');
   await page.locator('#menu-trigger').press('ArrowDown');
-  await expect.poll(() => page.getByRole('menu').evaluate(menu => document.getElementById(menu.getAttribute('aria-activedescendant') ?? '')?.textContent)).toBe('可用项');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('menu')
+        .evaluate(
+          menu =>
+            document.getElementById(menu.getAttribute('aria-activedescendant') ?? '')?.textContent
+        )
+    )
+    .toBe('可用项');
   await page.keyboard.press('Escape');
   await page.locator('#jump-anchor').click();
   await expect(page.locator('#anchor-nav a[href="#anchor-second"]')).toHaveClass(/is-active/);
@@ -95,15 +110,24 @@ test('静态循环数据可用，全部子项选中时父项全选，跨树拖�
   await expect(page.locator('.ex-cascader__dropdown')).toContainText('合法子项');
   await page.keyboard.press('Escape');
   await page.locator('#checked-parent [role="combobox"]').click();
-  await expect(page.getByRole('tree', { name: '请选择', exact: true }).getByRole('treeitem').first()).toHaveAttribute('aria-checked', 'true');
+  await expect(
+    page.getByRole('tree', { name: '请选择', exact: true }).getByRole('treeitem').first()
+  ).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('Escape');
   const dragEvents = await page.evaluateHandle(() => {
     const events: unknown[] = [];
-    for (const node of document.querySelectorAll('#drag-source [draggable], #drag-target [draggable]')) {
+    for (const node of document.querySelectorAll(
+      '#drag-source [draggable], #drag-target [draggable]'
+    )) {
       for (const type of ['dragstart', 'dragenter', 'dragover', 'drop', 'dragend']) {
         node.addEventListener(type, event => {
           const transfer = (event as DragEvent).dataTransfer;
-          events.push({ type, node: node.getAttribute('data-node-key'), value: transfer?.getData('text/plain'), token: transfer?.getData('application/x-ex-ui-tree') });
+          events.push({
+            type,
+            node: node.getAttribute('data-node-key'),
+            value: transfer?.getData('text/plain'),
+            token: transfer?.getData('application/x-ex-ui-tree'),
+          });
         });
       }
     }
@@ -121,7 +145,10 @@ test('静态循环数据可用，全部子项选中时父项全选，跨树拖�
   await drag(page.locator('#drag-source [data-node-key="same"]'));
   await expect(page.locator('#drop-results')).toHaveText('[]');
   await drag(page.locator('#drag-target [data-node-key="same"]'));
-  await expect(page.locator('#drop-results'), JSON.stringify(await dragEvents.jsonValue())).toHaveText('["当前节点"]');
+  await expect(
+    page.locator('#drop-results'),
+    JSON.stringify(await dragEvents.jsonValue())
+  ).toHaveText('["当前节点"]');
   await dragEvents.dispose();
 });
 
@@ -131,7 +158,9 @@ test('动态列表原地重排后按新高度滚动，ISO 周键盘跨周年移�
   await expect(page.locator('.ex-virtual-list__item').first()).toHaveText('b');
   await page.locator('#reverse-rows').click();
   await page.locator('#scroll-second').click();
-  await expect.poll(() => page.locator('.ex-virtual-list__wrapper').evaluate(element => element.scrollTop)).toBeGreaterThanOrEqual(400);
+  await expect
+    .poll(() => page.locator('.ex-virtual-list__wrapper').evaluate(element => element.scrollTop))
+    .toBeGreaterThanOrEqual(400);
   await page.goto('/tests/browser/date-time-fixture.html?type=week');
   await page.getByRole('combobox', { name: '周期' }).click();
   await page.locator('[data-date="2020-12-28"]').focus();
@@ -153,20 +182,31 @@ test('服务浮层跟随局部层级变化，显式默认值仍可覆盖继承�
   await expect(page.locator('.ex-loading-bar')).toHaveCSS('z-index', '5100');
   await page.locator('#explicit-services').click();
   await expect(page.locator('.ex-message-container')).toHaveCSS('z-index', '2000');
-  await expect(page.locator('.ex-notification').filter({ hasText: '显式通知' })).toHaveCSS('z-index', '2000');
+  await expect(page.locator('.ex-notification').filter({ hasText: '显式通知' })).toHaveCSS(
+    'z-index',
+    '2000'
+  );
 });
 
 test('真实上传重置终止请求，下载切换配置仍保存原任务文件名和内容', async ({ page }) => {
   let uploadRoute: Route | undefined;
   let downloadRoute: Route | undefined;
-  await page.route('**/acceptance-upload', route => { uploadRoute = route; });
-  await page.route('**/acceptance-download/old.txt', route => { downloadRoute = route; });
+  await page.route('**/acceptance-upload', route => {
+    uploadRoute = route;
+  });
+  await page.route('**/acceptance-download/old.txt', route => {
+    downloadRoute = route;
+  });
   await open(page, 'files');
   await page.locator('#start-upload').click();
   await expect.poll(() => Boolean(uploadRoute)).toBe(true);
   await expect(page.locator('#upload-status')).toHaveText('uploading');
   await page.locator('#reset-upload').click();
-  await uploadRoute!.fulfill({ status: 200, contentType: 'application/json', body: '{"url":"/old-file"}' });
+  await uploadRoute!.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '{"url":"/old-file"}',
+  });
   await expect(page.locator('#upload-status')).toHaveText('ready');
   await expect(page.locator('#upload-success')).toHaveText('0');
   await page.locator('#snapshot-download .ex-file-download button').click();
