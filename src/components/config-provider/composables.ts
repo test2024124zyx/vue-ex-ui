@@ -45,8 +45,9 @@ export function useLocale(): ComputedRef<SupportedLocale> {
 }
 
 export function useGlobalSize(): ComputedRef<ComponentSize> {
-  const config = useConfig();
-  return computed(() => unref(config.size));
+  // 只读取尺寸所需上下文，基础组件无需因此加载语言包或初始化翻译器。
+  const config = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
+  return computed(() => (config ? unref(config.size) : DEFAULT_CONFIG.size));
 }
 
 export function useComponentSize(
@@ -57,13 +58,13 @@ export function useComponentSize(
 }
 
 export function useNeonEffect(): ComputedRef<boolean> {
-  const config = useConfig();
-  return computed(() => unref(config.neonEffect));
+  const config = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
+  return computed(() => (config ? unref(config.neonEffect) : DEFAULT_CONFIG.neonEffect));
 }
 
 export function useAnimation(): ComputedRef<boolean> {
-  const config = useConfig();
-  return computed(() => unref(config.animation));
+  const config = inject(CONFIG_PROVIDER_INJECTION_KEY, null);
+  return computed(() => (config ? unref(config.animation) : DEFAULT_CONFIG.animation));
 }
 
 export function useZIndex(offset = 0): ComputedRef<number> {

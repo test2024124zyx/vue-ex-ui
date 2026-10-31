@@ -29,15 +29,25 @@ function createHarness(accept = true, debounceDelay = 0) {
     },
   };
   const rules = { count: [rule], other: [rule] };
-  const wrapper = mount({
-    render: () => h(ExForm, { ref: form, model, rules, readonly: readonly.value }, () =>
-      shown.value ? h(ExFormItem, { prop: prop.value }, () => h(ExNumberInput, {
-        modelValue: model[prop.value],
-        debounceDelay,
-        'onUpdate:modelValue': value => { if (accept) model[prop.value] = value; },
-      })) : null
-    ),
-  }, { attachTo: document.body });
+  const wrapper = mount(
+    {
+      render: () =>
+        h(ExForm, { ref: form, model, rules, readonly: readonly.value }, () =>
+          shown.value
+            ? h(ExFormItem, { prop: prop.value }, () =>
+                h(ExNumberInput, {
+                  modelValue: model[prop.value],
+                  debounceDelay,
+                  'onUpdate:modelValue': value => {
+                    if (accept) model[prop.value] = value;
+                  },
+                })
+              )
+            : null
+        ),
+    },
+    { attachTo: document.body }
+  );
   wrappers.push(wrapper);
   const input = () => wrapper.get<HTMLInputElement>('input');
   const draft = async (value = '2') => {
@@ -51,7 +61,8 @@ function createHarness(accept = true, debounceDelay = 0) {
 
 describe('输入草稿校验的值身份与生命周期', () => {
   it.each(['external', 'blur', 'reset', 'clear', 'rename', 'unmount', 'readonly'] as const)(
-    '%s 使旧草稿异步结果失效，即使新触发器没有匹配规则', async transition => {
+    '%s 使旧草稿异步结果失效，即使新触发器没有匹配规则',
+    async transition => {
       const harness = createHarness();
       await harness.draft();
       expect(harness.pending[0]!.value).toBe(2);
@@ -74,7 +85,8 @@ describe('输入草稿校验的值身份与生命周期', () => {
   );
 
   it.each(['external', 'blur', 'reset', 'rename', 'readonly'] as const)(
-    '%s 同时清除已经完成但不再对应当前值的草稿错误', async transition => {
+    '%s 同时清除已经完成但不再对应当前值的草稿错误',
+    async transition => {
       const harness = createHarness();
       await harness.draft();
       harness.pending[0]!.finish('草稿不合法');
@@ -90,18 +102,21 @@ describe('输入草稿校验的值身份与生命周期', () => {
     }
   );
 
-  it.each([true, false])('父级接受=%s 时，change/blur 按最终确认值保留或丢弃在途校验', async accept => {
-    const harness = createHarness(accept);
-    await harness.draft();
-    await harness.input().trigger('change');
-    await harness.input().trigger('blur');
-    await flushPromises();
-    harness.pending[0]!.finish('值2不合法');
-    await flushPromises();
-    expect(harness.model.count).toBe(accept ? 2 : 1);
-    expect(harness.input().element.value).toBe(accept ? '2' : '1');
-    expect(harness.wrapper.text().includes('值2不合法')).toBe(accept);
-  });
+  it.each([true, false])(
+    '父级接受=%s 时，change/blur 按最终确认值保留或丢弃在途校验',
+    async accept => {
+      const harness = createHarness(accept);
+      await harness.draft();
+      await harness.input().trigger('change');
+      await harness.input().trigger('blur');
+      await flushPromises();
+      harness.pending[0]!.finish('值2不合法');
+      await flushPromises();
+      expect(harness.model.count).toBe(accept ? 2 : 1);
+      expect(harness.input().element.value).toBe(accept ? '2' : '1');
+      expect(harness.wrapper.text().includes('值2不合法')).toBe(accept);
+    }
+  );
 
   it('值已接受时，无关 blur 也不能清除已经完成的 input 错误', async () => {
     const harness = createHarness();

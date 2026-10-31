@@ -808,6 +808,8 @@ const visibleInner = ref(false);
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
+
 ### Modal Props
 
 | 属性                    | 说明                        | 类型                                                                     | 默认值      |

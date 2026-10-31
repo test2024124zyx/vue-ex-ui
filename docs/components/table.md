@@ -862,6 +862,8 @@ const selectionData = [
 
 ## API
 
+`toggleAllSelection()` 仅适用于多选；单选模式或加载期间不会改变选择。多选切换为单选时，仅保留首个有效选中项。
+
 ### Table Props
 
 | 属性                | 说明                                                   | 类型                             | 默认值       |

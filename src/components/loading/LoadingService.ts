@@ -247,10 +247,12 @@ export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options
     directive: DirectiveBinding<LoadingDirectiveValue>
   ) => {
     const binding = normalizeDirectiveValue(directive.value);
-    const owner = directive.instance?.$ as unknown as { provides?: AppContext['provides'] } | undefined;
+    const owner = directive.instance?.$ as unknown as
+      { provides?: AppContext['provides'] } | undefined;
     const scope =
       findElementServiceScope(element) ??
-      (owner?.provides?.[COMPONENT_SERVICE_SCOPE_KEY as symbol] as ComponentServiceScope | undefined) ??
+      (owner?.provides?.[COMPONENT_SERVICE_SCOPE_KEY as symbol] as
+        ComponentServiceScope | undefined) ??
       null;
     const config: LoadingServiceConfig = {
       ...binding.config,

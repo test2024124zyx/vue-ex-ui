@@ -9,6 +9,7 @@ const listType: UploadListType = view === 'picture' || view === 'picture-card' ?
 const theme = params.get('theme') === 'neon-blue' ? 'neon-blue' : 'light';
 const files = ref<UploadFile[]>([]);
 const uploader = ref<ExFileUploadExposed>();
+const account = ref('account-a');
 const CHUNK_BYTES = 16;
 document.documentElement.dataset.theme = theme;
 document.body.style.margin = '0';
@@ -40,7 +41,8 @@ createApp({
                 },
                 transport: 'tus',
                 action: params.get('endpoint') ?? '',
-                tus: { chunkSize: CHUNK_BYTES, retryDelays: [] },
+                tus: { chunkSize: CHUNK_BYTES, retryDelays: [], resumeKey: account.value },
+                headers: { 'X-Api-Key': `dummy-${account.value}` },
                 concurrency: 1,
                 autoUpload: false,
                 multiple: true,
@@ -50,6 +52,17 @@ createApp({
                 'button',
                 { id: 'submit-all', type: 'button', onClick: () => void uploader.value?.submit() },
                 '开始全部'
+              ),
+              h(
+                'button',
+                {
+                  id: 'switch-account',
+                  type: 'button',
+                  onClick: () => {
+                    account.value = 'account-b';
+                  },
+                },
+                '切换测试账号'
               ),
               h(
                 'output',

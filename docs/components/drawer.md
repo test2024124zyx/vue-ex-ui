@@ -725,6 +725,8 @@ const visibleGame = ref(false);
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸（包括自定义宽高）优先。
+
 ### Drawer Props
 
 | 参数                    | 说明                     | 类型                                                                  | 默认值      |

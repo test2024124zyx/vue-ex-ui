@@ -751,6 +751,8 @@ const toggleLoading3 = () => {
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；全局 `medium` 对应骨架屏的 `default`。显式设置的尺寸优先。
+
 ### Skeleton Props
 
 | 属性           | 说明             | 类型                                                                                                                          | 默认值      |

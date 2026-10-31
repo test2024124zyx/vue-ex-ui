@@ -140,6 +140,28 @@ describe('tus 标准上传适配', () => {
     handle.abort();
   });
 
+  it('凭证边界已失效时跳过旧持久断点，但继续保存新账号资源', async () => {
+    state.previous = [
+      {
+        uploadUrl: new URL('/files/old-account', document.baseURI).href,
+        creationTime: '2025-01-01',
+        size: 10,
+        metadata: {},
+        urlStorageKey: 'old-account',
+        parallelUploadUrls: null,
+      },
+    ];
+    const handle = createTusUploadRequest({
+      file: file(),
+      action: '/files/',
+      skipPreviousUploads: true,
+    });
+    const upload = await started();
+    expect(upload.resumeFromPreviousUpload).not.toHaveBeenCalled();
+    expect(upload.options.storeFingerprintForResuming).toBe(true);
+    handle.abort();
+  });
+
   it('请求前刷新认证配置、设置凭证与超时，并拒绝跨来源请求', async () => {
     const headers = vi.fn(async () => ({ Authorization: 'Bearer current' }));
     const handle = createTusUploadRequest({

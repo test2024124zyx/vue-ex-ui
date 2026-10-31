@@ -556,6 +556,8 @@ const current3 = ref(2);
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。步骤导航的辅助技术名称跟随全局语言配置。
+
 ### Steps Props
 
 | 属性         | 说明                | 类型                                       | 默认值             |

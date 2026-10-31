@@ -73,6 +73,84 @@ describe('FileUpload tus 用户流程', () => {
     expect(wrapper.emitted('resumed')).toHaveLength(1);
   });
 
+  it.each([
+    { tus: { resumeKey: 'account-b' }, headers: { Authorization: 'Bearer b' } },
+    { action: '/other-files/' },
+    { withCredentials: true },
+    { headers: { Authorization: 'Bearer refreshed' } },
+  ])('传输作用域改变后不恢复旧资源，也不沿用旧进度：%j', async changes => {
+    const { vm, wrapper } = create({ tus: { resumeKey: 'account-a' } });
+    const first = vm.submit();
+    await flushPromises();
+    tasks[0]!.options.onUploadUrl?.('http://localhost/files/account-a');
+    tasks[0]!.options.onProgress?.(50);
+    vm.pause('a');
+    await first;
+    await wrapper.setProps(changes);
+    expect(vm.getFiles()[0]).toMatchObject({ status: 'ready', percent: 0 });
+    expect(vm.getFiles()[0]!.tusUploadUrl).toBeUndefined();
+    const second = vm.resume('a');
+    await flushPromises();
+    expect(tasks[1]!.options.uploadUrl).toBeUndefined();
+    expect(tasks[0]!.terminate).not.toHaveBeenCalled();
+    vm.abort();
+    await second;
+  });
+
+  it('受控列表拒绝清空旧地址时，账号切换仍阻止继续和删除旧账号资源', async () => {
+    const source = {
+      ...makeFile('a'),
+      status: 'paused' as const,
+      tusUploadUrl: 'http://localhost/files/account-a',
+    };
+    const { vm, wrapper } = create({ fileList: [source], tus: { resumeKey: 'account-a' } });
+    await wrapper.setProps({ tus: { resumeKey: 'account-b' } });
+    const resumed = vm.resume('a');
+    await flushPromises();
+    expect(tasks[0]!.options.uploadUrl).toBeUndefined();
+    vm.abort();
+    await resumed;
+    await expect(vm.cancel('a')).resolves.toMatchObject([{ cancelled: true, terminated: true }]);
+    expect(tasks[0]!.terminate).toHaveBeenCalledOnce();
+    expect(tasks[0]!.options.uploadUrl).toBeUndefined();
+  });
+
+  it('账号切换会中止排队和进行中的上传，并忽略旧账号迟到的回调', async () => {
+    const { vm, wrapper } = create({
+      tus: { resumeKey: 'account-a' },
+      concurrency: 1,
+      defaultFileList: [makeFile('a'), makeFile('b')],
+    });
+    const pending = vm.submit();
+    await flushPromises();
+    await wrapper.setProps({ tus: { resumeKey: 'account-b' } });
+    tasks[0]!.options.onUploadUrl?.('http://localhost/files/late');
+    tasks[0]!.options.onProgress?.(80);
+    tasks[0]!.resolve({ outcome: 'success', response: {} });
+    await expect(pending).resolves.toMatchObject([{ outcome: 'aborted' }, { outcome: 'aborted' }]);
+    expect(tasks).toHaveLength(1);
+    expect(wrapper.emitted('success')).toBeUndefined();
+    expect(vm.getFiles().every(file => file.status === 'ready' && !file.tusUploadUrl)).toBe(true);
+  });
+
+  it('账号切换会中止未完成的永久取消，迟到确认不能清空新账号状态', async () => {
+    const { vm, wrapper } = create({ tus: { resumeKey: 'account-a' } });
+    const pending = vm.submit();
+    await flushPromises();
+    let finish!: (terminated: boolean) => void;
+    tasks[0]!.terminate.mockImplementation(
+      () => new Promise<boolean>(resolve => (finish = resolve))
+    );
+    const cancelled = vm.cancel('a');
+    await flushPromises();
+    await wrapper.setProps({ tus: { resumeKey: 'account-b' } });
+    finish(true);
+    await expect(cancelled).resolves.toMatchObject([{ cancelled: false }]);
+    await pending;
+    expect(wrapper.emitted('cancelled')).toBeUndefined();
+    expect(vm.getFiles()[0]!.status).toBe('ready');
+  });
+
   it('并发上限约束文件，取消排队项后不会启动该文件', async () => {
     const { vm } = create({
       concurrency: 1,

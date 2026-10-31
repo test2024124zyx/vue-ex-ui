@@ -645,6 +645,8 @@ const reportTusStorage = () => {
 - `pause()` 保留已确认的资源地址和进度；`resume()` 使用 `HEAD` 获取真实断点，再继续 `PATCH`。
 - 浏览器允许本地存储时，重新打开页面并重新选择相同文件也可续传。浏览器不会替应用保存原始 `File`；成功上传后移除本地断点记录。
 - 续传身份包含端点、`resumeKey`、文件名、类型、大小和修改时间。多账户应用应提供账户专属 `resumeKey`，业务服务端仍须验证每个资源的访问权限。
+- 切换 `resumeKey`、端点、静态请求头、凭证模式或允许来源时，组件中止旧传输并丢弃旧资源的复用权，不会用新凭证删除旧账户资源。动态请求头函数用于刷新同一账户的凭证；账户变化仍须同步更新 `resumeKey`。
+- tus 进度以服务端确认的分片偏移为准，收到响应后更新；尚在网络传输中的分片不提前计入已上传字节。
 - `cancel()` 使用 Termination 扩展删除服务端上传资源。服务端不支持或请求失败时返回 `cancelled: false` 并发出 `error`，保留地址以便重试；`terminated: true` 才表示服务端确认删除。
 - `abort()`、移除列表、清空与组件卸载只中止本地传输，保留服务器断点。创建请求中断且尚未收到 `Location` 时，客户端无法确认未知资源是否存在，服务端应配置过期清理。
 - tus 成功响应为 `{ uploadUrl }`，不会把协议资源地址伪装为可下载地址。业务需要下载地址时应使用自己的文件查询接口。
@@ -688,6 +690,8 @@ const reportTusStorage = () => {
 附加数据支持 `string`、`number`、`boolean` 和 `Blob`；`null` 与 `undefined` 会被忽略。组件负责 multipart 边界，不能在 `headers` 中手动设置 `Content-Type`。
 
 `UploadTusOptions` 支持 `chunkSize`、`retryDelays`、`metadata`、`resume`、`resumeKey`、`allowedOrigins`。重试间隔默认为 `[0, 1000, 3000, 5000]`，`resume` 默认为 `true`。额外来源必须显式加入 `allowedOrigins`；默认拒绝向端点以外来源发送上传请求和认证信息。自定义请求头不得覆盖 `Tus-*`、`Upload-*` 和内容长度/类型等协议头。
+
+上传请求拒绝全部 HTTP 自动重定向，避免浏览器在来源校验前转发文件正文或认证头；`action` 应指向最终接口地址。创建成功响应中的 tus `Location` 资源地址仍可使用同源地址或 `allowedOrigins` 中明确授权的来源。
 
 文件状态为 `ready`、`queued`、`uploading`、`paused`、`cancelling`、`success`、`error`。`UploadFile.tusUploadUrl` 是 tus 资源地址，`url` 继续只表示业务提供的文件地址。
 

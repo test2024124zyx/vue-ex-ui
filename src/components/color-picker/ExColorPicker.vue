@@ -654,6 +654,17 @@ watch(interactive, canInteract => {
 });
 
 watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 重置时终止拖动，后续全局指针事件不能继续写回重置前的颜色。
+    stopDrag();
+    close();
+    syncFromValue(colorState.value.value);
+  },
+  { flush: 'post' }
+);
+
+watch(
   () => props.teleported,
   () => {
     if (visible.value) nextTick(updatePanelPosition);

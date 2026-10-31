@@ -1,13 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createServer } from 'node:http';
+import { File as NetworkFile } from 'node:buffer';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { mount } from '@vue/test-utils';
+import ExFileUpload from '../../../src/components/file-upload/ExFileUpload.vue';
 import {
   createTusUploadRequest,
   terminateTusUploadResource,
 } from '../../../src/components/file-upload/tus-upload';
-import type { UploadFile } from '../../../src/components/file-upload/types';
+import type { ExFileUploadExposed, UploadFile } from '../../../src/components/file-upload/types';
 
-// 加载依赖的正式浏览器入口，让 JSDOM 的真实 XHR 与本地 HTTP 服务进行协议交互。
+// 加载正式浏览器入口；Node 原生 File 与 fetch 配对，真实浏览器另有端到端覆盖。
 vi.mock('tus-js-client', async () => {
   const browserEntry = 'tus-js-client/lib.es5/browser/index.js';
   return import(browserEntry);
@@ -19,7 +22,8 @@ interface Resource {
   metadata?: string;
 }
 const resources = new Map<string, Resource>();
-const requests: Array<{ method: string; path: string; offset?: number }> = [];
+const requests: Array<{ method: string; path: string; offset?: number; authorization?: string }> =
+  [];
 let endpoint = '';
 let sequence = 0;
 let rejectPatchOnce = false;
@@ -56,6 +60,7 @@ const serve = async (request: IncomingMessage, response: ServerResponse) => {
   requests.push({
     method,
     path,
+    authorization: request.headers.authorization,
     offset:
       request.headers['upload-offset'] === undefined
         ? undefined
@@ -123,7 +128,10 @@ const server = createServer((request, response) => {
   void serve(request, response).catch(() => respond(response, 400));
 });
 const sourceFile = (): UploadFile => {
-  const raw = new File(['abcdefghij'], 'network.txt', { type: 'text/plain', lastModified: 100 });
+  const raw = new NetworkFile(['abcdefghij'], 'network.txt', {
+    type: 'text/plain',
+    lastModified: 100,
+  }) as unknown as File;
   return { uid: 'network', name: raw.name, size: raw.size, type: raw.type, raw, status: 'ready' };
 };
 const pauseAfterFirstChunk = async () => {
@@ -199,6 +207,45 @@ describe('tus 浏览器客户端与真实 HTTP 服务', () => {
     expect([...resources.values()][0]!.content.toString()).toBe('abcdefghij');
   });
 
+  it.each([true, false])(
+    '同一组件切换认证后不以新凭证访问旧资源：更新作用域 %s',
+    async changeKey => {
+      responseDelay = 100;
+      const wrapper = mount(ExFileUpload, {
+        props: {
+          transport: 'tus',
+          action: endpoint,
+          autoUpload: false,
+          defaultFileList: [sourceFile()],
+          headers: { Authorization: 'Bearer account-a' },
+          tus: { chunkSize: 4, retryDelays: [], resumeKey: 'account-a' },
+        },
+      });
+      const vm = wrapper.vm as unknown as ExFileUploadExposed;
+      try {
+        const first = vm.submit();
+        await vi.waitFor(() => expect([...resources.values()][0]?.content.byteLength).toBe(4));
+        vm.pause();
+        await first;
+        const originalPath = [...resources.keys()][0]!;
+        const before = requests.length;
+        responseDelay = 0;
+        await wrapper.setProps({
+          headers: { Authorization: 'Bearer account-b' },
+          tus: { chunkSize: 4, retryDelays: [], resumeKey: changeKey ? 'account-b' : 'account-a' },
+        });
+        await expect(vm.submit()).resolves.toMatchObject([{ outcome: 'success' }]);
+        const following = requests.slice(before);
+        expect(following[0]).toMatchObject({ method: 'POST', authorization: 'Bearer account-b' });
+        expect(following.every(request => request.path !== originalPath)).toBe(true);
+        expect(resources.get(originalPath)!.content.toString()).toBe('abcd');
+        expect([...resources.values()][1]!.content.toString()).toBe('abcdefghij');
+      } finally {
+        wrapper.unmount();
+      }
+    }
+  );
+
   it('可恢复的 503 自动重试，403 不重试也不创建成功记录', async () => {
     rejectPatchOnce = true;
     const retrying = createTusUploadRequest({
@@ -248,7 +295,7 @@ describe('tus 浏览器客户端与真实 HTTP 服务', () => {
     expect([...resources.values()][0]!.content.toString()).toBe('abcdefghij');
   });
 
-  it('真实 XHR 超时必须兑现失败，不能悬挂上传 Promise', async () => {
+  it('真实请求超时必须兑现失败，不能悬挂上传 Promise', async () => {
     responseDelay = 250;
     const handle = createTusUploadRequest({
       file: sourceFile(),

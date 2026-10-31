@@ -21,6 +21,8 @@ import type { UploadTusOptions, UploadTusResponse } from './tus-types';
 interface TusRequestOptions extends Omit<UploadRequestOptions, 'method' | 'data' | 'name'> {
   tus?: UploadTusOptions;
   uploadUrl?: string;
+  /** 凭证边界变化但指纹未变时，禁止从旧账户的持久记录自动恢复。 */
+  skipPreviousUploads?: boolean;
   onUploadUrl?: (url: string) => void;
   onResumeUnavailable?: (error: unknown) => void;
 }
@@ -181,7 +183,7 @@ export function createTusUploadRequest(options: TusRequestOptions): TusUploadHan
             finish({ outcome: 'error', error: transportError(cause, 'request-error') });
         },
       });
-      if (normalized.resume && !knownUrl) {
+      if (normalized.resume && !knownUrl && !options.skipPreviousUploads) {
         try {
           const previous = await upload.findPreviousUploads();
           if (!current()) return;

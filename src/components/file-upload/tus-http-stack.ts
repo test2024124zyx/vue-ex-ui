@@ -2,44 +2,37 @@ import type { HttpRequest, HttpResponse, HttpStack } from 'tus-js-client';
 import { ExFileUploadError } from './errors';
 
 /**
- * 通过 tus 官方 HttpStack 扩展点补齐 XHR timeout/abort 完成路径。
- * 不修改依赖源码；任何终态都清理监听，并让协议层获得可重试的失败结果。
+ * 通过官方 HttpStack 扩展点禁止自动重定向，避免正文和认证头绕过来源校验。
+ * fetch 无可靠的上传进度事件，进度由 tus 在收到服务端偏移确认后统一报告。
  */
 export class TusHttpStack implements HttpStack {
   getName(): string {
-    return 'ex-ui-xhr';
+    return 'ex-ui-fetch';
   }
 
   createRequest(method: string, url: string): HttpRequest {
-    const xhr = new XMLHttpRequest();
-    xhr.open(method, url, true);
-    const headers = new Map<string, string>();
-    let aborted = false;
+    const controller = new AbortController();
+    const headers = new Headers();
+    const settings = { withCredentials: false, timeout: 0 };
     let complete = false;
     let settleAbort: (() => void) | undefined;
-    let reportProgress: ((sent: number) => void) | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const cleanup = () => {
-      xhr.onload = null;
-      xhr.onerror = null;
-      xhr.ontimeout = null;
-      xhr.onabort = null;
-      if (xhr.upload) xhr.upload.onprogress = null;
+      clearTimeout(timeout);
       settleAbort = undefined;
     };
     return {
       getMethod: () => method,
       getURL: () => url,
-      getHeader: name => headers.get(name.toLowerCase()),
-      setHeader(name, value) {
-        headers.set(name.toLowerCase(), value);
-        xhr.setRequestHeader(name, value);
+      getHeader: name => headers.get(name) ?? undefined,
+      setHeader: (name, value) => headers.set(name, value),
+      setProgressHandler() {
+        // 不把浏览器排队的字节误报为服务端已接收的字节。
       },
-      setProgressHandler(handler) {
-        reportProgress = handler;
-      },
-      getUnderlyingObject: () => xhr,
+      getUnderlyingObject: () => settings,
       send(body: XMLHttpRequestBodyInit | null = null): Promise<HttpResponse> {
-        if (aborted) return Promise.reject(new DOMException('上传请求已中止', 'AbortError'));
+        if (controller.signal.aborted)
+          return Promise.reject(new DOMException('上传请求已中止', 'AbortError'));
         return new Promise((resolve, reject) => {
           const fail = (error: unknown) => {
             if (complete) return;
@@ -48,50 +41,48 @@ export class TusHttpStack implements HttpStack {
             reject(error);
           };
           settleAbort = () => fail(new DOMException('上传请求已中止', 'AbortError'));
-          xhr.onload = () => {
-            if (complete) return;
-            complete = true;
-            cleanup();
-            resolve({
-              getStatus: () => xhr.status,
-              getHeader: name => xhr.getResponseHeader(name) ?? undefined,
-              getBody: () => xhr.responseText,
-              getUnderlyingObject: () => xhr,
-            });
-          };
-          xhr.onerror = event =>
-            fail(
-              new ExFileUploadError('tus 请求发生网络错误', {
-                code: 'request-error',
-                cause: event,
-              })
-            );
-          xhr.ontimeout = event =>
-            fail(
-              new ExFileUploadError('tus 请求超时', {
-                code: 'timeout',
-                cause: event,
-              })
-            );
-          xhr.onabort = () => settleAbort?.();
-          if (xhr.upload) {
-            xhr.upload.onprogress = event => {
-              if (!complete && event.lengthComputable) reportProgress?.(event.loaded);
-            };
+          if (settings.timeout > 0) {
+            timeout = setTimeout(() => {
+              fail(new ExFileUploadError('tus 请求超时', { code: 'timeout' }));
+              controller.abort();
+            }, settings.timeout);
           }
-          try {
-            xhr.send(body);
-          } catch (cause) {
-            fail(cause);
-          }
+          void (async () => {
+            try {
+              const response = await fetch(url, {
+                method,
+                headers,
+                body,
+                credentials: settings.withCredentials ? 'include' : 'same-origin',
+                redirect: 'error',
+                signal: controller.signal,
+              });
+              const responseBody = await response.text();
+              if (complete) return;
+              complete = true;
+              cleanup();
+              resolve({
+                getStatus: () => response.status,
+                getHeader: name => response.headers.get(name) ?? undefined,
+                getBody: () => responseBody,
+                getUnderlyingObject: () => response,
+              });
+            } catch (cause) {
+              fail(
+                new ExFileUploadError('tus 请求失败或包含不允许的重定向', {
+                  code: 'request-error',
+                  cause,
+                })
+              );
+            }
+          })();
         });
       },
       async abort() {
-        if (complete || aborted) return;
-        aborted = true;
-        // 先兑现 Promise，兼容不会在 abort() 中派发 abort 事件的旧实现。
+        if (complete || controller.signal.aborted) return;
+        // 立即兑现取消，不能依赖网络栈或迟到的响应自行结束。
         settleAbort?.();
-        xhr.abort();
+        controller.abort();
       },
     };
   }

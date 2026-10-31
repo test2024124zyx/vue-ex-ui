@@ -397,6 +397,8 @@ const syncing = ref(false);
 
 ## API
 
+组件与 `v-loading` 指令均继承最近的 `ExConfigProvider` 的尺寸和语言配置；显式设置的尺寸优先，未配置全局尺寸时使用下表默认值。
+
 ### Props
 
 | 参数          | 类型                                                 | 默认值      |

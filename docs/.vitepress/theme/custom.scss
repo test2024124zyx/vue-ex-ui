@@ -17,6 +17,7 @@
 
 // ==================== 导入组件库样式（含主题变量、字体、基础样式） ====================
 @use '../../../src/styles/index.scss';
+@use './responsive-accessibility';
 // ============================================================================
 // 1. VitePress 设计令牌映射到 ExUI 变量
 // ============================================================================
@@ -971,38 +972,4 @@ html {
 // ============================================================================
 // 13. 响应式 & 无障碍
 // ============================================================================
-@media (max-width: 768px) {
-  .demo-container {
-    padding: 22px 16px;
-    gap: 10px;
-  }
-
-  .vp-doc h2:not(.demo-container h2) {
-    margin-top: 32px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .demo-container,
-  .VPFeature,
-  .VPButton.brand,
-  .VPNavBarMenuLink::after,
-  .vp-doc .pager-link {
-    transition: none;
-  }
-}
-
-@media print {
-  .Layout::before,
-  .VPHome::before,
-  .demo-container::after,
-  .demo-container::before {
-    display: none;
-  }
-
-  .demo-container {
-    border: 1px solid #ddd;
-    box-shadow: none;
-    background: #fff;
-  }
-}
+@include responsive-accessibility.styles;

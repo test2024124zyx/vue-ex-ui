@@ -9,6 +9,10 @@ export default tseslint.config(
       'node_modules/**',
       'dist/**',
       'coverage/**',
+      // 本地验收产物（覆盖率报告和浏览器截图）不属于项目源代码。
+      '.tmp/**',
+      'test-results/**',
+      'playwright-report/**',
       'docs/.vitepress/cache/**',
       'docs/.vitepress/dist/**',
       // 独立浏览器基准的编译产物和机器采样数据不作为源代码检查。

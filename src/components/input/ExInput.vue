@@ -568,6 +568,7 @@ const commitNativeValue = (event: Event): void => {
 };
 
 let ignoreCompositionInput: string | null = null;
+let discardedComposition = false;
 
 function discardNativeDraft(): void {
   isComposing.value = false;
@@ -580,13 +581,39 @@ watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
   if (disabled || readonly) discardNativeDraft();
 });
 
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 同值重置也必须清除 lazy 草稿、本地错误和仍在进行的输入法组合。
+    discardedComposition ||= isComposing.value;
+    rawValue.value = normalizeInputValue(props.modelValue);
+    validationError.value = null;
+    discardNativeDraft();
+    scheduleTextareaHeight();
+  },
+  { flush: 'post' }
+);
+
 const handleCompositionStart = (): void => {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
+  discardedComposition = false;
   isComposing.value = true;
   ignoreCompositionInput = null;
 };
 
 const handleCompositionEnd = (event: CompositionEvent): void => {
+  if (discardedComposition) {
+    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+    const cancelledValue = target.value;
+    discardedComposition = false;
+    discardNativeDraft();
+    // 浏览器可能在 compositionend 后补发 input；旧组合结果不能覆盖重置值。
+    ignoreCompositionInput = cancelledValue;
+    queueMicrotask(() => {
+      ignoreCompositionInput = null;
+    });
+    return;
+  }
   if (effectiveDisabled.value || effectiveReadonly.value) {
     discardNativeDraft();
     return;
@@ -604,7 +631,7 @@ const handleCompositionEnd = (event: CompositionEvent): void => {
 
 const handleInput = (event: Event): void => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-  if (effectiveDisabled.value || effectiveReadonly.value) {
+  if (discardedComposition || effectiveDisabled.value || effectiveReadonly.value) {
     discardNativeDraft();
     return;
   }
@@ -614,6 +641,7 @@ const handleInput = (event: Event): void => {
   }
   if (ignoreCompositionInput === target.value) {
     ignoreCompositionInput = null;
+    target.value = displayValue.value;
     return;
   }
   commitNativeValue(event);

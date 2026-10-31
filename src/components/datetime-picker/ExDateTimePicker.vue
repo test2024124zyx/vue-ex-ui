@@ -916,6 +916,16 @@ const handleClickOutside = (event: PointerEvent) => {
 
 watch([currentValue, () => props.type], () => syncFromModel(), { immediate: true });
 
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 空值或同值重置不会触发模型侦听，仍需丢弃待确认日期并退出编辑。
+    closePanel();
+    syncFromModel();
+  },
+  { flush: 'post' }
+);
+
 watch(interactive, canInteract => {
   if (!canInteract) closePanel({ discardDraft: true });
 });

@@ -40,7 +40,10 @@ interface ActiveUpload {
 export function useUploadTransfers(options: TransferOptions) {
   const { props, files, disabled, mutationDisabled, destroyed, patchFile, emit } = options;
   const active = new Map<string, ActiveUpload>();
-  const sessions = new Map<string, { file: UploadFile; handle: TusUploadHandle }>();
+  const sessions = new Map<string, { file: UploadFile; handle: TusUploadHandle; scope: number }>();
+  const invalidatedUrls = new Set<string>();
+  let scopeRevision = 0;
+  let skipPreviousUploads = false;
   const cancellations = new Map<string, Promise<UploadCancelResult>>();
   const cancellationControllers = new Map<string, AbortController>();
   const cancellationFiles = new Map<string, UploadFile>();
@@ -57,6 +60,8 @@ export function useUploadTransfers(options: TransferOptions) {
     if (file) return [files.value.find(item => item.uid === file.uid) ?? file];
     return [...files.value];
   };
+  const resourceUrl = (file: UploadFile) =>
+    file.tusUploadUrl && !invalidatedUrls.has(file.tusUploadUrl) ? file.tusUploadUrl : undefined;
 
   const abortActiveUpload = (uid: string, reason: UploadAbortReason): boolean => {
     const task = active.get(uid);
@@ -96,11 +101,13 @@ export function useUploadTransfers(options: TransferOptions) {
     if (!file.raw)
       return Promise.resolve({ uid: file.uid, outcome: 'ignored', reason: 'missing-raw' });
     const task = { file } as ActiveUpload;
-    const isCurrent = () => !destroyed.value && active.get(file.uid) === task;
+    const scope = scopeRevision;
+    const isCurrent = () =>
+      !destroyed.value && scope === scopeRevision && active.get(file.uid) === task;
     patchFile(file.uid, {
       status: 'queued',
       error: undefined,
-      percent: props.transport === 'tus' ? (file.percent ?? 0) : 0,
+      percent: props.transport === 'tus' && resourceUrl(file) ? (file.percent ?? 0) : 0,
     });
     const handle = scheduler.enqueue(() => {
       patchFile(file.uid, { status: 'uploading', error: undefined });
@@ -122,16 +129,19 @@ export function useUploadTransfers(options: TransferOptions) {
       if (props.transport === 'tus') {
         const tusHandle = createTusUploadRequest({
           ...requestOptions,
-          tus: props.tus,
-          uploadUrl: file.tusUploadUrl,
+          tus: props.tus ? { ...props.tus } : undefined,
+          uploadUrl: resourceUrl(file),
+          skipPreviousUploads,
           onUploadUrl: url => {
-            if (isCurrent()) patchFile(file.uid, { tusUploadUrl: url });
+            if (!isCurrent()) return;
+            invalidatedUrls.delete(url);
+            patchFile(file.uid, { tusUploadUrl: url });
           },
           onResumeUnavailable: error => {
             if (isCurrent()) emit('resume-unavailable', error, { ...file });
           },
         });
-        sessions.set(file.uid, { file, handle: tusHandle });
+        sessions.set(file.uid, { file, handle: tusHandle, scope });
         return tusHandle;
       }
       return createUploadRequest({
@@ -220,9 +230,9 @@ export function useUploadTransfers(options: TransferOptions) {
       try {
         const session = sessions.get(file.uid);
         const terminated =
-          session && session.file.raw === file.raw
+          session && session.scope === scopeRevision && session.file.raw === file.raw
             ? await session.handle.terminate(controller.signal)
-            : file.tusUploadUrl && props.action
+            : resourceUrl(file) && props.action
               ? await terminateTusUploadResource(
                   {
                     file,
@@ -231,7 +241,7 @@ export function useUploadTransfers(options: TransferOptions) {
                     headers: props.headers,
                     timeout: props.timeout,
                     withCredentials: props.withCredentials,
-                    uploadUrl: file.tusUploadUrl,
+                    uploadUrl: resourceUrl(file),
                   },
                   controller.signal
                 )
@@ -308,8 +318,44 @@ export function useUploadTransfers(options: TransferOptions) {
     for (const controller of cancellationControllers.values()) controller.abort();
   };
   watch(
-    () => props.transport,
-    () => abortUploads([...active.keys()], 'external')
+    () => [
+      props.transport,
+      props.action,
+      props.tus?.resumeKey ?? '',
+      JSON.stringify(props.tus?.allowedOrigins ?? []),
+      props.withCredentials === true,
+      typeof props.headers === 'function'
+        ? props.headers
+        : JSON.stringify(
+            Object.entries(props.headers ?? {}).sort(([a], [b]) => a.localeCompare(b))
+          ),
+    ],
+    (next, previous) => {
+      if (next.every((value, index) => value === previous[index])) return;
+      scopeRevision += 1;
+      // 仅换认证头而未换指纹时，旧存储也不能绕过内存会话失效。
+      skipPreviousUploads = next[1] === previous[1] && next[2] === previous[2];
+      // 先撤销提交权和取消信号，再清理列表；不得用新账号凭证终止旧账号资源。
+      for (const file of files.value) if (file.tusUploadUrl) invalidatedUrls.add(file.tusUploadUrl);
+      for (const session of sessions.values()) {
+        if (session.handle.uploadUrl) invalidatedUrls.add(session.handle.uploadUrl);
+      }
+      abortUploads([...active.keys()], 'external');
+      sessions.clear();
+      for (const controller of cancellationControllers.values()) controller.abort();
+      cancellationControllers.clear();
+      cancellationFiles.clear();
+      cancellations.clear();
+      for (const file of files.value) {
+        if (file.status === 'success' && !file.tusUploadUrl) continue;
+        patchFile(file.uid, {
+          tusUploadUrl: undefined,
+          status: file.status === 'success' ? 'success' : 'ready',
+          percent: file.status === 'success' ? 100 : 0,
+          error: undefined,
+        });
+      }
+    }
   );
   return {
     startUpload,

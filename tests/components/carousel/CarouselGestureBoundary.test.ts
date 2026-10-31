@@ -54,30 +54,43 @@ describe('轮播手势边界', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0]);
     wrapper.unmount();
   });
-  it.each(['horizontal', 'vertical'] as const)('%s 反向滑动回到上一项，空触摸事件不产生切换', async direction => {
-    vi.useFakeTimers();
-    const wrapper = mount(ExCarousel, {
-      props: { autoplay: false, direction, loop: true, style: { padding: '2px' } },
-      slots: { default: () => [
-        h(ExCarouselItem, { style: 'color: red' }, () => '甲'), h(ExCarouselItem, {}, () => '乙'),
-      ] },
-    });
-    const track = wrapper.get('.ex-carousel__track');
-    await track.trigger('touchstart', { touches: [] });
-    await track.trigger('touchmove', { touches: [] });
-    await track.trigger('touchend', { changedTouches: [] });
-    expect(wrapper.emitted('change')).toBeUndefined();
-    await track.trigger('touchstart', { touches: [{ clientX: 0, clientY: 0 }] });
-    await track.trigger('touchmove', { touches: [] });
-    await track.trigger('touchend', { changedTouches: [{ clientX: direction === 'horizontal' ? 120 : 0, clientY: direction === 'vertical' ? 120 : 0 }] });
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1]);
-    await vi.advanceTimersByTimeAsync(300);
-    await track.trigger('touchstart', { touches: [{ clientX: 0, clientY: 0 }] });
-    await track.trigger('touchcancel');
-    await track.trigger('touchend', { changedTouches: [{ clientX: 200, clientY: 200 }] });
-    expect(wrapper.emitted('change')).toHaveLength(1);
-    wrapper.unmount();
-  });
+  it.each(['horizontal', 'vertical'] as const)(
+    '%s 反向滑动回到上一项，空触摸事件不产生切换',
+    async direction => {
+      vi.useFakeTimers();
+      const wrapper = mount(ExCarousel, {
+        props: { autoplay: false, direction, loop: true, style: { padding: '2px' } },
+        slots: {
+          default: () => [
+            h(ExCarouselItem, { style: 'color: red' }, () => '甲'),
+            h(ExCarouselItem, {}, () => '乙'),
+          ],
+        },
+      });
+      const track = wrapper.get('.ex-carousel__track');
+      await track.trigger('touchstart', { touches: [] });
+      await track.trigger('touchmove', { touches: [] });
+      await track.trigger('touchend', { changedTouches: [] });
+      expect(wrapper.emitted('change')).toBeUndefined();
+      await track.trigger('touchstart', { touches: [{ clientX: 0, clientY: 0 }] });
+      await track.trigger('touchmove', { touches: [] });
+      await track.trigger('touchend', {
+        changedTouches: [
+          {
+            clientX: direction === 'horizontal' ? 120 : 0,
+            clientY: direction === 'vertical' ? 120 : 0,
+          },
+        ],
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1]);
+      await vi.advanceTimersByTimeAsync(300);
+      await track.trigger('touchstart', { touches: [{ clientX: 0, clientY: 0 }] });
+      await track.trigger('touchcancel');
+      await track.trigger('touchend', { changedTouches: [{ clientX: 200, clientY: 200 }] });
+      expect(wrapper.emitted('change')).toHaveLength(1);
+      wrapper.unmount();
+    }
+  );
 
   it('空轮播和非法播放周期不创建不可控的自动播放任务', async () => {
     vi.useFakeTimers();

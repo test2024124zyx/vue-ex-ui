@@ -870,6 +870,16 @@ watch(interactive, canInteract => {
 });
 
 watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 重置必须同时清除范围两端的已编辑标记，避免继续确认旧草稿。
+    close();
+    syncDraftFromValue();
+  },
+  { flush: 'post' }
+);
+
+watch(
   [valueState.value, rangeState.value, () => props.format, () => props.range],
   () => {
     syncDraftFromValue();

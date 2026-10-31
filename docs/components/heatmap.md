@@ -196,6 +196,8 @@ const quarterActivity = activity.filter(item => item.date <= '2025-03-31');
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
+
 ### Props
 
 | 参数              | 说明                            | 类型                                                | 默认值          |
