@@ -309,6 +309,7 @@ let loadController: AbortController | null = null;
 let cropController: AbortController | null = null;
 let cropPromise: Promise<CropResult> | null = null;
 let cropOperationToken: symbol | null = null;
+let cropGeneration = 0;
 let loadGeneration = 0;
 
 const resolvedAriaLabel = computed(() => props.ariaLabel.trim() || t('editor'));
@@ -454,6 +455,7 @@ const releaseResource = (): void => {
 };
 
 const cancelCropOperation = (): void => {
+  cropGeneration += 1;
   cropController?.abort();
   cropController = null;
   cropPromise = null;
@@ -655,6 +657,9 @@ const crop = (): Promise<CropResult> => {
           signal: controller.signal,
         }
       );
+      if (controller.signal.aborted || cropOperationToken !== operationToken) {
+        throw new ExImageCropError('ABORTED', '图片裁剪已取消');
+      }
       return {
         blob: rendered.blob,
         previewArea: cloneArea(previewArea),
@@ -666,6 +671,7 @@ const crop = (): Promise<CropResult> => {
         zoom: currentZoom,
       };
     } catch (error) {
+      if (controller.signal.aborted) throw new ExImageCropError('ABORTED', '图片裁剪已取消');
       throw toImageCropError(error, 'ENCODE_FAILED', '图片裁剪失败');
     } finally {
       if (cropOperationToken === operationToken) {
@@ -681,9 +687,14 @@ const crop = (): Promise<CropResult> => {
 };
 
 const handleCrop = (): void => {
+  const generation = cropGeneration;
   void crop()
-    .then(result => emit('crop', result))
+    .then(result => {
+      // Promise 已完成到业务事件发布之间仍可能被取消或换图。
+      if (generation === cropGeneration) emit('crop', result);
+    })
     .catch(error => {
+      if (generation !== cropGeneration) return;
       const normalized = toImageCropError(error, 'ENCODE_FAILED', '图片裁剪失败');
       if (normalized.code !== 'ABORTED') reportError(normalized, 'ENCODE_FAILED');
     });

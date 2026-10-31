@@ -153,6 +153,29 @@ describe('ExFileDownload', () => {
 
   const exposed = (wrapper: VueWrapper) => wrapper.vm as unknown as ExFileDownloadExposed;
 
+  it.each(['fetch', 'xhr'] as const)(
+    '%s 的在途下载固定文件配置，新配置仅用于下一次下载',
+    async transport => {
+      let finish!: (response: Response) => void;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => new Promise<Response>(resolve => (finish = resolve)))
+      );
+      vi.stubGlobal('XMLHttpRequest', MockXHR);
+      const wrapper = mountDownload({ props: { url: '/old.txt', filename: 'old.txt', transport } });
+      const pending = exposed(wrapper).download();
+      await wrapper.setProps({ url: '/new.txt', filename: 'new.txt' });
+      if (transport === 'fetch') finish(createFetchResponse({ chunks: [new Uint8Array([1, 2])] }));
+      else MockXHR.instances[0]!.triggerLoad();
+      await expect(pending).resolves.toMatchObject({ outcome: 'success', filename: 'old.txt' });
+      expect(clickedAnchors.at(-1)?.download).toBe('old.txt');
+      const next = exposed(wrapper).download();
+      if (transport === 'fetch') finish(createFetchResponse({ chunks: [new Uint8Array([3])] }));
+      else MockXHR.instances[1]!.triggerLoad();
+      await expect(next).resolves.toMatchObject({ outcome: 'success', filename: 'new.txt' });
+    }
+  );
+
   describe('链接交接', () => {
     it('默认状态只提供真实方法，不再暴露伪暂停与伪恢复 API', () => {
       const wrapper = mountDownload({ props: { url: '/files/manual.pdf' } });

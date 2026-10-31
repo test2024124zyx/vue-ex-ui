@@ -528,6 +528,21 @@ function getRules(): FormRule[] {
   return rules;
 }
 
+let ruleSnapshot = deepClone(getRules());
+watch(
+  getRules,
+  rules => {
+    // 父级重渲染可能重建等价规则对象，只有实际规则变化才撤销校验。
+    if (equalValueSnapshot(ruleSnapshot, rules)) return;
+    ruleSnapshot = deepClone(rules);
+    // 规则本身也是校验身份的一部分；关闭自动重验仍不能接受旧规则的回调。
+    invalidateFieldValidation();
+    clearValidationState();
+    if (isMounted && formContext?.props.validateOnRuleChange) void validateFieldMethod();
+  },
+  { deep: true, flush: 'sync' }
+);
+
 // 暴露实例方法
 defineExpose({
   validate: validateFieldMethod,

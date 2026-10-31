@@ -43,17 +43,9 @@ class LoadingBarController {
   private readonly appContext: AppContext | undefined;
 
   constructor(defaults: LoadingBarOptions, appContext?: AppContext) {
-    const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
-      ConfigContext | undefined;
-    const scopedDefaults: LoadingBarOptions = {
-      ...defaults,
-      zIndex:
-        defaults.zIndex ??
-        (config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined),
-    };
     this.options = mergeLoadingBarOptions(
       { color: undefined, height: DEFAULT_LOADING_BAR_HEIGHT, zIndex: undefined },
-      scopedDefaults
+      defaults
     );
     this.appContext = appContext;
     this.state = shallowReactive({
@@ -62,6 +54,12 @@ class LoadingBarController {
       percentage: 0,
       status: 'loading',
     });
+  }
+
+  private resolveScopedZIndex(): number | undefined {
+    const config = this.appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined;
   }
 
   config(options: LoadingBarOptions): void {
@@ -173,7 +171,7 @@ class LoadingBarController {
           status: this.state.status,
           color: this.state.color,
           height: this.state.height,
-          zIndex: this.state.zIndex,
+          zIndex: this.state.zIndex ?? this.resolveScopedZIndex(),
         }),
     });
 

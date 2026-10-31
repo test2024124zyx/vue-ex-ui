@@ -35,7 +35,7 @@ describe('Pagination 严格受控', () => {
     expect(wrapper.get('[aria-current="page"]').text()).toBe('3');
   });
 
-  it('只控制容量时立即调整内部页码，容量仍等待父级接受', async () => {
+  it('只控制容量时保持旧页码，父级确认容量后再同时调整位置', async () => {
     const wrapper = mount(ExPagination, {
       props: { pageSize: 10, total: 200, showSizeChanger: true },
     });
@@ -43,10 +43,35 @@ describe('Pagination 严格受控', () => {
     wrapper.vm.goToPage(4);
     await nextTick();
     await wrapper.get('select').setValue(20);
-    expect(wrapper.get('[aria-current="page"]').text()).toBe('2');
+    expect(wrapper.get('[aria-current="page"]').text()).toBe('4');
     expect(wrapper.get<HTMLSelectElement>('select').element.value).toBe('10');
     await wrapper.setProps({ pageSize: 20 });
     expect(wrapper.get('[aria-current="page"]').text()).toBe('2');
+  });
+
+  it('容量请求等待期间的新导航使旧位置请求失效', async () => {
+    const wrapper = mount(ExPagination, {
+      props: { pageSize: 10, total: 200, showSizeChanger: true },
+    });
+    wrappers.push(wrapper);
+    wrapper.vm.goToPage(4);
+    await nextTick();
+    await wrapper.get('select').setValue(20);
+    wrapper.vm.goToPage(5);
+    await wrapper.setProps({ pageSize: 20 });
+    expect(wrapper.get('[aria-current="page"]').text()).toBe('5');
+  });
+
+  it('清空快速跳页后回车恢复确认页，不请求第一页', async () => {
+    const wrapper = mount(ExPagination, {
+      props: { current: 5, total: 100, showQuickJumper: true },
+    });
+    wrappers.push(wrapper);
+    const input = wrapper.get<HTMLInputElement>('.ex-pagination__jumper-input');
+    await input.setValue('');
+    await input.trigger('keyup', { key: 'Enter' });
+    expect(wrapper.emitted('update:current')).toBeUndefined();
+    expect(input.element.value).toBe('5');
   });
 
   it('只控制页码时容量正常提交，页码请求仍需父级回写', async () => {

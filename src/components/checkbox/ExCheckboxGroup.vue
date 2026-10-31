@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, provide, useSlots } from 'vue';
+import { computed, ref, provide, useSlots, watch } from 'vue';
 import type {
   ExCheckboxGroupProps,
   ExCheckboxGroupEmits,
@@ -143,6 +143,13 @@ const registrations = new Map<number, CheckboxRegistration>();
 
 // 状态
 const validationErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    validationErrorMessage.value = '';
+  },
+  { flush: 'post' }
+);
 const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 
 // 计算属性

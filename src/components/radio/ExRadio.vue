@@ -114,7 +114,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, useSlots, inject, useAttrs } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  useSlots,
+  inject,
+  useAttrs,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import type { ExRadioProps, ExRadioEmits, ExRadioSlots, ExRadioInstance } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
@@ -161,12 +171,21 @@ const radioGroupContext = inject<{
   readonly?: boolean;
   required?: boolean;
   updateValue: (value: string | number | boolean) => void;
+  registerRadio?: (restore: () => void) => () => void;
 } | null>('radioGroup', null);
 
 const radioId = generateId('ex-radio');
 const radioRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
 const currentErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 外部明确提供的错误仍由业务控制，只撤销本地校验反馈。
+    currentErrorMessage.value = props.errorMessage || '';
+  },
+  { flush: 'post' }
+);
 
 // 计算属性
 const radioValue = computed({
@@ -188,6 +207,15 @@ const radioValue = computed({
 const isChecked = computed(() => {
   return radioValue.value === props.value;
 });
+
+const restoreNativeState = () => {
+  if (radioRef.value) radioRef.value.checked = isChecked.value;
+};
+let unregisterRadio: (() => void) | undefined;
+onMounted(() => {
+  unregisterRadio = radioGroupContext?.registerRadio?.(restoreNativeState);
+});
+onBeforeUnmount(() => unregisterRadio?.());
 
 const hasLabel = computed(() => {
   return Boolean(props.label || slots.default);
@@ -312,6 +340,7 @@ const handleChange = (event: Event) => {
     emit('change', props.value, event);
     formItem?.onFieldChange();
   }
+  void nextTick(restoreNativeState);
 };
 
 const handleFocus = (event: FocusEvent) => {

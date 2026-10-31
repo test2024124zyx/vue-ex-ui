@@ -1,6 +1,20 @@
 import type { AppContext, ComponentInternalInstance, InjectionKey } from 'vue';
-import { getCurrentInstance, inject, onBeforeUnmount, provide } from 'vue';
+import { effectScope, getCurrentInstance, inject, onBeforeUnmount, provide, watch } from 'vue';
 import { createDocumentRuntime, createSharedInjectionKey } from '../../utils/shared-runtime';
+import { CONFIG_PROVIDER_INJECTION_KEY, type ConfigContext } from './types';
+
+/** 服务容器独立于首次调用组件存活，由容器销毁显式停止配置监听。 */
+export function watchServiceZIndex(
+  appContext: AppContext | undefined,
+  update: () => void
+): () => void {
+  const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+    ConfigContext | undefined;
+  if (!config) return () => undefined;
+  const scope = effectScope(true);
+  scope.run(() => watch(config.zIndex, update));
+  return () => scope.stop();
+}
 
 type ServiceKey = symbol;
 type ServiceDisposer = (service: unknown) => void;

@@ -553,6 +553,22 @@ const { startUpload, submit, abort, pause, resume, cancel, abortActiveUpload, ab
   transfers;
 
 watch(
+  () => field.formItem?.resetRevision?.value,
+  () => {
+    // 表单已经恢复模型；只清理旧任务，不再发列表变更或删除服务端续传资源。
+    invalidatePendingSelections();
+    transfers.dispose();
+    selectionQueue = Promise.resolve();
+    const restored = cloneUploadFileList(isControlled.value ? props.fileList! : initialFiles);
+    operationFileList.value = restored;
+    if (!isControlled.value) internalFileList.value = cloneUploadFileList(restored);
+    isDragOver.value = false;
+    if (inputRef.value) inputRef.value.value = '';
+  },
+  { flush: 'post' }
+);
+
+watch(
   () => props.fileList,
   (nextFiles, previousFiles) => {
     invalidatePendingSelections();

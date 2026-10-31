@@ -18,7 +18,7 @@ import ExIcon from '../icon/ExIcon.vue';
 defineOptions({ name: 'ExVerificationCode' });
 
 const props = withDefaults(defineProps<ExVerificationCodeProps>(), {
-  modelValue: '',
+  modelValue: undefined,
   length: 6,
   inputMode: 'numeric',
   size: undefined, // 使用全局配置
@@ -149,17 +149,34 @@ const hiddenInputAttrs = computed(() => {
   };
 });
 
-// 监听 modelValue 变化
+function synchronizeConfirmedValue(force = false) {
+  if (props.modelValue === undefined && !force) return;
+  const filtered = filterValidChars(props.modelValue || '', props.inputMode);
+  const chars = filtered.slice(0, normalizedLength.value).split('');
+  if (chars.join('') !== currentValue.value || force) {
+    cancelAutoSubmit();
+    if (maskDelayTimer) clearTimeout(maskDelayTimer);
+    maskDelayTimer = null;
+    lastInputIndex.value = -1;
+    cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
+    focusedIndex.value = Math.min(chars.length, normalizedLength.value - 1);
+  }
+  if (hiddenInputRef.value) hiddenInputRef.value.value = currentValue.value;
+}
+
+// 监听 modelValue 变化；外部替换撤销原验证码对应的延迟提交。
 watch(
   () => props.modelValue,
-  newValue => {
-    if (newValue !== currentValue.value) {
-      const filtered = filterValidChars(newValue || '', props.inputMode);
-      const chars = filtered.slice(0, normalizedLength.value).split('');
-      cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
-    }
-  },
+  () => synchronizeConfirmedValue(),
   { immediate: true }
+);
+
+watch(
+  () => field.formItem?.resetRevision?.value,
+  () => {
+    synchronizeConfirmedValue(true);
+  },
+  { flush: 'post' }
 );
 
 // 监听 length 变化
@@ -246,6 +263,7 @@ function updateValue() {
   } else {
     cancelAutoSubmit();
   }
+  void nextTick(() => synchronizeConfirmedValue());
 }
 
 /**
@@ -257,9 +275,16 @@ function handleAutoSubmit() {
   cancelAutoSubmit();
   isPendingSubmit.value = true;
 
+  const submittedValue = currentValue.value;
   autoSubmitTimer = setTimeout(() => {
-    if (isComplete.value && props.autoSubmit && field.interactive.value) {
-      emit('submit', currentValue.value);
+    autoSubmitTimer = null;
+    if (
+      isComplete.value &&
+      currentValue.value === submittedValue &&
+      props.autoSubmit &&
+      field.interactive.value
+    ) {
+      emit('submit', submittedValue);
     }
     isPendingSubmit.value = false;
   }, props.autoSubmitDelay);
@@ -562,6 +587,7 @@ function clear() {
   emit('update:modelValue', '');
   emit('change', '');
   field.formItem?.onFieldChange();
+  void nextTick(() => synchronizeConfirmedValue());
 }
 
 function setValue(value: string) {

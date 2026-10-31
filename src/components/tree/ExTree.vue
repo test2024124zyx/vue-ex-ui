@@ -113,6 +113,7 @@ import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } f
 import ExTreeNode from './ExTreeNode.vue';
 import { TREE_STATE_KEY } from './state';
 import { useTreeLoader } from './use-tree-loader';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExTree',
@@ -624,7 +625,15 @@ const handleNodeContextmenu = (node: TreeNode, event: MouseEvent) => {
 };
 
 // 拖拽相关
+const TREE_DRAG_TYPE = 'application/x-ex-ui-tree';
+let dragSession: { node: TreeNode; token: string } | undefined;
+watch([() => props.draggable, () => props.disabled, treeData], () => {
+  dragSession = undefined;
+});
 const handleNodeDragStart = (node: TreeNode, event: DragEvent) => {
+  if (!event.dataTransfer || !props.draggable || props.disabled) return;
+  dragSession = { node, token: generateId('ex-tree-drag') };
+  event.dataTransfer.setData(TREE_DRAG_TYPE, dragSession.token);
   emit('node-drag-start', node, event);
 };
 
@@ -637,6 +646,7 @@ const handleNodeDragLeave = (node: TreeNode, event: DragEvent) => {
 };
 
 const handleNodeDragEnd = (node: TreeNode, event: DragEvent) => {
+  dragSession = undefined;
   emit('node-drag-end', node, event);
 };
 
@@ -647,8 +657,16 @@ const handleNodeDrop = (
   event: DragEvent
 ) => {
   // 只接受当前树发起的拖拽，保证事件中的 dragNode 始终是完整原始节点。
+  const session = dragSession;
+  dragSession = undefined;
+  if (
+    !session ||
+    event.dataTransfer?.getData(TREE_DRAG_TYPE) !== session.token ||
+    session.node.key !== dragNode.key
+  )
+    return;
   const resolvedDragNode = nodeMap.value.get(dragNode.key);
-  if (!resolvedDragNode) return;
+  if (!resolvedDragNode || resolvedDragNode !== session.node) return;
   emit('node-drop', resolvedDragNode, dropNode, position, event);
 };
 

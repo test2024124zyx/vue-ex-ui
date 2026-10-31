@@ -382,14 +382,14 @@ describe('ExTree', () => {
 
   describe('拖拽请求', () => {
     it('只对当前树中的完整源节点发出 drop 事件', async () => {
-      let transferValue = '';
+      const transferValues = new Map<string, string>();
       const dataTransfer = {
         effectAllowed: 'none',
         dropEffect: 'none',
-        setData: vi.fn((_type: string, value: string) => {
-          transferValue = value;
+        setData: vi.fn((type: string, value: string) => {
+          transferValues.set(type, value);
         }),
-        getData: vi.fn(() => transferValue),
+        getData: vi.fn((type: string) => transferValues.get(type) ?? ''),
       };
       const wrapper = mount(ExTree, { props: { data, draggable: true } });
       const nodes = wrapper.findAll('[role="treeitem"]');
@@ -430,7 +430,7 @@ describe('ExTree', () => {
       expect(wrapper.emitted('node-drag-leave')).toHaveLength(1);
       expect(wrapper.emitted('node-drag-end')).toHaveLength(1);
 
-      transferValue = 'external-key';
+      transferValues.set('text/plain', 'external-key');
       await nodes[1].trigger('dragover', { dataTransfer, clientY: 0 });
       await nodes[1].trigger('drop', { dataTransfer });
       expect(wrapper.emitted('node-drop')).toHaveLength(3);

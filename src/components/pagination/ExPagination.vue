@@ -289,6 +289,19 @@ const pageState = useControllableState<number>({
 });
 const currentPage = computed(() => normalizePage(pageState.value.value));
 const jumpValue = ref(currentPage.value);
+let pendingSizePosition: number | undefined;
+
+watch(
+  currentPageSize,
+  size => {
+    if (pendingSizePosition === undefined) return;
+    const position = pendingSizePosition;
+    pendingSizePosition = undefined;
+    if (!pageState.isControlled.value)
+      pageState.request(normalizePage(Math.floor(position / size) + 1));
+  },
+  { flush: 'sync' }
+);
 
 // 计算当前页的数据范围
 const dataRange = computed<[number, number]>(() => {
@@ -351,6 +364,7 @@ const handlePageChange = (page: number) => {
   }
 
   const normalizedPage = normalizePage(page);
+  pendingSizePosition = undefined;
   pageState.request(normalizedPage);
   jumpValue.value = currentPage.value;
   emit('update:current', normalizedPage);
@@ -390,6 +404,13 @@ const handleSizeChange = (event: Event) => {
   const firstItemIndex = Math.max(0, (currentPage.value - 1) * currentPageSize.value);
   const previousPage = currentPage.value;
   const newPageSize = normalizePageSize(Number((event.target as HTMLSelectElement).value));
+  // 部分受控时，页码与容量必须在父级确认后一起生效；变更事件仍报告请求值。
+  pendingSizePosition =
+    sizeState.isControlled.value &&
+    !pageState.isControlled.value &&
+    newPageSize !== currentPageSize.value
+      ? firstItemIndex
+      : undefined;
   sizeState.request(newPageSize);
   emit('update:pageSize', newPageSize);
   // 原生 select 会先改变 DOM，受控请求未获接受时恢复外部已确认容量。
@@ -401,7 +422,7 @@ const handleSizeChange = (event: Event) => {
     nextPageCount === 0 ? 0 : Math.min(Math.floor(firstItemIndex / newPageSize) + 1, nextPageCount);
 
   if (newPage !== previousPage) {
-    pageState.request(newPage);
+    if (pendingSizePosition === undefined) pageState.request(newPage);
     jumpValue.value = currentPage.value;
     emit('update:current', newPage);
   }
@@ -412,9 +433,9 @@ const handleSizeChange = (event: Event) => {
 // 快速跳转
 const handleJump = () => {
   if (props.disabled) return;
-  // 输入被清空时 v-model.number 会得到 NaN，需先拦截，否则会越过 handlePageChange 的边界守卫
+  // v-model.number 对空输入保留空字符串；不能让 Number('') 把它转换为第一页。
   const raw = Number(jumpValue.value);
-  if (!Number.isFinite(raw) || totalPages.value === 0) {
+  if (String(jumpValue.value).trim() === '' || !Number.isFinite(raw) || totalPages.value === 0) {
     jumpValue.value = currentPage.value;
     return;
   }

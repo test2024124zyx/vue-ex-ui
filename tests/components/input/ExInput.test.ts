@@ -171,6 +171,9 @@ describe('ExInput', () => {
         modelValue: '1234',
         formatter,
         parser,
+        'onUpdate:modelValue': value => {
+          void wrapper!.setProps({ modelValue: value });
+        },
       },
     });
     const input = inputWrapper.get('input');
@@ -209,6 +212,9 @@ describe('ExInput', () => {
       props: {
         modelValue: 'valid',
         rules: [value => Boolean(value) || '内容不能为空'],
+        'onUpdate:modelValue': value => {
+          void wrapper!.setProps({ modelValue: value });
+        },
       },
     });
     const input = inputWrapper.get('input');

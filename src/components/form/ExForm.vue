@@ -112,14 +112,7 @@ watch(
   () => props.rules,
   newRules => {
     formContext.rules = newRules || {};
-    // validateOnRuleChange：规则变化后重新校验已注册字段（不滚动）
-    if (props.validateOnRuleChange) {
-      fields.forEach(fieldGroup => {
-        fieldGroup.forEach(field => {
-          void field.validate();
-        });
-      });
-    }
+    // 字段统一监听最终规则，兼顾本地规则及关闭自动重验时的旧任务撤销。
   },
   { deep: true }
 );
@@ -129,6 +122,8 @@ function addField(field: FormItemContext) {
   if (field.prop) {
     const fieldGroup = fields.get(field.prop) || [];
     if (!fieldGroup.includes(field)) {
+      // 校验快照必须覆盖当前字段集合，结构变更后由调用方重新提交校验。
+      invalidateFormValidation();
       fieldGroup.push(field);
       fields.set(field.prop, fieldGroup);
     }
@@ -140,6 +135,7 @@ function removeField(field: FormItemContext) {
     const index = fieldGroup.indexOf(field);
     if (index < 0) return;
 
+    invalidateFormValidation();
     fieldGroup.splice(index, 1);
     if (fieldGroup.length === 0) {
       fields.delete(prop);

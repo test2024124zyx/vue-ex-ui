@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick, reactive, ref } from 'vue';
+import ExForm from '../../../src/components/form/ExForm.vue';
+import ExFormItem from '../../../src/components/form/ExFormItem.vue';
+import type { FormInstance } from '../../../src/components/form/types';
 import ExFileUpload from '../../../src/components/file-upload/ExFileUpload.vue';
 import { ExFileUploadError } from '../../../src/components/file-upload/errors';
 import type { ExFileUploadExposed, UploadFile } from '../../../src/components/file-upload/types';
@@ -115,6 +118,44 @@ describe('ExFileUpload', () => {
     await input.trigger('change');
     await flushPromises();
   };
+
+  it('表单重置中止同一原始文件的上传，旧响应不改写字段且允许重新上传', async () => {
+    const original = asUploadFile(makeFile('reset.txt', 'text/plain'));
+    const model = reactive({ files: [original] });
+    const form = ref<FormInstance>();
+    const upload = ref<ExFileUploadExposed>();
+    const wrapper = mount({
+      render: () =>
+        h(ExForm, { ref: form, model }, () =>
+          h(ExFormItem, { prop: 'files' }, () =>
+            h(ExFileUpload, {
+              ref: upload,
+              action: '/upload',
+              fileList: model.files,
+              'onUpdate:fileList': files => (model.files = files),
+            })
+          )
+        ),
+    });
+    wrappers.push(wrapper);
+    const pending = upload.value!.submit();
+    await flushPromises();
+    const request = MockXHR.instances[0]!;
+    form.value!.resetFields();
+    await nextTick();
+    expect(request.abort).toHaveBeenCalledOnce();
+    request.triggerProgress(8, 8);
+    request.triggerLoad();
+    await expect(pending).resolves.toMatchObject([{ outcome: 'aborted' }]);
+    expect(model.files[0]).toMatchObject({ status: 'ready', percent: 0 });
+    expect(model.files[0]!.url).toBeUndefined();
+    expect(wrapper.findComponent(ExFileUpload).emitted('success')).toBeUndefined();
+    const restarted = upload.value!.submit();
+    await flushPromises();
+    MockXHR.instances[1]!.triggerLoad();
+    await expect(restarted).resolves.toMatchObject([{ outcome: 'success' }]);
+    expect(model.files[0]!.status).toBe('success');
+  });
 
   it('同 UID 替换原始文件会中止旧上传，不污染替换文件', async () => {
     const old = asUploadFile(makeFile('old.png', 'image/png'));

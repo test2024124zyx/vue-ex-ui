@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, provide, useSlots } from 'vue';
+import { computed, ref, watch, provide, useSlots, nextTick } from 'vue';
 import type {
   ExRadioGroupProps,
   ExRadioGroupEmits,
@@ -121,6 +121,14 @@ const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 const radioName = computed(() => props.name || groupId);
 
 const currentErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    currentErrorMessage.value = props.errorMessage || '';
+  },
+  { flush: 'post' }
+);
+const nativeRestorers = new Set<() => void>();
 
 // 计算属性
 const showErrorMessage = computed(() => {
@@ -176,6 +184,8 @@ const updateValue = (value: RadioValue) => {
   emit('update:modelValue', value);
   emit('change', value);
   formItem?.onFieldChange();
+  // 原生单选会同时取消旧项，必须恢复整个组，且只涉及当前实例注册的控件。
+  void nextTick(() => nativeRestorers.forEach(restore => restore()));
 };
 
 // 验证单选框组
@@ -233,6 +243,10 @@ provide('radioGroup', {
     return props.required;
   },
   updateValue,
+  registerRadio(restore: () => void) {
+    nativeRestorers.add(restore);
+    return () => nativeRestorers.delete(restore);
+  },
 });
 
 // 暴露方法

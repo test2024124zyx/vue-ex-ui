@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { h, nextTick, reactive, ref } from 'vue';
+import ExForm from '../../../src/components/form/ExForm.vue';
+import ExFormItem from '../../../src/components/form/ExFormItem.vue';
+import type { FormInstance } from '../../../src/components/form/types';
 import ExFileUpload from '../../../src/components/file-upload/ExFileUpload.vue';
 import type { ExFileUploadExposed, UploadFile } from '../../../src/components/file-upload/types';
 import type { UploadTransportResult } from '../../../src/components/file-upload/upload-request';
@@ -52,6 +56,41 @@ const create = (props = {}) => {
 describe('FileUpload tus 用户流程', () => {
   beforeEach(() => tasks.splice(0));
   afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
+
+  it('表单重置撤销 tus 活动任务和队列，旧资源回调无效且不永久删除服务端文件', async () => {
+    const model = reactive({ files: [makeFile('a'), makeFile('b')] });
+    const form = ref<FormInstance>();
+    const upload = ref<ExFileUploadExposed>();
+    const wrapper = mount({
+      render: () =>
+        h(ExForm, { ref: form, model }, () =>
+          h(ExFormItem, { prop: 'files' }, () =>
+            h(ExFileUpload, {
+              ref: upload,
+              transport: 'tus',
+              action: '/files/',
+              concurrency: 1,
+              fileList: model.files,
+              'onUpdate:fileList': files => (model.files = files),
+            })
+          )
+        ),
+    });
+    wrappers.push(wrapper);
+    const pending = upload.value!.submit();
+    await flushPromises();
+    form.value!.resetFields();
+    await nextTick();
+    tasks[0]!.options.onUploadUrl?.('http://localhost/files/old');
+    tasks[0]!.options.onProgress?.(100);
+    tasks[0]!.resolve({ outcome: 'success', response: {} });
+    await expect(pending).resolves.toMatchObject([{ outcome: 'aborted' }, { outcome: 'aborted' }]);
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]!.abort).toHaveBeenCalledOnce();
+    expect(tasks[0]!.terminate).not.toHaveBeenCalled();
+    expect(model.files.every(file => file.status === 'ready' && !file.tusUploadUrl)).toBe(true);
+    expect(wrapper.findComponent(ExFileUpload).emitted('success')).toBeUndefined();
+  });
 
   it('暂停保留已确认资源和进度，继续上传重新查询该资源偏移', async () => {
     const { vm, wrapper } = create();

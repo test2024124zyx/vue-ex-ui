@@ -489,6 +489,11 @@ describe('ExSlider', () => {
 
     it('范围轨道点击应该更新距离更近的手柄并保持顺序', async () => {
       wrapper = createWrapper({ range: true, modelValue: [20, 80] });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
       await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
         clientX: 50,
         clientY: 16,
@@ -521,6 +526,11 @@ describe('ExSlider', () => {
 
     it('键盘应该覆盖步进、分页和范围两端边界', async () => {
       wrapper = createWrapper({ modelValue: 50, step: 5 });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
       const thumb = wrapper.find('[role="slider"]');
       for (const key of ['ArrowDown', 'ArrowLeft']) {
         await thumb.trigger('keydown', { key });
@@ -540,6 +550,11 @@ describe('ExSlider', () => {
 
       wrapper.unmount();
       wrapper = createWrapper({ range: true, modelValue: [20, 80], step: 10 });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
       const thumbs = wrapper.findAll('[role="slider"]');
       await thumbs[0]!.trigger('keydown', { key: 'End' });
       expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([80, 80]);
@@ -549,6 +564,11 @@ describe('ExSlider', () => {
 
     it('输入框应该规范化标量和范围值', async () => {
       wrapper = createWrapper({ modelValue: 10, step: 5, showInput: true });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
       const input = wrapper.find<HTMLInputElement>('.ex-slider__input');
       await input.setValue('13');
       await input.trigger('change');
@@ -556,11 +576,18 @@ describe('ExSlider', () => {
 
       wrapper.unmount();
       wrapper = createWrapper({ range: true, modelValue: [20, 80], step: 5, showInput: true });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
       const inputs = wrapper.findAll<HTMLInputElement>('.ex-slider__input');
       await inputs[0]!.setValue('90');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([80, 90]);
+      expect(inputs.map(input => input.element.value)).toEqual(['80', '90']);
       await inputs[1]!.setValue('10');
       await inputs[1]!.trigger('change');
-      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([10, 90]);
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([10, 80]);
     });
 
     it('标记、步进点、悬停提示和暴露方法应该保持可用', async () => {

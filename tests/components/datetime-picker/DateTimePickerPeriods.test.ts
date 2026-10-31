@@ -15,6 +15,40 @@ afterEach(() => {
 });
 
 describe('日期选择的年、月和 ISO 周模式', () => {
+  it.each(['week', 'weekrange'] as const)(
+    '%s 键盘以 ISO 周一为焦点单位，跨年并跳过禁用周',
+    async type => {
+      const monday = new Date(2026, 0, 5);
+      const wrapper = mount(ExDateTimePicker, {
+        props: {
+          type,
+          modelValue: type === 'week' ? monday : [monday, monday],
+          teleported: false,
+          disabledDate: date =>
+            date.getFullYear() === 2026 && date.getMonth() === 0 && date.getDate() === 12,
+        },
+        attachTo: document.body,
+      });
+      wrappers.push(wrapper);
+      await wrapper.get('input').trigger('keydown', { key: 'ArrowDown' });
+      let focusedDate = '2026-01-05';
+      for (const [key, expected] of [
+        ['Home', '2026-01-05'],
+        ['End', '2026-01-05'],
+        ['ArrowLeft', '2025-12-29'],
+        ['ArrowRight', '2026-01-05'],
+        ['ArrowRight', '2026-01-19'],
+      ] as const) {
+        const focused = wrapper.get(`[data-date="${focusedDate}"]`);
+        await focused.trigger('keydown', { key });
+        await nextTick();
+        expect(document.activeElement?.getAttribute('data-date')).toBe(expected);
+        focusedDate = expected;
+      }
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    }
+  );
+
   it.each([
     ['year', '[data-period="2024"]', new Date(2024, 0, 1), '2024'],
     ['month', '[data-period="2026-02"]', new Date(2026, 1, 1), '2026-02'],

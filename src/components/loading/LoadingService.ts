@@ -78,7 +78,7 @@ class LoadingServiceController implements LoadingService {
       mask: merged.mask ?? true,
       maskClosable: merged.maskClosable ?? false,
       target: target ?? undefined,
-      zIndex: merged.zIndex ?? this.resolveScopedZIndex(),
+      zIndex: merged.zIndex,
       lockScroll: merged.lockScroll ?? true,
     };
   }
@@ -127,6 +127,7 @@ class LoadingServiceController implements LoadingService {
       render: () =>
         h(ExLoading, {
           ...state,
+          zIndex: state.zIndex ?? this.resolveScopedZIndex(),
           'onUpdate:visible': (visible: boolean) => {
             state.visible = visible;
           },

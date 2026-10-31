@@ -243,6 +243,7 @@ export async function renderCrop(
       drawExportImage(context, image, originalSize, layout, sourceArea, outputSize, options);
       const quality = options.outputType === 'image/png' ? undefined : options.quality;
       const blob = await encodeCanvasToBlob(canvas, options.outputType, quality, options.signal);
+      throwIfImageOperationAborted(options.signal);
       return {
         blob,
         sourceArea: { ...sourceArea },

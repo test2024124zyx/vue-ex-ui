@@ -316,6 +316,9 @@ export function useUploadTransfers(options: TransferOptions) {
     }
     sessions.clear();
     for (const controller of cancellationControllers.values()) controller.abort();
+    cancellationControllers.clear();
+    cancellationFiles.clear();
+    cancellations.clear();
   };
   watch(
     () => [

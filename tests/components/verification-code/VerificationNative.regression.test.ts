@@ -35,6 +35,11 @@ describe('验证码原生输入与遮罩契约', () => {
   it('浏览器替换式自动填充覆盖已有完整值', async () => {
     const wrapper = mount(ExVerificationCode, { props: { modelValue: '1234', length: 4 } });
     wrappers.push(wrapper);
+    await wrapper.setProps({
+      'onUpdate:modelValue': value => {
+        void wrapper.setProps({ modelValue: value });
+      },
+    });
     const input = wrapper.get('input');
     input.element.value = '9876';
     input.element.dispatchEvent(

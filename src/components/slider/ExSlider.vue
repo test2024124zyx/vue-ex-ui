@@ -206,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
 import { useFormFieldState } from '../form/use-form-item';
@@ -217,7 +217,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExSliderProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   min: 0,
   max: 100,
   step: 1,
@@ -258,7 +258,8 @@ const thumbRef = ref<HTMLDivElement>();
 const thumbStartRef = ref<HTMLDivElement>();
 
 // State
-const currentValue = ref<number | [number, number]>(props.modelValue);
+const currentValue = ref<number | [number, number]>(props.modelValue ?? 0);
+let dragRequestedValue: number | [number, number] | undefined;
 const isDragging = ref(false);
 const isDraggingStart = ref(false);
 const isDraggingEnd = ref(false);
@@ -487,13 +488,19 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
  */
 const updateValue = (newValue: number | [number, number], commit = true) => {
   if (!interactive.value) return;
-  currentValue.value = newValue;
+  if (props.modelValue === undefined) {
+    currentValue.value = newValue;
+    synchronizeValue();
+  }
+  if (isDragging.value || isDraggingStart.value || isDraggingEnd.value)
+    dragRequestedValue = newValue;
   emit('update:modelValue', newValue);
   emit('input', newValue);
   if (commit) {
     emit('change', newValue);
     formItem?.onFieldChange();
   }
+  void nextTick(synchronizeValue);
 };
 
 const handleTrackClick = (event: MouseEvent | TouchEvent) => {
@@ -567,9 +574,7 @@ const handleMouseMove = (event: MouseEvent | TouchEvent) => {
   }
 };
 
-const handleMouseUp = () => {
-  const wasDragging = isDragging.value || isDraggingStart.value || isDraggingEnd.value;
-
+function stopDragging() {
   isDragging.value = false;
   isDraggingStart.value = false;
   isDraggingEnd.value = false;
@@ -579,10 +584,17 @@ const handleMouseUp = () => {
   document.removeEventListener('touchmove', handleMouseMove);
   document.removeEventListener('touchend', handleMouseUp);
   document.removeEventListener('touchcancel', handleMouseUp);
+  dragRequestedValue = undefined;
+}
+
+const handleMouseUp = () => {
+  const wasDragging = isDragging.value || isDraggingStart.value || isDraggingEnd.value;
+  const requested = dragRequestedValue ?? currentValue.value;
+  stopDragging();
 
   // 拖拽结束时提交一次 change
   if (wasDragging && interactive.value) {
-    emit('change', currentValue.value);
+    emit('change', requested);
     formItem?.onFieldChange();
   }
 };
@@ -649,41 +661,49 @@ const handleInputChange = () => {
 
 // 监听
 watch(interactive, canInteract => {
-  if (!canInteract) handleMouseUp();
+  if (!canInteract) stopDragging();
 });
+// 显式重置撤销拖动会话，即使父级值未变也不能让旧移动事件继续写入。
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    stopDragging();
+    synchronizeValue();
+  },
+  { flush: 'post' }
+);
+
+function synchronizeValue() {
+  const newValue = props.modelValue ?? currentValue.value;
+  const isRange = props.range;
+  const scalarValue = Array.isArray(newValue) ? newValue[0] : newValue;
+  const normalizedScalar = roundToStep(scalarValue ?? props.min);
+
+  if (!isRange) {
+    currentValue.value = normalizedScalar;
+    inputValue.value = normalizedScalar;
+    return;
+  }
+
+  const source = Array.isArray(newValue)
+    ? newValue
+    : ([normalizedScalar, normalizedScalar] as [number, number]);
+  const start = roundToStep(source[0] ?? props.min);
+  const end = roundToStep(source[1] ?? start);
+  const normalizedStart = Math.min(start, end);
+  const normalizedEnd = Math.max(start, end);
+  currentValue.value = [normalizedStart, normalizedEnd];
+  inputStartValue.value = normalizedStart;
+  inputEndValue.value = normalizedEnd;
+}
+
 watch(
   [() => props.modelValue, () => props.range, () => props.min, () => props.max, effectiveStep],
-  ([newValue, isRange]) => {
-    const scalarValue = Array.isArray(newValue) ? newValue[0] : newValue;
-    const normalizedScalar = roundToStep(scalarValue ?? props.min);
-
-    if (!isRange) {
-      currentValue.value = normalizedScalar;
-      inputValue.value = normalizedScalar;
-      return;
-    }
-
-    const source = Array.isArray(newValue)
-      ? newValue
-      : ([normalizedScalar, normalizedScalar] as [number, number]);
-    const start = roundToStep(source[0] ?? props.min);
-    const end = roundToStep(source[1] ?? start);
-    const normalizedStart = Math.min(start, end);
-    const normalizedEnd = Math.max(start, end);
-    currentValue.value = [normalizedStart, normalizedEnd];
-    inputStartValue.value = normalizedStart;
-    inputEndValue.value = normalizedEnd;
-  },
+  synchronizeValue,
   { immediate: true, flush: 'sync' }
 );
 
-onBeforeUnmount(() => {
-  document.removeEventListener('mousemove', handleMouseMove);
-  document.removeEventListener('mouseup', handleMouseUp);
-  document.removeEventListener('touchmove', handleMouseMove);
-  document.removeEventListener('touchend', handleMouseUp);
-  document.removeEventListener('touchcancel', handleMouseUp);
-});
+onBeforeUnmount(stopDragging);
 
 // 暴露的方法
 const getElement = () => sliderRef.value || null;

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { reactive } from 'vue';
 import ExVirtualList from '../../../src/components/virtual-list/ExVirtualList.vue';
 import type { ExVirtualListProps, VisibleRange } from '../../../src/components/virtual-list/types';
 
@@ -81,6 +82,31 @@ describe('ExVirtualList 动态布局回归', () => {
     await list.wrapper.setProps({ buffer: 2 });
     await flushPromises();
     expect(list.range().visibleCount).toBe(18);
+  });
+
+  it('原数组重排和离屏内容高度变化后，定位与总高度使用新数据', async () => {
+    const rows = reactive([
+      { id: 'a', height: 10 },
+      { id: 'b', height: 100 },
+      { id: 'c', height: 20 },
+    ]);
+    const list = await createList({
+      dataSource: rows,
+      itemHeight: (_index, item) => (item as { height: number }).height,
+    });
+    const scrollTo = vi.fn();
+    list.viewport.scrollTo = scrollTo;
+    list.wrapper.vm.scrollToIndex(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 10, behavior: 'auto' });
+    rows.reverse();
+    await flushPromises();
+    list.wrapper.vm.scrollToIndex(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 20, behavior: 'auto' });
+    rows[0]!.height = 40;
+    await flushPromises();
+    list.wrapper.vm.scrollToIndex(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 40, behavior: 'auto' });
+    expect(list.wrapper.get('.ex-virtual-list__spacer').attributes('style')).toContain('150px');
   });
 
   it('固定行高也观察容器的实际尺寸变化', async () => {

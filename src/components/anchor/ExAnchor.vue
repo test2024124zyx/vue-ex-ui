@@ -47,6 +47,7 @@ let scrollContainer: HTMLElement | Window | null = null;
 let animationTimer: ReturnType<typeof setTimeout> | null = null;
 let animating = false;
 let mounted = false;
+const SCROLL_SETTLE_DELAY = 500;
 
 const resolveTarget = (href: string): HTMLElement | null => {
   if (!href) return null;
@@ -107,12 +108,14 @@ const scrollTo = (href: string): void => {
   scrollContainer.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
   if (reduceMotion) {
     animating = false;
+    handleScroll();
     return;
   }
   animationTimer = setTimeout(() => {
     animationTimer = null;
     animating = false;
-  }, 500);
+    handleScroll();
+  }, SCROLL_SETTLE_DELAY);
 };
 
 const updateInkPosition = async (): Promise<void> => {

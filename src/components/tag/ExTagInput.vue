@@ -198,6 +198,18 @@ watch(interactive, enabled => {
   isComposing.value = false;
 });
 
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 重置不是用户确认或取消，不发业务事件，也不让旧输入节点继续提交草稿。
+    inputValue.value = '';
+    duplicateValue.value = '';
+    isEditing.value = false;
+    isComposing.value = false;
+  },
+  { flush: 'post' }
+);
+
 const startEdit = (event: MouseEvent) => {
   if (!interactive.value || isEditing.value || event.currentTarget !== buttonRef.value) return;
   isEditing.value = true;

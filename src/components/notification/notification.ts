@@ -1,7 +1,7 @@
-import { createVNode, inject, isVNode, render } from 'vue';
+import { cloneVNode, createVNode, inject, isVNode, render } from 'vue';
 import type { AppContext, InjectionKey, VNode } from 'vue';
 import { createSharedInjectionKey } from '../../utils/shared-runtime';
-import { useComponentServiceScope } from '../config-provider/service-scope';
+import { useComponentServiceScope, watchServiceZIndex } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
 import { resolveZIndexLayer } from '../config-provider/z-index';
@@ -34,6 +34,7 @@ interface NotificationRecord {
   options: ResolvedNotificationOptions;
   position: NotificationPosition;
   groupKey: string;
+  inheritsZIndex: boolean;
   wrapper: HTMLDivElement;
   vnode: VNode;
   state: 'active' | 'closing' | 'destroyed';
@@ -66,6 +67,8 @@ const createContainerStyle = (
 /** 创建队列、容器、配置和回调生命周期完全隔离的 Notification 服务。 */
 export function createNotificationService(appContext?: AppContext): NotificationService {
   let globalConfig: NotificationGlobalConfig = { ...DEFAULT_CONFIG };
+  let hasExplicitZIndex = false;
+  let stopZIndexWatch: (() => void) | undefined;
   let seed = 0;
   const records = new Map<string, NotificationRecord>();
   const containers = new Map<string, HTMLDivElement>();
@@ -78,7 +81,7 @@ export function createNotificationService(appContext?: AppContext): Notification
   };
 
   const resolveScopedConfig = (): NotificationGlobalConfig => {
-    if (globalConfig.zIndex !== DEFAULT_CONFIG.zIndex) return globalConfig;
+    if (hasExplicitZIndex) return globalConfig;
     const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
       ConfigContext | undefined;
     return config
@@ -118,6 +121,7 @@ export function createNotificationService(appContext?: AppContext): Notification
     Object.assign(container.style, createContainerStyle(options));
     parent.appendChild(container);
     containers.set(groupKey, container);
+    stopZIndexWatch ??= watchServiceZIndex(appContext, syncScopedZIndices);
     return container;
   };
 
@@ -134,6 +138,32 @@ export function createNotificationService(appContext?: AppContext): Notification
     if (stillUsed) return;
     containers.get(groupKey)?.remove();
     containers.delete(groupKey);
+    if (records.size === 0) {
+      stopZIndexWatch?.();
+      stopZIndexWatch = undefined;
+    }
+  };
+
+  const syncScopedZIndices = (): void => {
+    const context = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    if (!context) return;
+    const zIndex = resolveZIndexLayer(context.zIndex.value, 'toast');
+    const previousGroups = new Set<string>();
+    for (const record of records.values()) {
+      if (!record.inheritsZIndex || record.options.zIndex === zIndex) continue;
+      previousGroups.add(record.groupKey);
+      record.options.zIndex = zIndex;
+      record.groupKey = createGroupKey(record.options);
+      getContainer(record.groupKey, record.options).appendChild(record.wrapper);
+      // 更新现有实例，保留通知计时、焦点和关闭回调，不重新挂载。
+      record.vnode = cloneVNode(record.vnode, { zIndex });
+      render(record.vnode, record.wrapper);
+    }
+    // 合并到已有组时仍按原始创建顺序排列，显式层级的记录留在原组。
+    for (const record of records.values())
+      containers.get(record.groupKey)?.appendChild(record.wrapper);
+    previousGroups.forEach(destroyContainerIfEmpty);
   };
 
   const notifyClose = (record: NotificationRecord): void => {
@@ -244,6 +274,7 @@ export function createNotificationService(appContext?: AppContext): Notification
       options: { ...options, id },
       position: options.position,
       groupKey,
+      inheritsZIndex: input.zIndex === undefined && !hasExplicitZIndex,
       wrapper,
       vnode,
       state: 'active',
@@ -278,6 +309,7 @@ export function createNotificationService(appContext?: AppContext): Notification
 
   const config = (options: Partial<NotificationGlobalConfig>): void => {
     globalConfig = resolveNotificationConfig(options, globalConfig);
+    if (Object.prototype.hasOwnProperty.call(options, 'zIndex')) hasExplicitZIndex = true;
     for (const queue of activeQueues.values()) {
       const removeCount = queue.length - globalConfig.maxCount;
       if (removeCount > 0) forceCloseRecords(queue.slice(0, removeCount));

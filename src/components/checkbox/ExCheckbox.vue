@@ -201,6 +201,13 @@ const checkboxRef = ref<HTMLInputElement>();
 // 状态
 const isFocused = ref(false);
 const validationErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    validationErrorMessage.value = '';
+  },
+  { flush: 'post' }
+);
 const isIndeterminate = ref(props.indeterminate);
 
 // 计算属性

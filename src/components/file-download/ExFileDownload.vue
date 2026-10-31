@@ -364,13 +364,15 @@ const handleDownload = async (): Promise<ExFileDownloadResult> => {
     return { outcome: 'error', error: downloadError };
   }
 
+  // 地址与文件名属于同一次下载快照，后续属性切换只影响下一次请求。
+  const requestedFilename = props.filename;
   resetProgress();
 
   if (transport === 'link') {
     isHandlingLink = true;
     try {
       emit('start', transport);
-      const filename = resolveDownloadFilename(props.filename, null, url);
+      const filename = resolveDownloadFilename(requestedFilename, null, url);
       triggerBrowserDownload(url, filename);
       status.value = 'triggered';
       emit('trigger', url, filename);
@@ -399,7 +401,7 @@ const handleDownload = async (): Promise<ExFileDownloadResult> => {
 
     if (!isActive(operation)) return { outcome: 'cancelled', transport };
 
-    const filename = resolveDownloadFilename(props.filename, response.contentDisposition, url);
+    const filename = resolveDownloadFilename(requestedFilename, response.contentDisposition, url);
     downloadBlob(response.blob, filename);
     status.value = 'success';
     emit('success', response.blob, filename);

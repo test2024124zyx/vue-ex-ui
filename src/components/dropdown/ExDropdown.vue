@@ -220,7 +220,8 @@ const getMenuItems = (): HTMLElement[] => {
       '[data-ex-dropdown-item]:not([aria-disabled="true"]), [role="menuitem"]:not([aria-disabled="true"])'
     ) ?? []
   );
-  const unique = Array.from(new Set(elements));
+  // :disabled 同时覆盖原生按钮及禁用 fieldset 后代，不能只检查 ARIA 属性。
+  const unique = Array.from(new Set(elements)).filter(item => !item.matches(':disabled'));
   unique.forEach((item, index) => {
     if (!item.id) item.id = `${menuId}-custom-${index}`;
   });

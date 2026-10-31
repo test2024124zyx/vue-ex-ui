@@ -507,6 +507,36 @@ describe('ExImageCrop', () => {
     expect(current.emitted('cancel')).toEqual([[]]);
   });
 
+  it.each(['cancel', 'source', 'unmount'] as const)(
+    '编码完成与 %s 交错时旧裁剪结果不再发布',
+    async action => {
+      let finish!: (value: {
+        blob: Blob;
+        sourceArea: CropResult['sourceArea'];
+        outputSize: CropResult['outputSize'];
+      }) => void;
+      cropMocks.renderCrop.mockImplementationOnce(() => new Promise(resolve => (finish = resolve)));
+      const current = await mountCrop();
+      await current.get('[data-action="crop"]').trigger('click');
+      finish({
+        blob: cropResult.blob,
+        sourceArea: cropResult.sourceArea,
+        outputSize: cropResult.outputSize,
+      });
+      if (action === 'cancel') await current.get('[data-action="cancel"]').trigger('click');
+      else if (action === 'source')
+        await current.setProps({ src: new Blob(['新图'], { type: 'image/png' }) });
+      else {
+        current.unmount();
+        wrapper = null;
+      }
+      await flushPromises();
+      expect(current.emitted('crop')).toBeUndefined();
+      expect(current.emitted('error')).toBeUndefined();
+      if (action === 'cancel') expect(current.emitted('cancel')).toHaveLength(1);
+    }
+  );
+
   it('裁剪失败只发出一次稳定错误并恢复忙碌状态', async () => {
     const error = new ExImageCropError('ENCODE_FAILED', 'encode failed');
     cropMocks.renderCrop.mockRejectedValueOnce(error);

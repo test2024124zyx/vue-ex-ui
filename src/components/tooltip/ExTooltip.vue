@@ -49,7 +49,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted, getCurrentInstance } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  nextTick,
+  onMounted,
+  onUpdated,
+  onUnmounted,
+  getCurrentInstance,
+} from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
 import { calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
@@ -291,11 +300,16 @@ const handleScroll = () => {
   schedulePosition();
 };
 
-const describedElements = new Map<HTMLElement, string | null>();
+const describedElements = new Map<HTMLElement, boolean>();
 const restoreTriggerDescriptions = () => {
-  describedElements.forEach((description, element) => {
-    if (description === null) element.removeAttribute('aria-describedby');
-    else element.setAttribute('aria-describedby', description);
+  describedElements.forEach((owned, element) => {
+    if (!owned) return;
+    // 只撤销本实例添加的 ID，父级在浮层打开期间更新的说明必须保留。
+    const ids = (element.getAttribute('aria-describedby') ?? '')
+      .split(/\s+/)
+      .filter(id => id && id !== popperId);
+    if (ids.length) element.setAttribute('aria-describedby', ids.join(' '));
+    else element.removeAttribute('aria-describedby');
   });
   describedElements.clear();
 };
@@ -308,8 +322,8 @@ const syncTriggerDescriptions = () => {
   );
   if (!trigger) return;
   const current = trigger.getAttribute('aria-describedby');
-  describedElements.set(trigger, current);
   const ids = new Set((current ?? '').split(/\s+/).filter(Boolean));
+  describedElements.set(trigger, !ids.has(popperId));
   ids.add(popperId);
   trigger.setAttribute('aria-describedby', Array.from(ids).join(' '));
 };
@@ -336,6 +350,8 @@ watch(
 onMounted(() => {
   if (visible.value) nextTick(updatePosition);
 });
+
+onUpdated(syncTriggerDescriptions);
 
 onUnmounted(() => {
   clearTimers();

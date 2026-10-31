@@ -1,7 +1,7 @@
 import { createVNode, inject, render } from 'vue';
 import type { AppContext, InjectionKey, VNode } from 'vue';
 import { createSharedInjectionKey } from '../../utils/shared-runtime';
-import { useComponentServiceScope } from '../config-provider/service-scope';
+import { useComponentServiceScope, watchServiceZIndex } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
 import { resolveZIndexLayer } from '../config-provider/z-index';
@@ -45,6 +45,8 @@ export const MESSAGE_SERVICE_KEY: InjectionKey<MessageService> =
 /** 创建队列、配置、DOM 与回调生命周期完全隔离的 Message 服务。 */
 export function createMessageService(appContext?: AppContext): MessageService {
   let globalConfig: MessageGlobalConfig = { ...DEFAULT_CONFIG };
+  let hasExplicitZIndex = false;
+  let stopZIndexWatch: (() => void) | undefined;
   let messageContainer: HTMLDivElement | null = null;
   let seed = 0;
   const activeQueue: MessageRecord[] = [];
@@ -63,7 +65,7 @@ export function createMessageService(appContext?: AppContext): MessageService {
   };
 
   const resolveContainerZIndex = (): string => {
-    if (globalConfig.zIndex !== DEFAULT_CONFIG.zIndex) return String(globalConfig.zIndex);
+    if (hasExplicitZIndex) return String(globalConfig.zIndex);
     const scopedZIndex = resolveScopedZIndex();
     return scopedZIndex === null
       ? `var(--ex-z-toast, ${DEFAULT_CONFIG.zIndex})`
@@ -84,9 +86,11 @@ export function createMessageService(appContext?: AppContext): MessageService {
   };
 
   const destroyContainerIfEmpty = (): void => {
-    if (!messageContainer || records.size > 0) return;
-    messageContainer.remove();
+    if (records.size > 0) return;
+    messageContainer?.remove();
     messageContainer = null;
+    stopZIndexWatch?.();
+    stopZIndexWatch = undefined;
   };
 
   const notifyClose = (record: MessageRecord): void => {
@@ -147,6 +151,7 @@ export function createMessageService(appContext?: AppContext): MessageService {
     if (!parent) throw new Error('Message 服务找不到可用的文档根节点');
     messageContainer = document.createElement('div');
     messageContainer.className = 'ex-message-container';
+    stopZIndexWatch ??= watchServiceZIndex(appContext, updateContainerStyle);
     updateContainerStyle();
     parent.appendChild(messageContainer);
     return messageContainer;
@@ -234,6 +239,7 @@ export function createMessageService(appContext?: AppContext): MessageService {
 
   const config = (options: Partial<MessageGlobalConfig>): void => {
     globalConfig = resolveMessageConfig(options, globalConfig);
+    if (Object.prototype.hasOwnProperty.call(options, 'zIndex')) hasExplicitZIndex = true;
     updateContainerStyle();
 
     const removeCount = activeQueue.length - globalConfig.maxCount;

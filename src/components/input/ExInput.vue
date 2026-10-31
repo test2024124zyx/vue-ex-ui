@@ -550,7 +550,10 @@ const commitNativeValue = (event: Event): void => {
   }
 
   const modelValue = normalizeModelOutput(value);
-  if (!props.modelModifiers?.lazy) emit('update:modelValue', modelValue);
+  if (!props.modelModifiers?.lazy) {
+    emit('update:modelValue', modelValue);
+    void nextTick(synchronizeConfirmedValue);
+  }
   emit('input', modelValue, event);
   if (shouldValidate('input')) {
     validateInput(value);
@@ -575,6 +578,22 @@ function discardNativeDraft(): void {
   ignoreCompositionInput = null;
   displayValue.value = applyFormatter(rawValue.value);
   if (inputRef.value) inputRef.value.value = displayValue.value;
+}
+
+function synchronizeConfirmedValue(): void {
+  if (props.modelValue === undefined) return;
+  const confirmed = normalizeInputValue(props.modelValue);
+  if (rawValue.value !== confirmed) {
+    rawValue.value = confirmed;
+    validationError.value = null;
+    formItem?.onFieldDraftDiscard?.();
+  }
+  // 保留随后开始的输入法组合；已提交输入才恢复父级接受、转换或拒绝后的真实值。
+  if (!isComposing.value) {
+    displayValue.value = applyFormatter(confirmed);
+    if (inputRef.value) inputRef.value.value = displayValue.value;
+  }
+  scheduleTextareaHeight();
 }
 
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
@@ -653,7 +672,10 @@ const handleChange = (event: Event): void => {
     return;
   }
   const modelValue = normalizeModelOutput(rawValue.value);
-  if (props.modelModifiers?.lazy) emit('update:modelValue', modelValue);
+  if (props.modelModifiers?.lazy) {
+    emit('update:modelValue', modelValue);
+    void nextTick(synchronizeConfirmedValue);
+  }
   emit('change', modelValue, event);
   if (shouldValidate('change')) validateInput(rawValue.value);
   formItem?.onFieldChange();
@@ -698,6 +720,7 @@ const handleClear = (): void => {
   scheduleTextareaHeight();
 
   nextTick(() => {
+    synchronizeConfirmedValue();
     focus({ preventScroll: true });
   });
 };

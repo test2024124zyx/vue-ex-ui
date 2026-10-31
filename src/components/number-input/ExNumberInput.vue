@@ -267,7 +267,7 @@ const parseValue = (input: string): number | null => {
   }
 
   const num = Number(input);
-  if (isNaN(num)) return props.modelValue;
+  if (!Number.isFinite(num)) return props.modelValue;
 
   return num;
 };

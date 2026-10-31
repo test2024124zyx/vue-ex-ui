@@ -555,6 +555,14 @@ const checkedSet = computed(() => {
       if (!entry.disabled && entry.parent !== null && checked.has(entry.parent))
         checked.add(entry.node.value);
     }
+    // 外部值和用户勾选遵守相同的向上联动规则，禁用后代不参与全选判定。
+    for (let index = maps.value.entries.length - 1; index >= 0; index--) {
+      const entry = maps.value.entries[index]!;
+      if (entry.disabled) continue;
+      const children = (entry.node.children ?? []).filter(child => !isValueDisabled(child.value));
+      if (children.length && children.every(child => checked.has(child.value)))
+        checked.add(entry.node.value);
+    }
   }
   return checked;
 });

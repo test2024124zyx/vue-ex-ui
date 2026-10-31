@@ -215,11 +215,34 @@ export function useTableRows(
       Math.max(1, Math.ceil(total.value / pageSize.value))
     )
   );
+  let pendingSizePosition: number | undefined;
+  watch(
+    pageSize,
+    size => {
+      if (pendingSizePosition === undefined) return;
+      const position = pendingSizePosition;
+      pendingSizePosition = undefined;
+      if (paginationConfig.value?.current === undefined) {
+        internalCurrent.value = Math.min(
+          Math.floor(position / size) + 1,
+          Math.max(1, Math.ceil(total.value / size))
+        );
+      }
+    },
+    { flush: 'sync' }
+  );
   function changePage(next: number, size: number) {
     if (props.loading || paginationConfig.value?.disabled) return;
     const capacity = positiveInteger(size, pageSize.value);
     const page = Math.min(positiveInteger(next, 1), Math.max(1, Math.ceil(total.value / capacity)));
-    if (paginationConfig.value?.current === undefined) internalCurrent.value = page;
+    pendingSizePosition =
+      paginationConfig.value?.pageSize !== undefined &&
+      paginationConfig.value?.current === undefined &&
+      capacity !== pageSize.value
+        ? (current.value - 1) * pageSize.value
+        : undefined;
+    if (paginationConfig.value?.current === undefined && pendingSizePosition === undefined)
+      internalCurrent.value = page;
     if (paginationConfig.value?.pageSize === undefined) internalPageSize.value = capacity;
     const result = { current: page, pageSize: capacity, total: total.value };
     emit('update:pagination', result);

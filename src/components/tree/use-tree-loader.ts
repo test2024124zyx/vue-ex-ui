@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 import type { ExTreeProps, TreeNode, TreeNodeLoadState } from './types';
 import { composeTreeData, validateLoadedChildren } from './tree-data';
 import type { LoadedTreeBranch } from './tree-data';
+import { pruneTreeCycles } from '../../utils/tree-cycles';
 
 interface TreeLoaderOptions {
   props: Readonly<ExTreeProps>;
@@ -20,7 +21,8 @@ interface PendingTreeLoad {
 export function useTreeLoader({ props, onLoad, onError }: TreeLoaderOptions) {
   const branches = shallowRef(new Map<string, LoadedTreeBranch>());
   const states = shallowRef(new Map<string, TreeNodeLoadState>());
-  const tree = computed(() => composeTreeData(props.data, branches.value));
+  const safeData = computed(() => pruneTreeCycles(props.data, 'Tree'));
+  const tree = computed(() => composeTreeData(safeData.value, branches.value));
   const pending = new Map<string, PendingTreeLoad>();
   const cancelled = new Set<string>();
   let expanded = new Set<string>();

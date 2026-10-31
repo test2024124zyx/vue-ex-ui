@@ -375,7 +375,7 @@ import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
 import { clonePickerValue, usePickerValue } from './use-picker-value';
 import { useDateGrid } from './use-date-grid';
-import { getPeriodStart, YEARS_PER_PAGE, type DatePeriod } from './date-periods';
+import { DAYS_PER_WEEK, getPeriodStart, YEARS_PER_PAGE, type DatePeriod } from './date-periods';
 import ExDatePeriodGrid from './ExDatePeriodGrid.vue';
 import { getDatePickerPosition } from './date-picker-position';
 import { createTimeDraft, isDateTimeDisabled } from './time-constraints';
@@ -847,10 +847,11 @@ const focusDate = (date: Date) => {
 const MAX_DISABLED_DATE_SEARCH_DAYS = 3660;
 
 const findEnabledDate = (initial: Date, direction: number): Date | null => {
-  let candidate = new Date(initial);
-  for (let attempts = 0; attempts <= MAX_DISABLED_DATE_SEARCH_DAYS; attempts += 1) {
+  const step = period.value === 'week' ? DAYS_PER_WEEK : 1;
+  let candidate = getPeriodStart(initial, period.value);
+  for (let attempts = 0; attempts <= MAX_DISABLED_DATE_SEARCH_DAYS; attempts += step) {
     if (!isDateDisabled(candidate)) return candidate;
-    candidate = addDays(candidate, direction);
+    candidate = addDays(candidate, direction * step);
   }
   return null;
 };
@@ -865,18 +866,21 @@ const handleDayKeydown = (event: KeyboardEvent, date: Date) => {
 
   let target: Date;
   let direction = 1;
+  const horizontalStep = period.value === 'week' ? DAYS_PER_WEEK : 1;
+  const weekday =
+    period.value === 'week' ? (date.getDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK : date.getDay();
   if (event.key === 'ArrowLeft') {
-    target = addDays(date, -1);
+    target = addDays(date, -horizontalStep);
     direction = -1;
-  } else if (event.key === 'ArrowRight') target = addDays(date, 1);
+  } else if (event.key === 'ArrowRight') target = addDays(date, horizontalStep);
   else if (event.key === 'ArrowUp') {
-    target = addDays(date, -7);
+    target = addDays(date, -DAYS_PER_WEEK);
     direction = -1;
-  } else if (event.key === 'ArrowDown') target = addDays(date, 7);
+  } else if (event.key === 'ArrowDown') target = addDays(date, DAYS_PER_WEEK);
   else if (event.key === 'Home') {
-    target = addDays(date, -date.getDay());
+    target = addDays(date, -weekday);
     direction = -1;
-  } else if (event.key === 'End') target = addDays(date, 6 - date.getDay());
+  } else if (event.key === 'End') target = addDays(date, DAYS_PER_WEEK - 1 - weekday);
   else if (event.key === 'PageUp') {
     target = setMonthClamped(date, date.getMonth() - 1);
     direction = -1;

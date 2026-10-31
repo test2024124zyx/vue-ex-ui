@@ -135,38 +135,30 @@ const shouldUseVirtual = computed(() => {
   return props.virtual !== false && props.dataSource.length >= props.threshold;
 });
 
-// 获取项目高度 - 带错误处理和缓存
-const getItemHeight = (index: number): number => {
-  // 检查缓存
-  if (heightCache.has(index)) {
-    return heightCache.get(index)!;
-  }
-
-  try {
-    let height: number;
-
-    if (typeof props.itemHeight === 'function') {
-      height = props.itemHeight(index, props.dataSource[index]);
-
-      // 验证高度值
-      if (typeof height !== 'number' || height <= 0 || !isFinite(height)) {
-        logger.warn(
-          `Invalid height ${height} for item ${index}, using default ${DEFAULT_ITEM_HEIGHT_PX}px`
-        );
-        height = DEFAULT_ITEM_HEIGHT_PX;
-      }
-    } else {
-      height = normalizedFixedItemHeight.value ?? DEFAULT_ITEM_HEIGHT_PX;
+// 在响应式计算中读取顺序及高度依赖；离屏项也能使旧索引缓存失效。
+const estimatedHeights = computed(() => {
+  const measure = props.itemHeight;
+  if (typeof measure !== 'function') return undefined;
+  return props.dataSource.map((item, index) => {
+    try {
+      const height = measure(index, item);
+      if (typeof height === 'number' && height > 0 && Number.isFinite(height)) return height;
+      logger.warn(
+        `Invalid height ${height} for item ${index}, using default ${DEFAULT_ITEM_HEIGHT_PX}px`
+      );
+    } catch (error) {
+      logger.error(`Error calculating height for item ${index}:`, error);
     }
-
-    // 缓存高度
-    heightCache.set(index, height);
-    return height;
-  } catch (error) {
-    logger.error(`Error calculating height for item ${index}:`, error);
-    heightCache.set(index, DEFAULT_ITEM_HEIGHT_PX);
     return DEFAULT_ITEM_HEIGHT_PX;
-  }
+  });
+});
+
+const getItemHeight = (index: number): number => {
+  if (heightCache.has(index)) return heightCache.get(index)!;
+  const height =
+    estimatedHeights.value?.[index] ?? normalizedFixedItemHeight.value ?? DEFAULT_ITEM_HEIGHT_PX;
+  heightCache.set(index, height);
+  return height;
 };
 
 // 构建偏移量缓存（前缀和数组）
@@ -751,17 +743,8 @@ watch(
   { flush: 'post' }
 );
 
-// 监听数据源变化（深度监听可能影响性能，仅在必要时使用）
-watch(
-  () => props.dataSource,
-  () => {
-    // 数据内容变化时，可能需要重新测量高度
-    if (typeof props.itemHeight === 'function') {
-      refresh();
-    }
-  },
-  { deep: false }
-);
+// 只追踪高度函数实际读取的数据，避免对所有业务字段进行深度遍历。
+watch(estimatedHeights, () => refresh());
 
 // 暴露方法
 defineExpose({

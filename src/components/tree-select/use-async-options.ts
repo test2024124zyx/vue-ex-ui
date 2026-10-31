@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
+import { pruneTreeCycles } from '../../utils/tree-cycles';
 
 export type OptionValue = string | number;
 export interface AsyncOption<T> {
@@ -34,6 +35,9 @@ interface AsyncOptions<T extends AsyncOption<T>> {
 
 /** 共享异步生命周期；树选择按值识别，级联选择按完整路径识别。 */
 export function useAsyncOptions<T extends AsyncOption<T>>(options: AsyncOptions<T>) {
+  const safeData = computed(() =>
+    pruneTreeCycles(options.data(), options.identity === 'value' ? 'TreeSelect' : 'Cascader')
+  );
   const branches = shallowRef(new Map<string, { source: T; children: T[] }>());
   const states = shallowRef(new Map<string, OptionLoadState>());
   const requestedPaths = shallowRef<OptionValue[][]>([]);
@@ -64,10 +68,7 @@ export function useAsyncOptions<T extends AsyncOption<T>>(options: AsyncOptions<
       parent?: OptionEntry<T>;
       disabled: boolean;
       exit?: boolean;
-    }> = options
-      .data()
-      .map(source => ({ source, target: data, disabled: false }))
-      .reverse();
+    }> = safeData.value.map(source => ({ source, target: data, disabled: false })).reverse();
     while (stack.length) {
       const frame = stack.pop()!;
       if (frame.exit) {
@@ -353,7 +354,7 @@ export function useAsyncOptions<T extends AsyncOption<T>>(options: AsyncOptions<
     cancelAll();
   });
   return {
-    data: computed(() => (options.loader() ? indexed.value.data : options.data())),
+    data: computed(() => (options.loader() ? indexed.value.data : safeData.value)),
     entries: computed(() => indexed.value.entries),
     keyFor,
     expandable,
