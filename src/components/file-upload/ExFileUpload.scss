@@ -357,6 +357,20 @@
     gap: var(--ex-spacing-2);
     opacity: 0;
     transition: opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
+    // 图片遮罩固定为深色，操作图标不能沿用浅色主题的深灰文字。
+    .ex-button {
+      color: var(--ex-color-white);
+
+      &:not(:disabled):hover {
+        color: var(--ex-color-white);
+        background: var(--ex-color-white-alpha-10);
+      }
+
+      &:focus-visible {
+        outline-color: var(--ex-color-white);
+      }
+    }
   }
 
   &__list-item--picture-card:hover &__list-item-card-actions,

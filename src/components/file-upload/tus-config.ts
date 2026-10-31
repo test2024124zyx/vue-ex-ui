@@ -3,6 +3,8 @@ import type { UploadTusOptions } from './tus-types';
 import type { UploadHeaders } from './types';
 
 export const DEFAULT_TUS_RETRY_DELAYS = [0, 1000, 3000, 5000] as const;
+const BYTES_PER_MEBIBYTE = 1024 * 1024;
+export const DEFAULT_TUS_CHUNK_SIZE = 8 * BYTES_PER_MEBIBYTE;
 const HEADER_NAME = /^[!#$%&'*+.^_`|~\da-z-]+$/i;
 const RESERVED_HEADERS = /^(?:tus-|upload-|content-length$|content-type$|host$)/i;
 const hasControlCharacter = (value: string) =>
@@ -16,7 +18,7 @@ export const tusConfigurationError = (message: string) =>
 
 /** 协议参数严格拒绝非法输入，避免无限重试、空分片或服务端偏移损坏。 */
 export function normalizeTusOptions(options: UploadTusOptions = {}) {
-  const chunkSize = options.chunkSize ?? Number.POSITIVE_INFINITY;
+  const chunkSize = options.chunkSize ?? DEFAULT_TUS_CHUNK_SIZE;
   if (
     chunkSize !== Number.POSITIVE_INFINITY &&
     (!Number.isSafeInteger(chunkSize) || chunkSize <= 0)

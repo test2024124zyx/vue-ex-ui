@@ -85,7 +85,9 @@ let unregisterScopeElement: (() => void) | undefined;
 // 函数 ref 在指令 mounted 前注册容器，支持同一模板中的 Provider 默认插槽。
 const bindProviderElement = (element: unknown): void => {
   unregisterScopeElement?.();
-  providerRef.value = element instanceof HTMLDivElement ? element : undefined;
+  // 原生 div 的函数 ref 只有元素或 null，不要求宿主向全局导出 DOM 构造器。
+  const root = element as HTMLDivElement | null;
+  providerRef.value = root?.tagName === 'DIV' ? root : undefined;
   unregisterScopeElement = providerRef.value
     ? registerServiceScopeElement(providerRef.value, serviceScope)
     : undefined;

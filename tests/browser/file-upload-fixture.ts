@@ -24,6 +24,7 @@ createApp({
           h(
             'main',
             {
+              class: 'ex-app',
               style: {
                 padding: '24px',
                 boxSizing: 'border-box',

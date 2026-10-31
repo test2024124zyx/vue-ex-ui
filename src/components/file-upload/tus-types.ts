@@ -2,7 +2,7 @@ import type { UploadConfigResolver } from './types';
 
 /** tus 1.0.0 客户端配置；单文件按偏移顺序分片，不要求服务端 Concatenation 扩展。 */
 export interface UploadTusOptions {
-  /** 单次 PATCH 的最大字节数；省略时遵循 tus 客户端默认，不人为切小请求。 */
+  /** 单次 PATCH 的最大字节数；默认 8 MiB，显式 Infinity 会整文件读入内存。 */
   chunkSize?: number;
   /** 自动重试间隔，单位毫秒；空数组表示不重试。 */
   retryDelays?: readonly number[];

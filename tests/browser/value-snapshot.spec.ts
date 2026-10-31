@@ -6,8 +6,9 @@ test('原生文件经过表单快照后仍可读取，替换同名文件会作�
     const clonePath = '/src/utils/clone.ts';
     const snapshotPath = '/src/utils/value-snapshot.ts';
     const { deepClone } = (await import(clonePath)) as typeof import('../../src/utils/clone');
-    const { equalValueSnapshot } =
-      (await import(snapshotPath)) as typeof import('../../src/utils/value-snapshot');
+    const { equalValueSnapshot } = (await import(
+      snapshotPath
+    )) as typeof import('../../src/utils/value-snapshot');
     const file = new File(['业务文件甲'], 'same.txt', { lastModified: 1 });
     const replacement = new File(['业务文件乙'], 'same.txt', { lastModified: 1 });
     const snapshot = deepClone({ files: [file] });

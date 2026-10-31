@@ -16,6 +16,7 @@ let sequence = 0;
 let endpoint = '';
 let redirectTarget = '';
 let redirectStatus = 0;
+let holdPatchResponse = false;
 const finish = (response: ServerResponse, status: number) => {
   if (response.destroyed) return;
   response.statusCode = status;
@@ -70,6 +71,8 @@ const serve = async (request: IncomingMessage, response: ServerResponse) => {
   for await (const chunk of request) chunks.push(Buffer.from(chunk));
   resource.data = Buffer.concat([resource.data, ...chunks]);
   response.setHeader('Upload-Offset', resource.data.byteLength);
+  // 暂停与取消用例由操作释放响应，避免慢机器上文件先传完造成时序竞争。
+  if (holdPatchResponse) return;
   const timer = setTimeout(() => {
     timers.delete(timer);
     finish(response, 204);
@@ -111,6 +114,7 @@ test.beforeEach(() => {
   requests.splice(0);
   outsideRequests.splice(0);
   redirectStatus = 0;
+  holdPatchResponse = false;
 });
 test.afterAll(async () => {
   for (const timer of timers) clearTimeout(timer);
@@ -138,12 +142,14 @@ for (const status of [302, 307, 308]) {
 }
 
 test('同一组件暂停后切换账号，新凭证只能访问新账号上传资源', async ({ page }) => {
+  holdPatchResponse = true;
   await page.goto(fixtureUrl());
   await page.locator('input[type=file]').setInputFiles(SAMPLE_FILE);
   await page.locator('[data-upload-action=start]').click();
   await expect.poll(() => [...resources.values()][0]?.data.byteLength ?? 0).toBeGreaterThan(0);
   await page.locator('[data-upload-action=pause]').click();
   await expect(page.locator('#file-state')).toContainText('paused');
+  holdPatchResponse = false;
   const originalPath = [...resources.keys()][0]!;
   const originalBytes = resources.get(originalPath)!.data.byteLength;
   const before = requests.length;
@@ -155,12 +161,13 @@ test('同一组件暂停后切换账号，新凭证只能访问新账号上传�
   expect(following[0]).toMatchObject({ method: 'POST', token: 'dummy-account-b' });
   expect(following.every(request => request.path !== originalPath)).toBe(true);
   expect(resources.get(originalPath)!.data.byteLength).toBe(originalBytes);
-  expect([...resources.values()][1]!.data.equals(SAMPLE_BYTES)).toBe(true);
+  expect([...resources.values()][1]!.data).toEqual(SAMPLE_BYTES);
 });
 
 for (const view of ['text', 'picture', 'picture-card']) {
   for (const theme of ['light', 'neon-blue']) {
     test(`${view} ${theme} 窄屏暂停、继续和完整分片上传`, async ({ page }) => {
+      holdPatchResponse = true;
       const errors: string[] = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.setViewportSize({ width: 390, height: 844 });
@@ -170,6 +177,7 @@ for (const view of ['text', 'picture', 'picture-card']) {
       await expect.poll(() => [...resources.values()][0]?.data.byteLength ?? 0).toBeGreaterThan(0);
       await page.locator('[data-upload-action=pause]').click();
       await expect(page.locator('#file-state')).toContainText('paused');
+      holdPatchResponse = false;
       // 操作必须处于卡片与视口内，不能只是 DOM 存在但被固定高度裁掉。
       const bounds = await page.locator('[data-upload-action=resume]').evaluate(element => {
         const button = element.getBoundingClientRect();
@@ -192,29 +200,32 @@ for (const view of ['text', 'picture', 'picture-card']) {
       await page.screenshot({ path: test.info().outputPath('paused-upload.png'), fullPage: true });
       await page.locator('[data-upload-action=resume]').click();
       await expect(page.locator('#file-state')).toContainText('success');
-      expect([...resources.values()][0]!.data.equals(SAMPLE_BYTES)).toBe(true);
+      expect([...resources.values()][0]!.data).toEqual(SAMPLE_BYTES);
       expect(errors).toEqual([]);
     });
   }
 }
 
 test('刷新后重新选择同一原始文件，恢复已保存的服务器偏移', async ({ page }) => {
+  holdPatchResponse = true;
   await page.goto(fixtureUrl());
   await page.locator('input[type=file]').setInputFiles(SAMPLE_FILE);
   await page.locator('[data-upload-action=start]').click();
   await expect.poll(() => [...resources.values()][0]?.data.byteLength ?? 0).toBeGreaterThan(0);
   await page.locator('[data-upload-action=pause]').click();
   await expect(page.locator('#file-state')).toContainText('paused');
+  holdPatchResponse = false;
   await page.reload();
   await page.locator('input[type=file]').setInputFiles(SAMPLE_FILE);
   await page.locator('[data-upload-action=start]').click();
   await expect(page.locator('#file-state')).toContainText('success');
   expect(methods.filter(method => method === 'POST')).toHaveLength(1);
   expect(methods).toContain('HEAD');
-  expect([...resources.values()][0]!.data.equals(SAMPLE_BYTES)).toBe(true);
+  expect([...resources.values()][0]!.data).toEqual(SAMPLE_BYTES);
 });
 
 test('永久取消等待真实 DELETE，排队文件遵守单文件并发', async ({ page }) => {
+  holdPatchResponse = true;
   await page.goto(fixtureUrl());
   await page.locator('input[type=file]').setInputFiles([
     { name: 'a.txt', mimeType: 'text/plain', buffer: Buffer.alloc(90, 'a') },

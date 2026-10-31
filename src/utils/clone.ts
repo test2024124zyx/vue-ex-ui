@@ -61,6 +61,9 @@ const cloneValue = (value: unknown, context: CloneContext): unknown => {
   if (value instanceof WeakMap || value instanceof WeakSet || value instanceof Promise)
     return value;
 
+  // File 继承 Blob；二进制内容不可变，保留原生对象才能保持读取和上传所需的内部槽。
+  if (typeof Blob !== 'undefined' && value instanceof Blob) return value;
+
   if (value instanceof Date) {
     const cloned = new Date(value.getTime());
     context.seen.set(value, cloned);

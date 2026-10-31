@@ -1,6 +1,12 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createServer } from 'node:http';
+import { Blob as NativeBlob } from 'node:buffer';
 import { TusHttpStack } from '../../../src/components/file-upload/tus-http-stack';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const received: Array<{ body: string; token?: string }> = [];
 const outside = createServer(async (request, response) => {
@@ -73,5 +79,39 @@ describe('tus 请求的网络边界', () => {
     await expect(request.send('cancelled')).rejects.toMatchObject({ name: 'AbortError' });
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it('分片按其真实字节发送，不把文件切片句柄交给浏览器网络栈', async () => {
+    vi.stubGlobal('Blob', NativeBlob);
+    const body = new NativeBlob(['abcdef']).slice(2, 5);
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const request = new TusHttpStack().createRequest('PATCH', endpoint);
+    await request.send(body as unknown as Blob);
+    const sent = fetchSpy.mock.calls[0]![1]!.body;
+    expect(sent).toHaveProperty('byteLength', body.size);
+    expect(new TextDecoder().decode(sent as ArrayBuffer)).toBe('cde');
+  });
+
+  it.each(['abort', 'timeout'] as const)('读取分片期间 %s，读完后也不能补发请求', async reason => {
+    vi.stubGlobal('Blob', NativeBlob);
+    let finish!: (data: ArrayBuffer) => void;
+    const body = new NativeBlob(['body']);
+    vi.spyOn(body, 'arrayBuffer').mockImplementation(
+      () => new Promise(resolve => (finish = resolve))
+    );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const request = new TusHttpStack().createRequest('PATCH', endpoint);
+    if (reason === 'timeout') (request.getUnderlyingObject() as { timeout: number }).timeout = 1;
+    const pending = request.send(body as unknown as Blob);
+    const rejected = expect(pending).rejects.toMatchObject(
+      reason === 'timeout' ? { code: 'timeout' } : { name: 'AbortError' }
+    );
+    if (reason === 'abort') await request.abort();
+    await rejected;
+    finish(new ArrayBuffer(4));
+    await Promise.resolve();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

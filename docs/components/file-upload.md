@@ -650,7 +650,7 @@ const reportTusStorage = () => {
 - `cancel()` 使用 Termination 扩展删除服务端上传资源。服务端不支持或请求失败时返回 `cancelled: false` 并发出 `error`，保留地址以便重试；`terminated: true` 才表示服务端确认删除。
 - `abort()`、移除列表、清空与组件卸载只中止本地传输，保留服务器断点。创建请求中断且尚未收到 `Location` 时，客户端无法确认未知资源是否存在，服务端应配置过期清理。
 - tus 成功响应为 `{ uploadUrl }`，不会把协议资源地址伪装为可下载地址。业务需要下载地址时应使用自己的文件查询接口。
-- `chunkSize` 省略时沿用客户端默认；仅在代理或服务端请求体限制需要时设置有限大小。`method`、`name`、`data` 属于 multipart 模式，tus 创建元数据使用 `tus.metadata`。
+- `chunkSize` 默认为 8 MiB，按顺序读取并发送分片，避免大文件整份进入内存；显式大小优先，设置 `Infinity` 会整文件读取。`method`、`name`、`data` 属于 multipart 模式，tus 创建元数据使用 `tus.metadata`。
 
 ## API
 

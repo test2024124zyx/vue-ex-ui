@@ -49,10 +49,13 @@ export class TusHttpStack implements HttpStack {
           }
           void (async () => {
             try {
+              // WebKit 的文件切片直接作为 fetch 正文时可能丢失偏移；只读取当前分片。
+              const payload = body instanceof Blob ? await body.arrayBuffer() : body;
+              if (complete || controller.signal.aborted) return;
               const response = await fetch(url, {
                 method,
                 headers,
-                body,
+                body: payload,
                 credentials: settings.withCredentials ? 'include' : 'same-origin',
                 redirect: 'error',
                 signal: controller.signal,

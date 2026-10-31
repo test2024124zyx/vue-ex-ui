@@ -31,7 +31,8 @@
     li {
       position: relative;
 
-      &::before {
+      // 正文装饰不进入 ExUI 组件的列表项，避免上传卡片和数据列表出现额外圆点。
+      &:not(:where([class^='ex-'], [class*=' ex-']))::before {
         content: '';
         position: absolute;
         left: -var(--ex-spacing-4);
@@ -52,7 +53,7 @@
       counter-increment: list-counter;
       position: relative;
 
-      &::before {
+      &:not(:where([class^='ex-'], [class*=' ex-']))::before {
         content: counter(list-counter);
         position: absolute;
         left: -var(--ex-spacing-6);

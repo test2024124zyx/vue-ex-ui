@@ -53,9 +53,9 @@ describe('tus 地址、认证与协议参数边界', () => {
     expect(validateTusMetadata(undefined)).toEqual({});
   });
 
-  it('默认顺序请求不强制分片，重试数组复制后不修改调用方配置', () => {
+  it('默认每 8 MiB 顺序分片，显式大小优先且不修改调用方重试配置', () => {
     expect(normalizeTusOptions()).toEqual({
-      chunkSize: Infinity,
+      chunkSize: 8 * 1024 * 1024,
       retryDelays: [0, 1000, 3000, 5000],
       resume: true,
     });
@@ -63,6 +63,8 @@ describe('tus 地址、认证与协议参数边界', () => {
     const options = normalizeTusOptions({ chunkSize: 10, retryDelays: delays, resume: false });
     options.retryDelays.push(200);
     expect(delays).toEqual([100]);
+    expect(options.chunkSize).toBe(10);
+    expect(normalizeTusOptions({ chunkSize: Infinity }).chunkSize).toBe(Infinity);
     expect(options.resume).toBe(false);
   });
 });

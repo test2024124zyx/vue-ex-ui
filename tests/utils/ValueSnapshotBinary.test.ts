@@ -53,5 +53,6 @@ describe('二进制表单值和不透明对象的快照', () => {
     const after = { first: shared, second: shared };
     expect(equalValueSnapshot(before, after)).toBe(false);
     expect(equalValueSnapshot(after, before)).toBe(false);
+    expect(equalValueSnapshot({ first: shared, second: { value: 1 } }, after)).toBe(false);
   });
 });

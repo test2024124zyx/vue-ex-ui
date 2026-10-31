@@ -4,18 +4,34 @@ import { toRaw } from 'vue';
 export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const pending: Array<[unknown, unknown]> = [[left, right]];
   const seen = new WeakMap<object, object>();
+  const reverseSeen = new WeakMap<object, object>();
   while (pending.length) {
     const [leftValue, rightValue] = pending.pop()!;
     const a = leftValue && typeof leftValue === 'object' ? toRaw(leftValue) : leftValue;
     const b = rightValue && typeof rightValue === 'object' ? toRaw(rightValue) : rightValue;
-    if (Object.is(a, b)) continue;
-    if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+    if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
+      if (!Object.is(a, b)) return false;
+      continue;
+    }
     if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+    // 不透明对象无法靠自有属性比较；只允许同一原生对象继续作为确认值。
+    if (
+      a instanceof Promise ||
+      a instanceof WeakMap ||
+      a instanceof WeakSet ||
+      (typeof Blob !== 'undefined' && a instanceof Blob)
+    ) {
+      if (a !== b) return false;
+      continue;
+    }
     if (seen.has(a)) {
       if (seen.get(a) !== b) return false;
       continue;
     }
+    // 双向身份映射同时识别共享引用被拆分或合并，保留对象图的关系。
+    if (reverseSeen.has(b) && reverseSeen.get(b) !== a) return false;
     seen.set(a, b);
+    reverseSeen.set(b, a);
     if (a instanceof Date && b instanceof Date && !Object.is(a.getTime(), b.getTime()))
       return false;
     if (
@@ -30,8 +46,11 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     } else if (a instanceof Set && b instanceof Set) {
       if (a.size !== b.size) return false;
       pending.push([[...a], [...b]]);
-    } else if (a instanceof ArrayBuffer && b instanceof ArrayBuffer) {
-      pending.push([new Uint8Array(a), new Uint8Array(b)]);
+    } else if (
+      a instanceof ArrayBuffer ||
+      (typeof SharedArrayBuffer !== 'undefined' && a instanceof SharedArrayBuffer)
+    ) {
+      pending.push([new Uint8Array(a), new Uint8Array(b as ArrayBufferLike)]);
     } else if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
       if (a.byteLength !== b.byteLength) return false;
       const first = new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
