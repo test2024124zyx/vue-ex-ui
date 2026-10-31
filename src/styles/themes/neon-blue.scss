@@ -34,7 +34,8 @@
   // ========== 文本色系 ==========
   --ex-color-text-primary: #e6f0ff;
   --ex-color-text-secondary: #8fa3b8;
-  --ex-color-text-tertiary: #6b7d91;
+  // 三级文字在最亮的常用暗色表面上仍保持阅读对比度。
+  --ex-color-text-tertiary: #7b8da3;
   --ex-color-text-disabled: #4a5568;
   --ex-color-text-inverse: #0b0f14;
 

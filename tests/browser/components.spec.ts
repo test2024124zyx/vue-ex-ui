@@ -174,6 +174,42 @@ for (const component of modules) {
         await expect(page.locator('main')).toHaveAttribute('data-component', component);
         await expectScene(page, component);
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        const dialogScenes = [
+          'color-picker',
+          'datetime-picker',
+          'time-picker',
+          'dialog',
+          'modal',
+          'drawer',
+          'file-preview',
+          'popover',
+          'popconfirm',
+        ];
+        const popupRole = dialogScenes.includes(component)
+          ? 'dialog'
+          : component === 'dropdown'
+            ? 'menu'
+            : component === 'tooltip'
+              ? 'tooltip'
+              : undefined;
+        if (popupRole) {
+          const popup = page.getByRole(popupRole).first();
+          await expect(popup).toBeVisible();
+          // 可见性断言不检查 opacity；必须等待 Vue 移除入场类后再留存验收截图。
+          await expect
+            .poll(() =>
+              popup.evaluate(element => {
+                for (
+                  let current: Element | null = element;
+                  current;
+                  current = current.parentElement
+                )
+                  if (Number(getComputedStyle(current).opacity) !== 1) return false;
+                return true;
+              })
+            )
+            .toBe(true);
+        }
         await expect(page.locator('#fixture-errors')).toBeEmpty();
         expect(failures).toEqual([]);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

@@ -68,7 +68,7 @@
     flex-shrink: 0;
     width: var(--ex-checkbox-box-size-md);
     height: var(--ex-checkbox-box-size-md);
-    border: var(--ex-checkbox-box-border-width) solid var(--ex-color-border-primary);
+    border: var(--ex-checkbox-box-border-width) solid var(--ex-color-text-tertiary);
     border-radius: var(--ex-radius-sm);
     background: transparent;
     @include safe-transition(all);
@@ -88,7 +88,7 @@
     // 选中状态的图标
     .ex-checkbox__check-icon,
     .ex-checkbox__indeterminate-icon {
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       @include safe-transition(all, var(--ex-motion-duration-fast));
     }
 

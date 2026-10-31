@@ -51,7 +51,7 @@
     @include flex-center;
     width: 48px;
     height: 48px;
-    border: 2px solid var(--ex-color-border-primary);
+    border: 2px solid var(--ex-color-text-tertiary);
     border-radius: var(--ex-radius-md);
     background: var(--ex-color-bg-secondary);
     cursor: text;
@@ -64,7 +64,7 @@
     }
 
     &--filled {
-      border-color: var(--ex-color-border-secondary);
+      border-color: var(--ex-color-primary);
     }
 
     &--error {

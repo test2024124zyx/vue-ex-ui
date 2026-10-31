@@ -7,7 +7,7 @@
   align-items: center;
   width: 100%;
   background: var(--ex-number-input-bg, var(--ex-color-bg-secondary));
-  border: 1px solid var(--ex-number-input-border-color, var(--ex-color-border-primary));
+  border: 1px solid var(--ex-number-input-border-color, var(--ex-color-text-tertiary));
   border-radius: var(--ex-radius-md);
   @include transition(all);
 

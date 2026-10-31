@@ -119,7 +119,7 @@
     }
 
     &--active {
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       background: linear-gradient(
         135deg,
         var(--ex-color-neon-blue-500),
@@ -139,7 +139,7 @@
     );
     border: none;
     border-radius: var(--ex-radius-base);
-    color: var(--ex-color-white);
+    color: var(--ex-color-text-inverse);
     font-size: var(--ex-text-sm);
     font-weight: var(--ex-font-semibold);
     cursor: pointer;
@@ -669,7 +669,7 @@
 
     &--today {
       background: var(--ex-color-neon-blue-500);
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       font-weight: var(--ex-font-bold);
     }
   }

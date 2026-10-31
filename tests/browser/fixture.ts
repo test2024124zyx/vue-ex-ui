@@ -135,11 +135,10 @@ const basicProps: Record<string, Record<string, unknown>> = {
   progress: { percentage: 60 },
   qrcode: { value: 'https://example.com' },
   radio: { value: 'a', label: '项目甲' },
-  rate: { modelValue: 3 },
+  rate: { modelValue: params.has('half') ? 3.5 : 3, allowHalf: params.has('half') },
   select: { options, ariaLabel: '项目选择' },
   skeleton: { variant: 'article', rows: 3 },
   slider: { modelValue: 35, ariaLabel: '完成比例' },
-  switch: { modelValue: false, ariaLabel: '启用任务' },
   table: { columns, data: rows },
   'time-picker': { modelValue: '09:30:00', ariaLabel: '开始时间' },
   tooltip: { content: '提示内容' },
@@ -155,7 +154,20 @@ const formModel = reactive({ amount: 1 });
 const validationValue = ref<unknown>();
 const tableRef = ref<InstanceType<typeof ui.ExTable>>();
 const selectedKeys = ref<Array<string | number>>([]);
+const switchValue = ref<boolean | string | number>(params.has('checked'));
 const grouped: Record<string, () => VNodeChild> = {
+  switch: () =>
+    render('ExSwitch', {
+      modelValue: switchValue.value,
+      'onUpdate:modelValue': (value: boolean | string | number) => {
+        switchValue.value = value;
+      },
+      ariaLabel: '启用任务',
+      loading: params.has('loading'),
+      inlinePrompt: params.has('inline'),
+      activeText: params.has('inline') ? '开' : undefined,
+      inactiveText: params.has('inline') ? '关' : undefined,
+    }),
   loading: () =>
     h('div', { class: 'loading-target' }, [
       h('p', '正在读取项目数据'),
@@ -167,7 +179,10 @@ const grouped: Record<string, () => VNodeChild> = {
       render('ExAvatar', { text: '李四' }),
       render('ExAvatar', { text: '王五' }),
     ]),
-  checkbox: () => render('ExCheckboxGroup', { modelValue: ['a'], options }),
+  checkbox: () =>
+    params.has('indeterminate')
+      ? render('ExCheckbox', { indeterminate: true, label: '部分选择' })
+      : render('ExCheckboxGroup', { modelValue: ['a'], options }),
   radio: () =>
     render('ExRadioGroup', { modelValue: 'a' }, [
       render('ExRadio', { value: 'a', label: '项目甲' }),

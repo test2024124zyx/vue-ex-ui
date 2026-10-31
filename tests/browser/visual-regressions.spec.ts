@@ -1,55 +1,11 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { contrast } from './contrast';
 
 const TEXT_CONTRAST = 4.5;
 const CONTROL_CONTRAST = 3;
 const GEOMETRY_TOLERANCE = 2;
 const THEMES = ['light', 'neon-blue'];
 test.setTimeout(60000);
-
-/** 按实际计算样式合成透明背景，并检查渐变各端点中最差的文字对比度。 */
-const contrast = async (foreground: Locator, background?: string, property = 'color') => {
-  return foreground.evaluate(
-    (foregroundElement, options) => {
-      const color = getComputedStyle(foregroundElement).getPropertyValue(options.property);
-      const element =
-        options.background === ':parent'
-          ? foregroundElement.parentElement!
-          : options.background
-            ? document.querySelector(options.background)!
-            : foregroundElement;
-      const parse = (value: string) => (value.match(/[\d.]+/g) ?? []).map(Number);
-      const blend = (front: number[], back: number[]) =>
-        back.map((value, index) => front[index] * (front[3] ?? 1) + value * (1 - (front[3] ?? 1)));
-      const luminance = (rgb: number[]) =>
-        rgb.reduce((sum, value, index) => {
-          const channel = value / 255;
-          const linear = channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-          return sum + linear * [0.2126, 0.7152, 0.0722][index];
-        }, 0);
-      const ancestors: Element[] = [];
-      for (let current: Element | null = element; current; current = current.parentElement)
-        ancestors.unshift(current);
-      let backgrounds = [[255, 255, 255]];
-      for (const ancestor of ancestors) {
-        const style = getComputedStyle(ancestor);
-        backgrounds = backgrounds.map(back => blend(parse(style.backgroundColor), back));
-        const stops = style.backgroundImage.match(/rgba?\([^)]+\)/g);
-        if (stops)
-          backgrounds = backgrounds.flatMap(back => stops.map(stop => blend(parse(stop), back)));
-      }
-      // 包含组件对文字设置的透明度，避免低对比度被颜色本身掩盖。
-      const ink = parse(color);
-      ink[3] = (ink[3] ?? 1) * Number(getComputedStyle(foregroundElement).opacity);
-      return Math.min(
-        ...backgrounds.map(back => {
-          const values = [luminance(blend(ink, back)), luminance(back)].sort((a, b) => a - b);
-          return (values[1] + 0.05) / (values[0] + 0.05);
-        })
-      );
-    },
-    { property, background }
-  );
-};
 
 const openScene = async (page: Page, component: string, theme: string) => {
   await page.goto(`/tests/browser/fixture.html?component=${component}&theme=${theme}`);
@@ -78,7 +34,8 @@ for (const component of [
       if (['time-picker', 'datetime-picker'].includes(component))
         await page.getByRole('combobox').click();
       const selectors: Record<string, string> = {
-        calendar: '.ex-calendar__cell[aria-selected="true"] .ex-calendar__date-number',
+        calendar:
+          '.ex-calendar__cell[aria-selected="true"] .ex-calendar__date-number, .ex-calendar__mode-btn--active, .ex-calendar__today-btn',
         pagination: '.ex-pagination__item--active',
         alert: '.ex-alert__title',
         notification: '.ex-notification__title',

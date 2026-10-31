@@ -144,13 +144,11 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--ex-color-bg-tertiary);
+  background: var(--ex-color-text-tertiary);
   border-radius: var(--ex-radius-full);
   @include transition(background);
 
-  .ex-slider:hover & {
-    background: var(--ex-color-bg-elevated);
-  }
+  // 保持完整轨道可见，悬停时由手柄动效提供反馈。
 }
 
 // 激活轨道
@@ -172,7 +170,7 @@
   position: absolute;
   width: 18px;
   height: 18px;
-  background: var(--ex-color-white);
+  background: var(--ex-color-text-inverse);
   border: 2px solid var(--ex-color-neon-blue-500);
   border-radius: var(--ex-radius-full);
   cursor: grab;

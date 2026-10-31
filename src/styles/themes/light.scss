@@ -48,7 +48,8 @@
   // ========== 文本色系（深色）==========
   --ex-color-text-primary: #1a2332;
   --ex-color-text-secondary: #5a6b7d;
-  --ex-color-text-tertiary: #64748b;
+  // 说明文字也需要适配三级浅灰底，不能只按白底校验。
+  --ex-color-text-tertiary: #5f6f84;
   --ex-color-text-disabled: #b3bdc9;
   --ex-color-text-inverse: #ffffff;
 

@@ -60,7 +60,7 @@
     flex-shrink: 0;
     width: 18px;
     height: 18px;
-    border: 2px solid var(--ex-color-border-primary);
+    border: 2px solid var(--ex-color-text-tertiary);
     border-radius: 50%;
     background: transparent;
     @include safe-transition(all);
@@ -119,7 +119,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--ex-color-white);
+    background: var(--ex-color-text-inverse);
     @include safe-transition(all, var(--ex-motion-duration-fast));
   }
 

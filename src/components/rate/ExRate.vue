@@ -105,7 +105,7 @@ const props = withDefaults(defineProps<ExRateProps>(), {
   scoreTemplate: '{value}',
   size: undefined,
   color: 'var(--ex-color-primary, #00f0ff)',
-  voidColor: 'var(--ex-color-text-disabled, #4a5568)',
+  voidColor: 'var(--ex-color-text-tertiary, #7b8da3)',
   disabledVoidColor: 'var(--ex-color-text-disabled, #6b7280)',
 });
 
