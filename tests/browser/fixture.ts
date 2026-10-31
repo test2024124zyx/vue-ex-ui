@@ -40,7 +40,13 @@ const render = (name: string, props: Record<string, unknown> = {}, content?: VNo
 
 const basicProps: Record<string, Record<string, unknown>> = {
   affix: { offsetTop: 0 },
-  alert: { title: '任务已完成', closable: true },
+  alert: {
+    title: '任务已完成',
+    description: '可以继续下一步操作',
+    closable: true,
+    type: params.get('type') ?? 'info',
+    variant: params.get('variant') ?? 'standard',
+  },
   avatar: { text: '张三' },
   'back-top': { visibilityHeight: 0 },
   badge: { count: 8 },
@@ -80,7 +86,7 @@ const basicProps: Record<string, Record<string, unknown>> = {
     startDate: '2024-05-01',
     endDate: '2024-05-31',
   },
-  icon: { icon: 'home-line', ariaLabel: '首页' },
+  icon: { icon: 'check-line', ariaLabel: '完成' },
   image: { src: IMAGE_SOURCE, alt: '示例图片', width: 160, height: 100 },
   'image-compress': {
     src: IMAGE_SOURCE,

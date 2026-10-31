@@ -167,7 +167,7 @@
     @include optimized-neon-glow('blue', 'sm');
 
     .ex-notification__title {
-      color: var(--ex-color-neon-blue-400);
+      color: var(--ex-color-neon-blue-500);
     }
   }
 
@@ -213,7 +213,7 @@
     @include optimized-neon-glow('pink', 'sm');
 
     .ex-notification__title {
-      color: var(--ex-color-neon-pink-400);
+      color: var(--ex-color-neon-pink-500);
     }
   }
 

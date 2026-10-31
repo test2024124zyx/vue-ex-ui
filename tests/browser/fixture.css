@@ -18,6 +18,10 @@ main {
   margin-block: 24px;
 }
 
+main > h1 {
+  overflow-wrap: anywhere;
+}
+
 .loading-target {
   position: relative;
   min-height: 160px;

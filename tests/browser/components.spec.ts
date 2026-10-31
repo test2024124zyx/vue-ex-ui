@@ -61,7 +61,10 @@ const expectScene = async (page: Page, component: string) => {
   }
   const root = page.locator(`.ex-${component}`).first();
   await expect(root).toBeVisible();
-  if (component === 'barcode') {
+  if (component === 'icon') {
+    await expect(root.locator('svg')).toBeVisible();
+    await expect(root).not.toHaveClass(/ex-icon--empty/);
+  } else if (component === 'barcode') {
     await expect(root).toHaveAttribute('role', 'img');
     await expect(root.locator('.ex-barcode__error')).toHaveCount(0);
     await expect.poll(() => root.locator('svg rect').count()).toBeGreaterThan(2);

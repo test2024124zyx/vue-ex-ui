@@ -73,10 +73,23 @@ const getThemePalette = (theme: Theme): ChartThemePalette => {
  */
 export function getChartTheme(theme: Theme, overrides: Partial<ChartThemePalette> = {}): object {
   const palette = { ...getThemePalette(theme), ...overrides };
+  // ECharts 的坐标轴不会继承全局 textStyle，必须显式提供各坐标类型的语义色。
+  const axisTheme = () => ({
+    axisLine: { lineStyle: { color: palette.border } },
+    axisTick: { lineStyle: { color: palette.border } },
+    axisLabel: { color: palette.mutedText },
+    nameTextStyle: { color: palette.mutedText },
+    splitLine: { lineStyle: { color: palette.border } },
+  });
 
   return {
     color: palette.series,
     backgroundColor: 'transparent',
+    categoryAxis: axisTheme(),
+    valueAxis: axisTheme(),
+    logAxis: axisTheme(),
+    timeAxis: axisTheme(),
+    legend: { textStyle: { color: palette.text } },
     textStyle: {
       color: palette.text,
       fontFamily: CHART_FONT_FAMILY,

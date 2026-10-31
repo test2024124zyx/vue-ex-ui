@@ -60,7 +60,7 @@ import {
   getCurrentInstance,
 } from 'vue';
 import type { ExTooltipProps, ExTooltipEmits, ExTooltipExposed } from './types';
-import { calcPopperPosition } from '../../utils/popper';
+import { calcPopperArrowStyle, calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
@@ -142,10 +142,7 @@ const tooltipClasses = computed(() => {
   return classes;
 });
 
-const arrowStyle = computed(() => {
-  const styles: Record<string, string> = {};
-  return styles;
-});
+const arrowStyle = ref<Record<string, string>>({});
 
 // 方法
 const clearTimers = () => {
@@ -173,6 +170,7 @@ const updatePosition = () => {
   );
 
   resolvedPlacement.value = placement as typeof resolvedPlacement.value;
+  arrowStyle.value = calcPopperArrowStyle(triggerRect, popperRect, { top, left, placement });
   popperRef.value.style.top = `${top}px`;
   popperRef.value.style.left = `${left}px`;
 };

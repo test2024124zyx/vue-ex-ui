@@ -243,7 +243,7 @@
     display: block;
     width: 8px;
     height: 8px;
-    background: rgba(var(--ex-color-white-rgb), 0.3);
+    background: var(--ex-color-text-secondary);
     border-radius: 50%;
     transition-property: background-color, border-color, color, opacity, transform, box-shadow;
     transition-duration: var(--ex-motion-duration-base);

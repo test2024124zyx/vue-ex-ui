@@ -221,8 +221,7 @@
     }
 
     &--other-month {
-      color: var(--ex-color-text-tertiary);
-      opacity: 0.55;
+      color: var(--ex-color-text-secondary);
     }
 
     &--today {
@@ -233,7 +232,7 @@
     &--selected,
     &--range-start,
     &--range-end {
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       font-weight: var(--ex-font-bold);
       background: linear-gradient(
         135deg,
@@ -374,7 +373,7 @@
   }
 
   &__confirm-btn {
-    color: var(--ex-color-white);
+    color: var(--ex-color-text-inverse);
     font-weight: var(--ex-font-semibold);
     background: linear-gradient(
       135deg,

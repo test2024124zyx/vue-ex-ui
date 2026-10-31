@@ -332,10 +332,8 @@
 
     // 其他月份
     &--other-month {
-      opacity: 0.4;
-
       .ex-calendar__date-number {
-        color: var(--ex-color-text-tertiary);
+        color: var(--ex-color-text-secondary);
       }
     }
 
@@ -361,7 +359,7 @@
       @include neon-glow('pink', 'sm');
 
       .ex-calendar__date-number {
-        color: var(--ex-color-white);
+        color: var(--ex-color-text-primary);
         font-weight: var(--ex-font-bold);
       }
     }

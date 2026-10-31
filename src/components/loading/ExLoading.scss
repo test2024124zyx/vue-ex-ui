@@ -220,9 +220,13 @@
 
 .ex-loading__text {
   margin-top: var(--ex-spacing-3);
-  color: var(--ex-color-text-primary);
+  color: var(--ex-color-white);
   font-size: var(--ex-text-base);
   text-align: center;
+}
+
+.ex-loading--no-mask .ex-loading__text {
+  color: var(--ex-color-text-primary);
 }
 
 .ex-loading-fade-enter-active,

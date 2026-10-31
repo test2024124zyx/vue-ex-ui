@@ -56,6 +56,7 @@
           <div
             v-if="showArrow"
             class="ex-popover__arrow"
+            :style="arrowStyle"
           ></div>
         </div>
       </Transition>
@@ -75,7 +76,7 @@ import {
   useSlots,
 } from 'vue';
 import type { ExPopoverProps, ExPopoverEmits, ExPopoverExposed } from './types';
-import { calcPopperPosition } from '../../utils/popper';
+import { calcPopperArrowStyle, calcPopperPosition } from '../../utils/popper';
 import { generateId } from '../../utils/id';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
@@ -145,6 +146,7 @@ const {
 });
 // flip 后最终生效的位置（用于同步箭头方向的类名）
 const resolvedPlacement = ref(props.placement);
+const arrowStyle = ref<Record<string, string>>({});
 
 // 计算属性
 const popoverClasses = computed(() => {
@@ -207,6 +209,7 @@ const updatePosition = () => {
   );
 
   resolvedPlacement.value = placement as typeof resolvedPlacement.value;
+  arrowStyle.value = calcPopperArrowStyle(triggerRect, popperRect, { top, left, placement });
   popperRef.value.style.top = `${top}px`;
   popperRef.value.style.left = `${left}px`;
 };

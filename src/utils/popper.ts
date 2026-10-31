@@ -41,6 +41,7 @@ const OPPOSITE: Record<PopperSide, PopperSide> = {
 };
 
 const VIEWPORT_PADDING = 8;
+const ARROW_EDGE_PADDING = 16;
 const PLACEMENT_ALIASES: Record<string, PopperPlacement> = {
   topLeft: 'top-start',
   topRight: 'top-end',
@@ -135,4 +136,22 @@ export function calcPopperPosition(
   top = Math.max(VIEWPORT_PADDING, Math.min(top, maxTop));
 
   return { top, left, placement: align ? `${side}-${align}` : side };
+}
+
+/** 以夹取后的浮层为坐标原点，将箭头中心投影到触发元素中心，并避开圆角边缘。 */
+export function calcPopperArrowStyle(
+  trigger: DOMRect,
+  popper: PopperRect,
+  position: PopperPositionResult
+): Record<string, string> {
+  const horizontal = /^(top|bottom)/.test(position.placement);
+  const size = horizontal ? popper.width : popper.height;
+  const center = horizontal
+    ? trigger.left + trigger.width / 2 - position.left
+    : trigger.top + trigger.height / 2 - position.top;
+  const padding = Math.min(ARROW_EDGE_PADDING, size / 2);
+  const coordinate = `${Math.max(padding, Math.min(center, size - padding))}px`;
+  return horizontal
+    ? { left: coordinate, right: 'auto', transform: 'translateX(-50%) rotate(45deg)' }
+    : { top: coordinate, bottom: 'auto', transform: 'translateY(-50%) rotate(45deg)' };
 }

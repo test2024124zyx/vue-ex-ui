@@ -54,7 +54,12 @@
   &__description {
     font-size: var(--ex-text-sm);
     line-height: var(--ex-leading-relaxed);
-    opacity: 0.9;
+  }
+
+  // 状态由图标和边框传达，浅色底上的正文使用可读的主题文字色。
+  &--standard .ex-alert__content,
+  &--outlined .ex-alert__content {
+    color: var(--ex-color-text-primary);
   }
 
   // ============================================================================
@@ -195,9 +200,9 @@
     }
 
     &.ex-alert--filled {
-      background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-mid));
+      background: linear-gradient(135deg, var(--ex-color-success), var(--ex-color-success-hover));
       border-color: var(--ex-color-success);
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       @include optimized-neon-glow('blue', 'md');
     }
 
@@ -212,7 +217,7 @@
     &.ex-alert--standard {
       background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
       border-color: var(--ex-color-neon-blue-500);
-      color: var(--ex-color-neon-blue-400);
+      color: var(--ex-color-neon-blue-500);
       @include optimized-neon-glow('blue', 'sm');
     }
 
@@ -223,14 +228,14 @@
         var(--ex-color-neon-blue-600)
       );
       border-color: var(--ex-color-neon-blue-500);
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       @include optimized-neon-glow('blue', 'md');
     }
 
     &.ex-alert--outlined {
       background: transparent;
       border-color: var(--ex-color-neon-blue-500);
-      color: var(--ex-color-neon-blue-400);
+      color: var(--ex-color-neon-blue-500);
     }
   }
 
@@ -245,7 +250,7 @@
     &.ex-alert--filled {
       background: linear-gradient(135deg, var(--ex-color-warning), var(--ex-color-warning));
       border-color: var(--ex-color-warning);
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       box-shadow: 0 0 15px rgba(var(--ex-color-warning-rgb), 0.3);
     }
 
@@ -260,7 +265,7 @@
     &.ex-alert--standard {
       background: rgba(var(--ex-color-neon-pink-500-rgb), 0.1);
       border-color: var(--ex-color-neon-pink-500);
-      color: var(--ex-color-neon-pink-400);
+      color: var(--ex-color-neon-pink-500);
       @include optimized-neon-glow('pink', 'sm');
     }
 
@@ -271,14 +276,14 @@
         var(--ex-color-neon-pink-600)
       );
       border-color: var(--ex-color-neon-pink-500);
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       @include optimized-neon-glow('pink', 'md');
     }
 
     &.ex-alert--outlined {
       background: transparent;
       border-color: var(--ex-color-neon-pink-500);
-      color: var(--ex-color-neon-pink-400);
+      color: var(--ex-color-neon-pink-500);
     }
   }
 
