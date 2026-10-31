@@ -1,7 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { resolve } from 'node:path';
 import { componentDirectories } from '../../src/resolver/component-map';
 
 const modules = [...new Set(componentDirectories.values())];
+const VISUAL_VIEWPORTS = [
+  { name: 'desktop', width: 1280, height: 900 },
+  { name: 'phone', width: 390, height: 844 },
+] as const;
+const LAYOUT_TOLERANCE_PX = 1;
 
 /** 真实像素必须既有内容又有颜色变化，避免空画布或纯背景通过验收。 */
 const expectCanvasDrawing = async (canvas: Locator) => {
@@ -153,16 +159,30 @@ const expectScene = async (page: Page, component: string) => {
 };
 
 for (const component of modules) {
-  test(`${component} 在真实浏览器完成双主题挂载`, async ({ page }) => {
+  test(`${component} 在真实浏览器完成双主题和双视口视觉验收`, async ({ page }, testInfo) => {
+    test.setTimeout(60000);
     const failures: string[] = [];
     page.on('pageerror', error => failures.push(error.message));
-    for (const theme of ['light', 'neon-blue']) {
-      await page.goto(`/tests/browser/fixture.html?component=${component}&theme=${theme}`);
-      await expect(page.locator('html')).toHaveAttribute('data-ready', 'true');
-      await expect(page.locator('main')).toHaveAttribute('data-component', component);
-      await expectScene(page, component);
-      await expect(page.locator('#fixture-errors')).toBeEmpty();
-      expect(failures).toEqual([]);
+    for (const viewport of VISUAL_VIEWPORTS) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      for (const theme of ['light', 'neon-blue']) {
+        await page.goto(`/tests/browser/fixture.html?component=${component}&theme=${theme}`);
+        await expect(page.locator('html')).toHaveAttribute('data-ready', 'true');
+        await expect(page.locator('main')).toHaveAttribute('data-component', component);
+        await expectScene(page, component);
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        await expect(page.locator('#fixture-errors')).toBeEmpty();
+        expect(failures).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          viewport.width + LAYOUT_TOLERANCE_PX
+        );
+        // 成功场景也保留真实截图，供逐组件检查排版、间距、色彩及浮层位置。
+        await page.screenshot({
+          path: resolve('.tmp/visual-acceptance', testInfo.project.name, `${component}-${viewport.name}-${theme}.png`),
+          fullPage: true,
+          animations: 'disabled',
+        });
+      }
     }
   });
 }
