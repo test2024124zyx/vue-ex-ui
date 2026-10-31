@@ -192,8 +192,17 @@ for (const component of modules) {
             : component === 'tooltip'
               ? 'tooltip'
               : undefined;
-        if (popupRole) {
-          const popup = page.getByRole(popupRole).first();
+        const popup =
+          component === 'cascader'
+            ? page.locator('.ex-cascader__dropdown')
+            : component === 'select'
+              ? page.getByRole('listbox')
+              : component === 'tree-select'
+                ? page.getByRole('tree')
+                : popupRole
+                  ? page.getByRole(popupRole).first()
+                  : undefined;
+        if (popup) {
           await expect(popup).toBeVisible();
           // 可见性断言不检查 opacity；必须等待 Vue 移除入场类后再留存验收截图。
           await expect
