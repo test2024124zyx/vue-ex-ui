@@ -10,8 +10,26 @@ export interface CascaderOption {
   children?: CascaderOption[];
   /** 是否禁用；禁用节点及其整个子树均不可交互 */
   disabled?: boolean;
+  /** false 表示仍可异步加载子项；成功返回空数组后自动视为叶子。 */
+  isLeaf?: boolean;
   /** 自定义选项内容所需的业务附加字段。 */
   [key: string]: unknown;
+}
+
+export type CascaderPath = Array<string | number>;
+export interface CascaderLoadContext {
+  /** 离开分支、关闭、禁用或卸载时中止。 */
+  signal: AbortSignal;
+  /** 完整路径用于区分不同分支中相同的 value。 */
+  path: CascaderPath;
+}
+export type CascaderLoadData = (
+  option: CascaderOption,
+  context: CascaderLoadContext
+) => Promise<CascaderOption[]>;
+export interface CascaderLoadState {
+  status: 'idle' | 'loading' | 'loaded' | 'error';
+  error?: unknown;
 }
 
 export interface ExCascaderSlots {
@@ -48,6 +66,14 @@ export interface ExCascaderProps {
   id?: string;
   /** 选项数据 */
   options?: CascaderOption[];
+  /** 异步加载子项，完整路径作为缓存和请求身份。 */
+  loadData?: CascaderLoadData;
+  /** 多选使用独立 selectedPaths，保持单选 modelValue 的类型不变。 */
+  multiple?: boolean;
+  /** 多选受控路径；undefined 使用内部状态，空数组是显式受控空值。 */
+  selectedPaths?: CascaderPath[];
+  /** 多选时只显示首个标签和其余数量。 */
+  collapseTags?: boolean;
   /** 占位文本 */
   placeholder?: string;
   /** 是否禁用 */
@@ -92,6 +118,14 @@ export interface ExCascaderEmits {
   focus: [event: FocusEvent];
   /** 失焦事件 */
   blur: [event: FocusEvent];
+  /** 多选请求更新完整路径集合。 */
+  'update:selectedPaths': [paths: CascaderPath[]];
+  /** 多选变更请求与每条完整选项路径。 */
+  'selection-change': [paths: CascaderPath[], options: CascaderOption[][]];
+  /** 异步子项成功加载。 */
+  load: [option: CascaderOption, children: CascaderOption[], path: CascaderPath];
+  /** 异步请求或返回结构校验失败。 */
+  'load-error': [error: unknown, option: CascaderOption, path: CascaderPath];
 }
 
 /**
@@ -110,4 +144,12 @@ export interface ExCascaderExposed {
   show: () => void;
   /** 隐藏下拉面板 */
   hide: () => void;
+  /** 获取真实生效的多选路径快照。 */
+  getCheckedPaths: () => CascaderPath[];
+  /** 重载完整路径节点；要求面板打开且可交互。 */
+  reloadNode: (path: CascaderPath) => Promise<boolean>;
+  /** 中止指定完整路径的在途加载。 */
+  cancelNodeLoad: (path: CascaderPath) => boolean;
+  /** 返回该路径的独立加载状态快照。 */
+  getNodeLoadState: (path: CascaderPath) => CascaderLoadState;
 }

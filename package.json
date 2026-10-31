@@ -66,6 +66,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:browser": "playwright test",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -75,7 +76,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vite preview --config docs/.vitepress/preview.config.ts",
     "audit:production": "npm audit --omit=dev --audit-level=high",
-    "verify:release": "npm run verify:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run verify:tree-shaking && npm run build && npm run verify:package && npm run docs:build && npm run audit:production",
+    "verify:release": "npm run verify:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run verify:tree-shaking && npm run build && npm run verify:package && npm run docs:build && npm run test:browser && npm run audit:production",
     "prepublishOnly": "npm run verify:release",
     "prepare": "husky"
   },
@@ -145,10 +146,12 @@
     "@fontsource/orbitron": "^5.3.0",
     "@fontsource/share-tech-mono": "^5.3.0",
     "dom-serializer": "^3.1.1",
-    "htmlparser2": "^12.0.0"
+    "htmlparser2": "^12.0.0",
+    "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20.19.43",
     "@types/qrcode": "^1.5.6",
     "@typescript-eslint/eslint-plugin": "^8.67.0",

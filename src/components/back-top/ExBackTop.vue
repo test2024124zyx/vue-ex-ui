@@ -90,6 +90,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useLocale } from '../../locale';
 import {
   useAnimation,
+  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useZIndexLayer,
@@ -107,7 +108,7 @@ defineOptions({
 const props = withDefaults(defineProps<ExBackTopProps>(), {
   position: 'bottom-right',
   shape: 'circle',
-  size: 'medium',
+  size: undefined,
   visibilityHeight: 200,
   visibilityPercent: undefined,
   target: undefined,
@@ -167,7 +168,8 @@ const iconIsComponent = computed(() => {
   return !!ic && (isVNode(ic) || typeof ic === 'function' || typeof ic === 'object');
 });
 
-const iconSize = computed(() => ({ small: 18, medium: 20, large: 24 })[props.size]);
+const componentSize = useComponentSize(computed(() => props.size));
+const iconSize = computed(() => ({ small: 18, medium: 20, large: 24 })[componentSize.value]);
 
 const transitionName = computed(() =>
   props.animation === 'none' ? '' : `ex-back-top-${props.animation}`
@@ -181,7 +183,7 @@ const ringOffset = computed(() => ringCircumference.value * (1 - scrollInfo.scro
 const rootClasses = computed(() => [
   'ex-back-top',
   `ex-back-top--${props.shape}`,
-  `ex-back-top--${props.size}`,
+  `ex-back-top--${componentSize.value}`,
   {
     'ex-back-top--with-text': !!props.text,
     'ex-back-top--with-progress': props.showProgress,

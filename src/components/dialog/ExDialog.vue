@@ -125,6 +125,7 @@ import { useOverlay } from '../../composables/useOverlay';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import {
   useAnimation,
+  useGlobalSize,
   useConfigTheme,
   useNeonEffect,
   useThemeOverrides,
@@ -137,9 +138,10 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const globalSize = useGlobalSize();
 const props = withDefaults(defineProps<ExDialogProps>(), {
   modelValue: false,
-  size: 'medium',
+  size: undefined,
   type: 'default',
   showClose: true,
   modal: true,
@@ -226,7 +228,7 @@ const wrapperStyles = computed(() => ({
   zIndex: overlayZIndex.value,
 }));
 const dialogClasses = computed(() => [
-  `ex-dialog--${props.size}`,
+  `ex-dialog--${props.size ?? globalSize.value}`,
   `ex-dialog--${props.type}`,
   {
     'ex-dialog--fullscreen': props.fullscreen,

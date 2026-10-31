@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>层级选择器浏览器验收</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      main {
+        min-height: 100vh;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      section {
+        margin-block: 32px;
+      }
+      output {
+        display: block;
+        margin-top: 16px;
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script
+      type="module"
+      src="./hierarchy-fixture.ts"
+    ></script>
+  </body>
+</html>

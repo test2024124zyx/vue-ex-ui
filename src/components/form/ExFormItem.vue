@@ -96,6 +96,7 @@ import { FORM_CONTEXT_INJECTION_KEY, provideFormItem } from './use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { deepClone } from '../../utils/clone';
+import { equalValueSnapshot } from '../../utils/value-snapshot';
 import { generateId } from '../../utils/id';
 import { useComponentSize } from '../config-provider';
 
@@ -134,6 +135,10 @@ let validationScheduled = false;
 let resettingField = false;
 type FieldValidationTrigger = 'blur' | 'change' | 'input';
 const pendingValidationTriggers = new Set<FieldValidationTrigger>();
+let pendingInputSnapshot: { value: unknown } | undefined;
+let validationSnapshot: { value: unknown } | undefined;
+let scheduledValidationRevision = 0;
+const resetRevision = ref(0);
 
 // 使用实例级 ID 建立标签、控件与反馈消息之间的稳定关联。
 const generatedId = generateId('ex-form-item');
@@ -310,11 +315,17 @@ provideFormItem({
       scheduleFieldValidation('change');
     }
   },
-  onFieldInput: () => {
+  onFieldInput: snapshot => {
     if (props.prop && formContext) {
-      scheduleFieldValidation('input');
+      scheduleFieldValidation('input', snapshot);
     }
   },
+  onFieldDraftDiscard: () => {
+    if (props.prop && formContext) {
+      reconcileValidationValue(getFieldValue(formContext.model, props.prop));
+    }
+  },
+  resetRevision: computed(() => resetRevision.value),
   labelId: formItemLabelId,
   describedBy: formItemMessageId,
   status: actualValidateStatus,
@@ -342,24 +353,42 @@ const formItemContext: FormItemContext = {
 };
 
 // 方法
-function scheduleFieldValidation(trigger: FieldValidationTrigger) {
+function scheduleFieldValidation(trigger: FieldValidationTrigger, snapshot?: { value: unknown }) {
+  const value = snapshot ? snapshot.value : getFieldValue(formContext!.model, props.prop!);
+  reconcileValidationValue(value);
+  if (trigger === 'input') {
+    pendingInputSnapshot = snapshot ? { value: deepClone(snapshot.value) } : undefined;
+  }
   pendingValidationTriggers.add(trigger);
   if (validationScheduled) return;
 
   validationScheduled = true;
+  const scheduledRevision = ++scheduledValidationRevision;
   void nextTick(async () => {
+    if (scheduledRevision !== scheduledValidationRevision) return;
     validationScheduled = false;
     const triggers = Array.from(pendingValidationTriggers);
     pendingValidationTriggers.clear();
+    // 同一轮发生确认或失焦时改用最终模型，只有纯输入阶段才验证独立草稿。
+    const snapshot = triggers.every(item => item === 'input') ? pendingInputSnapshot : undefined;
+    pendingInputSnapshot = undefined;
     if (!isMounted || !props.prop || !formContext || triggers.length === 0) return;
-    await validateFieldMethod(triggers);
+    await validateFieldMethod(triggers, snapshot);
   });
 }
 
-async function validateFieldMethod(trigger?: string | string[]): Promise<FormItemValidateResult> {
+async function validateFieldMethod(
+  trigger?: string | string[],
+  snapshot?: { value: unknown }
+): Promise<FormItemValidateResult> {
   if (!props.prop || !formContext) {
     return { valid: true };
   }
+
+  if (!isMounted) return { valid: false, outOfDate: true };
+  const field = props.prop;
+  const value = deepClone(snapshot ? snapshot.value : getFieldValue(formContext.model, field));
+  reconcileValidationValue(value);
 
   const rules = getRules();
   if (!rules || rules.length === 0) {
@@ -385,15 +414,15 @@ async function validateFieldMethod(trigger?: string | string[]): Promise<FormIte
   }
 
   const validationId = ++latestValidationId;
-  const value = getFieldValue(formContext.model, props.prop);
+  validationSnapshot = { value: deepClone(value) };
 
   validateStatus.value = 'validating';
   isValidating.value = true;
 
   try {
-    const result = await validateField(filteredRules, value, props.prop, t);
+    const result = await validateField(filteredRules, value, field, t);
 
-    if (validationId !== latestValidationId) {
+    if (validationId !== latestValidationId || field !== props.prop || !isMounted) {
       return { valid: false, outOfDate: true };
     }
 
@@ -408,11 +437,11 @@ async function validateFieldMethod(trigger?: string | string[]): Promise<FormIte
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
     const validationResult = { valid: result.valid, error: result.error };
-    formContext.notifyFieldValidate(props.prop, validationResult);
+    formContext.notifyFieldValidate(field, validationResult, { value });
 
     return validationResult;
   } catch (error) {
-    if (validationId !== latestValidationId) {
+    if (validationId !== latestValidationId || field !== props.prop || !isMounted) {
       return { valid: false, outOfDate: true };
     }
 
@@ -422,7 +451,7 @@ async function validateFieldMethod(trigger?: string | string[]): Promise<FormIte
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
     const validationResult = { valid: false, error: validateMessage.value };
-    formContext.notifyFieldValidate(props.prop, validationResult);
+    formContext.notifyFieldValidate(field, validationResult, { value });
 
     return validationResult;
   } finally {
@@ -443,6 +472,7 @@ function resetFieldMethod() {
   } finally {
     resettingField = false;
   }
+  resetRevision.value += 1;
   clearValidationState();
 }
 
@@ -453,9 +483,22 @@ function clearValidateMethod() {
 
 function invalidateFieldValidation() {
   latestValidationId += 1;
+  scheduledValidationRevision += 1;
   isValidating.value = false;
   validationScheduled = false;
   pendingValidationTriggers.clear();
+  pendingInputSnapshot = undefined;
+  validationSnapshot = undefined;
+}
+
+/** 无关触发器保留同值校验；值已改变时同步作废在途任务和已完成的旧反馈。 */
+function reconcileValidationValue(value: unknown) {
+  const changed = [validationSnapshot, pendingInputSnapshot].some(
+    snapshot => snapshot !== undefined && !equalValueSnapshot(snapshot.value, value)
+  );
+  if (!changed) return;
+  invalidateFieldValidation();
+  clearValidationState();
 }
 
 function clearValidationState() {

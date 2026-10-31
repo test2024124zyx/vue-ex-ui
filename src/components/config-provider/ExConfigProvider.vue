@@ -1,6 +1,6 @@
 <template>
   <div
-    ref="providerRef"
+    :ref="bindProviderElement"
     :class="providerClasses"
     :style="providerStyles"
     :data-theme="theme"
@@ -13,12 +13,12 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, getCurrentInstance, h, inject, provide, ref } from 'vue';
+import { computed, getCurrentInstance, h, inject, onBeforeUnmount, provide, ref } from 'vue';
 import type { ExConfigProviderProps, ConfigContext } from './types';
 import { CONFIG_PROVIDER_INJECTION_KEY, DEFAULT_CONFIG } from './types';
 import { LOCALE_INJECTION_KEY, useLocale } from '../../locale';
 import { createProviderEffectStyles } from './effect-styles';
-import { provideComponentServiceScope } from './service-scope';
+import { provideComponentServiceScope, registerServiceScopeElement } from './service-scope';
 import { createZIndexCssVariables, normalizeZIndexBase } from './z-index';
 import { getTheme } from '../../composables/useTheme';
 import { resolveThemeOverrides } from './theme-overrides';
@@ -80,7 +80,17 @@ const configContext: ConfigContext = {
 
 provide(CONFIG_PROVIDER_INJECTION_KEY, configContext);
 provide(LOCALE_INJECTION_KEY, locale);
-provideComponentServiceScope();
+const serviceScope = provideComponentServiceScope();
+let unregisterScopeElement: (() => void) | undefined;
+// 函数 ref 在指令 mounted 前注册容器，支持同一模板中的 Provider 默认插槽。
+const bindProviderElement = (element: unknown): void => {
+  unregisterScopeElement?.();
+  providerRef.value = element instanceof HTMLDivElement ? element : undefined;
+  unregisterScopeElement = providerRef.value
+    ? registerServiceScopeElement(providerRef.value, serviceScope)
+    : undefined;
+};
+onBeforeUnmount(() => unregisterScopeElement?.());
 
 // 计算属性
 const providerClasses = computed(() => {

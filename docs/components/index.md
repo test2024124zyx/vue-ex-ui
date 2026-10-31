@@ -1,8 +1,15 @@
 # 组件总览
 
+<script setup>
+import { componentDirectories } from '../../src/resolver/component-map';
+
+const moduleCount = new Set(componentDirectories.values()).size;
+const publicComponentCount = componentDirectories.size;
+</script>
+
 ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发的各种需求。
 
-### ✅ 通用基础组件 (12/12)
+### 通用基础组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -13,7 +20,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
 
   <div class="component-card completed">
     <h3>Icon</h3>
-    <p>图标组件，基于Iconify API，支持海量图标</p>
+    <p>内置 SVG 图标注册表，支持自定义图片来源，无运行时图标网络依赖</p>
     <div class="status">✅ 已完成</div>
   </div>
 
@@ -78,7 +85,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-### ✅ 表单类组件 (16/16)
+### 表单类组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -166,7 +173,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-### ✅ 数据展示组件 (17/17)
+### 数据展示组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -276,7 +283,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-### ✅ 导航布局组件 (13/13)
+### 导航布局组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -358,7 +365,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-### ✅ 反馈与交互组件 (14/14)
+### 反馈与交互组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -446,7 +453,7 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-### ✅ 其他组件 (3/3)
+### 其他组件
 
 <div class="component-grid">
   <div class="component-card completed">
@@ -468,38 +475,36 @@ ExUI 提供了丰富的组件库，涵盖了现代赛博朋克风格应用开发
   </div>
 </div>
 
-## 📊 总体进度
+## 组件统计与验收
+
+统计由公开组件映射生成，模块数与包含附属组件的公开导出数分别计数。
+功能与兼容性由持续集成验证，不以静态百分比代替验收结果。
 
 <div class="progress-summary">
   <div class="progress-item">
-    <div class="progress-label">总计组件</div>
-    <div class="progress-value">75</div>
+    <div class="progress-label">组件模块</div>
+    <div class="progress-value">{{ moduleCount }}</div>
   </div>
 
   <div class="progress-item">
-    <div class="progress-label">已完成</div>
-    <div class="progress-value completed">75</div>
+    <div class="progress-label">公开组件（含附属组件）</div>
+    <div class="progress-value completed">{{ publicComponentCount }}</div>
   </div>
 
   <div class="progress-item">
-    <div class="progress-label">需优化</div>
-    <div class="progress-value developing">0</div>
+    <div class="progress-label">每模块四项覆盖率门禁</div>
+    <div class="progress-value">≥ 80%</div>
   </div>
 
   <div class="progress-item">
-    <div class="progress-label">待开发</div>
-    <div class="progress-value pending">0</div>
+    <div class="progress-label">浏览器引擎</div>
+    <div class="progress-value">3</div>
   </div>
 
-  <div class="progress-item">
-    <div class="progress-label">完成度</div>
-    <div class="progress-value">100%</div>
-  </div>
 </div>
 
-<div class="progress-bar">
-  <div class="progress-fill" style="width: 100%"></div>
-</div>
+运行 `npm run test:coverage` 检查各组件覆盖率，运行 `npm run test:browser`
+检查双主题、真实绘制、键盘、窄屏和异步操作。完整发布检查为 `npm run verify:release`。
 
 <style scoped>
 .component-grid {

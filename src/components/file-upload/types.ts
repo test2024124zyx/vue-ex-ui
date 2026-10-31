@@ -1,7 +1,10 @@
 import type { ExFileUploadError } from './errors';
+import type { UploadCancelResult, UploadTusOptions } from './tus-types';
+export type * from './tus-types';
 
 /** 上传文件状态。 */
-export type UploadStatus = 'ready' | 'uploading' | 'success' | 'error';
+export type UploadStatus =
+  'ready' | 'queued' | 'uploading' | 'paused' | 'cancelling' | 'success' | 'error';
 
 /** 上传列表展示类型。 */
 export type UploadListType = 'text' | 'picture' | 'picture-card';
@@ -30,6 +33,8 @@ export interface UploadFile {
   error?: string;
   /** 服务端响应。 */
   response?: unknown;
+  /** tus 上传资源地址，用于续传；它不等同于可下载文件地址。 */
+  tusUploadUrl?: string;
 }
 
 export interface UploadResolveContext {
@@ -72,7 +77,7 @@ export interface UploadRejection {
 
 export type UploadIgnoredReason =
   'no-action' | 'missing-raw' | 'not-ready' | 'disabled' | 'readonly';
-export type UploadOutcome = 'success' | 'error' | 'aborted' | 'ignored';
+export type UploadOutcome = 'success' | 'error' | 'aborted' | 'paused' | 'ignored';
 
 /** 单个文件上传任务的最终结果。 */
 export interface UploadResult {
@@ -84,10 +89,16 @@ export interface UploadResult {
 }
 
 export type UploadAbortReason =
-  'manual' | 'remove' | 'clear' | 'external' | 'disabled' | 'readonly';
+  'manual' | 'remove' | 'clear' | 'external' | 'disabled' | 'readonly' | 'pause' | 'cancel';
 
 /** 文件上传组件属性。 */
 export interface ExFileUploadProps {
+  /** 显式选择普通 multipart 或 tus 1.0.0；默认保持 xhr 上传。 */
+  transport?: 'xhr' | 'tus';
+  /** 同时活动的文件数量；默认 3，Infinity 表示不限制。 */
+  concurrency?: number;
+  /** tus 顺序分片、重试、持久续传和元数据配置。 */
+  tus?: UploadTusOptions;
   /** 上传地址或可中止的动态地址解析器。 */
   action?: UploadAction;
   /** 上传请求方法。 */
@@ -149,6 +160,10 @@ export interface ExFileUploadEmits {
   success: [response: unknown, file: UploadFile, fileList: UploadFile[]];
   error: [error: ExFileUploadError, file: UploadFile, fileList: UploadFile[]];
   aborted: [file: UploadFile, fileList: UploadFile[], reason: UploadAbortReason];
+  paused: [file: UploadFile, fileList: UploadFile[]];
+  resumed: [file: UploadFile, fileList: UploadFile[]];
+  cancelled: [result: UploadCancelResult, file: UploadFile, fileList: UploadFile[]];
+  'resume-unavailable': [error: unknown, file: UploadFile];
   'remove-request': [file: UploadFile];
   'preview-request': [file: UploadFile];
 }
@@ -161,6 +176,12 @@ export interface ExFileUploadExposed {
   submit: (file?: UploadFile | string) => Promise<UploadResult[]>;
   /** 中止指定任务，未指定时中止全部；返回真实中止数量。 */
   abort: (file?: UploadFile | string) => number;
+  /** 暂停 tus 活动或排队任务并保留断点；返回实际暂停数量。 */
+  pause: (file?: UploadFile | string) => number;
+  /** 继续暂停的 tus 文件，重试失败文件；仍受文件并发和字段状态约束。 */
+  resume: (file?: UploadFile | string) => Promise<UploadResult[]>;
+  /** 永久取消 tus 资源，需要服务端 Termination 扩展；失败不会伪装为成功。 */
+  cancel: (file?: UploadFile | string) => Promise<UploadCancelResult[]>;
   /** 中止全部任务并请求清空列表；禁用/只读时不操作并返回 0。 */
   requestClear: () => number;
   /** 获取当前真实生效的文件列表快照。 */

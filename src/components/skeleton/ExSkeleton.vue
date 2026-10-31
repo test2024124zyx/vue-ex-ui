@@ -34,7 +34,10 @@
             <!-- 头像 -->
             <div
               class="ex-skeleton__avatar"
-              :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
+              :class="[
+                `ex-skeleton__avatar--${avatarShape}`,
+                `ex-skeleton__avatar--${componentSize}`,
+              ]"
               :style="avatarStyle"
             />
 
@@ -76,7 +79,10 @@
             >
               <div
                 class="ex-skeleton__avatar"
-                :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
+                :class="[
+                  `ex-skeleton__avatar--${avatarShape}`,
+                  `ex-skeleton__avatar--${componentSize}`,
+                ]"
                 :style="avatarStyle"
               />
               <div class="ex-skeleton__content">
@@ -163,6 +169,7 @@ import { useRenderComputed } from '../../composables/useRenderComputed';
 import { computed, getCurrentInstance, ref } from 'vue';
 import type { ExSkeletonProps, ExSkeletonExposed } from './types';
 import { useLocale } from '../../locale';
+import { useGlobalSize } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExSkeleton',
@@ -172,7 +179,7 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
   loading: true,
   animation: 'pulse',
   shape: 'rounded',
-  size: 'default',
+  size: undefined,
   variant: 'text',
   active: true,
   count: 1,
@@ -183,6 +190,11 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
 });
 
 const { t } = useLocale('skeleton');
+const globalSize = useGlobalSize();
+// 骨架屏保留 default 的公开别名，缺省值映射到全局 medium。
+const componentSize = computed(
+  () => props.size ?? (globalSize.value === 'medium' ? 'default' : globalSize.value)
+);
 const skeletonRef = ref<HTMLDivElement>();
 const instance = getCurrentInstance();
 const hasExplicitRows = useRenderComputed(() => {
@@ -196,7 +208,7 @@ const skeletonClasses = computed(() => {
   const classes = [
     'ex-skeleton',
     `ex-skeleton--${props.variant}`,
-    `ex-skeleton--${props.size}`,
+    `ex-skeleton--${componentSize.value}`,
     `ex-skeleton--${props.shape}`,
   ];
 

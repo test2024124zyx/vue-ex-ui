@@ -129,55 +129,43 @@
             :aria-label="ariaLabelledby ? undefined : ariaLabel || placeholder || t('placeholder')"
             :aria-labelledby="ariaLabelledby"
             :aria-multiselectable="multiple"
+            :style="{
+              maxHeight: `${treeHeight}px`,
+              overflow: virtual ? 'hidden' : undefined,
+              padding: virtual ? '0' : undefined,
+            }"
           >
-            <div
-              v-for="flat in flatNodes"
-              :key="flat.node.value"
-              :ref="element => setNodeRef(flat.node.value, element)"
-              class="ex-tree-select__node"
-              :class="{
-                'is-selected': !multiple && flat.node.value === currentValue,
-                'is-disabled': flat.disabled,
-              }"
-              role="treeitem"
-              :tabindex="flat.disabled ? -1 : activeNodeValue === flat.node.value ? 0 : -1"
-              :aria-expanded="flat.hasChildren ? flat.expanded : undefined"
-              :aria-selected="multiple ? undefined : flat.node.value === currentValue"
-              :aria-checked="multiple ? getAriaChecked(flat.node) : undefined"
-              :aria-disabled="flat.disabled || undefined"
-              :aria-level="flat.level + 1"
-              :style="{ paddingLeft: `${flat.level * 18 + 8}px` }"
-              @click="handleNodeClick(flat.node)"
-              @keydown="handleNodeKeydown($event, flat)"
+            <ExTreeSelectWindow
+              ref="windowRef"
+              :nodes="flatNodes"
+              :virtual="virtual"
+              :height="treeHeight"
+              :item-height="nodeHeight"
+              :buffer="windowBuffer"
             >
-              <!-- 展开箭头 -->
-              <span
-                class="ex-tree-select__expand"
-                :class="{ 'is-leaf': !flat.hasChildren }"
-                aria-hidden="true"
-                @click.stop="flat.hasChildren && toggleExpand(flat.node)"
-              >
-                <ExIcon
-                  v-if="flat.hasChildren"
-                  icon="arrow-right-s-line"
-                  :size="14"
-                  :class="{ 'is-expanded': flat.expanded }"
-                  aria-hidden="true"
+              <template #default="{ flat }">
+                <ExTreeSelectNode
+                  :ref="element => setNodeRef(flat.node.value, element)"
+                  :node="flat.node"
+                  :disabled="flat.disabled"
+                  :selected="!multiple && flat.node.value === currentValue"
+                  :multiple="multiple"
+                  :checked="getAriaChecked(flat.node)"
+                  :expanded="flat.expanded"
+                  :expandable="flat.hasChildren"
+                  :active="activeNodeValue === flat.node.value"
+                  :level="flat.level"
+                  :position="flat.position"
+                  :set-size="flat.setSize"
+                  :height="nodeHeight"
+                  :load-state="getNodeLoadState(flat.node.value)"
+                  @select="handleNodeClick(flat.node)"
+                  @expand="toggleExpand(flat.node)"
+                  @keydown="handleNodeKeydown($event, flat)"
+                  @retry="reloadNode(flat.node.value)"
                 />
-              </span>
-
-              <!-- 复选框（多选） -->
-              <span
-                v-if="multiple"
-                class="ex-tree-select__checkbox"
-                :class="{
-                  'is-checked': isChecked(flat.node),
-                  'is-indeterminate': isIndeterminate(flat.node),
-                }"
-              ></span>
-
-              <span class="ex-tree-select__node-label">{{ flat.node.label }}</span>
-            </div>
+              </template>
+            </ExTreeSelectWindow>
 
             <div
               v-if="flatNodes.length === 0"
@@ -214,6 +202,9 @@ import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useControllableState } from '../../composables/useControllableState';
 import ExIcon from '../icon/ExIcon.vue';
+import ExTreeSelectNode from './ExTreeSelectNode.vue';
+import ExTreeSelectWindow from './ExTreeSelectWindow.vue';
+import { useAsyncOptions } from './use-async-options';
 
 defineOptions({
   name: 'ExTreeSelect',
@@ -232,6 +223,7 @@ const props = withDefaults(defineProps<ExTreeSelectProps>(), {
   defaultExpandAll: false,
   collapseTags: false,
   teleported: true,
+  virtual: false,
 });
 
 const emit = defineEmits<ExTreeSelectEmits>();
@@ -256,6 +248,7 @@ const rootRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
 const panelRef = ref<HTMLElement>();
 const searchInputRef = ref<HTMLInputElement>();
+const windowRef = ref<InstanceType<typeof ExTreeSelectWindow>>();
 const idSuffix = useId().replace(/:/g, '');
 const panelId = `ex-tree-select-panel-${idSuffix}`;
 const treeId = `ex-tree-select-tree-${idSuffix}`;
@@ -295,6 +288,33 @@ const panelStyle = computed<Record<string, string>>(() => ({
 }));
 const searchQuery = ref('');
 const expandedKeys = ref<Set<string | number>>(new Set());
+const DEFAULT_NODE_HEIGHT = 44;
+const DEFAULT_TREE_HEIGHT = 264;
+const DEFAULT_WINDOW_BUFFER = 4;
+const positiveMetric = (value: number | undefined, fallback: number) =>
+  value !== undefined && Number.isFinite(value) && value > 0 ? value : fallback;
+const treeHeight = computed(() => positiveMetric(props.height, DEFAULT_TREE_HEIGHT));
+const nodeHeight = computed(() => positiveMetric(props.itemHeight, DEFAULT_NODE_HEIGHT));
+const windowBuffer = computed(() =>
+  props.virtualBuffer !== undefined &&
+  Number.isFinite(props.virtualBuffer) &&
+  props.virtualBuffer >= 0
+    ? Math.floor(props.virtualBuffer)
+    : DEFAULT_WINDOW_BUFFER
+);
+const asyncOptions = useAsyncOptions<TreeSelectNode>({
+  data: () => props.data,
+  loader: () => props.loadData,
+  blocked: () => !interactive.value,
+  active: () => visible.value,
+  identity: 'value',
+  onLoad: (node, children) => emit('load', node, children),
+  onError: (error, node) => emit('load-error', error, node),
+});
+const resolvedData = asyncOptions.data;
+const reloadNode = (value: string | number) => asyncOptions.reload([value]);
+const cancelNodeLoad = (value: string | number) => asyncOptions.cancel([value]);
+const getNodeLoadState = (value: string | number) => asyncOptions.stateFor([value]);
 
 const rootClasses = computed(() => [
   'ex-tree-select',
@@ -316,6 +336,8 @@ interface IndexedNode {
   level: number;
   index: number;
   end: number;
+  position: number;
+  setSize: number;
 }
 const maps = computed(() => {
   const nodeMap = new Map<string | number, TreeSelectNode>();
@@ -323,7 +345,7 @@ const maps = computed(() => {
   const entries: IndexedNode[] = [];
   const indices = new Map<string | number, IndexedNode>();
   const stack: Array<{ nodes: TreeSelectNode[]; next: number; owner?: IndexedNode }> = [
-    { nodes: props.data, next: 0 },
+    { nodes: resolvedData.value, next: 0 },
   ];
   // 迭代先序遍历记录子树半开区间，避免深层递归及每个节点重复扫描全部后代。
   while (stack.length) {
@@ -341,6 +363,8 @@ const maps = computed(() => {
       level: stack.length - 1,
       index: entries.length,
       end: entries.length + 1,
+      position: frame.next,
+      setSize: frame.nodes.length,
     };
     entries.push(entry);
     indices.set(node.value, entry);
@@ -386,6 +410,8 @@ interface FlatNode {
   level: number;
   hasChildren: boolean;
   expanded: boolean;
+  position: number;
+  setSize: number;
 }
 const flatNodes = computed<FlatNode[]>(() => {
   const out: FlatNode[] = [];
@@ -398,13 +424,30 @@ const flatNodes = computed<FlatNode[]>(() => {
       index = entry.end;
       continue;
     }
-    const hasChildren = entry.end > index + 1;
+    const hasChildren = asyncOptions.expandable(node, [node.value]);
     const expanded = filterActive.value || expandedKeys.value.has(node.value);
-    out.push({ node, level, hasChildren, expanded, disabled: entry.disabled });
+    out.push({
+      node,
+      level,
+      hasChildren,
+      expanded,
+      disabled: entry.disabled,
+      position: entry.position,
+      setSize: entry.setSize,
+    });
     index = expanded ? index + 1 : entry.end;
   }
   return out;
 });
+watch(
+  flatNodes,
+  nodes => {
+    asyncOptions.syncExpanded(
+      nodes.filter(node => node.expanded && node.hasChildren).map(node => [node.node.value])
+    );
+  },
+  { immediate: true }
+);
 
 const activeNodeValue = ref<string | number | null>(null);
 
@@ -435,7 +478,12 @@ const focusNodeAt = (index: number, direction: 1 | -1 = 1) => {
   }
   if (!target) return;
   activeNodeValue.value = target.node.value;
-  nextTick(() => nodeRefs.get(target.node.value)?.focus());
+  if (props.virtual) windowRef.value?.scrollToIndex(index);
+  void nextTick(async () => {
+    // 虚拟窗口先更新范围、再创建节点；晚到的焦点请求不能覆盖后续导航。
+    if (props.virtual) await nextTick();
+    if (activeNodeValue.value === target.node.value) nodeRefs.get(target.node.value)?.focus();
+  });
 };
 
 const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
@@ -477,7 +525,7 @@ const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
   if (event.key === 'ArrowRight' && flat.hasChildren) {
     event.preventDefault();
     if (!flat.expanded) toggleExpand(flat.node);
-    else focusNodeAt(currentIndex + 1, 1);
+    else if (flat.node.children?.length) focusNodeAt(currentIndex + 1, 1);
     return;
   }
 
@@ -499,7 +547,17 @@ const handleNodeKeydown = (event: KeyboardEvent, flat: FlatNode) => {
 const selectedValues = computed<Array<string | number>>(() =>
   props.multiple && Array.isArray(currentValue.value) ? currentValue.value : []
 );
-const checkedSet = computed(() => new Set(selectedValues.value));
+const checkedSet = computed(() => {
+  const checked = new Set(selectedValues.value);
+  if (!props.checkStrictly) {
+    // 父节点的级联选择意图覆盖后加载的可用后代，不主动改写受控模型。
+    for (const entry of maps.value.entries) {
+      if (!entry.disabled && entry.parent !== null && checked.has(entry.parent))
+        checked.add(entry.node.value);
+    }
+  }
+  return checked;
+});
 const selectedNodes = computed<TreeSelectNode[]>(() =>
   selectedValues.value.map(v => nodeMap.value.get(v)).filter((n): n is TreeSelectNode => !!n)
 );
@@ -733,7 +791,7 @@ const handleClickOutside = (event: MouseEvent) => {
 const expandAll = () => {
   const next = new Set([...expandedKeys.value].filter(isValueDisabled));
   maps.value.entries.forEach(({ node, disabled: nodeDisabled }) => {
-    if (!nodeDisabled && node.children && node.children.length) next.add(node.value);
+    if (!nodeDisabled && asyncOptions.expandable(node, [node.value])) next.add(node.value);
   });
   expandedKeys.value = next;
 };
@@ -777,7 +835,15 @@ onUnmounted(() => {
 const focus = () => triggerRef.value?.focus();
 const blur = () => triggerRef.value?.blur();
 
-defineExpose<ExTreeSelectExposed>({ focus, blur, expandAll, collapseAll });
+defineExpose<ExTreeSelectExposed>({
+  focus,
+  blur,
+  expandAll,
+  collapseAll,
+  reloadNode,
+  cancelNodeLoad,
+  getNodeLoadState,
+});
 </script>
 
 <style scoped lang="scss" src="./ExTreeSelect.scss"></style>

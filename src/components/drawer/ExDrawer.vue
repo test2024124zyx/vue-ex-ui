@@ -116,6 +116,7 @@ import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import {
   useAnimation,
+  useGlobalSize,
   useConfigTheme,
   useNeonEffect,
   useThemeOverrides,
@@ -131,10 +132,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const globalSize = useGlobalSize();
 const props = withDefaults(defineProps<ExDrawerProps>(), {
   modelValue: false,
   placement: 'right',
-  size: 'medium',
+  size: undefined,
   closable: true,
   mask: true,
   maskClosable: true,
@@ -230,7 +232,8 @@ const normalizedSize = computed(() => {
   if (typeof props.size === 'number') {
     return Number.isFinite(props.size) && props.size > 0 ? `${props.size}px` : PRESET_SIZES.medium;
   }
-  return PRESET_SIZES[props.size as keyof typeof PRESET_SIZES] ?? props.size;
+  const size = props.size ?? globalSize.value;
+  return PRESET_SIZES[size as keyof typeof PRESET_SIZES] ?? size;
 });
 
 const sizeStyles = computed<CSSProperties>(() => {

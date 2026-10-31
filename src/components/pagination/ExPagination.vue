@@ -221,6 +221,7 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentSize } from '../config-provider/composables';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch } from 'vue';
@@ -242,13 +243,14 @@ const props = withDefaults(defineProps<ExPaginationProps>(), {
   showTotal: true,
   disabled: false,
   simple: false,
-  size: 'medium',
+  size: undefined,
   align: 'left',
   showPages: 7,
   hideOnSinglePage: false,
 });
 
 const emit = defineEmits<ExPaginationEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
 
 const { t } = useLocale('pagination');
 const paginationRef = ref<HTMLDivElement>();
@@ -315,7 +317,7 @@ const { itemsStyle, layout } = useResponsivePagination(paginationRef, itemsRef, 
 const paginationClasses = computed(() => {
   const classes = [
     'ex-pagination',
-    `ex-pagination--${props.size}`,
+    `ex-pagination--${componentSize.value}`,
     `ex-pagination--${props.align}`,
   ];
 

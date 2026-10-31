@@ -50,5 +50,11 @@ jobs:
       - name: Build (docs)
         run: npm run docs:build
 
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser acceptance
+        run: npm run test:browser
+
       - name: Audit dependencies
         run: npm run audit:production

@@ -309,6 +309,29 @@
           </div>
         </template>
 
+        <div
+          v-if="listType === 'picture-card'"
+          class="ex-file-upload__card-caption"
+          :title="file.name"
+        >
+          {{ file.name }}
+        </div>
+        <UploadTaskActions
+          :file="file"
+          :tus="transport === 'tus'"
+          :disabled="mutationDisabled"
+          :can-start="Boolean(action)"
+          @start="resume(file)"
+          @pause="pause(file)"
+          @cancel="cancel(file)"
+        />
+        <p
+          v-if="file.error"
+          class="ex-file-upload__error"
+          role="alert"
+        >
+          {{ file.error }}
+        </p>
         <span class="ex-file-upload__sr-only">
           {{ getFileStatusLabel(file) }}
         </span>
@@ -361,12 +384,11 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
 import { useFormFieldState } from '../form/use-form-item';
 import { generateId } from '../../utils/id';
-import { createUploadRequest } from './upload-request';
-import type { UploadRequestHandle } from './upload-request';
+import UploadTaskActions from './UploadTaskActions.vue';
+import { useUploadTransfers } from './useUploadTransfers';
 import {
   cloneUploadFileList,
   formatUploadFileSize,
-  getUploadResponseUrl,
   matchesUploadAccept,
   normalizeUploadLimit,
   normalizeUploadMaxFileSize,
@@ -378,10 +400,8 @@ import type {
   ExFileUploadExposed,
   ExFileUploadProps,
   ExFileUploadSlots,
-  UploadAbortReason,
   UploadFile,
   UploadRejection,
-  UploadResult,
 } from './types';
 
 defineOptions({
@@ -420,6 +440,7 @@ const UploadProgress = defineComponent({
 });
 
 const props = withDefaults(defineProps<ExFileUploadProps>(), {
+  transport: 'xhr',
   method: 'POST',
   name: 'file',
   multiple: false,
@@ -476,13 +497,6 @@ const uploadClasses = computed(() => [
 const { synchronize: synchronizePreviewUrls, getPreviewUrl } = useUploadPreviewUrls();
 watch(displayedFileList, files => synchronizePreviewUrls(files), { deep: true, immediate: true });
 
-interface ActiveUpload {
-  file: UploadFile;
-  handle: UploadRequestHandle;
-  result: Promise<UploadResult>;
-}
-
-const activeUploads = new Map<string, ActiveUpload>();
 let selectionRevision = 0;
 
 const invalidatePendingSelections = (): void => {
@@ -526,27 +540,17 @@ const getFileItemClass = (file: UploadFile) => [
   `ex-file-upload__list-item--${props.listType}`,
 ];
 
-const abortActiveUpload = (uid: string, reason: UploadAbortReason): boolean => {
-  const task = activeUploads.get(uid);
-  if (!task) return false;
-  const aborted = task.handle.abort();
-  // 网络完成和 Vue 属性同步可能位于同一微任务轮次；外部替换仍须撤销提交权。
-  if (!aborted && reason !== 'external') return false;
-  activeUploads.delete(uid);
-  const current = operationFileList.value.find(file => file.uid === uid);
-  // 外部替换同 UID 的原始文件后，旧任务只能结束自身，不能重置新文件状态。
-  const patched =
-    current?.raw === task.file.raw
-      ? patchFile(uid, { status: 'ready', percent: 0, error: undefined })
-      : null;
-  const file = patched?.file ?? { ...task.file, status: 'ready', percent: 0, error: undefined };
-  const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
-  emit('aborted', file, files, reason);
-  return true;
-};
-
-const abortUploads = (uids: readonly string[], reason: UploadAbortReason): number =>
-  uids.reduce((count, uid) => count + Number(abortActiveUpload(uid, reason)), 0);
+const transfers = useUploadTransfers({
+  props,
+  files: operationFileList,
+  disabled,
+  mutationDisabled,
+  destroyed,
+  patchFile,
+  emit,
+});
+const { startUpload, submit, abort, pause, resume, cancel, abortActiveUpload, abortUploads } =
+  transfers;
 
 watch(
   () => props.fileList,
@@ -554,11 +558,7 @@ watch(
     invalidatePendingSelections();
     if (nextFiles !== undefined) {
       operationFileList.value = cloneUploadFileList(nextFiles);
-      const currentFiles = new Map(nextFiles.map(file => [file.uid, file]));
-      const removedTaskUids = [...activeUploads]
-        .filter(([uid, task]) => currentFiles.get(uid)?.raw !== task.file.raw)
-        .map(([uid]) => uid);
-      abortUploads(removedTaskUids, 'external');
+      transfers.invalidateExternal(nextFiles);
     } else if (previousFiles !== undefined) {
       internalFileList.value = cloneUploadFileList(previousFiles);
       operationFileList.value = cloneUploadFileList(previousFiles);
@@ -572,10 +572,7 @@ watch(mutationDisabled, disabled => {
     isDragOver.value = false;
     invalidatePendingSelections();
     // 已发送的上传由显式中止接口管理；尚在解析配置的任务不得再发出请求。
-    for (const [uid, task] of activeUploads) {
-      if (task.handle.pending)
-        abortActiveUpload(uid, field.disabled.value ? 'disabled' : 'readonly');
-    }
+    transfers.abortPending(field.disabled.value ? 'disabled' : 'readonly');
   }
 });
 
@@ -607,131 +604,6 @@ const validateFile = (file: File): UploadRejection | null => {
     };
   }
   return null;
-};
-
-const startUpload = (sourceFile: UploadFile): Promise<UploadResult> => {
-  const existing = activeUploads.get(sourceFile.uid);
-  if (existing) return existing.result;
-  if (mutationDisabled.value) {
-    return Promise.resolve({
-      uid: sourceFile.uid,
-      outcome: 'ignored',
-      reason: disabled.value ? 'disabled' : 'readonly',
-    });
-  }
-
-  const currentFile =
-    operationFileList.value.find(file => file.uid === sourceFile.uid) ?? sourceFile;
-  if (currentFile.status !== 'ready') {
-    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'not-ready' });
-  }
-  if (!props.action) {
-    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'no-action' });
-  }
-  if (!currentFile.raw) {
-    return Promise.resolve({ uid: currentFile.uid, outcome: 'ignored', reason: 'missing-raw' });
-  }
-
-  const uploading = patchFile(currentFile.uid, {
-    status: 'uploading',
-    percent: 0,
-    error: undefined,
-  })?.file ?? { ...currentFile, status: 'uploading' as const, percent: 0 };
-  const task = {} as ActiveUpload;
-  const handle = createUploadRequest({
-    file: uploading,
-    action: props.action,
-    method: props.method,
-    headers: props.headers,
-    data: props.data,
-    name: props.name,
-    withCredentials: props.withCredentials,
-    timeout: props.timeout,
-    onProgress: percent => {
-      if (activeUploads.get(uploading.uid) !== task) return;
-      const currentPercent = getFilePercent(
-        operationFileList.value.find(file => file.uid === uploading.uid) ?? uploading
-      );
-      const patched = patchFile(uploading.uid, { percent: Math.max(currentPercent, percent) });
-      if (patched) emit('progress', patched.file, patched.files);
-    },
-  });
-
-  const result = handle.promise.then(transportResult => {
-    if (activeUploads.get(uploading.uid) !== task) {
-      return { uid: uploading.uid, outcome: 'aborted' } satisfies UploadResult;
-    }
-    activeUploads.delete(uploading.uid);
-
-    if (transportResult.outcome === 'aborted') {
-      const patched = patchFile(uploading.uid, { status: 'ready', percent: 0 });
-      const file = patched?.file ?? { ...uploading, status: 'ready' as const, percent: 0 };
-      const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
-      emit('aborted', file, files, 'manual');
-      return { uid: uploading.uid, outcome: 'aborted' } satisfies UploadResult;
-    }
-
-    if (transportResult.outcome === 'error') {
-      const patched = patchFile(uploading.uid, {
-        status: 'error',
-        error: transportResult.error.message,
-      });
-      const file = patched?.file ?? {
-        ...uploading,
-        status: 'error' as const,
-        error: transportResult.error.message,
-      };
-      const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
-      emit('error', transportResult.error, file, files);
-      return {
-        uid: uploading.uid,
-        outcome: 'error',
-        error: transportResult.error,
-      } satisfies UploadResult;
-    }
-
-    const responseUrl = getUploadResponseUrl(transportResult.response);
-    const patched = patchFile(uploading.uid, {
-      status: 'success',
-      percent: 100,
-      response: transportResult.response,
-      ...(responseUrl ? { url: responseUrl } : {}),
-      error: undefined,
-    });
-    const file = patched?.file ?? {
-      ...uploading,
-      status: 'success' as const,
-      percent: 100,
-      response: transportResult.response,
-      ...(responseUrl ? { url: responseUrl } : {}),
-    };
-    const files = patched?.files ?? cloneUploadFileList(operationFileList.value);
-    emit('success', transportResult.response, file, files);
-    return {
-      uid: uploading.uid,
-      outcome: 'success',
-      response: transportResult.response,
-    } satisfies UploadResult;
-  });
-
-  task.file = uploading;
-  task.handle = handle;
-  task.result = result;
-  activeUploads.set(uploading.uid, task);
-  return result;
-};
-
-const submit = (file?: UploadFile | string): Promise<UploadResult[]> => {
-  let targets: UploadFile[];
-  if (typeof file === 'string') {
-    const target = operationFileList.value.find(item => item.uid === file);
-    targets = target ? [target] : [];
-  } else if (file) {
-    targets = [operationFileList.value.find(item => item.uid === file.uid) ?? file];
-  } else {
-    targets = operationFileList.value.filter(item => item.status === 'ready');
-  }
-  return Promise.all(targets.map(startUpload));
 };
 
 let selectionQueue: Promise<void> = Promise.resolve();
@@ -835,6 +707,7 @@ const handleRemove = (file: UploadFile): void => {
   invalidatePendingSelections();
   abortActiveUpload(file.uid, 'remove');
   requestFileList(operationFileList.value.filter(item => item.uid !== file.uid));
+  transfers.invalidateExternal(operationFileList.value);
   field.formItem?.onFieldChange();
   emit('remove-request', file);
 };
@@ -849,19 +722,12 @@ const handleFieldBlur = (event: FocusEvent): void => {
   field.formItem?.onFieldBlur();
 };
 
-const abort = (file?: UploadFile | string): number => {
-  if (file) {
-    const uid = typeof file === 'string' ? file : file.uid;
-    return Number(abortActiveUpload(uid, 'manual'));
-  }
-  return abortUploads([...activeUploads.keys()], 'manual');
-};
-
 const requestClear = (): number => {
   if (mutationDisabled.value) return 0;
   invalidatePendingSelections();
-  const abortedCount = abortUploads([...activeUploads.keys()], 'clear');
+  const abortedCount = abortUploads([...transfers.active.keys()], 'clear');
   requestFileList([]);
+  transfers.invalidateExternal([]);
   field.formItem?.onFieldChange();
   return abortedCount;
 };
@@ -872,16 +738,16 @@ const getElement = (): HTMLDivElement | null => uploadRef.value ?? null;
 onBeforeUnmount(() => {
   destroyed.value = true;
   // 卸载属于资源清理，不再向已销毁的业务树发送列表或中止事件。
-  for (const [uid, task] of activeUploads) {
-    activeUploads.delete(uid);
-    task.handle.abort();
-  }
+  transfers.dispose();
 });
 
 defineExpose<ExFileUploadExposed>({
   openFileDialog,
   submit,
   abort,
+  pause,
+  resume,
+  cancel,
   requestClear,
   getFiles,
   getElement,

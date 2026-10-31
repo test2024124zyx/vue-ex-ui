@@ -1,6 +1,7 @@
 const enUS = {
   // 评分控件
   rate: { label: 'Rating' },
+  steps: { navigation: 'Steps navigation' },
   // Common
   common: {
     confirm: 'Confirm',
@@ -313,6 +314,9 @@ const enUS = {
   // Time Picker
   timePicker: {
     selectTime: 'Select Time',
+    selectRange: 'Select time range',
+    rangeSeparator: 'to',
+    invalidRangeOrder: 'The end time must not be earlier than the start time.',
     hour: 'Hour',
     minute: 'Minute',
     second: 'Second',
@@ -349,6 +353,7 @@ const enUS = {
   // Date Picker
   datePicker: {
     placeholder: 'Select date',
+    disabledTime: 'This time is unavailable. Adjust the hour, minute, or second.',
     panel: 'Date picker panel',
     startDate: 'Start date',
     endDate: 'End date',
@@ -558,6 +563,14 @@ const enUS = {
     removeFile: 'Remove {name}',
     uploadProgress: 'Upload progress for {name}',
     statusReady: 'Ready to upload',
+    statusQueued: 'Queued',
+    statusPaused: 'Paused',
+    statusCancelling: 'Cancelling',
+    startUpload: 'Upload {name}',
+    pauseUpload: 'Pause upload {name}',
+    resumeUpload: 'Resume upload {name}',
+    retryUpload: 'Retry upload {name}',
+    cancelUpload: 'Cancel upload {name}',
     statusUploading: 'Uploading',
     statusSuccess: 'Uploaded',
     statusError: 'Upload failed',

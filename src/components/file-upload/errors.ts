@@ -1,6 +1,12 @@
 /** 文件上传传输阶段的稳定错误代码。 */
 export type ExFileUploadErrorCode =
-  'configuration-error' | 'request-error' | 'http-error' | 'timeout' | 'response-error';
+  | 'configuration-error'
+  | 'request-error'
+  | 'http-error'
+  | 'timeout'
+  | 'response-error'
+  | 'unsupported'
+  | 'termination-error';
 
 export interface ExFileUploadErrorOptions {
   code: ExFileUploadErrorCode;

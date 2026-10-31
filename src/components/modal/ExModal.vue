@@ -118,6 +118,7 @@ import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import {
   useAnimation,
+  useGlobalSize,
   useConfigTheme,
   useNeonEffect,
   useThemeOverrides,
@@ -142,10 +143,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const globalSize = useGlobalSize();
 const slots = defineSlots<ExModalSlots>();
 const props = withDefaults(defineProps<ExModalProps>(), {
   modelValue: false,
-  size: 'medium',
+  size: undefined,
   type: 'default',
   showClose: true,
   mask: true,
@@ -188,7 +190,7 @@ const OBSOLETE_ATTRS = new Set(['arialabel']);
 
 /** 运行时非法枚举值必须回退，不能生成不存在的样式类。 */
 const normalizedSize = computed<ModalSize>(() =>
-  MODAL_SIZES.has(props.size as ModalSize) ? (props.size as ModalSize) : 'medium'
+  MODAL_SIZES.has(props.size as ModalSize) ? (props.size as ModalSize) : globalSize.value
 );
 const normalizedType = computed<ModalType>(() =>
   MODAL_TYPES.has(props.type as ModalType) ? (props.type as ModalType) : 'default'

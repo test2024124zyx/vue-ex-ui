@@ -154,6 +154,7 @@ const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const displayValue = ref<string>('');
 const isFocused = ref(false);
+let debouncedInput: DebouncedFunction<(value: number) => void> | null = null;
 
 // 计算属性
 const numberInputClasses = computed(() => {
@@ -272,8 +273,8 @@ const parseValue = (input: string): number | null => {
 };
 
 // 更新显示值
-const updateDisplayValue = () => {
-  if (isFocused.value) return; // 聚焦时不更新显示值
+const updateDisplayValue = (force = false) => {
+  if (isFocused.value && !force) return;
 
   if (props.modelValue === null) {
     displayValue.value = '';
@@ -282,19 +283,29 @@ const updateDisplayValue = () => {
     const formattedValue = validateValue(props.modelValue);
     displayValue.value = String(formattedValue);
   }
+  if (force && inputRef.value) inputRef.value.value = displayValue.value;
 };
 
-// 监听 modelValue 变化
+// 外部确认值优先于尚未提交的草稿，聚焦状态不阻挡显式数据更新。
 watch(
-  [() => props.modelValue, () => props.precision, () => props.min, () => props.max],
+  () => props.modelValue,
   () => {
-    updateDisplayValue();
+    debouncedInput?.cancel();
+    updateDisplayValue(true);
   },
   { immediate: true }
 );
 
-// 防抖的输入事件
-let debouncedInput: DebouncedFunction<(value: number) => void> | null = null;
+watch([() => props.precision, () => props.min, () => props.max], () => updateDisplayValue());
+
+const discardDraft = () => {
+  debouncedInput?.cancel();
+  updateDisplayValue(true);
+  formItem?.onFieldDraftDiscard?.();
+};
+
+// 重置可能写回与当前模型相同的值，必须独立订阅通知，并等待父级属性同步。
+watch(() => formItem?.resetRevision?.value, discardDraft, { flush: 'post' });
 
 watch(
   () => props.debounceDelay,
@@ -313,7 +324,7 @@ watch(
 // 事件处理
 const handleInput = (event: Event) => {
   if (!interactive.value) {
-    updateDisplayValue();
+    discardDraft();
     return;
   }
   const target = event.target as HTMLInputElement;
@@ -336,13 +347,14 @@ const handleInput = (event: Event) => {
       emit('input', parsedValue);
     }
   }
-  formItem?.onFieldInput?.();
+  // 保持 change 才提交模型的既有行为，同时让实时校验看到用户正在编辑的值。
+  formItem?.onFieldInput?.({ value: parsedValue });
 };
 
 const handleChange = (event: Event) => {
   debouncedInput?.cancel();
   if (!interactive.value) {
-    updateDisplayValue();
+    discardDraft();
     return;
   }
   const target = event.target as HTMLInputElement;
@@ -375,7 +387,7 @@ const handleFocus = (event: FocusEvent) => {
 
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
-  updateDisplayValue();
+  discardDraft();
   emit('blur', event);
   formItem?.onFieldBlur();
 };
@@ -463,8 +475,7 @@ const handleDecrease = (customStepOrEvent?: number | Event) => {
 
 watch(interactive, canInteract => {
   if (!canInteract) {
-    debouncedInput?.cancel();
-    updateDisplayValue();
+    discardDraft();
   }
 });
 

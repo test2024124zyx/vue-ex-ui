@@ -186,6 +186,7 @@ import { computeFloatingPosition, type FloatingPlacement } from '../../utils/flo
 import { generateId } from '../../utils/id';
 import {
   useAnimation,
+  useComponentSize,
   useConfigTheme,
   useNeonEffect,
   useThemeOverrides,
@@ -221,7 +222,7 @@ const CELL_SIZES = {
 } as const;
 
 const props = withDefaults(defineProps<ExHeatmapProps>(), {
-  size: 'medium',
+  size: undefined,
   theme: 'neon',
   showMonthLabels: true,
   showWeekLabels: true,
@@ -255,7 +256,7 @@ let tooltipListenersAttached = false;
 
 const heatmapClasses = computed(() => [
   'ex-heatmap',
-  `ex-heatmap--${props.size}`,
+  `ex-heatmap--${componentSize.value}`,
   `ex-heatmap--${props.theme}`,
   ...normalizeCustomClass(props.class),
 ]);
@@ -273,7 +274,8 @@ const tooltipStyle = computed<CSSProperties>(() => ({
   zIndex: overlayZIndex.value,
 }));
 
-const cellSize = computed(() => CELL_SIZES[props.size]);
+const componentSize = useComponentSize(computed(() => props.size));
+const cellSize = computed(() => CELL_SIZES[componentSize.value]);
 const normalizedGap = computed(() => normalizeHeatmapMetric(props.gap, 4, 64));
 const normalizedRadius = computed(() =>
   normalizeHeatmapMetric(props.radius, 2, cellSize.value / 2)

@@ -103,6 +103,7 @@ import { lockDocumentScroll, unlockDocumentScroll } from '../../composables/over
 import { useLocale } from '../../locale';
 import {
   useAnimation,
+  useGlobalSize,
   useConfigTheme,
   useNeonEffect,
   useThemeOverrides,
@@ -123,10 +124,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const globalSize = useGlobalSize();
 const props = withDefaults(defineProps<ExLoadingProps>(), {
   visible: true,
   type: 'spinner',
-  size: 'medium',
+  size: undefined,
   fullscreen: false,
   mask: true,
   maskClosable: false,
@@ -177,7 +179,7 @@ const loadingRef = shallowRef<HTMLDivElement | null>(null);
 const resolvedTarget = shallowRef<HTMLElement | null>(null);
 const isMounted = shallowRef(false);
 const normalizedType = computed(() => normalizeLoadingType(props.type));
-const normalizedSize = computed(() => normalizeLoadingSize(props.size));
+const normalizedSize = computed(() => normalizeLoadingSize(props.size ?? globalSize.value));
 
 const loadingClasses = computed(() => [
   'ex-loading',

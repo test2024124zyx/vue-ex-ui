@@ -223,6 +223,9 @@ describe('ExDateTimePicker', () => {
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
     document.querySelector<HTMLButtonElement>('.ex-datetime-picker__confirm-btn')!.click();
     await nextTick();
+    const requested = wrapper!.emitted('update:modelValue')?.at(-1)?.[0] as Date;
+    expect(requested).toEqual(new Date(2024, 4, 20, 8));
+    await wrapper!.setProps({ modelValue: requested });
     expect(input().element.value).toBe('2024-05-20 08:00');
   });
 

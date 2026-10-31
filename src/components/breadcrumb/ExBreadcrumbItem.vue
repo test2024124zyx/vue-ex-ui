@@ -2,7 +2,7 @@
   <li
     class="ex-breadcrumb-item"
     :class="[
-      `ex-breadcrumb-item--${size}`,
+      `ex-breadcrumb-item--${componentSize}`,
       {
         'ex-breadcrumb-item--clickable': isClickable,
         'ex-breadcrumb-item--last': isLast,
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
 import { normalizeLinkHref } from '../link/link-utils';
 import type { BreadcrumbItemProps, BreadcrumbItemEmits } from './types';
 
@@ -76,11 +77,12 @@ const props = withDefaults(defineProps<BreadcrumbItemProps>(), {
   index: 0,
   isLast: false,
   separator: '/',
-  size: 'medium',
+  size: undefined,
   clickable: true,
 });
 
 const emit = defineEmits<BreadcrumbItemEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
 const normalizedPath = computed(() => normalizeLinkHref(props.item.path));
 const isEffectivelyDisabled = computed(() =>
   Boolean(props.item.disabled || (props.item.path && !normalizedPath.value))

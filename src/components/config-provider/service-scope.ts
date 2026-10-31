@@ -1,6 +1,6 @@
 import type { AppContext, ComponentInternalInstance, InjectionKey } from 'vue';
 import { getCurrentInstance, inject, onBeforeUnmount, provide } from 'vue';
-import { createSharedInjectionKey } from '../../utils/shared-runtime';
+import { createDocumentRuntime, createSharedInjectionKey } from '../../utils/shared-runtime';
 
 type ServiceKey = symbol;
 type ServiceDisposer = (service: unknown) => void;
@@ -23,6 +23,34 @@ export interface ComponentServiceScope {
 
 export const COMPONENT_SERVICE_SCOPE_KEY: InjectionKey<ComponentServiceScope> =
   createSharedInjectionKey('component-service-scope');
+
+const getElementScopes = createDocumentRuntime(
+  'component-service-element-scopes',
+  () => new WeakMap<HTMLElement, ComponentServiceScope>()
+);
+
+/** 原生指令可能来自父组件插槽，通过真实容器补全其最近的配置作用域。 */
+export function registerServiceScopeElement(
+  element: HTMLElement,
+  scope: ComponentServiceScope
+): () => void {
+  const scopes = getElementScopes();
+  scopes.set(element, scope);
+  return () => {
+    if (scopes.get(element) === scope) scopes.delete(element);
+  };
+}
+
+export function findElementServiceScope(element: HTMLElement): ComponentServiceScope | null {
+  const scopes = getElementScopes();
+  let current: HTMLElement | null = element;
+  while (current) {
+    const scope = scopes.get(current);
+    if (scope) return scope;
+    current = current.parentElement;
+  }
+  return null;
+}
 
 const createInheritedAppContext = (instance: ComponentInternalInstance): AppContext => ({
   ...instance.appContext,

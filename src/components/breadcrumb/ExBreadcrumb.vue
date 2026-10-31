@@ -2,7 +2,7 @@
   <nav
     class="ex-breadcrumb"
     :class="[
-      `ex-breadcrumb--${size}`,
+      `ex-breadcrumb--${componentSize}`,
       {
         'ex-breadcrumb--clickable': clickable,
       },
@@ -19,7 +19,7 @@
           :index="index"
           :is-last="index === displayItems.length - 1"
           :separator="separator"
-          :size="size"
+          :size="componentSize"
           :clickable="clickable"
           @click="handleItemClick(item, index)"
         >
@@ -50,7 +50,7 @@
           :index="0"
           :is-last="false"
           :separator="separator"
-          :size="size"
+          :size="componentSize"
           :clickable="clickable"
           @click="handleItemClick(displayItems[0]!, 0)"
         >
@@ -96,7 +96,7 @@
           :index="displayItems.length - lastItems.length + index"
           :is-last="index === lastItems.length - 1"
           :separator="separator"
-          :size="size"
+          :size="componentSize"
           :clickable="clickable"
           @click="handleItemClick(item, displayItems.length - lastItems.length + index)"
         >
@@ -124,6 +124,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
 import type { BreadcrumbProps, BreadcrumbEmits, BreadcrumbItem } from './types';
 import ExBreadcrumbItem from './ExBreadcrumbItem.vue';
 import { useI18n } from '../../locale';
@@ -136,11 +137,12 @@ const props = withDefaults(defineProps<BreadcrumbProps>(), {
   items: () => [],
   separator: '/',
   maxItems: undefined,
-  size: 'medium',
+  size: undefined,
   clickable: true,
 });
 
 const emit = defineEmits<BreadcrumbEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
 
 const { t } = useI18n();
 

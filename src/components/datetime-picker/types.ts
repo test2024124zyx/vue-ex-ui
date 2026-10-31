@@ -1,17 +1,41 @@
 import type { CSSProperties } from 'vue';
 
 /** 已实现并保持完整语义的选择模式。 */
-export type DateTimePickerType = 'date' | 'datetime' | 'daterange' | 'datetimerange';
+export type DateTimePickerType =
+  | 'date'
+  | 'datetime'
+  | 'daterange'
+  | 'datetimerange'
+  | 'year'
+  | 'yearrange'
+  | 'month'
+  | 'monthrange'
+  | 'week'
+  | 'weekrange';
 
 export type DateTimePickerSize = 'small' | 'medium' | 'large';
 export type DateTimePickerRange = [Date, Date];
 export type DateTimePickerValue = Date | DateTimePickerRange | null;
 export type DisabledDateFn = (date: Date) => boolean;
+export type DateTimePickerEndpoint = 'start' | 'end';
+
+/** 时分秒按当前端点分别禁用，未提供的维度不受限制。 */
+export interface DateTimeConstraints {
+  disabledHours?: () => number[];
+  disabledMinutes?: (hour: number) => number[];
+  disabledSeconds?: (hour: number, minute: number) => number[];
+}
+export type DisabledTimeFn = (
+  date: Date,
+  endpoint: DateTimePickerEndpoint
+) => DateTimeConstraints | undefined;
 
 /** 日期时间选择器属性。 */
 export interface ExDateTimePickerProps {
   /** 当前日期或日期范围。 */
   modelValue?: DateTimePickerValue;
+  /** 原生输入框 ID，支持外部 label 的 for 关联。 */
+  id?: string;
   /** 日期与时间选择模式。 */
   type?: DateTimePickerType;
   /** 组件尺寸。 */
@@ -32,6 +56,8 @@ export interface ExDateTimePickerProps {
   clearable?: boolean;
   /** 判断某个本地日历日期是否不可选择。 */
   disabledDate?: DisabledDateFn;
+  /** 独立时间限制；单值使用 start，纯日期及年月周模式不调用。 */
+  disabledTime?: DisabledTimeFn;
   /** 在 date 或 daterange 模式中额外启用时间选择。 */
   showTime?: boolean;
   /** 分钟输入步长，规范范围为 1～60。 */

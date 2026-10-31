@@ -2,6 +2,8 @@
 @use '../../styles/mixins' as *;
 
 .ex-file-upload {
+  --ex-upload-card-size: 148px;
+
   position: relative;
   display: inline-block;
   width: 100%;
@@ -130,6 +132,7 @@
 
     &--text {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: var(--ex-spacing-3);
@@ -137,15 +140,17 @@
 
     &--picture {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: var(--ex-spacing-3);
     }
 
     &--picture-card {
       display: block;
-      flex: 0 0 148px;
-      width: 148px;
-      height: 148px;
+      flex: 0 0 var(--ex-upload-card-size);
+      width: var(--ex-upload-card-size);
+      min-height: var(--ex-upload-card-size);
+      height: auto;
       margin: 0 var(--ex-spacing-2) var(--ex-spacing-2) 0;
       padding: 0;
       vertical-align: top;
@@ -163,6 +168,40 @@
       background: var(--ex-color-error-alpha-05);
       border-color: var(--ex-color-error);
     }
+  }
+
+  &__list-item--text :deep(.ex-file-upload-task-actions),
+  &__list-item--picture :deep(.ex-file-upload-task-actions),
+  &__error {
+    flex-basis: 100%;
+  }
+
+  &__list-item--picture-card :deep(.ex-file-upload-task-actions) {
+    padding: var(--ex-spacing-2);
+    margin-top: 0;
+  }
+
+  &__error {
+    margin: var(--ex-spacing-2) 0 0;
+    color: var(--ex-color-error);
+    font-size: var(--ex-text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  &__list-item--picture-card &__error {
+    padding: 0 var(--ex-spacing-2) var(--ex-spacing-2);
+  }
+
+  &__card-caption {
+    display: -webkit-box;
+    margin: var(--ex-spacing-2) var(--ex-spacing-2) 0;
+    overflow: hidden;
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
+    line-height: var(--ex-leading-normal);
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   &__list-item-info {
@@ -284,7 +323,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100%;
+    height: var(--ex-upload-card-size);
     overflow: hidden;
     background: var(--ex-color-bg-tertiary);
   }
@@ -336,6 +375,7 @@
   &__list--card {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
   }
 
   &__upload-trigger {
@@ -364,7 +404,7 @@
     justify-content: center;
     gap: var(--ex-spacing-2);
     width: 100%;
-    height: 100%;
+    min-height: var(--ex-upload-card-size);
     padding: 0;
     color: var(--ex-color-text-secondary);
     background: transparent;
@@ -446,12 +486,6 @@
     &__drag {
       min-height: 150px;
       padding: var(--ex-spacing-6);
-    }
-
-    &__list-item--picture-card {
-      flex-basis: 104px;
-      width: 104px;
-      height: 104px;
     }
   }
 

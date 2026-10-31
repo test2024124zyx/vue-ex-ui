@@ -1,6 +1,6 @@
 # FileUpload 文件上传
 
-`ExFileUpload` 提供文件选择、拖拽校验、列表状态和可中止的 XHR multipart 上传。上传结果会区分成功、失败、中止和未启动。
+`ExFileUpload` 提供文件选择、拖拽校验、文件并发调度和可中止的上传。默认使用 XHR multipart；显式设置 `transport="tus"` 后支持 tus 1.0.0 分片、暂停、断点续传及服务端资源取消。
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
@@ -23,6 +23,19 @@ const autoStatus = ref('选择文件后自动发送。')
 const manualStatus = ref('选择文件后点击开始上传。')
 const dynamicStatus = ref('选择文件后先解析上传配置，可在解析或传输期间中止。')
 const tickets = new WeakMap()
+const tusEndpoint = ref('')
+const tusScope = ref('')
+const tusFiles = ref([])
+const tusStatus = ref('填写自己的 tus 服务端地址后选择测试文件，点击文件下方的上传按钮。')
+const TUS_CHUNK_BYTES = 4 * 1024 * 1024
+const tusOptions = computed(() => ({ chunkSize: TUS_CHUNK_BYTES, resumeKey: tusScope.value }))
+const tusBusy = computed(() => tusFiles.value.some(file => ['queued', 'uploading', 'cancelling'].includes(file.status)))
+const reportTusCancellation = result => {
+  tusStatus.value = result.terminated ? '服务端已确认删除上传资源。' : '本地任务已取消，尚无已知服务端资源地址。'
+}
+const reportTusStorage = () => {
+  tusStatus.value = '浏览器续传记录不可用；本次上传继续，但不能依赖跨会话恢复。'
+}
 
 onMounted(async () => {
   try {
@@ -299,7 +312,7 @@ const cancelManual = () => {
 
 :::
 
-没有 `action`、缺少原始 `File` 或文件不是 `ready` 状态时，`submit()` 返回 `ignored`，不会伪装为已上传。
+没有 `action`、缺少原始 `File` 或文件不处于 `ready`、`paused`、`error` 状态时，`submit()` 返回 `ignored`，不会伪装为已上传。失败文件可以通过列表中的重试按钮重新提交。
 
 `disabled` 与 `readonly` 也继承所在 Form 的状态。禁用或只读时，程序化 `submit()` 不会发起新任务，结果为 `ignored`，原因分别为 `disabled` 或 `readonly`；`requestClear()` 不修改列表并返回 `0`。只读仍可预览已有附件。
 
@@ -542,12 +555,110 @@ const reportConversionError = rejection => {
 
 :::
 
+## tus 分片、断点续传与并发
+
+业务服务端需要提供 [tus 1.0.0](https://tus.io/protocols/resumable-upload) 接口，支持 Creation 扩展。单个文件的分片顺序发送，服务器通过 `Upload-Offset` 确认已接收字节；`concurrency` 控制不同文件的并发数量，不要求 Concatenation 扩展。
+
+此运行区使用你填写的真实服务端，不会向公共演示服务上传文件。跨域接口必须正确配置 CORS，允许 `POST`、`HEAD`、`PATCH`、`DELETE` 及 tus 请求头，并暴露 `Location`、`Upload-Offset`、`Upload-Length`、`Tus-Resumable`。认证可使用 `headers` 动态解析器；它会在每次请求前重新执行，暂停/继续期间可以刷新凭证。
+
+::: raw
+<div class="demo-container">
+  <ExInput v-model="tusEndpoint" label="tus 服务端地址" :disabled="tusBusy" />
+  <ExInput v-model="tusScope" label="账户或业务续传作用域" :disabled="tusBusy" />
+  <ex-file-upload
+    v-model:file-list="tusFiles"
+    transport="tus"
+    :action="tusEndpoint"
+    :tus="tusOptions"
+    :concurrency="2"
+    :auto-upload="false"
+    :disabled="!tusEndpoint.trim()"
+    multiple
+    @paused="file => (tusStatus = `${file.name} 已暂停，继续时将查询服务器偏移。`)"
+    @success="response => (tusStatus = `上传完成：${response.uploadUrl}`)"
+    @error="error => (tusStatus = error.message)"
+    @cancelled="reportTusCancellation"
+    @resume-unavailable="reportTusStorage"
+  />
+  <output role="status">{{ tusStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import type { UploadCancelResult, UploadFile } from 'vue-ex-ui';
+
+const tusEndpoint = ref('');
+const tusScope = ref('');
+const tusFiles = ref<UploadFile[]>([]);
+const tusStatus = ref('填写自己的 tus 服务端地址后选择测试文件，点击文件下方的上传按钮。');
+const TUS_CHUNK_BYTES = 4 * 1024 * 1024;
+const tusOptions = computed(() => ({ chunkSize: TUS_CHUNK_BYTES, resumeKey: tusScope.value }));
+const tusBusy = computed(() =>
+  tusFiles.value.some(file => ['queued', 'uploading', 'cancelling'].includes(file.status))
+);
+const reportTusCancellation = (result: UploadCancelResult) => {
+  tusStatus.value = result.terminated
+    ? '服务端已确认删除上传资源。'
+    : '本地任务已取消，尚无已知服务端资源地址。';
+};
+const reportTusStorage = () => {
+  tusStatus.value = '浏览器续传记录不可用；本次上传继续，但不能依赖跨会话恢复。';
+};
+</script>
+
+<template>
+  <ExInput
+    v-model="tusEndpoint"
+    label="tus 服务端地址"
+    :disabled="tusBusy"
+  />
+  <ExInput
+    v-model="tusScope"
+    label="账户或业务续传作用域"
+    :disabled="tusBusy"
+  />
+  <ex-file-upload
+    v-model:file-list="tusFiles"
+    transport="tus"
+    :action="tusEndpoint"
+    :tus="tusOptions"
+    :concurrency="2"
+    :auto-upload="false"
+    :disabled="!tusEndpoint.trim()"
+    multiple
+    @paused="file => (tusStatus = `${file.name} 已暂停，继续时将查询服务器偏移。`)"
+    @success="response => (tusStatus = `上传完成：${response.uploadUrl}`)"
+    @error="error => (tusStatus = error.message)"
+    @cancelled="reportTusCancellation"
+    @resume-unavailable="reportTusStorage"
+  />
+  <output role="status">{{ tusStatus }}</output>
+</template>
+```
+
+:::
+
+- `pause()` 保留已确认的资源地址和进度；`resume()` 使用 `HEAD` 获取真实断点，再继续 `PATCH`。
+- 浏览器允许本地存储时，重新打开页面并重新选择相同文件也可续传。浏览器不会替应用保存原始 `File`；成功上传后移除本地断点记录。
+- 续传身份包含端点、`resumeKey`、文件名、类型、大小和修改时间。多账户应用应提供账户专属 `resumeKey`，业务服务端仍须验证每个资源的访问权限。
+- `cancel()` 使用 Termination 扩展删除服务端上传资源。服务端不支持或请求失败时返回 `cancelled: false` 并发出 `error`，保留地址以便重试；`terminated: true` 才表示服务端确认删除。
+- `abort()`、移除列表、清空与组件卸载只中止本地传输，保留服务器断点。创建请求中断且尚未收到 `Location` 时，客户端无法确认未知资源是否存在，服务端应配置过期清理。
+- tus 成功响应为 `{ uploadUrl }`，不会把协议资源地址伪装为可下载地址。业务需要下载地址时应使用自己的文件查询接口。
+- `chunkSize` 省略时沿用客户端默认；仅在代理或服务端请求体限制需要时设置有限大小。`method`、`name`、`data` 属于 multipart 模式，tus 创建元数据使用 `tus.metadata`。
+
 ## API
 
 ### Props
 
 | 属性                | 类型                                                   | 默认值   |
 | ------------------- | ------------------------------------------------------ | -------- |
+| `transport`         | `'xhr' \| 'tus'`                                       | `'xhr'`  |
+| `concurrency`       | `number`，文件并发数，支持 `Infinity`                  | `3`      |
+| `tus`               | `UploadTusOptions`                                     | —        |
 | `action`            | `string \| UploadActionResolver`                       | —        |
 | `method`            | `'POST' \| 'PUT' \| 'PATCH'`                           | `'POST'` |
 | `headers`           | `UploadHeaders \| UploadConfigResolver<UploadHeaders>` | —        |
@@ -576,23 +687,31 @@ const reportConversionError = rejection => {
 
 附加数据支持 `string`、`number`、`boolean` 和 `Blob`；`null` 与 `undefined` 会被忽略。组件负责 multipart 边界，不能在 `headers` 中手动设置 `Content-Type`。
 
+`UploadTusOptions` 支持 `chunkSize`、`retryDelays`、`metadata`、`resume`、`resumeKey`、`allowedOrigins`。重试间隔默认为 `[0, 1000, 3000, 5000]`，`resume` 默认为 `true`。额外来源必须显式加入 `allowedOrigins`；默认拒绝向端点以外来源发送上传请求和认证信息。自定义请求头不得覆盖 `Tus-*`、`Upload-*` 和内容长度/类型等协议头。
+
+文件状态为 `ready`、`queued`、`uploading`、`paused`、`cancelling`、`success`、`error`。`UploadFile.tusUploadUrl` 是 tus 资源地址，`url` 继续只表示业务提供的文件地址。
+
 ### Events
 
-| 事件              | 参数                                                                    |
-| ----------------- | ----------------------------------------------------------------------- |
-| `update:fileList` | `(fileList: UploadFile[])`                                              |
-| `added`           | `(file: UploadFile, fileList: UploadFile[])`                            |
-| `rejected`        | `(rejection: UploadRejection, fileList: UploadFile[])`                  |
-| `progress`        | `(file: UploadFile, fileList: UploadFile[])`                            |
-| `success`         | `(response: unknown, file: UploadFile, fileList: UploadFile[])`         |
-| `error`           | `(error: ExFileUploadError, file: UploadFile, fileList: UploadFile[])`  |
-| `aborted`         | `(file: UploadFile, fileList: UploadFile[], reason: UploadAbortReason)` |
-| `remove-request`  | `(file: UploadFile)`                                                    |
-| `preview-request` | `(file: UploadFile)`                                                    |
+| 事件                 | 参数                                                                     |
+| -------------------- | ------------------------------------------------------------------------ |
+| `update:fileList`    | `(fileList: UploadFile[])`                                               |
+| `added`              | `(file: UploadFile, fileList: UploadFile[])`                             |
+| `rejected`           | `(rejection: UploadRejection, fileList: UploadFile[])`                   |
+| `progress`           | `(file: UploadFile, fileList: UploadFile[])`                             |
+| `success`            | `(response: unknown, file: UploadFile, fileList: UploadFile[])`          |
+| `error`              | `(error: ExFileUploadError, file: UploadFile, fileList: UploadFile[])`   |
+| `aborted`            | `(file: UploadFile, fileList: UploadFile[], reason: UploadAbortReason)`  |
+| `paused`             | `(file: UploadFile, fileList: UploadFile[])`                             |
+| `resumed`            | `(file: UploadFile, fileList: UploadFile[])`                             |
+| `cancelled`          | `(result: UploadCancelResult, file: UploadFile, fileList: UploadFile[])` |
+| `resume-unavailable` | `(error: unknown, file: UploadFile)`                                     |
+| `remove-request`     | `(file: UploadFile)`                                                     |
+| `preview-request`    | `(file: UploadFile)`                                                     |
 
 `UploadRejection.code` 为 `accept`、`size`、`limit`、`multiple`、`before-add` 或 `before-add-error`。
 
-`ExFileUploadError.code` 为 `configuration-error`、`request-error`、`http-error`、`timeout` 或 `response-error`。
+`ExFileUploadError.code` 为 `configuration-error`、`request-error`、`http-error`、`timeout`、`response-error`、`unsupported` 或 `termination-error`。
 
 ### Slots
 
@@ -604,14 +723,17 @@ const reportConversionError = rejection => {
 
 ### Exposed
 
-| 方法             | 类型                                                       |
-| ---------------- | ---------------------------------------------------------- |
-| `openFileDialog` | `() => boolean`                                            |
-| `submit`         | `(file?: UploadFile \| string) => Promise<UploadResult[]>` |
-| `abort`          | `(file?: UploadFile \| string) => number`                  |
-| `requestClear`   | `() => number`                                             |
-| `getFiles`       | `() => UploadFile[]`                                       |
-| `getElement`     | `() => HTMLDivElement \| null`                             |
+| 方法             | 类型                                                             |
+| ---------------- | ---------------------------------------------------------------- |
+| `openFileDialog` | `() => boolean`                                                  |
+| `submit`         | `(file?: UploadFile \| string) => Promise<UploadResult[]>`       |
+| `abort`          | `(file?: UploadFile \| string) => number`                        |
+| `pause`          | `(file?: UploadFile \| string) => number`                        |
+| `resume`         | `(file?: UploadFile \| string) => Promise<UploadResult[]>`       |
+| `cancel`         | `(file?: UploadFile \| string) => Promise<UploadCancelResult[]>` |
+| `requestClear`   | `() => number`                                                   |
+| `getFiles`       | `() => UploadFile[]`                                             |
+| `getElement`     | `() => HTMLDivElement \| null`                                   |
 
 `requestClear()` 会真实中止活动任务并请求空列表；受控模式下仍需父级同步列表，方法不会提前清空受控界面。
 

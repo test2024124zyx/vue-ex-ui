@@ -1,8 +1,13 @@
 import { createApp, h, inject, shallowReactive } from 'vue';
-import type { App, AppContext, InjectionKey, Plugin } from 'vue';
+import type { App, AppContext, DirectiveBinding, InjectionKey, Plugin } from 'vue';
 import { createSharedInjectionKey } from '../../utils/shared-runtime';
 import { generateId } from '../../utils/id';
-import { useComponentServiceScope } from '../config-provider/service-scope';
+import {
+  COMPONENT_SERVICE_SCOPE_KEY,
+  findElementServiceScope,
+  useComponentServiceScope,
+} from '../config-provider/service-scope';
+import type { ComponentServiceScope } from '../config-provider/service-scope';
 import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
 import type { ConfigContext } from '../config-provider/types';
 import { resolveZIndexLayer } from '../config-provider/z-index';
@@ -33,6 +38,7 @@ interface LoadingRecord {
 /** 当前应用 Loading 服务的注入键。 */
 export const LOADING_SERVICE_KEY: InjectionKey<LoadingService> =
   createSharedInjectionKey('loading-service');
+const DIRECTIVE_SERVICE_KEY = createSharedInjectionKey<LoadingService>('loading-directive-service');
 
 class LoadingServiceController implements LoadingService {
   private readonly records = new Map<string, LoadingRecord>();
@@ -229,20 +235,33 @@ const normalizeDirectiveValue = (
 export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options = {}) => {
   const service = createLoadingService(options.defaults, app._context);
   const directiveInstances = new WeakMap<HTMLElement, LoadingServiceInstance>();
+  const directiveScopes = new WeakMap<HTMLElement, ComponentServiceScope | null>();
   app.config.globalProperties.$loading = service;
   app.provide(LOADING_SERVICE_KEY, service);
   app.onUnmount(() => service.destroyAll());
 
   if (options.enableDirective === false) return;
 
-  const updateDirective = (element: HTMLElement, value: LoadingDirectiveValue | undefined) => {
-    const binding = normalizeDirectiveValue(value);
+  const updateDirective = (
+    element: HTMLElement,
+    directive: DirectiveBinding<LoadingDirectiveValue>
+  ) => {
+    const binding = normalizeDirectiveValue(directive.value);
+    const owner = directive.instance?.$ as unknown as { provides?: AppContext['provides'] } | undefined;
+    const scope =
+      findElementServiceScope(element) ??
+      (owner?.provides?.[COMPONENT_SERVICE_SCOPE_KEY as symbol] as ComponentServiceScope | undefined) ??
+      null;
     const config: LoadingServiceConfig = {
       ...binding.config,
       target: element,
       fullscreen: false,
     };
-    const current = directiveInstances.get(element);
+    let current = directiveInstances.get(element);
+    if (current && directiveScopes.get(element) !== scope) {
+      current.destroy();
+      current = undefined;
+    }
 
     if (!binding.loading) {
       current?.hide();
@@ -255,10 +274,20 @@ export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options
       return;
     }
 
-    const instance = service.show(config);
+    const scopedService = scope
+      ? scope.getOrCreate(
+          DIRECTIVE_SERVICE_KEY,
+          context => createLoadingService(options.defaults, context),
+          scoped => scoped.destroyAll()
+        )
+      : service;
+    const instance = scopedService.show(config);
     // 遮罩关闭也会销毁服务实例，弱引用表必须同步移除，才能再次创建。
     const forget = () => {
-      if (directiveInstances.get(element) === instance) directiveInstances.delete(element);
+      if (directiveInstances.get(element) === instance) {
+        directiveInstances.delete(element);
+        directiveScopes.delete(element);
+      }
     };
     const close = instance.close;
     const destroy = instance.destroy;
@@ -271,14 +300,16 @@ export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options
       destroy();
     };
     directiveInstances.set(element, instance);
+    directiveScopes.set(element, scope);
   };
 
   app.directive<HTMLElement, LoadingDirectiveValue>('loading', {
-    mounted: (element, binding) => updateDirective(element, binding.value),
-    updated: (element, binding) => updateDirective(element, binding.value),
+    mounted: updateDirective,
+    updated: updateDirective,
     unmounted: element => {
       directiveInstances.get(element)?.destroy();
       directiveInstances.delete(element);
+      directiveScopes.delete(element);
     },
   });
 };

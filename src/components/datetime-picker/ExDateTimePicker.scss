@@ -110,6 +110,12 @@
     padding: var(--ex-spacing-4);
   }
 
+  &__time-error {
+    margin: var(--ex-spacing-2) 0 0;
+    color: var(--ex-color-error);
+    font-size: var(--ex-text-sm);
+  }
+
   &__header {
     display: flex;
     align-items: center;

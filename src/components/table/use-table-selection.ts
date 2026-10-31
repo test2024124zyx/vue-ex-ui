@@ -15,12 +15,20 @@ export function useTableSelection(
   const internalSelectedKeys = ref([...(props.selectedRowKeys ?? [])]);
   watch(
     () => props.selectedRowKeys,
-    keys => {
+    (keys, previousKeys) => {
       if (keys !== undefined) internalSelectedKeys.value = [...keys];
+      else if (previousKeys !== undefined) {
+        // 解除控制继承当前模式的真实值，不能保留单选模式隐藏的额外键。
+        internalSelectedKeys.value =
+          props.selectionType === 'radio' ? previousKeys.slice(0, 1) : [...previousKeys];
+      }
     },
-    { deep: true }
+    { deep: true, flush: 'sync' }
   );
-  const effectiveSelectedKeys = computed(() => props.selectedRowKeys ?? internalSelectedKeys.value);
+  const effectiveSelectedKeys = computed(() => {
+    const keys = props.selectedRowKeys ?? internalSelectedKeys.value;
+    return props.selectionType === 'radio' ? keys.slice(0, 1) : keys;
+  });
   const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
   const rowSelectable = (record: TableDataItem, index: number) =>
     !props.isRowSelectable || props.isRowSelectable(record, index);
@@ -46,6 +54,19 @@ export function useTableSelection(
     emit('update:selectedRowKeys', [...keys]);
     emit('selection-change', [...keys], getSelectedRows(keys));
   };
+  watch(
+    () => props.selectionType,
+    mode => {
+      // 模式切换收敛内部状态，避免切回多选时复活已经不再生效的选择。
+      if (
+        mode === 'radio' &&
+        props.selectedRowKeys === undefined &&
+        internalSelectedKeys.value.length > 1
+      ) {
+        commit(internalSelectedKeys.value.slice(0, 1));
+      }
+    }
+  );
   const toggleRowSelectionAtIndex = (record: TableDataItem, index: number, selected?: boolean) => {
     if (props.loading || !rowSelectable(record, index)) return;
     const key = getRowKey(record, index);
@@ -68,7 +89,8 @@ export function useTableSelection(
     if (row) toggleRowSelectionAtIndex(record, row.sourceIndex, selected);
   };
   const toggleAllSelection = () => {
-    if (props.loading) return;
+    // 程序化入口同样遵守单选约束，不能因隐藏了表头全选框就省略模式校验。
+    if (props.loading || props.selectionType === 'radio') return;
     const next = !allSelected.value;
     const visible = new Set(selectableKeys.value);
     const keys = next

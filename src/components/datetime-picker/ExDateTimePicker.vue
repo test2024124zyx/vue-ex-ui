@@ -6,6 +6,7 @@
   >
     <div class="ex-datetime-picker__input-wrapper">
       <input
+        :id="id"
         ref="inputRef"
         class="ex-datetime-picker__input"
         :value="displayValue"
@@ -83,6 +84,7 @@
                 />
               </button>
               <button
+                v-if="!isPeriodGrid"
                 type="button"
                 class="ex-datetime-picker__nav-btn"
                 data-action="previous-month"
@@ -104,6 +106,7 @@
               </div>
 
               <button
+                v-if="!isPeriodGrid"
                 type="button"
                 class="ex-datetime-picker__nav-btn"
                 data-action="next-month"
@@ -131,7 +134,22 @@
               </button>
             </div>
 
+            <ExDatePeriodGrid
+              v-if="period === 'year' || period === 'month'"
+              :period="period"
+              :current="currentDate"
+              :focused="focusedDate"
+              :selection="periodSelection"
+              :preview="hoverDate"
+              :label="currentYearMonth"
+              :disabled-date="isDateDisabled"
+              @select="selectDate"
+              @focus="focusedDate = $event"
+              @navigate="focusDate"
+              @preview="hoverDate = $event"
+            />
             <div
+              v-else
               class="ex-datetime-picker__calendar-grid"
               role="grid"
               :aria-label="currentYearMonth"
@@ -293,6 +311,13 @@
                   </div>
                 </fieldset>
               </div>
+              <p
+                v-if="hasDisabledTime"
+                class="ex-datetime-picker__time-error"
+                role="status"
+              >
+                {{ tDatePicker('disabledTime') }}
+              </p>
             </div>
 
             <div class="ex-datetime-picker__footer">
@@ -347,6 +372,13 @@ import {
 } from '../config-provider/composables';
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
+import { clonePickerValue, usePickerValue } from './use-picker-value';
+import { useDateGrid } from './use-date-grid';
+import { getPeriodStart, YEARS_PER_PAGE, type DatePeriod } from './date-periods';
+import ExDatePeriodGrid from './ExDatePeriodGrid.vue';
+import { getDatePickerPosition } from './date-picker-position';
+import { createTimeDraft, isDateTimeDisabled } from './time-constraints';
 import ExIcon from '../icon/ExIcon.vue';
 import type {
   DateTimePickerValue,
@@ -426,31 +458,59 @@ const endHours = ref(0);
 const endMinutes = ref(0);
 const endSeconds = ref(0);
 
-interface CalendarDay {
-  date: Date;
-  day: number;
-  key: string;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  isSelected: boolean;
-  disabled: boolean;
-}
-
-const isRangeMode = computed(() => props.type === 'daterange' || props.type === 'datetimerange');
+const isRangeMode = computed(() => props.type.endsWith('range'));
+const period = computed<DatePeriod>(() => {
+  if (props.type.startsWith('year')) return 'year';
+  if (props.type.startsWith('month')) return 'month';
+  return props.type.startsWith('week') ? 'week' : 'date';
+});
+const isPeriodGrid = computed(() => period.value === 'year' || period.value === 'month');
+const periodSelection = computed(() =>
+  (isRangeMode.value ? [rangeStart.value, rangeEnd.value] : [selectedDate.value]).filter(
+    (value): value is Date => value !== null
+  )
+);
 const hasTime = computed(
-  () => props.showTime || props.type === 'datetime' || props.type === 'datetimerange'
+  () =>
+    period.value === 'date' &&
+    (props.showTime || props.type === 'datetime' || props.type === 'datetimerange')
 );
 const minuteStep = computed(() => normalizeMinuteStepSize(props.timeStep));
-const effectiveFormat = computed(
-  () => props.format || (hasTime.value ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD')
+const { currentValue, displayValue, hasValue, requestValue } = usePickerValue(
+  props,
+  isRangeMode,
+  hasTime,
+  period,
+  () => tDatePicker('rangeSeparator')
 );
-const hasValue = computed(() =>
-  isRangeMode.value ? Boolean(rangeStart.value || rangeEnd.value) : Boolean(selectedDate.value)
+const confirmationDates = computed(() =>
+  isRangeMode.value ? [rangeStart.value, rangeEnd.value] : [selectedDate.value]
 );
-const canConfirm = computed(() => {
-  const dates = isRangeMode.value ? [rangeStart.value, rangeEnd.value] : [selectedDate.value];
-  return interactive.value && dates.every(date => date !== null && !isDateDisabled(date));
-});
+const hasDisabledTime = computed(
+  () =>
+    hasTime.value &&
+    confirmationDates.value.some(
+      (date, index) =>
+        date !== null &&
+        isDateTimeDisabled(
+          createTimeDraft(
+            date,
+            index === 0
+              ? [hours.value, minutes.value, seconds.value]
+              : [endHours.value, endMinutes.value, endSeconds.value],
+            minuteStep.value
+          ),
+          index === 0 ? 'start' : 'end',
+          props.disabledTime
+        )
+    )
+);
+const canConfirm = computed(
+  () =>
+    interactive.value &&
+    !hasDisabledTime.value &&
+    confirmationDates.value.every(date => date !== null && !isDateDisabled(date))
+);
 
 const pickerClasses = computed(() => [
   'ex-datetime-picker',
@@ -474,92 +534,34 @@ const currentPlaceholder = computed(() => {
 });
 const inputAriaLabel = computed(() => props.ariaLabel || currentPlaceholder.value);
 
-const displayValue = computed(() => {
-  if (!isRangeMode.value) {
-    return selectedDate.value ? formatDate(selectedDate.value, effectiveFormat.value) : '';
-  }
-  const start = rangeStart.value ? formatDate(rangeStart.value, effectiveFormat.value) : '';
-  const end = rangeEnd.value ? formatDate(rangeEnd.value, effectiveFormat.value) : '';
-  if (start && end) return `${start} ${tDatePicker('rangeSeparator')} ${end}`;
-  return start || end;
+const weekdays = computed(() => {
+  const days = tCalendar('weekdaysShort').split(',');
+  return period.value === 'week' ? [...days.slice(1), days[0]] : days;
 });
-
-const weekdays = computed(() => tCalendar('weekdaysShort').split(','));
 const currentYearMonth = computed(() => {
+  if (period.value === 'year') {
+    const first = Math.floor(currentDate.value.getFullYear() / YEARS_PER_PAGE) * YEARS_PER_PAGE;
+    return `${first} – ${first + YEARS_PER_PAGE - 1}`;
+  }
   const year = tCalendar('yearFormat', { year: currentDate.value.getFullYear() });
+  if (period.value === 'month') return year;
   const month = tCalendar('monthFormat', { month: currentDate.value.getMonth() + 1 });
   return `${year} ${month}`;
 });
 
 const isDateDisabled = (date: Date): boolean =>
-  props.disabledDate ? Boolean(props.disabledDate(new Date(date.getTime()))) : false;
+  props.disabledDate ? Boolean(props.disabledDate(getPeriodStart(date, period.value))) : false;
 
-const getActualRangeBounds = (): [number, number] | null => {
-  if (!rangeStart.value) return null;
-  const start = startOfDay(rangeStart.value).getTime();
-  if (!rangeEnd.value) return [start, start];
-  const end = startOfDay(rangeEnd.value).getTime();
-  return start <= end ? [start, end] : [end, start];
-};
-
-const getPreviewRangeBounds = (): [number, number] | null => {
-  if (!rangeStart.value) return null;
-  const candidate = rangeEnd.value || hoverDate.value || rangeStart.value;
-  const start = startOfDay(rangeStart.value).getTime();
-  const end = startOfDay(candidate).getTime();
-  return start <= end ? [start, end] : [end, start];
-};
-
-const calendarDays = computed<CalendarDay[]>(() => {
-  const year = currentDate.value.getFullYear();
-  const month = currentDate.value.getMonth();
-  const firstOfMonth = new Date(year, month, 1);
-  const gridStart = new Date(year, month, 1 - firstOfMonth.getDay());
-  const today = startOfDay(new Date());
-  const actualRange = getActualRangeBounds();
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = addDays(gridStart, index);
-    const timestamp = startOfDay(date).getTime();
-    const isSelected = isRangeMode.value
-      ? actualRange !== null && timestamp >= actualRange[0] && timestamp <= actualRange[1]
-      : isSameDay(date, selectedDate.value);
-    return {
-      date,
-      day: date.getDate(),
-      key: toDateKey(date),
-      isCurrentMonth: date.getFullYear() === year && date.getMonth() === month,
-      isToday: isSameDay(date, today),
-      isSelected,
-      disabled: isDateDisabled(date),
-    };
-  });
+const { calendarWeeks, getDayClasses } = useDateGrid({
+  currentDate,
+  selectedDate,
+  rangeStart,
+  rangeEnd,
+  hoverDate,
+  range: isRangeMode,
+  period,
+  isDateDisabled,
 });
-
-const calendarWeeks = computed(() =>
-  Array.from({ length: 6 }, (_, index) => calendarDays.value.slice(index * 7, index * 7 + 7))
-);
-
-const getDayClasses = (day: CalendarDay) => {
-  const classes = ['ex-datetime-picker__day'];
-  if (!day.isCurrentMonth) classes.push('ex-datetime-picker__day--other-month');
-  if (day.isToday) classes.push('ex-datetime-picker__day--today');
-  if (day.isSelected) classes.push('ex-datetime-picker__day--selected');
-  if (day.disabled) classes.push('ex-datetime-picker__day--disabled');
-
-  if (isRangeMode.value && rangeStart.value) {
-    const bounds = getPreviewRangeBounds();
-    const timestamp = startOfDay(day.date).getTime();
-    if (bounds) {
-      if (timestamp === bounds[0]) classes.push('ex-datetime-picker__day--range-start');
-      if (timestamp === bounds[1]) classes.push('ex-datetime-picker__day--range-end');
-      if (timestamp > bounds[0] && timestamp < bounds[1]) {
-        classes.push('ex-datetime-picker__day--in-range');
-      }
-    }
-  }
-  return classes;
-};
 
 const isTodayDisabled = computed(() => isDateDisabled(startOfDay(new Date())));
 
@@ -583,9 +585,9 @@ const syncFromModel = () => {
   hoverDate.value = null;
 
   if (isRangeMode.value) {
-    if (Array.isArray(props.modelValue) && props.modelValue.length === 2) {
-      const first = cloneDate(props.modelValue[0]);
-      const second = cloneDate(props.modelValue[1]);
+    if (Array.isArray(currentValue.value) && currentValue.value.length === 2) {
+      const first = cloneDate(currentValue.value[0]);
+      const second = cloneDate(currentValue.value[1]);
       if (first && second) {
         [rangeStart.value, rangeEnd.value] =
           first.getTime() <= second.getTime() ? [first, second] : [second, first];
@@ -599,7 +601,7 @@ const syncFromModel = () => {
     return;
   }
 
-  selectedDate.value = cloneDate(props.modelValue);
+  selectedDate.value = cloneDate(currentValue.value);
   syncStartTime(selectedDate.value);
   syncEndTime(null);
   const anchor = selectedDate.value || startOfDay(new Date());
@@ -607,13 +609,9 @@ const syncFromModel = () => {
   focusedDate.value = startOfDay(anchor);
 };
 
-const clonePickerValue = (value: DateTimePickerValue): DateTimePickerValue => {
-  if (Array.isArray(value)) return [new Date(value[0]), new Date(value[1])];
-  return value instanceof Date ? new Date(value) : null;
-};
-
 const emitCommittedValue = (value: DateTimePickerValue) => {
   if (!interactive.value) return;
+  requestValue(value);
   emit('update:modelValue', clonePickerValue(value));
   emit('change', clonePickerValue(value));
   formItem?.onFieldChange();
@@ -647,13 +645,11 @@ const closePanel = ({ restoreFocus = false, discardDraft = false }: ClosePanelOp
 
 const focusCurrentDay = () => {
   nextTick(() => {
-    const key = toDateKey(focusedDate.value);
+    const key = toDateKey(getPeriodStart(focusedDate.value, period.value));
     const day = panelRef.value?.querySelector<HTMLButtonElement>(`[data-date="${key}"]`);
     if (day && !day.disabled) day.focus();
   });
 };
-
-const PANEL_VIEWPORT_GAP = 8;
 
 const updatePanelPosition = () => {
   if (!props.teleported) {
@@ -662,29 +658,15 @@ const updatePanelPosition = () => {
   }
   if (!inputRef.value || !panelRef.value || typeof window === 'undefined') return;
 
-  const triggerRect = inputRef.value.getBoundingClientRect();
-  const panelWidth = panelRef.value.offsetWidth;
-  const panelHeight = panelRef.value.offsetHeight;
-  const maxLeft = Math.max(PANEL_VIEWPORT_GAP, window.innerWidth - panelWidth - PANEL_VIEWPORT_GAP);
-  const left = Math.min(Math.max(PANEL_VIEWPORT_GAP, triggerRect.left), maxLeft);
-  const spaceBelow = window.innerHeight - triggerRect.bottom - PANEL_VIEWPORT_GAP;
-  const spaceAbove = triggerRect.top - PANEL_VIEWPORT_GAP;
-  const openAbove = spaceBelow < panelHeight && spaceAbove > spaceBelow;
-  const desiredTop = openAbove
-    ? triggerRect.top - panelHeight - PANEL_VIEWPORT_GAP
-    : triggerRect.bottom + PANEL_VIEWPORT_GAP;
-  const maxTop = Math.max(
-    PANEL_VIEWPORT_GAP,
-    window.innerHeight - panelHeight - PANEL_VIEWPORT_GAP
-  );
-  const top = Math.min(Math.max(PANEL_VIEWPORT_GAP, desiredTop), maxTop);
-
-  panelPositionStyle.value = {
-    position: 'fixed',
-    top: `${top}px`,
-    left: `${left}px`,
-  };
+  panelPositionStyle.value = getDatePickerPosition(inputRef.value, panelRef.value);
 };
+
+useFloatingAutoUpdate(
+  isOpen,
+  [inputRef, panelRef],
+  [() => props.type, () => props.showTime, () => props.teleported, componentSize],
+  updatePanelPosition
+);
 
 const openPanel = (focusCalendar = false) => {
   if (!interactive.value || isOpen.value) return;
@@ -745,19 +727,20 @@ const changeMonth = (offset: number) => {
 };
 
 const changeYear = (offset: number) => {
-  const next = setYearClamped(currentDate.value, currentDate.value.getFullYear() + offset);
+  const shift = period.value === 'year' ? offset * YEARS_PER_PAGE : offset;
+  const next = setYearClamped(currentDate.value, currentDate.value.getFullYear() + shift);
   currentDate.value = next;
   focusedDate.value = startOfDay(next);
 };
 
 const withTime = (date: Date, h: number, m: number, s: number): Date => {
-  const result = startOfDay(date);
+  const result = getPeriodStart(date, period.value);
   if (hasTime.value) result.setHours(h, m, s, 0);
   return result;
 };
 
 const selectDate = (date: Date) => {
-  if (isDateDisabled(date)) return;
+  if (!interactive.value || isDateDisabled(date)) return;
   focusedDate.value = startOfDay(date);
   currentDate.value = new Date(date);
 
@@ -850,7 +833,7 @@ const selectToday = () => {
 };
 
 const focusDate = (date: Date) => {
-  const next = startOfDay(date);
+  const next = getPeriodStart(date, period.value);
   focusedDate.value = next;
   if (
     next.getFullYear() !== currentDate.value.getFullYear() ||
@@ -931,7 +914,7 @@ const handleClickOutside = (event: PointerEvent) => {
   }
 };
 
-watch([() => props.modelValue, () => props.type], () => syncFromModel(), { immediate: true });
+watch([currentValue, () => props.type], () => syncFromModel(), { immediate: true });
 
 watch(interactive, canInteract => {
   if (!canInteract) closePanel({ discardDraft: true });

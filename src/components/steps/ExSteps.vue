@@ -4,7 +4,7 @@
     :class="stepsClasses"
     :style="stepsStyles"
     role="navigation"
-    :aria-label="ariaLabel || 'Steps navigation'"
+    :aria-label="ariaLabel || t('navigation')"
   >
     <SlotContent />
   </div>
@@ -15,6 +15,8 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onMounted, onUpdated, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
 import { useSlotItems } from '../../composables/useSlotItems';
+import { useComponentSize } from '../config-provider/composables';
+import { useLocale } from '../../locale';
 
 defineOptions({
   name: 'ExSteps',
@@ -23,13 +25,15 @@ defineOptions({
 const props = withDefaults(defineProps<ExStepsProps>(), {
   current: 0,
   direction: 'horizontal',
-  size: 'medium',
+  size: undefined,
   status: 'process',
   progressDot: false,
   clickable: false,
 });
 
 const emit = defineEmits<ExStepsEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
+const { t } = useLocale('steps');
 
 const stepsRef = ref<HTMLDivElement>();
 const { items: slotItems, SlotContent } = useSlotItems('ExStep');
@@ -43,7 +47,7 @@ const stepsClasses = computed(() => {
   const classes = ['ex-steps'];
 
   classes.push(`ex-steps--${props.direction}`);
-  classes.push(`ex-steps--${props.size}`);
+  classes.push(`ex-steps--${componentSize.value}`);
 
   if (props.progressDot) {
     classes.push('ex-steps--progress-dot');
@@ -120,7 +124,7 @@ const stepsContext: StepsContext = {
   current: computed(() => props.current),
   status: computed(() => props.status),
   direction: computed(() => props.direction),
-  size: computed(() => props.size),
+  size: componentSize,
   progressDot: computed(() => props.progressDot),
   clickable: computed(() => props.clickable),
   stepCount: computed(() => Math.max(slotItems.value.length, stepUids.value.length)),

@@ -17,7 +17,15 @@ import browserTargets from './browser-targets.json';
  * 仍需引入一次：见 dist/es/style.css（由 src/style-base.ts 产出）。
  */
 
-const external = ['vue', 'vue-i18n', 'echarts', 'qrcode', 'jsbarcode', 'lunar-javascript'];
+const external = [
+  'vue',
+  'vue-i18n',
+  'echarts',
+  'qrcode',
+  'jsbarcode',
+  'lunar-javascript',
+  'tus-js-client',
+];
 
 const addVueShimReference = (filePath: string, content: string) => {
   if (filePath.endsWith('shims-vue.d.ts') || !content.includes('.vue')) return;

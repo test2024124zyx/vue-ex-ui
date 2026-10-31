@@ -166,14 +166,18 @@ async function validateFieldMethod(
 }
 
 // 将 FormItem 的验证结果转换为 Form 对外统一的字段验证事件。
-function notifyFieldValidate(prop: string, result: FormItemValidateResult) {
+function notifyFieldValidate(
+  prop: string,
+  result: FormItemValidateResult,
+  snapshot?: { value: unknown }
+) {
   const errors = result.valid
     ? []
     : [
         {
           field: prop,
           message: result.error || t('common.validationError'),
-          value: getFieldValue(prop),
+          value: snapshot ? snapshot.value : getFieldValue(prop),
         },
       ];
 

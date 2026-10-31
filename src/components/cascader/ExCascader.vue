@@ -11,6 +11,38 @@
       class="ex-cascader__input-wrapper"
       @click="handleTriggerClick"
     >
+      <div
+        v-if="multiple && displayTags.length"
+        class="ex-cascader__tags"
+      >
+        <span
+          v-for="tag in displayTags"
+          :key="tag.key"
+          class="ex-cascader__tag"
+        >
+          <span
+            class="ex-cascader__tag-label"
+            :title="tag.label"
+          >
+            {{ tag.label }}
+          </span>
+          <button
+            v-if="!tag.disabled && !effectiveDisabled && !effectiveReadonly"
+            type="button"
+            class="ex-cascader__tag-remove"
+            :aria-label="`${tCommon('clear')}: ${tag.label}`"
+            @click.stop="multipleState.remove(tag.path)"
+          >
+            ×
+          </button>
+        </span>
+        <span
+          v-if="collapsedCount"
+          class="ex-cascader__tag"
+        >
+          +{{ collapsedCount }}
+        </span>
+      </div>
       <input
         :id="controlId"
         ref="inputRef"
@@ -45,7 +77,7 @@
           v-if="
             clearable &&
             hasValue &&
-            !selectedPathDisabled &&
+            (multiple ? multipleState.canClear.value : !selectedPathDisabled) &&
             !effectiveDisabled &&
             !effectiveReadonly
           "
@@ -120,6 +152,7 @@
               v-else
               role="listbox"
               :aria-label="tCascader('searchResults')"
+              :aria-multiselectable="multiple || undefined"
             >
               <button
                 v-for="(result, resultIndex) in searchResults"
@@ -221,6 +254,7 @@
                 class="ex-cascader__menu"
                 role="listbox"
                 :aria-label="tCascader('level', { level: index + 1 })"
+                :aria-multiselectable="multiple || undefined"
               >
                 <button
                   v-for="(option, optIndex) in menu"
@@ -232,8 +266,11 @@
                   role="option"
                   :disabled="isOptionDisabled(option, index)"
                   :aria-selected="isSelected(option, index)"
-                  :aria-expanded="hasChildren(option) ? isActive(option, index) : undefined"
-                  :aria-haspopup="hasChildren(option) ? 'listbox' : undefined"
+                  :aria-expanded="hasChildren(option, index) ? isActive(option, index) : undefined"
+                  :aria-haspopup="hasChildren(option, index) ? 'listbox' : undefined"
+                  :aria-busy="
+                    getNodeLoadState(getOptionPath(option, index)).status === 'loading' || undefined
+                  "
                   :aria-disabled="isOptionDisabled(option, index) || undefined"
                   :class="{
                     'ex-cascader__option--active': isActive(option, index),
@@ -267,16 +304,38 @@
                     </slot>
                   </span>
                   <span
-                    v-if="hasChildren(option)"
+                    v-if="hasChildren(option, index)"
                     class="ex-cascader__option-arrow"
                     aria-hidden="true"
                   >
                     <ExIcon
-                      icon="arrow-right-s-line"
+                      :icon="
+                        getNodeLoadState(getOptionPath(option, index)).status === 'loading'
+                          ? 'loader-4-line'
+                          : 'arrow-right-s-line'
+                      "
+                      :spin="getNodeLoadState(getOptionPath(option, index)).status === 'loading'"
                       :size="16"
                     />
                   </span>
                 </button>
+                <div
+                  v-if="
+                    activePath[index] !== undefined &&
+                    getNodeLoadState(activePath.slice(0, index + 1)).status === 'error'
+                  "
+                  class="ex-cascader__load-error"
+                  role="status"
+                >
+                  <span>{{ tTree('loadError') }}</span>
+                  <button
+                    type="button"
+                    class="ex-cascader__retry"
+                    @click="reloadNode(activePath.slice(0, index + 1))"
+                  >
+                    {{ tTree('retryLoad') }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -312,8 +371,10 @@ import { useCascaderAria } from './use-cascader-aria';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { collectCascaderLeafPaths } from './search';
 import type { CascaderSearchResult } from './search';
-import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useCascaderPaths } from './use-cascader-paths';
+import { useCascaderKeyboard } from './use-cascader-keyboard';
+import { useCascaderMultiple, cascaderPathKey } from './use-cascader-multiple';
+import { useAsyncOptions } from '../tree-select/use-async-options';
 
 defineOptions({
   name: 'ExCascader',
@@ -334,13 +395,18 @@ const props = withDefaults(defineProps<ExCascaderProps>(), {
   showAllLevels: true,
   changeOnSelect: false,
   teleported: true,
+  multiple: false,
+  collapseTags: false,
 });
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
 const formItem = useFormItem();
 const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
+const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
+const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
 const { t: tCascader } = useLocale('cascader');
 const { t: tCommon } = useLocale('common');
+const { t: tTree } = useLocale('tree');
 const attrs = useAttrs();
 const currentPlaceholder = computed(() => props.placeholder || tCascader('placeholder'));
 const emit = defineEmits<ExCascaderEmits>();
@@ -370,6 +436,18 @@ const dropdownStyle = computed<Record<string, string>>(() => ({
   ...dropdownPositionStyle.value,
   ...popupOverlayStyles.value,
 }));
+const asyncOptions = useAsyncOptions<CascaderOption>({
+  data: () => props.options,
+  loader: () => props.loadData,
+  blocked: () => effectiveDisabled.value || effectiveReadonly.value,
+  active: () => visible.value,
+  identity: 'path',
+  onLoad: (option, children, path) => emit('load', option, children, path),
+  onError: (error, option, path) => emit('load-error', error, option, path),
+});
+const reloadNode = asyncOptions.reload;
+const cancelNodeLoad = asyncOptions.cancel;
+const getNodeLoadState = asyncOptions.stateFor;
 const {
   selectedPath,
   requestSelectedPath,
@@ -380,14 +458,35 @@ const {
   selectedPathDisabled,
   canSelectPath,
   activePathLabels,
-} = useCascaderPaths(props);
+} = useCascaderPaths({
+  get options() {
+    return asyncOptions.data.value;
+  },
+  get modelValue() {
+    return props.modelValue;
+  },
+});
+const multipleState = useCascaderMultiple({
+  props,
+  blocked: () => effectiveDisabled.value || effectiveReadonly.value,
+  getOptions: getSelectedOptions,
+  onChange: (paths, options) => {
+    emit('update:selectedPaths', paths);
+    emit('selection-change', paths, options);
+    formItem?.onFieldChange();
+  },
+});
+const { displayTags, collapsedCount } = multipleState;
+watch(
+  activePath,
+  path => asyncOptions.syncExpanded(path.map((_value, index) => path.slice(0, index + 1))),
+  { immediate: true }
+);
 const searchQuery = ref('');
 /** 键盘导航高亮位置：列索引与该列内选项索引（-1 表示无） */
 const activeCol = ref(0);
 const activeIndex = ref(-1);
 const searchActiveIndex = ref(-1);
-const effectiveDisabled = computed(() => props.disabled || Boolean(formItem?.disabled?.value));
-const effectiveReadonly = computed(() => props.readonly || Boolean(formItem?.readonly?.value));
 const inheritedStatus = computed(() => formItem?.status?.value || '');
 const {
   accessibleLabel,
@@ -408,8 +507,7 @@ const {
 const getOptionId = (column: number, index: number) =>
   `${dropdownId.value}-option-${column}-${index}`;
 const getSearchResultId = (index: number) => `${dropdownId.value}-search-${index}`;
-const getPathKey = (values: (string | number)[]) =>
-  values.map(value => `${typeof value}:${String(value)}`).join('/');
+const getPathKey = cascaderPathKey;
 
 const hasSearchQuery = computed(() => props.filterable && searchQuery.value.trim().length > 0);
 const activeDescendant = computed(() => {
@@ -426,10 +524,11 @@ const inputDisplayValue = computed(() => {
   if (hasSearchQuery.value && visible.value) {
     return searchQuery.value;
   }
+  if (props.multiple) return '';
   return displayValue.value;
 });
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
-const allLeafPaths = computed(() => collectCascaderLeafPaths(props.options));
+const allLeafPaths = computed(() => collectCascaderLeafPaths(asyncOptions.data.value));
 // 搜索结果是一条完整叶子路径，路径中任意一级标签命中即可显示。
 const searchResults = computed<CascaderSearchResult[]>(() => {
   if (!hasSearchQuery.value) return [];
@@ -441,8 +540,10 @@ const searchResults = computed<CascaderSearchResult[]>(() => {
 });
 
 const isSearchResultSelected = (result: CascaderSearchResult): boolean =>
-  selectedPath.value.length === result.values.length &&
-  selectedPath.value.every((value, index) => value === result.values[index]);
+  props.multiple
+    ? multipleState.isSelected(result.values)
+    : selectedPath.value.length === result.values.length &&
+      selectedPath.value.every((value, index) => value === result.values[index]);
 // 计算属性
 const cascaderClasses = computed(() => {
   const classes = ['ex-cascader', `ex-cascader--${componentSize.value}`];
@@ -451,6 +552,7 @@ const cascaderClasses = computed(() => {
   if (effectiveReadonly.value) classes.push('ex-cascader--readonly');
   if (inheritedStatus.value) classes.push(`ex-cascader--${inheritedStatus.value}`);
   if (visible.value) classes.push('ex-cascader--open');
+  if (props.multiple) classes.push('ex-cascader--multiple');
 
   classes.push(...normalizeCustomClass(props.class));
   return classes;
@@ -462,7 +564,9 @@ const cascaderStyles = computed(() => {
   return props.style;
 });
 
-const hasValue = computed(() => selectedPath.value.length > 0);
+const hasValue = computed(() =>
+  props.multiple ? multipleState.selected.value.length > 0 : selectedPath.value.length > 0
+);
 const displayValue = computed(() => {
   if (!hasValue.value) return '';
   const labels = getSelectedOptions().map(option => option.label);
@@ -477,10 +581,17 @@ const handlePathCrumbClick = (level: number) => {
 // 判断选项是否激活
 const isActive = (option: CascaderOption, level: number) =>
   activePath.value[level] === option.value;
-const hasChildren = (option: CascaderOption) => Boolean(option.children?.length);
+const getOptionPath = (option: CascaderOption, level: number) => [
+  ...activePath.value.slice(0, level),
+  option.value,
+];
+const hasChildren = (option: CascaderOption, level: number) =>
+  asyncOptions.expandable(option, getOptionPath(option, level));
 // 判断选项是否被选中
 const isSelected = (option: CascaderOption, level: number) =>
-  selectedPath.value[level] === option.value;
+  props.multiple
+    ? multipleState.isSelected(getOptionPath(option, level))
+    : selectedPath.value[level] === option.value;
 // 更新下拉面板位置；非 Teleport 模式保留 CSS 的就地/底部面板布局。
 const updateDropdownPosition = () => {
   if (!props.teleported) {
@@ -554,7 +665,9 @@ const normalizeMenuActive = () => {
 // 显示面板
 const show = () => {
   if (effectiveDisabled.value || effectiveReadonly.value || visible.value) return;
-  activePath.value = [...selectedPath.value];
+  activePath.value = [
+    ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
+  ];
   searchActiveIndex.value = -1;
   initializeMenuActive();
   visible.value = true;
@@ -593,144 +706,25 @@ const nextEnabledIndex = (col: number, from: number, step: 1 | -1): number => {
   );
 };
 
-/** 搜索状态下的键盘导航。搜索结果仍使用 aria-activedescendant，不让焦点跳入 Teleport 面板。 */
-const handleSearchKeydown = (event: KeyboardEvent) => {
-  switch (event.key) {
-    case 'ArrowDown':
-      event.preventDefault();
-      searchActiveIndex.value = findNextEnabledIndex(
-        searchResults.value,
-        searchActiveIndex.value,
-        1
-      );
-      break;
-    case 'ArrowUp':
-      event.preventDefault();
-      searchActiveIndex.value = findNextEnabledIndex(
-        searchResults.value,
-        searchActiveIndex.value,
-        -1
-      );
-      break;
-    case 'Home':
-      event.preventDefault();
-      searchActiveIndex.value = findNextEnabledIndex(searchResults.value, -1, 1);
-      break;
-    case 'End':
-      event.preventDefault();
-      searchActiveIndex.value = findNextEnabledIndex(
-        searchResults.value,
-        searchResults.value.length,
-        -1
-      );
-      break;
-    case 'Enter': {
-      event.preventDefault();
-      const result = searchResults.value[searchActiveIndex.value];
-      if (result && !result.disabled) handleSearchResultClick(result);
-      break;
-    }
-    case 'Escape':
-      event.preventDefault();
-      hide();
-      break;
-    case 'Tab':
-      hide();
-      break;
-  }
-};
-
-/**
- * 键盘交互：
- * - 关闭态：↓ / Enter 打开并高亮当前列首个可用项
- * - 打开态：↑↓ 列内移动、→/Enter 展开子级或选中叶子、← 返回上一列、Esc 关闭
- */
-const handleKeydown = (e: KeyboardEvent) => {
-  if (isComposingKeyboardEvent(e)) return;
-  if (effectiveDisabled.value || effectiveReadonly.value) return;
-  if (hasSearchQuery.value) {
-    handleSearchKeydown(e);
-    return;
-  }
-
-  if (!visible.value) {
-    if (
-      e.key === 'ArrowDown' ||
-      e.key === 'ArrowUp' ||
-      e.key === 'Enter' ||
-      (e.key === ' ' && !props.filterable)
-    ) {
-      e.preventDefault();
-      show();
-      activeCol.value = Math.max(0, menus.value.length - 1);
-      activeIndex.value = nextEnabledIndex(
-        activeCol.value,
-        e.key === 'ArrowUp' ? menus.value[activeCol.value]?.length || 0 : -1,
-        e.key === 'ArrowUp' ? -1 : 1
-      );
-    }
-    return;
-  }
-
-  const column = menus.value[activeCol.value] ?? [];
-  const current = column[activeIndex.value];
-
-  switch (e.key) {
-    case 'ArrowDown':
-      e.preventDefault();
-      activeIndex.value = nextEnabledIndex(activeCol.value, activeIndex.value, 1);
-      break;
-    case 'ArrowUp':
-      e.preventDefault();
-      activeIndex.value = nextEnabledIndex(activeCol.value, activeIndex.value, -1);
-      break;
-    case 'ArrowRight':
-      e.preventDefault();
-      if (current && !isOptionDisabled(current, activeCol.value) && current.children?.length) {
-        handleOptionHover(current, activeCol.value, activeIndex.value);
-        activeCol.value += 1;
-        activeIndex.value = nextEnabledIndex(activeCol.value, -1, 1);
-      }
-      break;
-    case 'ArrowLeft':
-      e.preventDefault();
-      if (activeCol.value > 0) {
-        activeCol.value -= 1;
-        const value = activePath.value[activeCol.value];
-        const preferredIndex =
-          value === undefined
-            ? -1
-            : (menus.value[activeCol.value]?.findIndex(option => option.value === value) ?? -1);
-        setMenuActive(activeCol.value, preferredIndex);
-      }
-      break;
-    case 'Enter':
-    case ' ':
-      if (e.key === ' ' && props.filterable) return;
-      e.preventDefault();
-      if (current) handleOptionClick(current, activeCol.value);
-      break;
-    case 'Escape':
-      e.preventDefault();
-      hide();
-      break;
-    case 'Home':
-      e.preventDefault();
-      activeIndex.value = nextEnabledIndex(activeCol.value, -1, 1);
-      break;
-    case 'End':
-      e.preventDefault();
-      activeIndex.value = nextEnabledIndex(
-        activeCol.value,
-        menus.value[activeCol.value]?.length || 0,
-        -1
-      );
-      break;
-    case 'Tab':
-      hide();
-      break;
-  }
-};
+const handleKeydown = useCascaderKeyboard({
+  blocked: () => effectiveDisabled.value || effectiveReadonly.value,
+  filterable: () => props.filterable,
+  visible,
+  searching: hasSearchQuery,
+  results: searchResults,
+  menus,
+  activePath,
+  activeCol,
+  activeIndex,
+  searchActiveIndex,
+  nextEnabledIndex,
+  setMenuActive,
+  show,
+  hide,
+  selectResult: result => handleSearchResultClick(result),
+  selectOption: (option, level) => handleOptionClick(option, level),
+  expandOption: (option, level, index) => expandFromKeyboard(option, level, index),
+});
 
 // 事件处理
 const handleTriggerClick = () => {
@@ -766,6 +760,10 @@ const handleInputBlur = (event: FocusEvent) => {
 const handleSearchResultClick = (result: CascaderSearchResult) => {
   if (effectiveDisabled.value || effectiveReadonly.value || !canSelectPath(result.values)) return;
   activePath.value = [...result.values];
+  if (props.multiple) {
+    multipleState.toggle(result.values);
+    return;
+  }
   emitChange(result.values);
   searchQuery.value = '';
   hide({ restoreFocus: true });
@@ -784,15 +782,19 @@ const handleOptionClick = (option: CascaderOption, level: number) => {
   nextPath.push(option.value);
   activePath.value = nextPath;
 
-  if (option.children && option.children.length) {
+  if (hasChildren(option, level)) {
     // 如果允许选择任意一级，则触发变化
     if (props.changeOnSelect) {
-      emitChange(nextPath);
+      if (props.multiple) multipleState.toggle(nextPath);
+      else emitChange(nextPath);
     }
   } else {
     // 叶子节点，触发变化并关闭
-    emitChange(nextPath);
-    hide({ restoreFocus: true });
+    if (props.multiple) multipleState.toggle(nextPath);
+    else {
+      emitChange(nextPath);
+      hide({ restoreFocus: true });
+    }
   }
 };
 
@@ -803,7 +805,23 @@ const handleOptionHover = (option: CascaderOption, level: number, optionIndex = 
   setMenuActive(level, optionIndex);
 };
 
+const expandFromKeyboard = async (option: CascaderOption, level: number, index: number) => {
+  if (isOptionDisabled(option, level) || !hasChildren(option, level)) return;
+  handleOptionHover(option, level, index);
+  const path = [...activePath.value];
+  if (!option.children?.length) await asyncOptions.load(path, false, true);
+  await nextTick();
+  if (!visible.value || cascaderPathKey(path) !== cascaderPathKey(activePath.value)) return;
+  if (menus.value[level + 1]?.length) setMenuActive(level + 1);
+};
+
 const handleClear = () => {
+  if (props.multiple) {
+    if (effectiveDisabled.value || effectiveReadonly.value || !multipleState.canClear.value) return;
+    multipleState.clear();
+    emit('clear');
+    return;
+  }
   if (effectiveDisabled.value || effectiveReadonly.value || selectedPathDisabled.value) return;
   requestSelectedPath([]);
   activePath.value = [];
@@ -842,6 +860,7 @@ const handleClickOutside = (event: MouseEvent) => {
 watch(
   selectedPath,
   newValue => {
+    if (props.multiple) return;
     activePath.value = [...newValue];
     if (visible.value) initializeMenuActive();
   },
@@ -851,11 +870,25 @@ watch(
 watch(
   () => props.options,
   () => {
-    activePath.value = [...selectedPath.value];
+    activePath.value = [
+      ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
+    ];
     searchActiveIndex.value = -1;
     if (visible.value) initializeMenuActive();
   },
   { deep: true }
+);
+
+watch(
+  () => props.multiple,
+  () => {
+    activePath.value = [
+      ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
+    ];
+    searchQuery.value = '';
+    searchActiveIndex.value = -1;
+    if (visible.value) initializeMenuActive();
+  }
 );
 
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
@@ -903,7 +936,7 @@ onBeforeUnmount(() => {
 
 // 暴露的方法
 const getCheckedNodes = () => {
-  return getSelectedOptions();
+  return props.multiple ? multipleState.getCheckedNodes() : getSelectedOptions();
 };
 
 const getElement = () => {
@@ -925,6 +958,10 @@ defineExpose<ExCascaderExposed>({
   blur,
   show,
   hide,
+  getCheckedPaths: multipleState.getCheckedPaths,
+  reloadNode,
+  cancelNodeLoad,
+  getNodeLoadState,
 });
 </script>
 

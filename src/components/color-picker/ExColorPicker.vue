@@ -10,7 +10,7 @@
       ref="triggerRef"
       type="button"
       class="ex-color-picker__trigger"
-      :class="{ 'is-empty': !hasValue }"
+      :class="{ 'is-empty': !selectedColor }"
       aria-haspopup="dialog"
       :aria-controls="panelId"
       :aria-label="(attrs['aria-label'] as string | undefined) || t('trigger')"
@@ -26,7 +26,7 @@
       <div class="ex-color-picker__swatch">
         <div
           class="ex-color-picker__swatch-inner"
-          :style="previewStyle"
+          :style="selectedPreviewStyle"
         ></div>
       </div>
       <ExIcon
@@ -206,6 +206,7 @@ import {
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useControllableState } from '../../composables/useControllableState';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -214,7 +215,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExColorPickerProps>(), {
-  modelValue: '',
   disabled: false,
   size: undefined,
   showAlpha: false,
@@ -225,6 +225,11 @@ const props = withDefaults(defineProps<ExColorPickerProps>(), {
 });
 
 const emit = defineEmits<ExColorPickerEmits>();
+const colorState = useControllableState<string>({
+  controlledValue: () => props.modelValue,
+  defaultValue: '',
+  onChange: value => emit('update:modelValue', value),
+});
 const attrs = useAttrs();
 const { t } = useLocale('colorPicker');
 const {
@@ -297,6 +302,16 @@ const previewStyle = computed(() =>
       }
     : {}
 );
+// 触发器只展示确认值，面板可以保留拖拽草稿；父级拒绝更新时不伪造已选颜色。
+const selectedColor = computed(() => parseColor(colorState.value.value));
+const selectedPreviewStyle = computed(() => {
+  const color = selectedColor.value;
+  return color
+    ? {
+        backgroundColor: `rgba(${color.r}, ${color.g}, ${color.b}, ${props.showAlpha ? color.a : 1})`,
+      }
+    : {};
+});
 const svStyle = computed(() => ({ backgroundColor: hueRgb.value }));
 const svThumbStyle = computed(() => ({
   left: `${hsva.s * 100}%`,
@@ -330,8 +345,22 @@ const syncFromValue = (value: string) => {
 };
 
 watch(
-  () => props.modelValue,
-  value => syncFromValue(value),
+  colorState.value,
+  value => {
+    const parsed = parseColor(value);
+    const draft = { ...hsvToRgb(hsva.h, hsva.s, hsva.v), a: hsva.a };
+    // 自身颜色回显不重新反推 HSV：黑色缺少色相和饱和度，灰色缺少色相。
+    // 父级真正转换颜色时仍同步完整草稿，透明度也参与等价比较。
+    if (
+      hasValue.value &&
+      parsed &&
+      formatColor(parsed, 'hex', true) === formatColor(draft, 'hex', true)
+    ) {
+      hexInput.value = currentHex.value;
+      return;
+    }
+    syncFromValue(value);
+  },
   { immediate: true }
 );
 
@@ -349,7 +378,7 @@ const applyLive = () => {
   hasValue.value = true;
   const value = currentColorString.value;
   hexInput.value = currentHex.value;
-  emit('update:modelValue', value);
+  colorState.request(value);
   emit('active-change', value);
 };
 
@@ -540,7 +569,7 @@ const updatePanelPosition = () => {
 
 const open = () => {
   if (!interactive.value || visible.value) return;
-  syncFromValue(props.modelValue);
+  syncFromValue(colorState.value.value);
   visible.value = true;
   emit('visible-change', true);
   nextTick(updatePanelPosition);
@@ -550,6 +579,7 @@ const close = () => {
   if (!visible.value) return;
   stopDrag();
   visible.value = false;
+  syncFromValue(colorState.value.value);
   emit('visible-change', false);
 };
 
@@ -570,7 +600,7 @@ const handleClear = () => {
   if (!interactive.value) return;
   hasValue.value = false;
   hexInput.value = '';
-  emit('update:modelValue', '');
+  colorState.request('');
   emit('change', '');
   emit('clear');
   formItem?.onFieldChange();

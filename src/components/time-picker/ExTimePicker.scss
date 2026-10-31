@@ -10,6 +10,44 @@
   width: 100%;
   max-width: 220px;
 
+  &--range {
+    max-width: 360px;
+  }
+
+  &__endpoints {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-3);
+    button {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ex-spacing-1);
+      padding: var(--ex-spacing-2);
+      color: var(--ex-color-text-secondary);
+      font: inherit;
+      background: transparent;
+      border: 1px solid var(--ex-color-border-primary);
+      border-radius: var(--ex-radius-base);
+      cursor: pointer;
+      &[aria-selected='true'] {
+        color: var(--ex-color-primary);
+        border-color: var(--ex-color-primary);
+      }
+      &:focus-visible {
+        outline: 2px solid var(--ex-color-primary);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  &__range-error {
+    margin: 0;
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    color: var(--ex-color-error);
+    font-size: var(--ex-text-sm);
+  }
+
   // 触发器
   &__trigger {
     display: flex;
@@ -98,18 +136,22 @@
 // ============================================================================
 .ex-time-picker__panel {
   position: absolute;
+  max-width: calc(100vw - 8px);
+  max-height: calc(100vh - 8px);
   z-index: var(--ex-z-dropdown, 1000);
   background: var(--ex-color-bg-elevated);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-md);
   box-shadow: var(--ex-shadow-lg);
-  overflow: hidden;
+  overflow: auto;
 
   .ex-time-picker__columns {
     display: flex;
   }
 
   .ex-time-picker__column {
+    flex: 1;
+    min-width: 0;
     width: 56px;
     height: 224px;
     overflow-y: auto;

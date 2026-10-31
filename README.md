@@ -238,7 +238,7 @@ const playerAvatar = ref('/avatar.jpg');
 ### 🎯 开发进度跟踪
 
 <details open>
-<summary><strong>✅ 通用基础组件 (12/12) - 100%</strong></summary>
+<summary><strong>通用基础组件（12 个模块）</strong></summary>
 
 - [x] **Typography** - 排版文本组件
 - [x] **Icon** - 图标组件（内置 SVG 图标注册表，无网络依赖）
@@ -256,7 +256,7 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details open>
-<summary><strong>✅ 表单类组件 (15/15) - 100%</strong></summary>
+<summary><strong>表单类组件（15 个模块）</strong></summary>
 
 - [x] **Input** - 文本输入框
 - [x] **NumberInput** - 数字输入框
@@ -267,21 +267,33 @@ const playerAvatar = ref('/avatar.jpg');
 - [x] **Switch** - 开关
 - [x] **Slider** - 滑块
 - [x] **DateTimePicker** - 日期时间选择器
+- [x] **TimePicker** - 时间及时间范围选择器
+- [x] **ColorPicker** - 颜色选择器
+- [x] **TreeSelect** - 树选择器，支持异步加载和虚拟滚动
+- [x] **VerificationCode** - 验证码输入
 - [x] **Rate** - 评分组件
+- [x] **Form** - 表单容器及验证
+
+</details>
+
+<details open>
+<summary><strong>文件管理组件（6 个模块）</strong></summary>
+
 - [x] **FileUpload** - 文件上传
 - [x] **FileDownload** - 文件下载
 - [x] **FilePreview** - 文件预览
 - [x] **ImageCrop** - 图片裁剪
 - [x] **ImageCompress** - 图片压缩
 - [x] **FileList** - 文件列表/资源管理
-- [x] **Form** - 表单容器及验证
 
 </details>
 
 <details open>
-<summary><strong>✅ 数据展示组件 (17/17) - 100%</strong></summary>
+<summary><strong>数据展示组件（18 个模块）</strong></summary>
 
 - [x] **Tag** - 标签/标记
+- [x] **Descriptions** - 描述列表
+- [x] **Chart** - 图表与数据导航
 - [x] **List** - 列表
 - [x] **Empty** - 空状态提示
 - [x] **VirtualList** - 虚拟列表
@@ -301,7 +313,7 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details open>
-<summary><strong>✅ 导航与布局组件 (11/11) - 100%</strong></summary>
+<summary><strong>导航与布局组件（13 个模块）</strong></summary>
 
 - [x] **Layout** - 布局容器（Header/Sider/Content/Footer）
 - [x] **Grid** - 栅格布局
@@ -314,11 +326,13 @@ const playerAvatar = ref('/avatar.jpg');
 - [x] **Steps** - 步骤条
 - [x] **Anchor** - 锚点/页面内导航
 - [x] **Pagination** - 分页器
+- [x] **BackTop** - 回到顶部
+- [x] **PageHeader** - 页头
 
 </details>
 
 <details open>
-<summary><strong>✅ 反馈与交互组件 (12/12) - 100%</strong></summary>
+<summary><strong>反馈与交互组件（12 个模块）</strong></summary>
 
 - [x] **Dialog** - 对话框
 - [x] **Modal** - 模态对话框
@@ -336,18 +350,21 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details>
-<summary><strong>🔧 全局配置组件 (1/1) - 100%</strong></summary>
+<summary><strong>全局配置（1 个模块）</strong></summary>
 
 - [x] **ConfigProvider** - 全局化配置（主题、国际化、尺寸）
 
 </details>
 
-### 📊 总体进度
+### 验证与组件统计
 
-```
-总计组件: 80+ 个（含 DatePicker / TimePicker / Calendar 等独立组件）
-测试用例: 1200+ 全部通过 ✅
-```
+当前提供 77 个组件模块、100 个公开组件（包含附属组件）。日期选择统一由
+`ExDateTimePicker` 提供，没有独立的 `ExDatePicker` 导出。
+
+`npm run test:coverage` 同时检查整体和每个组件模块的语句、分支、函数、行覆盖率，
+每项均要求至少 80%。`npm run test:browser` 在 Chromium、Firefox、WebKit 中验证
+全部组件的双主题渲染，以及键盘、窄屏、异步选择和 tus 上传流程。
+当前验证结果以 CI 和本地命令输出为准。
 
 ### 🎨 双主题系统
 

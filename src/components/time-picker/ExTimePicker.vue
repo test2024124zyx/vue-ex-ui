@@ -29,10 +29,10 @@
         aria-hidden="true"
       />
       <span
-        v-if="modelValue"
+        v-if="displayValue"
         class="ex-time-picker__text"
       >
-        {{ modelValue }}
+        {{ displayValue }}
       </span>
       <span
         v-else
@@ -73,7 +73,37 @@
           :class="[popperClass, portalEffectClasses]"
           :style="panelStyle"
         >
-          <div class="ex-time-picker__columns">
+          <div
+            v-if="range"
+            class="ex-time-picker__endpoints"
+            role="tablist"
+            :aria-label="t('selectRange')"
+          >
+            <button
+              v-for="endpoint in endpoints"
+              :id="`${panelId}-${endpoint}`"
+              :key="endpoint"
+              type="button"
+              role="tab"
+              :data-endpoint="endpoint"
+              :aria-selected="activeEndpoint === endpoint"
+              :aria-controls="`${panelId}-columns`"
+              :tabindex="activeEndpoint === endpoint ? 0 : -1"
+              @click="selectEndpoint(endpoint)"
+              @keydown="handleEndpointKeydown($event, endpoint)"
+            >
+              <span>{{ t(endpoint === 'start' ? 'startTime' : 'endTime') }}</span>
+              <span>
+                {{ rangeTouched[endpoint] ? formatTime(rangeDrafts[endpoint]) : t('selectTime') }}
+              </span>
+            </button>
+          </div>
+          <div
+            :id="`${panelId}-columns`"
+            class="ex-time-picker__columns"
+            :role="range ? 'tabpanel' : undefined"
+            :aria-labelledby="range ? `${panelId}-${activeEndpoint}` : undefined"
+          >
             <div
               v-if="showHour"
               ref="hourColRef"
@@ -150,6 +180,14 @@
             </div>
           </div>
 
+          <p
+            v-if="invalidRangeOrder"
+            class="ex-time-picker__range-error"
+            role="status"
+          >
+            {{ t('invalidRangeOrder') }}
+          </p>
+
           <div class="ex-time-picker__footer">
             <button
               type="button"
@@ -162,7 +200,7 @@
             <button
               type="button"
               class="ex-time-picker__confirm"
-              :disabled="!interactive || !isDraftSelectable"
+              :disabled="!interactive || !canConfirm"
               @click="handleConfirm"
             >
               {{ t('confirm') }}
@@ -176,7 +214,13 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch, nextTick, onUnmounted, useAttrs } from 'vue';
-import type { ExTimePickerProps, ExTimePickerEmits, ExTimePickerExposed } from './types';
+import type {
+  ExTimePickerProps,
+  ExTimePickerEmits,
+  ExTimePickerExposed,
+  TimePickerEndpoint,
+  TimePickerRange,
+} from './types';
 import { useLocale } from '../../locale';
 import {
   useAnimation,
@@ -186,10 +230,19 @@ import {
 } from '../config-provider/composables';
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useFloatingAutoUpdate } from '../../composables/useFloatingAutoUpdate';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { generateId } from '../../utils/id';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import { useControllableState } from '../../composables/useControllableState';
+import {
+  formatTimeValue,
+  normalizeTimeFormat,
+  parseTimeValue,
+  type TimeValue,
+  type TimeUnit,
+} from './time-values';
 
 defineOptions({
   name: 'ExTimePicker',
@@ -197,7 +250,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExTimePickerProps>(), {
-  modelValue: '',
   format: 'HH:mm:ss',
   placeholder: '',
   disabled: false,
@@ -210,6 +262,15 @@ const props = withDefaults(defineProps<ExTimePickerProps>(), {
 });
 
 const emit = defineEmits<ExTimePickerEmits>();
+const valueState = useControllableState<string>({
+  controlledValue: () => props.modelValue,
+  defaultValue: '',
+});
+const rangeState = useControllableState<TimePickerRange | null>({
+  controlledValue: () => props.rangeValue,
+  defaultValue: null,
+  clone: value => (Array.isArray(value) && value.length === 2 ? [...value] : null),
+});
 
 const { t } = useLocale('timePicker');
 const {
@@ -270,17 +331,40 @@ const panelStyle = computed<Record<string, string>>(() => ({
 
 // 当前编辑中的时分秒
 const draft = reactive<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
+const endpoints: TimePickerEndpoint[] = ['start', 'end'];
+const activeEndpoint = ref<TimePickerEndpoint>('start');
+const rangeDrafts = reactive({ start: { h: 0, m: 0, s: 0 }, end: { h: 0, m: 0, s: 0 } });
+const rangeTouched = reactive({ start: false, end: false });
+const callbackEndpoint = computed(() => (props.range ? activeEndpoint.value : undefined));
+const confirmedRange = computed(() => {
+  const value = rangeState.value.value;
+  return Array.isArray(value) &&
+    value.length === 2 &&
+    value.every(item => parseTimeValue(item, props.format))
+    ? value
+    : null;
+});
+const displayValue = computed(() =>
+  props.range
+    ? confirmedRange.value?.join(` ${t('rangeSeparator')} `) || ''
+    : valueState.value.value
+);
 
-const showHour = computed(() => props.format.includes('HH'));
-const showMinute = computed(() => props.format.includes('mm'));
-const showSecond = computed(() => props.format.includes('ss'));
+const effectiveFormat = computed(() => normalizeTimeFormat(props.format));
+const showHour = computed(() => effectiveFormat.value.includes('HH'));
+const showMinute = computed(() => effectiveFormat.value.includes('mm'));
+const showSecond = computed(() => effectiveFormat.value.includes('ss'));
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 const rootClasses = computed(() => [
   'ex-time-picker',
   `ex-time-picker--${componentSize.value}`,
-  { 'is-disabled': disabled.value, 'is-active': visible.value },
+  {
+    'is-disabled': disabled.value,
+    'is-active': visible.value,
+    'ex-time-picker--range': props.range,
+  },
   ...normalizeCustomClass(props.class),
 ]);
 
@@ -289,34 +373,25 @@ const rootStyle = computed(() => {
   return props.style;
 });
 
-const showClear = computed(() => props.clearable && interactive.value && !!props.modelValue);
+const showClear = computed(() => props.clearable && interactive.value && !!displayValue.value);
 
 // 解析 modelValue -> draft
-const parseValue = (val: string) => {
-  if (!val) return null;
-  const parts = val.split(':').map(p => parseInt(p, 10));
-  const units: Array<'h' | 'm' | 's'> = [];
-  if (showHour.value) units.push('h');
-  if (showMinute.value) units.push('m');
-  if (showSecond.value) units.push('s');
-  const result = { h: 0, m: 0, s: 0 };
-  units.forEach((u, i) => {
-    const n = parts[i];
-    if (n !== undefined && !Number.isNaN(n)) result[u] = n;
-  });
-  return result;
-};
-
-const formatDraft = (): string => {
-  const segments: string[] = [];
-  if (showHour.value) segments.push(pad(draft.h));
-  if (showMinute.value) segments.push(pad(draft.m));
-  if (showSecond.value) segments.push(pad(draft.s));
-  return segments.join(':');
-};
+const parseValue = (value: string) => parseTimeValue(value, effectiveFormat.value);
+const formatTime = (value: TimeValue) => formatTimeValue(value, effectiveFormat.value);
 
 const syncDraftFromValue = () => {
-  const parsed = parseValue(props.modelValue);
+  if (props.range) {
+    activeEndpoint.value = 'start';
+    endpoints.forEach((endpoint, index) => {
+      const value = confirmedRange.value?.[index];
+      const parsed = value ? parseValue(value) : null;
+      rangeDrafts[endpoint] = parsed ?? { h: 0, m: 0, s: 0 };
+      rangeTouched[endpoint] = parsed !== null;
+    });
+    Object.assign(draft, rangeDrafts.start);
+    return;
+  }
+  const parsed = parseValue(valueState.value.value);
   if (parsed) {
     draft.h = parsed.h;
     draft.m = parsed.m;
@@ -343,16 +418,22 @@ const buildCells = (max: number, step: number, disabledList: number[]): Cell[] =
 };
 
 const hours = computed<Cell[]>(() =>
-  buildCells(HOUR_MAX, props.hourStep, props.disabledHours?.() ?? [])
+  buildCells(HOUR_MAX, props.hourStep, props.disabledHours?.(callbackEndpoint.value) ?? [])
 );
 const minutes = computed<Cell[]>(() =>
-  buildCells(MINUTE_MAX, props.minuteStep, props.disabledMinutes?.(draft.h) ?? [])
+  buildCells(
+    MINUTE_MAX,
+    props.minuteStep,
+    props.disabledMinutes?.(draft.h, callbackEndpoint.value) ?? []
+  )
 );
 const seconds = computed<Cell[]>(() =>
-  buildCells(SECOND_MAX, props.secondStep, props.disabledSeconds?.(draft.h, draft.m) ?? [])
+  buildCells(
+    SECOND_MAX,
+    props.secondStep,
+    props.disabledSeconds?.(draft.h, draft.m, callbackEndpoint.value) ?? []
+  )
 );
-
-type TimeUnit = 'h' | 'm' | 's';
 
 const getCells = (unit: TimeUnit): Cell[] => {
   if (unit === 'h') return hours.value;
@@ -399,14 +480,53 @@ const isDraftSelectable = computed(() => {
   );
 });
 
-interface TimeValue {
-  h: number;
-  m: number;
-  s: number;
-}
-
 const toSeconds = ({ h, m, s }: TimeValue): number =>
   (h * MINUTES_PER_HOUR + m) * SECONDS_PER_MINUTE + s;
+
+const isRangeEndpointSelectable = (endpoint: TimePickerEndpoint) => {
+  const value = rangeDrafts[endpoint];
+  const available = (
+    maximum: number,
+    step: number,
+    excluded: number[] | undefined,
+    selected: number
+  ) =>
+    buildCells(maximum, step, excluded ?? []).some(
+      cell => cell.value === selected && !cell.disabled
+    );
+  return (
+    rangeTouched[endpoint] &&
+    (!showHour.value ||
+      available(HOUR_MAX, props.hourStep, props.disabledHours?.(endpoint), value.h)) &&
+    (!showMinute.value ||
+      available(
+        MINUTE_MAX,
+        props.minuteStep,
+        props.disabledMinutes?.(value.h, endpoint),
+        value.m
+      )) &&
+    (!showSecond.value ||
+      available(
+        SECOND_MAX,
+        props.secondStep,
+        props.disabledSeconds?.(value.h, value.m, endpoint),
+        value.s
+      ))
+  );
+};
+const invalidRangeOrder = computed(() =>
+  Boolean(
+    props.range &&
+    rangeTouched.start &&
+    rangeTouched.end &&
+    toSeconds(rangeDrafts.start) > toSeconds(rangeDrafts.end)
+  )
+);
+const canConfirm = computed(() =>
+  props.range
+    ? !invalidRangeOrder.value && endpoints.every(isRangeEndpointSelectable)
+    : isDraftSelectable.value
+);
 
 // 穷举至多一天内的时分秒组合，确保依赖上级值的禁用回调也被完整校验。
 const findClosestSelectableTime = (target: TimeValue): TimeValue | undefined => {
@@ -422,7 +542,7 @@ const findClosestSelectableTime = (target: TimeValue): TimeValue | undefined => 
       ? buildCells(
           MINUTE_MAX,
           props.minuteStep,
-          props.disabledMinutes?.(hourCell.value) ?? []
+          props.disabledMinutes?.(hourCell.value, callbackEndpoint.value) ?? []
         ).filter(cell => !cell.disabled)
       : [{ value: target.m, disabled: false }];
 
@@ -431,7 +551,7 @@ const findClosestSelectableTime = (target: TimeValue): TimeValue | undefined => 
         ? buildCells(
             SECOND_MAX,
             props.secondStep,
-            props.disabledSeconds?.(hourCell.value, minuteCell.value) ?? []
+            props.disabledSeconds?.(hourCell.value, minuteCell.value, callbackEndpoint.value) ?? []
           ).filter(cell => !cell.disabled)
         : [{ value: target.s, disabled: false }];
 
@@ -445,6 +565,7 @@ const findClosestSelectableTime = (target: TimeValue): TimeValue | undefined => 
         if (distance < closestDistance) {
           closest = candidate;
           closestDistance = distance;
+          if (distance === 0) return closest;
         }
       }
     }
@@ -489,12 +610,20 @@ const scrollSelectedIntoView = () => {
   const scroll = (col?: HTMLElement) => {
     if (!col) return;
     const selected = col.querySelector<HTMLElement>('.is-selected');
-    if (selected) col.scrollTop = selected.offsetTop;
+    // 端点标题位于时间列上方，滚动量必须使用列内偏移而非整个弹层偏移。
+    if (selected) col.scrollTop = selected.offsetTop - col.offsetTop;
   };
   scroll(hourColRef.value);
   scroll(minuteColRef.value);
   scroll(secondColRef.value);
 };
+
+useFloatingAutoUpdate(
+  visible,
+  [triggerRef, panelRef],
+  [() => props.range, () => props.format, () => props.teleported, componentSize],
+  updatePanelPosition
+);
 
 const focusCell = (unit: TimeUnit, value: number) => {
   nextTick(() => {
@@ -515,10 +644,37 @@ const focusInitialCell = () => {
   if (cell) focusCell(unit, cell.value);
 };
 
+const selectEndpoint = (endpoint: TimePickerEndpoint) => {
+  if (!interactive.value) return;
+  activeEndpoint.value = endpoint;
+  Object.assign(draft, rangeDrafts[endpoint]);
+  nextTick(scrollSelectedIntoView);
+};
+const handleEndpointKeydown = (event: KeyboardEvent, endpoint: TimePickerEndpoint) => {
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    focusInitialCell();
+    return;
+  }
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const next =
+    event.key === 'Home'
+      ? 'start'
+      : event.key === 'End'
+        ? 'end'
+        : endpoint === 'start'
+          ? 'end'
+          : 'start';
+  selectEndpoint(next);
+  nextTick(() => panelRef.value?.querySelector<HTMLElement>(`[data-endpoint="${next}"]`)?.focus());
+};
+
 const open = (focusOptions = false) => {
   if (!interactive.value || visible.value) return;
   syncDraftFromValue();
-  normalizeDraft();
+  if (!props.range) normalizeDraft();
   visible.value = true;
   emit('visible-change', true);
   nextTick(() => {
@@ -542,7 +698,13 @@ const handleTriggerClick = () => {
 
 const emitValue = () => {
   if (!interactive.value || !isDraftSelectable.value) return;
-  const value = formatDraft();
+  if (props.range) {
+    rangeDrafts[activeEndpoint.value] = { ...draft };
+    rangeTouched[activeEndpoint.value] = true;
+    return;
+  }
+  const value = formatTime(draft);
+  valueState.request(value);
   emit('update:modelValue', value);
   emit('change', value);
   formItem?.onFieldChange();
@@ -551,7 +713,13 @@ const emitValue = () => {
 const selectUnit = (unit: 'h' | 'm' | 's', value: number, disabled: boolean) => {
   if (!interactive.value || disabled) return;
   draft[unit] = value;
-  if (!normalizeDependentUnits(unit)) return;
+  const selectable = normalizeDependentUnits(unit);
+  if (props.range) {
+    // 即使下级没有可选时间也保留真实草稿，让确认状态反映当前编辑而非旧快照。
+    rangeDrafts[activeEndpoint.value] = { ...draft };
+    rangeTouched[activeEndpoint.value] = true;
+  }
+  if (!selectable) return;
   emitValue();
   nextTick(scrollSelectedIntoView);
 };
@@ -573,15 +741,28 @@ const selectNow = () => {
 };
 
 const handleConfirm = () => {
-  if (!interactive.value || !isDraftSelectable.value) return;
-  emitValue();
+  if (!interactive.value || !canConfirm.value) return;
+  if (props.range) {
+    const value: TimePickerRange = [formatTime(rangeDrafts.start), formatTime(rangeDrafts.end)];
+    rangeState.request(value);
+    emit('update:rangeValue', [...value]);
+    emit('range-change', [...value]);
+    formItem?.onFieldChange();
+  } else emitValue();
   close();
 };
 
 const handleClear = () => {
   if (!interactive.value) return;
-  emit('update:modelValue', '');
-  emit('change', '');
+  if (props.range) {
+    rangeState.request(null);
+    emit('update:rangeValue', null);
+    emit('range-change', null);
+  } else {
+    valueState.request('');
+    emit('update:modelValue', '');
+    emit('change', '');
+  }
   emit('clear');
   formItem?.onFieldChange();
   close();
@@ -688,12 +869,16 @@ watch(interactive, canInteract => {
   if (!canInteract) close();
 });
 
-watch([() => props.modelValue, () => props.format], () => {
-  syncDraftFromValue();
-  if (!visible.value) return;
-  normalizeDraft();
-  nextTick(scrollSelectedIntoView);
-});
+watch(
+  [valueState.value, rangeState.value, () => props.format, () => props.range],
+  () => {
+    syncDraftFromValue();
+    if (!visible.value) return;
+    if (!props.range) normalizeDraft();
+    nextTick(scrollSelectedIntoView);
+  },
+  { deep: true }
+);
 
 watch(
   () => props.teleported,

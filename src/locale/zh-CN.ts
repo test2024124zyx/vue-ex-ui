@@ -3,6 +3,7 @@ import type { BuiltInLocale } from './en-US';
 const zhCN = {
   // 评分控件
   rate: { label: '评分' },
+  steps: { navigation: '步骤导航' },
   // 通用
   common: {
     confirm: '确认',
@@ -315,6 +316,9 @@ const zhCN = {
   // 时间选择器
   timePicker: {
     selectTime: '选择时间',
+    selectRange: '选择时间范围',
+    rangeSeparator: '至',
+    invalidRangeOrder: '结束时间不能早于开始时间。',
     hour: '时',
     minute: '分',
     second: '秒',
@@ -351,6 +355,7 @@ const zhCN = {
   // 日期选择器
   datePicker: {
     placeholder: '请选择日期',
+    disabledTime: '该时间不可选择，请调整时、分或秒。',
     panel: '日期选择面板',
     startDate: '开始日期',
     endDate: '结束日期',
@@ -560,6 +565,14 @@ const zhCN = {
     removeFile: '移除 {name}',
     uploadProgress: '{name} 的上传进度',
     statusReady: '等待上传',
+    statusQueued: '排队中',
+    statusPaused: '已暂停',
+    statusCancelling: '取消中',
+    startUpload: '上传 {name}',
+    pauseUpload: '暂停上传 {name}',
+    resumeUpload: '继续上传 {name}',
+    retryUpload: '重试上传 {name}',
+    cancelUpload: '取消上传 {name}',
     statusUploading: '上传中',
     statusSuccess: '上传完成',
     statusError: '上传失败',

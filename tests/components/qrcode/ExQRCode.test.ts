@@ -135,4 +135,29 @@ describe('ExQRCode', () => {
     await result;
     expect(generator.toCanvas).toHaveBeenCalledTimes(2);
   });
+
+  it('下载使用调用方文件名，编码与下载失败通过 error 反馈', async () => {
+    const names: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
+      names.push(this.download);
+    });
+    const wrapper = mount(ExQRCode, { props: { value: 'downloadable' } });
+    await flushPromises();
+    wrapper.vm.download('业务二维码.png');
+    expect(names).toEqual(['业务二维码.png']);
+    expect(wrapper.vm.getElement()).toBe(wrapper.element);
+    click.mockImplementationOnce(() => {
+      throw new Error('下载被拒绝');
+    });
+    wrapper.vm.download();
+    expect(wrapper.emitted('error')?.at(-1)?.[0]).toBeInstanceOf(Error);
+    vi.mocked(HTMLCanvasElement.prototype.toDataURL).mockImplementationOnce(() => {
+      throw new Error('无法编码');
+    });
+    expect(wrapper.vm.toDataURL()).toBe('');
+    expect(wrapper.emitted('error')).toHaveLength(2);
+    wrapper.unmount();
+  });
 });

@@ -19,6 +19,93 @@
     align-items: center;
   }
 
+  &--multiple &__input-wrapper {
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-1);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    padding-right: var(--ex-input-action-width-md, 36px);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    &:focus-within {
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  &--multiple &__input {
+    flex: 1;
+    min-width: 80px;
+    width: auto;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-1);
+    max-width: 100%;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    max-width: 100%;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-primary);
+    background: var(--ex-color-bg-tertiary);
+    font-size: var(--ex-text-sm);
+  }
+
+  &__tag-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__tag-remove {
+    border: 0;
+    padding: 0 var(--ex-spacing-1);
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__load-error {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+  }
+
+  &__retry {
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    color: var(--ex-color-primary);
+    background: var(--ex-color-bg-secondary);
+    cursor: pointer;
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
   // 输入框
   &__input {
     width: 100%;

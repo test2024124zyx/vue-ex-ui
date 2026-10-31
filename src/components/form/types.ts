@@ -299,7 +299,11 @@ export interface FormContext {
   /** 验证字段 */
   validateField: (prop: string, trigger?: string) => Promise<FormItemValidateResult>;
   /** 通知表单字段验证结果 */
-  notifyFieldValidate: (prop: string, result: FormItemValidateResult) => void;
+  notifyFieldValidate: (
+    prop: string,
+    result: FormItemValidateResult,
+    snapshot?: { value: unknown }
+  ) => void;
   /** 重置字段 */
   resetField: (prop: string) => void;
   /** 清除验证 */

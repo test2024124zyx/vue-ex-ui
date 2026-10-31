@@ -592,7 +592,7 @@ describe('组件文档实时演示', () => {
       /::: details 查看示例代码\s*\n```vue\s*\n([\s\S]*?)\n```\s*\n:::/g
     );
 
-    expect(liveBlocks).toHaveLength(3);
+    expect(liveBlocks).toHaveLength(5);
     expect(codeBlocks).toHaveLength(liveBlocks.length);
     expect(document).not.toMatch(/::: details 查看示例代码\s+open/);
 

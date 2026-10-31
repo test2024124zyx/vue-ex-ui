@@ -109,6 +109,7 @@ import { useLocale } from '../../locale';
 import { useSlotItems } from '../../composables/useSlotItems';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useControllableState } from '../../composables/useControllableState';
+import { useComponentSize } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExTabs',
@@ -117,7 +118,7 @@ defineOptions({
 const props = withDefaults(defineProps<ExTabsProps>(), {
   type: 'line',
   position: 'top',
-  size: 'medium',
+  size: undefined,
   closable: false,
   addable: false,
   editable: false,
@@ -125,6 +126,7 @@ const props = withDefaults(defineProps<ExTabsProps>(), {
 });
 
 const emit = defineEmits<ExTabsEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
 const { t } = useLocale('tabs');
 
 interface PaneInfo {
@@ -230,7 +232,7 @@ const tabsClasses = computed(() => {
     'ex-tabs',
     `ex-tabs--${props.type}`,
     `ex-tabs--${props.position}`,
-    `ex-tabs--${props.size}`,
+    `ex-tabs--${componentSize.value}`,
   ];
 
   if (props.animated) classes.push('ex-tabs--animated');
@@ -405,7 +407,7 @@ onMounted(() =>
 
 onMounted(() =>
   watch(
-    [() => JSON.stringify(panes.value), () => props.position, () => props.size, () => props.type],
+    [() => JSON.stringify(panes.value), () => props.position, componentSize, () => props.type],
     updateIndicator,
     { flush: 'post' }
   )

@@ -29,7 +29,7 @@ export function collectCascaderLeafPaths(options: CascaderOption[]): CascaderSea
     };
     if (option.children?.length) {
       frames.push({ ...path, options: option.children, index: 0 });
-    } else results.push(path);
+    } else if (option.isLeaf !== false) results.push(path);
   }
   return results;
 }

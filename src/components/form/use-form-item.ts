@@ -16,8 +16,12 @@ export interface FormItemFieldContext {
   onFieldBlur: () => void;
   /** 控件值变化时调用（触发 trigger: 'change' 的规则校验） */
   onFieldChange: () => void;
-  /** 控件输入时调用（触发 trigger: 'input' 的规则校验） */
-  onFieldInput?: () => void;
+  /** 控件输入时调用；延迟提交模型的控件可提供当前编辑值快照进行 input 校验。 */
+  onFieldInput?: (snapshot?: { value: unknown }) => void;
+  /** 编辑草稿被撤销时，只清理已不对应确认值的校验，不伪造 blur/change 事件。 */
+  onFieldDraftDiscard?: () => void;
+  /** 显式重置代次；即使模型值没有改变，也通知控件撤销本地草稿和延迟任务。 */
+  resetRevision?: ComputedRef<number>;
   /** FormItem 标签的可访问名称 ID */
   labelId?: ComputedRef<string | undefined>;
   /** FormItem 帮助或错误消息的可访问描述 ID */

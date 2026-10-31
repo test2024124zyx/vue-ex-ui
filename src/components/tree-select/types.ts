@@ -8,6 +8,23 @@ export interface TreeSelectNode {
   children?: TreeSelectNode[];
   /** 是否禁用；禁用节点及其整个子树均不可交互 */
   disabled?: boolean;
+  /** false 表示子节点尚未加载；空结果加载成功后自动视为叶子。 */
+  isLeaf?: boolean;
+}
+
+export interface TreeSelectLoadContext {
+  /** 收起、关闭、禁用、数据替换和卸载时中止。 */
+  signal: AbortSignal;
+  /** 当前节点的完整值路径。 */
+  path: Array<string | number>;
+}
+export type TreeSelectLoadData = (
+  node: TreeSelectNode,
+  context: TreeSelectLoadContext
+) => Promise<TreeSelectNode[]>;
+export interface TreeSelectLoadState {
+  status: 'idle' | 'loading' | 'loaded' | 'error';
+  error?: unknown;
 }
 
 /** 树选择尺寸 */
@@ -24,6 +41,16 @@ export interface ExTreeSelectProps {
   modelValue?: TreeSelectValue;
   /** 树形数据 */
   data?: TreeSelectNode[];
+  /** 异步加载子节点，输入数据不会被原地改写。 */
+  loadData?: TreeSelectLoadData;
+  /** 只渲染可视窗口内的树节点。 */
+  virtual?: boolean;
+  /** 树区域高度，单位像素。 */
+  height?: number;
+  /** 虚拟节点行高，单位像素，须与实际内容一致。 */
+  itemHeight?: number;
+  /** 虚拟窗口上下预渲染节点数量。 */
+  virtualBuffer?: number;
   /** 是否多选（显示复选框） */
   multiple?: boolean;
   /** 多选时父子节点选中状态不再关联 */
@@ -80,6 +107,10 @@ export interface ExTreeSelectEmits {
   blur: [event: FocusEvent];
   /** 清空 */
   clear: [];
+  /** 子节点成功加载。 */
+  load: [node: TreeSelectNode, children: TreeSelectNode[]];
+  /** 子节点加载或返回结构校验失败。 */
+  'load-error': [error: unknown, node: TreeSelectNode];
 }
 
 /**
@@ -94,4 +125,10 @@ export interface ExTreeSelectExposed {
   expandAll: () => void;
   /** 收起全部 */
   collapseAll: () => void;
+  /** 强制重载节点，成功返回 true；当前面板必须打开且可交互。 */
+  reloadNode: (value: string | number) => Promise<boolean>;
+  /** 中止指定节点的在途加载。 */
+  cancelNodeLoad: (value: string | number) => boolean;
+  /** 获取独立加载状态快照。 */
+  getNodeLoadState: (value: string | number) => TreeSelectLoadState;
 }
