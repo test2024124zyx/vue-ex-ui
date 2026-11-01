@@ -61,7 +61,10 @@ const expectScene = async (page: Page, component: string) => {
   }
   const root = page.locator(`.ex-${component}`).first();
   await expect(root).toBeVisible();
-  if (component === 'icon') {
+  if (component === 'back-top') {
+    // 可见性断言允许透明元素，等待入场结束才能验收返回顶部按钮的真实外观。
+    await expect(root).toHaveCSS('opacity', '1');
+  } else if (component === 'icon') {
     await expect(root.locator('svg')).toBeVisible();
     await expect(root).not.toHaveClass(/ex-icon--empty/);
   } else if (component === 'barcode') {
