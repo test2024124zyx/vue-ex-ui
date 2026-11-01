@@ -283,13 +283,19 @@ export function createFocusTrap(
   return () => document.removeEventListener('keydown', handleKeydown, true);
 }
 
-/** 在两帧布局稳定后聚焦首个可用控件，并返回可取消任务。 */
-export function scheduleAutoFocus(container: HTMLElement): () => void {
+/** 在两帧布局稳定后补充初始焦点，保留用户已进入逻辑子树的焦点。 */
+export function scheduleAutoFocus(
+  container: HTMLElement,
+  getContainers: () => HTMLElement[] = () => [container]
+): () => void {
   let firstFrame = 0;
   let secondFrame = 0;
   firstFrame = requestAnimationFrame(() => {
     secondFrame = requestAnimationFrame(() => {
       if (!container.isConnected) return;
+      // 打开期间用户可能已经操作本层或 Teleport 子层，迟到任务不能抢回焦点。
+      const activeElement = container.ownerDocument.activeElement;
+      if (getContainers().some(owner => owner.contains(activeElement))) return;
       const target = getFocusableElements(container)[0] ?? container;
       if (target === container && !container.hasAttribute('tabindex')) container.tabIndex = -1;
       target.focus({ preventScroll: true });

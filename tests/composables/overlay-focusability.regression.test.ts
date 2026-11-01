@@ -9,6 +9,28 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('延迟自动聚焦尊重已建立的弹层焦点', () => {
+  it.each(['control', 'container', 'teleport'] as const)('保留用户提前进入 %s 的焦点', kind => {
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => frames.push(callback));
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    const root = mountContent('<button>首项</button><button id="chosen">当前操作</button>');
+    root.tabIndex = -1;
+    const owned = [root];
+    disposers.push(scheduleAutoFocus(root, () => owned));
+    frames[0]!(0);
+    // 子弹层在父层的自动聚焦任务排队之后才打开，归属集合必须实时读取。
+    const popup = kind === 'teleport' ? mountContent('<button>子菜单</button>') : undefined;
+    if (popup) owned.push(popup);
+    const target =
+      popup?.querySelector('button') ??
+      (kind === 'container' ? root : root.querySelector<HTMLElement>('#chosen')!);
+    target.focus();
+    frames[1]!(0);
+    expect(document.activeElement).toBe(target);
+  });
+});
+
 function mountContent(content: string): HTMLElement {
   const root = document.createElement('section');
   root.innerHTML = content;

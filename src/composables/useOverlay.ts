@@ -128,7 +128,9 @@ export function useOverlay(options: UseOverlayOptions): UseOverlayReturn {
       if (revision !== activationRevision || !active.value || !options.container.value) return;
       syncFocusTrap();
       cancelAutoFocus?.();
-      cancelAutoFocus = shouldAutoFocus() ? scheduleAutoFocus(options.container.value) : null;
+      cancelAutoFocus = shouldAutoFocus()
+        ? scheduleAutoFocus(options.container.value, () => getOverlayOwnedContainers(entry))
+        : null;
     });
   };
 

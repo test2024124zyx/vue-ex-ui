@@ -122,6 +122,31 @@ for (const modal of [false, true]) {
   });
 }
 
+for (const target of ['control', 'menu']) {
+  test(`模态框延迟自动聚焦保留用户提前进入的 ${target} 焦点`, async ({ page }) => {
+    const start = new Date('2024-05-15T00:00:00Z');
+    await page.clock.install({ time: start });
+    await page.clock.pauseAt(start);
+    await open(page, 'dropdown', '&modal=true');
+    const control = page.locator('#after-dropdown');
+    const menu = page.getByRole('menu');
+    if (target === 'menu') {
+      await page.locator('#dropdown-trigger').press('ArrowDown');
+      await expect(menu).toBeFocused();
+    } else await control.focus();
+    // 显式执行父层等待的两帧，稳定复现用户先操作、自动聚焦后执行的顺序。
+    await page.clock.runFor(50);
+    await expect(target === 'menu' ? menu : control).toBeFocused();
+    // 竞态断言后恢复真实帧，使后续关闭的 Vue 离场过渡正常完成。
+    await page.clock.resume();
+    if (target === 'menu') {
+      await page.keyboard.press('Tab');
+      await expect(control).toBeFocused();
+      await expect(menu).not.toBeVisible();
+    }
+  });
+}
+
 test('通知迁移层级保留正在操作的按钮焦点', async ({ page }) => {
   await open(page, 'services');
   await page.locator('#show-notification').click();
