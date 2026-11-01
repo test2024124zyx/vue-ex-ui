@@ -444,6 +444,21 @@ describe('image-compress utils', () => {
     }
   });
 
+  it.each(['quality', 'dimension', 'size'] as const)(
+    '编码回调完成但 %s 结果尚未返回时取消，不得返回成功快照',
+    async mode => {
+      let complete!: BlobCallback;
+      vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(callback => {
+        complete = callback;
+      });
+      const controller = new AbortController();
+      const pending = compressLoadedImage(createResource(), { mode, signal: controller.signal });
+      complete(new Blob(['图片'], { type: 'image/jpeg' }));
+      controller.abort();
+      await expect(pending).rejects.toMatchObject({ code: 'ABORTED' });
+    }
+  );
+
   it('compressImage 在成功和失败后都释放临时源资源', async () => {
     class ImageMock {
       naturalWidth = 40;

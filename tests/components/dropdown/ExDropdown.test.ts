@@ -252,7 +252,7 @@ describe('ExDropdown', () => {
     expect(document.activeElement).toBe(triggerButton().element);
   });
 
-  it('Escape 关闭并归还焦点，Tab 关闭但不强制恢复焦点', async () => {
+  it('Escape 关闭并归还焦点，Tab 从触发器放行原生顺序', async () => {
     mountDropdown();
     await triggerButton().trigger('keydown', { key: 'ArrowDown' });
     await flushPromises();
@@ -262,10 +262,12 @@ describe('ExDropdown', () => {
 
     await triggerButton().trigger('keydown', { key: 'ArrowDown' });
     await flushPromises();
-    menuElement().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    menuElement().dispatchEvent(tab);
     await flushPromises();
     expect(wrapper!.emitted('update:visible')?.at(-1)).toEqual([false]);
-    expect(document.activeElement).not.toBe(triggerButton().element);
+    expect(document.activeElement).toBe(triggerButton().element);
+    expect(tab.defaultPrevented).toBe(false);
   });
 
   it('受控关闭在父级确认隐藏后才把焦点归还触发器', async () => {

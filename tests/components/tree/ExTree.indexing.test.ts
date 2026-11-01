@@ -28,16 +28,15 @@ describe('ExTree 大树计算及状态一致性', () => {
     };
   };
 
-  it('深树半选计算单次聚合后代，避免逐祖先重复遍历整棵子树', () => {
+  it('深树外部勾选向上聚合为全选，避免逐祖先重复遍历整棵子树', () => {
     const depth = 200;
     const tree = createDeepTree(depth);
     const wrapper = mount(ExTree, {
       props: { data: tree.data, checkable: true, defaultCheckedKeys: ['leaf'] },
     });
     const methods = wrapper.vm as unknown as ExTreeExposed;
-    expect(methods.getHalfCheckedNodes().map(node => node.key)).toEqual(
-      Array.from({ length: depth - 1 }, (_, level) => `level-${level}`)
-    );
+    expect(methods.getHalfCheckedNodes()).toEqual([]);
+    expect(methods.getCheckedNodes()).toHaveLength(depth + 1);
     expect(tree.reads()).toBeLessThan(depth * 15);
     wrapper.unmount();
   });

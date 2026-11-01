@@ -113,6 +113,7 @@ import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } f
 import ExTreeNode from './ExTreeNode.vue';
 import { TREE_STATE_KEY } from './state';
 import { useTreeLoader } from './use-tree-loader';
+import { filterTreeNodes } from './tree-data';
 import { generateId } from '../../utils/id';
 
 defineOptions({
@@ -173,10 +174,12 @@ watch(
 const filterValue = ref('');
 
 const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
-  for (const node of nodes) {
+  const pending = [...nodes].reverse();
+  while (pending.length) {
+    const node = pending.pop()!;
     if (!node.disabled) return node.key;
-    const childKey = node.children ? findFirstEnabledKey(node.children) : null;
-    if (childKey) return childKey;
+    for (let index = (node.children?.length ?? 0) - 1; index >= 0; index--)
+      pending.push(node.children![index]!);
   }
   return null;
 };
@@ -218,7 +221,28 @@ const checkedState = useControllableState<string[]>({
 
 const effectiveExpandedKeys = expandedState.value;
 const effectiveSelectedKeys = selectedState.value;
-const effectiveCheckedKeys = checkedState.value;
+const effectiveCheckedKeys = computed(() => {
+  if (props.checkStrictly) return checkedState.value.value;
+  const checked = new Set(checkedState.value.value);
+  const { nodes, parents } = treeIndex.value;
+  const inherited = new Set<string>();
+  // 前序传递已有勾选意图；不可勾选节点自身不被新增，后代沿用点击联动语义。
+  for (const node of nodes.values()) {
+    const parent = parents.get(node.key);
+    if (parent !== undefined && inherited.has(parent)) {
+      inherited.add(node.key);
+      if (isNodeCheckable(node)) checked.add(node.key);
+    }
+    if (isNodeCheckable(node) && checked.has(node.key)) inherited.add(node.key);
+  }
+  // 逆前序汇总完整的子级状态，外部值与用户点击使用相同的父子关系。
+  for (const node of [...nodes.values()].reverse()) {
+    const children = node.children?.filter(isNodeCheckable) ?? [];
+    if (isNodeCheckable(node) && children.length && children.every(child => checked.has(child.key)))
+      checked.add(node.key);
+  }
+  return [...checked];
+});
 const expandedKeySet = computed(() => new Set(effectiveExpandedKeys.value));
 const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
 const checkedKeySet = computed(() => new Set(effectiveCheckedKeys.value));
@@ -259,25 +283,7 @@ const filteredData = computed(() => {
     return treeData.value;
   }
 
-  const filter = (nodes: TreeNode[]): TreeNode[] => {
-    const result: TreeNode[] = [];
-
-    for (const node of nodes) {
-      const match = props.filterNodeMethod!(filterValue.value, node);
-      const children = node.children ? filter(node.children) : [];
-
-      if (match || children.length > 0) {
-        result.push({
-          ...node,
-          children: children.length > 0 ? children : node.children,
-        });
-      }
-    }
-
-    return result;
-  };
-
-  return filter(treeData.value);
+  return filterTreeNodes(treeData.value, node => props.filterNodeMethod!(filterValue.value, node));
 });
 
 // 样式类
@@ -566,7 +572,7 @@ function handleLoadedChildren(node: TreeNode, children: TreeNode[]) {
   if (props.checkable && !props.checkStrictly && checkedKeySet.value.has(node.key)) {
     const next = new Set(effectiveCheckedKeys.value);
     getAllChildKeys(node).forEach(key => next.add(key));
-    if (next.size !== effectiveCheckedKeys.value.length) checkedState.request([...next]);
+    if (next.size !== checkedState.value.value.length) checkedState.request([...next]);
   }
   emit('load', node, children);
 }
@@ -744,17 +750,16 @@ const filter = (value: string) => {
   // 过滤时自动展开命中节点的所有祖先，确保命中项可见
   if (value && props.filterNodeMethod) {
     const toExpand = new Set(effectiveExpandedKeys.value);
-    const walk = (nodes: TreeNode[], ancestors: string[]) => {
-      for (const node of nodes) {
-        if (props.filterNodeMethod!(value, node)) {
-          ancestors.forEach(k => toExpand.add(k));
-        }
-        if (node.children && node.children.length > 0) {
-          walk(node.children, [...ancestors, node.key]);
-        }
+    const matched = new Set<string>();
+    for (const node of [...treeIndex.value.nodes.values()].reverse()) {
+      if (!matched.has(node.key) && !props.filterNodeMethod!(value, node)) continue;
+      const parent = treeIndex.value.parents.get(node.key);
+      if (parent !== undefined) {
+        matched.add(parent);
       }
-    };
-    walk(treeData.value, []);
+    }
+    for (const node of treeIndex.value.nodes.values())
+      if (matched.has(node.key)) toExpand.add(node.key);
     const nextKeys = Array.from(toExpand);
     if (
       nextKeys.length !== effectiveExpandedKeys.value.length ||

@@ -463,6 +463,13 @@ const cancelCropOperation = (): void => {
   isCropping.value = false;
 };
 
+const stopInteraction = (): void => {
+  const pointerId = interaction.value?.pointerId;
+  interaction.value = null;
+  if (pointerId !== undefined && containerRef.value?.hasPointerCapture?.(pointerId))
+    containerRef.value.releasePointerCapture(pointerId);
+};
+
 const loadSource = async (): Promise<void> => {
   const generation = ++loadGeneration;
   loadController?.abort();
@@ -470,7 +477,7 @@ const loadSource = async (): Promise<void> => {
   const controller = loadController;
   cancelCropOperation();
   releaseResource();
-  interaction.value = null;
+  stopInteraction();
   displayError.value = '';
   configurationValid.value = true;
   isLoading.value = true;
@@ -523,6 +530,9 @@ const rotateRight = (): void => updateRotation(rotation.value + 90);
 const rotateLeft = (): void => updateRotation(rotation.value - 90);
 
 const reset = (): void => {
+  // 重置撤销旧裁剪和拖动身份，迟到结果与指针移动都不能覆盖新编辑状态。
+  cancelCropOperation();
+  stopInteraction();
   if (!resource.value) return;
   const initialZoom = Math.min(props.maxZoom, Math.max(props.minZoom, 1));
   const zoomChanged = zoom.value !== initialZoom;
@@ -702,6 +712,7 @@ const handleCrop = (): void => {
 
 const handleCancel = (): void => {
   cancelCropOperation();
+  stopInteraction();
   emit('cancel');
 };
 
@@ -834,6 +845,7 @@ onBeforeUnmount(() => {
   loadGeneration += 1;
   loadController?.abort();
   cancelCropOperation();
+  stopInteraction();
   resizeObserver?.disconnect();
   resizeObserver = null;
   if (typeof window !== 'undefined') window.removeEventListener('resize', measureContainer);

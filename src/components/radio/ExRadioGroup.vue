@@ -207,6 +207,16 @@ const validateGroup = (value: RadioValue) => {
   return true;
 };
 
+watch(
+  [() => props.modelValue, () => props.rules],
+  () => {
+    if (!currentErrorMessage.value || props.errorMessage) return;
+    if (props.modelValue === undefined) currentErrorMessage.value = '';
+    else validateGroup(props.modelValue);
+  },
+  { deep: true }
+);
+
 // 监听错误信息变化
 watch(
   () => props.errorMessage,

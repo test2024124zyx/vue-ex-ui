@@ -118,7 +118,7 @@ describe('ExTree 异步子节点', () => {
     expect(api.getNode('new')).not.toBeNull();
   });
 
-  it('加载完成时依据当前勾选状态级联，受控状态不提前变化', async () => {
+  it('加载完成时继承已确认父节点的级联意图，受控模型仍只发更新请求', async () => {
     const loadData = vi.fn(async () => [leaf(), { ...leaf('disabled'), disabled: true }]);
     const { wrapper, api } = createTree({
       loadData,
@@ -128,7 +128,8 @@ describe('ExTree 异步子节点', () => {
     });
     await flushPromises();
     expect(wrapper.emitted('update:checkedKeys')?.at(-1)).toEqual([['root', 'child']]);
-    expect(api.getCheckedNodes().map(node => node.key)).toEqual(['root']);
+    expect(api.getCheckedNodes().map(node => node.key)).toEqual(['root', 'child']);
+    expect(wrapper.props('checkedKeys')).toEqual(['root']);
     await wrapper.setProps({ checkedKeys: ['root', 'child'] });
     expect(api.getCheckedNodes().map(node => node.key)).toEqual(['root', 'child']);
   });

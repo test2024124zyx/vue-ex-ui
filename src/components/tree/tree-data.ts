@@ -6,6 +6,40 @@ export interface LoadedTreeBranch {
   children: TreeNode[];
 }
 
+/** 后序过滤与节点深度无关，不借助调用栈，也不改写源节点的子数组。 */
+export function filterTreeNodes(data: TreeNode[], matches: (node: TreeNode) => boolean) {
+  interface Frame {
+    nodes: TreeNode[];
+    index: number;
+    result: TreeNode[];
+    owner?: TreeNode;
+    match?: boolean;
+  }
+  const frames: Frame[] = [{ nodes: data, index: 0, result: [] }];
+  while (frames.length) {
+    const frame = frames[frames.length - 1]!;
+    if (frame.index === frame.nodes.length) {
+      frames.pop();
+      if (!frame.owner) return frame.result;
+      if (frame.match || frame.result.length)
+        frames[frames.length - 1]!.result.push({
+          ...frame.owner,
+          children: frame.result.length ? frame.result : frame.owner.children,
+        });
+      continue;
+    }
+    const node = frame.nodes[frame.index++]!;
+    frames.push({
+      nodes: node.children ?? [],
+      index: 0,
+      result: [],
+      owner: node,
+      match: matches(node),
+    });
+  }
+  return [];
+}
+
 /** 迭代生成有效树和源节点索引，隔离加载后的结构并避免深树递归溢出。 */
 export function composeTreeData(data: TreeNode[], branches: ReadonlyMap<string, LoadedTreeBranch>) {
   const nodes = new Map<string, TreeNode>();

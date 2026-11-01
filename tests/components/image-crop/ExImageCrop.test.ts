@@ -507,7 +507,7 @@ describe('ExImageCrop', () => {
     expect(current.emitted('cancel')).toEqual([[]]);
   });
 
-  it.each(['cancel', 'source', 'unmount'] as const)(
+  it.each(['cancel', 'reset', 'source', 'unmount'] as const)(
     '编码完成与 %s 交错时旧裁剪结果不再发布',
     async action => {
       let finish!: (value: {
@@ -524,6 +524,7 @@ describe('ExImageCrop', () => {
         outputSize: cropResult.outputSize,
       });
       if (action === 'cancel') await current.get('[data-action="cancel"]').trigger('click');
+      else if (action === 'reset') (current.vm as unknown as ExImageCropExposed).reset();
       else if (action === 'source')
         await current.setProps({ src: new Blob(['新图'], { type: 'image/png' }) });
       else {
@@ -536,6 +537,32 @@ describe('ExImageCrop', () => {
       if (action === 'cancel') expect(current.emitted('cancel')).toHaveLength(1);
     }
   );
+
+  it('重置撤销正在拖动的旧起点，后续仍可开始新拖动', async () => {
+    const current = await mountCrop();
+    const api = current.vm as unknown as ExImageCropExposed;
+    api.setArea({ x: 100, y: 100, width: 100, height: 100 });
+    const box = current.get('.ex-image-crop__crop-box').element;
+    const container = current.get('.ex-image-crop__container').element;
+    await dispatchPointer(box, 'pointerdown', {
+      pointerId: 1,
+      clientX: 100,
+      clientY: 100,
+      button: 0,
+    });
+    api.reset();
+    const resetArea = api.getArea();
+    await dispatchPointer(container, 'pointermove', { pointerId: 1, clientX: 110, clientY: 100 });
+    expect(api.getArea()).toEqual(resetArea);
+    await dispatchPointer(box, 'pointerdown', {
+      pointerId: 2,
+      clientX: 100,
+      clientY: 100,
+      button: 0,
+    });
+    await dispatchPointer(container, 'pointermove', { pointerId: 2, clientX: 110, clientY: 100 });
+    expect(api.getArea().x).toBe(resetArea.x + 10);
+  });
 
   it('裁剪失败只发出一次稳定错误并恢复忙碌状态', async () => {
     const error = new ExImageCropError('ENCODE_FAILED', 'encode failed');

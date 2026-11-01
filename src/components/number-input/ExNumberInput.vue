@@ -224,10 +224,17 @@ const getIconColor = (isDisabled: boolean) => {
 
 // 格式化数字（处理浮点数精度问题）
 const formatNumber = (value: number): number => {
-  if (props.precision !== undefined) {
-    // 使用更可靠的方法处理精度
+  if (
+    props.precision !== undefined &&
+    Number.isInteger(props.precision) &&
+    props.precision >= 0 &&
+    !Number.isInteger(value)
+  ) {
+    // IEEE 754 大数已无小数位；超出可表示范围的十进制放大不能用于舍入。
     const multiplier = Math.pow(10, props.precision);
-    return Math.round(value * multiplier) / multiplier;
+    const scaled = value * multiplier;
+    if (Number.isFinite(scaled) && Number.isFinite(multiplier))
+      return Math.round(scaled) / multiplier;
   }
   return value;
 };

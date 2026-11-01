@@ -308,6 +308,15 @@ const validateGroup = (value: Array<string | number>) => {
   return true;
 };
 
+watch(
+  [() => props.modelValue, () => props.rules],
+  () => {
+    // 保留业务提供的 errorMessage，只更新组件自己产生的错误。
+    if (validationErrorMessage.value) validateGroup(props.modelValue);
+  },
+  { deep: true }
+);
+
 // 提供上下文给子 Checkbox 组件。
 // size/status/disabled/readonly 用 getter 暴露，确保子组件读取时建立
 // 响应式依赖——Group 运行时改变这些属性能正确传播到所有子项。

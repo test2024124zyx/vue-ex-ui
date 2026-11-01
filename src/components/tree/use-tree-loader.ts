@@ -3,6 +3,7 @@ import type { ExTreeProps, TreeNode, TreeNodeLoadState } from './types';
 import { composeTreeData, validateLoadedChildren } from './tree-data';
 import type { LoadedTreeBranch } from './tree-data';
 import { pruneTreeCycles } from '../../utils/tree-cycles';
+import { captureReactiveValue } from '../../utils/reactive-snapshot';
 
 interface TreeLoaderOptions {
   props: Readonly<ExTreeProps>;
@@ -54,7 +55,9 @@ export function useTreeLoader({ props, onLoad, onError }: TreeLoaderOptions) {
     cancelled.clear();
     expanded = new Set();
   };
-  watch([() => props.data, () => props.loadData], invalidate, { deep: true, flush: 'sync' });
+  watch([() => captureReactiveValue(props.data), () => props.loadData], invalidate, {
+    flush: 'sync',
+  });
 
   const loadNode = (key: string, force = false): Promise<boolean> => {
     const node = tree.value.nodes.get(key);

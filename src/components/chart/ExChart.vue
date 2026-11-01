@@ -118,6 +118,7 @@ const resizeObserver = ref<ResizeObserver | null>(null);
 const resizeTimer = ref<number | null>(null);
 const prefersReducedMotion = ref(false);
 const navigationItems = shallowRef<ChartNavigationItem[]>([]);
+const renderedOption = shallowRef<ChartOption>(props.option ?? {});
 let highlightedItem: ChartNavigationItem | null = null;
 // 异步初始化竞态控制：序号 + 卸载标记
 let initSeq = 0;
@@ -159,11 +160,8 @@ const chartStyles = computed(() => {
 });
 
 const isEmpty = computed(() => {
-  if (!props.option) return true;
-  if (
-    !props.option.series ||
-    (Array.isArray(props.option.series) && props.option.series.length === 0)
-  ) {
+  const option = renderedOption.value;
+  if (!option.series || (Array.isArray(option.series) && option.series.length === 0)) {
     return true;
   }
   return false;
@@ -242,6 +240,8 @@ const cloneSeries = (series: ChartOption['series']): ChartOption['series'] => {
 
 const syncNavigationItems = (fallback = props.option) => {
   const option = chartInstance.value?.getOption?.() ?? fallback;
+  // 空状态与键盘导航共用当前实例快照，兼容声明式及公开 setOption 更新。
+  renderedOption.value = option ?? {};
   const items = getChartNavigationItems(option);
   // finished 可能由高亮动作触发，相同数据不重复通知导航器，避免动作反馈循环。
   const previous = navigationItems.value;
@@ -461,6 +461,7 @@ const clear = () => {
   highlightNavigationItem(null);
   chartInstance.value?.clear();
   navigationItems.value = [];
+  renderedOption.value = {};
 };
 
 const dispose = () => {
@@ -470,6 +471,7 @@ const dispose = () => {
     chartInstance.value = null;
   }
   navigationItems.value = [];
+  renderedOption.value = {};
   highlightedItem = null;
 };
 
@@ -482,7 +484,8 @@ const setOption = (
     replaceMerge?: string | string[];
   }
 ) => {
-  chartInstance.value?.setOption(option, opts);
+  if (!chartInstance.value) return;
+  chartInstance.value.setOption(option, opts);
   syncNavigationItems(option);
 };
 

@@ -375,6 +375,7 @@ import { useCascaderPaths } from './use-cascader-paths';
 import { useCascaderKeyboard } from './use-cascader-keyboard';
 import { useCascaderMultiple, cascaderPathKey } from './use-cascader-multiple';
 import { useAsyncOptions } from '../tree-select/use-async-options';
+import { captureReactiveValue } from '../../utils/reactive-snapshot';
 
 defineOptions({
   name: 'ExCascader',
@@ -868,15 +869,14 @@ watch(
 );
 
 watch(
-  () => props.options,
+  () => captureReactiveValue(props.options),
   () => {
     activePath.value = [
       ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
     ];
     searchActiveIndex.value = -1;
     if (visible.value) initializeMenuActive();
-  },
-  { deep: true }
+  }
 );
 
 watch(
@@ -894,6 +894,20 @@ watch(
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
   if (disabled || readonly) hide();
 });
+
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    asyncOptions.cancelAll();
+    hide();
+    activePath.value = [
+      ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
+    ];
+    activeCol.value = 0;
+    activeIndex.value = -1;
+  },
+  { flush: 'post' }
+);
 
 // 菜单列变化后修正高亮并重新定位，保证向上翻转时位置正确。
 watch(menus, () => {

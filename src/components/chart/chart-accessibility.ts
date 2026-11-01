@@ -29,6 +29,8 @@ const NAVIGABLE_SERIES_TYPES = new Set([
   'funnel',
   'gauge',
 ]);
+// 这些系列的图例选择数据项名称；普通折线和柱图只按系列名过滤。
+const ITEM_LEGEND_SERIES_TYPES = new Set(['pie', 'funnel', 'radar']);
 
 function readableValue(value: unknown): ChartNavigationItem['value'] | undefined {
   if (scalar(value)) return value;
@@ -150,6 +152,8 @@ export function getChartNavigationItems(option: ChartOption): ChartNavigationIte
       const value = readableValue(raw);
       if (value === undefined) return;
       const pointName = scalar(name) ? String(name) : '';
+      if (seriesType && ITEM_LEGEND_SERIES_TYPES.has(seriesType) && hiddenNames.has(pointName))
+        return;
       items.push({
         seriesIndex,
         dataIndex,

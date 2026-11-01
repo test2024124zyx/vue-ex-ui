@@ -48,6 +48,25 @@ const notificationFor = (title: string) =>
   )!;
 
 describe('编程式服务的动态层级与显式覆盖', () => {
+  it('通知分组迁移保留按钮焦点及计时暂停，不能抢走通知之外的焦点', async () => {
+    const { services, wrapper } = createServices();
+    const closed = vi.fn();
+    services.notification.info({ title: '焦点通知', duration: 1000, onClose: closed });
+    await nextTick();
+    const button = notificationFor('焦点通知').querySelector<HTMLButtonElement>('button')!;
+    button.focus();
+    await wrapper.setProps({ zIndex: 3000 });
+    expect(document.activeElement).toBe(button);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(closed).not.toHaveBeenCalled();
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    await wrapper.setProps({ zIndex: 5000 });
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+
   it('调用组件卸载后服务仍跟随 Provider；显式通知与继承通知正确分组', async () => {
     const { services, wrapper, callerVisible } = createServices();
     services.message.info({ content: '消息', duration: 0 });

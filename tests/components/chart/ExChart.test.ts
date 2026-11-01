@@ -300,6 +300,21 @@ describe('ExChart', () => {
     expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
   });
 
+  it('公开 setOption 和 clear 同步真实空状态，声明式更新仍能重新呈现数据', async () => {
+    wrapper = mount(ExChart, { props: { option: {} }, attachTo: document.body });
+    await flushPromises();
+    const api = wrapper.vm as unknown as { setOption(option: object): void; clear(): void };
+    expect(wrapper.get('.ex-chart__empty').isVisible()).toBe(true);
+    api.setOption(defaultOption);
+    await nextTick();
+    expect(wrapper.get('.ex-chart__empty').isVisible()).toBe(false);
+    api.clear();
+    await nextTick();
+    expect(wrapper.get('.ex-chart__empty').isVisible()).toBe(true);
+    await wrapper.setProps({ option: defaultOption });
+    expect(wrapper.get('.ex-chart__empty').isVisible()).toBe(false);
+  });
+
   it('父 Modal 中第一次 Escape 清除图表高亮，第二次才请求关闭对话框', async () => {
     const { default: ExModal } = await import('../../../src/components/modal/ExModal.vue');
     wrapper = mount(ExModal, {

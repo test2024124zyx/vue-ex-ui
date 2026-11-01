@@ -362,6 +362,7 @@ export function useAsyncOptions<T extends AsyncOption<T>>(options: AsyncOptions<
     load,
     reload: (path: readonly OptionValue[]) => load(path, true),
     cancel,
+    cancelAll,
     syncExpanded: (paths: OptionValue[][]) => {
       if (JSON.stringify(paths) !== JSON.stringify(requestedPaths.value))
         requestedPaths.value = paths;

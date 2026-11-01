@@ -571,7 +571,15 @@ watch(
 watch(
   () => props.fileList,
   (nextFiles, previousFiles) => {
-    invalidatePendingSelections();
+    // 自身进度、成功和新增回写不撤销选择队列；真正替换文件来源才使旧选择失效。
+    const sameSources =
+      nextFiles !== undefined &&
+      nextFiles.length === operationFileList.value.length &&
+      nextFiles.every((file, index) => {
+        const current = operationFileList.value[index];
+        return current?.uid === file.uid && current.raw === file.raw;
+      });
+    if (!sameSources) invalidatePendingSelections();
     if (nextFiles !== undefined) {
       operationFileList.value = cloneUploadFileList(nextFiles);
       transfers.invalidateExternal(nextFiles);

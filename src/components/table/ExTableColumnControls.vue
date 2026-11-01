@@ -24,6 +24,7 @@
         :disabled="disabled"
         :aria-label="t('reorderColumn', { column: title })"
         @dragstart="dragStart"
+        @dragend="columnDrag?.clear()"
         @dragover.prevent="dragOver"
         @drop.prevent.stop="drop"
         @keydown.left.prevent="emit('move', 'before')"
@@ -64,10 +65,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
 import type { TableColumn } from './types';
+import { TABLE_COLUMN_DRAG_KEY } from './column-drag';
 import {
   TABLE_COLUMN_KEYBOARD_STEP,
   TABLE_COLUMN_DRAG_TYPE,
@@ -91,6 +93,7 @@ const emit = defineEmits<{
   'resize-cancel': [];
 }>();
 const { t } = useLocale('table');
+const columnDrag = inject(TABLE_COLUMN_DRAG_KEY, null);
 const title = computed(() => props.column.title || props.column.key);
 const resolvedMinimum = ref<number>();
 const bounds = computed(() => normalizeTableColumnBounds(props.column, resolvedMinimum.value));
@@ -160,13 +163,14 @@ function dragStart(event: DragEvent) {
   if (props.disabled || !event.dataTransfer) return;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData(TABLE_COLUMN_DRAG_TYPE, props.column.key);
+  columnDrag?.start(props.column.key, event);
 }
 function dragOver(event: DragEvent) {
   if (!props.disabled && event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 }
 function drop(event: DragEvent) {
   if (props.disabled) return;
-  const key = event.dataTransfer?.getData(TABLE_COLUMN_DRAG_TYPE);
+  const key = columnDrag?.consume(event);
   if (key) emit('drop', key, 'before');
 }
 </script>

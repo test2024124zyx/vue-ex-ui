@@ -347,6 +347,9 @@ const formItemContext: FormItemContext = {
   get validateMessage() {
     return validateMessage.value;
   },
+  get validationRevision() {
+    return latestValidationId;
+  },
   validate: validateFieldMethod,
   resetField: resetFieldMethod,
   clearValidate: clearValidateMethod,

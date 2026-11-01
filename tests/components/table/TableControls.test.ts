@@ -302,7 +302,7 @@ describe('表头列宽和排序控件的原生交互', () => {
     expect(outerClick).not.toHaveBeenCalled();
   });
 
-  it('原生拖放写入组件 MIME，只接受有来源列键的数据', async () => {
+  it('原生拖放写入组件 MIME，缺少表格会话时不接受任何来源列键', async () => {
     const { wrapper } = mountControls();
     const drag = wrapper.get('.ex-table-column-controls__drag');
     const dataTransfer = transferData();
@@ -312,12 +312,12 @@ describe('表头列宽和排序控件的原生交互', () => {
     await drag.trigger('dragover', { dataTransfer });
     expect(dataTransfer.dropEffect).toBe('move');
     await drag.trigger('drop', { dataTransfer: transferData('source') });
-    expect(wrapper.emitted('drop')).toEqual([['source', 'before']]);
+    expect(wrapper.emitted('drop')).toBeUndefined();
     await drag.trigger('drop', { dataTransfer: transferData() });
     await drag.trigger('drop');
     await drag.trigger('dragover');
     await drag.trigger('dragstart');
-    expect(wrapper.emitted('drop')).toHaveLength(1);
+    expect(wrapper.emitted('drop')).toBeUndefined();
   });
 
   it('禁用时不可聚焦或拖放，不发送列宽和拖放变更', async () => {

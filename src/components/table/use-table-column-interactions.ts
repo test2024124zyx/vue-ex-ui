@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import { useControllableState } from '../../composables/useControllableState';
 import type { TableColumn } from './types';
+import { provideTableColumnDrag } from './column-drag';
 import type {
   TableColumnInteractionEmits,
   TableColumnInteractionProps,
@@ -172,6 +173,7 @@ export function useTableColumnInteractions(
     !props.loading &&
     !column.children?.length &&
     (column.reorderable ?? props.reorderableColumns ?? false);
+  provideTableColumnDrag(key => index.value.get(key)?.column, canReorder);
   const hasManagedWidth = (column: TableColumn) => {
     if (column.children?.length) return false;
     const value = Object.prototype.hasOwnProperty.call(widths.value.value, column.key)

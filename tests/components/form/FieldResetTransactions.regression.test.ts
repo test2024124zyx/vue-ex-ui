@@ -40,6 +40,54 @@ function mountField(model: Record<string, unknown>, control: () => VNode) {
 
 describe('重置字段同时撤销控件本地事务', () => {
   it.each(['checkbox', 'checkbox-group', 'radio', 'radio-group'] as const)(
+    '%s 外部赋合法值后清除本地错误，外部错误信息仍由父级控制',
+    async kind => {
+      const checkbox = kind.startsWith('checkbox');
+      const grouped = kind.endsWith('group');
+      const initial = checkbox ? (grouped ? [] : false) : 'a';
+      const model = reactive<{ value: unknown; error: string }>({ value: initial, error: '' });
+      const component: Component = checkbox
+        ? grouped
+          ? ExCheckboxGroup
+          : ExCheckbox
+        : grouped
+          ? ExRadioGroup
+          : ExRadio;
+      const { wrapper } = mountField(model, () =>
+        h(
+          component,
+          {
+            modelValue: model.value,
+            value: 'b',
+            errorMessage: model.error,
+            options: checkbox && grouped ? [{ label: '乙', value: 'b' }] : undefined,
+            rules: [
+              (value: unknown) =>
+                (checkbox
+                  ? Array.isArray(value)
+                    ? value.length === 0
+                    : value === false
+                  : value === 'a') || '本地错误',
+            ],
+            'onUpdate:modelValue': (value: unknown) => (model.value = value),
+          },
+          grouped && !checkbox ? { default: () => h(ExRadio, { value: 'b' }) } : undefined
+        )
+      );
+      await wrapper.get('input').setValue(true);
+      expect(wrapper.text()).toContain('本地错误');
+      model.value = initial;
+      await nextTick();
+      expect(wrapper.text()).not.toContain('本地错误');
+      model.error = '服务端错误';
+      await nextTick();
+      model.value = checkbox ? (grouped ? ['b'] : true) : 'b';
+      await nextTick();
+      expect(wrapper.text()).toContain('服务端错误');
+    }
+  );
+
+  it.each(['checkbox', 'checkbox-group', 'radio', 'radio-group'] as const)(
     '%s 重置后清除本地规则错误，并允许新的交互重新校验',
     async kind => {
       const checkbox = kind.startsWith('checkbox');

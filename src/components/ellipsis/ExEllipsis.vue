@@ -83,6 +83,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import ExTooltip from '../tooltip/ExTooltip.vue';
 import type { ExTooltipExposed } from '../tooltip/types';
 import type { ExEllipsisEmits, ExEllipsisExposed, ExEllipsisProps } from './types';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({ name: 'ExEllipsis' });
 
@@ -104,7 +105,11 @@ const rootRef = ref<HTMLElement>();
 const contentRef = ref<HTMLElement>();
 const tooltipRef = ref<ExTooltipExposed>();
 const contentId = `ex-ellipsis-content-${useId()}`;
-const internalExpanded = ref(props.defaultExpanded);
+const expandedState = useControllableState<boolean>({
+  controlledValue: () => props.expanded,
+  defaultValue: () => props.defaultExpanded,
+  onChange: value => emit('update:expanded', value),
+});
 const isOverflowing = ref(false);
 const fullText = ref('');
 let resizeObserver: ResizeObserver | null = null;
@@ -123,8 +128,7 @@ const normalizedLines = computed(() => {
 const normalizedExpandControl = computed(() =>
   props.expandControl === 'inline' ? 'inline' : 'button'
 );
-const isControlled = computed(() => props.expanded !== undefined);
-const requestedExpanded = computed(() => props.expanded ?? internalExpanded.value);
+const requestedExpanded = expandedState.value;
 const isExpanded = computed(() => props.expandable && requestedExpanded.value);
 const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
 const groupRole = computed(() => (accessibleLabel.value ? ('group' as const) : undefined));
@@ -191,8 +195,7 @@ const queueMeasurement = () => {
 
 const requestExpanded = (expanded: boolean) => {
   if (!props.expandable || isExpanded.value === expanded) return;
-  emit('update:expanded', expanded);
-  if (!isControlled.value) internalExpanded.value = expanded;
+  expandedState.request(expanded);
 };
 
 const expand = () => requestExpanded(true);

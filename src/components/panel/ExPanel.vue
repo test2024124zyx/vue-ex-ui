@@ -6,7 +6,9 @@
     :role="panelRole"
     :aria-label="accessibleLabel"
     :aria-busy="loading ? 'true' : undefined"
+    :aria-disabled="isInteractive && loading ? 'true' : undefined"
     :tabindex="isInteractive ? 0 : undefined"
+    @click.capture="guardLoadingClick"
     @keydown="triggerPanelClick"
   >
     <span
@@ -155,6 +157,12 @@ const panelStyles = computed(() => {
 
 // 暴露的方法
 const getElement = () => panelRef.value || null;
+const guardLoadingClick = (event: MouseEvent): void => {
+  if (!props.loading) return;
+  // 原生监听通过根节点透传，捕获阶段统一阻止根节点与子操作的加载期点击。
+  event.preventDefault();
+  event.stopImmediatePropagation();
+};
 const triggerPanelClick = (event: KeyboardEvent): void => {
   if (
     event.target !== event.currentTarget ||

@@ -149,6 +149,10 @@ export function createNotificationService(appContext?: AppContext): Notification
       ConfigContext | undefined;
     if (!context) return;
     const zIndex = resolveZIndexLayer(context.zIndex.value, 'toast');
+    const focused = document.activeElement;
+    const restoreFocus =
+      focused instanceof HTMLElement &&
+      [...records.values()].some(record => record.wrapper.contains(focused));
     const previousGroups = new Set<string>();
     for (const record of records.values()) {
       if (!record.inheritsZIndex || record.options.zIndex === zIndex) continue;
@@ -161,9 +165,18 @@ export function createNotificationService(appContext?: AppContext): Notification
       render(record.vnode, record.wrapper);
     }
     // 合并到已有组时仍按原始创建顺序排列，显式层级的记录留在原组。
-    for (const record of records.values())
-      containers.get(record.groupKey)?.appendChild(record.wrapper);
+    const positions = new Map<string, number>();
+    for (const record of records.values()) {
+      const container = containers.get(record.groupKey);
+      const index = positions.get(record.groupKey) ?? 0;
+      if (container && container.children[index] !== record.wrapper)
+        container.insertBefore(record.wrapper, container.children[index] ?? null);
+      positions.set(record.groupKey, index + 1);
+    }
     previousGroups.forEach(destroyContainerIfEmpty);
+    // DOM 迁移会丢失原生焦点；仅恢复被迁移的控件，不覆盖业务主动转移的焦点。
+    if (restoreFocus && focused.isConnected && document.activeElement === document.body)
+      focused.focus({ preventScroll: true });
   };
 
   const notifyClose = (record: NotificationRecord): void => {

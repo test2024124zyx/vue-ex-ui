@@ -68,6 +68,10 @@ import {
   useZIndexLayer,
 } from '../config-provider/composables';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import {
+  moveFocusAfterPopup,
+  registerOverlayEscapeBoundary,
+} from '../../composables/overlay-manager';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { computeFloatingPosition } from '../../utils/floating';
 import type { FloatingRect } from '../../utils/floating';
@@ -493,6 +497,14 @@ const handleMenuKeydown = (event: KeyboardEvent) => {
       requestHide(true);
       return;
     case 'Tab':
+      // Teleport 的 DOM 顺序不代表触发器的业务顺序；模态内还须保留焦点圈闭。
+      {
+        const trigger = findTriggerElement();
+        if (trigger && menuRef.value) {
+          if (moveFocusAfterPopup(trigger, menuRef.value, event.shiftKey)) event.preventDefault();
+          else trigger.focus({ preventScroll: true });
+        }
+      }
       requestHide(false);
       return;
   }
@@ -526,6 +538,31 @@ const {
   closeOnEscape: () => true,
   onEscape: () => requestHide(true),
   restoreFocus: false,
+});
+
+let releaseKeyboardBoundary: (() => void) | undefined;
+watch(
+  menuRef,
+  element => {
+    releaseKeyboardBoundary?.();
+    releaseKeyboardBoundary = element
+      ? registerOverlayEscapeBoundary(
+          element,
+          () => overlayActive.value,
+          () => requestHide(true),
+          () => true
+        )
+      : undefined;
+  },
+  { flush: 'post' }
+);
+
+watch(normalizedTrigger, () => {
+  clearHoverTimer();
+  contextPoint.value = null;
+  focusMenuWhenOpened = false;
+  restoreFocusWhenClosed = false;
+  if (overlayActive.value) schedulePosition();
 });
 
 watch(
@@ -596,6 +633,7 @@ const getElement = () => dropdownRef.value ?? null;
 
 onBeforeUnmount(() => {
   disposed = true;
+  releaseKeyboardBoundary?.();
   clearHoverTimer();
   detachPositionListeners();
 });

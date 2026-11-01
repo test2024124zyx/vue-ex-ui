@@ -10,6 +10,18 @@ const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('数值边界与表单输入事件', () => {
+  it.each([1e308, -1e308, Number.MAX_VALUE])(
+    '精度舍入保留可表示的大数 %s，不生成 Infinity',
+    async value => {
+      const wrapper = mount(ExNumberInput, { props: { modelValue: value, precision: 2 } });
+      wrappers.push(wrapper);
+      expect(Number(wrapper.get('input').element.value)).toBe(value);
+      const text = `${value < 0 ? '-' : ''}${'9'.repeat(307)}`;
+      await wrapper.get('input').setValue(text);
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([Number(text)]);
+    }
+  );
+
   it.each([
     { min: -1, max: 0.15, value: '0.15' },
     { min: 0.16, max: 1, value: '0.16' },

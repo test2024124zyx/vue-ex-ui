@@ -824,6 +824,17 @@ watch(interactive, canInteract => {
 });
 
 watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 只撤销编辑请求，已成功加载且来源未变的数据仍可复用。
+    asyncOptions.cancelAll();
+    close();
+    searchQuery.value = '';
+  },
+  { flush: 'post' }
+);
+
+watch(
   () => props.teleported,
   () => {
     if (visible.value) nextTick(updatePanelPosition);

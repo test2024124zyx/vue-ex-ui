@@ -512,6 +512,15 @@ const syncIndeterminate = () => {
   if (checkboxRef.value) checkboxRef.value.indeterminate = isIndeterminate.value;
 };
 
+// 本地错误仅描述已验证的值，外部改值或规则变化后按当前确认值重新核对。
+watch(
+  [checkboxValue, () => props.rules],
+  () => {
+    if (validationErrorMessage.value) validateCheckbox(checkboxValue.value);
+  },
+  { deep: true }
+);
+
 onMounted(syncIndeterminate);
 watch(
   () => props.indeterminate,

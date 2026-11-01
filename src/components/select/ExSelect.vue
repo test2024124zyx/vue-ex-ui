@@ -464,14 +464,12 @@ const formItem = useFormItem();
 // 使用组件自身、FormItem 与 ConfigProvider 的尺寸继承链。
 const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
 
-// Refs
 const selectRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
 const inputRef = ref<HTMLInputElement>();
 const dropdownRef = ref<HTMLElement>();
 const virtualListRef = ref<InstanceType<typeof ExVirtualList>>();
 
-// State
 const dropdownVisible = ref(false);
 const searchQuery = ref('');
 const composing = ref(false);
@@ -548,7 +546,6 @@ const dropdownClasses = computed(() => [
   },
 ]);
 
-// 计算属性
 const selectClasses = computed(() => {
   const classes = ['ex-select', `ex-select--${componentSize.value}`];
 
@@ -589,7 +586,6 @@ const displayTags = computed<SelectOption[]>(() =>
 );
 const collapsedCount = computed(() => selectedOptions.value.length - displayTags.value.length);
 
-// 显示清空图标
 const showClearIcon = computed(() => {
   if (!props.clearable || effectiveDisabled.value || effectiveReadonly.value) return false;
   // 只有界面上存在真实选中内容时才显示清空入口，避免空值或失效值出现假操作。
@@ -708,6 +704,12 @@ const hideDropdown = (restoreFocus = false) => {
   searchQuery.value = '';
   hoverIndex.value = -1;
 };
+// 同值重置也关闭搜索并取消防抖和在途请求。
+watch(
+  () => formItem?.resetRevision?.value,
+  () => hideDropdown(),
+  { flush: 'post' }
+);
 
 const handleInputClick = () => {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
@@ -751,7 +753,6 @@ const handleSelect = (option: SelectOption) => {
   hideDropdown();
 };
 
-// 多选：移除某个标签
 const removeTag = (value: string | number) => {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
   const next = selectedValues.value.filter(v => v !== value);
@@ -970,7 +971,6 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleViewportChange, true);
 });
 
-// 暴露的方法
 const focus = () => {
   if (props.searchable && inputRef.value) {
     inputRef.value.focus();

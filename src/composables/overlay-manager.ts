@@ -213,6 +213,28 @@ export function getOverlayOwnedContainers(entry: OverlayStackEntry): HTMLElement
     .filter((container): container is HTMLElement => Boolean(container?.isConnected));
 }
 
+/** 子菜单退出时按触发器所在模态边界移动；普通页面交回浏览器原生 Tab 顺序。 */
+export function moveFocusAfterPopup(
+  trigger: HTMLElement,
+  popup: HTMLElement,
+  reverse: boolean
+): boolean {
+  const boundary = [...getOverlayRuntime().overlayStack]
+    .reverse()
+    .find(entry => isOverlayPresent(entry) && entry.trapFocus?.());
+  if (!boundary) return false;
+  const containers = getOverlayOwnedContainers(boundary);
+  if (!containers.some(container => container.contains(trigger))) return false;
+  const focusable = [...new Set(containers.flatMap(getFocusableElements))].filter(
+    element => !popup.contains(element)
+  );
+  const index = focusable.indexOf(trigger);
+  if (index < 0) return false;
+  const offset = reverse ? -1 : 1;
+  focusable[(index + offset + focusable.length) % focusable.length]!.focus({ preventScroll: true });
+  return true;
+}
+
 /** 安装 Tab 焦点圈闭，并返回清理函数。 */
 export function createFocusTrap(
   container: HTMLElement,

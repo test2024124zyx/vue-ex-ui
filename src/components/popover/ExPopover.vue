@@ -71,6 +71,7 @@ import {
   watch,
   nextTick,
   onMounted,
+  onUpdated,
   onUnmounted,
   getCurrentInstance,
   useSlots,
@@ -266,6 +267,16 @@ const handleMouseEnter = () => {
   }
 };
 
+watch(
+  () => props.trigger,
+  () => {
+    clearTimers();
+    isPointerInside.value = false;
+    isPopoverHovered.value = false;
+    isFocusInside.value = false;
+  }
+);
+
 const handleMouseLeave = () => {
   if (props.trigger === 'hover') {
     isPointerInside.value = false;
@@ -356,21 +367,16 @@ const handleScroll = () => {
   schedulePosition();
 };
 
-interface TriggerAriaSnapshot {
-  haspopup: string | null;
-  expanded: string | null;
-  controls: string | null;
-}
+type TriggerAriaSnapshot = Record<string, { value: string | null; written: string }>;
 const triggerAria = new Map<HTMLElement, TriggerAriaSnapshot>();
 const restoreTriggerAria = () => {
   triggerAria.forEach((snapshot, element) => {
-    const restore = (name: string, value: string | null) => {
+    for (const [name, { value, written }] of Object.entries(snapshot)) {
+      // 父级更新过的属性属于业务最新状态，只撤销本实例仍持有的写入。
+      if (element.getAttribute(name) !== written) continue;
       if (value === null) element.removeAttribute(name);
       else element.setAttribute(name, value);
-    };
-    restore('aria-haspopup', snapshot.haspopup);
-    restore('aria-expanded', snapshot.expanded);
-    restore('aria-controls', snapshot.controls);
+    }
   });
   triggerAria.clear();
 };
@@ -382,14 +388,16 @@ const syncTriggerAria = () => {
     (child): child is HTMLElement => child instanceof HTMLElement
   );
   if (!trigger) return;
-  triggerAria.set(trigger, {
-    haspopup: trigger.getAttribute('aria-haspopup'),
-    expanded: trigger.getAttribute('aria-expanded'),
-    controls: trigger.getAttribute('aria-controls'),
-  });
-  trigger.setAttribute('aria-haspopup', 'dialog');
-  trigger.setAttribute('aria-expanded', String(overlayActive.value));
-  trigger.setAttribute('aria-controls', popperId);
+  const snapshot: TriggerAriaSnapshot = {};
+  for (const [name, written] of Object.entries({
+    'aria-haspopup': 'dialog',
+    'aria-expanded': String(overlayActive.value),
+    'aria-controls': popperId,
+  })) {
+    snapshot[name] = { value: trigger.getAttribute(name), written };
+    trigger.setAttribute(name, written);
+  }
+  triggerAria.set(trigger, snapshot);
 };
 
 const removeGlobalListeners = () => {
@@ -450,6 +458,8 @@ onMounted(() => {
   syncTriggerAria();
   if (visible.value) nextTick(updatePosition);
 });
+
+onUpdated(syncTriggerAria);
 
 onUnmounted(() => {
   clearTimers();

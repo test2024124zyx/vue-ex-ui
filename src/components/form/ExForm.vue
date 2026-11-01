@@ -152,8 +152,9 @@ async function validateFieldMethod(
     return { valid: true };
   }
 
-  const results = await Promise.all(fieldGroup.map(field => field.validate(trigger)));
-  if (results.some(result => result.outOfDate)) {
+  const validation = trackFieldValidations();
+  const results = await Promise.all(fieldGroup.map(field => validation.run(field, trigger)));
+  if (!validation.isCurrent() || results.some(result => result.outOfDate)) {
     return { valid: false, outOfDate: true };
   }
 
@@ -195,19 +196,34 @@ function invalidateFormValidation() {
   isValidating.value = false;
 }
 
+/** 字段 Promise 完成不代表结果一直有效，整批结束前还必须核对每个校验版本。 */
+function trackFieldValidations() {
+  const revisions = new Map<FormItemContext, number | undefined>();
+  return {
+    run(field: FormItemContext, trigger?: string) {
+      const pending = field.validate(trigger);
+      revisions.set(field, field.validationRevision);
+      return pending;
+    },
+    isCurrent: () =>
+      [...revisions].every(([field, revision]) => field.validationRevision === revision),
+  };
+}
+
 // 验证整个表单
 async function validate(
   callback?: (valid: boolean, errors?: FormValidateError[]) => void
 ): Promise<FormValidateResult> {
   const validationId = ++latestValidationId;
   isValidating.value = true;
+  const validation = trackFieldValidations();
 
   try {
     const results = await Promise.all(
       Array.from(fields.entries()).flatMap(([prop, fieldGroup]) =>
         fieldGroup.map(async field => {
           try {
-            const result = await field.validate();
+            const result = await validation.run(field);
             return { prop, result };
           } catch (error) {
             logger.error(
@@ -226,7 +242,7 @@ async function validate(
       )
     );
 
-    if (validationId !== latestValidationId) {
+    if (validationId !== latestValidationId || !validation.isCurrent()) {
       return { valid: false, errors: [], outOfDate: true };
     }
 
@@ -269,6 +285,7 @@ async function validateField(
   const validationId = ++latestValidationId;
   const propsArray = Array.isArray(fieldProps) ? fieldProps : [fieldProps];
   isValidating.value = true;
+  const validation = trackFieldValidations();
 
   try {
     const entries: Array<{ prop: string; field?: FormItemContext }> = [];
@@ -284,7 +301,7 @@ async function validateField(
       entries.map(async ({ prop, field }) => {
         if (!field) return { prop, result: { valid: true } satisfies FormItemValidateResult };
         try {
-          const result = await field.validate();
+          const result = await validation.run(field);
           return { prop, result };
         } catch (error) {
           logger.error(
@@ -302,7 +319,7 @@ async function validateField(
       })
     );
 
-    if (validationId !== latestValidationId) {
+    if (validationId !== latestValidationId || !validation.isCurrent()) {
       return { valid: false, errors: [], outOfDate: true };
     }
 

@@ -233,6 +233,17 @@ const shouldStayVisible = () => {
   return visible.value;
 };
 
+watch(
+  () => props.trigger,
+  () => {
+    // 触发方式变化后，旧鼠标或焦点事件的延迟意图不再有效。
+    clearTimers();
+    isPointerInside.value = false;
+    isFocusInside.value = false;
+    isPopperHovered.value = false;
+  }
+);
+
 const hideWhenInactive = () => {
   if (!shouldStayVisible()) hide();
 };

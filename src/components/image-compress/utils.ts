@@ -323,6 +323,8 @@ export async function compressLoadedImage(
       };
     }
 
+    // 编码回调兑现之后仍可能取消；公开工具不能返回已经失效的成功结果。
+    assertNotAborted(options.signal);
     const compressionRatio =
       resource.originalSize > 0
         ? Math.round((1 - encoded.blob.size / resource.originalSize) * 100)
@@ -354,7 +356,9 @@ export async function compressImage(
 ): Promise<CompressResult> {
   const resource = await loadImageResource(source, options.signal);
   try {
-    return await compressLoadedImage(resource, options);
+    const result = await compressLoadedImage(resource, options);
+    assertNotAborted(options.signal);
+    return result;
   } finally {
     resource.dispose();
   }
@@ -369,6 +373,7 @@ export async function compressImages(
   for (const source of sources) {
     results.push(await compressImage(source, options));
   }
+  assertNotAborted(options.signal);
   return results;
 }
 

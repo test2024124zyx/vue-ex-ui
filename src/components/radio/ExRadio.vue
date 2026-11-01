@@ -130,6 +130,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { generateId } from '../../utils/id';
 import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
+import { registerNativeRadio, restoreNativeRadioGroup } from './native-radio-state';
 
 defineOptions({
   name: 'ExRadio',
@@ -212,10 +213,16 @@ const restoreNativeState = () => {
   if (radioRef.value) radioRef.value.checked = isChecked.value;
 };
 let unregisterRadio: (() => void) | undefined;
+let unregisterNativeRadio: (() => void) | undefined;
 onMounted(() => {
   unregisterRadio = radioGroupContext?.registerRadio?.(restoreNativeState);
+  if (radioRef.value)
+    unregisterNativeRadio = registerNativeRadio(radioRef.value, restoreNativeState);
 });
-onBeforeUnmount(() => unregisterRadio?.());
+onBeforeUnmount(() => {
+  unregisterRadio?.();
+  unregisterNativeRadio?.();
+});
 
 const hasLabel = computed(() => {
   return Boolean(props.label || slots.default);
@@ -340,7 +347,8 @@ const handleChange = (event: Event) => {
     emit('change', props.value, event);
     formItem?.onFieldChange();
   }
-  void nextTick(restoreNativeState);
+  if (radioGroupContext) void nextTick(restoreNativeState);
+  else if (radioRef.value) restoreNativeRadioGroup(radioRef.value);
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -380,6 +388,17 @@ watch(
     currentErrorMessage.value = newError || '';
   },
   { immediate: true }
+);
+
+watch(
+  [radioValue, () => props.rules],
+  () => {
+    // 外部错误仍由父级控制，不能被本地模型同步清除。
+    if (!currentErrorMessage.value || props.errorMessage) return;
+    if (radioValue.value === undefined) currentErrorMessage.value = '';
+    else validateRadio(radioValue.value);
+  },
+  { deep: true }
 );
 
 // 暴露方法

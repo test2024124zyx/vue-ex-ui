@@ -11,6 +11,46 @@ const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('控件显示以父级确认值为准', () => {
+  it.each(['reject', 'accept', 'transform'] as const)(
+    '同名独立单选框在父级 %s 后恢复整个原生组，并隔离其他表单',
+    async outcome => {
+      const value = ref('a');
+      const wrapper = mount(
+        {
+          render: () =>
+            h('div', [
+              h(
+                'form',
+                ['a', 'b', 'c'].map(option =>
+                  h(ExRadio, {
+                    name: 'shared',
+                    value: option,
+                    modelValue: value.value,
+                    'onUpdate:modelValue': next => {
+                      if (outcome !== 'reject')
+                        value.value = outcome === 'transform' ? 'c' : String(next);
+                    },
+                  })
+                )
+              ),
+              h('form', [h(ExRadio, { name: 'shared', value: 'other', modelValue: 'other' })]),
+            ]),
+        },
+        { attachTo: document.body }
+      );
+      wrappers.push(wrapper);
+      const inputs = wrapper.findAll<HTMLInputElement>('input');
+      inputs[1]!.element.click();
+      await nextTick();
+      expect(inputs.map(input => input.element.checked)).toEqual([
+        outcome === 'reject',
+        outcome === 'accept',
+        outcome === 'transform',
+        true,
+      ]);
+    }
+  );
+
   it.each(['text', 'textarea'] as const)('%s 在父级拒绝输入和清空时恢复确认值', async type => {
     const wrapper = mount(ExInput, { props: { type, modelValue: '确认值', clearable: true } });
     wrappers.push(wrapper);

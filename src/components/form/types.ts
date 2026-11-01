@@ -323,6 +323,8 @@ export interface FormItemContext {
   validateStatus: FormValidateStatus;
   /** 错误消息 */
   validateMessage: string;
+  /** 内部校验版本；汇总结果时识别已完成字段随后发生的值或规则变化。 */
+  readonly validationRevision?: number;
   /** 验证字段 */
   validate: (trigger?: string) => Promise<FormItemValidateResult>;
   /** 重置字段 */

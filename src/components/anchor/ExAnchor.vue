@@ -186,11 +186,16 @@ const updateLink = (element: HTMLElement, href: string, title: string): void => 
 
 const unregisterLink = (element: HTMLElement): void => {
   links.value = links.value.filter(link => link.element !== element);
-  if (activeElement.value === element) {
-    activeElement.value = null;
-    activeLink.value = '';
-  }
 };
+
+watch(
+  links,
+  () => {
+    // 等待动态子项完成挂载或移除，再统一计算活动项并发布真实变化。
+    if (mounted) handleScroll();
+  },
+  { flush: 'post' }
+);
 
 provide(ANCHOR_INJECTION_KEY, {
   activeLink: readonly(activeLink),

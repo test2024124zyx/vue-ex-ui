@@ -2,6 +2,29 @@ import { describe, expect, it } from 'vitest';
 import { getChartNavigationItems } from '../../../src/components/chart/chart-accessibility';
 
 describe('图表可访问数据解析', () => {
+  it.each(['pie', 'funnel', 'radar'] as const)(
+    '%s 隐藏数据项不参与键盘导航，并保留原始索引',
+    type => {
+      const items = getChartNavigationItems({
+        legend: { selected: { 隐藏项: false } },
+        series: [
+          {
+            type,
+            data: [
+              { name: '隐藏项', value: 3 },
+              { name: '显示项', value: 4 },
+            ],
+          },
+          { type: 'bar', data: [{ name: '隐藏项', value: 5 }] },
+        ],
+      });
+      expect(items.map(item => [item.seriesIndex, item.dataIndex, item.name])).toEqual([
+        [0, 1, '显示项'],
+        [1, 0, '隐藏项'],
+      ]);
+    }
+  );
+
   it('从分类轴、系列名称和数据对象读取真实语义，跳过空值与隐藏系列', () => {
     expect(
       getChartNavigationItems({
