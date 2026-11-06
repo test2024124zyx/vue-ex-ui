@@ -138,7 +138,14 @@ try {
   }
 
   const packOutput = runNpm(
-    ['pack', '--json', '--ignore-scripts', '--pack-destination', temporaryDirectory],
+    [
+      'pack',
+      '--json',
+      '--ignore-scripts',
+      '--foreground-scripts=false',
+      '--pack-destination',
+      temporaryDirectory,
+    ],
     { name: 'npm pack' }
   );
   const packEntries = JSON.parse(packOutput);
