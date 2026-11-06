@@ -2,59 +2,55 @@
   <div
     ref="dropdownRef"
     :class="dropdownClasses"
-    :style="dropdownStyles"
-    :aria-label="ariaLabel"
   >
-    <div
+    <span
+      :id="triggerId"
       ref="triggerRef"
       class="ex-dropdown__trigger"
-      role="button"
-      :tabindex="disabled ? -1 : 0"
-      aria-haspopup="menu"
-      :aria-expanded="isVisible"
-      :aria-controls="menuId"
       @mouseenter="handleTriggerEnter"
       @mouseleave="handleTriggerLeave"
       @click="handleTriggerClick"
       @contextmenu="handleContextMenu"
-      @keydown="handleKeydown"
+      @keydown="handleTriggerKeydown"
     >
-      <slot />
-    </div>
+      <slot
+        :open="overlayActive"
+        :disabled="disabled"
+        :trigger-props="triggerProps"
+      ></slot>
+    </span>
 
     <Teleport to="body">
       <Transition name="ex-dropdown-fade">
         <div
-          v-show="isVisible"
+          v-show="overlayActive"
           :id="menuId"
           ref="menuRef"
           :class="menuClasses"
+          :data-theme="configTheme"
           :style="menuStyles"
           role="menu"
-          :aria-activedescendant="activeIndex >= 0 ? `${menuId}-item-${activeIndex}` : undefined"
+          tabindex="-1"
+          :data-placement="actualPlacement"
+          :aria-label="accessibleLabel"
+          :aria-labelledby="accessibleLabel ? undefined : triggerId"
+          :aria-activedescendant="activeItemId || undefined"
           @mouseenter="handleMenuEnter"
           @mouseleave="handleMenuLeave"
+          @keydown="handleMenuKeydown"
         >
           <div class="ex-dropdown__menu-content">
-            <template
+            <ExDropdownItem
               v-for="(item, index) in items"
-              :key="item.key || index"
-            >
-              <div
-                v-if="item.divided"
-                class="ex-dropdown__divider"
-                role="separator"
-              />
-              <ExDropdownItem
-                :id="`${menuId}-item-${index}`"
-                :label="item.label"
-                :icon="item.icon"
-                :disabled="item.disabled"
-                :active="index === activeIndex"
-                @click="handleItemClick(item)"
-              />
-            </template>
-            <slot name="menu" />
+              :id="`${menuId}-item-${index}`"
+              :key="item.key"
+              :label="item.label"
+              :icon="item.icon"
+              :disabled="item.disabled"
+              :divided="item.divided"
+              @click="handleDataItemClick(item)"
+            />
+            <slot name="menu"></slot>
           </div>
         </div>
       </Transition>
@@ -63,20 +59,39 @@
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { computed, nextTick, onBeforeUnmount, provide, ref, useId, watch } from 'vue';
+import type { CSSProperties } from 'vue';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+} from '../config-provider/composables';
+import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import {
+  moveFocusAfterPopup,
+  registerOverlayEscapeBoundary,
+} from '../../composables/overlay-manager';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import { computeFloatingPosition } from '../../utils/floating';
+import type { FloatingRect } from '../../utils/floating';
+import { DROPDOWN_INJECTION_KEY } from './context';
+import ExDropdownItem from './ExDropdownItem.vue';
 import type {
-  ExDropdownProps,
+  DropdownItemData,
+  DropdownPlacement,
+  DropdownTrigger,
+  DropdownTriggerSlotProps,
   ExDropdownEmits,
   ExDropdownExposed,
-  DropdownItemData,
+  ExDropdownProps,
 } from './types';
-import ExDropdownItem from './ExDropdownItem.vue';
-import { generateId } from '../../utils/id';
 
-defineOptions({
-  name: 'ExDropdown',
-});
+defineOptions({ name: 'ExDropdown' });
+defineSlots<{
+  default(props: DropdownTriggerSlotProps): unknown;
+  menu(): unknown;
+}>();
 
 const props = withDefaults(defineProps<ExDropdownProps>(), {
   items: () => [],
@@ -86,345 +101,544 @@ const props = withDefaults(defineProps<ExDropdownProps>(), {
   visible: undefined,
   offset: 8,
   matchTriggerWidth: false,
+  flip: true,
+  viewportPadding: 8,
+  showDelay: 0,
+  hideDelay: 150,
+  hideOnClick: true,
+  zIndex: undefined,
 });
-
 const emit = defineEmits<ExDropdownEmits>();
 
+const TRIGGERS = new Set<DropdownTrigger>(['hover', 'click', 'contextmenu']);
+const PLACEMENTS = new Set<DropdownPlacement>([
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end',
+]);
+const FOCUSABLE_TRIGGER_SELECTOR =
+  'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 const dropdownRef = ref<HTMLDivElement>();
-const triggerRef = ref<HTMLDivElement>();
+const triggerRef = ref<HTMLSpanElement>();
 const menuRef = ref<HTMLDivElement>();
-const isVisible = ref(false);
-const menuStyles = ref<Record<string, string>>({});
-const hoverTimer = ref<number>();
-const menuId = `${generateId('ex-dropdown')}-menu`;
-/** 键盘导航当前高亮项索引（-1 表示无） */
-const activeIndex = ref(-1);
+const instanceId = useId();
+const triggerId = `ex-dropdown-trigger-${instanceId}`;
+const menuId = `ex-dropdown-menu-${instanceId}`;
+const baseZIndex = useZIndexLayer('dropdown');
+const isVisible = ref(props.visible ?? false);
+const activeItemId = ref<string | null>(null);
+const actualPlacement = ref<DropdownPlacement>('bottom-start');
+const menuPositionStyles = ref<CSSProperties>({});
+const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const contextPoint = ref<{ x: number; y: number } | null>(null);
+let hoverTimer: number | undefined;
+let positionFrame: number | undefined;
+let listenersAttached = false;
+let resizeObserver: ResizeObserver | null = null;
+let focusMenuWhenOpened = false;
+let restoreFocusWhenClosed = false;
+let lastTriggerElement: HTMLElement | null = null;
+let disposed = false;
 
-/** 可被键盘导航选中的菜单项索引（跳过禁用项） */
-const enabledIndexes = computed(() =>
-  props.items.map((item, index) => (item.disabled ? -1 : index)).filter(index => index >= 0)
+const normalizedTrigger = computed<DropdownTrigger>(() =>
+  TRIGGERS.has(props.trigger) ? props.trigger : 'hover'
 );
+const normalizedPlacement = computed<DropdownPlacement>(() =>
+  PLACEMENTS.has(props.placement) ? props.placement : 'bottom-start'
+);
+const isControlled = computed(() => props.visible !== undefined);
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || undefined);
+const dropdownClasses = computed(() => [
+  'ex-dropdown',
+  { 'ex-dropdown--disabled': props.disabled },
+]);
+const menuClasses = computed(() => [
+  'ex-dropdown__menu',
+  `ex-dropdown__menu--${actualPlacement.value}`,
+  {
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
+  },
+]);
+const menuStyles = computed<CSSProperties>(() => ({
+  ...menuPositionStyles.value,
+  ...popupStyles.value,
+}));
+const triggerProps = computed(() => ({
+  'aria-haspopup': 'menu' as const,
+  'aria-expanded': overlayActive.value,
+  'aria-controls': menuId,
+  'aria-disabled': props.disabled ? (true as const) : undefined,
+}));
 
-/** 将高亮项滚动进可视区域 */
-const scrollActiveIntoView = () => {
-  if (activeIndex.value < 0) return;
+const finiteDelay = (value: number, fallback: number): number =>
+  Number.isFinite(value) && value >= 0 ? value : fallback;
+
+const applyVisibility = (nextVisible: boolean, emitLifecycle = true) => {
+  if (isVisible.value === nextVisible) return false;
+  isVisible.value = nextVisible;
+  if (!nextVisible) activeItemId.value = null;
+  if (emitLifecycle) {
+    if (nextVisible) emit('show');
+    else emit('hide');
+  }
+  return true;
+};
+
+const requestVisible = (nextVisible: boolean) => {
+  if (nextVisible && props.disabled) return false;
+  if (isVisible.value === nextVisible) return false;
+  emit('update:visible', nextVisible);
+  if (!isControlled.value) applyVisibility(nextVisible);
+  return true;
+};
+
+const findTriggerElement = (): HTMLElement | null => {
+  if (lastTriggerElement?.isConnected) return lastTriggerElement;
+  return triggerRef.value?.querySelector<HTMLElement>(FOCUSABLE_TRIGGER_SELECTOR) ?? null;
+};
+
+const rememberTriggerElement = (event: Event) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  const focusable = event.target.closest<HTMLElement>(FOCUSABLE_TRIGGER_SELECTOR);
+  if (focusable && triggerRef.value?.contains(focusable)) lastTriggerElement = focusable;
+};
+
+const focusTrigger = () => findTriggerElement()?.focus({ preventScroll: true });
+
+const getMenuItems = (): HTMLElement[] => {
+  const elements = Array.from(
+    menuRef.value?.querySelectorAll<HTMLElement>(
+      '[data-ex-dropdown-item]:not([aria-disabled="true"]), [role="menuitem"]:not([aria-disabled="true"])'
+    ) ?? []
+  );
+  // :disabled 同时覆盖原生按钮及禁用 fieldset 后代，不能只检查 ARIA 属性。
+  const unique = Array.from(new Set(elements)).filter(item => !item.matches(':disabled'));
+  unique.forEach((item, index) => {
+    if (!item.id) item.id = `${menuId}-custom-${index}`;
+  });
+  return unique;
+};
+
+/** 只调整菜单自身滚动位置，避免 scrollIntoView 连带滚动页面和触发器。 */
+const scrollMenuItemIntoView = (item: HTMLElement): void => {
+  const menu = menuRef.value;
+  if (!menu) return;
+
+  const menuRect = menu.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  if (itemRect.top < menuRect.top) {
+    menu.scrollTop -= menuRect.top - itemRect.top;
+  } else if (itemRect.bottom > menuRect.bottom) {
+    menu.scrollTop += itemRect.bottom - menuRect.bottom;
+  }
+};
+
+const activateItem = (itemId: string) => {
+  activeItemId.value = itemId;
   nextTick(() => {
-    const el = menuRef.value?.querySelector<HTMLElement>(`#${menuId}-item-${activeIndex.value}`);
-    // scrollIntoView 在部分环境（如 jsdom）不可用，做存在性守卫
-    if (typeof el?.scrollIntoView === 'function') {
-      el.scrollIntoView({ block: 'nearest' });
-    }
+    const item = document.getElementById(itemId);
+    if (item) scrollMenuItemIntoView(item);
   });
 };
 
-/** 移动高亮：step=+1 向下，-1 向上；wrap 环绕 */
-const moveActive = (step: 1 | -1) => {
-  const list = enabledIndexes.value;
-  if (list.length === 0) return;
-  const current = list.indexOf(activeIndex.value);
-  const next =
-    current === -1
+const activateBoundaryItem = (boundary: 'first' | 'last') => {
+  const items = getMenuItems();
+  const item = boundary === 'first' ? items[0] : items[items.length - 1];
+  if (item) activateItem(item.id);
+};
+
+const moveActiveItem = (step: 1 | -1) => {
+  const items = getMenuItems();
+  if (items.length === 0) return;
+  const currentIndex = items.findIndex(item => item.id === activeItemId.value);
+  const nextIndex =
+    currentIndex < 0
       ? step === 1
         ? 0
-        : list.length - 1
-      : (current + step + list.length) % list.length;
-  activeIndex.value = list[next]!;
-  scrollActiveIntoView();
+        : items.length - 1
+      : (currentIndex + step + items.length) % items.length;
+  activateItem(items[nextIndex]!.id);
 };
 
-// 计算属性
-const dropdownClasses = computed(() => {
-  const classes = ['ex-dropdown'];
+const focusMenu = () => {
+  activateBoundaryItem('first');
+  menuRef.value?.focus({ preventScroll: true });
+};
 
-  if (props.disabled) classes.push('ex-dropdown--disabled');
+const requestShow = (focus = false) => {
+  focusMenuWhenOpened ||= focus;
+  if (!requestVisible(true) && isVisible.value && focus) {
+    nextTick(focusMenu);
+  }
+};
 
-  classes.push(...normalizeCustomClass(props.class));
+const requestHide = (restoreTriggerFocus = false) => {
+  restoreFocusWhenClosed = restoreTriggerFocus;
+  const changed = requestVisible(false);
+  if (restoreTriggerFocus && !changed && !isVisible.value) {
+    restoreFocusWhenClosed = false;
+    nextTick(focusTrigger);
+  }
+};
 
-  return classes;
+provide(DROPDOWN_INJECTION_KEY, {
+  activeItemId,
+  activate: activateItem,
+  select: () => {
+    if (props.hideOnClick) requestHide(true);
+  },
 });
 
-const dropdownStyles = computed(() => {
-  if (!props.style) return undefined;
-  if (typeof props.style === 'string') return props.style;
-  return props.style;
+const toFloatingRect = (rect: DOMRect): FloatingRect => ({
+  top: rect.top,
+  right: rect.right,
+  bottom: rect.bottom,
+  left: rect.left,
+  width: rect.width,
+  height: rect.height,
 });
 
-const menuClasses = computed(() => {
-  return ['ex-dropdown__menu', `ex-dropdown__menu--${props.placement}`];
-});
-
-// 方法
-const updateMenuPosition = () => {
-  if (!triggerRef.value || !menuRef.value) return;
-
-  const triggerRect = triggerRef.value.getBoundingClientRect();
+/** 立即读取布局并更新 fixed 菜单坐标；滚动和缩放事件通过 rAF 合并调用。 */
+const updatePosition = () => {
+  if (disposed || !triggerRef.value || !menuRef.value || typeof window === 'undefined') return;
+  const point = contextPoint.value;
+  const contextOffset = finiteDelay(props.offset, 0);
+  const reference: FloatingRect = point
+    ? {
+        top: point.y,
+        right: point.x + contextOffset,
+        bottom: point.y,
+        left: point.x + contextOffset,
+        width: 0,
+        height: 0,
+      }
+    : toFloatingRect(triggerRef.value.getBoundingClientRect());
   const menuRect = menuRef.value.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const spacing = props.offset ?? 8;
+  const result = computeFloatingPosition({
+    reference,
+    floating: { width: menuRect.width, height: menuRect.height },
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    placement: point ? 'bottom-start' : normalizedPlacement.value,
+    offset: props.offset,
+    padding: props.viewportPadding,
+    flip: point ? false : props.flip,
+    matchReferenceWidth: !point && props.matchTriggerWidth,
+  });
 
-  let top = 0;
-  let left = 0;
-
-  // 根据 placement 计算位置
-  const [mainPlacement, subPlacement] = props.placement.split('-');
-  const effectiveMenuWidth = props.matchTriggerWidth
-    ? Math.max(menuRect.width, triggerRect.width)
-    : menuRect.width;
-
-  switch (mainPlacement) {
-    case 'bottom':
-      top = triggerRect.bottom + spacing;
-      if (subPlacement === 'start') {
-        left = triggerRect.left; // 左对齐
-      } else if (subPlacement === 'end') {
-        left = triggerRect.right - effectiveMenuWidth; // 右对齐
-      } else {
-        left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
-      }
-      break;
-    case 'top':
-      top = triggerRect.top - menuRect.height - spacing;
-      if (subPlacement === 'start') {
-        left = triggerRect.left; // 左对齐
-      } else if (subPlacement === 'end') {
-        left = triggerRect.right - effectiveMenuWidth; // 右对齐
-      } else {
-        left = triggerRect.left + (triggerRect.width - effectiveMenuWidth) / 2;
-      }
-      break;
-    case 'left':
-      left = triggerRect.left - menuRect.width - spacing;
-      if (subPlacement === 'start') {
-        top = triggerRect.top;
-      } else if (subPlacement === 'end') {
-        top = triggerRect.bottom - menuRect.height;
-      } else {
-        top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
-      }
-      break;
-    case 'right':
-      left = triggerRect.right + spacing;
-      if (subPlacement === 'start') {
-        top = triggerRect.top;
-      } else if (subPlacement === 'end') {
-        top = triggerRect.bottom - menuRect.height;
-      } else {
-        top = triggerRect.top + (triggerRect.height - menuRect.height) / 2;
-      }
-      break;
-  }
-
-  // 边界检测和调整
-  if (left + effectiveMenuWidth > viewportWidth - spacing) {
-    left = viewportWidth - effectiveMenuWidth - spacing;
-  }
-  if (left < spacing) {
-    left = spacing;
-  }
-  if (top + menuRect.height > viewportHeight - spacing) {
-    top = viewportHeight - menuRect.height - spacing;
-  }
-  if (top < spacing) {
-    top = spacing;
-  }
-
-  const styles: Record<string, string> = {
-    top: `${top}px`,
-    left: `${left}px`,
-    zIndex: 'var(--ex-z-dropdown, 1000)',
+  actualPlacement.value = result.placement as DropdownPlacement;
+  menuPositionStyles.value = {
+    top: `${result.y}px`,
+    left: `${result.x}px`,
+    ...(result.width === undefined ? {} : { width: `${result.width}px` }),
   };
-  if (props.matchTriggerWidth) {
-    styles.minWidth = `${Math.max(triggerRect.width, menuRect.width)}px`;
-  }
-  menuStyles.value = styles;
 };
 
-// 受控模式（传入 visible prop）下，isVisible 只由 props.visible 的 watch 驱动，
-// 内部不直接改写，避免与父级状态脱节。
-const isControlled = computed(() => props.visible !== undefined);
+/** 只取消当前组件创建的定位任务，服务端渲染期间不读取浏览器全局对象。 */
+const cancelScheduledPosition = () => {
+  if (positionFrame === undefined) return;
+  if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+    window.cancelAnimationFrame(positionFrame);
+  }
+  positionFrame = undefined;
+};
 
-const show = () => {
-  if (props.disabled) return;
-  if (!isControlled.value) isVisible.value = true;
-  emit('update:visible', true);
-  emit('show');
-  nextTick(() => {
-    updateMenuPosition();
+const schedulePosition = () => {
+  if (typeof window === 'undefined') return;
+  cancelScheduledPosition();
+  if (typeof window.requestAnimationFrame !== 'function') {
+    updatePosition();
+    return;
+  }
+  positionFrame = window.requestAnimationFrame(() => {
+    positionFrame = undefined;
+    updatePosition();
   });
 };
 
-const hide = () => {
-  if (!isControlled.value) isVisible.value = false;
-  activeIndex.value = -1;
-  emit('update:visible', false);
-  emit('hide');
+const handlePointerOutside = (event: Event) => {
+  if (!(event.target instanceof Node)) return;
+  if (dropdownRef.value?.contains(event.target) || containsTarget(event.target)) return;
+  requestHide(false);
+};
+
+const attachPositionListeners = () => {
+  if (disposed || !overlayActive.value || listenersAttached || typeof window === 'undefined')
+    return;
+  document.addEventListener('pointerdown', handlePointerOutside, true);
+  window.addEventListener('resize', schedulePosition);
+  window.addEventListener('scroll', schedulePosition, true);
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(schedulePosition);
+    if (triggerRef.value) resizeObserver.observe(triggerRef.value);
+    if (menuRef.value) resizeObserver.observe(menuRef.value);
+  }
+  listenersAttached = true;
+};
+
+const detachPositionListeners = () => {
+  if (!listenersAttached || typeof window === 'undefined') return;
+  document.removeEventListener('pointerdown', handlePointerOutside, true);
+  window.removeEventListener('resize', schedulePosition);
+  window.removeEventListener('scroll', schedulePosition, true);
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  cancelScheduledPosition();
+  listenersAttached = false;
 };
 
 const clearHoverTimer = () => {
-  if (hoverTimer.value) {
-    clearTimeout(hoverTimer.value);
-    hoverTimer.value = undefined;
+  if (hoverTimer === undefined) return;
+  window.clearTimeout(hoverTimer);
+  hoverTimer = undefined;
+};
+
+const scheduleHoverAction = (action: () => void, delay: number) => {
+  clearHoverTimer();
+  if (delay === 0) {
+    action();
+    return;
   }
+  hoverTimer = window.setTimeout(() => {
+    hoverTimer = undefined;
+    action();
+  }, delay);
 };
 
 const handleTriggerEnter = () => {
-  if (props.trigger === 'hover') {
-    clearHoverTimer();
-    show();
-  }
+  if (normalizedTrigger.value !== 'hover' || props.disabled) return;
+  contextPoint.value = null;
+  scheduleHoverAction(() => requestShow(false), finiteDelay(props.showDelay, 0));
 };
 
 const handleTriggerLeave = () => {
-  if (props.trigger === 'hover') {
-    clearHoverTimer();
-    hoverTimer.value = window.setTimeout(() => {
-      hide();
-    }, 200);
-  }
+  if (normalizedTrigger.value !== 'hover') return;
+  scheduleHoverAction(() => requestHide(false), finiteDelay(props.hideDelay, 150));
 };
 
 const handleMenuEnter = () => {
-  if (props.trigger === 'hover') {
-    clearHoverTimer();
-  }
+  if (normalizedTrigger.value === 'hover') clearHoverTimer();
 };
 
 const handleMenuLeave = () => {
-  if (props.trigger === 'hover') {
-    clearHoverTimer();
-    hoverTimer.value = window.setTimeout(() => {
-      hide();
-    }, 200);
-  }
+  if (normalizedTrigger.value !== 'hover') return;
+  scheduleHoverAction(() => requestHide(false), finiteDelay(props.hideDelay, 150));
 };
 
-const handleTriggerClick = () => {
-  if (props.trigger === 'click') {
-    if (isVisible.value) {
-      hide();
-    } else {
-      show();
-    }
-  }
+const handleTriggerClick = (event: MouseEvent) => {
+  if (normalizedTrigger.value !== 'click' || props.disabled) return;
+  rememberTriggerElement(event);
+  contextPoint.value = null;
+  if (isVisible.value) requestHide(false);
+  else requestShow(true);
 };
 
-const handleContextMenu = (e: MouseEvent) => {
-  if (props.trigger === 'contextmenu') {
-    e.preventDefault();
-    show();
-  }
+const handleContextMenu = (event: MouseEvent) => {
+  if (normalizedTrigger.value !== 'contextmenu' || props.disabled) return;
+  event.preventDefault();
+  rememberTriggerElement(event);
+  contextPoint.value = { x: event.clientX, y: event.clientY };
+  requestShow(true);
 };
 
-/**
- * 键盘交互：
- * - 关闭态：↓ / Enter / Space 打开并高亮首项
- * - 打开态：↑↓ 导航、Home/End 跳转首尾、Enter/Space 选中、Esc/Tab 关闭
- */
-const handleKeydown = (e: KeyboardEvent) => {
-  if (props.disabled) return;
+const handleTriggerKeydown = (event: KeyboardEvent) => {
+  if (props.disabled || event.defaultPrevented || isComposingKeyboardEvent(event)) return;
+  if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  rememberTriggerElement(event);
+  contextPoint.value = null;
+  focusMenuWhenOpened = true;
+  requestShow(true);
+  nextTick(() => {
+    if (event.key === 'ArrowUp') activateBoundaryItem('last');
+  });
+};
 
-  if (!isVisible.value) {
-    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      show();
-      nextTick(() => {
-        activeIndex.value = enabledIndexes.value[0] ?? -1;
-        scrollActiveIntoView();
-      });
-    }
-    return;
-  }
-
-  switch (e.key) {
+const handleMenuKeydown = (event: KeyboardEvent) => {
+  if (event.defaultPrevented || isComposingKeyboardEvent(event)) return;
+  switch (event.key) {
     case 'ArrowDown':
-      e.preventDefault();
-      moveActive(1);
-      break;
+      event.preventDefault();
+      moveActiveItem(1);
+      return;
     case 'ArrowUp':
-      e.preventDefault();
-      moveActive(-1);
-      break;
+      event.preventDefault();
+      moveActiveItem(-1);
+      return;
     case 'Home':
-      e.preventDefault();
-      activeIndex.value = enabledIndexes.value[0] ?? -1;
-      scrollActiveIntoView();
-      break;
+      event.preventDefault();
+      activateBoundaryItem('first');
+      return;
     case 'End':
-      e.preventDefault();
-      activeIndex.value = enabledIndexes.value[enabledIndexes.value.length - 1] ?? -1;
-      scrollActiveIntoView();
-      break;
+      event.preventDefault();
+      activateBoundaryItem('last');
+      return;
     case 'Enter':
     case ' ': {
-      e.preventDefault();
-      const item = props.items[activeIndex.value];
-      if (item) handleItemClick(item);
-      break;
+      event.preventDefault();
+      document.getElementById(activeItemId.value || '')?.click();
+      return;
     }
     case 'Escape':
-      e.preventDefault();
-      hide();
-      triggerRef.value?.focus();
-      break;
+      event.preventDefault();
+      event.stopPropagation();
+      requestHide(true);
+      return;
     case 'Tab':
-      hide();
-      break;
+      // Teleport 的 DOM 顺序不代表触发器的业务顺序；模态内还须保留焦点圈闭。
+      {
+        const trigger = findTriggerElement();
+        if (trigger && menuRef.value) {
+          if (moveFocusAfterPopup(trigger, menuRef.value, event.shiftKey)) event.preventDefault();
+          else trigger.focus({ preventScroll: true });
+        }
+      }
+      requestHide(false);
+      return;
+  }
+
+  if (event.ctrlKey || event.altKey || event.metaKey || event.key.length !== 1) return;
+  const query = event.key.toLocaleLowerCase();
+  const items = getMenuItems();
+  const start = Math.max(0, items.findIndex(item => item.id === activeItemId.value) + 1);
+  const ordered = [...items.slice(start), ...items.slice(0, start)];
+  const match = ordered.find(item =>
+    item.textContent?.trim().toLocaleLowerCase().startsWith(query)
+  );
+  if (match) {
+    event.preventDefault();
+    activateItem(match.id);
   }
 };
 
-const handleItemClick = (item: DropdownItemData) => {
-  if (item.disabled) return;
-  emit('item-click', item);
-  hide();
+const handleDataItemClick = (item: DropdownItemData) => {
+  if (!item.disabled) emit('item-click', item);
 };
 
-const handleClickOutside = (e: MouseEvent) => {
-  if (!dropdownRef.value || !menuRef.value) return;
-  if (!dropdownRef.value.contains(e.target as Node) && !menuRef.value.contains(e.target as Node)) {
-    hide();
-  }
-};
+const {
+  active: overlayActive,
+  styles: popupStyles,
+  containsTarget,
+} = usePopupOverlay({
+  active: () => isVisible.value && !props.disabled,
+  container: menuRef,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
+  closeOnEscape: () => true,
+  onEscape: () => requestHide(true),
+  restoreFocus: false,
+});
 
-const getElement = () => {
-  return dropdownRef.value || null;
-};
+let releaseKeyboardBoundary: (() => void) | undefined;
+watch(
+  menuRef,
+  element => {
+    releaseKeyboardBoundary?.();
+    releaseKeyboardBoundary = element
+      ? registerOverlayEscapeBoundary(
+          element,
+          () => overlayActive.value,
+          () => requestHide(true),
+          () => true
+        )
+      : undefined;
+  },
+  { flush: 'post' }
+);
 
-// 监听 visible 属性
+watch(normalizedTrigger, () => {
+  clearHoverTimer();
+  contextPoint.value = null;
+  focusMenuWhenOpened = false;
+  restoreFocusWhenClosed = false;
+  if (overlayActive.value) schedulePosition();
+});
+
 watch(
   () => props.visible,
-  newValue => {
-    if (newValue !== undefined) {
-      isVisible.value = newValue;
-      if (newValue) {
-        nextTick(() => {
-          updateMenuPosition();
-        });
-      }
+  visible => {
+    if (visible !== undefined) applyVisibility(visible);
+  },
+  { flush: 'sync' }
+);
+
+watch(
+  overlayActive,
+  visible => {
+    if (!visible) {
+      detachPositionListeners();
+      contextPoint.value = null;
+      if (restoreFocusWhenClosed) nextTick(focusTrigger);
+      restoreFocusWhenClosed = false;
+      return;
     }
+    nextTick(() => {
+      if (disposed || !overlayActive.value) return;
+      attachPositionListeners();
+      updatePosition();
+      if (focusMenuWhenOpened) focusMenu();
+      focusMenuWhenOpened = false;
+    });
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.disabled,
+  disabled => {
+    if (!disabled) return;
+    clearHoverTimer();
+    requestHide(false);
   }
 );
 
-// 生命周期
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  window.addEventListener('resize', updateMenuPosition);
-  window.addEventListener('scroll', updateMenuPosition, true);
-});
+watch(
+  normalizedPlacement,
+  placement => {
+    if (!isVisible.value) actualPlacement.value = placement;
+    else schedulePosition();
+  },
+  { immediate: true }
+);
 
-onUnmounted(() => {
+watch(
+  [
+    () => props.offset,
+    () => props.viewportPadding,
+    () => props.flip,
+    () => props.matchTriggerWidth,
+  ],
+  () => {
+    if (overlayActive.value) schedulePosition();
+  }
+);
+
+const show = () => {
+  contextPoint.value = null;
+  requestShow(false);
+};
+const hide = () => requestHide(false);
+const getElement = () => dropdownRef.value ?? null;
+
+onBeforeUnmount(() => {
+  disposed = true;
+  releaseKeyboardBoundary?.();
   clearHoverTimer();
-  document.removeEventListener('click', handleClickOutside);
-  window.removeEventListener('resize', updateMenuPosition);
-  window.removeEventListener('scroll', updateMenuPosition, true);
+  detachPositionListeners();
 });
 
-// 暴露的方法
-defineExpose<ExDropdownExposed>({
-  show,
-  hide,
-  getElement,
-});
+defineExpose<ExDropdownExposed>({ show, hide, updatePosition, getElement });
 </script>
 
 <style scoped lang="scss" src="./ExDropdown.scss"></style>

@@ -2,17 +2,26 @@
   <div
     ref="cropRef"
     class="ex-image-crop"
+    role="region"
+    :aria-label="resolvedAriaLabel"
+    :aria-busy="isBusy"
   >
-    <!-- 工具栏 -->
     <div
-      v-if="showToolbar && toolbarPosition === 'top'"
+      v-if="showToolbar"
       class="ex-image-crop__toolbar"
+      :class="`ex-image-crop__toolbar--${toolbarPosition}`"
+      role="toolbar"
+      :aria-label="t('toolbar')"
     >
       <div class="ex-image-crop__toolbar-group">
         <button
           v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomOut"
+          type="button"
+          class="ex-image-crop__toolbar-button"
+          :aria-label="t('zoomOut')"
+          :title="t('zoomOut')"
+          :disabled="!isReady || isCropping || zoom <= minZoom"
+          @click="zoomOut"
         >
           <ExIcon
             icon="zoom-out-line"
@@ -22,8 +31,12 @@
         </button>
         <button
           v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomIn"
+          type="button"
+          class="ex-image-crop__toolbar-button"
+          :aria-label="t('zoomIn')"
+          :title="t('zoomIn')"
+          :disabled="!isReady || isCropping || zoom >= maxZoom"
+          @click="zoomIn"
         >
           <ExIcon
             icon="zoom-in-line"
@@ -33,8 +46,12 @@
         </button>
         <button
           v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateLeft"
+          type="button"
+          class="ex-image-crop__toolbar-button"
+          :aria-label="t('rotateLeft')"
+          :title="t('rotateLeft')"
+          :disabled="!isReady || isCropping"
+          @click="rotateLeft"
         >
           <ExIcon
             icon="anticlockwise-line"
@@ -44,8 +61,12 @@
         </button>
         <button
           v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateRight"
+          type="button"
+          class="ex-image-crop__toolbar-button"
+          :aria-label="t('rotateRight')"
+          :title="t('rotateRight')"
+          :disabled="!isReady || isCropping"
+          @click="rotateRight"
         >
           <ExIcon
             icon="clockwise-line"
@@ -54,8 +75,12 @@
           />
         </button>
         <button
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="reset"
+          type="button"
+          class="ex-image-crop__toolbar-button"
+          :aria-label="t('reset')"
+          :title="t('reset')"
+          :disabled="!isReady || isCropping"
+          @click="reset"
         >
           <ExIcon
             icon="refresh-line"
@@ -64,779 +89,768 @@
           />
         </button>
       </div>
+
       <div class="ex-image-crop__toolbar-group">
         <ExButton
           size="small"
-          @click.stop="handleCancel"
+          data-action="cancel"
+          :disabled="isLoading"
+          @click="handleCancel"
         >
-          {{ t('imageCrop.cancel') }}
+          {{ t('cancel') }}
         </ExButton>
         <ExButton
           type="primary"
           size="small"
-          @click.stop="handleCrop"
+          data-action="crop"
+          :loading="isCropping"
+          :disabled="!isReady"
+          @click="handleCrop"
         >
-          {{ t('imageCrop.confirmCrop') }}
+          {{ t('confirmCrop') }}
         </ExButton>
       </div>
     </div>
 
-    <!-- 裁剪区域 -->
     <div
       ref="containerRef"
       class="ex-image-crop__container"
       :style="{ backgroundColor }"
-      @mousedown="handleMouseDown"
-      @touchstart="handleTouchStart"
+      @pointermove="handlePointerMove"
+      @pointerup="endPointerInteraction"
+      @pointercancel="endPointerInteraction"
     >
       <canvas
         ref="canvasRef"
         class="ex-image-crop__canvas"
-        :style="canvasStyle"
-      />
+        aria-hidden="true"
+      ></canvas>
 
-      <!-- 裁剪框 -->
       <div
-        class="ex-image-crop__crop-box"
-        :class="{ 'is-circle': shape === 'circle' }"
-        :style="cropBoxStyle"
+        v-if="isLoading"
+        class="ex-image-crop__status"
+        role="status"
       >
-        <!-- 网格 -->
-        <div
-          v-if="showGrid"
-          class="ex-image-crop__grid"
-        >
-          <div
-            v-for="i in gridRows - 1"
-            :key="`row-${i}`"
-            class="ex-image-crop__grid-line ex-image-crop__grid-line--horizontal"
-            :style="{ top: `${(i / gridRows) * 100}%` }"
-          />
-          <div
-            v-for="i in gridCols - 1"
-            :key="`col-${i}`"
-            class="ex-image-crop__grid-line ex-image-crop__grid-line--vertical"
-            :style="{ left: `${(i / gridCols) * 100}%` }"
-          />
-        </div>
-
-        <!-- 调整手柄 -->
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--nw"
-          data-direction="nw"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--ne"
-          data-direction="ne"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--sw"
-          data-direction="sw"
-        />
-        <div
-          class="ex-image-crop__handle ex-image-crop__handle--se"
-          data-direction="se"
-        />
-        <div
-          v-if="mode === 'free'"
-          class="ex-image-crop__handle ex-image-crop__handle--n"
-          data-direction="n"
-        />
-        <div
-          v-if="mode === 'free'"
-          class="ex-image-crop__handle ex-image-crop__handle--s"
-          data-direction="s"
-        />
-        <div
-          v-if="mode === 'free'"
-          class="ex-image-crop__handle ex-image-crop__handle--w"
-          data-direction="w"
-        />
-        <div
-          v-if="mode === 'free'"
-          class="ex-image-crop__handle ex-image-crop__handle--e"
-          data-direction="e"
-        />
+        {{ t('sourceLoading') }}
+      </div>
+      <div
+        v-else-if="displayError"
+        class="ex-image-crop__status is-error"
+        role="alert"
+      >
+        {{ displayError }}
       </div>
 
-      <!-- 遮罩层 -->
-      <svg
-        class="ex-image-crop__mask"
-        :style="{ pointerEvents: 'none' }"
-      >
-        <defs>
-          <mask :id="maskId">
-            <rect
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              fill="white"
-            />
-            <rect
-              v-if="shape === 'rect'"
-              :x="cropArea.x"
-              :y="cropArea.y"
-              :width="cropArea.width"
-              :height="cropArea.height"
-              fill="black"
-            />
-            <circle
-              v-else
-              :cx="cropArea.x + cropArea.width / 2"
-              :cy="cropArea.y + cropArea.height / 2"
-              :r="cropArea.width / 2"
-              fill="black"
-            />
-          </mask>
-        </defs>
-        <rect
-          x="0"
-          y="0"
+      <template v-if="isReady">
+        <svg
+          class="ex-image-crop__mask"
           width="100%"
           height="100%"
-          fill="rgba(0, 0, 0, 0.6)"
-          :mask="`url(#${maskId})`"
-        />
-      </svg>
-    </div>
+          aria-hidden="true"
+        >
+          <defs>
+            <mask :id="maskId">
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                fill="white"
+              />
+              <rect
+                v-if="shape === 'rect'"
+                :x="cropArea.x"
+                :y="cropArea.y"
+                :width="cropArea.width"
+                :height="cropArea.height"
+                fill="black"
+              />
+              <circle
+                v-else
+                :cx="cropArea.x + cropArea.width / 2"
+                :cy="cropArea.y + cropArea.height / 2"
+                :r="cropArea.width / 2"
+                fill="black"
+              />
+            </mask>
+          </defs>
+          <rect
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            fill="rgba(0, 0, 0, 0.62)"
+            :mask="`url(#${maskId})`"
+          />
+        </svg>
 
-    <!-- 底部工具栏 -->
-    <div
-      v-if="showToolbar && toolbarPosition === 'bottom'"
-      class="ex-image-crop__toolbar"
-    >
-      <div class="ex-image-crop__toolbar-group">
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomOut"
+        <div
+          class="ex-image-crop__crop-box"
+          :class="{ 'is-circle': shape === 'circle', 'is-interacting': Boolean(interaction) }"
+          :style="cropBoxStyle"
+          role="group"
+          tabindex="0"
+          :aria-label="t('cropArea')"
+          @pointerdown="startDrag"
+          @keydown="handleCropBoxKeydown"
         >
-          <ExIcon
-            icon="zoom-out-line"
-            :size="18"
+          <div
+            v-if="showGrid"
+            class="ex-image-crop__grid"
+            :style="{ '--ex-crop-grid-rows': gridRows, '--ex-crop-grid-cols': gridCols }"
             aria-hidden="true"
-          />
-        </button>
-        <button
-          v-if="zoomable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="zoomIn"
-        >
-          <ExIcon
-            icon="zoom-in-line"
-            :size="18"
-            aria-hidden="true"
-          />
-        </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateLeft"
-        >
-          <ExIcon
-            icon="anticlockwise-line"
-            :size="18"
-            aria-hidden="true"
-          />
-        </button>
-        <button
-          v-if="rotatable"
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="rotateRight"
-        >
-          <ExIcon
-            icon="clockwise-line"
-            :size="18"
-            aria-hidden="true"
-          />
-        </button>
-        <button
-          class="ex-image-crop__toolbar-btn"
-          @click.stop="reset"
-        >
-          <ExIcon
-            icon="refresh-line"
-            :size="18"
-            aria-hidden="true"
-          />
-        </button>
-      </div>
-      <div class="ex-image-crop__toolbar-group">
-        <ExButton
-          size="small"
-          @click.stop="handleCancel"
-        >
-          {{ t('imageCrop.cancel') }}
-        </ExButton>
-        <ExButton
-          type="primary"
-          size="small"
-          @click.stop="handleCrop"
-        >
-          {{ t('imageCrop.confirmCrop') }}
-        </ExButton>
-      </div>
+          ></div>
+
+          <button
+            v-for="direction in handleDirections"
+            :key="direction"
+            type="button"
+            class="ex-image-crop__handle"
+            :class="`ex-image-crop__handle--${direction}`"
+            :data-direction="direction"
+            :aria-label="handleLabel(direction)"
+            :title="handleLabel(direction)"
+            @pointerdown.stop="startResize($event, direction)"
+            @keydown.stop="handleResizeKeydown($event, direction)"
+          ></button>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
-import { useI18n } from '../../locale';
+import {
+  loadBrowserImageResource,
+  type LoadedBrowserImageResource,
+} from '../../utils/image-resource';
+import { ExImageCropError, toImageCropError } from './errors';
+import {
+  createImageLayout,
+  createInitialCropArea,
+  moveCropArea,
+  normalizeCropArea,
+  normalizeQuarterTurn,
+  reprojectCropArea,
+  resizeCropArea,
+  type CropConstraints,
+  type CropResizeDirection,
+  type ImageCropLayout,
+} from './geometry';
+import { drawCropPreview, renderCrop, validateCropConfiguration } from './utils';
 import type {
-  ExImageCropProps,
-  ExImageCropEmits,
-  ExImageCropExposed,
   CropArea,
   CropResult,
+  CropRotation,
+  CropSize,
+  ExImageCropEmits,
+  ExImageCropExposed,
+  ExImageCropProps,
 } from './types';
-import ExButton from '../button/ExButton.vue';
 
-defineOptions({
-  name: 'ExImageCrop',
-});
+defineOptions({ name: 'ExImageCrop' });
 
 const props = withDefaults(defineProps<ExImageCropProps>(), {
   shape: 'rect',
-  mode: 'free',
   quality: 0.9,
   outputType: 'image/png',
+  outputBackgroundColor: '#ffffff',
   showGrid: true,
   gridRows: 3,
   gridCols: 3,
   zoomable: true,
   rotatable: true,
   zoomStep: 0.1,
-  rotateStep: 90,
-  minZoom: 0.1,
-  maxZoom: 3,
-  backgroundColor: '#000000',
+  minZoom: 0.5,
+  maxZoom: 4,
+  minWidth: 48,
+  minHeight: 48,
+  backgroundColor: '#111827',
   showToolbar: true,
   toolbarPosition: 'bottom',
-  minWidth: 50,
-  minHeight: 50,
+  ariaLabel: '',
 });
 
 const emit = defineEmits<ExImageCropEmits>();
-
-const { t } = useI18n();
+const { t } = useLocale('imageCrop');
 
 const cropRef = ref<HTMLDivElement>();
 const containerRef = ref<HTMLDivElement>();
 const canvasRef = ref<HTMLCanvasElement>();
-// SSR 环境无 Image 构造器，需守卫；该对象仅在客户端的加载/绘制逻辑中使用
-const image = typeof Image !== 'undefined' ? new Image() : (null as unknown as HTMLImageElement);
-const maskId = generateId('crop-mask');
+const maskId = generateId('image-crop-mask');
+const resource = ref<LoadedBrowserImageResource | null>(null);
+const containerSize = ref<CropSize>({ width: 0, height: 0 });
+const layout = ref<ImageCropLayout | null>(null);
+const cropArea = ref<CropArea>({ x: 0, y: 0, width: 1, height: 1 });
+const zoom = ref(1);
+const rotation = ref<CropRotation>(0);
+const isLoading = ref(false);
+const isCropping = ref(false);
+const displayError = ref('');
+const configurationValid = ref(true);
 
-const imageLoaded = ref(false);
-const imageSize = ref({ width: 0, height: 0 });
-const containerSize = ref({ width: 0, height: 0 });
-const scale = ref(1);
-const rotation = ref(0);
-const cropArea = ref<CropArea>({
-  x: 0,
-  y: 0,
-  width: 200,
-  height: 200,
+interface PointerInteraction {
+  pointerId: number;
+  kind: 'drag' | 'resize';
+  direction?: CropResizeDirection;
+  startX: number;
+  startY: number;
+  startArea: CropArea;
+}
+
+const interaction = ref<PointerInteraction | null>(null);
+let resizeObserver: ResizeObserver | null = null;
+let loadController: AbortController | null = null;
+let cropController: AbortController | null = null;
+let cropPromise: Promise<CropResult> | null = null;
+let cropOperationToken: symbol | null = null;
+let cropGeneration = 0;
+let loadGeneration = 0;
+
+const resolvedAriaLabel = computed(() => props.ariaLabel.trim() || t('editor'));
+const isReady = computed(() =>
+  Boolean(resource.value && layout.value && configurationValid.value && !isLoading.value)
+);
+const isBusy = computed(() => isLoading.value || isCropping.value);
+const effectiveAspectRatio = computed(() => (props.shape === 'circle' ? 1 : props.aspectRatio));
+const handleDirections = computed<CropResizeDirection[]>(() =>
+  effectiveAspectRatio.value
+    ? ['nw', 'ne', 'sw', 'se']
+    : ['nw', 'ne', 'sw', 'se', 'n', 's', 'w', 'e']
+);
+const cropBoxStyle = computed(() => ({
+  left: cropArea.value.x + 'px',
+  top: cropArea.value.y + 'px',
+  width: cropArea.value.width + 'px',
+  height: cropArea.value.height + 'px',
+}));
+
+const handleNames: Record<CropResizeDirection, string> = {
+  n: 'resizeNorth',
+  s: 'resizeSouth',
+  e: 'resizeEast',
+  w: 'resizeWest',
+  nw: 'resizeNorthwest',
+  ne: 'resizeNortheast',
+  sw: 'resizeSouthwest',
+  se: 'resizeSoutheast',
+};
+const handleLabel = (direction: CropResizeDirection): string => t(handleNames[direction]);
+
+const cloneArea = (area: CropArea): CropArea => ({ ...area });
+
+const currentConstraints = (): CropConstraints => ({
+  minWidth: props.minWidth,
+  minHeight: props.minHeight,
+  maxWidth: props.maxWidth,
+  maxHeight: props.maxHeight,
+  aspectRatio: effectiveAspectRatio.value,
 });
 
-const isDragging = ref(false);
-const isResizing = ref(false);
-const resizeDirection = ref('');
-const startPos = ref({ x: 0, y: 0 });
-const startArea = ref<CropArea>({ x: 0, y: 0, width: 0, height: 0 });
-
-// 计算样式
-const canvasStyle = computed(() => ({
-  transform: `scale(${scale.value}) rotate(${rotation.value}deg)`,
-}));
-
-const cropBoxStyle = computed(() => ({
-  left: `${cropArea.value.x}px`,
-  top: `${cropArea.value.y}px`,
-  width: `${cropArea.value.width}px`,
-  height: `${cropArea.value.height}px`,
-}));
-
-// 加载图片
-const loadImage = async () => {
-  try {
-    let url: string;
-    if (typeof props.src === 'string') {
-      url = props.src;
-      // 设置 crossOrigin 以避免 canvas 被污染
-      image.crossOrigin = 'anonymous';
-    } else {
-      url = URL.createObjectURL(props.src);
-    }
-
-    image.src = url;
-    await new Promise((resolve, reject) => {
-      image.onload = resolve;
-      image.onerror = reject;
-    });
-
-    imageSize.value = { width: image.width, height: image.height };
-    imageLoaded.value = true;
-    emit('load', imageSize.value);
-
-    await nextTick();
-    drawImage();
-    initCropArea();
-  } catch (error) {
-    emit('error', error as Error);
-  }
-};
-
-// 绘制图片
-const drawImage = () => {
-  if (!canvasRef.value || !imageLoaded.value) return;
-
-  const canvas = canvasRef.value;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  // 设置canvas尺寸
-  const container = containerRef.value;
-  if (!container) return;
-
-  const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight;
-  containerSize.value = { width: containerWidth, height: containerHeight };
-
-  // 计算适应容器的尺寸
-  const imageRatio = image.width / image.height;
-  const containerRatio = containerWidth / containerHeight;
-
-  let drawWidth, drawHeight;
-  if (imageRatio > containerRatio) {
-    drawWidth = containerWidth * 0.9;
-    drawHeight = drawWidth / imageRatio;
-  } else {
-    drawHeight = containerHeight * 0.9;
-    drawWidth = drawHeight * imageRatio;
-  }
-
-  canvas.width = drawWidth;
-  canvas.height = drawHeight;
-
-  ctx.clearRect(0, 0, drawWidth, drawHeight);
-  ctx.drawImage(image, 0, 0, drawWidth, drawHeight);
-};
-
-// 初始化裁剪区域
-const initCropArea = () => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-
-  const canvasRect = canvas.getBoundingClientRect();
-  const containerRect = containerRef.value?.getBoundingClientRect();
-  if (!containerRect) return;
-
-  const offsetX = canvasRect.left - containerRect.left;
-  const offsetY = canvasRect.top - containerRect.top;
-
-  if (props.initialArea) {
-    cropArea.value = {
-      x: props.initialArea.x ?? offsetX + canvasRect.width * 0.1,
-      y: props.initialArea.y ?? offsetY + canvasRect.height * 0.1,
-      width: props.initialArea.width ?? canvasRect.width * 0.8,
-      height: props.initialArea.height ?? canvasRect.height * 0.8,
-    };
-  } else {
-    const size = Math.min(canvasRect.width, canvasRect.height) * 0.8;
-    cropArea.value = {
-      x: offsetX + (canvasRect.width - size) / 2,
-      y: offsetY + (canvasRect.height - size) / 2,
-      width: size,
-      height: props.aspectRatio ? size / props.aspectRatio : size,
-    };
-  }
-
-  emit('change', cropArea.value);
-};
-
-// 鼠标/触摸事件处理
-const handleMouseDown = (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-
-  if (target.classList.contains('ex-image-crop__handle')) {
-    isResizing.value = true;
-    resizeDirection.value = target.dataset.direction || '';
-    startPos.value = { x: e.clientX, y: e.clientY };
-    startArea.value = { ...cropArea.value };
-    e.preventDefault();
-  } else if (
-    target.classList.contains('ex-image-crop__crop-box') ||
-    target.closest('.ex-image-crop__crop-box')
-  ) {
-    isDragging.value = true;
-    startPos.value = { x: e.clientX, y: e.clientY };
-    startArea.value = { ...cropArea.value };
-    e.preventDefault();
-  }
-};
-
-const handleTouchStart = (e: TouchEvent) => {
-  const touch = e.touches[0];
-  if (!touch) return;
-
-  const target = e.target as HTMLElement;
-
-  if (target.classList.contains('ex-image-crop__handle')) {
-    isResizing.value = true;
-    resizeDirection.value = target.dataset.direction || '';
-    startPos.value = { x: touch.clientX, y: touch.clientY };
-    startArea.value = { ...cropArea.value };
-    e.preventDefault();
-  } else if (
-    target.classList.contains('ex-image-crop__crop-box') ||
-    target.closest('.ex-image-crop__crop-box')
-  ) {
-    isDragging.value = true;
-    startPos.value = { x: touch.clientX, y: touch.clientY };
-    startArea.value = { ...cropArea.value };
-    e.preventDefault();
-  }
-};
-
-const handleMouseMove = (e: MouseEvent) => {
-  if (isDragging.value) {
-    const dx = e.clientX - startPos.value.x;
-    const dy = e.clientY - startPos.value.y;
-
-    const newX = Math.max(
-      0,
-      Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width)
-    );
-    const newY = Math.max(
-      0,
-      Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height)
-    );
-
-    cropArea.value.x = newX;
-    cropArea.value.y = newY;
-    emit('change', cropArea.value);
-  } else if (isResizing.value) {
-    handleResize(e.clientX, e.clientY);
-  }
-};
-
-const handleTouchMove = (e: TouchEvent) => {
-  const touch = e.touches[0];
-  if (!touch) return;
-
-  if (isDragging.value) {
-    const dx = touch.clientX - startPos.value.x;
-    const dy = touch.clientY - startPos.value.y;
-
-    const newX = Math.max(
-      0,
-      Math.min(startArea.value.x + dx, containerSize.value.width - cropArea.value.width)
-    );
-    const newY = Math.max(
-      0,
-      Math.min(startArea.value.y + dy, containerSize.value.height - cropArea.value.height)
-    );
-
-    cropArea.value.x = newX;
-    cropArea.value.y = newY;
-    emit('change', cropArea.value);
-  } else if (isResizing.value) {
-    handleResize(touch.clientX, touch.clientY);
-  }
-};
-
-const handleMouseUp = () => {
-  isDragging.value = false;
-  isResizing.value = false;
-  resizeDirection.value = '';
-};
-
-// 调整大小
-const handleResize = (clientX: number, clientY: number) => {
-  const dx = clientX - startPos.value.x;
-  const dy = clientY - startPos.value.y;
-  const dir = resizeDirection.value;
-
-  let newArea = { ...startArea.value };
-
-  // 圆形裁剪：保持正圆
-  if (props.shape === 'circle') {
-    // 使用对角线方向的最大变化量
-    const delta = Math.max(Math.abs(dx), Math.abs(dy));
-    const sign = dx + dy > 0 ? 1 : -1;
-
-    if (dir.includes('e') || dir.includes('s')) {
-      newArea.width = startArea.value.width + delta * sign;
-      newArea.height = newArea.width;
-    } else if (dir.includes('w') || dir.includes('n')) {
-      newArea.width = startArea.value.width - delta * sign;
-      newArea.height = newArea.width;
-      if (dir.includes('w')) {
-        newArea.x = startArea.value.x + startArea.value.width - newArea.width;
-      }
-      if (dir.includes('n')) {
-        newArea.y = startArea.value.y + startArea.value.height - newArea.height;
-      }
-    }
-  }
-  // 固定宽高比裁剪
-  else if (props.aspectRatio) {
-    // 根据拖动方向决定以哪个维度为准
-    if (dir.includes('e') || dir.includes('w')) {
-      // 水平方向拖动，以宽度为准
-      if (dir.includes('w')) {
-        newArea.x = startArea.value.x + dx;
-        newArea.width = startArea.value.width - dx;
-      } else {
-        newArea.width = startArea.value.width + dx;
-      }
-      newArea.height = newArea.width / props.aspectRatio;
-
-      // 调整y位置保持中心
-      if (dir === 'e' || dir === 'w') {
-        newArea.y = startArea.value.y + (startArea.value.height - newArea.height) / 2;
-      } else if (dir.includes('n')) {
-        newArea.y = startArea.value.y + startArea.value.height - newArea.height;
-      }
-    } else {
-      // 垂直方向拖动，以高度为准
-      if (dir.includes('n')) {
-        newArea.y = startArea.value.y + dy;
-        newArea.height = startArea.value.height - dy;
-      } else {
-        newArea.height = startArea.value.height + dy;
-      }
-      newArea.width = newArea.height * props.aspectRatio;
-
-      // 调整x位置保持中心
-      if (dir === 'n' || dir === 's') {
-        newArea.x = startArea.value.x + (startArea.value.width - newArea.width) / 2;
-      } else if (dir.includes('w')) {
-        newArea.x = startArea.value.x + startArea.value.width - newArea.width;
-      }
-    }
-  }
-  // 自由裁剪
-  else {
-    if (dir.includes('n')) {
-      newArea.y = startArea.value.y + dy;
-      newArea.height = startArea.value.height - dy;
-    }
-    if (dir.includes('s')) {
-      newArea.height = startArea.value.height + dy;
-    }
-    if (dir.includes('w')) {
-      newArea.x = startArea.value.x + dx;
-      newArea.width = startArea.value.width - dx;
-    }
-    if (dir.includes('e')) {
-      newArea.width = startArea.value.width + dx;
-    }
-  }
-
-  // 限制最小/最大尺寸
-  newArea.width = Math.max(
-    props.minWidth || 50,
-    Math.min(newArea.width, props.maxWidth || containerSize.value.width)
-  );
-  newArea.height = Math.max(
-    props.minHeight || 50,
-    Math.min(newArea.height, props.maxHeight || containerSize.value.height)
-  );
-
-  // 圆形裁剪确保正圆（在限制尺寸后）
-  if (props.shape === 'circle') {
-    const size = Math.min(newArea.width, newArea.height);
-    newArea.width = size;
-    newArea.height = size;
-  }
-  // 固定宽高比确保比例（在限制尺寸后）
-  else if (props.aspectRatio) {
-    const currentRatio = newArea.width / newArea.height;
-    if (Math.abs(currentRatio - props.aspectRatio) > 0.01) {
-      // 重新计算以保持比例
-      if (newArea.width > newArea.height * props.aspectRatio) {
-        newArea.width = newArea.height * props.aspectRatio;
-      } else {
-        newArea.height = newArea.width / props.aspectRatio;
-      }
-    }
-  }
-
-  // 限制边界
-  newArea.x = Math.max(0, Math.min(newArea.x, containerSize.value.width - newArea.width));
-  newArea.y = Math.max(0, Math.min(newArea.y, containerSize.value.height - newArea.height));
-
-  cropArea.value = newArea;
-  emit('change', cropArea.value);
-};
-
-// 缩放和旋转
-const zoomIn = () => {
-  if (scale.value < props.maxZoom) {
-    scale.value = Math.min(scale.value + props.zoomStep, props.maxZoom);
-    emit('zoom', scale.value);
-  }
-};
-
-const zoomOut = () => {
-  if (scale.value > props.minZoom) {
-    scale.value = Math.max(scale.value - props.zoomStep, props.minZoom);
-    emit('zoom', scale.value);
-  }
-};
-
-const rotateRight = () => {
-  rotation.value = (rotation.value + props.rotateStep) % 360;
-  emit('rotate', rotation.value);
-};
-
-const rotateLeft = () => {
-  rotation.value = (rotation.value - props.rotateStep + 360) % 360;
-  emit('rotate', rotation.value);
-};
-
-// 重置
-const reset = () => {
-  scale.value = 1;
-  rotation.value = 0;
-  initCropArea();
-};
-
-// 执行裁剪
-const crop = async (): Promise<CropResult> => {
-  const canvas = canvasRef.value;
-  if (!canvas) throw new Error('Canvas not found');
-
-  const canvasRect = canvas.getBoundingClientRect();
-  const containerRect = containerRef.value?.getBoundingClientRect();
-  if (!containerRect) throw new Error('Container not found');
-
-  // 计算相对于canvas的裁剪区域
-  const offsetX = canvasRect.left - containerRect.left;
-  const offsetY = canvasRect.top - containerRect.top;
-
-  const relativeArea = {
-    x: (cropArea.value.x - offsetX) / scale.value,
-    y: (cropArea.value.y - offsetY) / scale.value,
-    width: cropArea.value.width / scale.value,
-    height: cropArea.value.height / scale.value,
-  };
-
-  // 创建裁剪canvas
-  const cropCanvas = document.createElement('canvas');
-  cropCanvas.width = relativeArea.width;
-  cropCanvas.height = relativeArea.height;
-  const ctx = cropCanvas.getContext('2d');
-  if (!ctx) throw new Error('Failed to get context');
-
-  // 绘制裁剪区域
-  const scaleX = canvas.width / canvasRect.width;
-  const scaleY = canvas.height / canvasRect.height;
-
-  ctx.drawImage(
-    canvas,
-    relativeArea.x * scaleX,
-    relativeArea.y * scaleY,
-    relativeArea.width * scaleX,
-    relativeArea.height * scaleY,
-    0,
-    0,
-    relativeArea.width,
-    relativeArea.height
-  );
-
-  // 如果是圆形，应用遮罩
-  if (props.shape === 'circle') {
-    const radius = relativeArea.width / 2;
-    ctx.globalCompositeOperation = 'destination-in';
-    ctx.beginPath();
-    ctx.arc(radius, radius, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // 转换为Blob
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    cropCanvas.toBlob(
-      b => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
-      props.outputType,
-      props.quality
-    );
+const validateConfiguration = (): void => {
+  validateCropConfiguration({
+    quality: props.quality,
+    outputType: props.outputType,
+    zoomStep: props.zoomStep,
+    minZoom: props.minZoom,
+    maxZoom: props.maxZoom,
+    minWidth: props.minWidth,
+    minHeight: props.minHeight,
+    maxWidth: props.maxWidth,
+    maxHeight: props.maxHeight,
+    aspectRatio: props.aspectRatio,
+    gridRows: props.gridRows,
+    gridCols: props.gridCols,
   });
-
-  const dataUrl = cropCanvas.toDataURL(props.outputType, props.quality);
-
-  const result: CropResult = {
-    blob,
-    dataUrl,
-    area: cropArea.value,
-    originalSize: imageSize.value,
-    croppedSize: {
-      width: Math.round(relativeArea.width),
-      height: Math.round(relativeArea.height),
-    },
-  };
-
-  // console.log('裁剪结果生成:', result);
-  return result;
 };
 
-const handleCrop = async () => {
-  try {
-    // console.log('开始裁剪...');
-    const result = await crop();
+const reportError = (
+  error: unknown,
+  fallbackCode: 'LOAD_FAILED' | 'INVALID_CONFIGURATION' | 'ENCODE_FAILED'
+): ExImageCropError => {
+  const normalized = toImageCropError(error, fallbackCode, '图片裁剪失败');
+  displayError.value = normalized.message;
+  emit('error', normalized);
+  return normalized;
+};
 
-    emit('crop', result);
-  } catch (error) {
-    emit('error', error as Error);
-    if (import.meta.env.DEV) {
-      console.error('裁剪失败:', error);
-    }
+const visibleImageBounds = (currentLayout: ImageCropLayout): CropArea => {
+  const bounds = currentLayout.imageBounds;
+  const left = Math.max(0, bounds.x);
+  const top = Math.max(0, bounds.y);
+  const right = Math.min(containerSize.value.width, bounds.x + bounds.width);
+  const bottom = Math.min(containerSize.value.height, bounds.y + bounds.height);
+  if (right <= left || bottom <= top) {
+    throw new ExImageCropError('INVALID_AREA', '当前缩放下图片没有可裁剪区域');
+  }
+  return { x: left, y: top, width: right - left, height: bottom - top };
+};
+
+const emitAreaChange = (): void => emit('change', cloneArea(cropArea.value));
+
+const drawPreview = (): void => {
+  if (!canvasRef.value || !resource.value || !layout.value) return;
+  const pixelRatio =
+    typeof window === 'undefined' ? 1 : Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+  drawCropPreview(
+    canvasRef.value,
+    resource.value.image,
+    containerSize.value,
+    layout.value,
+    pixelRatio
+  );
+};
+
+const initializeArea = (): void => {
+  if (!layout.value) return;
+  cropArea.value = createInitialCropArea(
+    visibleImageBounds(layout.value),
+    props.initialArea,
+    currentConstraints()
+  );
+  emitAreaChange();
+};
+
+const rebuildLayout = (mode: 'initialize' | 'preserve-source' | 'keep-preview'): void => {
+  if (!resource.value || containerSize.value.width <= 0 || containerSize.value.height <= 0) {
+    return;
+  }
+
+  const previous = layout.value;
+  const next = createImageLayout(
+    resource.value.dimension,
+    containerSize.value,
+    rotation.value,
+    zoom.value
+  );
+  layout.value = next;
+  drawPreview();
+
+  if (!previous || mode === 'initialize') {
+    initializeArea();
+    return;
+  }
+
+  try {
+    const nextArea =
+      mode === 'preserve-source'
+        ? reprojectCropArea(cropArea.value, previous, next, currentConstraints())
+        : cropArea.value;
+    cropArea.value = normalizeCropArea(nextArea, visibleImageBounds(next), currentConstraints());
+    emitAreaChange();
+  } catch {
+    initializeArea();
   }
 };
 
-const handleCancel = () => {
+const releaseResource = (): void => {
+  resource.value?.dispose();
+  resource.value = null;
+  layout.value = null;
+};
+
+const cancelCropOperation = (): void => {
+  cropGeneration += 1;
+  cropController?.abort();
+  cropController = null;
+  cropPromise = null;
+  cropOperationToken = null;
+  isCropping.value = false;
+};
+
+const stopInteraction = (): void => {
+  const pointerId = interaction.value?.pointerId;
+  interaction.value = null;
+  if (pointerId !== undefined && containerRef.value?.hasPointerCapture?.(pointerId))
+    containerRef.value.releasePointerCapture(pointerId);
+};
+
+const loadSource = async (): Promise<void> => {
+  const generation = ++loadGeneration;
+  loadController?.abort();
+  loadController = new AbortController();
+  const controller = loadController;
+  cancelCropOperation();
+  releaseResource();
+  stopInteraction();
+  displayError.value = '';
+  configurationValid.value = true;
+  isLoading.value = true;
+  zoom.value = Math.min(props.maxZoom, Math.max(props.minZoom, 1));
+  rotation.value = 0;
+
+  try {
+    validateConfiguration();
+    const loaded = await loadBrowserImageResource(props.src, controller.signal);
+    if (generation !== loadGeneration || controller.signal.aborted) {
+      loaded.dispose();
+      return;
+    }
+
+    resource.value = loaded;
+    emit('load', { ...loaded.dimension });
+    await nextTick();
+    rebuildLayout('initialize');
+  } catch (error) {
+    if (generation !== loadGeneration || controller.signal.aborted) return;
+    releaseResource();
+    configurationValid.value =
+      !(error instanceof ExImageCropError) || error.code !== 'INVALID_CONFIGURATION';
+    reportError(error, configurationValid.value ? 'LOAD_FAILED' : 'INVALID_CONFIGURATION');
+  } finally {
+    if (generation === loadGeneration) isLoading.value = false;
+  }
+};
+
+const updateZoom = (nextZoom: number): void => {
+  if (!isReady.value) return;
+  const normalized = Math.min(props.maxZoom, Math.max(props.minZoom, nextZoom));
+  if (normalized === zoom.value) return;
+  zoom.value = normalized;
+  rebuildLayout('keep-preview');
+  emit('zoom', zoom.value);
+};
+
+const zoomIn = (): void => updateZoom(zoom.value + props.zoomStep);
+const zoomOut = (): void => updateZoom(zoom.value - props.zoomStep);
+
+const updateRotation = (angle: number): void => {
+  if (!isReady.value) return;
+  rotation.value = normalizeQuarterTurn(angle);
+  rebuildLayout('keep-preview');
+  emit('rotate', rotation.value);
+};
+
+const rotateRight = (): void => updateRotation(rotation.value + 90);
+const rotateLeft = (): void => updateRotation(rotation.value - 90);
+
+const reset = (): void => {
+  // 重置撤销旧裁剪和拖动身份，迟到结果与指针移动都不能覆盖新编辑状态。
+  cancelCropOperation();
+  stopInteraction();
+  if (!resource.value) return;
+  const initialZoom = Math.min(props.maxZoom, Math.max(props.minZoom, 1));
+  const zoomChanged = zoom.value !== initialZoom;
+  const rotationChanged = rotation.value !== 0;
+  zoom.value = initialZoom;
+  rotation.value = 0;
+  displayError.value = '';
+  rebuildLayout('initialize');
+  if (zoomChanged) emit('zoom', zoom.value);
+  if (rotationChanged) emit('rotate', rotation.value);
+};
+
+const applyArea = (area: CropArea): void => {
+  cropArea.value = area;
+  emitAreaChange();
+};
+
+const startInteraction = (
+  event: PointerEvent,
+  kind: PointerInteraction['kind'],
+  direction?: CropResizeDirection
+): void => {
+  if (!isReady.value || isCropping.value || event.button !== 0) return;
+  interaction.value = {
+    pointerId: event.pointerId,
+    kind,
+    direction,
+    startX: event.clientX,
+    startY: event.clientY,
+    startArea: cloneArea(cropArea.value),
+  };
+  containerRef.value?.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+};
+
+const startDrag = (event: PointerEvent): void => startInteraction(event, 'drag');
+const startResize = (event: PointerEvent, direction: CropResizeDirection): void =>
+  startInteraction(event, 'resize', direction);
+
+const handlePointerMove = (event: PointerEvent): void => {
+  const current = interaction.value;
+  if (!current || current.pointerId !== event.pointerId || !layout.value) return;
+  const dx = event.clientX - current.startX;
+  const dy = event.clientY - current.startY;
+  const bounds = visibleImageBounds(layout.value);
+  const next =
+    current.kind === 'drag'
+      ? moveCropArea(current.startArea, dx, dy, bounds)
+      : resizeCropArea(
+          current.startArea,
+          current.direction as CropResizeDirection,
+          dx,
+          dy,
+          bounds,
+          currentConstraints()
+        );
+  applyArea(next);
+  event.preventDefault();
+};
+
+const endPointerInteraction = (event: PointerEvent): void => {
+  if (!interaction.value || interaction.value.pointerId !== event.pointerId) return;
+  containerRef.value?.releasePointerCapture?.(event.pointerId);
+  interaction.value = null;
+};
+
+const keyboardDelta = (event: KeyboardEvent): { dx: number; dy: number } | null => {
+  const step = event.shiftKey ? 10 : 1;
+  if (event.key === 'ArrowLeft') return { dx: -step, dy: 0 };
+  if (event.key === 'ArrowRight') return { dx: step, dy: 0 };
+  if (event.key === 'ArrowUp') return { dx: 0, dy: -step };
+  if (event.key === 'ArrowDown') return { dx: 0, dy: step };
+  return null;
+};
+
+const handleCropBoxKeydown = (event: KeyboardEvent): void => {
+  const delta = keyboardDelta(event);
+  if (!delta || !layout.value || !isReady.value) return;
+  applyArea(moveCropArea(cropArea.value, delta.dx, delta.dy, visibleImageBounds(layout.value)));
+  event.preventDefault();
+};
+
+const handleResizeKeydown = (event: KeyboardEvent, direction: CropResizeDirection): void => {
+  const delta = keyboardDelta(event);
+  if (!delta || !layout.value || !isReady.value) return;
+  applyArea(
+    resizeCropArea(
+      cropArea.value,
+      direction,
+      delta.dx,
+      delta.dy,
+      visibleImageBounds(layout.value),
+      currentConstraints()
+    )
+  );
+  event.preventDefault();
+};
+
+const crop = (): Promise<CropResult> => {
+  if (cropPromise) return cropPromise;
+  if (!resource.value || !layout.value || !isReady.value) {
+    return Promise.reject(new ExImageCropError('NOT_READY', '图片尚未准备完成'));
+  }
+
+  const currentResource = resource.value;
+  const currentLayout = layout.value;
+  const previewArea = cloneArea(cropArea.value);
+  const currentRotation = rotation.value;
+  const currentZoom = zoom.value;
+  const currentShape = props.shape;
+  const currentOutputType = props.outputType;
+  const currentQuality = props.quality;
+  const currentBackgroundColor = props.outputBackgroundColor;
+  const controller = new AbortController();
+  const operationToken = Symbol('image-crop-operation');
+  cropController = controller;
+  cropOperationToken = operationToken;
+  isCropping.value = true;
+
+  const pending = (async (): Promise<CropResult> => {
+    try {
+      const rendered = await renderCrop(
+        currentResource.image,
+        currentResource.dimension,
+        currentLayout,
+        {
+          area: previewArea,
+          shape: currentShape,
+          outputType: currentOutputType,
+          quality: currentQuality,
+          backgroundColor: currentBackgroundColor,
+          signal: controller.signal,
+        }
+      );
+      if (controller.signal.aborted || cropOperationToken !== operationToken) {
+        throw new ExImageCropError('ABORTED', '图片裁剪已取消');
+      }
+      return {
+        blob: rendered.blob,
+        previewArea: cloneArea(previewArea),
+        sourceArea: cloneArea(rendered.sourceArea),
+        originalSize: { ...currentResource.dimension },
+        outputSize: { ...rendered.outputSize },
+        outputType: currentOutputType,
+        rotation: currentRotation,
+        zoom: currentZoom,
+      };
+    } catch (error) {
+      if (controller.signal.aborted) throw new ExImageCropError('ABORTED', '图片裁剪已取消');
+      throw toImageCropError(error, 'ENCODE_FAILED', '图片裁剪失败');
+    } finally {
+      if (cropOperationToken === operationToken) {
+        cropPromise = null;
+        cropController = null;
+        cropOperationToken = null;
+        isCropping.value = false;
+      }
+    }
+  })();
+  cropPromise = pending;
+  return pending;
+};
+
+const handleCrop = (): void => {
+  const generation = cropGeneration;
+  void crop()
+    .then(result => {
+      // Promise 已完成到业务事件发布之间仍可能被取消或换图。
+      if (generation === cropGeneration) emit('crop', result);
+    })
+    .catch(error => {
+      if (generation !== cropGeneration) return;
+      const normalized = toImageCropError(error, 'ENCODE_FAILED', '图片裁剪失败');
+      if (normalized.code !== 'ABORTED') reportError(normalized, 'ENCODE_FAILED');
+    });
+};
+
+const handleCancel = (): void => {
+  cancelCropOperation();
+  stopInteraction();
   emit('cancel');
 };
 
-const setArea = (area: Partial<CropArea>) => {
-  cropArea.value = { ...cropArea.value, ...area };
-  emit('change', cropArea.value);
+const setArea = (area: CropArea): void => {
+  if (!layout.value || !isReady.value) {
+    throw new ExImageCropError('NOT_READY', '图片尚未准备完成');
+  }
+  try {
+    applyArea(normalizeCropArea(area, visibleImageBounds(layout.value), currentConstraints()));
+  } catch (error) {
+    throw new ExImageCropError('INVALID_AREA', '裁剪区域无效', error);
+  }
 };
 
-const getArea = () => cropArea.value;
+const getArea = (): CropArea => cloneArea(cropArea.value);
+const getElement = (): HTMLDivElement | null => cropRef.value ?? null;
 
-// 监听src变化
-watch(() => props.src, loadImage, { immediate: true });
-
-// 监听窗口大小变化
-const handleWindowResize = () => {
-  drawImage();
-  initCropArea();
+const updateContainerSize = (size: CropSize): void => {
+  if (
+    !Number.isFinite(size.width) ||
+    !Number.isFinite(size.height) ||
+    size.width <= 0 ||
+    size.height <= 0
+  ) {
+    return;
+  }
+  const hadLayout = Boolean(layout.value);
+  const previousSize = containerSize.value;
+  const previousLayout = layout.value;
+  const previousArea = cropArea.value;
+  containerSize.value = { width: size.width, height: size.height };
+  try {
+    rebuildLayout(hadLayout ? 'preserve-source' : 'initialize');
+    displayError.value = '';
+  } catch (error) {
+    // 无效画布尺寸不能提交半成品布局；保留上次有效裁剪，等待容器恢复。
+    containerSize.value = previousSize;
+    layout.value = previousLayout;
+    cropArea.value = previousArea;
+    reportError(error, 'ENCODE_FAILED');
+  }
 };
 
-onMounted(() => {
-  window.addEventListener('mousemove', handleMouseMove);
-  window.addEventListener('mouseup', handleMouseUp);
-  window.addEventListener('touchmove', handleTouchMove);
-  window.addEventListener('touchend', handleMouseUp);
-  window.addEventListener('resize', handleWindowResize);
-});
+const measureContainer = (): void => {
+  const element = containerRef.value;
+  if (!element) return;
+  const rect = element.getBoundingClientRect();
+  updateContainerSize({ width: rect.width, height: rect.height });
+};
+
+const setupResizeObserver = (): void => {
+  if (!containerRef.value) return;
+  if (typeof ResizeObserver === 'function') {
+    resizeObserver = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        updateContainerSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    resizeObserver.observe(containerRef.value);
+  } else if (typeof window !== 'undefined') {
+    window.addEventListener('resize', measureContainer);
+    measureContainer();
+  }
+};
+
+watch(
+  () => props.src,
+  () => void loadSource(),
+  { immediate: true }
+);
+
+const applyValidatedConfiguration = (update: () => void): void => {
+  const shouldReload = !configurationValid.value && !resource.value;
+  try {
+    validateConfiguration();
+    configurationValid.value = true;
+    displayError.value = '';
+    if (shouldReload) {
+      void loadSource();
+      return;
+    }
+    update();
+  } catch (error) {
+    configurationValid.value = false;
+    reportError(error, 'INVALID_CONFIGURATION');
+  }
+};
+
+watch(
+  () => [
+    props.shape,
+    props.aspectRatio,
+    props.minWidth,
+    props.minHeight,
+    props.maxWidth,
+    props.maxHeight,
+    props.initialArea,
+  ],
+  () => applyValidatedConfiguration(() => layout.value && initializeArea())
+);
+
+watch(
+  () => [
+    props.quality,
+    props.outputType,
+    props.zoomStep,
+    props.minZoom,
+    props.maxZoom,
+    props.gridRows,
+    props.gridCols,
+  ],
+  () =>
+    applyValidatedConfiguration(() => {
+      const nextZoom = Math.min(props.maxZoom, Math.max(props.minZoom, zoom.value));
+      if (nextZoom !== zoom.value) {
+        zoom.value = nextZoom;
+        rebuildLayout('keep-preview');
+        emit('zoom', zoom.value);
+      }
+    })
+);
+
+onMounted(setupResizeObserver);
 
 onBeforeUnmount(() => {
-  window.removeEventListener('mousemove', handleMouseMove);
-  window.removeEventListener('mouseup', handleMouseUp);
-  window.removeEventListener('touchmove', handleTouchMove);
-  window.removeEventListener('touchend', handleMouseUp);
-  window.removeEventListener('resize', handleWindowResize);
+  loadGeneration += 1;
+  loadController?.abort();
+  cancelCropOperation();
+  stopInteraction();
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  if (typeof window !== 'undefined') window.removeEventListener('resize', measureContainer);
+  releaseResource();
 });
-
-const getElement = () => cropRef.value || null;
 
 defineExpose<ExImageCropExposed>({
   crop,

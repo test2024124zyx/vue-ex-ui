@@ -12,13 +12,13 @@
       <nav
         v-if="$slots.breadcrumb || (breadcrumb && breadcrumb.length > 0)"
         class="ex-page-header__breadcrumb"
-        :aria-label="t('pageHeader.breadcrumb')"
+        :aria-label="t('breadcrumb')"
       >
         <slot name="breadcrumb">
           <ol class="ex-page-header__breadcrumb-list">
             <li
               v-for="(item, index) in breadcrumb"
-              :key="index"
+              :key="item.id || item.path || `${item.title}-${index}`"
               class="ex-page-header__breadcrumb-item"
             >
               <component
@@ -54,7 +54,7 @@
             v-if="showBack"
             class="ex-page-header__back"
             type="button"
-            :aria-label="backText || t('pageHeader.back')"
+            :aria-label="backText || t('back')"
             @click="handleBack"
           >
             <ExIcon
@@ -110,7 +110,7 @@
             <slot name="tags">
               <ExTag
                 v-for="(tag, index) in tags"
-                :key="index"
+                :key="tag.id || `${tag.text}-${tag.type || 'default'}-${index}`"
                 :type="resolveTagType(tag.type)"
                 :bg-color="tag.color"
                 size="small"
@@ -157,13 +157,16 @@ import { ExIcon } from '../icon';
 import { ExAvatar } from '../avatar';
 import { ExTag } from '../tag';
 import type { TagType } from '../tag/types';
-import { useI18n } from '../../locale';
+import { useLocale } from '../../locale';
+import { useZIndexLayer } from '../config-provider/composables';
+import { normalizeLayoutLength } from '../layout/layout-utils';
 
 defineOptions({
   name: 'ExPageHeader',
 });
 
-const { t } = useI18n();
+const { t } = useLocale('pageHeader');
+const stickyZIndex = useZIndexLayer('sticky');
 
 const props = withDefaults(defineProps<PageHeaderProps>(), {
   title: undefined,
@@ -177,7 +180,7 @@ const props = withDefaults(defineProps<PageHeaderProps>(), {
   showDivider: true,
   height: undefined,
   fixed: false,
-  zIndex: 1000,
+  zIndex: undefined,
 });
 
 const emit = defineEmits<PageHeaderEmits>();
@@ -185,11 +188,11 @@ const emit = defineEmits<PageHeaderEmits>();
 // 头部样式
 const headerStyle = computed(() => {
   const style: Record<string, string | number> = {};
-  if (props.height) {
-    style.height = typeof props.height === 'number' ? `${props.height}px` : props.height;
+  if (props.height !== undefined) {
+    style.height = normalizeLayoutLength(props.height, 'auto');
   }
   if (props.fixed) {
-    style.zIndex = props.zIndex;
+    style.zIndex = props.zIndex ?? stickyZIndex.value;
   }
   return style;
 });

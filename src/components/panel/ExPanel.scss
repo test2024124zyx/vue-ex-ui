@@ -48,13 +48,32 @@
 
   // 可悬�?
   &--hoverable {
-    cursor: pointer;
-
     &:hover {
       transform: translateY(-4px);
       box-shadow: var(--ex-shadow-lg);
       @include neon-glow('blue', 'md');
     }
+  }
+
+  &--hoverable[tabindex='0'] {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
+  }
+
+  &__loading-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   // 加载态：遮罩 + 居中旋转指示器（更明显）
@@ -391,7 +410,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-panel:not(.ex-panel--borderless) {
     border-width: 2px;
   }
@@ -410,4 +429,3 @@
     transform: rotate(360deg);
   }
 }
-

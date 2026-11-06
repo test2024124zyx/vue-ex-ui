@@ -10,55 +10,73 @@
     >
       <!-- 隐藏的原生复选框 -->
       <input
-        v-if="checkboxGroupContext"
+        v-if="checkboxGroupContext && props.value !== undefined"
         :id="checkboxId"
         ref="checkboxRef"
         type="checkbox"
         :class="inputClasses"
-        :checked="isChecked"
+        :checked="nativeChecked"
         :disabled="currentDisabled"
+        :aria-disabled="currentDisabled || undefined"
         :readonly="currentReadonly"
-        :required="required"
+        :name="currentName"
+        :value="props.value ?? undefined"
+        :tabindex="props.tabindex"
+        :required="props.required"
+        :aria-label="props.ariaLabel"
+        :aria-labelledby="ariaLabelledBy"
         :aria-describedby="ariaDescribedBy"
-        :aria-invalid="showErrorMessage"
-        @change="handleChange"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @keydown.space.prevent="handleSpaceKey"
-      >
-      <input
-        v-else
-        :id="checkboxId"
-        ref="checkboxRef"
-        v-model="checkboxValue"
-        type="checkbox"
-        :class="inputClasses"
-        :disabled="currentDisabled"
-        :readonly="currentReadonly"
-        :required="required"
-        :true-value="trueValue"
-        :false-value="falseValue"
-        :aria-describedby="ariaDescribedBy"
-        :aria-invalid="showErrorMessage"
+        :aria-controls="isIndeterminate ? props.ariaControls : undefined"
+        :aria-invalid="ariaInvalid"
+        :aria-readonly="currentReadonly || undefined"
         @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown.space.prevent="handleSpaceKey"
-      >
+      />
+      <input
+        v-else
+        :id="checkboxId"
+        ref="checkboxRef"
+        :checked="nativeChecked"
+        type="checkbox"
+        :class="inputClasses"
+        :disabled="currentDisabled"
+        :aria-disabled="currentDisabled || undefined"
+        :readonly="currentReadonly"
+        :name="currentName"
+        :value="props.value ?? undefined"
+        :tabindex="props.tabindex"
+        :required="props.required"
+        :aria-label="props.ariaLabel"
+        :aria-labelledby="ariaLabelledBy"
+        :aria-describedby="ariaDescribedBy"
+        :aria-controls="isIndeterminate ? props.ariaControls : undefined"
+        :aria-invalid="ariaInvalid"
+        :aria-readonly="currentReadonly || undefined"
+        @click="handleReadonlyGuard"
+        @change="handleChange"
+        @focus="handleFocus"
+        @blur="handleBlur"
+        @keydown.space.prevent="handleSpaceKey"
+      />
 
       <!-- 自定义复选框外观 -->
-      <span :class="checkboxBoxClasses">
+      <span
+        :class="checkboxBoxClasses"
+        aria-hidden="true"
+      >
         <!-- 选中状态图标 -->
         <ex-icon
-          v-if="isChecked && !indeterminate"
+          v-if="isChecked && !isIndeterminate"
           icon="check-line"
           class="ex-checkbox__check-icon"
           :size="iconSize"
         />
         <!-- 中间状态图标 -->
         <ex-icon
-          v-else-if="indeterminate"
+          v-else-if="isIndeterminate"
           icon="subtract-line"
           class="ex-checkbox__indeterminate-icon"
           :size="iconSize"
@@ -70,7 +88,9 @@
         v-if="hasLabel"
         class="ex-checkbox__label-text"
       >
-        <slot>{{ label }}</slot>
+        <slot name="label">
+          <slot>{{ props.label }}</slot>
+        </slot>
       </span>
     </label>
 
@@ -81,12 +101,12 @@
     >
       <!-- 帮助文本 -->
       <div
-        v-if="helpText || $slots.help"
+        v-if="props.helpText || $slots.help"
         :id="`${checkboxId}-help`"
         class="ex-checkbox__help"
       >
         <slot name="help">
-          {{ helpText }}
+          {{ props.helpText }}
         </slot>
       </div>
 
@@ -114,7 +134,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, useSlots, inject } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  useSlots,
+  inject,
+  getCurrentInstance,
+  onBeforeUnmount,
+  onMounted,
+  nextTick,
+} from 'vue';
 import type {
   ExCheckboxProps,
   ExCheckboxEmits,
@@ -126,14 +156,15 @@ import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
 import { useFormItem } from '../form/use-form-item';
+import { checkboxGroupContextKey } from './context';
 
 defineOptions({
   name: 'ExCheckbox',
 });
 
 const props = withDefaults(defineProps<ExCheckboxProps>(), {
+  modelValue: false,
   size: undefined,
-  status: 'default',
   trueValue: true,
   falseValue: false,
   disabled: false,
@@ -150,32 +181,34 @@ defineSlots<ExCheckboxSlots>();
 const slots = useSlots();
 const { t } = useI18n();
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 blur 自动校验）
+// 所在 FormItem 的字段上下文，同时承接尺寸、状态和表单校验语义。
 const formItem = useFormItem();
 
-// 注入 CheckboxGroup 上下文（如果存在）
-const checkboxGroupContext = inject<{
-  modelValue: import('vue').ComputedRef<Array<string | number>>;
-  name?: string;
-  size?: string;
-  status?: string;
-  disabled?: boolean;
-  readonly?: boolean;
-  updateValue: (value: string | number, checked: boolean) => void;
-} | null>('checkboxGroup', null);
+// 使用全局尺寸配置；组件显式尺寸和 FormItem 尺寸均高于全局默认值。
+const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));
 
-// 生成唯一ID
-const checkboxId = generateId('ex-checkbox');
+// 注入 CheckboxGroup 上下文（如果存在）
+const checkboxGroupContext = inject(checkboxGroupContextKey, null);
+const instance = getCurrentInstance();
+
+// 生成唯一 ID；显式 id 用于表单关联和自动化测试，未提供时保持实例唯一。
+const generatedCheckboxId = generateId('ex-checkbox');
+const checkboxId = computed(() => props.id?.trim() || generatedCheckboxId);
 
 // 引用
 const checkboxRef = ref<HTMLInputElement>();
 
 // 状态
 const isFocused = ref(false);
-const currentErrorMessage = ref('');
+const validationErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    validationErrorMessage.value = '';
+  },
+  { flush: 'post' }
+);
+const isIndeterminate = ref(props.indeterminate);
 
 // 计算属性
 const checkboxValue = computed({
@@ -195,15 +228,18 @@ const checkboxValue = computed({
   },
 });
 
-const isChecked = computed(() => {
+// 原生 checked 只反映真实值；半选状态单独管理，避免把 mixed 错误地当成选中。
+const nativeChecked = computed(() => {
   if (checkboxGroupContext && props.value !== undefined) {
     return checkboxGroupContext.modelValue.value.includes(props.value);
   }
   return checkboxValue.value === props.trueValue;
 });
 
+const isChecked = computed(() => !isIndeterminate.value && nativeChecked.value);
+
 const hasLabel = computed(() => {
-  return Boolean(props.label || slots.default);
+  return Boolean(props.label || slots.default || slots.label);
 });
 
 const currentSize = computed(() => {
@@ -211,19 +247,60 @@ const currentSize = computed(() => {
   if (props.size) {
     return props.size;
   }
-  return checkboxGroupContext?.size || componentSize.value;
+  return checkboxGroupContext?.size.value || componentSize.value;
+});
+
+const currentShape = computed(() => {
+  // 优先级：组件自己的 shape prop > CheckboxGroup 的 shape > 默认方形
+  return props.shape ?? checkboxGroupContext?.shape.value ?? 'square';
 });
 
 const currentStatus = computed(() => {
-  return checkboxGroupContext?.status || props.status;
+  const formStatus = formItem?.status?.value;
+
+  return (
+    props.status ??
+    checkboxGroupContext?.status.value ??
+    (formStatus === 'success' || formStatus === 'warning' || formStatus === 'error'
+      ? formStatus
+      : undefined) ??
+    'default'
+  );
 });
 
 const currentDisabled = computed(() => {
-  return checkboxGroupContext?.disabled || props.disabled;
+  return Boolean(
+    checkboxGroupContext?.disabled.value || props.disabled || formItem?.disabled?.value
+  );
 });
 
 const currentReadonly = computed(() => {
-  return checkboxGroupContext?.readonly || props.readonly;
+  return Boolean(
+    checkboxGroupContext?.readonly.value || props.readonly || formItem?.readonly?.value
+  );
+});
+
+const currentName = computed(() => checkboxGroupContext?.name.value ?? props.name);
+
+// 合并外部、FormItem 和组件内部生成的 ARIA ID，避免覆盖调用方已经提供的描述。
+const mergeAriaIds = (...values: Array<string | undefined>) => {
+  const ids = new Set<string>();
+
+  values.forEach(value => {
+    value
+      ?.trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach(id => ids.add(id));
+  });
+
+  return ids.size > 0 ? Array.from(ids).join(' ') : undefined;
+};
+
+const ariaLabelledBy = computed(() => {
+  if (props.ariaLabelledby) return props.ariaLabelledby;
+  if (!props.ariaLabel && !hasLabel.value) return formItem?.labelId?.value;
+  return undefined;
 });
 
 const iconSize = computed(() => {
@@ -240,12 +317,14 @@ const wrapperClasses = computed(() => {
   const classes = ['ex-checkbox'];
 
   if (currentSize.value) classes.push(`ex-checkbox--${currentSize.value}`);
+  if (currentShape.value === 'circle') classes.push('ex-checkbox--circle');
   if (currentStatus.value) classes.push(`ex-checkbox--${currentStatus.value}`);
   if (currentDisabled.value) classes.push('ex-checkbox--disabled');
   if (currentReadonly.value) classes.push('ex-checkbox--readonly');
   if (isFocused.value) classes.push('ex-checkbox--focused');
   if (isChecked.value) classes.push('ex-checkbox--checked');
-  if (props.indeterminate) classes.push('ex-checkbox--indeterminate');
+  if (!hasLabel.value) classes.push('ex-checkbox--no-label');
+  if (isIndeterminate.value) classes.push('ex-checkbox--indeterminate');
   if (currentStatus.value === 'error' || showErrorMessage.value) {
     classes.push('ex-checkbox--error');
   }
@@ -268,7 +347,7 @@ const checkboxBoxClasses = computed(() => {
   const classes = ['ex-checkbox__box'];
 
   if (isChecked.value) classes.push('ex-checkbox__box--checked');
-  if (props.indeterminate) classes.push('ex-checkbox__box--indeterminate');
+  if (isIndeterminate.value) classes.push('ex-checkbox__box--indeterminate');
   if (currentDisabled.value) classes.push('ex-checkbox__box--disabled');
 
   return classes;
@@ -279,27 +358,49 @@ const wrapperStyles = computed(() => {
 });
 
 // 显示状态
-const showErrorMessage = computed(() => {
-  return Boolean(currentErrorMessage.value) || currentStatus.value === 'error';
+const currentErrorMessage = computed(() => {
+  return (
+    validationErrorMessage.value ||
+    props.errorMessage?.trim() ||
+    formItem?.errorMessage?.value ||
+    ''
+  );
 });
+
+const hasErrorState = computed(() => {
+  return currentStatus.value === 'error' || Boolean(currentErrorMessage.value);
+});
+
+const showErrorMessage = computed(() => {
+  return hasErrorState.value && (Boolean(currentErrorMessage.value) || Boolean(slots.error));
+});
+
+const ariaInvalid = computed(() => (hasErrorState.value ? true : undefined));
 
 const showBottomInfo = computed(() => {
   return props.helpText || slots.help || showErrorMessage.value;
 });
 
 const ariaDescribedBy = computed(() => {
-  const ids: string[] = [];
-
-  if (props.helpText || slots.help) {
-    ids.push(`${checkboxId}-help`);
-  }
-
-  if (showErrorMessage.value) {
-    ids.push(`${checkboxId}-error`);
-  }
-
-  return ids.length > 0 ? ids.join(' ') : undefined;
+  return mergeAriaIds(
+    props.ariaDescribedby,
+    formItem?.describedBy?.value,
+    props.helpText || slots.help ? `${checkboxId.value}-help` : undefined,
+    showErrorMessage.value ? `${checkboxId.value}-error` : undefined
+  );
 });
+
+// 可选项模式需要注册当前实例，以便全选/取消全选正确跳过禁用项。
+if (checkboxGroupContext && instance) {
+  checkboxGroupContext.registerCheckbox(instance.uid, {
+    getValue: () => props.value,
+    isDisabled: () => currentDisabled.value,
+  });
+
+  onBeforeUnmount(() => {
+    checkboxGroupContext.unregisterCheckbox(instance.uid);
+  });
+}
 
 // 只读/禁用时拦截点击的默认切换行为（独立模式用 v-model 时 change 守卫为时已晚）
 const handleReadonlyGuard = (event: MouseEvent) => {
@@ -308,27 +409,49 @@ const handleReadonlyGuard = (event: MouseEvent) => {
   }
 };
 
+// 用户第一次操作半选复选框时，按原生语义进入明确的选中或未选中状态。
+const clearIndeterminate = () => {
+  if (!isIndeterminate.value) return;
+
+  isIndeterminate.value = false;
+  emit('update:indeterminate', false);
+  if (checkboxRef.value) checkboxRef.value.indeterminate = false;
+};
+
+const restoreNativeState = (target: HTMLInputElement) => {
+  target.checked = nativeChecked.value;
+  target.indeterminate = isIndeterminate.value;
+};
+
 // 事件处理
 const handleChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
   if (currentDisabled.value || currentReadonly.value) {
     event.preventDefault();
+    restoreNativeState(target);
     return;
   }
 
-  const target = event.target as HTMLInputElement;
-
   if (checkboxGroupContext && props.value !== undefined) {
     // CheckboxGroup 模式
-    checkboxGroupContext.updateValue(props.value, target.checked);
+    const accepted = checkboxGroupContext.updateValue(props.value, target.checked);
+    if (accepted) clearIndeterminate();
+    else restoreNativeState(target);
   } else {
     // 独立模式
     const value = target.checked ? props.trueValue : props.falseValue;
+
+    emit('update:modelValue', value);
+    clearIndeterminate();
 
     // 验证
     validateCheckbox(value);
 
     emit('change', value, event);
+    formItem?.onFieldChange();
   }
+  // 等待父组件处理更新后恢复原生状态，兼容接受、拒绝及转换值的受控场景。
+  void nextTick(() => restoreNativeState(target));
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -347,44 +470,65 @@ const handleBlur = (event: FocusEvent) => {
 const handleSpaceKey = (event: KeyboardEvent) => {
   if (currentDisabled.value || currentReadonly.value) return;
 
-  const newChecked = !isChecked.value;
+  const newChecked = !nativeChecked.value;
   if (checkboxGroupContext && props.value !== undefined) {
-    checkboxGroupContext.updateValue(props.value, newChecked);
+    const accepted = checkboxGroupContext.updateValue(props.value, newChecked);
+    if (accepted) clearIndeterminate();
+    else {
+      const target = event.target as HTMLInputElement | null;
+      if (target) restoreNativeState(target);
+    }
   } else {
     const value = newChecked ? props.trueValue : props.falseValue;
     emit('update:modelValue', value);
+    clearIndeterminate();
     validateCheckbox(value);
     emit('change', value, event);
+    formItem?.onFieldChange();
   }
 };
 
 // 验证复选框
 const validateCheckbox = (value: boolean | string | number) => {
   if (!props.rules || props.rules.length === 0) {
-    currentErrorMessage.value = '';
+    validationErrorMessage.value = '';
     return true;
   }
 
   for (const rule of props.rules) {
     const result = rule(value);
     if (result !== true) {
-      currentErrorMessage.value = typeof result === 'string' ? result : t('common.validationError');
+      validationErrorMessage.value =
+        typeof result === 'string' ? result : t('common.validationError');
       return false;
     }
   }
 
-  currentErrorMessage.value = '';
+  validationErrorMessage.value = '';
   return true;
 };
 
-// 监听错误信息变化
+const syncIndeterminate = () => {
+  if (checkboxRef.value) checkboxRef.value.indeterminate = isIndeterminate.value;
+};
+
+// 本地错误仅描述已验证的值，外部改值或规则变化后按当前确认值重新核对。
 watch(
-  () => props.errorMessage,
-  newError => {
-    // 父级清空 errorMessage 时同步清除，避免残留旧错误
-    currentErrorMessage.value = newError || '';
+  [checkboxValue, () => props.rules],
+  () => {
+    if (validationErrorMessage.value) validateCheckbox(checkboxValue.value);
   },
-  { immediate: true }
+  { deep: true }
+);
+
+onMounted(syncIndeterminate);
+watch(
+  () => props.indeterminate,
+  newValue => {
+    isIndeterminate.value = newValue;
+    syncIndeterminate();
+  },
+  { flush: 'post' }
 );
 
 // 暴露方法

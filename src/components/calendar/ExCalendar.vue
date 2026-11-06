@@ -93,6 +93,7 @@
               { 'ex-calendar__mode-btn--active': activeMode === m.value },
             ]"
             type="button"
+            :aria-pressed="activeMode === m.value"
             @click="changeMode(m.value)"
           >
             {{ m.label }}
@@ -121,7 +122,9 @@
           <span
             v-if="currentHoliday"
             class="ex-calendar__day-holiday"
-          >{{ currentHoliday }}</span>
+          >
+            {{ currentHoliday }}
+          </span>
           <span
             v-else-if="currentSolarTerm"
             class="ex-calendar__day-solar-term"
@@ -142,14 +145,17 @@
           v-if="dayEvents.length > 0"
           class="ex-calendar__day-events"
         >
-          <div
+          <button
             v-for="event in dayEvents"
             :key="event.id"
+            type="button"
             :class="[
               'ex-calendar__day-event',
               `ex-calendar__day-event--${event.type || 'primary'}`,
             ]"
             @click="handleEventClick(event, currentDate)"
+            @keydown.enter.prevent="handleEventClick(event, currentDate)"
+            @keydown.space.prevent="handleEventClick(event, currentDate)"
           >
             <div class="ex-calendar__day-event-header">
               <span class="ex-calendar__day-event-title">{{ event.title }}</span>
@@ -160,7 +166,7 @@
             >
               {{ event.description }}
             </div>
-          </div>
+          </button>
         </div>
         <div
           v-else
@@ -186,69 +192,83 @@
         </div>
       </div>
 
-      <div class="ex-calendar__week-body">
+      <div
+        class="ex-calendar__week-body ex-calendar__grid"
+        role="grid"
+      >
         <div
-          v-for="cell in weekCells"
-          :key="cell.date.getTime()"
-          :class="getCellClasses(cell)"
-          role="button"
-          :tabindex="cell.disabled ? -1 : 0"
-          :aria-selected="cell.isSelected"
-          :aria-disabled="cell.disabled"
-          @click="handleDateClick(cell)"
-          @keydown="handleCellKeydown(cell, $event)"
+          class="ex-calendar__grid-row"
+          role="row"
         >
-          <div class="ex-calendar__date-content">
-            <div class="ex-calendar__date-info">
-              <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span
-                v-if="cell.holiday"
-                class="ex-calendar__holiday"
-              >{{ cell.holiday }}</span>
-              <span
-                v-else-if="cell.solarTerm"
-                class="ex-calendar__solar-term"
-              >
-                {{ cell.solarTerm }}
-              </span>
-              <span
-                v-else-if="showLunar && cell.lunar"
-                class="ex-calendar__lunar"
-              >
-                {{ cell.lunar }}
-              </span>
-            </div>
-
-            <div
-              v-if="cell.checkedIn"
-              class="ex-calendar__check-in"
-            >
-              <ExIcon
-                icon="checkbox-circle-fill"
-                :size="16"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-
           <div
-            v-if="cell.events.length > 0"
-            class="ex-calendar__events"
+            v-for="cell in weekCells"
+            :key="cell.date.getTime()"
+            :class="getCellClasses(cell)"
+            role="gridcell"
+            :tabindex="isCellFocusable(cell) ? 0 : -1"
+            :aria-selected="isDateSelected(cell.date)"
+            :aria-disabled="cell.disabled"
+            :data-date="getDateTimestamp(cell.date)"
+            @click="handleDateClick(cell)"
+            @keydown="handleCellKeydown(cell, $event)"
           >
-            <div
-              v-for="event in cell.events.slice(0, 2)"
-              :key="event.id"
-              :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
-              @click.stop="handleEventClick(event, cell.date)"
-            >
-              <span class="ex-calendar__event-dot" />
-              <span class="ex-calendar__event-title">{{ event.title }}</span>
+            <div class="ex-calendar__date-content">
+              <div class="ex-calendar__date-info">
+                <span class="ex-calendar__date-number">{{ cell.day }}</span>
+                <span
+                  v-if="cell.holiday"
+                  class="ex-calendar__holiday"
+                >
+                  {{ cell.holiday }}
+                </span>
+                <span
+                  v-else-if="cell.solarTerm"
+                  class="ex-calendar__solar-term"
+                >
+                  {{ cell.solarTerm }}
+                </span>
+                <span
+                  v-else-if="showLunar && cell.lunar"
+                  class="ex-calendar__lunar"
+                >
+                  {{ cell.lunar }}
+                </span>
+              </div>
+
+              <div
+                v-if="cell.checkedIn"
+                class="ex-calendar__check-in"
+              >
+                <ExIcon
+                  icon="checkbox-circle-fill"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </div>
             </div>
+
             <div
-              v-if="cell.events.length > 2"
-              class="ex-calendar__event-more"
+              v-if="cell.events.length > 0"
+              class="ex-calendar__events"
             >
-              +{{ cell.events.length - 2 }}
+              <button
+                v-for="event in cell.events.slice(0, 2)"
+                :key="event.id"
+                type="button"
+                :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
+                @click.stop="handleEventClick(event, cell.date)"
+                @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+                @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
+              >
+                <span class="ex-calendar__event-dot" />
+                <span class="ex-calendar__event-title">{{ event.title }}</span>
+              </button>
+              <div
+                v-if="cell.events.length > 2"
+                class="ex-calendar__event-more"
+              >
+                +{{ cell.events.length - 2 }}
+              </div>
             </div>
           </div>
         </div>
@@ -270,69 +290,85 @@
         </div>
       </div>
 
-      <div class="ex-calendar__body">
+      <div
+        class="ex-calendar__body ex-calendar__grid"
+        role="grid"
+      >
         <div
-          v-for="cell in calendarCells"
-          :key="cell.date.getTime()"
-          :class="getCellClasses(cell)"
-          role="button"
-          :tabindex="cell.disabled ? -1 : 0"
-          :aria-selected="cell.isSelected"
-          :aria-disabled="cell.disabled"
-          @click="handleDateClick(cell)"
-          @keydown="handleCellKeydown(cell, $event)"
+          v-for="(week, index) in calendarRows"
+          :key="index"
+          class="ex-calendar__grid-row"
+          role="row"
         >
-          <div class="ex-calendar__date-content">
-            <div class="ex-calendar__date-info">
-              <span class="ex-calendar__date-number">{{ cell.day }}</span>
-              <span
-                v-if="cell.holiday"
-                class="ex-calendar__holiday"
-              >{{ cell.holiday }}</span>
-              <span
-                v-else-if="cell.solarTerm"
-                class="ex-calendar__solar-term"
-              >
-                {{ cell.solarTerm }}
-              </span>
-              <span
-                v-else-if="showLunar && cell.lunar"
-                class="ex-calendar__lunar"
-              >
-                {{ cell.lunar }}
-              </span>
-            </div>
-
-            <div
-              v-if="cell.checkedIn"
-              class="ex-calendar__check-in"
-            >
-              <ExIcon
-                icon="checkbox-circle-fill"
-                :size="16"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-
           <div
-            v-if="cell.events.length > 0"
-            class="ex-calendar__events"
+            v-for="cell in week"
+            :key="cell.date.getTime()"
+            :class="getCellClasses(cell)"
+            role="gridcell"
+            :tabindex="isCellFocusable(cell) ? 0 : -1"
+            :aria-selected="isDateSelected(cell.date)"
+            :aria-disabled="cell.disabled"
+            :data-date="getDateTimestamp(cell.date)"
+            @click="handleDateClick(cell)"
+            @keydown="handleCellKeydown(cell, $event)"
           >
-            <div
-              v-for="event in cell.events.slice(0, 3)"
-              :key="event.id"
-              :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
-              @click.stop="handleEventClick(event, cell.date)"
-            >
-              <span class="ex-calendar__event-dot" />
-              <span class="ex-calendar__event-title">{{ event.title }}</span>
+            <div class="ex-calendar__date-content">
+              <div class="ex-calendar__date-info">
+                <span class="ex-calendar__date-number">{{ cell.day }}</span>
+                <span
+                  v-if="cell.holiday"
+                  class="ex-calendar__holiday"
+                >
+                  {{ cell.holiday }}
+                </span>
+                <span
+                  v-else-if="cell.solarTerm"
+                  class="ex-calendar__solar-term"
+                >
+                  {{ cell.solarTerm }}
+                </span>
+                <span
+                  v-else-if="showLunar && cell.lunar"
+                  class="ex-calendar__lunar"
+                >
+                  {{ cell.lunar }}
+                </span>
+              </div>
+
+              <div
+                v-if="cell.checkedIn"
+                class="ex-calendar__check-in"
+              >
+                <ExIcon
+                  icon="checkbox-circle-fill"
+                  :size="16"
+                  aria-hidden="true"
+                />
+              </div>
             </div>
+
             <div
-              v-if="cell.events.length > 3"
-              class="ex-calendar__event-more"
+              v-if="cell.events.length > 0"
+              class="ex-calendar__events"
             >
-              +{{ cell.events.length - 3 }}
+              <button
+                v-for="event in cell.events.slice(0, 3)"
+                :key="event.id"
+                type="button"
+                :class="['ex-calendar__event', `ex-calendar__event--${event.type || 'primary'}`]"
+                @click.stop="handleEventClick(event, cell.date)"
+                @keydown.enter.stop.prevent="handleEventClick(event, cell.date)"
+                @keydown.space.stop.prevent="handleEventClick(event, cell.date)"
+              >
+                <span class="ex-calendar__event-dot" />
+                <span class="ex-calendar__event-title">{{ event.title }}</span>
+              </button>
+              <div
+                v-if="cell.events.length > 3"
+                class="ex-calendar__event-more"
+              >
+                +{{ cell.events.length - 3 }}
+              </div>
             </div>
           </div>
         </div>
@@ -345,11 +381,14 @@
       class="ex-calendar__year-view"
     >
       <div class="ex-calendar__year-grid">
-        <div
+        <button
           v-for="month in 12"
           :key="month"
           class="ex-calendar__year-month"
+          type="button"
           @click="selectMonth(month)"
+          @keydown.enter.prevent="selectMonth(month)"
+          @keydown.space.prevent="selectMonth(month)"
         >
           <div class="ex-calendar__year-month-title">
             {{ t('calendar.monthFormat', { month }) }}
@@ -373,7 +412,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   </div>
@@ -381,11 +420,14 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useControllableState } from '../../composables/useControllableState';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
+import { parseLocalDate, setMonthClamped, setYearClamped } from '../../utils/date';
+import { CALENDAR_WEEK_LENGTH, useCalendarKeyboard } from './use-calendar-keyboard';
 import type {
   ExCalendarProps,
   ExCalendarEmits,
@@ -400,7 +442,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExCalendarProps>(), {
-  mode: 'month',
   events: () => [],
   showToday: true,
   fullscreen: false,
@@ -411,7 +452,6 @@ const props = withDefaults(defineProps<ExCalendarProps>(), {
 });
 
 const emit = defineEmits<ExCalendarEmits>();
-
 const { t } = useI18n();
 
 // 按需加载 lunar-javascript（可选依赖）。加载完成后写入响应式 ref，
@@ -435,16 +475,50 @@ onMounted(ensureLunarLib);
 watch(() => [props.showLunar, props.showSolarTerm], ensureLunarLib);
 
 const calendarRef = ref<HTMLDivElement>();
-const currentDate = ref(new Date());
-const selectedDate = ref<Date | null>(null);
-// 内部视图模式：初始化自 props.mode，支持 v-model:mode；外部不接管时按钮也能切换
-const activeMode = ref<CalendarMode>(props.mode);
-watch(
-  () => props.mode,
-  m => {
-    activeMode.value = m;
+const SSR_CALENDAR_ANCHOR = new Date(2000, 0, 1);
+const initialModelDate = props.modelValue instanceof Date ? new Date(props.modelValue) : null;
+const currentDate = ref(initialModelDate ?? new Date(SSR_CALENDAR_ANCHOR));
+const todayDate = ref<Date | null>(null);
+const { value: selectedDate, request: requestSelectedDate } = useControllableState<Date | null>({
+  controlledValue: () => props.modelValue,
+  defaultValue: null,
+  clone: value => (value ? new Date(value) : null),
+});
+const focusedDateTimestamp = ref<number | null>(null);
+let mounted = false;
+
+// 清空只重置浏览锚点和今日标记，不生成选择事件，也不把今天写为选中值。
+const resetViewToToday = () => {
+  const today = new Date();
+  todayDate.value = new Date(today);
+  currentDate.value = today;
+  focusedDateTimestamp.value = getDateTimestamp(today);
+};
+
+onMounted(() => {
+  mounted = true;
+  todayDate.value = new Date();
+  if (props.modelValue == null) resetViewToToday();
+  if (focusedDateTimestamp.value === null) {
+    focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
   }
-);
+});
+
+// undefined 表示非受控；null 是受控的明确清空值。单元格计算直接读取数据源，
+// 避免通过额外版本号驱动视图，确保受控值变化能可靠触发模板更新。
+const getSelectedTimestamp = (): number | null => {
+  const selected = selectedDate.value;
+  if (!selected) return null;
+
+  const normalized = new Date(selected);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized.getTime();
+};
+// 显式 mode 等待父级确认，未提供时由组件内部管理视图模式。
+const { value: activeMode, request: requestMode } = useControllableState<CalendarMode>({
+  controlledValue: () => props.mode,
+  defaultValue: 'month',
+});
 
 // 视图模式选项
 const modes = computed(() => [
@@ -461,12 +535,14 @@ const weekdays = computed(() => t('calendar.weekdaysShort').split(','));
 const prevPeriodLabel = computed(() => {
   if (activeMode.value === 'day') return t('calendar.prevDay');
   if (activeMode.value === 'week') return t('calendar.prevWeek');
+  if (activeMode.value === 'year') return t('calendar.prevYear');
   return t('calendar.prevMonth');
 });
 
 const nextPeriodLabel = computed(() => {
   if (activeMode.value === 'day') return t('calendar.nextDay');
   if (activeMode.value === 'week') return t('calendar.nextWeek');
+  if (activeMode.value === 'year') return t('calendar.nextYear');
   return t('calendar.nextMonth');
 });
 
@@ -517,14 +593,25 @@ const currentHoliday = computed(() => {
   return getHoliday(currentDate.value);
 });
 
+const getDayTimestamp = (value: Date | string): number | null => {
+  const date = parseLocalDate(value);
+  if (!date) return null;
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
+const getDateTimestamp = (value: Date): number => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
 // 日视图的事件
 const dayEvents = computed(() => {
   const date = new Date(currentDate.value);
   date.setHours(0, 0, 0, 0);
   return props.events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate.getTime() === date.getTime();
+    return getDayTimestamp(event.date) === date.getTime();
   });
 });
 
@@ -656,30 +743,19 @@ const getHoliday = (date: Date): string => {
 
 // 创建单元格数据
 const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarDateCell => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const cellDate = new Date(date);
   cellDate.setHours(0, 0, 0, 0);
   const dateTime = cellDate.getTime();
 
-  const isToday = dateTime === today.getTime();
-  const isSelected = selectedDate.value
-    ? dateTime === new Date(selectedDate.value).setHours(0, 0, 0, 0)
-    : false;
-
+  const isToday = todayDate.value !== null && dateTime === getDateTimestamp(todayDate.value);
   // 获取该日期的事件
   const dateEvents = props.events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate.getTime() === dateTime;
+    return getDayTimestamp(event.date) === dateTime;
   });
 
   // 检查是否签到
   const checkedIn = props.checkedInDates.some(checkedDate => {
-    const checkDate = new Date(checkedDate);
-    checkDate.setHours(0, 0, 0, 0);
-    return checkDate.getTime() === dateTime;
+    return getDayTimestamp(checkedDate) === dateTime;
   });
 
   // 获取节假日
@@ -696,7 +772,6 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
     day,
     isCurrentMonth,
     isToday,
-    isSelected,
     disabled: props.disabledDate ? props.disabledDate(date) : false,
     events: dateEvents,
     checkedIn,
@@ -715,8 +790,7 @@ const getMonthDays = (month: number) => {
   const lastDayDate = lastDay.getDate();
 
   const days: Array<{ day: number | null; isToday: boolean }> = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = todayDate.value ? getDateTimestamp(todayDate.value) : null;
 
   // 填充空白
   for (let i = 0; i < firstDayWeek; i++) {
@@ -727,19 +801,27 @@ const getMonthDays = (month: number) => {
   for (let day = 1; day <= lastDayDate; day++) {
     const date = new Date(year, month - 1, day);
     date.setHours(0, 0, 0, 0);
-    days.push({ day, isToday: date.getTime() === today.getTime() });
+    days.push({ day, isToday: todayTimestamp !== null && date.getTime() === todayTimestamp });
   }
 
   return days;
 };
 
 // 获取单元格样式类
+const isDateSelected = (date: Date): boolean => {
+  const selectedTime = getSelectedTimestamp();
+  if (selectedTime === null) return false;
+
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized.getTime() === selectedTime;
+};
+
 const getCellClasses = (cell: CalendarDateCell) => {
   const classes = ['ex-calendar__cell'];
 
   if (!cell.isCurrentMonth) classes.push('ex-calendar__cell--other-month');
   if (cell.isToday) classes.push('ex-calendar__cell--today');
-  if (cell.isSelected) classes.push('ex-calendar__cell--selected');
   if (cell.disabled) classes.push('ex-calendar__cell--disabled');
   if (cell.checkedIn) classes.push('ex-calendar__cell--checked-in');
   if (cell.events.length > 0) classes.push('ex-calendar__cell--has-events');
@@ -749,11 +831,27 @@ const getCellClasses = (cell: CalendarDateCell) => {
   return classes;
 };
 
+const calendarRows = computed(() =>
+  Array.from({ length: Math.ceil(calendarCells.value.length / CALENDAR_WEEK_LENGTH) }, (_, index) =>
+    calendarCells.value.slice(index * CALENDAR_WEEK_LENGTH, (index + 1) * CALENDAR_WEEK_LENGTH)
+  )
+);
+const { isCellFocusable, handleCellKeydown } = useCalendarKeyboard({
+  currentDate,
+  focusedDate: focusedDateTimestamp,
+  element: calendarRef,
+  cells: computed(() => (activeMode.value === 'week' ? weekCells.value : calendarCells.value)),
+  timestamp: getDateTimestamp,
+  isDisabled: date => Boolean(props.disabledDate?.(date)),
+  select: cell => handleDateClick(cell),
+});
+
 // 方法
 const handleDateClick = (cell: CalendarDateCell) => {
   if (cell.disabled) return;
 
-  selectedDate.value = cell.date;
+  focusedDateTimestamp.value = getDateTimestamp(cell.date);
+  requestSelectedDate(cell.date);
   currentDate.value = new Date(cell.date);
   emit('update:modelValue', cell.date);
   emit('select', cell.date, cell);
@@ -764,30 +862,26 @@ const handleEventClick = (event: CalendarEvent, date: Date) => {
   emit('event-click', event, date);
 };
 
-// 日期格键盘支持（Enter/Space 选择）
-const handleCellKeydown = (cell: CalendarDateCell, event: KeyboardEvent) => {
-  if (cell.disabled) return;
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    handleDateClick(cell);
-  }
-};
-
 const selectDate = (date: Date) => {
-  selectedDate.value = date;
+  if (props.disabledDate?.(date)) return;
+  focusedDateTimestamp.value = getDateTimestamp(date);
+  requestSelectedDate(date);
   currentDate.value = new Date(date);
   emit('update:modelValue', date);
 };
 
 const goToday = () => {
   const today = new Date();
+  if (props.disabledDate?.(today)) return;
+  todayDate.value = new Date(today);
+  focusedDateTimestamp.value = getDateTimestamp(today);
   currentDate.value = today;
-  selectedDate.value = today;
+  requestSelectedDate(today);
   emit('update:modelValue', today);
 };
 
 const changeMode = (newMode: CalendarMode) => {
-  activeMode.value = newMode;
+  requestMode(newMode);
   emit('update:mode', newMode);
   emit('mode-change', newMode);
 };
@@ -803,13 +897,13 @@ const prevPeriod = () => {
       newDate.setDate(newDate.getDate() - 7);
       break;
     case 'month':
-      newDate.setMonth(newDate.getMonth() - 1);
-      emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
-      break;
+      currentDate.value = setMonthClamped(newDate, newDate.getMonth() - 1);
+      emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
+      return;
     case 'year':
-      newDate.setFullYear(newDate.getFullYear() - 1);
-      emit('year-change', newDate.getFullYear());
-      break;
+      currentDate.value = setYearClamped(newDate, newDate.getFullYear() - 1);
+      emit('year-change', currentDate.value.getFullYear());
+      return;
   }
 
   currentDate.value = newDate;
@@ -826,51 +920,41 @@ const nextPeriod = () => {
       newDate.setDate(newDate.getDate() + 7);
       break;
     case 'month':
-      newDate.setMonth(newDate.getMonth() + 1);
-      emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
-      break;
+      currentDate.value = setMonthClamped(newDate, newDate.getMonth() + 1);
+      emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
+      return;
     case 'year':
-      newDate.setFullYear(newDate.getFullYear() + 1);
-      emit('year-change', newDate.getFullYear());
-      break;
+      currentDate.value = setYearClamped(newDate, newDate.getFullYear() + 1);
+      emit('year-change', currentDate.value.getFullYear());
+      return;
   }
 
   currentDate.value = newDate;
 };
 
 const selectMonth = (month: number) => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(month - 1);
-  currentDate.value = newDate;
+  currentDate.value = setMonthClamped(currentDate.value, month - 1);
   changeMode('month');
 };
 
 const prevMonth = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(newDate.getMonth() - 1);
-  currentDate.value = newDate;
-  emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
+  currentDate.value = setMonthClamped(currentDate.value, currentDate.value.getMonth() - 1);
+  emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const nextMonth = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setMonth(newDate.getMonth() + 1);
-  currentDate.value = newDate;
-  emit('month-change', newDate.getFullYear(), newDate.getMonth() + 1);
+  currentDate.value = setMonthClamped(currentDate.value, currentDate.value.getMonth() + 1);
+  emit('month-change', currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
 
 const prevYear = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setFullYear(newDate.getFullYear() - 1);
-  currentDate.value = newDate;
-  emit('year-change', newDate.getFullYear());
+  currentDate.value = setYearClamped(currentDate.value, currentDate.value.getFullYear() - 1);
+  emit('year-change', currentDate.value.getFullYear());
 };
 
 const nextYear = () => {
-  const newDate = new Date(currentDate.value);
-  newDate.setFullYear(newDate.getFullYear() + 1);
-  currentDate.value = newDate;
-  emit('year-change', newDate.getFullYear());
+  currentDate.value = setYearClamped(currentDate.value, currentDate.value.getFullYear() + 1);
+  emit('year-change', currentDate.value.getFullYear());
 };
 
 const getElement = () => {
@@ -882,8 +966,12 @@ watch(
   () => props.modelValue,
   newValue => {
     if (newValue instanceof Date) {
-      selectedDate.value = newValue;
       currentDate.value = new Date(newValue);
+      focusedDateTimestamp.value = getDateTimestamp(newValue);
+    } else if (newValue === null && mounted) {
+      resetViewToToday();
+    } else if (newValue === null && focusedDateTimestamp.value === null) {
+      focusedDateTimestamp.value = getDateTimestamp(currentDate.value);
     }
   },
   { immediate: true }

@@ -2,12 +2,7 @@ import type { VNode, Component, CSSProperties } from 'vue';
 
 /** 显示位置 */
 export type BackTopPosition =
-  | 'bottom-right'
-  | 'bottom-left'
-  | 'top-right'
-  | 'top-left'
-  | 'bottom-center'
-  | 'top-center';
+  'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center';
 
 /** 形状 */
 export type BackTopShape = 'circle' | 'square' | 'rounded';
@@ -30,10 +25,7 @@ export type BackTopProgressType = 'circle' | 'line';
  * - CSS 选择器字符串、HTMLElement、或返回二者之一的函数：监听指定滚动容器
  */
 export type BackTopTarget =
-  | HTMLElement
-  | Window
-  | string
-  | (() => HTMLElement | Window | string | null | undefined);
+  HTMLElement | Window | string | (() => HTMLElement | Window | string | null | undefined);
 
 /** 位置偏移（像素或带单位字符串） */
 export interface BackTopOffset {

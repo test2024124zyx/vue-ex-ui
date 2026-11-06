@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { libInjectCss } from 'vite-plugin-lib-inject-css';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { glob } from 'glob';
+import browserTargets from './browser-targets.json';
 
 /**
  * 按需打包构建（per-component packaging）
@@ -23,7 +24,17 @@ const external = [
   'qrcode',
   'jsbarcode',
   'lunar-javascript',
+  'tus-js-client',
 ];
+
+const addVueShimReference = (filePath: string, content: string) => {
+  if (filePath.endsWith('shims-vue.d.ts') || !content.includes('.vue')) return;
+  const shimPath = normalizePath(
+    relative(dirname(filePath), resolve(import.meta.dirname, 'dist/shims-vue.d.ts'))
+  );
+  const referencePath = shimPath.startsWith('.') ? shimPath : `./${shimPath}`;
+  return { content: `/// <reference path="${referencePath}" />\n${content}` };
+};
 
 // 入口为「公共 API 出口」：整包 barrel、基础样式、各组件 index、composables、
 // 工具与国际化入口。组件内部的子文件（如 DatePanel.vue）会作为依赖被打进各自
@@ -31,6 +42,7 @@ const external = [
 const entryFiles = [
   'src/index.ts',
   'src/style-base.ts',
+  'src/style-font.ts',
   'src/locale/index.ts',
   'src/utils/index.ts',
   ...glob.sync('src/components/*/index.ts'),
@@ -41,19 +53,27 @@ const entries = Object.fromEntries(
   entryFiles.map(file => {
     // 入口名：去掉 src/ 前缀与扩展名，作为 dist/es 下的相对路径
     const name = file.slice('src/'.length).replace(/\.(ts|vue)$/, '');
-    return [name, resolve(__dirname, file)];
+    return [name, resolve(import.meta.dirname, file)];
   })
 );
 
 export default defineConfig({
+  base: './',
   plugins: [
     vue(),
     libInjectCss(),
     dts({
       include: ['src/**/*'],
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-      outDir: 'dist/es',
+      outDirs: 'dist/es',
       entryRoot: 'src',
+      beforeWriteFile: addVueShimReference,
+      afterDiagnostic(diagnostics) {
+        // 按需构建的声明错误同样必须阻断发布。
+        if (diagnostics.length > 0) {
+          throw new Error(`声明生成失败，共发现 ${diagnostics.length} 个类型诊断`);
+        }
+      },
     }),
   ],
   css: {
@@ -64,11 +84,13 @@ export default defineConfig({
     },
   },
   build: {
+    target: browserTargets,
+    cssTarget: browserTargets,
     outDir: 'dist/es',
     emptyOutDir: true,
     cssCodeSplit: true,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       formats: ['es'],
     },
     rollupOptions: {
@@ -85,12 +107,9 @@ export default defineConfig({
       },
     },
   },
-  esbuild: {
-    target: 'es2020',
-  },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
   define: {

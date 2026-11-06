@@ -34,10 +34,19 @@ src/components/skeleton/
   <ExSkeleton />
 
   <!-- 复杂组合 -->
-  <ExSkeleton avatar :title="true" :rows="4" />
+  <ExSkeleton
+    avatar
+    :title="true"
+    :rows="4"
+  />
 
   <!-- 显示真实内容 -->
-  <ExSkeleton :loading="loading" avatar :title="true" :rows="3">
+  <ExSkeleton
+    :loading="loading"
+    avatar
+    :title="true"
+    :rows="3"
+  >
     <template #content>
       <div>真实内容</div>
     </template>
@@ -45,37 +54,40 @@ src/components/skeleton/
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ExSkeleton } from 'vue-ex-ui'
+import { ref } from 'vue';
+import { ExSkeleton } from 'vue-ex-ui';
 
-const loading = ref(true)
+const loading = ref(true);
 </script>
 ```
 
 ## 主要属性
 
-| 属性 | 说明 | 类型 | 默认值 |
-|------|------|------|--------|
-| loading | 是否显示加载状态 | boolean | true |
-| animation | 动画类型 | 'pulse' \| 'wave' \| 'none' | 'pulse' |
-| variant | 变体类型 | string | 'text' |
-| avatar | 是否显示头像 | boolean | false |
-| title | 是否显示标题 | boolean | false |
-| rows | 段落行数 | number | 3 |
-| count | 重复次数 | number | 1 |
+| 属性      | 说明             | 类型                        | 默认值  |
+| --------- | ---------------- | --------------------------- | ------- |
+| loading   | 是否显示加载状态 | boolean                     | true    |
+| animation | 动画类型         | 'pulse' \| 'wave' \| 'none' | 'pulse' |
+| variant   | 变体类型         | string                      | 'text'  |
+| avatar    | 是否显示头像     | boolean                     | false   |
+| title     | 是否显示标题     | boolean                     | false   |
+| rows      | 段落行数         | number                      | 3       |
+| count     | 重复次数         | number                      | 1       |
 
 ## 设计特点
 
 ### 游戏主题风格
+
 - **霓虹渐变背景**：使用 `rgba(0, 240, 255, 0.1)` 到 `rgba(255, 0, 127, 0.1)` 的渐变
 - **发光边框**：`rgba(0, 240, 255, 0.2)` 的霓虹蓝边框
 - **动画效果**：脉冲动画带有霓虹发光效果
 
 ### 动画实现
+
 - **脉冲动画**：透明度和阴影变化，营造呼吸感
 - **波浪动画**：渐变光带从左到右扫过，模拟加载进度
 
 ### 响应式设计
+
 - 移动端自动调整头像和文本尺寸
 - 支持 `prefers-reduced-motion` 减少动画
 - 高对比度模式增强边框

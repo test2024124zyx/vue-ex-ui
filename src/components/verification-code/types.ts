@@ -110,7 +110,6 @@ export interface ExVerificationCodeEmits {
   clear: [];
 }
 
-
 /**
  * 验证码输入组件暴露的方法接口
  */
@@ -173,5 +172,8 @@ export function isValidChar(char: string, mode: VerificationCodeInputMode): bool
  * @returns 过滤后的字符串
  */
 export function filterValidChars(str: string, mode: VerificationCodeInputMode): string {
-  return str.split('').filter(char => isValidChar(char, mode)).join('');
+  return str
+    .split('')
+    .filter(char => isValidChar(char, mode))
+    .join('');
 }

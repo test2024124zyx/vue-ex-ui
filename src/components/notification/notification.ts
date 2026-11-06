@@ -1,25 +1,25 @@
-/**
- * Notification 通知提醒服务
- * 提供全局通知提醒功能，支持多种通知类型和位置
- */
-
-import { createVNode, render, type VNode } from 'vue';
+import { cloneVNode, createVNode, inject, isVNode, render } from 'vue';
+import type { AppContext, InjectionKey, VNode } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
+import { useComponentServiceScope, watchServiceZIndex } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
 import ExNotificationComponent from './ExNotification.vue';
+import { resolveNotificationConfig, resolveNotificationOptions } from './notification-utils';
+import type { ResolvedNotificationOptions } from './notification-utils';
 import type {
-  NotificationOptions,
-  NotificationInstance,
-  NotificationService,
+  ExNotificationExposed,
   NotificationGlobalConfig,
-  NotificationQueueItem,
+  NotificationInstance,
+  NotificationOptions,
   NotificationPosition,
+  NotificationService,
+  NotificationType,
+  NotificationTypedOptions,
 } from './types';
 
-// ============================================================================
-// 全局配置
-// ============================================================================
-
-/** 默认全局配置 */
-const defaultConfig: NotificationGlobalConfig = {
+const DEFAULT_CONFIG: NotificationGlobalConfig = {
   duration: 4500,
   offset: 16,
   zIndex: 2000,
@@ -29,326 +29,331 @@ const defaultConfig: NotificationGlobalConfig = {
   position: 'top-right',
 };
 
-/** 当前全局配置 */
-let globalConfig: NotificationGlobalConfig = { ...defaultConfig };
+interface NotificationRecord {
+  id: string;
+  options: ResolvedNotificationOptions;
+  position: NotificationPosition;
+  groupKey: string;
+  inheritsZIndex: boolean;
+  wrapper: HTMLDivElement;
+  vnode: VNode;
+  state: 'active' | 'closing' | 'destroyed';
+  callbackCalled: boolean;
+  close: () => boolean;
+}
 
-/**
- * 解析容器 z-index：未自定义时走设计令牌 var(--ex-z-toast)，
- * 与 Modal/Popover 等浮层共享同一套层级体系；
- * 用户显式设置 zIndex 时仍以其数值为准。
- */
-const resolveZIndex = (): string =>
-  globalConfig.zIndex === defaultConfig.zIndex
-    ? `var(--ex-z-toast, ${defaultConfig.zIndex})`
-    : String(globalConfig.zIndex);
+/** 当前 Vue App 的 Notification 服务注入键。 */
+export const NOTIFICATION_SERVICE_KEY: InjectionKey<NotificationService> =
+  createSharedInjectionKey('notification-service');
 
-// ============================================================================
-// 通知队列管理
-// ============================================================================
-
-/** 按位置分组的通知队列 */
-const notificationQueues: Record<NotificationPosition, NotificationQueueItem[]> = {
-  'top-right': [],
-  'top-left': [],
-  'bottom-right': [],
-  'bottom-left': [],
-};
-
-/** 按位置分组的通知容器 */
-const notificationContainers: Record<NotificationPosition, HTMLElement | null> = {
-  'top-right': null,
-  'top-left': null,
-  'bottom-right': null,
-  'bottom-left': null,
-};
-
-/** 生成唯一 ID */
-let seed = 0;
-const generateId = (): string => {
-  return `ex-notification-${Date.now()}-${++seed}`;
-};
-
-/**
- * 获取位置样式
- */
-const getPositionStyle = (position: NotificationPosition, offset: number): string => {
-  const styles: Record<string, string> = {
+const createContainerStyle = (
+  options: ResolvedNotificationOptions
+): Partial<CSSStyleDeclaration> => {
+  const style: Partial<CSSStyleDeclaration> = {
     position: 'fixed',
-    zIndex: resolveZIndex(),
+    zIndex: String(options.zIndex),
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: options.position.includes('bottom') ? 'column-reverse' : 'column',
     gap: '12px',
     pointerEvents: 'none',
   };
-
-  if (position.includes('top')) {
-    styles.top = `${offset}px`;
-  } else {
-    styles.bottom = `${offset}px`;
-    styles.flexDirection = 'column-reverse';
-  }
-
-  if (position.includes('right')) {
-    styles.right = `${offset}px`;
-  } else {
-    styles.left = `${offset}px`;
-  }
-
-  return Object.entries(styles)
-    .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value}`)
-    .join('; ');
+  if (options.position.includes('top')) style.top = `${options.offset}px`;
+  else style.bottom = `${options.offset}px`;
+  if (options.position.includes('right')) style.right = `${options.offset}px`;
+  else style.left = `${options.offset}px`;
+  return style;
 };
 
-/**
- * 获取或创建通知容器
- */
-const getContainer = (position: NotificationPosition): HTMLElement => {
-  if (!notificationContainers[position]) {
+/** 创建队列、容器、配置和回调生命周期完全隔离的 Notification 服务。 */
+export function createNotificationService(appContext?: AppContext): NotificationService {
+  let globalConfig: NotificationGlobalConfig = { ...DEFAULT_CONFIG };
+  let hasExplicitZIndex = false;
+  let stopZIndexWatch: (() => void) | undefined;
+  let seed = 0;
+  const records = new Map<string, NotificationRecord>();
+  const containers = new Map<string, HTMLDivElement>();
+  const activeQueues = new Map<NotificationPosition, NotificationRecord[]>();
+
+  const assertBrowserEnvironment = (): void => {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      throw new Error('Notification 服务只能在浏览器环境中创建通知');
+    }
+  };
+
+  const resolveScopedConfig = (): NotificationGlobalConfig => {
+    if (hasExplicitZIndex) return globalConfig;
+    const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config
+      ? { ...globalConfig, zIndex: resolveZIndexLayer(config.zIndex.value, 'toast') }
+      : globalConfig;
+  };
+
+  const getQueue = (position: NotificationPosition): NotificationRecord[] => {
+    const existing = activeQueues.get(position);
+    if (existing) return existing;
+    const queue: NotificationRecord[] = [];
+    activeQueues.set(position, queue);
+    return queue;
+  };
+
+  const createGroupKey = (options: ResolvedNotificationOptions): string =>
+    `${options.position}:${options.offset}:${options.zIndex}`;
+
+  const closeStaleGroupRecords = (groupKey: string): void => {
+    const existing = containers.get(groupKey);
+    if (!existing || existing.isConnected) return;
+    containers.delete(groupKey);
+    forceCloseRecords([...records.values()].filter(record => record.groupKey === groupKey));
+  };
+
+  const getContainer = (groupKey: string, options: ResolvedNotificationOptions): HTMLDivElement => {
+    closeStaleGroupRecords(groupKey);
+    const existing = containers.get(groupKey);
+    if (existing) return existing;
+
+    assertBrowserEnvironment();
+    const parent = document.body ?? document.documentElement;
+    if (!parent) throw new Error('Notification 服务找不到可用的文档根节点');
     const container = document.createElement('div');
-    container.className = `ex-notification-container ex-notification-container--${position}`;
-    container.style.cssText = getPositionStyle(position, globalConfig.offset);
-    document.body.appendChild(container);
-    notificationContainers[position] = container;
-  }
-  return notificationContainers[position]!;
-};
-
-/**
- * 更新容器样式
- */
-const updateContainerStyle = (position: NotificationPosition): void => {
-  const container = notificationContainers[position];
-  if (container) {
-    container.style.cssText = getPositionStyle(position, globalConfig.offset);
-  }
-};
-
-/**
- * 销毁通知容器
- */
-const destroyContainer = (position: NotificationPosition): void => {
-  const container = notificationContainers[position];
-  const queue = notificationQueues[position];
-
-  if (container && queue.length === 0) {
-    document.body.removeChild(container);
-    notificationContainers[position] = null;
-  }
-};
-
-/**
- * 立即从队列中移除通知（不触发动画）
- */
-const removeFromQueueImmediate = (id: string, position: NotificationPosition): void => {
-  const queue = notificationQueues[position];
-  const index = queue.findIndex(item => item.id === id);
-
-  if (index > -1) {
-    const item = queue[index]!;
-    // 卸载 Vue 组件
-    render(null, item.container);
-    // 移除 DOM 元素
-    if (item.container.parentNode) {
-      item.container.parentNode.removeChild(item.container);
-    }
-    // 从队列中移除
-    queue.splice(index, 1);
-    // 如果队列为空，销毁容器
-    destroyContainer(position);
-  }
-};
-
-/**
- * 从队列中移除通知（动画完成后调用）
- */
-const removeFromQueue = (id: string, position: NotificationPosition): void => {
-  removeFromQueueImmediate(id, position);
-};
-
-/**
- * 限制通知数量 - 立即移除最旧的通知
- */
-const limitNotificationCount = (position: NotificationPosition): void => {
-  const queue = notificationQueues[position];
-  // 计算需要移除的数量
-  const removeCount = queue.length - globalConfig.maxCount + 1;
-  if (removeCount > 0) {
-    // 获取需要移除的通知（最旧的）
-    const itemsToRemove = queue.slice(0, removeCount);
-    // 立即移除，不等待动画
-    itemsToRemove.forEach(item => {
-      removeFromQueueImmediate(item.id, position);
-    });
-  }
-};
-
-// ============================================================================
-// 创建通知
-// ============================================================================
-
-/**
- * 创建通知实例
- */
-const createNotification = (options: NotificationOptions): NotificationInstance => {
-  const position = options.position || globalConfig.position;
-
-  // 限制通知数量（立即移除旧通知）
-  limitNotificationCount(position);
-
-  // 生成唯一 ID
-  const id = options.id || generateId();
-
-  // 合并配置
-  const mergedOptions: NotificationOptions = {
-    showIcon: globalConfig.showIcon,
-    closable: globalConfig.closable,
-    duration: globalConfig.duration,
-    offset: globalConfig.offset,
-    zIndex: globalConfig.zIndex,
-    position: globalConfig.position,
-    ...options,
-    id,
+    container.className = `ex-notification-container ex-notification-container--${options.position}`;
+    container.dataset.notificationGroup = groupKey;
+    Object.assign(container.style, createContainerStyle(options));
+    parent.appendChild(container);
+    containers.set(groupKey, container);
+    stopZIndexWatch ??= watchServiceZIndex(appContext, syncScopedZIndices);
+    return container;
   };
 
-  // 获取容器
-  const container = getContainer(position);
+  const removeActiveRecord = (record: NotificationRecord): void => {
+    const queue = getQueue(record.position);
+    const index = queue.indexOf(record);
+    if (index >= 0) queue.splice(index, 1);
+  };
 
-  // 创建通知包装元素
-  const notificationWrapper = document.createElement('div');
-  notificationWrapper.className = 'ex-notification-wrapper';
-  container.appendChild(notificationWrapper);
-
-  // 关闭方法
-  const close = (): void => {
-    const component = vnode.component;
-    if (component && component.exposed) {
-      (component.exposed as { close: () => void }).close();
+  const destroyContainerIfEmpty = (groupKey: string): void => {
+    const stillUsed = [...records.values()].some(
+      record => record.groupKey === groupKey && record.state !== 'destroyed'
+    );
+    if (stillUsed) return;
+    containers.get(groupKey)?.remove();
+    containers.delete(groupKey);
+    if (records.size === 0) {
+      stopZIndexWatch?.();
+      stopZIndexWatch = undefined;
     }
   };
 
-  // 销毁回调
-  const onDestroy = (): void => {
-    removeFromQueue(id, position);
+  const syncScopedZIndices = (): void => {
+    const context = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    if (!context) return;
+    const zIndex = resolveZIndexLayer(context.zIndex.value, 'toast');
+    const focused = document.activeElement;
+    const restoreFocus =
+      focused instanceof HTMLElement &&
+      [...records.values()].some(record => record.wrapper.contains(focused));
+    const previousGroups = new Set<string>();
+    for (const record of records.values()) {
+      if (!record.inheritsZIndex || record.options.zIndex === zIndex) continue;
+      previousGroups.add(record.groupKey);
+      record.options.zIndex = zIndex;
+      record.groupKey = createGroupKey(record.options);
+      getContainer(record.groupKey, record.options).appendChild(record.wrapper);
+      // 更新现有实例，保留通知计时、焦点和关闭回调，不重新挂载。
+      record.vnode = cloneVNode(record.vnode, { zIndex });
+      render(record.vnode, record.wrapper);
+    }
+    // 合并到已有组时仍按原始创建顺序排列，显式层级的记录留在原组。
+    const positions = new Map<string, number>();
+    for (const record of records.values()) {
+      const container = containers.get(record.groupKey);
+      const index = positions.get(record.groupKey) ?? 0;
+      if (container && container.children[index] !== record.wrapper)
+        container.insertBefore(record.wrapper, container.children[index] ?? null);
+      positions.set(record.groupKey, index + 1);
+    }
+    previousGroups.forEach(destroyContainerIfEmpty);
+    // DOM 迁移会丢失原生焦点；仅恢复被迁移的控件，不覆盖业务主动转移的焦点。
+    if (restoreFocus && focused.isConnected && document.activeElement === document.body)
+      focused.focus({ preventScroll: true });
   };
 
-  // 创建 Vue 虚拟节点
-  const vnode: VNode = createVNode(ExNotificationComponent, {
-    ...mergedOptions,
-    onDestroy,
+  const notifyClose = (record: NotificationRecord): void => {
+    if (record.callbackCalled) return;
+    record.callbackCalled = true;
+    record.options.onClose?.();
+  };
+
+  const finalizeRecord = (record: NotificationRecord, invokeClose: boolean): void => {
+    if (record.state === 'destroyed') return;
+    removeActiveRecord(record);
+    record.state = 'destroyed';
+    records.delete(record.id);
+    render(null, record.wrapper);
+    record.wrapper.remove();
+    destroyContainerIfEmpty(record.groupKey);
+    if (invokeClose) notifyClose(record);
+  };
+
+  const forceCloseRecords = (targets: readonly NotificationRecord[]): void => {
+    let firstError: unknown;
+    for (const record of targets) {
+      try {
+        finalizeRecord(record, true);
+      } catch (error) {
+        firstError ??= error;
+      }
+    }
+    if (firstError !== undefined) throw firstError;
+  };
+
+  const handleComponentClose = (record: NotificationRecord): void => {
+    if (record.state !== 'active') return;
+    removeActiveRecord(record);
+    record.state = 'closing';
+    notifyClose(record);
+  };
+
+  const requestClose = (record: NotificationRecord): boolean => {
+    if (record.state !== 'active') return false;
+    const exposed = record.vnode.component?.exposed as ExNotificationExposed | undefined;
+    if (!exposed || !exposed.close()) finalizeRecord(record, true);
+    return true;
+  };
+
+  const generateId = (): string => {
+    let id: string;
+    do {
+      id = `ex-notification-${Date.now()}-${++seed}`;
+    } while (records.has(id));
+    return id;
+  };
+
+  const enforceLimitBeforeCreate = (position: NotificationPosition): void => {
+    const queue = getQueue(position);
+    const removeCount = queue.length - globalConfig.maxCount + 1;
+    if (removeCount > 0) forceCloseRecords(queue.slice(0, removeCount));
+  };
+
+  const createNotification = (
+    input: NotificationOptions | NotificationTypedOptions,
+    forcedType?: NotificationType
+  ): NotificationInstance => {
+    assertBrowserEnvironment();
+    const options = resolveNotificationOptions(
+      input as NotificationOptions,
+      resolveScopedConfig(),
+      forcedType
+    );
+    const id = options.id ?? generateId();
+    if (records.has(id)) throw new TypeError(`Notification id "${id}" 重复`);
+    const groupKey = createGroupKey(options);
+    // 外部删除容器时先释放该组旧记录，避免幽灵记录继续占用 maxCount。
+    closeStaleGroupRecords(groupKey);
+    enforceLimitBeforeCreate(options.position);
+    const container = getContainer(groupKey, options);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ex-notification-wrapper';
+    container.appendChild(wrapper);
+
+    const contentIsVNode = isVNode(options.content);
+    const vnode = createVNode(
+      ExNotificationComponent,
+      {
+        id,
+        type: options.type,
+        title: options.title,
+        content: contentIsVNode ? '' : options.content,
+        showIcon: options.showIcon,
+        closable: options.closable,
+        duration: options.duration,
+        customClass: options.customClass,
+        customStyle: options.customStyle,
+        zIndex: options.zIndex,
+        offset: options.offset,
+        position: options.position,
+        dangerouslyUseHTMLString: options.dangerouslyUseHTMLString,
+        onClick: options.onClick,
+        onClose: () => handleComponentClose(record),
+        onDestroy: () => finalizeRecord(record, false),
+      },
+      contentIsVNode ? { default: () => [options.content as VNode] } : undefined
+    );
+    if (appContext) vnode.appContext = appContext;
+
+    const record: NotificationRecord = {
+      id,
+      options: { ...options, id },
+      position: options.position,
+      groupKey,
+      inheritsZIndex: input.zIndex === undefined && !hasExplicitZIndex,
+      wrapper,
+      vnode,
+      state: 'active',
+      callbackCalled: false,
+      close: () => requestClose(record),
+    };
+    records.set(id, record);
+    getQueue(options.position).push(record);
+
+    try {
+      render(vnode, wrapper);
+    } catch (error) {
+      finalizeRecord(record, false);
+      throw error;
+    }
+    return { id, close: record.close };
+  };
+
+  const createTypedNotification =
+    (type: NotificationType) =>
+    (options: NotificationTypedOptions): NotificationInstance =>
+      createNotification(options, type);
+
+  const close = (id: string): boolean => {
+    const record = records.get(id);
+    return record ? requestClose(record) : false;
+  };
+
+  const closeAll = (): void => {
+    forceCloseRecords([...records.values()]);
+  };
+
+  const config = (options: Partial<NotificationGlobalConfig>): void => {
+    globalConfig = resolveNotificationConfig(options, globalConfig);
+    if (Object.prototype.hasOwnProperty.call(options, 'zIndex')) hasExplicitZIndex = true;
+    for (const queue of activeQueues.values()) {
+      const removeCount = queue.length - globalConfig.maxCount;
+      if (removeCount > 0) forceCloseRecords(queue.slice(0, removeCount));
+    }
+  };
+
+  const notificationFunction = (options: NotificationOptions): NotificationInstance =>
+    createNotification(options);
+  return Object.assign(notificationFunction, {
+    info: createTypedNotification('info'),
+    success: createTypedNotification('success'),
+    warning: createTypedNotification('warning'),
+    error: createTypedNotification('error'),
+    close,
+    closeAll,
+    config,
   });
+}
 
-  // 渲染到 DOM
-  render(vnode, notificationWrapper);
+/** 直接导入时使用的进程级服务；Vue 插件和 ConfigProvider 均创建隔离实例。 */
+export const notification = createNotificationService();
 
-  // 添加到队列
-  const queueItem: NotificationQueueItem = {
-    id,
-    options: mergedOptions,
-    vnode,
-    container: notificationWrapper,
-    close,
-    position,
-  };
-  notificationQueues[position].push(queueItem);
-
-  // 返回实例
-  return {
-    id,
-    close,
-  };
-};
-
-// ============================================================================
-// 快捷方法
-// ============================================================================
-
-/**
- * 显示信息通知
- */
-const info = (options: NotificationOptions): NotificationInstance => {
-  return createNotification({ ...options, type: 'info' });
-};
-
-/**
- * 显示成功通知
- */
-const success = (options: NotificationOptions): NotificationInstance => {
-  return createNotification({ ...options, type: 'success' });
-};
-
-/**
- * 显示警告通知
- */
-const warning = (options: NotificationOptions): NotificationInstance => {
-  return createNotification({ ...options, type: 'warning' });
-};
-
-/**
- * 显示错误通知
- */
-const error = (options: NotificationOptions): NotificationInstance => {
-  return createNotification({ ...options, type: 'error' });
-};
-
-/**
- * 关闭指定通知
- */
-const close = (id: string): void => {
-  // 在所有位置队列中查找
-  for (const position of Object.keys(notificationQueues) as NotificationPosition[]) {
-    const item = notificationQueues[position].find(item => item.id === id);
-    if (item) {
-      item.close();
-      return;
-    }
+/** 获取最近 ConfigProvider 或当前 Vue App 的 Notification 服务。 */
+export function useNotificationService(): NotificationService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(NOTIFICATION_SERVICE_KEY, createNotificationService, service =>
+      service.closeAll()
+    );
   }
-};
-
-/**
- * 关闭所有通知
- */
-const closeAll = (): void => {
-  for (const position of Object.keys(notificationQueues) as NotificationPosition[]) {
-    const items = [...notificationQueues[position]];
-    // 立即移除，不等待动画
-    items.forEach(item => {
-      removeFromQueueImmediate(item.id, position);
-    });
-  }
-};
-
-/**
- * 配置全局选项
- */
-const config = (options: Partial<NotificationGlobalConfig>): void => {
-  globalConfig = { ...globalConfig, ...options };
-  // 更新所有容器样式
-  for (const position of Object.keys(notificationContainers) as NotificationPosition[]) {
-    updateContainerStyle(position);
-  }
-};
-
-// ============================================================================
-// 导出 Notification 服务
-// ============================================================================
-
-/**
- * Notification 服务主函数
- */
-const notificationFunction = (options: NotificationOptions): NotificationInstance => {
-  return createNotification(options);
-};
-
-// 挂载方法到主函数
-notificationFunction.info = info;
-notificationFunction.success = success;
-notificationFunction.warning = warning;
-notificationFunction.error = error;
-notificationFunction.close = close;
-notificationFunction.closeAll = closeAll;
-notificationFunction.config = config;
-
-/** Notification 服务 */
-export const notification: NotificationService = notificationFunction as NotificationService;
+  return inject(NOTIFICATION_SERVICE_KEY, notification);
+}
 
 export default notification;

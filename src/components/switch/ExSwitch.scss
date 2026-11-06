@@ -29,11 +29,10 @@
     height: 24px;
     min-width: 44px;
     padding: 2px;
-    border: 2px solid var(--ex-color-border-primary);
+    border: 2px solid var(--ex-color-text-tertiary);
     border-radius: 12px;
     background: var(--ex-color-bg-tertiary);
     @include safe-transition(all);
-    @include gpu-accelerate;
 
     // 霓虹发光效果
     &::before {
@@ -58,10 +57,9 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--ex-color-white);
+    background: var(--ex-color-text-primary);
     box-shadow: 0 2px 4px var(--ex-color-black-alpha-20);
     @include safe-transition(all);
-    @include gpu-accelerate;
   }
 
   // ============================================================================
@@ -79,7 +77,7 @@
   &__spinner {
     width: 10px;
     height: 10px;
-    border: 2px solid var(--ex-color-neon-blue-500);
+    border: 2px solid var(--ex-color-text-primary);
     border-top-color: transparent;
     border-radius: 50%;
     @include safe-animation(spin, 0.6s, linear, infinite);
@@ -152,7 +150,11 @@
 
   &.is-checked {
     .ex-switch__core {
-      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-blue-600)
+      );
       border-color: var(--ex-color-neon-blue-500);
       @include optimized-neon-glow('blue', 'sm');
 
@@ -164,10 +166,16 @@
 
     .ex-switch__action {
       left: calc(100% - 18px);
+      background: var(--ex-color-text-inverse);
+    }
+
+    .ex-switch__spinner {
+      border-color: var(--ex-color-text-inverse);
+      border-top-color: transparent;
     }
 
     .ex-switch__inner {
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       text-shadow: 0 0 4px var(--ex-color-black-alpha-30);
     }
   }
@@ -451,7 +459,7 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-switch {
     &__core {
       border-width: 3px;
@@ -512,13 +520,7 @@
 .ex-switch {
   contain: layout style;
 
-  &__core {
-    @include gpu-accelerate;
-
-    &:not(:hover):not(:focus) {
-      @include remove-gpu-accelerate;
-    }
-  }
+  // 大量静止开关不预先提升图层，保留原有位移、缩放与加载动画。
 
   @include low-end-device {
     &__core {

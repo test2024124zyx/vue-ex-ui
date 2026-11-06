@@ -1,16 +1,15 @@
 <template>
   <ExPopover
-    ref="popoverRef"
     v-model="popoverVisible"
     :placement="placement"
     :trigger="trigger"
     :disabled="disabled"
+    :aria-label="title || t('confirm')"
     :custom-class="popupClasses"
     :custom-style="popupStyle"
-    @update:model-value="handleVisibleChange"
   >
     <!-- 触发元素 -->
-    <slot />
+    <slot></slot>
 
     <!-- 确认框内容 -->
     <template #content>
@@ -55,6 +54,7 @@
           <ExButton
             v-if="showCancel"
             size="small"
+            :disabled="confirmPending"
             @click.stop="handleCancel"
           >
             {{ cancelText || t('cancel') }}
@@ -62,7 +62,8 @@
           <ExButton
             size="small"
             :type="okType"
-            :loading="confirmLoading"
+            :loading="effectiveConfirmLoading"
+            :disabled="effectiveConfirmLoading"
             @click.stop="handleConfirm"
           >
             {{ okText || t('confirm') }}
@@ -74,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import type { ExPopconfirmProps, ExPopconfirmEmits, ExPopconfirmExposed } from './types';
 import { useLocale } from '../../locale';
 import ExPopover from '../popover/ExPopover.vue';
@@ -100,8 +101,11 @@ const emit = defineEmits<ExPopconfirmEmits>();
 
 const { t } = useLocale('dialog');
 
-const popoverRef = ref();
 const popoverVisible = ref(false);
+const confirmPending = ref(false);
+let confirmationRevision = 0;
+let disposed = false;
+const effectiveConfirmLoading = computed(() => props.confirmLoading || confirmPending.value);
 
 // 计算属性
 const popconfirmClasses = computed(() => {
@@ -133,27 +137,64 @@ const defaultIcon = computed(() => {
 const customIconUrl = computed(() => props.icon);
 
 // 事件处理
-const handleVisibleChange = (visible: boolean) => {
-  emit('update:visible', visible);
-};
+watch(
+  popoverVisible,
+  visible => {
+    confirmationRevision += 1;
+    confirmPending.value = false;
+    emit('update:visible', visible);
+  },
+  { flush: 'sync' }
+);
+
+watch(
+  () => props.disabled,
+  disabled => {
+    if (disabled) popoverVisible.value = false;
+  }
+);
+
+onBeforeUnmount(() => {
+  disposed = true;
+  confirmationRevision += 1;
+});
 
 const handleConfirm = async () => {
-  if (props.beforeConfirm) {
-    const result = await props.beforeConfirm();
-    if (result === false) return;
-  }
+  if (
+    disposed ||
+    !popoverVisible.value ||
+    props.disabled ||
+    props.confirmLoading ||
+    confirmPending.value
+  )
+    return;
+  const revision = ++confirmationRevision;
+  confirmPending.value = true;
+  try {
+    if (props.beforeConfirm) {
+      const result = await props.beforeConfirm();
+      if (result === false) return;
+    }
 
-  emit('confirm');
-  popoverVisible.value = false;
+    if (disposed || revision !== confirmationRevision || !popoverVisible.value) return;
+    emit('confirm');
+    popoverVisible.value = false;
+  } catch (error) {
+    if (!disposed && revision === confirmationRevision) emit('confirm-error', error);
+  } finally {
+    if (revision === confirmationRevision) confirmPending.value = false;
+  }
 };
 
 const handleCancel = () => {
+  if (confirmPending.value) return;
   emit('cancel');
   popoverVisible.value = false;
 };
 
 // 暴露的方法
 const show = () => {
+  if (disposed || props.disabled) return;
   popoverVisible.value = true;
 };
 

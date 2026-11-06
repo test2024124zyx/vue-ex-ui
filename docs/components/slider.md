@@ -23,86 +23,141 @@ const formatPrice = (value) => `$${value}`
 
 最简单的滑块用法。
 
+::: raw
+
 <div class="demo-container">
   <ExSlider v-model="value1" />
   <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value1 }}</p>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" />
-  <p>当前值: {{ value }}</p>
+  <div class="demo-container">
+    <ExSlider v-model="value1" />
+    <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value1 }}</p>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(30)
+import { ref } from 'vue';
+const value1 = ref(30);
 </script>
 ```
+
+:::
 
 ## 离散值
 
 通过设置 `step` 属性可以改变步长，默认为 1。
+
+::: raw
 
 <div class="demo-container">
   <ExSlider v-model="value2" :step="10" show-stops />
   <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value2 }}</p>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" :step="10" show-stops />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value2"
+      :step="10"
+      show-stops
+    />
+    <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value2 }}</p>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(50)
+import { ref } from 'vue';
+const value2 = ref(50);
 </script>
 ```
+
+:::
 
 ## 范围选择
 
 设置 `range` 属性可以开启范围选择模式。
+
+::: raw
 
 <div class="demo-container">
   <ExSlider v-model="value3" range />
   <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前范围: {{ value3[0] }} - {{ value3[1] }}</p>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" range />
-  <p>当前范围: {{ value[0] }} - {{ value[1] }}</p>
+  <div class="demo-container">
+    <ExSlider
+      v-model="value3"
+      range
+    />
+    <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">
+      当前范围: {{ value3[0] }} - {{ value3[1] }}
+    </p>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref([20, 60])
+import { ref } from 'vue';
+const value3 = ref([20, 60]);
 </script>
 ```
+
+:::
 
 ## 带输入框
 
 通过设置 `show-input` 属性可以显示输入框，方便精确输入。
 
+::: raw
+
 <div class="demo-container">
   <ExSlider v-model="value4" show-input />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" show-input />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value4"
+      show-input
+    />
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(40)
+import { ref } from 'vue';
+const value4 = ref(40);
 </script>
 ```
+
+:::
 
 ## 不同尺寸
 
 提供三种尺寸：`small`、`medium`（默认）、`large`。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
@@ -119,42 +174,95 @@ const value = ref(40)
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value1" size="small" />
-  <ExSlider v-model="value2" size="medium" />
-  <ExSlider v-model="value3" size="large" />
+  <div
+    class="demo-container"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    <div>
+      <p style="margin-bottom: 8px; color: var(--ex-color-text-secondary);">Small</p>
+      <ExSlider
+        v-model="value5"
+        size="small"
+      />
+    </div>
+    <div>
+      <p style="margin-bottom: 8px; color: var(--ex-color-text-secondary);">Medium (默认)</p>
+      <ExSlider
+        v-model="value6"
+        size="medium"
+      />
+    </div>
+    <div>
+      <p style="margin-bottom: 8px; color: var(--ex-color-text-secondary);">Large</p>
+      <ExSlider
+        v-model="value7"
+        size="large"
+      />
+    </div>
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value5 = ref(25);
+const value6 = ref(70);
+const value7 = ref(50);
+</script>
 ```
+
+:::
 
 ## 自定义提示
 
 通过 `format-tooltip` 属性可以自定义提示信息的格式。
+
+::: raw
 
 <div class="demo-container">
   <ExSlider v-model="value9" :format-tooltip="formatTooltip" />
   <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value9 }}%</p>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" :format-tooltip="formatTooltip" />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value9"
+      :format-tooltip="formatTooltip"
+    />
+    <p style="margin-top: 16px; color: var(--ex-color-text-secondary);">当前值: {{ value9 }}%</p>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref(60)
-const formatTooltip = (value) => `${value}%`
+import { ref } from 'vue';
+const value9 = ref(60);
+const formatTooltip = value => `${value}%`;
 </script>
 ```
+
+:::
 
 ## 标记
 
 通过 `marks` 属性可以在滑块上添加标记。
 
+::: raw
+
 <div class="demo-container">
-  <ExSlider 
-    v-model="value8" 
+  <ExSlider
+    v-model="value8"
     range
     :marks="{
       0: '0°C',
@@ -166,30 +274,40 @@ const formatTooltip = (value) => `${value}%`
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider 
-    v-model="value" 
-    range
-    :marks="{
-      0: '0°C',
-      25: '25°C',
-      50: '50°C',
-      75: '75°C',
-      100: '100°C'
-    }"
-  />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value8"
+      range
+      :marks="{
+        0: '0°C',
+        25: '25°C',
+        50: '50°C',
+        75: '75°C',
+        100: '100°C',
+      }"
+    />
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const value = ref([30, 70])
+import { ref } from 'vue';
+const value8 = ref([30, 70]);
 </script>
 ```
+
+:::
 
 ## 垂直模式
 
 设置 `direction="vertical"` 可以使用垂直滑块。
+
+::: raw
 
 <div class="demo-container" style="display: flex; gap: 32px; height: 300px;">
   <ExSlider v-model="value1" direction="vertical" height="250px" />
@@ -197,91 +315,160 @@ const value = ref([30, 70])
   <ExSlider v-model="value4" direction="vertical" height="250px" show-input />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <div style="display: flex; gap: 32px; height: 300px;">
-    <ExSlider v-model="value1" direction="vertical" height="250px" />
-    <ExSlider v-model="value2" direction="vertical" height="250px" range />
-    <ExSlider v-model="value3" direction="vertical" height="250px" show-input />
+  <div
+    class="demo-container"
+    style="display: flex; gap: 32px; height: 300px;"
+  >
+    <ExSlider
+      v-model="value1"
+      direction="vertical"
+      height="250px"
+    />
+    <ExSlider
+      v-model="value3"
+      direction="vertical"
+      height="250px"
+      range
+    />
+    <ExSlider
+      v-model="value4"
+      direction="vertical"
+      height="250px"
+      show-input
+    />
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(30);
+const value3 = ref([20, 60]);
+const value4 = ref(40);
+</script>
 ```
+
+:::
 
 ## 禁用状态
 
 通过 `disabled` 属性可以禁用滑块。
 
+::: raw
+
 <div class="demo-container">
   <ExSlider v-model="value1" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" disabled />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value1"
+      disabled
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(30);
+</script>
 ```
+
+:::
 
 ## 反向模式
 
 设置 `reverse` 属性可以反转滑块方向。
 
+::: raw
+
 <div class="demo-container">
   <ExSlider v-model="value1" reverse />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExSlider v-model="value" reverse />
+  <div class="demo-container">
+    <ExSlider
+      v-model="value1"
+      reverse
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const value1 = ref(30);
+</script>
 ```
+
+:::
 
 ## API
 
 ### Slider Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `model-value` / `v-model` | 绑定值 | `number \| [number, number]` | `0` |
-| `min` | 最小值 | `number` | `0` |
-| `max` | 最大值 | `number` | `100` |
-| `step` | 步长 | `number` | `1` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `range` | 是否为范围选择 | `boolean` | `false` |
-| `show-input` | 是否显示输入框 | `boolean` | `false` |
-| `show-stops` | 是否显示步进点 | `boolean` | `false` |
-| `show-tooltip` | 是否显示提示信息 | `boolean` | `true` |
-| `tooltip-placement` | 提示信息显示位置 | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` |
-| `format-tooltip` | 格式化提示信息 | `(value: number) => string` | `undefined` |
-| `marks` | 标记 | `Record<number, string \| SliderMark>` | `undefined` |
-| `size` | 尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `direction` | 方向 | `'horizontal' \| 'vertical'` | `'horizontal'` |
-| `height` | 高度（垂直模式） | `string` | `'200px'` |
-| `reverse` | 是否反向 | `boolean` | `false` |
-| `aria-label` | 无障碍标签 | `string` | `undefined` |
-| `aria-description` | 无障碍描述 | `string` | `undefined` |
+| 属性                      | 说明             | 类型                                     | 默认值         |
+| ------------------------- | ---------------- | ---------------------------------------- | -------------- |
+| `model-value` / `v-model` | 绑定值           | `number \| [number, number]`             | `0`            |
+| `min`                     | 最小值           | `number`                                 | `0`            |
+| `max`                     | 最大值           | `number`                                 | `100`          |
+| `step`                    | 步长             | `number`                                 | `1`            |
+| `disabled`                | 是否禁用         | `boolean`                                | `false`        |
+| `range`                   | 是否为范围选择   | `boolean`                                | `false`        |
+| `show-input`              | 是否显示输入框   | `boolean`                                | `false`        |
+| `show-stops`              | 是否显示步进点   | `boolean`                                | `false`        |
+| `show-tooltip`            | 是否显示提示信息 | `boolean`                                | `true`         |
+| `tooltip-placement`       | 提示信息显示位置 | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'`        |
+| `format-tooltip`          | 格式化提示信息   | `(value: number) => string`              | `undefined`    |
+| `marks`                   | 标记             | `Record<number, string \| SliderMark>`   | `undefined`    |
+| `size`                    | 尺寸             | `'small' \| 'medium' \| 'large'`         | `'medium'`     |
+| `direction`               | 方向             | `'horizontal' \| 'vertical'`             | `'horizontal'` |
+| `height`                  | 高度（垂直模式） | `string`                                 | `'200px'`      |
+| `reverse`                 | 是否反向         | `boolean`                                | `false`        |
+| `aria-label`              | 无障碍标签       | `string`                                 | `undefined`    |
+| `aria-description`        | 无障碍描述       | `string`                                 | `undefined`    |
 
 ### Slider Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| `update:model-value` | 值改变时触发 | `(value: number \| [number, number]) => void` |
-| `change` | 值改变时触发（拖动过程中） | `(value: number \| [number, number]) => void` |
-| `input` | 输入事件（拖动过程中） | `(value: number \| [number, number]) => void` |
+| 事件名               | 说明                       | 类型                                          |
+| -------------------- | -------------------------- | --------------------------------------------- |
+| `update:model-value` | 值改变时触发               | `(value: number \| [number, number]) => void` |
+| `change`             | 值改变时触发（拖动过程中） | `(value: number \| [number, number]) => void` |
+| `input`              | 输入事件（拖动过程中）     | `(value: number \| [number, number]) => void` |
 
 ### Slider Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明            | 类型                           |
+| ------------ | --------------- | ------------------------------ |
 | `getElement` | 获取滑块DOM元素 | `() => HTMLDivElement \| null` |
-| `reset` | 重置滑块 | `() => void` |
+| `reset`      | 重置滑块        | `() => void`                   |
 
 ### SliderMark 类型
 
 ```typescript
 interface SliderMark {
-  value: number
-  label?: string
-  style?: Record<string, string>
+  value: number;
+  label?: string;
+  style?: Record<string, string>;
 }
 ```
 

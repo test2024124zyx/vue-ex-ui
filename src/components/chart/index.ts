@@ -1,10 +1,10 @@
-import type { App } from 'vue';
-import ExChart from './ExChart.vue';
+import ExChartComponent from './ExChart.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type { ExChartProps, ExChartEmits, ExChartExposed } from './types';
 
 // 导出组件类型
 export type { ExChartProps, ExChartEmits, ExChartExposed };
-export type { ChartType, ChartTheme, ChartSize, ChartLoadingStatus, ChartPresetConfig } from './types';
+export type { ChartType, ChartTheme, ChartSize } from './types';
 
 // 导出工具函数
 export {
@@ -19,14 +19,6 @@ export {
   createDefaultGrid,
 } from './utils';
 
-// 导出组件
-export { ExChart };
+export const ExChart: InstallableComponent<typeof ExChartComponent> = withInstall(ExChartComponent);
 
-// 组件安装插件
-export const ExChartPlugin = {
-  install(app: App) {
-    app.component('ExChart', ExChart);
-  },
-};
-
-export default ExChartPlugin;
+export default ExChart;

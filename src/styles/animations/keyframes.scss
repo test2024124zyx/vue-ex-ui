@@ -3,11 +3,14 @@
 
 // 发光效果动画
 @keyframes ex-glow {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: 0 0 5px currentColor;
   }
   50% {
-    text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    text-shadow:
+      0 0 20px currentColor,
+      0 0 30px currentColor;
   }
 }
 
@@ -124,7 +127,8 @@
 
 // 脉冲动画
 @keyframes ex-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -134,13 +138,21 @@
 
 // 摇摆动画
 @keyframes ex-shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-2px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(2px);
   }
 }
@@ -161,13 +173,14 @@
 
 // 霓虹脉冲
 @keyframes ex-neon-pulse {
-  0%, 100% {
-    box-shadow: 
+  0%,
+  100% {
+    box-shadow:
       0 0 5px var(--ex-color-neon-blue-500),
       0 0 10px var(--ex-color-neon-blue-500);
   }
   50% {
-    box-shadow: 
+    box-shadow:
       0 0 10px var(--ex-color-neon-blue-500),
       0 0 20px var(--ex-color-neon-blue-500),
       0 0 30px var(--ex-color-neon-blue-500);
@@ -176,9 +189,16 @@
 
 // 霓虹闪烁
 @keyframes ex-neon-flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-  75% { opacity: 0.9; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  75% {
+    opacity: 0.9;
+  }
 }
 
 // 渐变移动
@@ -196,7 +216,8 @@
 
 // 弹跳
 @keyframes ex-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(-25%);
     animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
   }
@@ -208,7 +229,8 @@
 
 // Ping 效果
 @keyframes ex-ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
@@ -236,10 +258,46 @@
 
 // 闪烁
 @keyframes ex-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0.3;
+  }
+}
+
+// 低频扫描线移动：只改变伪元素的位移，不触发布局重排
+@keyframes ex-cyber-scanline {
+  from {
+    transform: translateY(-4px);
+  }
+
+  to {
+    transform: translateY(4px);
+  }
+}
+
+// 低频色差抖动：保持绝大多数时间稳定，避免持续闪烁影响阅读
+@keyframes ex-cyber-glitch {
+  0%,
+  92%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  93% {
+    transform: translate3d(-1px, 0, 0) skewX(-1deg);
+    text-shadow:
+      -1px 0 var(--ex-color-cyber-magenta),
+      1px 0 var(--ex-color-cyber-cyan);
+  }
+
+  94% {
+    transform: translate3d(1px, 0, 0) skewX(1deg);
+    text-shadow:
+      1px 0 var(--ex-color-cyber-magenta),
+      -1px 0 var(--ex-color-cyber-cyan);
   }
 }

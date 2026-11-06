@@ -1,3 +1,19 @@
+import type { ExPaginationProps } from '../pagination/types';
+import type {
+  TableEditableColumn,
+  TableEditingProps,
+  TableEditingEmits,
+  TableEditingExposed,
+} from './table-editing-types';
+import type {
+  TableInteractiveColumn,
+  TableColumnInteractionProps,
+  TableColumnInteractionEmits,
+  TableColumnInteractionExposed,
+} from './table-column-interaction-types';
+export type * from './table-editing-types';
+export type * from './table-column-interaction-types';
+
 /**
  * 表格列对齐方式
  */
@@ -43,6 +59,42 @@ export interface TablePagination {
   total: number;
 }
 
+/** 表格分页配置；页码与容量分别受控，省略时使用内部状态。 */
+export interface TablePaginationConfig extends Omit<ExPaginationProps, 'total'> {
+  total?: number;
+}
+
+/** 表体跨度按过滤、排序、展开和分页后的数据行索引计算。 */
+export interface TableSpanContext {
+  record: TableDataItem;
+  column: TableColumn;
+  rowIndex: number;
+  columnIndex: number;
+}
+
+export interface TableCellSpan {
+  rowspan: number;
+  colspan: number;
+}
+
+export type TableSpanMethod = (
+  context: TableSpanContext
+) => TableCellSpan | [number, number] | undefined;
+
+/** 无效跨度的诊断位置；组件保留普通单元格，不丢弃数据。 */
+export interface TableSpanError {
+  rowIndex: number;
+  columnIndex: number;
+  reason:
+    | 'invalid-span'
+    | 'out-of-bounds'
+    | 'fixed-boundary'
+    | 'detail-boundary'
+    | 'editing-boundary'
+    | 'overlap'
+    | 'callback-error';
+}
+
 /**
  * 单元格渲染信息
  */
@@ -81,7 +133,7 @@ export interface TableRenderOptions {
 /**
  * 表格列定义
  */
-export interface TableColumn<T = unknown> {
+export interface TableColumn<T = unknown> extends TableEditableColumn, TableInteractiveColumn {
   /** 列的唯一标识 */
   key: string;
   /** 列标题 */
@@ -94,10 +146,12 @@ export interface TableColumn<T = unknown> {
   minWidth?: string | number;
   /** 对齐方式 */
   align?: TableColumnAlign;
-  /** 是否固定列 */
+  /** 是否固定列；固定列应设置 width 或 minWidth 以计算相邻列偏移 */
   fixed?: 'left' | 'right' | boolean;
   /** 是否可排序 */
   sortable?: boolean;
+  /** 本地自定义比较器，接收完整记录；返回负数表示 a 在 b 前，降序由组件反转；remoteSort 时不调用 */
+  sorter?: (a: TableDataItem, b: TableDataItem) => number;
   /** 自定义渲染函数 */
   render?: (value: unknown, record: unknown, index: number) => unknown;
   /** 自定义插槽名称 */
@@ -106,6 +160,8 @@ export interface TableColumn<T = unknown> {
   children?: TableColumn<T>[];
   /** 过滤器 */
   onFilter?: (value: unknown, record: T) => boolean;
+  /** 当前生效的过滤值；同列多个值按任一匹配处理 */
+  filteredValue?: readonly unknown[];
   /** 是否省略显示 */
   ellipsis?: boolean;
   /** 自定义类名 */
@@ -136,11 +192,40 @@ export interface TableSortInfo {
 /**
  * 表格组件属性接口
  */
-export interface ExTableProps {
+export interface ExTableProps extends TableEditingProps, TableColumnInteractionProps {
   /** 表格列配置 */
   columns: TableColumn[];
   /** 表格数据 */
   data: TableDataItem[];
+  /** 显式启用树形记录，默认保持普通数据行为。 */
+  tree?: boolean;
+  /** 树形记录的子节点字段。 */
+  childrenKey?: string;
+  /** 树层级缩进，单位为像素。 */
+  treeIndent?: number;
+  /** 受控的树展开键；与详情展开互相独立。 */
+  expandedRowKeys?: Array<string | number>;
+  defaultExpandedRowKeys?: Array<string | number>;
+  defaultExpandAllRows?: boolean;
+  /** 受控的详情展开键。 */
+  detailExpandedRowKeys?: Array<string | number>;
+  defaultDetailExpandedRowKeys?: Array<string | number>;
+  /** 判断记录是否允许打开详情。 */
+  rowExpandable?: (record: TableDataItem, index: number) => boolean;
+  /** 详情高度估计值；虚拟模式测量真实高度后会自动修正。 */
+  expandedRowHeight?: number;
+  /** 分页配置；未传入或 false 时显示全部数据。树表按根记录分页。 */
+  pagination?: false | TablePaginationConfig;
+  /** 远程分页仅发事件，不切分传入的当前页面数据。 */
+  remotePagination?: boolean;
+  /** 表格布局的合并规则；卡片布局保留完整字段，不执行此回调。跨度不能跨固定分区、详情或分页边界。 */
+  spanMethod?: TableSpanMethod;
+  /**
+   * 显式启用不可变行缓存，默认关闭以兼容原地修改后重新传入数组。
+   * 开启后，修改普通行或其嵌套数据时须替换行对象；渲染器的外部状态须使用响应式值。
+   * 引用与显示索引未变的行复用格式化结果，换位、列配置和响应式依赖变化仍会更新。
+   */
+  immutable?: boolean;
   /** 表格尺寸 */
   size?: TableSize;
   /** 是否显示边框 */
@@ -194,7 +279,14 @@ export interface ExTableProps {
 /**
  * 表格组件事件接口
  */
-export interface ExTableEmits {
+export interface ExTableEmits extends TableEditingEmits, TableColumnInteractionEmits {
+  'span-error': [errors: TableSpanError[]];
+  'update:expandedRowKeys': [keys: Array<string | number>];
+  'expand-change': [keys: Array<string | number>, record: TableDataItem, expanded: boolean];
+  'update:detailExpandedRowKeys': [keys: Array<string | number>];
+  'detail-expand-change': [keys: Array<string | number>, record: TableDataItem, expanded: boolean];
+  'update:pagination': [pagination: TablePagination];
+  'pagination-change': [pagination: TablePagination];
   /** 行点击事件 */
   'row-click': [record: TableDataItem, index: number, event: MouseEvent];
   /** 排序变化事件 */
@@ -212,7 +304,11 @@ export interface ExTableEmits {
 /**
  * 表格组件暴露的方法接口
  */
-export interface ExTableExposed {
+export interface ExTableExposed extends TableEditingExposed, TableColumnInteractionExposed {
+  /** 切换树展开状态。 */
+  toggleRowExpansion: (record: TableDataItem, expanded?: boolean) => void;
+  /** 切换详情展开状态。 */
+  toggleDetailExpansion: (record: TableDataItem, expanded?: boolean) => void;
   /** 获取表格DOM元素 */
   getElement: () => HTMLDivElement | null;
   /** 清除排序 */

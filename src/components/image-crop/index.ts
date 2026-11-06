@@ -1,9 +1,10 @@
-import type { App } from 'vue';
-import ExImageCrop from './ExImageCrop.vue';
+import ExImageCropComponent from './ExImageCrop.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExImageCrop.install = (app: App) => {
-  app.component('ExImageCrop', ExImageCrop);
-};
+export const ExImageCrop: InstallableComponent<typeof ExImageCropComponent> =
+  withInstall(ExImageCropComponent);
 
+export { ExImageCropError } from './errors';
+export type { ImageCropErrorCode } from './errors';
 export default ExImageCrop;
 export * from './types';

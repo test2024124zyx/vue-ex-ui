@@ -1,6 +1,6 @@
-import type { App } from 'vue';
-import ExRadio from './ExRadio.vue';
-import ExRadioGroup from './ExRadioGroup.vue';
+import ExRadioComponent from './ExRadio.vue';
+import ExRadioGroupComponent from './ExRadioGroup.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExRadioProps,
   ExRadioEmits,
@@ -16,7 +16,12 @@ import type {
 } from './types';
 
 // 导出组件
-export { ExRadio, ExRadioGroup };
+export const ExRadioGroup: InstallableComponent<typeof ExRadioGroupComponent> =
+  withInstall(ExRadioGroupComponent);
+export const ExRadio: InstallableComponent<typeof ExRadioComponent> = withInstall(
+  ExRadioComponent,
+  { ExRadioGroup }
+);
 
 // 导出类型
 export type {
@@ -33,13 +38,4 @@ export type {
   RadioStatus,
 };
 
-// 导出安装函数
-const ExRadioPlugin = {
-  install(app: App) {
-    app.component('ExRadio', ExRadio);
-    app.component('ExRadioGroup', ExRadioGroup);
-  },
-};
-
-export { ExRadioPlugin };
-export default ExRadioPlugin;
+export default ExRadio;

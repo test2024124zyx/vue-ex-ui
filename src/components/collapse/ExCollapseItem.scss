@@ -1,74 +1,77 @@
 @use '../../styles/mixins' as *;
 @use '../../styles/tokens' as *;
 
-// ============================================================================
-// Collapse Item 折叠面板项样�?
-// ============================================================================
-
 .ex-collapse-item {
   border-bottom: 1px solid var(--ex-color-border-primary);
-  @include transition(all);
+  @include transition((border-color, opacity));
 
   &:last-child {
-    border-bottom: none;
+    border-bottom: 0;
   }
 
-  // 激活状�?
-  &.is-active {
-    .ex-collapse-item__header {
-      background: var(--ex-color-neon-blue-alpha-05);
-      border-bottom: 1px solid var(--ex-color-neon-blue-500);
-      @include neon-glow('blue', 'sm');
-    }
+  &.is-active .ex-collapse-item__header-row {
+    background: var(--ex-color-neon-blue-alpha-05);
+    border-bottom-color: var(--ex-color-neon-blue-500);
+    @include neon-glow('blue', 'sm');
   }
 
-  // 禁用状�?
   &.is-disabled {
-    opacity: 0.5;
     cursor: not-allowed;
-
-    .ex-collapse-item__header {
-      cursor: not-allowed;
-      pointer-events: none;
-    }
+    opacity: 0.5;
   }
 }
 
-// 面板头部
-.ex-collapse-item__header {
+// 标题行负责共享背景，切换按钮与额外操作保持为并列的合法交互元素。
+.ex-collapse-item__header-row {
   display: flex;
   align-items: center;
   gap: var(--ex-spacing-3);
   padding: var(--ex-spacing-4) var(--ex-spacing-6);
   background: var(--ex-color-bg-secondary);
-  cursor: pointer;
-  user-select: none;
-  @include transition(all);
+  border-bottom: 1px solid transparent;
+  @include transition((background-color, border-color, box-shadow));
 
-  &:hover:not(.is-disabled) {
+  .ex-collapse-item:not(.is-disabled) &:hover {
     background: var(--ex-color-neon-blue-alpha-08);
     @include neon-glow('blue', 'sm');
   }
+}
+
+.ex-collapse-item__header {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ex-spacing-3);
+  min-width: 0;
+  padding: 0;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 
   &:focus-visible {
-    outline: none;
-    @include neon-glow('blue', 'md');
+    border-radius: var(--ex-radius-sm);
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: 3px;
   }
 
-  &.is-disabled {
+  &:disabled {
     cursor: not-allowed;
   }
 }
 
-// 箭头图标
 .ex-collapse-item__arrow {
-  display: flex;
+  display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
   color: var(--ex-color-text-secondary);
-  @include transition(transform, color);
+  @include transition((transform, color));
 
   svg {
     width: 16px;
@@ -76,57 +79,45 @@
   }
 
   &.is-active {
-    transform: rotate(180deg);
     color: var(--ex-color-neon-blue-500);
+    transform: rotate(180deg);
   }
 
   .ex-collapse-item__header:hover & {
     color: var(--ex-color-neon-blue-500);
   }
 
-  &--left {
-    order: -1;
-  }
-
   &--right {
-    order: 1;
     margin-left: auto;
   }
 }
 
-// 标题
 .ex-collapse-item__title {
   flex: 1;
+  min-width: 0;
+  color: var(--ex-color-text-primary);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
-  color: var(--ex-color-text-primary);
   @include transition(color);
 
-  .ex-collapse-item.is-active & {
-    color: var(--ex-color-neon-blue-500);
-  }
-
+  .ex-collapse-item.is-active &,
   .ex-collapse-item__header:hover & {
     color: var(--ex-color-neon-blue-500);
   }
 }
 
-// 额外内容
 .ex-collapse-item__extra {
   display: flex;
+  flex: none;
   align-items: center;
-  margin-left: auto;
   color: var(--ex-color-text-secondary);
   font-size: var(--ex-text-sm);
 }
 
-// 内容包裹�?
 .ex-collapse-item__wrap {
   overflow: hidden;
-  @include transition(height);
 }
 
-// 内容区域
 .ex-collapse-item__content {
   padding: var(--ex-spacing-4) var(--ex-spacing-6);
   color: var(--ex-color-text-secondary);
@@ -134,10 +125,6 @@
   line-height: var(--ex-leading-relaxed);
   background: var(--ex-color-bg-primary);
 }
-
-// ============================================================================
-// 动画
-// ============================================================================
 
 .ex-collapse-enter-active,
 .ex-collapse-leave-active {
@@ -149,15 +136,8 @@
   height: 0;
 }
 
-// ============================================================================
-// 响应式适配
-// ============================================================================
-
 @include mobile {
-  .ex-collapse-item__header {
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
-  }
-
+  .ex-collapse-item__header-row,
   .ex-collapse-item__content {
     padding: var(--ex-spacing-3) var(--ex-spacing-4);
   }
@@ -167,29 +147,23 @@
   }
 }
 
-// ============================================================================
-// 无障碍支�?
-// ============================================================================
-
 @media (prefers-reduced-motion: reduce) {
-  .ex-collapse-item__header,
+  .ex-collapse-item,
+  .ex-collapse-item__header-row,
   .ex-collapse-item__arrow,
   .ex-collapse-item__title,
-  .ex-collapse-item__wrap,
   .ex-collapse-enter-active,
   .ex-collapse-leave-active {
     transition: none;
   }
 }
 
-// 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-collapse-item {
-    border-bottom: 2px solid var(--ex-color-border-primary);
+    border-bottom-width: 2px;
   }
 
-  .ex-collapse-item.is-active .ex-collapse-item__header {
-    border-bottom: 2px solid var(--ex-color-neon-blue-500);
+  .ex-collapse-item.is-active .ex-collapse-item__header-row {
+    border-bottom-width: 2px;
   }
 }
-

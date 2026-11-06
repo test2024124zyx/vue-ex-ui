@@ -12,13 +12,11 @@ import type {
   FormValidateStatus,
   FormValidateResult,
   FormValidateError,
+  FormItemValidateResult,
   FormInstance,
   FormItemInstance,
 } from './types';
 import { commonRules, validateUtils } from './utils';
-
-import './ExForm.scss';
-import './ExFormItem.scss';
 
 // 为组件提供 install 方法，用于全局注册
 ExForm.install = (app: App): void => {
@@ -49,6 +47,7 @@ export type {
   FormValidateStatus,
   FormValidateResult,
   FormValidateError,
+  FormItemValidateResult,
   FormInstance,
   FormItemInstance,
 };

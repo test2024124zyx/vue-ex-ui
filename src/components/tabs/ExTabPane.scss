@@ -2,11 +2,11 @@
 
 .ex-tab-pane {
   padding: var(--ex-spacing-4);
-  
+
   &--animated {
     @include transition(opacity);
   }
-  
+
   &:not(&--active) {
     display: none;
   }

@@ -1,8 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { compileString } from 'sass-embedded';
 import ExProgress from '../../../src/components/progress/ExProgress.vue';
+import type { ExProgressExposed, ProgressStatus } from '../../../src/components/progress/types';
 
 describe('ExProgress', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
   describe('组件渲染', () => {
     it('应该正确渲染进度条', () => {
       const wrapper = mount(ExProgress, {
@@ -96,10 +105,109 @@ describe('ExProgress', () => {
 
       expect(wrapper.find('.ex-progress--line').exists()).toBe(true);
     });
+
+    it('应该渲染仪表盘进度弧而不是空容器', () => {
+      const wrapper = mount(ExProgress, {
+        props: { percentage: 50, type: 'dashboard' },
+      });
+
+      expect(wrapper.find('.ex-progress--dashboard').exists()).toBe(true);
+      expect(wrapper.find('.ex-progress__circle-path').exists()).toBe(true);
+      expect(wrapper.find('.ex-progress__circle-path').attributes('stroke-dasharray')).toBeTruthy();
+    });
+
+    it('关闭波浪动画时仍渲染静态波浪路径', () => {
+      const wrapper = mount(ExProgress, {
+        props: { percentage: 50, type: 'wave', waveAnimated: false },
+      });
+
+      const paths = wrapper.findAll('.ex-progress__wave-path');
+      expect(paths).toHaveLength(2);
+      expect(paths.every(path => Boolean(path.attributes('d')))).toBe(true);
+    });
+
+    it('系统要求减少动画时不启动波浪 requestAnimationFrame', () => {
+      const requestAnimationFrame = vi.fn(() => 1);
+      vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+      vi.stubGlobal('matchMedia', () => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }));
+
+      mount(ExProgress, { props: { percentage: 50, type: 'wave' } });
+
+      expect(requestAnimationFrame).not.toHaveBeenCalled();
+    });
+
+    it('波浪 RAF 只更新路径且不会触发 Vue 重渲染', async () => {
+      const frames: FrameRequestCallback[] = [];
+      vi.stubGlobal(
+        'requestAnimationFrame',
+        vi.fn((callback: FrameRequestCallback) => {
+          frames.push(callback);
+          return frames.length;
+        })
+      );
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+      const renderText = vi.fn(() => '动画进度');
+      const wrapper = mount(ExProgress, {
+        props: { percentage: 50, type: 'wave' },
+        slots: { text: renderText },
+      });
+      const initialRenderCount = renderText.mock.calls.length;
+      const initialPath = wrapper.get('.ex-progress__wave-path').attributes('d');
+      const firstFrame = frames.shift();
+
+      expect(firstFrame).toBeDefined();
+      firstFrame?.(16);
+      await nextTick();
+
+      expect(wrapper.get('.ex-progress__wave-path').attributes('d')).not.toBe(initialPath);
+      expect(renderText).toHaveBeenCalledTimes(initialRenderCount);
+    });
+
+    it('关闭动画时切换波浪类型仍生成静态路径', async () => {
+      const wrapper = mount(ExProgress, {
+        props: { percentage: 35, type: 'line', waveAnimated: false },
+      });
+
+      await wrapper.setProps({ type: 'wave' });
+      expect(wrapper.findAll('.ex-progress__wave-path')).toHaveLength(2);
+      expect(
+        wrapper.findAll('.ex-progress__wave-path').every(path => Boolean(path.attributes('d')))
+      ).toBe(true);
+
+      await wrapper.setProps({ type: 'wave-circle' });
+      expect(wrapper.findAll('.ex-progress__wave-circle-path')).toHaveLength(2);
+      expect(
+        wrapper
+          .findAll('.ex-progress__wave-circle-path')
+          .every(path => Boolean(path.attributes('d')))
+      ).toBe(true);
+    });
+
+    it('线性进度过渡在源码与编译 CSS 中都使用有效简写', () => {
+      const source = readFileSync(
+        resolve(process.cwd(), 'src/components/progress/ExProgress.scss'),
+        'utf8'
+      );
+      const css = compileString("@use 'src/components/progress/ExProgress';", {
+        loadPaths: [process.cwd(), resolve(process.cwd(), 'node_modules')],
+      }).css;
+      const invalidTransition =
+        /transition:\s*width\s+var\(--ex-motion-duration-base\)\s+var\(--ex-motion-ease-in-out\)\s+var\(--ex-motion-ease-in-out\)/;
+
+      expect(source).not.toMatch(invalidTransition);
+      expect(css).not.toMatch(invalidTransition);
+      expect(css).toMatch(
+        /transition:\s*width\s+var\(--ex-motion-duration-base\)\s+var\(--ex-motion-ease-in-out\)/
+      );
+    });
   });
 
   describe('进度条状态', () => {
-    it.each([
+    it.each<[ProgressStatus, string]>([
       ['success', 'ex-progress--success'],
       ['exception', 'ex-progress--exception'],
       ['warning', 'ex-progress--warning'],
@@ -107,7 +215,7 @@ describe('ExProgress', () => {
       const wrapper = mount(ExProgress, {
         props: {
           percentage: 50,
-          status: status as any,
+          status,
         },
       });
 
@@ -288,7 +396,7 @@ describe('ExProgress', () => {
         },
       });
 
-      const exposed = wrapper.vm as any;
+      const exposed = wrapper.vm as unknown as ExProgressExposed;
       expect(exposed.getElement).toBeDefined();
       expect(exposed.getElement()).toBeInstanceOf(HTMLElement);
     });

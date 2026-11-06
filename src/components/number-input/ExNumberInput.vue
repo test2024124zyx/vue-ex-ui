@@ -35,16 +35,18 @@
       :readonly="readonly"
       :name="name"
       :aria-label="ariaLabel"
-      :aria-valuemin="min"
-      :aria-valuemax="max"
+      v-bind="fieldAriaAttrs"
+      :aria-valuemin="ariaValueMin"
+      :aria-valuemax="ariaValueMax"
       :aria-valuenow="modelValue ?? undefined"
+      :aria-readonly="readonly"
       role="spinbutton"
       @input="handleInput"
       @change="handleChange"
       @focus="handleFocus"
       @blur="handleBlur"
       @keydown="handleKeydown"
-    >
+    />
 
     <!-- 右侧控制按钮 -->
     <div
@@ -111,9 +113,9 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { debounce } from '../../utils/debounce';
-import { useFormItem } from '../form/use-form-item';
+import type { DebouncedFunction } from '../../utils/debounce';
+import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({
@@ -139,15 +141,20 @@ const props = withDefaults(defineProps<ExNumberInputProps>(), {
 const emit = defineEmits<ExNumberInputEmits>();
 
 const { t } = useI18n();
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 blur 自动校验；change 由 FormItem 的 model watch 兜底）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const displayValue = ref<string>('');
 const isFocused = ref(false);
+let debouncedInput: DebouncedFunction<(value: number) => void> | null = null;
 
 // 计算属性
 const numberInputClasses = computed(() => {
@@ -157,8 +164,8 @@ const numberInputClasses = computed(() => {
     `ex-number-input--controls-${props.controlsPosition}`,
   ];
 
-  if (props.disabled) classes.push('ex-number-input--disabled');
-  if (props.readonly) classes.push('ex-number-input--readonly');
+  if (disabled.value) classes.push('ex-number-input--disabled');
+  if (readonly.value) classes.push('ex-number-input--readonly');
   if (isFocused.value) classes.push('ex-number-input--focused');
   if (!props.controls) classes.push('ex-number-input--no-controls');
 
@@ -174,14 +181,19 @@ const numberInputStyles = computed(() => {
 });
 
 const isIncreaseDisabled = computed(() => {
+  if (!interactive.value) return true;
   if (props.modelValue === null) return false;
   return props.modelValue >= props.max;
 });
 
 const isDecreaseDisabled = computed(() => {
+  if (!interactive.value) return true;
   if (props.modelValue === null) return false;
   return props.modelValue <= props.min;
 });
+
+const ariaValueMin = computed(() => (Number.isFinite(props.min) ? props.min : undefined));
+const ariaValueMax = computed(() => (Number.isFinite(props.max) ? props.max : undefined));
 
 // 图标尺寸
 const iconSize = computed(() => {
@@ -212,10 +224,17 @@ const getIconColor = (isDisabled: boolean) => {
 
 // 格式化数字（处理浮点数精度问题）
 const formatNumber = (value: number): number => {
-  if (props.precision !== undefined) {
-    // 使用更可靠的方法处理精度
+  if (
+    props.precision !== undefined &&
+    Number.isInteger(props.precision) &&
+    props.precision >= 0 &&
+    !Number.isInteger(value)
+  ) {
+    // IEEE 754 大数已无小数位；超出可表示范围的十进制放大不能用于舍入。
     const multiplier = Math.pow(10, props.precision);
-    return Math.round(value * multiplier) / multiplier;
+    const scaled = value * multiplier;
+    if (Number.isFinite(scaled) && Number.isFinite(multiplier))
+      return Math.round(scaled) / multiplier;
   }
   return value;
 };
@@ -239,7 +258,8 @@ const validateValue = (value: number): number => {
     if (result > props.max) result = props.max;
   }
 
-  return formatNumber(result);
+  // 精度与区间无法同时满足时，显式数值边界优先，防止舍入重新越界。
+  return Math.min(props.max, Math.max(props.min, formatNumber(result)));
 };
 
 // 解析输入值（增强输入验证）
@@ -254,43 +274,66 @@ const parseValue = (input: string): number | null => {
   }
 
   const num = Number(input);
-  if (isNaN(num)) return props.modelValue;
+  if (!Number.isFinite(num)) return props.modelValue;
 
   return num;
 };
 
 // 更新显示值
-const updateDisplayValue = () => {
-  if (isFocused.value) return; // 聚焦时不更新显示值
+const updateDisplayValue = (force = false) => {
+  if (isFocused.value && !force) return;
 
   if (props.modelValue === null) {
     displayValue.value = '';
   } else {
     // 应用精度格式化
-    const formattedValue = formatNumber(props.modelValue);
+    const formattedValue = validateValue(props.modelValue);
     displayValue.value = String(formattedValue);
   }
+  if (force && inputRef.value) inputRef.value.value = displayValue.value;
 };
 
-// 监听 modelValue 变化
+// 外部确认值优先于尚未提交的草稿，聚焦状态不阻挡显式数据更新。
 watch(
   () => props.modelValue,
   () => {
-    updateDisplayValue();
+    debouncedInput?.cancel();
+    updateDisplayValue(true);
   },
   { immediate: true }
 );
 
-// 防抖的输入事件
-const debouncedInput =
-  props.debounceDelay > 0
-    ? debounce((value: number) => {
-        emit('input', value);
-      }, props.debounceDelay)
-    : null;
+watch([() => props.precision, () => props.min, () => props.max], () => updateDisplayValue());
+
+const discardDraft = () => {
+  debouncedInput?.cancel();
+  updateDisplayValue(true);
+  formItem?.onFieldDraftDiscard?.();
+};
+
+// 重置可能写回与当前模型相同的值，必须独立订阅通知，并等待父级属性同步。
+watch(() => formItem?.resetRevision?.value, discardDraft, { flush: 'post' });
+
+watch(
+  () => props.debounceDelay,
+  delay => {
+    debouncedInput?.cancel();
+    debouncedInput =
+      delay > 0
+        ? debounce((value: number) => {
+            emit('input', value);
+          }, delay)
+        : null;
+  },
+  { immediate: true }
+);
 
 // 事件处理
 const handleInput = (event: Event) => {
+  if (!interactive.value) {
+    discardDraft();
+    return;
+  }
   const target = event.target as HTMLInputElement;
   let value = target.value;
 
@@ -311,9 +354,16 @@ const handleInput = (event: Event) => {
       emit('input', parsedValue);
     }
   }
+  // 保持 change 才提交模型的既有行为，同时让实时校验看到用户正在编辑的值。
+  formItem?.onFieldInput?.({ value: parsedValue });
 };
 
 const handleChange = (event: Event) => {
+  debouncedInput?.cancel();
+  if (!interactive.value) {
+    discardDraft();
+    return;
+  }
   const target = event.target as HTMLInputElement;
   const value = target.value;
 
@@ -321,6 +371,7 @@ const handleChange = (event: Event) => {
   if (parsedValue === null) {
     emit('update:modelValue', null);
     emit('change', null, props.modelValue);
+    formItem?.onFieldChange();
     return;
   }
 
@@ -329,26 +380,27 @@ const handleChange = (event: Event) => {
 
   emit('update:modelValue', validatedValue);
   emit('change', validatedValue, oldValue);
+  formItem?.onFieldChange();
 
   // 更新显示值
   displayValue.value = String(validatedValue);
 };
 
 const handleFocus = (event: FocusEvent) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
   isFocused.value = true;
   emit('focus', event);
 };
 
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
-  updateDisplayValue();
+  discardDraft();
   emit('blur', event);
   formItem?.onFieldBlur();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value || event.isComposing) return;
 
   // 上下箭头键
   if (event.key === 'ArrowUp') {
@@ -381,6 +433,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       const oldValue = props.modelValue;
       emit('update:modelValue', props.min);
       emit('change', props.min, oldValue);
+      formItem?.onFieldChange();
     }
   } else if (event.key === 'End') {
     event.preventDefault();
@@ -388,12 +441,13 @@ const handleKeydown = (event: KeyboardEvent) => {
       const oldValue = props.modelValue;
       emit('update:modelValue', props.max);
       emit('change', props.max, oldValue);
+      formItem?.onFieldChange();
     }
   }
 };
 
 const handleIncrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || isIncreaseDisabled.value) return;
+  if (!interactive.value || isIncreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
@@ -406,10 +460,11 @@ const handleIncrease = (customStepOrEvent?: number | Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue, oldValue);
   emit('increase', newValue);
+  formItem?.onFieldChange();
 };
 
 const handleDecrease = (customStepOrEvent?: number | Event) => {
-  if (props.disabled || isDecreaseDisabled.value) return;
+  if (!interactive.value || isDecreaseDisabled.value) return;
 
   // 如果是事件对象，忽略它
   const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
@@ -422,7 +477,14 @@ const handleDecrease = (customStepOrEvent?: number | Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue, oldValue);
   emit('decrease', newValue);
+  formItem?.onFieldChange();
 };
+
+watch(interactive, canInteract => {
+  if (!canInteract) {
+    discardDraft();
+  }
+});
 
 // 卸载时清理防抖待执行的定时器
 onBeforeUnmount(() => {

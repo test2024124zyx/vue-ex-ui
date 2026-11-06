@@ -3,14 +3,29 @@
     ref="panelRef"
     :class="panelClasses"
     :style="panelStyles"
-    role="region"
-    :aria-label="ariaLabel || title"
+    :role="panelRole"
+    :aria-label="accessibleLabel"
+    :aria-busy="loading ? 'true' : undefined"
+    :aria-disabled="isInteractive && loading ? 'true' : undefined"
+    :tabindex="isInteractive ? 0 : undefined"
+    @click.capture="guardLoadingClick"
+    @keydown="triggerPanelClick"
   >
+    <span
+      v-if="loading"
+      class="ex-panel__loading-status"
+      role="status"
+      aria-live="polite"
+    >
+      {{ t('loading') }}
+    </span>
+
     <!-- 面板头部 -->
     <div
       v-if="hasHeader"
       class="ex-panel__header"
       :style="headerStyle"
+      :inert="loading ? true : undefined"
     >
       <!-- 标题区域 -->
       <div class="ex-panel__title">
@@ -56,6 +71,7 @@
     <div
       class="ex-panel__body"
       :style="bodyStyle"
+      :inert="loading ? true : undefined"
     >
       <slot />
     </div>
@@ -65,6 +81,7 @@
       v-if="$slots.footer"
       class="ex-panel__footer"
       :style="footerStyle"
+      :inert="loading ? true : undefined"
     >
       <slot name="footer" />
     </div>
@@ -73,7 +90,10 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, useSlots } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
+import { useComponentSize } from '../config-provider/composables';
+import { computed, getCurrentInstance, ref, useSlots } from 'vue';
+import { useLocale } from '../../locale';
 import type { ExPanelProps, ExPanelExposed } from './types';
 
 defineOptions({
@@ -88,9 +108,22 @@ const props = withDefaults(defineProps<ExPanelProps>(), {
 
 const slots = useSlots();
 const panelRef = ref<HTMLDivElement>();
+const componentInstance = getCurrentInstance();
+const { t } = useLocale('common');
+const componentSize = useComponentSize(computed(() => props.size));
+const accessibleLabel = computed(() => props.ariaLabel?.trim() || props.title?.trim() || undefined);
+const isInteractive = useRenderComputed(
+  () =>
+    props.hoverable &&
+    Boolean(componentInstance?.vnode.props?.onClick || componentInstance?.vnode.props?.onClickOnce)
+);
+const panelRole = computed(() => {
+  if (isInteractive.value) return 'button';
+  return accessibleLabel.value ? 'region' : undefined;
+});
 
 // 计算属性
-const hasHeader = computed(() => {
+const hasHeader = useRenderComputed(() => {
   return !!(
     props.title ||
     props.subtitle ||
@@ -105,7 +138,7 @@ const panelClasses = computed(() => {
   const classes = ['ex-panel'];
 
   if (props.type) classes.push(`ex-panel--${props.type}`);
-  if (props.size) classes.push(`ex-panel--${props.size}`);
+  classes.push(`ex-panel--${componentSize.value}`);
   if (props.shadow) classes.push(`ex-panel--shadow-${props.shadow}`);
   if (!props.bordered) classes.push('ex-panel--borderless');
   if (props.hoverable) classes.push('ex-panel--hoverable');
@@ -124,6 +157,25 @@ const panelStyles = computed(() => {
 
 // 暴露的方法
 const getElement = () => panelRef.value || null;
+const guardLoadingClick = (event: MouseEvent): void => {
+  if (!props.loading) return;
+  // 原生监听通过根节点透传，捕获阶段统一阻止根节点与子操作的加载期点击。
+  event.preventDefault();
+  event.stopImmediatePropagation();
+};
+const triggerPanelClick = (event: KeyboardEvent): void => {
+  if (
+    event.target !== event.currentTarget ||
+    event.isComposing ||
+    event.keyCode === 229 ||
+    props.loading ||
+    !isInteractive.value ||
+    (event.key !== 'Enter' && event.key !== ' ')
+  )
+    return;
+  event.preventDefault();
+  panelRef.value?.click();
+};
 
 defineExpose<ExPanelExposed>({
   getElement,

@@ -4,60 +4,140 @@
     :class="nodeClasses"
     :style="{ paddingLeft: `${level * 24}px`, '--ex-tree-indent': `${level * 24}px` }"
     role="treeitem"
-    :tabindex="isDisabled ? -1 : 0"
+    :data-node-key="node.key"
+    :tabindex="isDisabled ? -1 : activeKey === node.key ? 0 : -1"
     :aria-expanded="hasChildren ? isExpanded : undefined"
-    :aria-selected="isSelected"
-    :aria-checked="checkable ? isChecked : undefined"
+    :aria-selected="selectable ? isSelected : undefined"
+    :aria-checked="checkable ? (isHalfChecked ? 'mixed' : isChecked) : undefined"
     :aria-disabled="isDisabled"
+    :aria-busy="loadState.status === 'loading' || undefined"
     :aria-level="level + 1"
+    :aria-posinset="position"
+    :aria-setsize="setSize"
     :draggable="draggable && !isDisabled"
+    @focus="handleFocus"
     @keydown="handleKeydown"
-    @dragstart="handleDragStart"
-    @dragenter="handleDragEnter"
-    @dragleave="handleDragLeave"
-    @dragover="handleDragOver"
-    @drop="handleDrop"
-    @dragend="handleDragEnd"
+    @dragstart.stop="handleDragStart"
+    @dragenter.stop="handleDragEnter"
+    @dragleave.stop="handleDragLeave"
+    @dragover.stop="handleDragOver"
+    @drop.stop="handleDrop"
+    @dragend.stop="handleDragEnd"
   >
-    <div class="ex-tree-node__content" @click="handleClick" @contextmenu="handleContextmenu">
+    <div
+      class="ex-tree-node__content"
+      @click="handleClick"
+      @contextmenu="handleContextmenu"
+    >
       <!-- 展开/收起图标 -->
-      <span v-if="hasChildren" class="ex-tree-node__expand-icon" @click.stop="handleToggle">
-        <ExIcon v-if="isExpanded" icon="arrow-down-s-line" :size="16" aria-hidden="true" />
-        <ExIcon v-else icon="arrow-right-s-line" :size="16" aria-hidden="true" />
+      <span
+        v-if="hasChildren"
+        class="ex-tree-node__expand-icon"
+        @click.stop="handleToggle"
+      >
+        <ExIcon
+          v-if="loadState.status === 'loading'"
+          icon="loader-4-line"
+          :size="16"
+          class="ex-tree-node__loading-icon"
+          aria-hidden="true"
+        />
+        <ExIcon
+          v-else-if="isExpanded"
+          icon="arrow-down-s-line"
+          :size="16"
+          aria-hidden="true"
+        />
+        <ExIcon
+          v-else
+          icon="arrow-right-s-line"
+          :size="16"
+          aria-hidden="true"
+        />
       </span>
-      <span v-else class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder" />
+      <span
+        v-else
+        class="ex-tree-node__expand-icon ex-tree-node__expand-icon--placeholder"
+      ></span>
 
       <!-- 复选框 -->
-      <span v-if="checkable && node.checkable !== false" class="ex-tree-node__checkbox" @click.stop>
+      <span
+        v-if="checkable && node.checkable !== false"
+        class="ex-tree-node__checkbox"
+        @click.stop
+      >
         <ExCheckbox
           :model-value="isChecked"
           :indeterminate="isHalfChecked"
           :disabled="isDisabled"
-          @update:model-value="handleCheckChange"
+          :aria-label="node.label"
+          @change="handleCheckChange"
         />
       </span>
 
       <!-- 图标 -->
-      <span v-if="showIcon" class="ex-tree-node__icon">
+      <span
+        v-if="showIcon"
+        class="ex-tree-node__icon"
+      >
         <!-- node.icon 支持内置图标名或图片 URL（内置名优先，未命中时按 URL 渲染） -->
-        <ExIcon v-if="node.icon" :icon="node.icon" :src="node.icon" :size="16" aria-hidden="true" />
+        <ExIcon
+          v-if="node.icon"
+          :icon="node.icon"
+          :src="node.icon"
+          :size="16"
+          aria-hidden="true"
+        />
         <ExIcon
           v-else-if="hasChildren"
           :icon="isExpanded ? 'folder-open-line' : 'folder-line'"
           :size="16"
           aria-hidden="true"
         />
-        <ExIcon v-else icon="file-line" :size="16" aria-hidden="true" />
+        <ExIcon
+          v-else
+          icon="file-line"
+          :size="16"
+          aria-hidden="true"
+        />
       </span>
 
       <!-- 标题 -->
       <span class="ex-tree-node__label">
-        {{ node.label }}
+        <slot :node="node">{{ node.label }}</slot>
       </span>
+      <span
+        v-if="loadState.status === 'loading'"
+        class="ex-tree-node__status"
+        role="status"
+      >
+        {{ t('loading') }}
+      </span>
+      <span
+        v-else-if="loadState.status === 'error'"
+        class="ex-tree-node__status ex-tree-node__status--error"
+        role="status"
+      >
+        {{ t('loadError') }}
+      </span>
+      <button
+        v-if="loadState.status === 'error'"
+        type="button"
+        class="ex-tree-node__retry"
+        :disabled="isDisabled"
+        :aria-label="`${node.label}: ${t('retryLoad')}`"
+        @click.stop="handleRetry"
+      >
+        {{ t('retryLoad') }}
+      </button>
     </div>
 
     <!-- 子节点（虚拟滚动 flat 模式下由父级统一扁平渲染，这里不再递归） -->
-    <div v-if="hasChildren && isExpanded && !flat" class="ex-tree-node__children" role="group">
+    <div
+      v-if="hasChildren && isExpanded && !flat"
+      class="ex-tree-node__children"
+      role="group"
+    >
       <ExTreeNode
         v-for="child in node.children"
         :key="child.key"
@@ -67,6 +147,7 @@
         :selected-keys="selectedKeys"
         :checked-keys="checkedKeys"
         :half-checked-keys="halfCheckedKeys"
+        :active-key="activeKey"
         :selectable="selectable"
         :checkable="checkable"
         :show-line="showLine"
@@ -76,6 +157,8 @@
         @toggle="(node, expanded) => $emit('toggle', node, expanded)"
         @select="(node, selected) => $emit('select', node, selected)"
         @check="(node, checked) => $emit('check', node, checked)"
+        @focus-node="node => $emit('focus-node', node)"
+        @navigate="(node, key) => $emit('navigate', node, key)"
         @node-click="(node, event) => $emit('node-click', node, event)"
         @node-contextmenu="(node, event) => $emit('node-contextmenu', node, event)"
         @node-drag-start="(node, event) => $emit('node-drag-start', node, event)"
@@ -86,7 +169,13 @@
           (dragNode, dropNode, position, event) =>
             $emit('node-drop', dragNode, dropNode, position, event)
         "
-      />
+      >
+        <template #default="{ node: childNode }">
+          <slot :node="childNode">
+            {{ childNode.label }}
+          </slot>
+        </template>
+      </ExTreeNode>
     </div>
   </div>
 </template>
@@ -94,8 +183,12 @@
 <script setup lang="ts">
 import ExIcon from '../icon/ExIcon.vue';
 import ExCheckbox from '../checkbox/ExCheckbox.vue';
-import { computed, ref, nextTick } from 'vue';
+import { computed, ref, nextTick, inject } from 'vue';
+import type { VNode } from 'vue';
 import type { TreeNode } from './types';
+import { TREE_STATE_KEY } from './state';
+import { useLocale } from '../../locale';
+import { useAnimation } from '../config-provider/composables';
 
 interface Props {
   node: TreeNode;
@@ -104,6 +197,7 @@ interface Props {
   selectedKeys: string[];
   checkedKeys: string[];
   halfCheckedKeys: string[];
+  activeKey: string | null;
   selectable: boolean;
   checkable: boolean;
   showLine: boolean;
@@ -112,12 +206,21 @@ interface Props {
   disabled: boolean;
   /** 扁平模式：不递归渲染子节点（供虚拟滚动使用） */
   flat?: boolean;
+  /** 虚拟节点显式携带同级集合位置。 */
+  position?: number;
+  setSize?: number;
 }
 
 interface Emits {
   (e: 'toggle', node: TreeNode, expanded: boolean): void;
   (e: 'select', node: TreeNode, selected: boolean): void;
   (e: 'check', node: TreeNode, checked: boolean): void;
+  (e: 'focus-node', node: TreeNode): void;
+  (
+    e: 'navigate',
+    node: TreeNode,
+    key: 'ArrowDown' | 'ArrowUp' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+  ): void;
   (e: 'node-click', node: TreeNode, event: MouseEvent): void;
   (e: 'node-contextmenu', node: TreeNode, event: MouseEvent): void;
   (e: 'node-drag-start', node: TreeNode, event: DragEvent): void;
@@ -133,31 +236,62 @@ interface Emits {
   ): void;
 }
 
+interface Slots {
+  default?: (props: { node: TreeNode }) => VNode[];
+}
+
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+defineSlots<Slots>();
+const stateLookup = inject(TREE_STATE_KEY, undefined);
+const { t } = useLocale('tree');
+const animation = useAnimation();
 
 const isDragOver = ref(false);
 const dropPosition = ref<'before' | 'after' | 'inner' | null>(null);
 const nodeRootRef = ref<HTMLElement>();
 
 const hasChildren = computed(() => {
-  return props.node.children && props.node.children.length > 0;
+  return stateLookup?.isExpandable(props.node) ?? Boolean(props.node.children?.length);
 });
+const loadState = computed(() => stateLookup?.getLoadState(props.node.key) ?? { status: 'idle' });
+const handleRetry = () => {
+  if (isDisabled.value) return;
+  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  const restoreFocus = focused?.classList.contains('ex-tree-node__retry');
+  void stateLookup?.reload(props.node.key).then(() => {
+    nextTick(() => {
+      // 重试按钮成功后消失时恢复节点焦点；用户已移到其他控件时不抢夺焦点。
+      if (restoreFocus && !focused?.isConnected && document.activeElement === document.body) {
+        nodeRootRef.value?.focus();
+      }
+    });
+  });
+};
 
 const isExpanded = computed(() => {
-  return props.expandedKeys.includes(props.node.key);
+  return (
+    stateLookup?.expanded.value.has(props.node.key) ?? props.expandedKeys.includes(props.node.key)
+  );
 });
 
 const isSelected = computed(() => {
-  return props.selectedKeys.includes(props.node.key);
+  return (
+    stateLookup?.selected.value.has(props.node.key) ?? props.selectedKeys.includes(props.node.key)
+  );
 });
 
 const isChecked = computed(() => {
-  return props.checkedKeys.includes(props.node.key);
+  return (
+    stateLookup?.checked.value.has(props.node.key) ?? props.checkedKeys.includes(props.node.key)
+  );
 });
 
 const isHalfChecked = computed(() => {
-  return props.halfCheckedKeys.includes(props.node.key);
+  return (
+    stateLookup?.halfChecked.value.has(props.node.key) ??
+    props.halfCheckedKeys.includes(props.node.key)
+  );
 });
 
 const isDisabled = computed(() => {
@@ -171,6 +305,7 @@ const nodeClasses = computed(() => {
       'ex-tree-node--expanded': isExpanded.value,
       'ex-tree-node--selected': isSelected.value,
       'ex-tree-node--disabled': isDisabled.value,
+      'ex-tree-node--no-animation': !animation.value,
       'ex-tree-node--drag-over': isDragOver.value,
       [`ex-tree-node--drop-${dropPosition.value}`]: dropPosition.value,
     },
@@ -179,12 +314,14 @@ const nodeClasses = computed(() => {
 
 const handleToggle = () => {
   if (!hasChildren.value || isDisabled.value) return;
+  nodeRootRef.value?.focus();
   emit('toggle', props.node, !isExpanded.value);
 };
 
 const handleClick = (event: MouseEvent) => {
   if (isDisabled.value) return;
 
+  nodeRootRef.value?.focus();
   emit('node-click', props.node, event);
 
   if (props.selectable && props.node.selectable !== false) {
@@ -192,20 +329,32 @@ const handleClick = (event: MouseEvent) => {
   }
 };
 
+const handleFocus = () => emit('focus-node', props.node);
+
 const handleContextmenu = (event: MouseEvent) => {
   event.preventDefault();
   emit('node-contextmenu', props.node, event);
 };
 
-const handleCheckChange = (val: string | number | boolean) => {
+const handleCheckChange = (val: string | number | boolean, event: Event) => {
   if (isDisabled.value) return;
   emit('check', props.node, Boolean(val));
+
+  // ExCheckbox 使用原生 input；受控父级未接受请求时需恢复真实 prop 状态。
+  nextTick(() => {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) return;
+    input.checked = isChecked.value;
+    input.indeterminate = isHalfChecked.value;
+  });
 };
 
 // 键盘导航（WAI-ARIA tree 模式）
 const handleKeydown = (event: KeyboardEvent) => {
+  // 节点插槽可以包含按钮等控件，子控件的键盘事件不得冒充树节点操作。
+  if (event.target !== nodeRootRef.value) return;
+
   const key = event.key;
-  const root = nodeRootRef.value?.closest('.ex-tree');
 
   switch (key) {
     case 'ArrowDown':
@@ -213,29 +362,17 @@ const handleKeydown = (event: KeyboardEvent) => {
     case 'Home':
     case 'End': {
       event.preventDefault();
-      if (!root) return;
-      const items = Array.from(
-        root.querySelectorAll<HTMLElement>('.ex-tree-node[role="treeitem"]')
-      ).filter(el => el.tabIndex >= 0);
-      const idx = nodeRootRef.value ? items.indexOf(nodeRootRef.value) : -1;
-      let target: HTMLElement | undefined;
-      if (key === 'ArrowDown') target = items[idx + 1];
-      else if (key === 'ArrowUp') target = items[idx - 1];
-      else if (key === 'Home') target = items[0];
-      else target = items[items.length - 1];
-      target?.focus();
+      emit('navigate', props.node, key);
       break;
     }
     case 'ArrowRight': {
       event.preventDefault();
-      if (hasChildren.value && !isExpanded.value) {
+      if (loadState.value.status === 'error') {
+        handleRetry();
+      } else if (hasChildren.value && !isExpanded.value) {
         emit('toggle', props.node, true);
       } else if (hasChildren.value && isExpanded.value) {
-        nextTick(() => {
-          nodeRootRef.value
-            ?.querySelector<HTMLElement>('.ex-tree-node__children > .ex-tree-node[role="treeitem"]')
-            ?.focus();
-        });
+        emit('navigate', props.node, key);
       }
       break;
     }
@@ -244,11 +381,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       if (hasChildren.value && isExpanded.value) {
         emit('toggle', props.node, false);
       } else {
-        (
-          nodeRootRef.value?.parentElement?.closest(
-            '.ex-tree-node[role="treeitem"]'
-          ) as HTMLElement | null
-        )?.focus();
+        emit('navigate', props.node, key);
       }
       break;
     }
@@ -267,27 +400,30 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // 拖拽相关
 const handleDragStart = (event: DragEvent) => {
-  if (isDisabled.value) return;
-  event.dataTransfer!.effectAllowed = 'move';
-  event.dataTransfer!.setData('text/plain', props.node.key);
+  if (isDisabled.value || !props.draggable || !event.dataTransfer) return;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', props.node.key);
   emit('node-drag-start', props.node, event);
 };
 
 const handleDragEnter = (event: DragEvent) => {
+  if (isDisabled.value || !props.draggable || !event.dataTransfer) return;
   event.preventDefault();
   isDragOver.value = true;
   emit('node-drag-enter', props.node, event);
 };
 
 const handleDragLeave = (event: DragEvent) => {
+  if (isDisabled.value || !props.draggable) return;
   isDragOver.value = false;
   dropPosition.value = null;
   emit('node-drag-leave', props.node, event);
 };
 
 const handleDragOver = (event: DragEvent) => {
+  if (isDisabled.value || !props.draggable || !event.dataTransfer) return;
   event.preventDefault();
-  event.dataTransfer!.dropEffect = 'move';
+  event.dataTransfer.dropEffect = 'move';
 
   // 计算放置位置
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -304,13 +440,13 @@ const handleDragOver = (event: DragEvent) => {
 };
 
 const handleDrop = (event: DragEvent) => {
+  if (isDisabled.value || !props.draggable || !event.dataTransfer) return;
   event.preventDefault();
   isDragOver.value = false;
 
-  const dragKey = event.dataTransfer!.getData('text/plain');
-  if (dragKey && dropPosition.value) {
-    // 这里需要从父组件获取 dragNode
-    // 简化处理，直接传递 key
+  const dragKey = event.dataTransfer.getData('text/plain');
+  if (dragKey && dragKey !== props.node.key && dropPosition.value) {
+    // 父组件会通过唯一 key 解析完整原始节点，无法解析的外部拖拽不会继续发出。
     emit('node-drop', { key: dragKey } as TreeNode, props.node, dropPosition.value, event);
   }
 
@@ -318,6 +454,7 @@ const handleDrop = (event: DragEvent) => {
 };
 
 const handleDragEnd = (event: DragEvent) => {
+  if (!props.draggable) return;
   isDragOver.value = false;
   dropPosition.value = null;
   emit('node-drag-end', props.node, event);
@@ -329,6 +466,15 @@ const handleDragEnd = (event: DragEvent) => {
   position: relative;
   user-select: none;
 
+  &:focus-visible {
+    outline: none;
+
+    > .ex-tree-node__content {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 1px;
+    }
+  }
+
   &__content {
     display: flex;
     align-items: center;
@@ -336,7 +482,10 @@ const handleDragEnd = (event: DragEvent) => {
     padding: var(--ex-spacing-1) var(--ex-spacing-2);
     border-radius: var(--ex-radius-sm);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      outline-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
@@ -344,7 +493,7 @@ const handleDragEnd = (event: DragEvent) => {
   }
 
   &--selected > &__content {
-    background: rgba(var(--ex-color-neon-blue-500-rgb), 0.1);
+    background: var(--ex-color-primary-alpha-10);
     color: var(--ex-color-primary);
   }
 
@@ -383,7 +532,7 @@ const handleDragEnd = (event: DragEvent) => {
     }
 
     &.ex-tree-node--drop-inner > .ex-tree-node__content {
-      background: rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
+      background: var(--ex-color-primary-alpha-20);
       border: 1px dashed var(--ex-color-primary);
     }
   }
@@ -392,15 +541,11 @@ const handleDragEnd = (event: DragEvent) => {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: 16px;
     height: 16px;
-    flex-shrink: 0;
     cursor: pointer;
     transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
-
-    img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
-    }
 
     &--placeholder {
       cursor: default;
@@ -409,8 +554,8 @@ const handleDragEnd = (event: DragEvent) => {
 
   &__checkbox {
     display: flex;
-    align-items: center;
     flex-shrink: 0;
+    align-items: center;
 
     input[type='checkbox'] {
       width: 16px;
@@ -422,25 +567,74 @@ const handleDragEnd = (event: DragEvent) => {
 
   &__icon {
     display: flex;
-    align-items: center;
     flex-shrink: 0;
-
-    img {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);
-    }
+    align-items: center;
   }
 
   &__label {
     flex: 1;
-    font-size: var(--ex-text-sm);
-    color: var(--ex-color-text-primary);
     overflow: hidden;
+    color: var(--ex-color-text-primary);
+    font-size: var(--ex-text-sm);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   &__children {
     margin-left: 0;
+  }
+
+  &__status {
+    overflow: hidden;
+    font-size: var(--ex-text-xs);
+    color: var(--ex-color-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &--error {
+      color: var(--ex-color-danger);
+    }
+  }
+
+  &__retry {
+    flex-shrink: 0;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border);
+    border-radius: var(--ex-radius-sm);
+    background: var(--ex-color-bg-primary);
+    color: var(--ex-color-primary);
+    font: inherit;
+    font-size: var(--ex-text-xs);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  &__loading-icon {
+    animation: ex-tree-loading var(--ex-motion-duration-slow) linear infinite;
+  }
+
+  &--no-animation &__loading-icon {
+    animation: none;
+  }
+}
+
+@keyframes ex-tree-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-tree-node__loading-icon {
+    animation: none;
   }
 }
 </style>

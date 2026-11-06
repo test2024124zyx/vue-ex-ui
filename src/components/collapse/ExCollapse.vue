@@ -3,7 +3,7 @@
     ref="collapseRef"
     :class="collapseClasses"
     :style="collapseStyles"
-    role="region"
+    role="group"
     :aria-label="ariaLabel"
   >
     <slot />
@@ -20,13 +20,15 @@ import type {
   CollapseItemName,
   CollapseActiveName,
 } from './types';
+import { collapseContextKey } from './context';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCollapse',
 });
 
 const props = withDefaults(defineProps<ExCollapseProps>(), {
-  modelValue: () => [],
+  modelValue: undefined,
   accordion: false,
   bordered: true,
   disabled: false,
@@ -35,13 +37,25 @@ const props = withDefaults(defineProps<ExCollapseProps>(), {
 
 const emit = defineEmits<ExCollapseEmits>();
 
-// Refs
+// 根元素引用。
 const collapseRef = ref<HTMLDivElement>();
 
-// 当前激活的面板
-const activeNames = ref<CollapseItemName[]>(
-  Array.isArray(props.modelValue) ? props.modelValue : props.modelValue ? [props.modelValue] : []
-);
+const normalizeActiveNames = (
+  value: CollapseActiveName,
+  accordion = props.accordion
+): CollapseItemName[] => {
+  const names = value === null ? [] : Array.isArray(value) ? value : [value];
+  const uniqueNames = [...new Set(names)];
+  return accordion ? uniqueNames.slice(0, 1) : uniqueNames;
+};
+
+const collapseState = useControllableState<CollapseActiveName>({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => [],
+  clone: value => (Array.isArray(value) ? [...value] : value),
+});
+const activeNames = computed(() => normalizeActiveNames(collapseState.value.value));
+const registeredItems = new Map<CollapseItemName, number>();
 
 // 计算属性
 const collapseClasses = computed(() => {
@@ -49,8 +63,6 @@ const collapseClasses = computed(() => {
 
   if (!props.bordered) classes.push('ex-collapse--borderless');
   if (props.disabled) classes.push('ex-collapse--disabled');
-  if (props.expandIconPosition === 'right') classes.push('ex-collapse--icon-right');
-
   classes.push(...normalizeCustomClass(props.class));
 
   return classes;
@@ -84,34 +96,52 @@ const handleItemClick = (name: CollapseItemName) => {
     }
   }
 
-  activeNames.value = newActiveNames;
+  commitActiveNames(newActiveNames);
+};
 
-  const emitValue: CollapseActiveName = props.accordion ? newActiveNames[0] || '' : newActiveNames;
-
+const commitActiveNames = (names: CollapseActiveName) => {
+  const normalizedNames = normalizeActiveNames(names);
+  collapseState.request(normalizedNames);
+  const emitValue: CollapseActiveName = props.accordion
+    ? (normalizedNames[0] ?? null)
+    : normalizedNames;
   emit('update:modelValue', emitValue);
   emit('change', emitValue);
 };
 
 const setActiveNames = (names: CollapseActiveName) => {
-  activeNames.value = Array.isArray(names) ? names : names ? [names] : [];
+  commitActiveNames(names);
 };
 
-// 监听 modelValue 变化
+// 非受控模式切换手风琴后保留实际生效的项，避免再次切换时旧项重新展开。
 watch(
-  () => props.modelValue,
-  newValue => {
-    activeNames.value = Array.isArray(newValue) ? newValue : newValue ? [newValue] : [];
+  () => props.accordion,
+  () => {
+    if (!collapseState.isControlled.value) collapseState.request(activeNames.value);
   }
 );
 
+const registerItem = (name: CollapseItemName, uid: number) => {
+  const existingUid = registeredItems.get(name);
+  if (existingUid !== undefined && existingUid !== uid) {
+    throw new Error(`ExCollapseItem 的 name 必须唯一：${String(name)}`);
+  }
+  registeredItems.set(name, uid);
+};
+
+const unregisterItem = (name: CollapseItemName, uid: number) => {
+  if (registeredItems.get(name) === uid) registeredItems.delete(name);
+};
+
 // 提供给子组件的上下文（用 computed 传递，保证运行时修改 prop 后子组件能响应）
-provide('exCollapse', {
+provide(collapseContextKey, {
   activeNames,
-  accordion: computed(() => props.accordion),
   disabled: computed(() => props.disabled),
   expandIconPosition: computed(() => props.expandIconPosition),
   isActive,
   handleItemClick,
+  registerItem,
+  unregisterItem,
 });
 
 // 暴露的方法

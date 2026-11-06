@@ -1,219 +1,340 @@
 # ImageCrop 图片裁剪
 
-强大的图片裁剪功能，支持自由裁剪和固定比例裁剪。
-
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
-const cropResult = ref(null)
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`
 
-const handleCrop = (result) => {
-  console.log('裁剪结果:', result)
-  console.log('Blob:', result.blob)
-  console.log('DataURL:', result.dataUrl)
-  cropResult.value = result
-  
-  // 显示提示
-  alert(`裁剪成功！\n原始尺寸: ${result.originalSize.width}x${result.originalSize.height}\n裁剪尺寸: ${result.croppedSize.width}x${result.croppedSize.height}`)
+const latestResult = ref(null)
+const handleCrop = result => {
+  latestResult.value = result
 }
+
+const ratioResult = ref(null)
+const circleResult = ref(null)
+const handleRatioCrop = result => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url)
+  ratioResult.value = { ...result, url: URL.createObjectURL(result.blob) }
+}
+const handleCircleCrop = result => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url)
+  circleResult.value = { ...result, url: URL.createObjectURL(result.blob) }
+}
+onBeforeUnmount(() => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url)
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url)
+})
 </script>
 
 ## 基础用法
 
-基础的图片裁剪功能。调整裁剪框后，点击"确认裁剪"按钮完成裁剪。
-
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="rect"
-    :show-grid="true"
-    @crop="handleCrop"
-  />
-  <div v-if="cropResult" style="margin-top: 16px; padding: 12px; background: var(--ex-color-bg-elevated); border-radius: var(--ex-radius-base);">
-    <div style="color: var(--ex-color-success); font-weight: 600; margin-bottom: 8px;">✓ 裁剪成功</div>
-    <div style="color: var(--ex-color-text-secondary); font-size: 14px;">
-      原始尺寸: {{ cropResult.originalSize.width }}x{{ cropResult.originalSize.height }}<br>
-      裁剪尺寸: {{ cropResult.croppedSize.width }}x{{ cropResult.croppedSize.height }}
-    </div>
-  </div>
+::: raw
+<div class="crop-demo">
+  <ex-image-crop :src="demoSource" @crop="handleCrop" />
+  <output v-if="latestResult" class="crop-result">
+    输出：{{ latestResult.outputSize.width }} × {{ latestResult.outputSize.height }}，
+    {{ latestResult.blob.type }}，{{ latestResult.blob.size }} B
+  </output>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExImageCrop
-    src="https://example.com/image.jpg"
-    shape="rect"
-    :show-grid="true"
-    @crop="handleCrop"
-  />
-</template>
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
 
-<script setup>
-const handleCrop = (result) => {
-  console.log('裁剪结果:', result);
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
+
+const latestResult = ref<CropResult | null>(null);
+const handleCrop = (result: CropResult) => {
+  latestResult.value = result;
 };
 </script>
-```
 
-## 固定比例裁剪
-
-设置 `aspect-ratio` 属性可以固定裁剪比例。
-
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="rect"
-    :aspect-ratio="16/9"
-    :show-grid="true"
-    @crop="handleCrop"
-  />
-</div>
-
-```vue
 <template>
-  <ExImageCrop
-    src="https://example.com/image.jpg"
-    shape="rect"
-    :aspect-ratio="16 / 9"
-    @crop="handleCrop"
-  />
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      @crop="handleCrop"
+    />
+    <output
+      v-if="latestResult"
+      class="crop-result"
+    >
+      输出：{{ latestResult.outputSize.width }} × {{ latestResult.outputSize.height }}，
+      {{ latestResult.blob.type }}，{{ latestResult.blob.size }} B
+    </output>
+  </div>
 </template>
 ```
+
+:::
+
+## 固定比例
+
+拖动选区或调整大小时保持 16:9。点击“确认裁剪”可查看实际输出及像素尺寸。
+
+::: raw
+<div class="crop-demo">
+  <ex-image-crop :src="demoSource" :aspect-ratio="16 / 9" @crop="handleRatioCrop" />
+  <template v-if="ratioResult">
+    <img class="cropped-preview" :src="ratioResult.url" alt="16:9 裁剪结果" />
+    <output class="crop-result" aria-live="polite">
+      输出：{{ ratioResult.outputSize.width }} × {{ ratioResult.outputSize.height }}，{{ ratioResult.blob.size }} B
+    </output>
+  </template>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
+
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
+
+const ratioResult = ref<(CropResult & { url: string }) | null>(null);
+const handleRatioCrop = (result: CropResult) => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url);
+  ratioResult.value = { ...result, url: URL.createObjectURL(result.blob) };
+};
+onBeforeUnmount(() => {
+  if (ratioResult.value) URL.revokeObjectURL(ratioResult.value.url);
+});
+</script>
+
+<template>
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      :aspect-ratio="16 / 9"
+      @crop="handleRatioCrop"
+    />
+    <template v-if="ratioResult">
+      <img
+        class="cropped-preview"
+        :src="ratioResult.url"
+        alt="16:9 裁剪结果"
+      />
+      <output
+        class="crop-result"
+        aria-live="polite"
+      >
+        输出：{{ ratioResult.outputSize.width }} × {{ ratioResult.outputSize.height }}，{{
+          ratioResult.blob.size
+        }}
+        B
+      </output>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.crop-demo {
+  display: grid;
+  gap: 12px;
+}
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+</style>
+```
+
+:::
 
 ## 圆形裁剪
 
-设置 `shape="circle"` 可以进行圆形裁剪，适合头像等场景。
+圆形选区始终为 1:1，PNG 输出保留圆外透明区域。下方预览展示真实输出图片，连续裁剪会释放上一次的预览地址。
 
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="circle"
-    :show-grid="false"
-    @crop="handleCrop"
-  />
+::: raw
+<div class="crop-demo">
+  <ex-image-crop :src="demoSource" shape="circle" output-type="image/png" @crop="handleCircleCrop" />
+  <template v-if="circleResult">
+    <img class="cropped-preview" :src="circleResult.url" alt="圆形 PNG 裁剪结果" />
+    <output class="crop-result" aria-live="polite">
+      输出：{{ circleResult.outputSize.width }} × {{ circleResult.outputSize.height }}，{{ circleResult.blob.type }}
+    </output>
+  </template>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
+<script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue';
+import type { CropResult } from 'vue-ex-ui';
+
+const demoSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="#0f4c81" />
+        <stop offset="1" stop-color="#22a699" />
+      </linearGradient>
+    </defs>
+    <rect width="960" height="640" fill="url(#background)" />
+    <circle cx="480" cy="280" r="150" fill="#f7d060" />
+    <path d="M0 560L260 330L430 490L620 300L960 570V640H0Z" fill="#173f5f" opacity=".78" />
+  </svg>
+`)}`;
+
+const circleResult = ref<(CropResult & { url: string }) | null>(null);
+const handleCircleCrop = (result: CropResult) => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url);
+  circleResult.value = { ...result, url: URL.createObjectURL(result.blob) };
+};
+onBeforeUnmount(() => {
+  if (circleResult.value) URL.revokeObjectURL(circleResult.value.url);
+});
+</script>
+
 <template>
-  <ExImageCrop src="https://example.com/avatar.jpg" shape="circle" @crop="handleCrop" />
+  <div class="crop-demo">
+    <ex-image-crop
+      :src="demoSource"
+      shape="circle"
+      output-type="image/png"
+      @crop="handleCircleCrop"
+    />
+    <template v-if="circleResult">
+      <img
+        class="cropped-preview"
+        :src="circleResult.url"
+        alt="圆形 PNG 裁剪结果"
+      />
+      <output
+        class="crop-result"
+        aria-live="polite"
+      >
+        输出：{{ circleResult.outputSize.width }} × {{ circleResult.outputSize.height }}，{{
+          circleResult.blob.type
+        }}
+      </output>
+    </template>
+  </div>
 </template>
+
+<style scoped>
+.crop-demo {
+  display: grid;
+  gap: 12px;
+}
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+</style>
 ```
 
-## 自由裁剪
-
-不设置 `aspect-ratio` 时，可以自由调整裁剪区域的宽高比。
-
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="rect"
-    mode="free"
-    :show-grid="true"
-    @crop="handleCrop"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCrop src="https://example.com/image.jpg" shape="rect" mode="free" @crop="handleCrop" />
-</template>
-```
-
-## 裁剪质量
-
-可以设置裁剪输出的图片质量。
-
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="rect"
-    :aspect-ratio="16/9"
-    :quality="0.9"
-    @crop="handleCrop"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCrop src="https://example.com/image.jpg" shape="rect" :quality="0.9" @crop="handleCrop" />
-</template>
-```
-
-## 缩放和旋转
-
-支持图片的缩放和旋转操作。
-
-<div class="demo-container">
-  <ExImageCrop
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    shape="rect"
-    :aspect-ratio="16/9"
-    :zoomable="true"
-    :rotatable="true"
-    :show-grid="true"
-    @crop="handleCrop"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCrop
-    src="https://example.com/image.jpg"
-    shape="rect"
-    :zoomable="true"
-    :rotatable="true"
-    @crop="handleCrop"
-  />
-</template>
-```
+:::
 
 ## API
 
 ### Props
 
-| 属性              | 说明           | 类型                                        | 默认值       |
-| ----------------- | -------------- | ------------------------------------------- | ------------ |
-| src               | 图片源         | string \| File                              | -            |
-| shape             | 裁剪形状       | 'rect' \| 'circle'                          | 'rect'       |
-| mode              | 裁剪模式       | 'free' \| 'fixed'                           | 'free'       |
-| aspect-ratio      | 固定宽高比     | number                                      | -            |
-| quality           | 输出质量 (0-1) | number                                      | 0.9          |
-| output-type       | 输出格式       | 'image/png' \| 'image/jpeg' \| 'image/webp' | 'image/jpeg' |
-| show-grid         | 是否显示网格   | boolean                                     | true         |
-| zoomable          | 是否可缩放     | boolean                                     | true         |
-| rotatable         | 是否可旋转     | boolean                                     | true         |
-| min-crop-width    | 最小裁剪宽度   | number                                      | 50           |
-| min-crop-height   | 最小裁剪高度   | number                                      | 50           |
-| initial-crop-area | 初始裁剪区域   | CropArea                                    | -            |
+| 属性                    | 类型                                          | 默认值        |
+| ----------------------- | --------------------------------------------- | ------------- |
+| src                     | `string \| Blob`                              | —             |
+| shape                   | `'rect' \| 'circle'`                          | `'rect'`      |
+| aspect-ratio            | `number`                                      | —             |
+| initial-area            | `CropArea`                                    | —             |
+| min-width               | `number`                                      | `48`          |
+| min-height              | `number`                                      | `48`          |
+| max-width               | `number`                                      | —             |
+| max-height              | `number`                                      | —             |
+| quality                 | `number`                                      | `0.9`         |
+| output-type             | `'image/png' \| 'image/jpeg' \| 'image/webp'` | `'image/png'` |
+| output-background-color | `string`                                      | `'#ffffff'`   |
+| show-grid               | `boolean`                                     | `true`        |
+| grid-rows               | `number`                                      | `3`           |
+| grid-cols               | `number`                                      | `3`           |
+| zoomable                | `boolean`                                     | `true`        |
+| rotatable               | `boolean`                                     | `true`        |
+| zoom-step               | `number`                                      | `0.1`         |
+| min-zoom                | `number`                                      | `0.5`         |
+| max-zoom                | `number`                                      | `4`           |
+| background-color        | `string`                                      | `'#111827'`   |
+| show-toolbar            | `boolean`                                     | `true`        |
+| toolbar-position        | `'top' \| 'bottom'`                           | `'bottom'`    |
+| aria-label              | `string`                                      | 本地化文本    |
+
+`quality` 仅传递给 JPEG 与 WebP 编码器。圆形裁剪固定为 1:1，并覆盖 `aspect-ratio`。
+
+输入图片限制为 64 MiB、3200 万像素且单边不超过 32768 像素。预览与导出 Canvas 会在分配像素缓冲区前执行同一预算检查，超限时通过 `error` 返回 `INVALID_DIMENSION`。
 
 ### Events
 
-| 事件名 | 说明               | 类型                         |
-| ------ | ------------------ | ---------------------------- |
-| crop   | 裁剪完成时触发     | (result: CropResult) => void |
-| change | 裁剪区域改变时触发 | (area: CropArea) => void     |
-| zoom   | 缩放时触发         | (scale: number) => void      |
-| rotate | 旋转时触发         | (angle: number) => void      |
-| cancel | 取消裁剪时触发     | () => void                   |
-| load   | 图片加载完成时触发 | (size: { width: number; height: number }) => void |
-| error  | 图片加载失败时触发 | (error: Error) => void       |
+| 事件   | 参数                             |
+| ------ | -------------------------------- |
+| change | `(area: CropArea)`               |
+| crop   | `(result: CropResult)`           |
+| cancel | `()`                             |
+| load   | `(size: CropSize)`               |
+| error  | `(error: ExImageCropError)`      |
+| zoom   | `(scale: number)`                |
+| rotate | `(angle: 0 \| 90 \| 180 \| 270)` |
 
-### Methods
+### Expose
 
-| 方法名      | 说明           | 类型                        |
-| ----------- | -------------- | --------------------------- |
-| crop        | 执行裁剪       | () => Promise\<CropResult\> |
-| reset       | 重置裁剪区域   | () => void                  |
-| zoomIn      | 放大           | () => void                  |
-| zoomOut     | 缩小           | () => void                  |
-| rotateLeft  | 逆时针旋转90度 | () => void                  |
-| rotateRight | 顺时针旋转90度 | () => void                  |
-| setZoom     | 设置缩放比例   | (scale: number) => void     |
-| setRotate   | 设置旋转角度   | (angle: number) => void     |
+| 方法        | 类型                           |
+| ----------- | ------------------------------ |
+| crop        | `() => Promise<CropResult>`    |
+| reset       | `() => void`                   |
+| zoomIn      | `() => void`                   |
+| zoomOut     | `() => void`                   |
+| rotateLeft  | `() => void`                   |
+| rotateRight | `() => void`                   |
+| setArea     | `(area: CropArea) => void`     |
+| getArea     | `() => CropArea`               |
+| getElement  | `() => HTMLDivElement \| null` |
 
-## 类型定义
+### Types
 
-```typescript
+```ts
 interface CropArea {
   x: number;
   y: number;
@@ -223,29 +344,34 @@ interface CropArea {
 
 interface CropResult {
   blob: Blob;
-  dataUrl: string;
-  width: number;
-  height: number;
-  size: number;
+  previewArea: CropArea;
+  sourceArea: CropArea;
+  originalSize: { width: number; height: number };
+  outputSize: { width: number; height: number };
+  outputType: 'image/png' | 'image/jpeg' | 'image/webp';
+  rotation: 0 | 90 | 180 | 270;
+  zoom: number;
 }
 ```
 
-## 无障碍支持
+### Error codes
 
-- 完整的键盘导航支持
-- ARIA 属性标注
-- 屏幕阅读器友好
-
-## 主题定制
-
-图片裁剪跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
+`INVALID_SOURCE`、`SOURCE_FETCH_FAILED`、`LOAD_FAILED`、`INVALID_DIMENSION`、`INVALID_CONFIGURATION`、`NOT_READY`、`INVALID_AREA`、`CANVAS_UNAVAILABLE`、`ENCODE_FAILED`、`UNSUPPORTED_OUTPUT`、`ABORTED`、`DOM_UNAVAILABLE`。
 
 <style scoped>
-.demo-container {
-  padding: 24px;
-  background: var(--ex-color-bg-primary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+.crop-demo {
+  display: grid;
+  gap: 12px;
+}
+
+.crop-result {
+  color: var(--ex-color-text-secondary);
+  font-size: 14px;
+}
+
+.cropped-preview {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
 }
 </style>

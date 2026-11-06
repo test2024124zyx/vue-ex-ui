@@ -29,6 +29,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-primary
 --ex-color-primary-hover
@@ -44,6 +45,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-bg-primary      /* 主背景 */
 --ex-color-bg-secondary    /* 次级背景 */
@@ -60,6 +62,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-text-primary    /* 主文本 */
 --ex-color-text-secondary  /* 次要文本 */
@@ -74,6 +77,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-border-primary
 --ex-color-border-secondary
@@ -88,6 +92,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-success
 --ex-color-success-hover
@@ -106,6 +111,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-primary-alpha-05   /* 5% 不透明度 */
 --ex-color-primary-alpha-10   /* 10% 不透明度 */
@@ -127,6 +133,7 @@ ExUI 使用统一的 CSS 变量命名规范，确保主题系统的一致性和�
 ```
 
 **示例**:
+
 ```css
 --ex-color-bg-primary-rgb: 11, 15, 20;
 --ex-color-neon-blue-500-rgb: 41, 171, 226;
@@ -146,6 +153,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-color-success-mid
 --ex-color-success-dark
@@ -161,6 +169,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-spacing-1     /* 4px */
 --ex-spacing-2     /* 8px */
@@ -184,6 +193,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-text-xs      /* 12px */
 --ex-text-sm      /* 14px */
@@ -201,6 +211,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-font-light       /* 300 */
 --ex-font-normal      /* 400 */
@@ -217,6 +228,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-leading-tight    /* 1.25 */
 --ex-leading-snug     /* 1.375 */
@@ -234,6 +246,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-shadow-sm
 --ex-shadow-md
@@ -248,6 +261,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-shadow-neon-sm
 --ex-shadow-neon-md
@@ -261,6 +275,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-gradient-primary
 --ex-gradient-secondary
@@ -274,6 +289,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-radius-none  /* 0 */
 --ex-radius-sm    /* 2px */
@@ -295,6 +311,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-motion-duration-fast    /* 120ms */
 --ex-motion-duration-base    /* 200ms */
@@ -313,6 +330,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-z-dropdown   /* 1000 */
 --ex-z-sticky     /* 1020 */
@@ -333,6 +351,7 @@ background: rgba(var(--ex-color-bg-primary-rgb), 0.8);
 ```
 
 **示例**:
+
 ```css
 --ex-color-neon-blue-400
 --ex-color-neon-blue-500

@@ -1,4 +1,5 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/tokens' as *;
 
 // ============================================================================
@@ -25,6 +26,14 @@
 
     .ex-dialog__footer-actions {
       justify-content: center;
+    }
+  }
+
+  &--modeless {
+    pointer-events: none;
+
+    .ex-dialog {
+      pointer-events: auto;
     }
   }
 }
@@ -100,11 +109,7 @@
     @include neon-glow('blue', 'sm');
 
     .ex-dialog__header {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-neon-blue-alpha-10),
-        transparent
-      );
+      background: linear-gradient(135deg, var(--ex-color-neon-blue-alpha-10), transparent);
       border-bottom-color: var(--ex-color-neon-blue-500);
     }
 
@@ -117,11 +122,7 @@
     border-color: var(--ex-color-success);
 
     .ex-dialog__header {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-success-alpha-10),
-        transparent
-      );
+      background: linear-gradient(135deg, var(--ex-color-success-alpha-10), transparent);
       border-bottom-color: var(--ex-color-success);
     }
 
@@ -134,11 +135,7 @@
     border-color: var(--ex-color-warning);
 
     .ex-dialog__header {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-warning-alpha-10),
-        transparent
-      );
+      background: linear-gradient(135deg, var(--ex-color-warning-alpha-10), transparent);
       border-bottom-color: var(--ex-color-warning);
     }
 
@@ -151,11 +148,7 @@
     border-color: var(--ex-color-error);
 
     .ex-dialog__header {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-error-alpha-10),
-        transparent
-      );
+      background: linear-gradient(135deg, var(--ex-color-error-alpha-10), transparent);
       border-bottom-color: var(--ex-color-error);
     }
 
@@ -168,11 +161,7 @@
     border-color: var(--ex-color-info);
 
     .ex-dialog__header {
-      background: linear-gradient(
-        135deg,
-        var(--ex-color-info-alpha-10),
-        transparent
-      );
+      background: linear-gradient(135deg, var(--ex-color-info-alpha-10), transparent);
       border-bottom-color: var(--ex-color-info);
     }
 
@@ -265,7 +254,8 @@
   }
 
   &:focus-visible {
-    outline: none;
+    outline: 2px solid var(--ex-color-primary);
+    outline-offset: 2px;
     @include neon-glow('pink', 'md');
   }
 
@@ -342,7 +332,9 @@
 // 缩放动画
 .ex-dialog-zoom-enter-active,
 .ex-dialog-zoom-leave-active {
-  transition: all var(--ex-motion-duration-medium) var(--ex-motion-ease-out);
+  transition-property: opacity, transform;
+  transition-duration: var(--ex-motion-duration-medium);
+  transition-timing-function: var(--ex-motion-ease-out);
 }
 
 .ex-dialog-zoom-enter-from,
@@ -369,3 +361,18 @@
 // ============================================================================
 // 注意：所有主题都通过 CSS 变量自动适配，无需硬编码特定主题
 
+// Teleport 包装器脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-dialog-wrapper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-dialog-wrapper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

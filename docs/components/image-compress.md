@@ -1,408 +1,267 @@
 # ImageCompress 图片压缩
 
-智能图片压缩，支持质量、大小、尺寸三种压缩模式。
-
 <script setup>
 import { ref } from 'vue'
 
-const handleCompress = (result) => {
-  console.log('压缩结果:', result)
-  console.log('压缩率:', result.compressionRatio + '%')
-  console.log('原始大小:', result.originalSize)
-  console.log('压缩后大小:', result.compressedSize)
+const svg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">',
+  '<defs><linearGradient id="g"><stop stop-color="#1677ff"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs>',
+  '<rect width="800" height="450" fill="url(#g)"/>',
+  '<circle cx="400" cy="225" r="120" fill="none" stroke="white" stroke-width="24"/>',
+  '</svg>',
+].join('')
+const demoSource = ref('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg))
+const lastResult = ref(null)
+
+const handleFile = event => {
+  const file = event.target.files?.[0]
+  if (file) demoSource.value = file
 }
 </script>
 
 ## 基础用法
 
-基础的图片压缩功能。
-
+::: raw
 <div class="demo-container">
-  <ExImageCompress
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
+  <label class="file-picker">
+    <span>选择图片</span>
+    <input type="file" accept="image/*" @change="handleFile" />
+  </label>
+  <ex-image-compress
+    :src="demoSource"
     mode="quality"
     :quality="0.8"
-    :show-preview="true"
-    @compress="handleCompress"
+    @compress="lastResult = $event"
   />
 </div>
-
-```vue
-<template>
-  <ExImageCompress
-    src="https://example.com/large-image.jpg"
-    mode="quality"
-    :quality="0.8"
-    :show-preview="true"
-    @compress="handleCompress"
-  />
-</template>
-
-<script setup>
-const handleCompress = (result) => {
-  console.log('压缩结果:', result)
-  console.log('压缩率:', result.compressionRatio + '%')
-}
-</script>
-```
-
-## 质量压缩
-
-通过调整图片质量来压缩文件大小。
-
-<div class="demo-container">
-  <ExImageCompress
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-    mode="quality"
-    :quality="0.7"
-    :show-preview="true"
-    :show-comparison="true"
-    @compress="handleCompress"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCompress
-    src="https://example.com/image.jpg"
-    mode="quality"
-    :quality="0.8"
-    @compress="handleCompress"
-  />
-</template>
-```
-
-## 大小压缩
-
-压缩到指定的文件大小。使用 NumberInput 组件提供更好的数值输入体验，支持键盘上下箭头调整、最小值/最大值限制。
-
-<div class="demo-container">
-  <ExImageCompress
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-    mode="size"
-    :target-size="500"
-    :show-preview="true"
-    :show-comparison="true"
-    @compress="handleCompress"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCompress
-    src="https://example.com/large-image.jpg"
-    mode="size"
-    :target-size="500"
-    @compress="handleCompress"
-  />
-</template>
-```
-
-::: tip 数值输入优化
-组件内部使用 `ExNumberInput` 组件，提供以下优势：
-- ✅ 自动限制最小值/最大值范围
-- ✅ 支持键盘上下箭头快速调整
-- ✅ 增加/减少按钮便于精确控制
-- ✅ 步长设置（目标大小步长 10KB，尺寸步长 10px）
 :::
 
-## 尺寸压缩
-
-通过缩小图片尺寸来压缩文件大小。
-
-<div class="demo-container">
-  <ExImageCompress
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=2400"
-    mode="dimension"
-    :max-width="1920"
-    :max-height="1080"
-    :show-preview="true"
-    :show-comparison="true"
-    @compress="handleCompress"
-  />
-</div>
+::: details 查看示例代码
 
 ```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const svg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">',
+  '<defs><linearGradient id="g"><stop stop-color="#1677ff"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs>',
+  '<rect width="800" height="450" fill="url(#g)"/>',
+  '<circle cx="400" cy="225" r="120" fill="none" stroke="white" stroke-width="24"/>',
+  '</svg>',
+].join('');
+const demoSource = ref<string | File>(
+  'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+);
+const lastResult = ref(null);
+
+const handleFile = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (file) demoSource.value = file;
+};
+</script>
+
 <template>
-  <ExImageCompress
-    src="https://example.com/huge-image.jpg"
-    mode="dimension"
-    :max-width="1920"
-    :max-height="1080"
-    @compress="handleCompress"
-  />
-</template>
-```
-
-## 对比预览
-
-显示压缩前后的对比效果。
-
-<div class="demo-container">
-  <ExImageCompress
-    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-    mode="quality"
-    :quality="0.7"
-    :show-preview="true"
-    :show-comparison="true"
-    @compress="handleCompress"
-  />
-</div>
-
-```vue
-<template>
-  <ExImageCompress
-    src="https://example.com/image.jpg"
-    mode="quality"
-    :quality="0.7"
-    :show-preview="true"
-    :show-comparison="true"
-    @compress="handleCompress"
-  />
-</template>
-```
-
-## 输出格式
-
-支持多种输出格式：JPEG、PNG、WebP。
-
-<div class="demo-container">
-  <ExSpace direction="vertical" :size="16">
-    <div>
-      <div style="color: var(--ex-color-text-secondary); font-size: 14px; margin-bottom: 8px;">
-        输出为 JPEG（文件小，有损压缩）
-      </div>
-      <ExImageCompress
-        src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-        mode="quality"
-        :quality="0.8"
-        output-type="image/jpeg"
-        :show-preview="true"
-        @compress="handleCompress"
+  <div class="demo-container">
+    <label class="file-picker">
+      <span>选择图片</span>
+      <input
+        type="file"
+        accept="image/*"
+        @change="handleFile"
       />
-    </div>
-  </ExSpace>
-</div>
-
-```vue
-<template>
-  <div>
-    <ExImageCompress
-      src="https://example.com/image.jpg"
-      output-type="image/jpeg"
-      @compress="handleCompress"
-    />
-    
-    <ExImageCompress
-      src="https://example.com/image.png"
-      output-type="image/png"
-      @compress="handleCompress"
-    />
-    
-    <ExImageCompress
-      src="https://example.com/image.jpg"
-      output-type="image/webp"
-      @compress="handleCompress"
+    </label>
+    <ex-image-compress
+      :src="demoSource"
+      mode="quality"
+      :quality="0.8"
+      @compress="lastResult = $event"
     />
   </div>
 </template>
 ```
 
-## API
+:::
 
-### Props
+## 模式
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| src | 图片源 | string \| File | - |
-| mode | 压缩模式 | 'quality' \| 'size' \| 'dimension' | 'quality' |
-| quality | 压缩质量 (0-1) | number | 0.8 |
-| target-size | 目标大小(KB) | number | 500 |
-| max-width | 最大宽度 | number | 1920 |
-| max-height | 最大高度 | number | 1080 |
-| output-type | 输出格式 | 'image/png' \| 'image/jpeg' \| 'image/webp' | 'image/jpeg' |
-| show-preview | 是否显示预览 | boolean | true |
-| show-comparison | 是否显示对比 | boolean | true |
-| auto-compress | 是否自动压缩 | boolean | false |
+::: raw
+<div class="demo-grid">
+  <ex-image-compress
+    :src="demoSource"
+    mode="size"
+    :target-size="20"
+    output-type="image/webp"
+  />
+  <ex-image-compress
+    :src="demoSource"
+    mode="dimension"
+    :max-width="400"
+    :max-height="225"
+    output-type="image/png"
+  />
+</div>
+:::
 
-### Events
+::: details 查看示例代码
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| start | 开始压缩时触发 | () => void |
-| progress | 压缩进度更新时触发 | (percent: number) => void |
-| compress | 压缩完成时触发 | (result: CompressResult) => void |
-| load | 原图加载完成时触发 | (size: { width: number; height: number }) => void |
-| error | 压缩失败时触发 | (error: Error) => void |
+```vue
+<script setup lang="ts">
+const svg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">',
+  '<defs><linearGradient id="g"><stop stop-color="#1677ff"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs>',
+  '<rect width="800" height="450" fill="url(#g)"/>',
+  '<circle cx="400" cy="225" r="120" fill="none" stroke="white" stroke-width="24"/>',
+  '</svg>',
+].join('');
+const demoSource = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+</script>
 
-### Methods
+<template>
+  <div class="demo-grid">
+    <ex-image-compress
+      :src="demoSource"
+      mode="size"
+      :target-size="20"
+      output-type="image/webp"
+    />
+    <ex-image-compress
+      :src="demoSource"
+      mode="dimension"
+      :max-width="400"
+      :max-height="225"
+      output-type="image/png"
+    />
+  </div>
+</template>
+```
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| compress | 执行压缩 | () => Promise\<CompressResult\> |
-| reset | 重置 | () => void |
-| download | 下载压缩后的图片 | (filename?: string) => void |
+:::
+
+## Props
+
+| 参数              | 类型                                  | 默认值     |
+| ----------------- | ------------------------------------- | ---------- |
+| src               | string \| Blob                        | 必填       |
+| mode              | quality \| size \| dimension          | quality    |
+| quality           | number（0.01–1）                      | 0.8        |
+| target-size       | number（KB）                          | 500        |
+| max-width         | number                                | 1920       |
+| max-height        | number                                | 1080       |
+| output-type       | image/jpeg \| image/png \| image/webp | image/jpeg |
+| keep-aspect-ratio | boolean                               | true       |
+| background-color  | string                                | #ffffff    |
+| auto-compress     | boolean                               | false      |
+| show-preview      | boolean                               | true       |
+| show-comparison   | boolean                               | true       |
+
+PNG 为无损格式，不提供质量模式；目标大小模式会在必要时缩小尺寸，若 1×1 像素仍无法达到目标则拒绝 Promise。
+
+输入图片默认限制为 64 MiB、3200 万像素且单边不超过 32768 像素；远程响应会优先校验 `Content-Length` 并按流累计字节。超过上限时会在创建对象 URL 或 Canvas 前拒绝处理。压缩参数在任务执行期间变化会取消旧任务；`auto-compress` 开启时以最新参数重新执行。
+
+## Events
+
+| 事件     | 参数                            |
+| -------- | ------------------------------- |
+| load     | (info: ImageCompressSourceInfo) |
+| start    | ()                              |
+| compress | (result: CompressResult)        |
+| error    | (error: Error)                  |
+
+## Exposes
+
+| 方法       | 类型                                |
+| ---------- | ----------------------------------- |
+| compress   | () => Promise&lt;CompressResult&gt; |
+| download   | (filename?: string) => void         |
+| getResult  | () => CompressResult \| null        |
+| reset      | () => void                          |
+| getElement | () => HTMLDivElement \| null        |
 
 ## 工具函数
 
-对于不需要 UI 界面的场景，可以直接使用工具函数进行后台压缩。
+```ts
+import { compressImage, compressImages, downloadCompressedImage, formatBytes } from 'vue-ex-ui';
 
-### compressImage
-
-压缩单张图片。
-
-```typescript
-import { compressImage } from 'exui'
-
-// 压缩图片
 const result = await compressImage(file, {
-  mode: 'quality',
-  quality: 0.8,
-  outputType: 'image/jpeg'
-})
-
-console.log('压缩完成:', result)
-```
-
-### compressImages
-
-批量压缩多张图片。
-
-```typescript
-import { compressImages } from 'exui'
-
-// 批量压缩
-const results = await compressImages([file1, file2, file3], {
   mode: 'size',
-  targetSize: 500, // 500KB
-  outputType: 'image/jpeg'
-})
+  targetSize: 500,
+  outputType: 'image/webp',
+});
 
-results.forEach((result, index) => {
-  console.log(`图片 ${index + 1} 压缩完成:`, result)
-})
+console.log(formatBytes(result.compressedSize));
+downloadCompressedImage(result.blob, 'compressed.webp');
+
+const results = await compressImages([fileA, fileB], {
+  mode: 'dimension',
+  maxWidth: 1920,
+  maxHeight: 1080,
+});
 ```
 
-### formatBytes
+### CompressOptions
 
-格式化字节大小为可读字符串。
-
-```typescript
-import { formatBytes } from 'exui'
-
-console.log(formatBytes(1024)) // "1.00 KB"
-console.log(formatBytes(1048576)) // "1.00 MB"
-```
-
-### downloadCompressedImage
-
-下载压缩后的图片。
-
-```typescript
-import { downloadCompressedImage } from 'exui'
-
-// 下载图片
-downloadCompressedImage(blob, 'my-image.jpg', 'image/jpeg')
-```
-
-### 工具函数选项
-
-```typescript
+```ts
 interface CompressOptions {
-  mode?: 'quality' | 'size' | 'dimension'
-  quality?: number // 0-1
-  targetSize?: number // KB
-  maxWidth?: number
-  maxHeight?: number
-  outputType?: 'image/png' | 'image/jpeg' | 'image/webp'
-  keepAspectRatio?: boolean
+  mode?: 'quality' | 'size' | 'dimension';
+  quality?: number;
+  targetSize?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  outputType?: 'image/png' | 'image/jpeg' | 'image/webp';
+  keepAspectRatio?: boolean;
+  backgroundColor?: string;
+  signal?: AbortSignal;
 }
 ```
 
-### 完整示例
+### CompressResult
 
-```vue
-<template>
-  <div>
-    <input type="file" @change="handleFileChange" accept="image/*" />
-    <div v-if="compressing">压缩中...</div>
-    <div v-if="result">
-      <p>原始大小: {{ formatBytes(result.originalSize) }}</p>
-      <p>压缩后大小: {{ formatBytes(result.compressedSize) }}</p>
-      <p>压缩率: {{ result.compressionRatio }}%</p>
-      <button @click="download">下载</button>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-import { compressImage, formatBytes, downloadCompressedImage } from 'exui'
-
-const compressing = ref(false)
-const result = ref(null)
-
-const handleFileChange = async (e) => {
-  const file = e.target.files[0]
-  if (!file) return
-
-  compressing.value = true
-  try {
-    result.value = await compressImage(file, {
-      mode: 'quality',
-      quality: 0.8,
-      outputType: 'image/jpeg'
-    })
-  } catch (error) {
-    console.error('压缩失败:', error)
-  } finally {
-    compressing.value = false
-  }
-}
-
-const download = () => {
-  if (result.value) {
-    downloadCompressedImage(
-      result.value.blob,
-      'compressed-image.jpg',
-      'image/jpeg'
-    )
-  }
-}
-</script>
-```
-
-## 类型定义
-
-```typescript
+```ts
 interface CompressResult {
-  blob: Blob
-  dataUrl: string
-  originalSize: number
-  compressedSize: number
-  compressionRatio: number
-  width: number
-  height: number
-  type: string
+  blob: Blob;
+  originalSize: number;
+  originalType: string;
+  compressedSize: number;
+  compressionRatio: number;
+  originalDimension: { width: number; height: number };
+  compressedDimension: { width: number; height: number };
+  outputType: 'image/png' | 'image/jpeg' | 'image/webp';
+  qualityUsed: number | null;
+  mode: 'quality' | 'size' | 'dimension';
 }
 ```
-
-## 无障碍支持
-
-- 完整的键盘导航支持
-- ARIA 属性标注
-- 屏幕阅读器友好
-
-## 主题定制
-
-图片压缩跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
 
 <style scoped>
-.demo-container {
-  padding: 24px;
-  background: var(--ex-color-bg-primary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
+.demo-container,
+.demo-grid {
+  display: grid;
+  gap: 16px;
   margin: 16px 0;
+}
+
+.file-picker {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-md);
+  color: var(--ex-color-text-primary);
+  cursor: pointer;
+}
+
+.file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+@media (min-width: 1200px) {
+  .demo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

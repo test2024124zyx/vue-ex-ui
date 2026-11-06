@@ -20,7 +20,7 @@ const fileWithLabel = (label: string): string =>
   s('<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>') +
   `<text x="12" y="17.5" text-anchor="middle" font-size="6" font-family="sans-serif" font-weight="bold" fill="currentColor" stroke="none">${label}</text>`;
 
-export const ICONS: Record<string, string> = {
+const iconDefinitions = {
   // ---- 基础操作 ----
   'add-line': s('<path d="M12 5v14M5 12h14"/>'),
   'subtract-line': s('<path d="M5 12h14"/>'),
@@ -212,11 +212,19 @@ export const ICONS: Record<string, string> = {
   'refresh-2-line': s(
     '<path d="M20 11a8 8 0 0 0-14-5L3 9M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14 5l3-3M21 20v-5h-5"/>'
   ),
-};
+} as const;
 
-export type BuiltinIconName = keyof typeof ICONS;
+/** 冻结注册表，确保 v-html 的可信静态来源无法在运行时被替换。 */
+export const ICONS: Readonly<typeof iconDefinitions> = Object.freeze(iconDefinitions);
+
+export type BuiltinIconName = keyof typeof iconDefinitions;
+
+/** 判断名称是否为注册表自身的图标键，避免命中对象原型属性。 */
+export function isBuiltinIcon(name: string): name is BuiltinIconName {
+  return Object.prototype.hasOwnProperty.call(ICONS, name);
+}
 
 /** 获取内置图标的 SVG 内容，未注册时返回空字符串 */
 export function getBuiltinIcon(name: string): string {
-  return ICONS[name] ?? '';
+  return isBuiltinIcon(name) ? ICONS[name] : '';
 }

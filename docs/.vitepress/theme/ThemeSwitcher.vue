@@ -23,38 +23,47 @@
       class="ex-theme-switcher__dot"
       :style="{ background: currentSwatch }"
       aria-hidden="true"
-    />
+    ></span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { getTheme, onThemeChange, setTheme } from '../../../src';
+import {
+  getTheme,
+  isTheme,
+  onThemeChange,
+  setTheme,
+  THEME_CONFIGS,
+  THEME_NAMES,
+  type Theme,
+} from '../../../src';
 
-// 按顺序循环切换组件库的全部主题（matrix 即原 high-contrast 矩阵绿，已含）
-const THEMES = [
-  { name: 'neon-blue', label: 'Neon Blue', swatch: '#29abe2' },
-  { name: 'neon-pink', label: 'Neon Pink', swatch: '#ff007f' },
-  { name: 'dark', label: 'Dark', swatch: '#5b9bd5' },
-  { name: 'matrix', label: 'Matrix', swatch: '#00ff41' },
-  { name: 'light', label: 'Light', swatch: '#1668dc' },
-] as const;
+// 使用主题系统的注册顺序，确保文档切换器与公开主题契约保持一致。
+const THEME_SWATCHES: Record<Theme, string> = {
+  'neon-blue': '#29abe2',
+  light: '#1668dc',
+};
+const THEMES = THEME_NAMES.map(name => ({
+  name,
+  label: THEME_CONFIGS[name].displayName,
+  swatch: THEME_SWATCHES[name],
+}));
 
 const STORAGE_KEY = 'ex-ui-theme';
-const current = ref<string>('neon-blue');
+const current = ref<Theme>(getTheme());
 
-const meta = computed(() => THEMES.find(t => t.name === current.value) ?? THEMES[0]);
+const meta = computed(() => THEMES.find(t => t.name === current.value) ?? THEMES[0]!);
 const currentLabel = computed(() => meta.value.label);
 const currentSwatch = computed(() => meta.value.swatch);
 
 let dispose: (() => void) | undefined;
 
 onMounted(() => {
-  const saved =
-    (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || '';
-  const initial = THEMES.some(t => t.name === saved) ? saved : getTheme();
+  const saved = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || '';
+  const initial = isTheme(saved) ? saved : getTheme();
   current.value = initial;
-  setTheme(initial as Parameters<typeof setTheme>[0]);
+  setTheme(initial);
   // 跟随外部主题变化（例如组件内部触发的切换）
   dispose = onThemeChange(theme => {
     current.value = theme;
@@ -65,8 +74,10 @@ onUnmounted(() => dispose?.());
 
 const cycle = () => {
   const index = THEMES.findIndex(t => t.name === current.value);
-  const next = THEMES[(index + 1) % THEMES.length];
-  setTheme(next.name as Parameters<typeof setTheme>[0]);
+  const next = THEMES[(index + 1) % THEMES.length] ?? THEMES[0];
+  if (!next) return;
+
+  setTheme(next.name);
   current.value = next.name;
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem(STORAGE_KEY, next.name);

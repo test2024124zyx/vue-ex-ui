@@ -1,353 +1,276 @@
-/**
- * Message 全局提示服务
- * 提供全局消息提示功能，支持多种消息类型
- */
-
-import { createVNode, render, type VNode } from 'vue';
+import { createVNode, inject, render } from 'vue';
+import type { AppContext, InjectionKey, VNode } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
+import { useComponentServiceScope, watchServiceZIndex } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
 import ExMessageComponent from './ExMessage.vue';
+import { resolveMessageConfig, resolveMessageOptions } from './message-utils';
+import type { ResolvedMessageOptions } from './message-utils';
 import type {
-  MessageOptions,
+  ExMessageExposed,
+  MessageGlobalConfig,
+  MessageInput,
   MessageInstance,
   MessageService,
-  MessageGlobalConfig,
-  MessageQueueItem,
   MessageType,
+  MessageTypedInput,
 } from './types';
 
-// ============================================================================
-// 全局配置
-// ============================================================================
-
-/** 默认全局配置 */
-const defaultConfig: MessageGlobalConfig = {
+const DEFAULT_CONFIG: MessageGlobalConfig = {
   duration: 3000,
   offset: 20,
   zIndex: 2000,
-  maxCount: 10,
+  maxCount: 5,
   showIcon: true,
   closable: false,
   grouping: false,
 };
 
-/** 当前全局配置 */
-let globalConfig: MessageGlobalConfig = { ...defaultConfig };
+interface MessageRecord {
+  id: string;
+  options: ResolvedMessageOptions;
+  wrapper: HTMLDivElement;
+  vnode: VNode;
+  state: 'active' | 'closing' | 'destroyed';
+  callbackCalled: boolean;
+  close: () => boolean;
+}
 
-/**
- * 解析容器 z-index：未自定义时走设计令牌 var(--ex-z-toast)，
- * 使 toast 与 Modal/Popover 等浮层共享同一套层级体系；
- * 用户显式设置 zIndex 时仍以其数值为准。
- */
-const resolveZIndex = (): string =>
-  globalConfig.zIndex === defaultConfig.zIndex
-    ? `var(--ex-z-toast, ${defaultConfig.zIndex})`
-    : String(globalConfig.zIndex);
+/** 当前 Vue App 的 Message 服务注入键。 */
+export const MESSAGE_SERVICE_KEY: InjectionKey<MessageService> =
+  createSharedInjectionKey('message-service');
 
-// ============================================================================
-// 消息队列管理
-// ============================================================================
+/** 创建队列、配置、DOM 与回调生命周期完全隔离的 Message 服务。 */
+export function createMessageService(appContext?: AppContext): MessageService {
+  let globalConfig: MessageGlobalConfig = { ...DEFAULT_CONFIG };
+  let hasExplicitZIndex = false;
+  let stopZIndexWatch: (() => void) | undefined;
+  let messageContainer: HTMLDivElement | null = null;
+  let seed = 0;
+  const activeQueue: MessageRecord[] = [];
+  const records = new Set<MessageRecord>();
 
-/** 消息队列 */
-const messageQueue: MessageQueueItem[] = [];
+  const assertBrowserEnvironment = (): void => {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      throw new Error('Message 服务只能在浏览器环境中创建消息');
+    }
+  };
 
-/** 消息容器 */
-let messageContainer: HTMLElement | null = null;
+  const resolveScopedZIndex = (): number | null => {
+    const config = appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config ? resolveZIndexLayer(config.zIndex.value, 'toast') : null;
+  };
 
-/** 生成唯一 ID */
-let seed = 0;
-const generateId = (): string => {
-  return `ex-message-${Date.now()}-${++seed}`;
-};
+  const resolveContainerZIndex = (): string => {
+    if (hasExplicitZIndex) return String(globalConfig.zIndex);
+    const scopedZIndex = resolveScopedZIndex();
+    return scopedZIndex === null
+      ? `var(--ex-z-toast, ${DEFAULT_CONFIG.zIndex})`
+      : String(scopedZIndex);
+  };
 
-/**
- * 获取或创建消息容器
- */
-const getContainer = (): HTMLElement => {
-  if (!messageContainer) {
+  const updateContainerStyle = (): void => {
+    if (!messageContainer) return;
+    const zIndex = resolveContainerZIndex();
+    messageContainer.style.setProperty('--ex-message-offset', `${globalConfig.offset}px`);
+    messageContainer.style.setProperty('--ex-message-z-index', zIndex);
+    messageContainer.style.zIndex = zIndex;
+  };
+
+  const removeActiveRecord = (record: MessageRecord): void => {
+    const index = activeQueue.indexOf(record);
+    if (index >= 0) activeQueue.splice(index, 1);
+  };
+
+  const destroyContainerIfEmpty = (): void => {
+    if (records.size > 0) return;
+    messageContainer?.remove();
+    messageContainer = null;
+    stopZIndexWatch?.();
+    stopZIndexWatch = undefined;
+  };
+
+  const notifyClose = (record: MessageRecord): void => {
+    if (record.callbackCalled) return;
+    record.callbackCalled = true;
+    record.options.onClose?.();
+  };
+
+  const finalizeRecord = (record: MessageRecord, invokeClose: boolean): void => {
+    if (record.state === 'destroyed') return;
+    removeActiveRecord(record);
+    record.state = 'destroyed';
+    records.delete(record);
+    render(null, record.wrapper);
+    record.wrapper.remove();
+    destroyContainerIfEmpty();
+    if (invokeClose) notifyClose(record);
+  };
+
+  const forceCloseRecords = (targets: readonly MessageRecord[]): void => {
+    let firstError: unknown;
+    for (const record of targets) {
+      try {
+        finalizeRecord(record, true);
+      } catch (error) {
+        firstError ??= error;
+      }
+    }
+    if (firstError !== undefined) throw firstError;
+  };
+
+  const handleComponentClose = (record: MessageRecord): void => {
+    if (record.state !== 'active') return;
+    removeActiveRecord(record);
+    record.state = 'closing';
+    notifyClose(record);
+  };
+
+  const requestClose = (record: MessageRecord): boolean => {
+    if (record.state !== 'active') return false;
+    const exposed = record.vnode.component?.exposed as ExMessageExposed | undefined;
+    if (!exposed || !exposed.close()) finalizeRecord(record, true);
+    return true;
+  };
+
+  const closeStaleRecords = (): void => {
+    if (!messageContainer || messageContainer.isConnected) return;
+    messageContainer = null;
+    forceCloseRecords([...records]);
+  };
+
+  const getContainer = (): HTMLDivElement => {
+    assertBrowserEnvironment();
+    closeStaleRecords();
+    if (messageContainer) return messageContainer;
+
+    const parent = document.body ?? document.documentElement;
+    if (!parent) throw new Error('Message 服务找不到可用的文档根节点');
     messageContainer = document.createElement('div');
     messageContainer.className = 'ex-message-container';
-    messageContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: ${resolveZIndex()};
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: ${globalConfig.offset}px;
-      gap: 12px;
-    `;
-    document.body.appendChild(messageContainer);
-  }
-  return messageContainer;
-};
+    stopZIndexWatch ??= watchServiceZIndex(appContext, updateContainerStyle);
+    updateContainerStyle();
+    parent.appendChild(messageContainer);
+    return messageContainer;
+  };
 
-/**
- * 更新消息容器样式
- */
-const updateContainerStyle = (): void => {
-  if (messageContainer) {
-    messageContainer.style.zIndex = resolveZIndex();
-    messageContainer.style.paddingTop = `${globalConfig.offset}px`;
-  }
-};
+  const findGroupedMessage = (options: ResolvedMessageOptions): MessageRecord | undefined => {
+    if (!options.grouping) return undefined;
+    return activeQueue.find(
+      record => record.options.type === options.type && record.options.content === options.content
+    );
+  };
 
-/**
- * 销毁消息容器
- */
-const destroyContainer = (): void => {
-  if (messageContainer && messageQueue.length === 0) {
-    document.body.removeChild(messageContainer);
-    messageContainer = null;
-  }
-};
+  const enforceLimitBeforeCreate = (): void => {
+    const removeCount = activeQueue.length - globalConfig.maxCount + 1;
+    if (removeCount > 0) forceCloseRecords(activeQueue.slice(0, removeCount));
+  };
 
-/**
- * 立即从队列中移除消息（不触发动画）
- */
-const removeFromQueueImmediate = (id: string): void => {
-  const index = messageQueue.findIndex(item => item.id === id);
-  if (index > -1) {
-    const item = messageQueue[index]!;
-    // 卸载 Vue 组件
-    render(null, item.container);
-    // 移除 DOM 元素
-    if (item.container.parentNode) {
-      item.container.parentNode.removeChild(item.container);
-    }
-    // 从队列中移除
-    messageQueue.splice(index, 1);
-    // 如果队列为空，销毁容器
-    destroyContainer();
-  }
-};
+  const createMessage = (
+    input: MessageInput | MessageTypedInput,
+    forcedType?: MessageType
+  ): MessageInstance => {
+    const options = resolveMessageOptions(input, globalConfig, forcedType);
+    assertBrowserEnvironment();
+    closeStaleRecords();
 
-/**
- * 从队列中移除消息（动画完成后调用）
- */
-const removeFromQueue = (id: string): void => {
-  removeFromQueueImmediate(id);
-};
+    const grouped = findGroupedMessage(options);
+    if (grouped) return { id: grouped.id, close: grouped.close };
+    enforceLimitBeforeCreate();
 
-/**
- * 检查是否存在相同内容的消息（用于消息合并）
- */
-const findSameMessage = (options: MessageOptions): MessageQueueItem | undefined => {
-  if (!globalConfig.grouping && !options.grouping) {
-    return undefined;
-  }
-  return messageQueue.find(
-    item => item.options.type === options.type && item.options.content === options.content
-  );
-};
+    const id = `ex-message-${Date.now()}-${++seed}`;
+    const container = getContainer();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ex-message-wrapper';
+    container.appendChild(wrapper);
 
-/**
- * 限制消息数量 - 立即移除最旧的消息
- */
-const limitMessageCount = (): void => {
-  // 计算需要移除的数量
-  const removeCount = messageQueue.length - globalConfig.maxCount + 1;
-  if (removeCount > 0) {
-    // 获取需要移除的消息（最旧的）
-    const itemsToRemove = messageQueue.slice(0, removeCount);
-    // 立即移除，不等待动画
-    itemsToRemove.forEach(item => {
-      removeFromQueueImmediate(item.id);
+    const vnode = createVNode(ExMessageComponent, {
+      type: options.type,
+      content: options.content,
+      showIcon: options.showIcon,
+      closable: options.closable,
+      duration: options.duration,
+      class: options.class,
+      style: options.style,
+      dangerouslyUseHTMLString: options.dangerouslyUseHTMLString,
+      onClose: () => handleComponentClose(record),
+      onDestroy: () => finalizeRecord(record, false),
     });
-  }
-};
+    if (appContext) vnode.appContext = appContext;
 
-// ============================================================================
-// 创建消息
-// ============================================================================
-
-/**
- * 创建消息实例
- */
-const createMessage = (options: MessageOptions): MessageInstance => {
-  // 检查是否存在相同消息
-  const sameMessage = findSameMessage(options);
-  if (sameMessage) {
-    return {
-      id: sameMessage.id,
-      close: sameMessage.close,
+    const record: MessageRecord = {
+      id,
+      options,
+      wrapper,
+      vnode,
+      state: 'active',
+      callbackCalled: false,
+      close: () => requestClose(record),
     };
-  }
 
-  // 限制消息数量（立即移除旧消息）
-  limitMessageCount();
-
-  // 生成唯一 ID
-  const id = options.id || generateId();
-
-  // 合并配置
-  const mergedOptions: MessageOptions = {
-    showIcon: globalConfig.showIcon,
-    closable: globalConfig.closable,
-    duration: globalConfig.duration,
-    offset: globalConfig.offset,
-    zIndex: globalConfig.zIndex,
-    ...options,
-    id,
-  };
-
-  // 获取容器
-  const container = getContainer();
-
-  // 创建消息包装元素
-  const messageWrapper = document.createElement('div');
-  messageWrapper.className = 'ex-message-wrapper';
-  container.appendChild(messageWrapper);
-
-  // 关闭方法
-  const close = (): void => {
-    const component = vnode.component;
-    if (component && component.exposed) {
-      (component.exposed as { close: () => void }).close();
+    activeQueue.push(record);
+    records.add(record);
+    try {
+      render(vnode, wrapper);
+    } catch (error) {
+      finalizeRecord(record, false);
+      throw error;
     }
+
+    return { id, close: record.close };
   };
 
-  // 销毁回调
-  const onDestroy = (): void => {
-    removeFromQueue(id);
+  const createTypedMessage =
+    (type: MessageType) =>
+    (input: MessageTypedInput): MessageInstance =>
+      createMessage(input, type);
+
+  const close = (id: string): boolean => {
+    const record = activeQueue.find(item => item.id === id);
+    return record ? requestClose(record) : false;
   };
 
-  // 创建 Vue 虚拟节点
-  const vnode: VNode = createVNode(ExMessageComponent, {
-    ...mergedOptions,
-    onDestroy,
-  });
+  const closeAll = (): void => {
+    forceCloseRecords([...records]);
+  };
 
-  // 渲染到 DOM
-  render(vnode, messageWrapper);
+  const config = (options: Partial<MessageGlobalConfig>): void => {
+    globalConfig = resolveMessageConfig(options, globalConfig);
+    if (Object.prototype.hasOwnProperty.call(options, 'zIndex')) hasExplicitZIndex = true;
+    updateContainerStyle();
 
-  // 添加到队列
-  const queueItem: MessageQueueItem = {
-    id,
-    options: mergedOptions,
-    vnode,
-    container: messageWrapper,
+    const removeCount = activeQueue.length - globalConfig.maxCount;
+    if (removeCount > 0) forceCloseRecords(activeQueue.slice(0, removeCount));
+  };
+
+  const messageFunction = (input: MessageInput): MessageInstance => createMessage(input);
+  return Object.assign(messageFunction, {
+    info: createTypedMessage('info'),
+    success: createTypedMessage('success'),
+    warning: createTypedMessage('warning'),
+    error: createTypedMessage('error'),
+    loading: createTypedMessage('loading'),
     close,
-  };
-  messageQueue.push(queueItem);
-
-  // 返回实例
-  return {
-    id,
-    close,
-  };
-};
-
-// ============================================================================
-// 快捷方法
-// ============================================================================
-
-/**
- * 解析消息选项
- */
-const parseOptions = (content: string | MessageOptions, type: MessageType): MessageOptions => {
-  if (typeof content === 'string') {
-    return { content, type };
-  }
-  return { ...content, type };
-};
-
-/**
- * 显示信息消息
- */
-const info = (content: string | MessageOptions): MessageInstance => {
-  return createMessage(parseOptions(content, 'info'));
-};
-
-/**
- * 显示成功消息
- */
-const success = (content: string | MessageOptions): MessageInstance => {
-  return createMessage(parseOptions(content, 'success'));
-};
-
-/**
- * 显示警告消息
- */
-const warning = (content: string | MessageOptions): MessageInstance => {
-  return createMessage(parseOptions(content, 'warning'));
-};
-
-/**
- * 显示错误消息
- */
-const error = (content: string | MessageOptions): MessageInstance => {
-  return createMessage(parseOptions(content, 'error'));
-};
-
-/**
- * 显示加载消息
- */
-const loading = (content: string | MessageOptions): MessageInstance => {
-  const options = parseOptions(content, 'loading');
-  // 加载消息默认不自动关闭
-  if (options.duration === undefined) {
-    options.duration = 0;
-  }
-  return createMessage(options);
-};
-
-/**
- * 关闭指定消息
- */
-const close = (id: string): void => {
-  const item = messageQueue.find(item => item.id === id);
-  if (item) {
-    item.close();
-  }
-};
-
-/**
- * 关闭所有消息
- */
-const closeAll = (): void => {
-  // 复制数组，避免在遍历时修改
-  const items = [...messageQueue];
-  items.forEach(item => {
-    // 立即移除，不等待动画
-    removeFromQueueImmediate(item.id);
+    closeAll,
+    config,
   });
-};
+}
 
-/**
- * 配置全局选项
- */
-const config = (options: Partial<MessageGlobalConfig>): void => {
-  globalConfig = { ...globalConfig, ...options };
-  updateContainerStyle();
-};
+/** 直接导入时使用的进程级服务；Vue 插件和 ConfigProvider 均创建隔离实例。 */
+export const message = createMessageService();
 
-// ============================================================================
-// 导出 Message 服务
-// ============================================================================
-
-/**
- * Message 服务主函数
- */
-const messageFunction = (options: MessageOptions | string): MessageInstance => {
-  if (typeof options === 'string') {
-    return createMessage({ content: options, type: 'info' });
+/** 获取最近 ConfigProvider 或当前 Vue App 的 Message 服务。 */
+export function useMessageService(): MessageService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(MESSAGE_SERVICE_KEY, createMessageService, service =>
+      service.closeAll()
+    );
   }
-  return createMessage(options);
-};
-
-// 挂载方法到主函数
-messageFunction.info = info;
-messageFunction.success = success;
-messageFunction.warning = warning;
-messageFunction.error = error;
-messageFunction.loading = loading;
-messageFunction.close = close;
-messageFunction.closeAll = closeAll;
-messageFunction.config = config;
-
-/** Message 服务 */
-export const message: MessageService = messageFunction as MessageService;
+  return inject(MESSAGE_SERVICE_KEY, message);
+}
 
 export default message;

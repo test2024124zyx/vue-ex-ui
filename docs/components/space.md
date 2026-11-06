@@ -1,116 +1,284 @@
 # Space 间距
 
-用于对多个元素进行间距与排布控制，支持方向、换行与对齐。
+用于排列一组同级元素。
 
 ## 基础用法
 
-<div class="demo-container">
+::: raw
+
+<div class="vp-raw demo-container">
   <ex-space>
-    <ex-button>按钮1</ex-button>
-    <ex-button>按钮2</ex-button>
-    <ex-button>按钮3</ex-button>
+    <ex-button>新建</ex-button>
+    <ex-button type="secondary">导入</ex-button>
+    <ex-button type="default">更多</ex-button>
   </ex-space>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-space>
-    <ex-button>按钮1</ex-button>
-    <ex-button>按钮2</ex-button>
-    <ex-button>按钮3</ex-button>
-  </ex-space>
-</template>
+<ex-space>
+  <ex-button>新建</ex-button>
+  <ex-button type="secondary">导入</ex-button>
+  <ex-button type="default">更多</ex-button>
+</ex-space>
 ```
+
+:::
 
 ## 方向与尺寸
 
-<div class="demo-container">
-  <ex-space direction="horizontal" size="small">
-    <ex-button>small</ex-button><ex-button>small</ex-button>
-  </ex-space>
-  <ex-space direction="horizontal" size="large" style="margin-top: 12px;">
-    <ex-button>large</ex-button><ex-button>large</ex-button>
-  </ex-space>
-  <ex-space direction="vertical" size="medium" style="margin-top: 12px;">
-    <ex-button>vertical A</ex-button><ex-button>vertical B</ex-button>
-  </ex-space>
+每个水平示例中的四个按钮使用相同交叉轴对齐方式。
+
+Space 的预设与 Flex/Grid 共用同一套间距刻度。未显式传入 `size` 时，会继承最近一层 `ExConfigProvider` 的全局尺寸；没有配置时使用 `medium`。
+
+| 预设     | 间距 Token       | 实际间距 |
+| -------- | ---------------- | -------- |
+| `small`  | `--ex-spacing-2` | `8px`    |
+| `medium` | `--ex-spacing-4` | `16px`   |
+| `large`  | `--ex-spacing-6` | `24px`   |
+
+::: raw
+
+<div class="vp-raw demo-container space-size-demo">
+  <div class="space-row">
+    <span class="space-label">small</span>
+    <ex-space direction="horizontal" size="small" align="center">
+      <ex-button size="small">概览</ex-button>
+      <ex-button size="small">客户</ex-button>
+      <ex-button size="small">订单</ex-button>
+      <ex-button size="small">报表</ex-button>
+    </ex-space>
+  </div>
+  <div class="space-row">
+    <span class="space-label">medium</span>
+    <ex-space direction="horizontal" size="medium" align="center">
+      <ex-button>概览</ex-button>
+      <ex-button>客户</ex-button>
+      <ex-button>订单</ex-button>
+      <ex-button>报表</ex-button>
+    </ex-space>
+  </div>
+  <div class="space-row">
+    <span class="space-label">large</span>
+    <ex-space direction="horizontal" size="large" align="center">
+      <ex-button size="large">概览</ex-button>
+      <ex-button size="large">客户</ex-button>
+      <ex-button size="large">订单</ex-button>
+      <ex-button size="large">报表</ex-button>
+    </ex-space>
+  </div>
+  <div class="space-row space-row--vertical">
+    <span class="space-label">vertical</span>
+    <ex-space direction="vertical" size="small">
+      <ex-button type="secondary">审核通过</ex-button>
+      <ex-button type="default">退回修改</ex-button>
+    </ex-space>
+  </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-space direction="horizontal" size="small">
-    <ex-button>small</ex-button>
-    <ex-button>small</ex-button>
-  </ex-space>
-  <ex-space direction="horizontal" size="large">
-    <ex-button>large</ex-button>
-    <ex-button>large</ex-button>
-  </ex-space>
-  <ex-space direction="vertical" size="medium">
-    <ex-button>vertical A</ex-button>
-    <ex-button>vertical B</ex-button>
-  </ex-space>
-</template>
+<ex-space direction="horizontal" size="small" align="center">
+  <ex-button size="small">概览</ex-button>
+  <ex-button size="small">客户</ex-button>
+  <ex-button size="small">订单</ex-button>
+  <ex-button size="small">报表</ex-button>
+</ex-space>
+<ex-space direction="horizontal" size="medium" align="center">
+  <ex-button>概览</ex-button>
+  <ex-button>客户</ex-button>
+  <ex-button>订单</ex-button>
+  <ex-button>报表</ex-button>
+</ex-space>
+<ex-space direction="horizontal" size="large" align="center">
+  <ex-button size="large">概览</ex-button>
+  <ex-button size="large">客户</ex-button>
+  <ex-button size="large">订单</ex-button>
+  <ex-button size="large">报表</ex-button>
+</ex-space>
+<ex-space direction="vertical" size="small">
+  <ex-button type="secondary">审核通过</ex-button>
+  <ex-button type="default">退回修改</ex-button>
+</ex-space>
 ```
+
+:::
 
 ## 换行与对齐
 
-<div class="demo-container">
-  <ex-space wrap justify="space-between" align="center" style="max-width: 360px;">
-    <ex-button>1</ex-button><ex-button>2</ex-button><ex-button>3</ex-button>
-    <ex-button>4</ex-button><ex-button>5</ex-button>
+::: raw
+
+<div class="vp-raw demo-container space-wrap-demo">
+  <ex-space wrap justify="space-between" align="center" :size="12">
+    <ex-button type="default">北京</ex-button>
+    <ex-button type="default">上海</ex-button>
+    <ex-button type="default">深圳</ex-button>
+    <ex-button type="default">杭州</ex-button>
+    <ex-button type="default">成都</ex-button>
   </ex-space>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-space wrap justify="space-between" align="center" style="max-width: 360px;">
-    <ex-button>1</ex-button>
-    <ex-button>2</ex-button>
-    <ex-button>3</ex-button>
-    <ex-button>4</ex-button>
-    <ex-button>5</ex-button>
-  </ex-space>
-</template>
+<ex-space wrap justify="space-between" align="center" :size="12">
+  <ex-button type="default">北京</ex-button>
+  <ex-button type="default">上海</ex-button>
+  <ex-button type="default">深圳</ex-button>
+  <ex-button type="default">杭州</ex-button>
+  <ex-button type="default">成都</ex-button>
+</ex-space>
 ```
+
+:::
+
+`wrap` 会同时使用相同的行间距和列间距；如果同时使用 `justify="space-between"`，剩余空间还会在每一行继续分配，因此实际项间距可能大于 `size`。
+
+## 自定义间距
+
+`size` 也接受非负数字（按像素处理）和 CSS 长度，例如 Token、`rem` 或 `clamp()`：
+
+::: raw
+
+<div class="vp-raw demo-container space-custom-demo">
+  <ex-space size="var(--ex-spacing-4)" align="center">
+    <ex-button>Token 间距</ex-button>
+    <ex-button type="default">保存</ex-button>
+  </ex-space>
+  <ex-space size="clamp(8px, 2vw, 24px)" align="center">
+    <ex-button>响应式间距</ex-button>
+    <ex-button type="default">预览</ex-button>
+  </ex-space>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-space size="var(--ex-spacing-4)" align="center">
+  <ex-button>Token 间距</ex-button>
+  <ex-button type="default">保存</ex-button>
+</ex-space>
+<ex-space size="clamp(8px, 2vw, 24px)" align="center">
+  <ex-button>响应式间距</ex-button>
+  <ex-button type="default">预览</ex-button>
+</ex-space>
+```
+
+:::
+
+## 全局尺寸
+
+Space 未显式传入 `size` 时，会继承最近一层 `ExConfigProvider` 的全局尺寸；显式传入的 Space 尺寸优先级更高。
+
+::: raw
+
+<div class="vp-raw demo-container space-config-demo">
+  <ex-config-provider size="large">
+    <div class="space-row">
+      <span class="space-label">继承 large</span>
+      <ex-space align="center">
+        <ex-button>导出</ex-button>
+        <ex-button type="default">分享</ex-button>
+      </ex-space>
+    </div>
+    <div class="space-row">
+      <span class="space-label">显式 small</span>
+      <ex-space size="small" align="center">
+        <ex-button>导出</ex-button>
+        <ex-button type="default">分享</ex-button>
+      </ex-space>
+    </div>
+  </ex-config-provider>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-config-provider size="large">
+  <div class="space-row">
+    <span class="space-label">继承 large</span>
+    <ex-space align="center">
+      <ex-button>导出</ex-button>
+      <ex-button type="default">分享</ex-button>
+    </ex-space>
+  </div>
+  <div class="space-row">
+    <span class="space-label">显式 small</span>
+    <ex-space size="small" align="center">
+      <ex-button>导出</ex-button>
+      <ex-button type="default">分享</ex-button>
+    </ex-space>
+  </div>
+</ex-config-provider>
+```
+
+:::
 
 ## API
 
 ### Props
 
-| 参数      | 说明       | 类型                                                                                  | 默认值         |
-| --------- | ---------- | ------------------------------------------------------------------------------------- | -------------- |
-| direction | 方向       | `'horizontal' \| 'vertical'`                                                          | `'horizontal'` |
-| size      | 间距       | `'small' \| 'medium' \| 'large' \| number`                                            | `'medium'`     |
-| wrap      | 是否换行   | `boolean`                                                                             | `false`        |
-| align     | 交叉轴对齐 | `'start' \| 'center' \| 'end'`                                                        | `'start'`      |
-| justify   | 主轴对齐   | `'start' \| 'center' \| 'end' \| 'space-between' \| 'space-around' \| 'space-evenly'` | `'start'`      |
+| 参数        | 说明                            | 类型                                                                      | 默认值       |
+| ----------- | ------------------------------- | ------------------------------------------------------------------------- | ------------ |
+| `direction` | 排列方向                        | `horizontal \| vertical`                                                  | `horizontal` |
+| `size`      | 间距预设、非负像素值或 CSS 长度 | `small \| medium \| large \| number \| string`                            | `medium`\*   |
+| `wrap`      | 是否换行                        | `boolean`                                                                 | `false`      |
+| `align`     | 交叉轴对齐                      | `start \| center \| end`                                                  | `start`      |
+| `justify`   | 主轴对齐                        | `start \| center \| end \| space-between \| space-around \| space-evenly` | `start`      |
+
+非法数字会回退到默认间距；负数会收敛到 `0px`。当子项高度不一致时，建议使用 `align="center"`；需要基线对齐、独立行列间距或更复杂 Flex 能力时，请使用 `ExFlex`。
+
+\* 未使用 `ExConfigProvider` 或未配置全局尺寸时为 `medium`。
 
 ### Slots
 
-| 名称    | 说明   |
-| ------- | ------ |
-| default | 子元素 |
+| 名称      | 说明   |
+| --------- | ------ |
+| `default` | 子元素 |
 
 ### Exposes
 
-| 方法名     | 说明       |
-| ---------- | ---------- |
-| getElement | 获取根元素 |
+| 方法         | 类型                        |
+| ------------ | --------------------------- |
+| `getElement` | `() => HTMLElement \| null` |
 
-## 间距说明
+<style scoped>
+.space-size-demo {
+  display: grid;
+  gap: 18px;
+  overflow-x: auto;
+}
 
-间距由 `size` 控制：预设 `small=8px` / `medium=12px` / `large=16px`，也可传数字自定义（如 `:size="20"`）。组件内部会据此写入 `--ex-space-gap` 并用原生 `gap` 实现（RTL 友好），无需手动设置 CSS 变量。
+.space-row {
+  display: grid;
+  grid-template-columns: 72px minmax(max-content, 1fr);
+  gap: 16px;
+  align-items: center;
+}
 
-```vue
-<template>
-  <ex-space :size="20">
-    <ex-button>A</ex-button>
-    <ex-button>B</ex-button>
-  </ex-space>
-</template>
-```
+.space-row--vertical {
+  align-items: start;
+}
 
-## 无障碍与国际化
+.space-label {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+}
 
-- Space 作为布局容器无语义，必要时请为内部元素提供合理 aria 属性与键盘可用性。
+.space-wrap-demo {
+  max-width: 520px;
+}
+
+.space-custom-demo,
+.space-config-demo {
+  display: grid;
+  gap: 16px;
+}
+</style>

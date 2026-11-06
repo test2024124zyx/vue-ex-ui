@@ -1,513 +1,541 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const logoWatermark =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="56" viewBox="0 0 160 56"%3E%3Crect width="160" height="56" rx="8" fill="%2329abe2"/%3E%3Ctext x="80" y="35" text-anchor="middle" font-family="monospace" font-size="18" font-weight="700" fill="%230b0f14"%3EEX // UI%3C/text%3E%3C/svg%3E';
+const dynamicText = ref('BUILD // 001');
+const watermarkRef = ref<{ refresh: () => Promise<void>; toDataURL: () => string } | null>(null);
+
+const updateDynamicText = () => {
+  const current = Number(dynamicText.value.split('//')[1]?.trim() ?? 0);
+  dynamicText.value = `BUILD // ${String(current + 1).padStart(3, '0')}`;
+};
+
+const exportDynamicWatermark = () => {
+  const dataUrl = watermarkRef.value?.toDataURL();
+  if (!dataUrl) return;
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = 'ex-watermark.png';
+  link.click();
+};
+</script>
+
 # Watermark 水印
 
-在页面或容器内渲染文本或图片水印，用于版权保护、内容标识或敏感信息展示。组件支持丰富的自定义选项，包括文本样式、图片、布局、响应式适配以及程序化控制。
+在页面或指定容器上叠加文本或图片标记，用于版权归属、文档状态和敏感信息追踪。水印是辅助识别手段，不等同于数字版权管理或访问控制。
 
 ## 基础用法
 
-最简单的用法，默认显示国际化配置的文本水印。
-<ExWatermark :fullPage="false">
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-    
-</div>
-</ExWatermark>
+容器模式不会阻断插槽内容的点击、选择和键盘交互。默认颜色与字体从当前 Ex UI 主题继承，亮色和霓虹暗色主题都能保持合适的视觉权重。
 
-```vue
-<template>
-  <!-- 全屏水印 -->
-  <ExWatermark />
-  
-  <!-- 容器水印 -->
-  <ExWatermark :fullPage="false" style="height: 200px;">
-    <div>您的内容</div>
-  </ExWatermark>
-</template>
-```
+::: raw
 
-## 自定义文本
-
-通过 `text` 属性自定义水印文本，支持字体、颜色、大小等样式设置。
-<ExWatermark
-      text="机密文档"
-      color="#ff4d4f"
-      :font-size="18"
-      font-weight="bold"
-      :fullPage="false">
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-</div>
-</ExWatermark>
-
-```vue
-<template>
-  <ExWatermark
-    text="机密文档"
-    color="#ff4d4f"
-    :font-size="18"
-    font-weight="bold"
-    font-family="Microsoft YaHei"
-  />
-</template>
-```
-
-## 多行文本
-
-支持传入字符串数组来显示多行水印文本，可以自定义行间距。
-
-<ExWatermark
-      :text="['机密文档', 'CONFIDENTIAL', '2024-11-06']"
-      color="#1890ff"
-      :font-size="14"
-      font-weight="bold"
-      :line-height="22"
-      :fullPage="false">
-<div class="demo-container" style="height: 200px; background-color: #f5f7fa; position: relative;">
-</div>
-</ExWatermark>
-
-```vue
-<template>
-  <ExWatermark
-    :text="['机密文档', 'CONFIDENTIAL', '2024-11-06']"
-    color="#1890ff"
-    :font-size="14"
-    font-weight="bold"
-    :line-height="22"
-  />
-</template>
-```
-
-<ExWatermark
-      :text="['公司名称', 'Company Name', 'www.example.com']"
-      color="#52c41a"
-      :font-size="12"
-      :line-height="18"
-      :angle="-45"
-      :gap-x="150"
-      :gap-y="150"
-      :fullPage="false">
-<div class="demo-container" style="height: 200px; background-color: #f5f7fa; position: relative;">
-</div>
-</ExWatermark>
-
-```vue
-<template>
-  <ExWatermark
-    :text="['公司名称', 'Company Name', 'www.example.com']"
-    color="#52c41a"
-    :font-size="12"
-    :line-height="18"
-    :angle="-45"
-  />
-</template>
-```
-
-## 布局控制
-
-精确控制水印的间距、角度和偏移位置。
- <ExWatermark
-      text="DRAFT"
-      :gap-x="100"
-      :gap-y="80"
-      :angle="45"
-      :offset-x="10"
-      :offset-y="10"
-      :opacity="0.4"
-      :fullPage="false">
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-</div>
-</ExWatermark>
-
-
-```vue
-<template>
-  <ExWatermark
-    text="DRAFT"
-    :gap-x="100"    <!-- 水平间距 -->
-    :gap-y="80"     <!-- 垂直间距 -->
-    :angle="45"     <!-- 旋转角度 -->
-    :offset-x="10"  <!-- 水平偏移 -->
-    :offset-y="10"  <!-- 垂直偏移 -->
-    :opacity="0.4"  <!-- 透明度 -->
-  />
-</template>
-```
-
-## 图片水印
-
-使用图片作为水印，支持 SVG、PNG、JPG 等格式。
-<ExWatermark
-      type="image"
-      :image-width="80"
-      :image-height="32"
-      :gap-x="120"
-      :gap-y="100"
-      :fullPage="false"
-      image-src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTAwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMTg5MEZGIiByeD0iNCIvPgo8dGV4dCB4PSI1MCIgeT0iMjYiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWkiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TG9nbyA8L3RleHQ+Cjwvc3ZnPgo="
-    >
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-</div>
-</ExWatermark>
-
-```vue
-<template>
-  <ExWatermark
-    type="image"
-    :image-width="80"
-    :image-height="32"
-    image-src="/path/to/logo.png"
-    cross-origin="anonymous"
-  />
-</template>
-```
-
-## 容器模式
-
-在指定容器内显示水印，适用于卡片、表格等局部区域。
-
-<div style="height: 200px; border: 2px dashed #d9d9d9; border-radius: 6px; background-color: #fafafa;">
-    <ExWatermark :fullPage="false" text="内部文档" :opacity="0.2">
-      <div style="padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <h3 style="margin: 0 0 16px 0; color: #262626;">重要内容区域</h3>
-        <p style="margin: 0; color: #595959; text-align: center;">
-          这里是需要添加水印保护的内容区域。<br>
-          水印会自动覆盖整个容器，不影响内容的正常显示和交互。
-        </p>
-      </div>
-    </ExWatermark>
-</div>
-
-```vue
-<template>
-  <ExWatermark :fullPage="false" text="内部文档" style="height: 300px;">
-    <div class="content">
-      <h3>重要内容</h3>
-      <p>这里是需要保护的内容...</p>
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="INTERNAL // EX UI">
+    <div class="watermark-demo__content">
+      <strong>受保护的业务内容</strong>
+      <span>覆盖层默认不参与鼠标与辅助技术交互。</span>
     </div>
-  </ExWatermark>
-</template>
-```
-
-## 响应式适配
-
-水印支持响应式设计和高分屏适配，在不同设备上都能保持清晰显示。
-<ExWatermark
-      text="响应式水印"
-      :responsive="true"
-      :dpr-aware="true"
-      :fullPage="false"
-    >
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-    
+  </ex-watermark>
 </div>
-</ExWatermark>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExWatermark
-    :responsive="true"    <!-- 窗口变化时自动重绘 -->
-    :dpr-aware="true"     <!-- 高分屏适配 -->
-    :throttle-ms="200"    <!-- 重绘节流间隔 -->
-  />
-</template>
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="INTERNAL // EX UI">
+    <div class="watermark-demo__content">
+      <strong>受保护的业务内容</strong>
+      <span>覆盖层默认不参与鼠标与辅助技术交互。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
 
-## 交互控制
+:::
 
-控制水印的交互行为，如鼠标事件穿透、文本选择等。
-<ExWatermark
-      text="可选择文本"
-      :selectable="true"
-      pointer-events="auto"
-      :fullPage="false"
-    >
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
+## 多行与排版
+
+字符串数组会按 `lineHeight` 居中排版。未显式提供 `color` 和 `fontFamily` 时，Canvas 会读取覆盖层的主题计算样式；也可以通过属性设置字重、字形和对齐方式。
+
+::: raw
+
+<div class="watermark-demo watermark-demo--tall">
+  <ex-watermark
+    :full-page="false"
+    :text="['CONFIDENTIAL', '研发环境 // 2026']"
+    :font-size="15"
+    :line-height="24"
+    :font-weight="700"
+    font-style="italic"
+    color="#29abe2"
+  >
+    <div class="watermark-demo__content">
+      <strong>多行水印</strong>
+      <span>内容尺寸会自动测量，旋转后不会被瓦片边界裁切。</span>
+    </div>
+  </ex-watermark>
 </div>
-</ExWatermark>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExWatermark
-    :selectable="true"        <!-- 允许选择水印文本 -->
-    pointer-events="auto"     <!-- 允许鼠标交互 -->
-    :z-index="999"           <!-- 控制层级 -->
-  />
-</template>
+<div class="watermark-demo watermark-demo--tall">
+  <ex-watermark
+    :full-page="false"
+    :text="['CONFIDENTIAL', '研发环境 // 2026']"
+    :font-size="15"
+    :line-height="24"
+    :font-weight="700"
+    font-style="italic"
+    color="#29abe2"
+  >
+    <div class="watermark-demo__content">
+      <strong>多行水印</strong>
+      <span>内容尺寸会自动测量，旋转后不会被瓦片边界裁切。</span>
+    </div>
+  </ex-watermark>
+</div>
 ```
 
-## 防篡改保护
+:::
 
-启用防篡改保护后，组件会使用 MutationObserver 监听 DOM 变化，自动恢复被删除或隐藏的水印。
+## 平铺布局
 
-<ExWatermark
-      :anti-tamper="true"
-      text="受保护的水印"
-      color="#ff4d4f"
-      :font-size="16"
-      font-weight="bold"
-      :fullPage="false"
+`gapX`、`gapY` 表示旋转后水印包围盒之间的净间距，不再充当 Canvas 尺寸。默认错位排列可降低规则条带感；需要严格网格时关闭 `staggered`。
+
+::: raw
+
+<div class="watermark-demo-grid">
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
+      <div class="watermark-demo__content"><strong>错位平铺</strong></div>
+    </ex-watermark>
+  </div>
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark
+      :full-page="false"
+      text="ALIGNED"
+      :gap-x="36"
+      :gap-y="28"
+      :staggered="false"
+      :angle="0"
     >
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
-  <div style="padding: 20px;">
-    <p style="margin: 0 0 12px 0; color: #262626;">此水印启用了防篡改保护</p>
-    <p style="margin: 0; color: #8c8c8c; font-size: 14px;">
-      尝试通过浏览器开发者工具删除或隐藏水印，它会自动恢复
-    </p>
+      <div class="watermark-demo__content"><strong>对齐平铺</strong></div>
+    </ex-watermark>
   </div>
 </div>
-</ExWatermark>
+:::
+
+::: details 查看示例代码
 
 ```vue
+<div class="watermark-demo-grid">
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark :full-page="false" text="STAGGERED" :gap-x="36" :gap-y="28">
+      <div class="watermark-demo__content"><strong>错位平铺</strong></div>
+    </ex-watermark>
+  </div>
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark
+      :full-page="false"
+      text="ALIGNED"
+      :gap-x="36"
+      :gap-y="28"
+      :staggered="false"
+      :angle="0"
+    >
+      <div class="watermark-demo__content"><strong>对齐平铺</strong></div>
+    </ex-watermark>
+  </div>
+</div>
+```
+
+:::
+
+## 图片与失败回退
+
+图片默认以匿名跨域语义和 `referrerPolicy="no-referrer"` 拉取，避免 Canvas 导出被跨域资源污染。远程源图最多读取 64 MiB，解码尺寸受 3200 万像素和 32768 像素单边上限保护；超限或加载失败时组件会触发 `error`，随后回退到 `text` 水印。建议提供 2 倍或 3 倍源图，并同时提供回退文字。
+
+::: raw
+
+<div class="watermark-demo-grid">
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark
+      :full-page="false"
+      type="image"
+      text="EX UI"
+      :image-src="logoWatermark"
+      :image-width="80"
+      :image-height="28"
+      :gap-x="48"
+      :gap-y="32"
+    >
+      <div class="watermark-demo__content"><strong>图片水印</strong></div>
+    </ex-watermark>
+  </div>
+  <div class="watermark-demo watermark-demo--compact">
+    <ex-watermark
+      :full-page="false"
+      type="image"
+      image-src="/missing-watermark-image.png"
+      text="IMAGE FALLBACK"
+      :gap-x="42"
+      :gap-y="30"
+    >
+      <div class="watermark-demo__content"><strong>失败后回退文本</strong></div>
+    </ex-watermark>
+  </div>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+const logoWatermark =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="56" viewBox="0 0 160 56"%3E%3Crect width="160" height="56" rx="8" fill="%2329abe2"/%3E%3Ctext x="80" y="35" text-anchor="middle" font-family="monospace" font-size="18" font-weight="700" fill="%230b0f14"%3EEX // UI%3C/text%3E%3C/svg%3E';
+</script>
+
 <template>
-  <ExWatermark
-    :anti-tamper="true"
-    text="受保护的水印"
-  >
-    <div class="content">
-      此水印启用了防篡改保护，无法通过修改 DOM 删除
+  <div class="watermark-demo-grid">
+    <div class="watermark-demo watermark-demo--compact">
+      <ex-watermark
+        :full-page="false"
+        type="image"
+        text="EX UI"
+        :image-src="logoWatermark"
+        :image-width="80"
+        :image-height="28"
+        :gap-x="48"
+        :gap-y="32"
+      >
+        <div class="watermark-demo__content"><strong>图片水印</strong></div>
+      </ex-watermark>
     </div>
-  </ExWatermark>
+    <div class="watermark-demo watermark-demo--compact">
+      <ex-watermark
+        :full-page="false"
+        type="image"
+        image-src="/missing-watermark-image.png"
+        text="IMAGE FALLBACK"
+        :gap-x="42"
+        :gap-y="30"
+      >
+        <div class="watermark-demo__content"><strong>失败后回退文本</strong></div>
+      </ex-watermark>
+    </div>
+  </div>
 </template>
 ```
 
-::: warning 性能提示
-防篡改保护会持续监听 DOM 变化，可能对性能有轻微影响。建议仅在需要高安全性的场景下启用。
 :::
 
 ## 程序化控制
 
-通过组件实例方法实现动态控制和数据导出。
+属性变化会自动触发重绘；`refresh()` 适用于宿主字体或外部主题样式发生变化但属性未变的场景。`toDataURL()` 返回当前已提交的最新瓦片，异步图片绘制不会让旧请求覆盖新请求。
 
-<script setup>
-import { ref } from 'vue';
+::: raw
 
-const watermarkRef = ref(null);
-const currentText = ref('初始文本');
-
-const updateWatermark = () => {
-  currentText.value = `更新时间: ${new Date().toLocaleTimeString()}`;
-  // 手动刷新（通常不需要，props 变化会自动刷新）
-  setTimeout(() => {
-    watermarkRef.value?.refresh();
-  }, 0);
-};
-
-const exportWatermark = () => {
-  const dataUrl = watermarkRef.value?.toDataURL();
-  if (dataUrl) {
-    // 创建下载链接
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = 'watermark.png';
-    link.click();
-  }
-};
-</script>
-  <ExWatermark 
-    ref="watermarkRef" 
-    :fullPage="false" 
-    :text="currentText"
-    color="#1890ff"
+<div class="watermark-demo">
+  <ex-watermark
+    ref="watermarkRef"
+    :full-page="false"
+    :text="dynamicText"
   >
-<div class="demo-container" style="height: 160px; background-color: #f5f7fa; position: relative;">
- 
+    <div class="watermark-demo__content">
+      <strong>{{ dynamicText }}</strong>
+      <div class="watermark-demo__actions">
+        <ex-button
+          size="small"
+          @click="updateDynamicText"
+        >
+          更新文本
+        </ex-button>
+        <ex-button
+          size="small"
+          type="secondary"
+          @click="exportDynamicWatermark"
+        >
+          导出瓦片
+        </ex-button>
+      </div>
+    </div>
+  </ex-watermark>
 </div>
-</ExWatermark>
+:::
 
-<div style="margin-top: 12px; display: flex; gap: 8px;">
-  <ExButton @click="updateWatermark" >
-    更新文本
-  </ExButton>
-  <ExButton @click="exportWatermark" >
-    导出水印
-  </ExButton>
-</div>
+::: details 查看示例代码
 
 ```vue
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 
-const watermarkRef = ref(null);
-const text = ref('初始文本');
+const dynamicText = ref('BUILD // 001');
+const watermarkRef = ref<{
+  refresh: () => Promise<void>;
+  toDataURL: () => string;
+} | null>(null);
 
-const updateText = () => {
-  text.value = `更新于 ${new Date().toLocaleTimeString()}`;
+const updateDynamicText = () => {
+  const current = Number(dynamicText.value.split('//')[1]?.trim() ?? 0);
+  dynamicText.value = `BUILD // ${String(current + 1).padStart(3, '0')}`;
 };
 
-const exportWatermark = () => {
+const exportDynamicWatermark = () => {
   const dataUrl = watermarkRef.value?.toDataURL();
-  // 处理导出的 base64 数据...
-};
-
-const manualRefresh = () => {
-  watermarkRef.value?.refresh();
+  if (!dataUrl) return;
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = 'ex-watermark.png';
+  link.click();
 };
 </script>
 
 <template>
-  <ExWatermark ref="watermarkRef" :text="text" />
-  <button @click="updateText">更新文本</button>
-  <button @click="exportWatermark">导出水印</button>
+  <div class="watermark-demo">
+    <ex-watermark
+      ref="watermarkRef"
+      :full-page="false"
+      :text="dynamicText"
+    >
+      <div class="watermark-demo__content">
+        <strong>{{ dynamicText }}</strong>
+        <div class="watermark-demo__actions">
+          <ex-button
+            size="small"
+            @click="updateDynamicText"
+          >
+            更新文本
+          </ex-button>
+          <ex-button
+            size="small"
+            type="secondary"
+            @click="exportDynamicWatermark"
+          >
+            导出瓦片
+          </ex-button>
+        </div>
+      </div>
+    </ex-watermark>
+  </div>
 </template>
 ```
 
-## 多种样式组合
+:::
 
-展示不同样式组合的效果。
+## 防篡改
 
+启用后会保护覆盖层的节点、类名、隐藏状态与行内样式，并在覆盖层被删除时触发 `remove`。组件只监听自身容器；开启保护时容器会使用 `overflow: hidden`，防止通过压缩容器暴露未加水印内容。
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;">
-  <ExWatermark 
-        :fullPage="false" 
-        text="CONFIDENTIAL" 
-        color="rgba(255,255,255,0.3)"
-        :font-size="16"
-        font-weight="bold"
-        :angle="0"
-        :gap-x="150"
-        :gap-y="60"
-      >
-  <div style="height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; border-radius: 8px;">
-    
-  </div>
-  </ExWatermark>
-  <ExWatermark 
-        :fullPage="false" 
-        text="SAMPLE"
-        color="#ff7875"
-        :font-size="20"
-        font-weight="bold"
-        :angle="-45"
-        :gap-x="80"
-        :gap-y="80"
-        :opacity="0.6"
-      >
-  <div style="height: 120px; background: #f0f2f5; position: relative; border-radius: 8px;">
-  </div>
-  </ExWatermark>
+::: raw
+
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
+    <div class="watermark-demo__content">
+      <strong>防篡改模式</strong>
+      <span>在开发者工具中删除或隐藏覆盖层后，组件会恢复它。</span>
+    </div>
+  </ex-watermark>
 </div>
+:::
 
-## API 参考
+::: details 查看示例代码
+
+```vue
+<div class="watermark-demo">
+  <ex-watermark :full-page="false" text="PROTECTED // EX UI" :anti-tamper="true">
+    <div class="watermark-demo__content">
+      <strong>防篡改模式</strong>
+      <span>在开发者工具中删除或隐藏覆盖层后，组件会恢复它。</span>
+    </div>
+  </ex-watermark>
+</div>
+```
+
+:::
+
+::: warning 安全边界
+DOM 防篡改只能提高删除水印的成本，无法阻止截屏、重新绘制页面或拥有执行权限的攻击者。敏感数据仍应由鉴权、审计和最小权限策略保护。
+:::
+
+## 全屏与响应式
+
+`fullPage` 默认为 `true`，覆盖层使用 `position: fixed`。在组件文档或嵌套卡片中通常应显式设置 `:full-page="false"`。`responsive` 开启时会监听窗口尺寸变化并按 `throttleMs` 节流重绘；运行时切换这两个属性会自动重绑监听器。高分屏倍率最多按 4 倍渲染，瓦片同时受 3200 万像素和 32768 像素单边上限保护。切换图片来源会中止旧加载；错误事件不会回显可能带签名参数的完整地址。
+
+::: raw
+
+<div class="watermark-demo watermark-demo--responsive">
+  <ex-watermark
+    :full-page="false"
+    text="RESPONSIVE // EX UI"
+    :responsive="true"
+    :dpr-aware="true"
+    :throttle-ms="160"
+  >
+    <div class="watermark-demo__content">
+      <strong>响应式容器水印</strong>
+      <span>调整浏览器宽度时，水印会按节流间隔重新绘制。</span>
+    </div>
+  </ex-watermark>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<div class="watermark-demo watermark-demo--responsive">
+  <ex-watermark
+    :full-page="false"
+    text="RESPONSIVE // EX UI"
+    :responsive="true"
+    :dpr-aware="true"
+    :throttle-ms="160"
+  >
+    <div class="watermark-demo__content">
+      <strong>响应式容器水印</strong>
+      <span>调整浏览器宽度时，水印会按节流间隔重新绘制。</span>
+    </div>
+  </ex-watermark>
+</div>
+```
+
+:::
+
+如需覆盖整个页面，移除示例中的 `:full-page="false"` 即可。全屏模式会真实覆盖当前视口，因此文档演示使用容器模式，避免干扰其他示例。
+
+## API
 
 ### Props
 
+<!-- prettier-ignore -->
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| type | 水印类型 | `'text' \| 'image'` | `'text'` |
-| fullPage | 是否全屏显示 | `boolean` | `true` |
+| type | 水印内容类型 | `'text' \| 'image'` | `'text'` |
+| fullPage | 是否使用固定定位覆盖视口 | `boolean` | `true` |
 | repeat | 是否重复平铺 | `boolean` | `true` |
-| angle | 旋转角度（度） | `number` | `-30` |
-| gapX | 水平间距（px） | `number` | `120` |
-| gapY | 垂直间距（px） | `number` | `120` |
-| offsetX | 水平偏移（px） | `number` | `0` |
-| offsetY | 垂直偏移（px） | `number` | `0` |
-| zIndex | CSS z-index | `number` | `900` |
-| opacity | 透明度 (0-1) | `number` | `0.3` |
-| pointerEvents | CSS pointer-events | `'none' \| 'auto'` | `'none'` |
-| selectable | 文本是否可选中 | `boolean` | `false` |
+| staggered | 重复时是否错位排列 | `boolean` | `true` |
+| angle | 顺时针旋转角度（度） | `number` | `-30` |
+| gapX | 旋转包围盒之间的水平净间距（px） | `number` | `120` |
+| gapY | 旋转包围盒之间的垂直净间距（px） | `number` | `120` |
+| offsetX | 背景图案水平偏移（px），支持负数向左移动 | `number` | `0` |
+| offsetY | 背景图案垂直偏移（px），支持负数向上移动 | `number` | `0` |
+| zIndex | 覆盖层级；未传时继承 ConfigProvider 的 watermark 语义层 | `number` | `1000` |
+| opacity | 覆盖层透明度，运行时限制在 0–1 | `number` | `0.3` |
+| pointerEvents | 覆盖层鼠标事件策略 | `'none' \| 'auto'` | `'none'` |
+| selectable | 覆盖层 `user-select` 策略；Canvas 图案本身不是可选文本 | `boolean` | `false` |
 
-#### 文本相关
+### 内容与文字
 
+<!-- prettier-ignore -->
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| text | 文本内容，支持字符串或字符串数组（多行） | `string \| string[]` | `''` |
-| fontFamily | 字体族 | `string` | `'system-ui'` |
+| text | 文本或多行文本；空字符串使用国际化默认值，也作为图片失败回退 | `string \| string[]` | `''` |
+| width | 水印内容宽度；文本缺省时自动测量 | `number` | — |
+| height | 水印内容高度；文本缺省时自动测量 | `number` | — |
+| fontFamily | Canvas 字体族；缺省时读取主题计算样式 | `string` | `''` |
 | fontSize | 字体大小（px） | `number` | `14` |
 | fontWeight | 字重 | `'normal' \| 'bold' \| number` | `'normal'` |
-| color | 文本颜色 | `string` | `'rgba(0,0,0,0.8)'` |
-| lineHeight | 多行文本的行间距（px） | `number` | `20` |
+| fontStyle | 字形 | `'normal' \| 'italic' \| 'oblique'` | `'normal'` |
+| textAlign | 文本对齐方式 | `'left' \| 'center' \| 'right'` | `'center'` |
+| color | Canvas 填充色；缺省时读取主题计算样式 | `string` | `''` |
+| lineHeight | 多行基线间距（px） | `number` | `20` |
 
-#### 图片相关
+### 图片
 
+<!-- prettier-ignore -->
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | imageSrc | 图片地址 | `string` | `''` |
-| imageWidth | 图片宽度（px） | `number` | `120` |
-| imageHeight | 图片高度（px） | `number` | `64` |
-| crossOrigin | 图片跨域设置 | `'anonymous' \| 'use-credentials'` | `undefined` |
+| imageWidth | 图片内容宽度（px），低于 `width` 优先级 | `number` | `120` |
+| imageHeight | 图片内容高度（px），低于 `height` 优先级 | `number` | `64` |
+| crossOrigin | 图片跨域凭据模式 | `'anonymous' \| 'use-credentials'` | `'anonymous'` |
 
-#### 高级配置
+### 运行时
 
+<!-- prettier-ignore -->
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | responsive | 窗口变化时自动重绘 | `boolean` | `true` |
-| dprAware | 高分屏适配 | `boolean` | `true` |
-| throttleMs | 重绘节流间隔（ms） | `number` | `100` |
-| antiTamper | 启用防篡改保护 | `boolean` | `false` |
+| dprAware | 根据设备像素比生成高清 Canvas | `boolean` | `true` |
+| throttleMs | resize 重绘节流间隔（ms） | `number` | `100` |
+| antiTamper | 保护覆盖层 DOM 和关键容器样式 | `boolean` | `false` |
+
+### Events
+
+<!-- prettier-ignore -->
+| 事件名 | 说明 | 参数 |
+| --- | --- | --- |
+| error | 图片加载、Canvas 创建或导出失败时触发 | `(error: Error)` |
+| remove | 防篡改模式检测到覆盖层被移除时触发 | `()` |
 
 ### Slots
 
+<!-- prettier-ignore -->
 | 名称 | 说明 |
 | --- | --- |
-| default | 容器模式下的内容区域 |
+| default | 被水印覆盖的业务内容 |
 
-### 方法
+### Expose
 
-通过 `ref` 获取组件实例后可调用以下方法：
-
-| 方法名 | 说明 | 返回值 |
+<!-- prettier-ignore -->
+| 方法 | 说明 | 返回值 |
 | --- | --- | --- |
-| refresh() | 手动重绘水印 | `void` |
-| toDataURL() | 获取水印图案的 base64 数据 | `string` |
+| refresh() | 重新测量并绘制水印；异步图片只提交最新请求 | `Promise<void>` |
+| toDataURL() | 返回当前已提交瓦片的 PNG data URL | `string` |
 
-### 样式变量
-
-可通过 CSS 变量自定义样式：
-
-```css
-:root {
-  --wm-z-index: 900;
-  --wm-pointer-events: none;
-  --wm-user-select: none;
+<style scoped>
+.watermark-demo {
+  min-height: 180px;
+  overflow: hidden;
+  border: 1px solid var(--ex-color-border-primary);
+  background: var(--ex-color-bg-secondary);
 }
-```
 
-## 最佳实践
+.watermark-demo--tall {
+  min-height: 220px;
+}
 
-### 1. 性能优化
+.watermark-demo--compact {
+  min-height: 160px;
+}
 
-```vue
-<template>
-  <!-- 对于静态水印，可以关闭响应式 -->
-  <ExWatermark 
-    :responsive="false" 
-    :throttle-ms="200"
-  />
-</template>
-```
+.watermark-demo__content {
+  min-height: inherit;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ex-color-text-primary);
+  text-align: center;
+}
 
-### 2. 安全考虑
+.watermark-demo__content span {
+  color: var(--ex-color-text-secondary);
+}
 
-```vue
-<template>
-  <!-- 使用较低的透明度、禁用交互并启用防篡改保护 -->
-  <ExWatermark 
-    :opacity="0.1"
-    pointer-events="none"
-    :selectable="false"
-    :anti-tamper="true"
-  />
-</template>
-```
+.watermark-demo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
 
-### 3. 国际化支持
+.watermark-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
 
-```javascript
-// 在 locale 配置中定义水印文本
-export default {
-  watermark: {
-    text: 'Confidential Document',
-    copyright: '© 2024 Your Company'
+@media (max-width: 720px) {
+  .watermark-demo-grid {
+    grid-template-columns: 1fr;
   }
 }
-```
-
-### 4. 响应式设计
-
-```vue
-<template>
-  <!-- 在不同屏幕尺寸下调整水印参数 -->
-  <ExWatermark 
-    :font-size="isMobile ? 12 : 16"
-    :gap-x="isMobile ? 80 : 120"
-    :gap-y="isMobile ? 60 : 100"
-  />
-</template>
+</style>

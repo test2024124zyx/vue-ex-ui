@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExSwitch from '../../../src/components/switch/ExSwitch.vue';
+import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
+import type { ExSwitchInstance } from '../../../src/components/switch/types';
 
 describe('ExSwitch', () => {
   // 基础渲染测试
@@ -109,6 +111,24 @@ describe('ExSwitch', () => {
       expect(wrapper.classes()).toContain('is-loading');
       expect(wrapper.find('.ex-switch__loading').exists()).toBe(true);
       expect(wrapper.find('.ex-switch__spinner').exists()).toBe(true);
+    });
+
+    it('loading 状态应该在原生控件和 ARIA 上均表现为禁用', () => {
+      const wrapper = mount(ExSwitch, {
+        props: { loading: true },
+      });
+      const input = wrapper.find('input');
+
+      expect((input.element as HTMLInputElement).disabled).toBe(true);
+      expect(input.attributes('aria-disabled')).toBe('true');
+    });
+
+    it('required 应该传递给原生复选框', () => {
+      const wrapper = mount(ExSwitch, {
+        props: { required: true },
+      });
+
+      expect((wrapper.find('input').element as HTMLInputElement).required).toBe(true);
     });
   });
 
@@ -256,6 +276,24 @@ describe('ExSwitch', () => {
       expect(wrapper.classes()).not.toContain('is-focused');
       expect(wrapper.emitted('blur')).toBeTruthy();
     });
+
+    it('失焦时应该通知所在 FormItem', async () => {
+      const onFieldBlur = vi.fn();
+      const wrapper = mount(ExSwitch, {
+        global: {
+          provide: {
+            [FORM_ITEM_INJECTION_KEY as symbol]: {
+              onFieldBlur,
+              onFieldChange: vi.fn(),
+            },
+          },
+        },
+      });
+
+      await wrapper.find('input').trigger('blur');
+
+      expect(onFieldBlur).toHaveBeenCalledOnce();
+    });
   });
 
   // 验证状态测试
@@ -361,7 +399,7 @@ describe('ExSwitch', () => {
       const wrapper = mount(ExSwitch);
       const focusSpy = vi.spyOn(wrapper.find('input').element, 'focus');
 
-      (wrapper.vm as any).focus();
+      (wrapper.vm as unknown as ExSwitchInstance).focus();
       expect(focusSpy).toHaveBeenCalled();
     });
 
@@ -369,7 +407,7 @@ describe('ExSwitch', () => {
       const wrapper = mount(ExSwitch);
       const blurSpy = vi.spyOn(wrapper.find('input').element, 'blur');
 
-      (wrapper.vm as any).blur();
+      (wrapper.vm as unknown as ExSwitchInstance).blur();
       expect(blurSpy).toHaveBeenCalled();
     });
 
@@ -382,7 +420,7 @@ describe('ExSwitch', () => {
         },
       });
 
-      (wrapper.vm as any).toggle();
+      (wrapper.vm as unknown as ExSwitchInstance).toggle();
       await nextTick();
       expect(wrapper.emitted('update:modelValue')).toBeTruthy();
       expect(wrapper.emitted('update:modelValue')![0]).toEqual([true]);
@@ -396,7 +434,7 @@ describe('ExSwitch', () => {
         },
       });
 
-      (wrapper.vm as any).toggle();
+      (wrapper.vm as unknown as ExSwitchInstance).toggle();
       expect(wrapper.emitted('update:modelValue')).toBeFalsy();
     });
 
@@ -408,7 +446,7 @@ describe('ExSwitch', () => {
         },
       });
 
-      (wrapper.vm as any).toggle();
+      (wrapper.vm as unknown as ExSwitchInstance).toggle();
       expect(wrapper.emitted('update:modelValue')).toBeFalsy();
     });
   });

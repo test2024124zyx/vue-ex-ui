@@ -10,16 +10,26 @@ import type {
 /** 解析滚动目标为 HTMLElement | Window（仅在客户端调用） */
 export function resolveTarget(target?: BackTopTarget): HTMLElement | Window {
   let t: BackTopTarget | null | undefined = target;
-  if (typeof t === 'function') t = t();
-  if (typeof t === 'string') {
-    const el = document.querySelector<HTMLElement>(t);
-    return el || window;
+  if (typeof t === 'function') {
+    try {
+      t = t();
+    } catch {
+      return window;
+    }
   }
-  if (t instanceof HTMLElement) return t;
+  if (typeof t === 'string') {
+    try {
+      return document.querySelector<HTMLElement>(t) ?? window;
+    } catch {
+      return window;
+    }
+  }
+  if (typeof HTMLElement !== 'undefined' && t instanceof HTMLElement) return t;
   return window;
 }
 
-const isWindowTarget = (target: HTMLElement | Window): target is Window => !(target instanceof HTMLElement);
+const isWindowTarget = (target: HTMLElement | Window): target is Window =>
+  !(target instanceof HTMLElement);
 
 /** 读取目标的滚动信息 */
 export function getScrollInfo(target: HTMLElement | Window): BackTopScrollInfo {
@@ -48,9 +58,27 @@ export function scrollToPosition(
   target: HTMLElement | Window,
   to: number,
   behavior: BackTopScrollBehavior,
-  duration: number
-): Promise<void> {
+  duration: number,
+  signal?: AbortSignal
+): Promise<boolean> {
   return new Promise(resolve => {
+    if (signal?.aborted) {
+      resolve(false);
+      return;
+    }
+
+    let frameId: number | null = null;
+    let settled = false;
+    const finish = (completed: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      signal?.removeEventListener('abort', abort);
+      resolve(completed);
+    };
+    const abort = () => finish(false);
+    signal?.addEventListener('abort', abort, { once: true });
+
     const setTop = (v: number) => {
       if (isWindowTarget(target)) window.scrollTo(0, v);
       else target.scrollTop = v;
@@ -59,7 +87,7 @@ export function scrollToPosition(
     // 立即滚动
     if (behavior !== 'smooth' || duration <= 0 || typeof requestAnimationFrame === 'undefined') {
       setTop(to);
-      resolve();
+      finish(true);
       return;
     }
 
@@ -72,10 +100,16 @@ export function scrollToPosition(
     const step = (now: number) => {
       const progress = Math.min(1, (now - start) / duration);
       setTop(from + distance * ease(progress));
-      if (progress < 1) requestAnimationFrame(step);
-      else resolve();
+      if (signal?.aborted) {
+        finish(false);
+      } else if (progress < 1) {
+        frameId = requestAnimationFrame(step);
+      } else {
+        frameId = null;
+        finish(true);
+      }
     };
-    requestAnimationFrame(step);
+    frameId = requestAnimationFrame(step);
   });
 }
 
@@ -97,7 +131,8 @@ export function getPositionStyle(position: BackTopPosition, offset?: BackTopOffs
   else if (horizontal === 'right') style.right = toLen(o.right, DEFAULT_OFFSET);
   else {
     style.left = '50%';
-    style.transform = 'translateX(-50%)';
+    // 独立 translate 属性不会被按钮悬停时的 transform 覆盖。
+    style.translate = '-50% 0';
   }
 
   return style;

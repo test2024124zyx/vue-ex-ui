@@ -20,9 +20,12 @@ export type ButtonType =
 export type ButtonSize = 'small' | 'medium' | 'large';
 
 /**
- * 按钮形状
+ * 按钮形态
+ *
+ * default/round/circle 保留基础形态；其余形态用于组件库的赛博朋克边框语言。
  */
-export type ButtonShape = 'default' | 'round' | 'circle';
+export type ButtonShape =
+  'default' | 'round' | 'circle' | 'slice' | 'slant' | 'bracket' | 'hex' | 'notched';
 
 /**
  * 原生按钮类型
@@ -41,10 +44,8 @@ export interface ExButtonProps {
   shape?: ButtonShape;
   /** 是否为朴素按钮 */
   plain?: boolean;
-  /** 是否为圆角按钮 */
-  round?: boolean;
-  /** 是否为圆形按钮 */
-  circle?: boolean;
+  /** 是否启用强调发光，未显式设置时按按钮语义决定 */
+  glow?: boolean;
   /** 是否禁用 */
   disabled?: boolean;
   /** 是否加载中 */

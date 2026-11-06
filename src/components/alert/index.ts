@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExAlert from './ExAlert.vue';
+import ExAlertComponent from './ExAlert.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExAlertProps,
   ExAlertEmits,
@@ -10,8 +10,7 @@ import type {
   AlertVariant,
 } from './types';
 
-// 导出组件
-export { ExAlert };
+export const ExAlert: InstallableComponent<typeof ExAlertComponent> = withInstall(ExAlertComponent);
 
 // 导出类型
 export type {
@@ -24,11 +23,4 @@ export type {
   AlertVariant,
 };
 
-// 组件安装插件
-export const ExAlertPlugin = {
-  install(app: App) {
-    app.component('ExAlert', ExAlert);
-  },
-};
-
-export default ExAlertPlugin;
+export default ExAlert;

@@ -3,7 +3,10 @@
 
 @use 'sass:map';
 @use 'sass:math';
+@use 'sass:meta';
+@use 'sass:string';
 @use 'tokens' as *;
+@use 'functions' as *;
 
 // ============================================================================
 // 响应式混合器 (Responsive Mixins)
@@ -171,6 +174,9 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow:
+    -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), 0.22),
+    1px 0 rgba(var(--ex-color-cyber-cyan-rgb), 0.22);
 }
 
 // ============================================================================
@@ -271,15 +277,15 @@
   @if $color == 'blue' {
     color: var(--ex-color-neon-blue-500);
     text-shadow:
-      0 0 5px var(--ex-color-shadow-neon-blue),
-      0 0 10px var(--ex-color-shadow-neon-blue),
-      0 0 15px var(--ex-color-shadow-neon-blue);
+      0 0 5px var(--ex-color-neon-blue-alpha-30),
+      0 0 10px var(--ex-color-neon-blue-alpha-30),
+      0 0 15px var(--ex-color-neon-blue-alpha-30);
   } @else if $color == 'pink' {
     color: var(--ex-color-neon-pink-500);
     text-shadow:
-      0 0 5px var(--ex-color-shadow-neon-pink),
-      0 0 10px var(--ex-color-shadow-neon-pink),
-      0 0 15px var(--ex-color-shadow-neon-pink);
+      0 0 5px var(--ex-color-neon-pink-alpha-30),
+      0 0 10px var(--ex-color-neon-pink-alpha-30),
+      0 0 15px var(--ex-color-neon-pink-alpha-30);
   }
 }
 
@@ -290,7 +296,10 @@
   @include neon-border($color);
   @include neon-glow($color, 'sm');
 
-  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+  transition-property:
+    background-color, border-color, color, opacity, transform, box-shadow, filter;
+  transition-duration: var(--ex-motion-duration-base);
+  transition-timing-function: var(--ex-motion-ease-out);
 
   &:hover {
     @include neon-glow($color, 'md');
@@ -313,12 +322,48 @@
 // ============================================================================
 
 // 基础过渡
+@function _is-transition-duration($value) {
+  // 兼容历史上的多属性调用，同时保留属性、时长、缓动三个参数的公开用法。
+  @if meta.type-of($value) == 'number' {
+    @return true;
+  }
+
+  @return string.index(meta.inspect($value), 'duration') != null;
+}
+
+// 将 all 收敛为实际会变化的属性，避免布局、尺寸和定位变化被隐式动画化。
+@function _resolve-transition-properties($properties) {
+  @if $properties == all {
+    @return (background-color, border-color, color, opacity, transform, box-shadow, filter);
+  }
+
+  @return $properties;
+}
+
 @mixin transition(
   $properties: all,
   $duration: var(--ex-motion-duration-base),
   $easing: var(--ex-motion-ease-out)
 ) {
-  transition: $properties $duration $easing;
+  $transition-properties: _resolve-transition-properties($properties);
+  $resolved-properties: $transition-properties;
+  $resolved-duration: $duration;
+  $resolved-easing: $easing;
+
+  @if not _is-transition-duration($duration) {
+    $resolved-properties: ($transition-properties, $duration);
+    $resolved-duration: var(--ex-motion-duration-base);
+
+    @if $easing != var(--ex-motion-ease-out) {
+      $resolved-properties: ($transition-properties, $duration, $easing);
+      $resolved-easing: var(--ex-motion-ease-out);
+    }
+  }
+
+  // 使用长写法可正确表达多个属性，避免逗号列表被解析成无效的过渡简写。
+  transition-property: $resolved-properties;
+  transition-duration: $resolved-duration;
+  transition-timing-function: $resolved-easing;
 
   // 尊重用户的动画偏好
   @media (prefers-reduced-motion: reduce) {
@@ -378,7 +423,7 @@
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
   padding: var(--ex-input-padding-y) var(--ex-input-padding-x);
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &::placeholder {
     color: var(--ex-color-text-tertiary);
@@ -387,7 +432,7 @@
   &:focus {
     outline: none;
     border-color: var(--ex-color-border-focus);
-    box-shadow: 0 0 0 var(--ex-input-focus-ring-width) var(--ex-color-shadow-neon-blue);
+    box-shadow: 0 0 0 var(--ex-input-focus-ring-width) var(--ex-color-primary-alpha-40);
   }
 
   &:disabled {
@@ -522,13 +567,13 @@
   background: var(--ex-color-bg-surface);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-card-radius);
-  box-shadow: var(--ex-card-shadow);
+  box-shadow: component-var(card, shadow);
   overflow: hidden;
 }
 
 // 卡片悬停效果
 @mixin card-hover {
-  @include transition(transform, box-shadow);
+  @include transition((transform, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
@@ -618,21 +663,21 @@
 
 // 移动端响应式 mixin
 @mixin mobile {
-  @media (max-width: 575px) {
+  @media (max-width: #{map.get($breakpoints, sm) - 1px}) {
     @content;
   }
 }
 
 // 平板端响应式 mixin
 @mixin tablet {
-  @media (min-width: 576px) and (max-width: 991px) {
+  @media (min-width: map.get($breakpoints, sm)) and (max-width: #{map.get($breakpoints, lg) - 1px}) {
     @content;
   }
 }
 
 // 桌面端响应式 mixin
 @mixin desktop {
-  @media (min-width: 992px) {
+  @media (min-width: map.get($breakpoints, lg)) {
     @content;
   }
 }

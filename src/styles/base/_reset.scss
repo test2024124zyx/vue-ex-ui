@@ -5,24 +5,38 @@
 // 安全的重置；所有会改变宿主外观的内容（背景、文字颜色、字体、滚动行为、选区配色、
 // 全屏氛围光晕）都移到可选的 `.ex-app` 作用域（见 base.scss），由使用者主动启用。
 
-*,
-*::before,
-*::after {
+// 仅在宿主明确启用 .ex-app 时提供页面级盒模型重置，避免接管宿主页面。
+.ex-app,
+.ex-app *,
+.ex-app *::before,
+.ex-app *::after {
   box-sizing: border-box;
 }
 
-html {
+.ex-app {
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
-// 焦点样式：键盘可达性增强（仅在键盘聚焦时显示轮廓）
-:focus-visible {
+// ExUI 控件即使未包在 .ex-app 中，也必须保留可见键盘焦点。
+:where(
+  .ex-app :focus-visible,
+  [class^='ex-']:focus-visible,
+  [class*=' ex-']:focus-visible,
+  [class^='ex-'] :focus-visible,
+  [class*=' ex-'] :focus-visible
+) {
   outline: 2px solid var(--ex-color-border-focus);
   outline-offset: 2px;
 }
 
-:focus:not(:focus-visible) {
+:where(
+  .ex-app :focus:not(:focus-visible),
+  [class^='ex-']:focus:not(:focus-visible),
+  [class*=' ex-']:focus:not(:focus-visible),
+  [class^='ex-'] :focus:not(:focus-visible),
+  [class*=' ex-'] :focus:not(:focus-visible)
+) {
   outline: none;
 }

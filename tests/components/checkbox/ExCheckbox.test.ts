@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { computed } from 'vue';
 import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
-import type { ExCheckboxProps } from '../../../src/components/checkbox/types';
+import type {
+  CheckboxValue,
+  ExCheckboxInstance,
+  ExCheckboxProps,
+} from '../../../src/components/checkbox/types';
+import { FORM_ITEM_INJECTION_KEY } from '../../../src/components/form/use-form-item';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -42,6 +48,15 @@ describe('ExCheckbox', () => {
 
       expect(wrapper.find('.ex-checkbox__label-text').exists()).toBe(false);
     });
+
+    it('renders the named label slot', () => {
+      const wrapper = mount(ExCheckbox, {
+        slots: { label: 'Named label' },
+      });
+
+      expect(wrapper.text()).toContain('Named label');
+      expect(wrapper.find('.ex-checkbox__label-text').exists()).toBe(true);
+    });
   });
 
   // 尺寸测试
@@ -57,6 +72,26 @@ describe('ExCheckbox', () => {
 
         expect(wrapper.classes()).toContain(`ex-checkbox--${size}`);
       });
+    });
+  });
+
+  // 形状测试
+  describe('Shapes', () => {
+    it('uses square shape by default', () => {
+      const wrapper = mount(ExCheckbox, {
+        slots: { default: 'Checkbox' },
+      });
+
+      expect(wrapper.classes()).not.toContain('ex-checkbox--circle');
+    });
+
+    it('renders circle shape correctly', () => {
+      const wrapper = mount(ExCheckbox, {
+        props: { shape: 'circle' },
+        slots: { default: 'Checkbox' },
+      });
+
+      expect(wrapper.classes()).toContain('ex-checkbox--circle');
     });
   });
 
@@ -82,7 +117,6 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -99,7 +133,6 @@ describe('ExCheckbox', () => {
           modelValue: 'no',
           trueValue: 'yes',
           falseValue: 'no',
-          'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -173,7 +206,6 @@ describe('ExCheckbox', () => {
         props: {
           readonly: true,
           modelValue: false,
-          'onUpdate:modelValue': (value: boolean) => wrapper.setProps({ modelValue: value }),
         },
         slots: { default: 'Checkbox' },
       });
@@ -211,6 +243,25 @@ describe('ExCheckbox', () => {
       });
 
       expect(wrapper.find('.ex-checkbox__indeterminate-icon').exists()).toBe(true);
+    });
+
+    it('同步原生 indeterminate 属性并通过 aria-controls 关联控制区域', async () => {
+      const wrapper = mount(ExCheckbox, {
+        props: { indeterminate: true, ariaControls: 'result-panel' },
+        slots: { default: 'Checkbox' },
+      });
+      const input = wrapper.find('input').element as HTMLInputElement;
+
+      expect(input.indeterminate).toBe(true);
+      expect(wrapper.find('input').attributes('aria-checked')).toBeUndefined();
+      expect(wrapper.find('input').attributes('aria-controls')).toBe('result-panel');
+
+      await wrapper.find('input').setValue(true);
+      expect(input.indeterminate).toBe(false);
+      expect(wrapper.emitted('update:indeterminate')).toEqual([[false]]);
+
+      await wrapper.setProps({ indeterminate: false });
+      expect(input.indeterminate).toBe(false);
     });
   });
 
@@ -348,7 +399,7 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          rules: [(value: boolean) => value === true || 'Must be checked'],
+          rules: [(value: CheckboxValue | CheckboxValue[]) => value === true || 'Must be checked'],
         },
         slots: { default: 'Checkbox' },
       });
@@ -364,7 +415,7 @@ describe('ExCheckbox', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
           modelValue: false,
-          rules: [(value: boolean) => value === true || 'Must be checked'],
+          rules: [(value: CheckboxValue | CheckboxValue[]) => value === true || 'Must be checked'],
         },
         slots: { default: 'Checkbox' },
       });
@@ -426,7 +477,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.focus).toBe('function');
     });
 
@@ -435,7 +486,7 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.blur).toBe('function');
     });
 
@@ -444,13 +495,28 @@ describe('ExCheckbox', () => {
         slots: { default: 'Checkbox' },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExCheckboxInstance;
       expect(typeof vm.getCheckboxElement).toBe('function');
     });
   });
 
   // ARIA 属性测试
   describe('Accessibility', () => {
+    it('does not warn when optional ARIA props are omitted', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      try {
+        mount(ExCheckbox, {
+          props: { indeterminate: true },
+          slots: { default: 'Checkbox' },
+        });
+
+        expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('Property "ariaControls"'));
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
     it('has correct ARIA attributes', () => {
       const wrapper = mount(ExCheckbox, {
         props: {
@@ -461,6 +527,27 @@ describe('ExCheckbox', () => {
 
       const input = wrapper.find('input[type="checkbox"]');
       expect(input.attributes('aria-describedby')).toBeTruthy();
+    });
+
+    it('forwards native identity and external accessible references', () => {
+      const wrapper = mount(ExCheckbox, {
+        props: {
+          id: 'terms-checkbox',
+          name: 'terms',
+          tabindex: 0,
+          ariaLabel: 'Accept terms',
+          ariaLabelledby: 'terms-title',
+          ariaDescribedby: 'terms-description',
+        },
+      });
+      const input = wrapper.find('input[type="checkbox"]');
+
+      expect(input.attributes('id')).toBe('terms-checkbox');
+      expect(input.attributes('name')).toBe('terms');
+      expect(input.attributes('tabindex')).toBe('0');
+      expect(input.attributes('aria-label')).toBe('Accept terms');
+      expect(input.attributes('aria-labelledby')).toBe('terms-title');
+      expect(input.attributes('aria-describedby')).toBe('terms-description');
     });
 
     it('sets aria-invalid when error', () => {
@@ -474,6 +561,35 @@ describe('ExCheckbox', () => {
 
       const input = wrapper.find('input[type="checkbox"]');
       expect(input.attributes('aria-invalid')).toBe('true');
+    });
+
+    it('integrates FormItem size, disabled state and change/blur triggers', async () => {
+      const onFieldChange = vi.fn();
+      const onFieldBlur = vi.fn();
+      const wrapper = mount(ExCheckbox, {
+        global: {
+          provide: {
+            [FORM_ITEM_INJECTION_KEY as symbol]: {
+              onFieldChange,
+              onFieldBlur,
+              size: computed(() => 'large'),
+              disabled: computed(() => false),
+              readonly: computed(() => false),
+              status: computed(() => 'success'),
+            },
+          },
+        },
+      });
+      const input = wrapper.find('input[type="checkbox"]');
+
+      expect(wrapper.classes()).toContain('ex-checkbox--large');
+      expect(wrapper.classes()).toContain('ex-checkbox--success');
+
+      await input.setValue(true);
+      await input.trigger('blur');
+
+      expect(onFieldChange).toHaveBeenCalledOnce();
+      expect(onFieldBlur).toHaveBeenCalledOnce();
     });
   });
 });

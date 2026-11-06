@@ -91,6 +91,12 @@
 }
 
 // 标签页项
+.ex-tabs__tab-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .ex-tabs__tab {
   position: relative;
   display: inline-flex;
@@ -100,11 +106,18 @@
   color: var(--ex-color-text-secondary);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
+  font-family: inherit;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
+  background: transparent;
+  border: 0;
   border-radius: var(--ex-radius-base);
   @include transition(all);
+
+  &--closable {
+    padding-right: calc(var(--ex-button-touch-target, 44px) + var(--ex-spacing-2));
+  }
 
   &:hover:not(&--disabled):not(&--active) {
     color: var(--ex-color-text-primary);
@@ -124,7 +137,10 @@
 
   &--add {
     color: var(--ex-color-text-tertiary);
+    font: inherit;
     padding: var(--ex-spacing-2);
+    background: transparent;
+    border: 0;
 
     &:hover {
       color: var(--ex-color-neon-blue-500);
@@ -149,14 +165,24 @@
 
 // 关闭按钮
 .ex-tabs__tab-close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-left: var(--ex-spacing-1);
+  width: var(--ex-button-touch-target, 44px);
+  height: var(--ex-button-touch-target, 44px);
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
   border-radius: 50%;
   opacity: 0.6;
+  transform: translateY(-50%);
   @include transition(all);
 
   &:hover {
@@ -171,11 +197,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--ex-color-neon-blue-500),
-    var(--ex-color-neon-pink-500)
-  );
+  background: linear-gradient(90deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500));
   border-radius: 2px;
   @include transition(all);
   @include neon-glow('blue', 'sm');
@@ -222,11 +244,11 @@
     border-radius: 0;
     border-right: 1px solid var(--ex-color-border-primary);
 
-    &:first-child {
+    &--first {
       border-radius: var(--ex-radius-lg) 0 0 0;
     }
 
-    &:last-child {
+    &--last {
       border-right: none;
       border-radius: 0 var(--ex-radius-lg) 0 0;
     }
@@ -341,6 +363,15 @@
 // 无障碍支持
 // ============================================================================
 
+.ex-tabs:not(.ex-tabs--animated) {
+  .ex-tabs__indicator,
+  .ex-tabs__tab,
+  .ex-tabs__tab-close {
+    transition: none;
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ex-tabs__nav,
   .ex-tabs__tab,
@@ -350,7 +381,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-tabs__nav-wrap {
     border-width: 2px;
   }

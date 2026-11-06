@@ -1,15 +1,21 @@
 <template>
   <component
-    :is="linkComponent"
+    :is="rootTag"
     ref="linkRef"
     :class="linkClasses"
-    :style="linkStyles"
-    v-bind="linkProps"
+    :type="isAction ? 'button' : undefined"
+    :disabled="isAction && isDisabled ? true : undefined"
+    :href="anchorHref"
+    :target="anchorTarget"
+    :rel="anchorRel"
+    :role="isAnchor && isDisabled ? 'link' : undefined"
+    :tabindex="isAnchor && isDisabled ? -1 : undefined"
+    :aria-disabled="isAnchor && isDisabled ? 'true' : undefined"
     @click="handleClick"
     @focus="handleFocus"
     @blur="handleBlur"
   >
-    <!-- 左侧图标插槽 -->
+    <!-- 左侧图标区域，prefix 插槽优先于通用 icon 插槽。 -->
     <span
       v-if="$slots.prefix || (iconPlacement === 'left' && $slots.icon)"
       class="ex-link__icon ex-link__icon--left"
@@ -18,16 +24,15 @@
         <slot
           v-if="iconPlacement === 'left'"
           name="icon"
-        />
+        ></slot>
       </slot>
     </span>
 
-    <!-- 链接内容 -->
     <span class="ex-link__content">
-      <slot />
+      <slot></slot>
     </span>
 
-    <!-- 右侧图标插槽 -->
+    <!-- 右侧图标区域，suffix 插槽优先于通用 icon 插槽。 -->
     <span
       v-if="$slots.suffix || (iconPlacement === 'right' && $slots.icon)"
       class="ex-link__icon ex-link__icon--right"
@@ -36,27 +41,41 @@
         <slot
           v-if="iconPlacement === 'right'"
           name="icon"
-        />
+        ></slot>
       </slot>
     </span>
 
-    <!-- 外部链接图标 -->
+    <!-- 外链状态同时提供本地化的屏幕阅读器文本，图标仅承担视觉提示。 -->
+    <span
+      v-if="isExternalLink"
+      class="ex-link__external-label"
+    >
+      {{ tLink('external') }}
+    </span>
+
     <span
       v-if="isExternalLink && showExternalIcon"
       class="ex-link__external-icon"
+      aria-hidden="true"
     >
       <slot name="external-icon">
-        <ex-icon icon="external-link-line" />
+        <ExIcon
+          icon="external-link-line"
+          size="var(--ex-link-icon-size)"
+          aria-hidden="true"
+        />
       </slot>
     </span>
   </component>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, getCurrentInstance } from 'vue';
-import type { ExLinkProps, ExLinkEmits, ExLinkExposed } from './types';
+import { computed, ref } from 'vue';
+import { useAnimation, useComponentSize, useNeonEffect } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
+import { useLocale } from '../../locale';
+import { buildSecureRel, isExternalLinkHref, normalizeLinkHref } from './link-utils';
+import type { ExLinkEmits, ExLinkExposed, ExLinkProps } from './types';
 
 defineOptions({
   name: 'ExLink',
@@ -64,99 +83,57 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExLinkProps>(), {
   type: 'default',
-  size: 'medium',
   disabled: false,
   underline: true,
-  target: '_self',
   iconPlacement: 'left',
   showExternalIcon: true,
 });
 
 const emit = defineEmits<ExLinkEmits>();
+const linkRef = ref<HTMLAnchorElement | HTMLButtonElement | null>(null);
+const { t: tLink } = useLocale('link');
+const componentSize = useComponentSize(computed(() => props.size));
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
 
-const linkRef = ref<HTMLElement>();
+// href 是否出现决定根元素语义；无 href 是动作按钮，非法 href 仍保持禁用锚点语义。
+const isAnchor = computed(() => props.href !== undefined);
+const isAction = computed(() => !isAnchor.value);
+const normalizedHref = computed(() => normalizeLinkHref(props.href));
+const hasInvalidHref = computed(() => isAnchor.value && normalizedHref.value === undefined);
+const isDisabled = computed(() => props.disabled || hasInvalidHref.value);
+const rootTag = computed(() => (isAnchor.value ? 'a' : 'button'));
 
-// 宿主应用是否安装了 vue-router（未安装时回退为普通 a 标签，避免解析失败）
-const instance = getCurrentInstance();
-const hasRouter = computed(() => {
-  return !!instance?.appContext.config.globalProperties.$router;
-});
+const isExternalLink = computed(
+  () => !isDisabled.value && isExternalLinkHref(normalizedHref.value)
+);
 
-// 计算属性
-const linkComponent = computed(() => {
-  // 如果有 to 属性且宿主安装了 vue-router，使用 router-link
-  if (props.to && !props.disabled && hasRouter.value) {
-    return 'router-link';
-  }
-  // 否则使用普通 a 标签
-  return 'a';
-});
+const linkClasses = computed(() => [
+  'ex-link',
+  `ex-link--${props.type}`,
+  `ex-link--${componentSize.value}`,
+  {
+    'ex-link--action': isAction.value,
+    'ex-link--disabled': isDisabled.value,
+    'ex-link--no-neon': !neonEffect.value,
+    'ex-link--no-animation': !animation.value,
+    'ex-link--no-underline': !props.underline,
+    'ex-link--external': isExternalLink.value,
+  },
+]);
 
-const linkClasses = computed(() => {
-  const classes = ['ex-link', `ex-link--${props.type}`, `ex-link--${props.size}`];
+const anchorHref = computed(() =>
+  isAnchor.value && !isDisabled.value ? normalizedHref.value : undefined
+);
+const anchorTarget = computed(() =>
+  isAnchor.value && !isDisabled.value ? props.target : undefined
+);
+const anchorRel = computed(() =>
+  isAnchor.value && !isDisabled.value ? buildSecureRel(props.rel, props.target) : undefined
+);
 
-  if (props.disabled) classes.push('ex-link--disabled');
-  if (!props.underline) classes.push('ex-link--no-underline');
-  if (isExternalLink.value) classes.push('ex-link--external');
-
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
-});
-
-const linkStyles = computed(() => {
-  if (!props.style) return undefined;
-
-  if (typeof props.style === 'string') {
-    return props.style;
-  }
-
-  return props.style;
-});
-
-const linkProps = computed(() => {
-  const baseProps: Record<string, string | number | boolean | undefined> = {};
-
-  if (props.disabled) {
-    baseProps.tabindex = -1;
-    baseProps['aria-disabled'] = true;
-  }
-
-  if (props.ariaLabel) {
-    baseProps['aria-label'] = props.ariaLabel;
-  }
-
-  // router-link 属性
-  if (linkComponent.value === 'router-link') {
-    baseProps.to = props.to as string;
-    if (props.target !== '_self') {
-      baseProps.target = props.target;
-    }
-  } else {
-    // 普通 a 标签属性
-    baseProps.href = props.disabled ? undefined : props.href;
-    baseProps.target = props.target;
-    baseProps.rel = props.rel || (isExternalLink.value ? 'noopener noreferrer' : undefined);
-  }
-
-  return baseProps;
-});
-
-const isExternalLink = computed(() => {
-  if (!props.href) return false;
-  if (typeof window === 'undefined') return false;
-
-  try {
-    const url = new URL(props.href, window.location.origin);
-    return url.origin !== window.location.origin;
-  } catch {
-    return false;
-  }
-});
-
-// 事件处理
-const handleClick = (event: MouseEvent) => {
-  if (props.disabled) {
+const handleClick = (event: MouseEvent): void => {
+  if (isDisabled.value) {
     event.preventDefault();
     event.stopPropagation();
     return;
@@ -165,32 +142,23 @@ const handleClick = (event: MouseEvent) => {
   emit('click', event);
 };
 
-const handleFocus = (event: FocusEvent) => {
-  if (!props.disabled) {
-    emit('focus', event);
-  }
+const handleFocus = (event: FocusEvent): void => {
+  if (!isDisabled.value) emit('focus', event);
 };
 
-const handleBlur = (event: FocusEvent) => {
-  if (!props.disabled) {
-    emit('blur', event);
-  }
+const handleBlur = (event: FocusEvent): void => {
+  if (!isDisabled.value) emit('blur', event);
 };
 
-// 暴露的方法
-const focus = () => {
-  if (!props.disabled) {
-    linkRef.value?.focus();
-  }
+const focus = (): void => {
+  if (!isDisabled.value) linkRef.value?.focus();
 };
 
-const blur = () => {
+const blur = (): void => {
   linkRef.value?.blur();
 };
 
-const getElement = () => {
-  return linkRef.value || null;
-};
+const getElement = (): HTMLAnchorElement | HTMLButtonElement | null => linkRef.value;
 
 defineExpose<ExLinkExposed>({
   focus,
@@ -198,4 +166,5 @@ defineExpose<ExLinkExposed>({
   getElement,
 });
 </script>
+
 <style lang="scss" scoped src="./ExLink.scss"></style>

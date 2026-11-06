@@ -1,22 +1,6 @@
 .ex-space {
-  /* 使用 gap 原生间距，RTL友好 */
-  gap: var(--ex-space-gap, 12px);
-  /* 逻辑属性确保布局兼容 */
-  margin-block: 0;
-  margin-inline: 0;
-}
-
-/* 垂直方向：gap 同样生效 */
-.ex-space--vertical {
-  /* 无额外样式，依赖 flexDirection: column */
-}
-
-/* wrap 时在小屏更友好 */
-.ex-space.is-wrap {
-  /* 可按需增加换行时的行间距（gap 已覆盖） */
-}
-
-/* 无动效需求，尊重 reduced-motion 规范 */
-@media (prefers-reduced-motion: reduce) {
-  .ex-space { transition: none; }
+  display: flex;
+  min-width: 0;
+  /* 使用 gap 原生间距，避免子项 margin 并兼容 RTL。 */
+  gap: var(--ex-space-gap, var(--ex-spacing-4, 16px));
 }

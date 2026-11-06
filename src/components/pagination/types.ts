@@ -12,9 +12,9 @@ export type PaginationAlign = 'left' | 'center' | 'right';
  * 分页组件属性
  */
 export interface ExPaginationProps {
-  /** 当前页码 */
+  /** 当前页码；显式传入后等待父级回写，undefined 使用内部状态。 */
   current?: number;
-  /** 每页条数 */
+  /** 每页条数；与页码独立受控，未受控页码在容量请求时立即调整。 */
   pageSize?: number;
   /** 数据总数 */
   total: number;
@@ -36,7 +36,7 @@ export interface ExPaginationProps {
   size?: PaginationSize;
   /** 对齐方式 */
   align?: PaginationAlign;
-  /** 显示的页码按钮数量（奇数） */
+  /** 页码按钮数量上限（奇数，至少 3）；容器变窄时自动减少，保留首尾和当前页 */
   showPages?: number;
   /** 是否隐藏单页 */
   hideOnSinglePage?: boolean;

@@ -1,30 +1,8 @@
-import type { App } from 'vue';
-import ExDrawer from './ExDrawer.vue';
-import type {
-  ExDrawerProps,
-  ExDrawerEmits,
-  ExDrawerExposed,
-  DrawerPlacement,
-  DrawerSize,
-} from './types';
+import ExDrawerComponent from './ExDrawer.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件类型
-export type {
-  ExDrawerProps,
-  ExDrawerEmits,
-  ExDrawerExposed,
-  DrawerPlacement,
-  DrawerSize,
-};
+export const ExDrawer: InstallableComponent<typeof ExDrawerComponent> =
+  withInstall(ExDrawerComponent);
 
-// 导出组件
-export { ExDrawer };
-
-// 组件安装插件
-export const ExDrawerPlugin = {
-  install(app: App) {
-    app.component('ExDrawer', ExDrawer);
-  },
-};
-
-export default ExDrawerPlugin;
+export * from './types';
+export default ExDrawer;

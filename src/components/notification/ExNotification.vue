@@ -8,17 +8,23 @@
       ref="notificationRef"
       :class="notificationClasses"
       :style="notificationStyles"
-      role="alert"
-      :aria-live="type === 'error' ? 'assertive' : 'polite'"
+      :data-theme="configTheme"
+      :role="liveRole"
+      :aria-live="ariaLive"
+      aria-atomic="true"
+      :tabindex="hasClickHandler ? 0 : undefined"
       @click="handleClick"
-      @mouseenter="pauseTimer"
-      @mouseleave="resumeTimer"
+      @keydown="handleKeyboardClick"
+      @mouseenter="pauseTimer('hover')"
+      @mouseleave="resumeTimer('hover')"
+      @focusin="pauseTimer('focus')"
+      @focusout="handleFocusOut"
     >
-      <!-- 图标 -->
       <div
         v-if="showIcon"
         class="ex-notification__icon"
         :class="iconClasses"
+        aria-hidden="true"
       >
         <slot name="icon">
           <ExIcon
@@ -29,46 +35,37 @@
         </slot>
       </div>
 
-      <!-- 内容区域 -->
       <div class="ex-notification__content">
-        <!-- 标题 -->
         <div
-          v-if="title"
+          v-if="title || $slots.title"
           class="ex-notification__title"
         >
-          <slot name="title">
-            {{ title }}
-          </slot>
+          <slot name="title">{{ title }}</slot>
         </div>
 
-        <!-- 描述内容 -->
         <div
-          v-if="content"
+          v-if="content || $slots.default"
           class="ex-notification__description"
         >
           <slot>
-            <!-- dangerouslyUseHTMLString 由用户显式开启；内容已经 sanitizeHtml 消毒，防止 XSS。 -->
+            <!-- HTML 模式只渲染经过白名单消毒的结果。 -->
             <!-- eslint-disable vue/no-v-html -->
             <span
               v-if="dangerouslyUseHTMLString"
               v-html="sanitizedContent"
-            />
+            ></span>
             <!-- eslint-enable vue/no-v-html -->
             <span v-else>{{ content }}</span>
           </slot>
         </div>
       </div>
 
-      <!-- 关闭按钮 -->
-      <div
+      <button
         v-if="closable"
+        type="button"
         class="ex-notification__close"
-        role="button"
-        tabindex="0"
-        :aria-label="t('notification.close')"
-        @click.stop="handleClose"
-        @keydown.enter="handleClose"
-        @keydown.space.prevent="handleClose"
+        :aria-label="t('close')"
+        @click.stop="close"
       >
         <slot name="close">
           <ExIcon
@@ -77,21 +74,36 @@
             aria-hidden="true"
           />
         </slot>
-      </div>
+      </button>
     </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { ExNotificationProps, ExNotificationEmits } from './types';
-import { useI18n } from '../../locale';
+import { computed, onMounted, onUnmounted, ref, watch, type EmitFn } from 'vue';
+import { useLocale } from '../../locale';
 import { sanitizeHtml } from '../../utils/sanitize';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
+import type {
+  ExNotificationEmits,
+  ExNotificationExposed,
+  ExNotificationProps,
+  ExNotificationSlots,
+  NotificationType,
+} from './types';
 
 defineOptions({
   name: 'ExNotification',
 });
+
+defineSlots<ExNotificationSlots>();
 
 const props = withDefaults(defineProps<ExNotificationProps>(), {
   type: 'info',
@@ -106,151 +118,143 @@ const props = withDefaults(defineProps<ExNotificationProps>(), {
   offset: 16,
   position: 'top-right',
   dangerouslyUseHTMLString: false,
-  onClose: undefined,
-  onClick: undefined,
 });
-
-const emit = defineEmits<ExNotificationEmits>();
-
-const { t } = useI18n();
-
-// 组件引用
-const notificationRef = ref<HTMLElement>();
-// 可见状态
+// click 监听影响渲染，单独按属性更新；其他事件继续声明，所有事件仍由 Vue 分发。
+const emit: EmitFn<ExNotificationEmits> = defineEmits(['close', 'destroy'] as string[]);
+const { t } = useLocale('notification');
+const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
+const animationEnabled = useAnimation();
+const neonEnabled = useNeonEffect();
+const notificationRef = ref<HTMLElement | null>(null);
 const visible = ref(false);
-// 定时器 + 剩余时长跟踪（用于悬停暂停 / 移出恢复）
-let timer: number | undefined;
-let startedAt = 0;
-let remaining = props.duration;
 
-// 默认图标映射（内置 SVG 图标名）
-const defaultIconMap: Record<string, string> = {
+const defaultIconMap: Record<NotificationType, string> = {
   info: 'information-line',
   success: 'checkbox-circle-line',
   warning: 'error-warning-line',
   error: 'close-circle-line',
 };
 
-// 默认图标名
-const defaultIcon = computed(() => {
-  return defaultIconMap[props.type];
-});
-
-// 消毒后的 HTML 内容（防止 XSS 攻击）
-const sanitizedContent = computed(() => {
-  if (props.dangerouslyUseHTMLString && props.content) {
-    return sanitizeHtml(props.content);
-  }
-  return props.content;
-});
-
-// 计算样式类
-const notificationClasses = computed(() => {
-  const classes = [
-    'ex-notification',
-    `ex-notification--${props.type}`,
-    `ex-notification--${props.position}`,
-  ];
-
-  if (props.closable) classes.push('ex-notification--closable');
-  if (props.customClass) classes.push(props.customClass);
-
-  return classes;
-});
-
-// 计算图标样式类
-const iconClasses = computed(() => {
-  return [`ex-notification__icon--${props.type}`];
-});
-
-// 计算内联样式
-const notificationStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  if (props.zIndex !== undefined) {
-    styles.zIndex = String(props.zIndex);
-  }
-
-  if (props.customStyle) {
-    Object.assign(styles, props.customStyle);
-  }
-
+const defaultIcon = computed(() => defaultIconMap[props.type]);
+const liveRole = computed(() => (props.type === 'error' ? 'alert' : 'status'));
+const ariaLive = computed(() => (props.type === 'error' ? 'assertive' : 'polite'));
+const hasClickHandler = computed(() => Boolean(props.onClick || props.onClickOnce));
+const sanitizedContent = computed(() =>
+  props.dangerouslyUseHTMLString ? sanitizeHtml(props.content) : props.content
+);
+const notificationClasses = computed(() => [
+  'ex-notification',
+  `ex-notification--${props.type}`,
+  `ex-notification--${props.position}`,
+  {
+    'ex-notification--closable': props.closable,
+    'ex-notification--clickable': hasClickHandler.value,
+    'ex-notification--no-animation': !animationEnabled.value,
+    'ex-notification--no-neon': !neonEnabled.value,
+  },
+  props.customClass,
+]);
+const iconClasses = computed(() => [`ex-notification__icon--${props.type}`]);
+const notificationStyles = computed<Record<string, string>>(() => {
+  const styles: Record<string, string> = { ...themeOverrides.value };
+  if (props.zIndex !== undefined) styles.zIndex = String(props.zIndex);
+  if (props.customStyle) Object.assign(styles, props.customStyle);
   return styles;
 });
 
-// 开始计时器
-const startTimer = () => {
-  if (props.duration > 0 && remaining > 0) {
-    startedAt = Date.now();
-    timer = window.setTimeout(() => {
-      close();
-    }, remaining);
-  }
+let timer: number | undefined;
+let startedAt = 0;
+let remaining = props.duration;
+type PauseReason = 'hover' | 'focus';
+const pauseReasons = new Set<PauseReason>();
+
+const isTimerPaused = (): boolean => pauseReasons.size > 0;
+
+const clearTimer = (): void => {
+  if (timer === undefined || typeof window === 'undefined') return;
+  window.clearTimeout(timer);
+  timer = undefined;
 };
 
-// 清除计时器
-const clearTimer = () => {
-  if (timer) {
-    clearTimeout(timer);
-    timer = undefined;
-  }
-};
-
-// 悬停暂停：记录已消耗时间，移出后按剩余时长继续
-const pauseTimer = () => {
-  if (timer) {
-    clearTimeout(timer);
-    timer = undefined;
-    remaining -= Date.now() - startedAt;
-  }
-};
-
-const resumeTimer = () => {
-  if (typeof window !== 'undefined') {
-    startTimer();
-  }
-};
-
-// 关闭通知
-const close = () => {
+const close = (): boolean => {
+  if (!visible.value) return false;
+  clearTimer();
   visible.value = false;
+  emit('close');
+  return true;
 };
 
-// 处理关闭按钮点击
-const handleClose = () => {
-  close();
+const startTimer = (): void => {
+  clearTimer();
+  if (typeof window === 'undefined' || !visible.value || isTimerPaused() || remaining <= 0) return;
+  startedAt = Date.now();
+  timer = window.setTimeout(() => {
+    timer = undefined;
+    close();
+  }, remaining);
 };
 
-// 处理点击事件
-const handleClick = () => {
-  props.onClick?.();
+const pauseTimer = (reason: PauseReason): void => {
+  if (pauseReasons.has(reason)) return;
+  const wasPaused = isTimerPaused();
+  pauseReasons.add(reason);
+  if (wasPaused) return;
+  if (timer === undefined || typeof window === 'undefined') return;
+  window.clearTimeout(timer);
+  timer = undefined;
+  remaining = Math.max(0, remaining - (Date.now() - startedAt));
+};
+
+const resumeTimer = (reason: PauseReason): void => {
+  if (!pauseReasons.delete(reason) || isTimerPaused()) return;
+  startTimer();
+};
+
+const handleFocusOut = (event: FocusEvent): void => {
+  if (event.relatedTarget instanceof Node && notificationRef.value?.contains(event.relatedTarget)) {
+    return;
+  }
+  resumeTimer('focus');
+};
+
+const handleClick = (): void => {
+  if (hasClickHandler.value) emit('click');
+};
+
+const handleKeyboardClick = (event: KeyboardEvent): void => {
+  if (
+    event.target !== event.currentTarget ||
+    event.defaultPrevented ||
+    isComposingKeyboardEvent(event)
+  )
+    return;
+  if (!hasClickHandler.value || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
   emit('click');
 };
 
-// 处理过渡动画结束
-const handleAfterLeave = () => {
-  props.onClose?.();
-  emit('close');
-  emit('destroy');
-};
+watch(
+  () => props.duration,
+  duration => {
+    remaining = duration;
+    if (!isTimerPaused()) startTimer();
+  }
+);
 
-// 生命周期
+const handleAfterLeave = (): void => emit('destroy');
+
 onMounted(() => {
   visible.value = true;
-  // 仅在浏览器环境且 duration > 0 时启动定时器
-  if (typeof window !== 'undefined' && props.duration > 0) {
-    startTimer();
-  }
+  remaining = props.duration;
+  startTimer();
 });
+onUnmounted(clearTimer);
 
-onUnmounted(() => {
-  clearTimer();
-});
-
-// 暴露方法
-defineExpose({
-  visible,
+defineExpose<ExNotificationExposed>({
   close,
+  isVisible: () => visible.value,
+  getElement: () => notificationRef.value,
 });
 </script>
 

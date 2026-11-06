@@ -1,10 +1,7 @@
-import type { App } from 'vue'
-import Empty from './ExEmpty.vue'
+import ExEmptyComponent from './ExEmpty.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-Empty.install = (app: App) => {
-  app.component('ExEmpty', Empty)
-}
+export const ExEmpty: InstallableComponent<typeof ExEmptyComponent> = withInstall(ExEmptyComponent);
 
-export default Empty
-export { Empty as ExEmpty }
-export * from './types'
+export * from './types';
+export default ExEmpty;

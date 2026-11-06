@@ -1,10 +1,8 @@
-import type { App } from 'vue';
-import ExColorPicker from './ExColorPicker.vue';
+import ExColorPickerComponent from './ExColorPicker.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExColorPicker.install = (app: App) => {
-  app.component('ExColorPicker', ExColorPicker);
-};
+export const ExColorPicker: InstallableComponent<typeof ExColorPickerComponent> =
+  withInstall(ExColorPickerComponent);
 
 export default ExColorPicker;
-export { ExColorPicker };
 export type * from './types';

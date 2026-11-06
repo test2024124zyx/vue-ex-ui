@@ -1,21 +1,16 @@
-import { App } from 'vue';
-import ExTypography from './ExTypography.vue';
-// 导出组件
-export { ExTypography };
+import ExTypographyComponent from './ExTypography.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出类型
-export type { ExTypographyProps } from './types';
+export const ExTypography: InstallableComponent<typeof ExTypographyComponent> =
+  withInstall(ExTypographyComponent);
 
-// 导出安装函数
-export const ExTypographyPlugin = {
-  install(app: App) {
-    app.component('ExTypography', ExTypography);
-  },
-};
+// 导出组件完整类型，保证按需引入和根入口的类型契约一致。
+export type {
+  ExTypographyProps,
+  TypographyColor,
+  TypographySize,
+  TypographyTag,
+  TypographyVariant,
+} from './types';
 
-// 安装函数
-export default {
-  install(app: App) {
-    app.component('ExTypography', ExTypography);
-  },
-};
+export default ExTypography;

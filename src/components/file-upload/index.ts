@@ -1,9 +1,10 @@
-import type { App } from 'vue';
-import ExFileUpload from './ExFileUpload.vue';
+import ExFileUploadComponent from './ExFileUpload.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExFileUpload.install = (app: App) => {
-  app.component('ExFileUpload', ExFileUpload);
-};
+export const ExFileUpload: InstallableComponent<typeof ExFileUploadComponent> =
+  withInstall(ExFileUploadComponent);
 
-export default ExFileUpload;
+export * from './errors';
 export * from './types';
+export * from './upload-utils';
+export default ExFileUpload;

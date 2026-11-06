@@ -6,6 +6,7 @@
         ref="rootRef"
         type="button"
         :class="rootClasses"
+        :data-theme="configTheme"
         :style="rootStyle"
         :aria-label="resolvedAriaLabel"
         @click="handleClick"
@@ -45,7 +46,7 @@
           <span
             class="ex-back-top__line-fill"
             :style="{ width: `${scrollInfo.scrollPercent}%` }"
-          />
+          ></span>
         </span>
 
         <span class="ex-back-top__content">
@@ -67,11 +68,15 @@
             <span
               v-if="text"
               class="ex-back-top__text"
-            >{{ text }}</span>
+            >
+              {{ text }}
+            </span>
             <span
               v-if="showPercent"
               class="ex-back-top__percent"
-            >{{ Math.round(scrollInfo.scrollPercent) }}%</span>
+            >
+              {{ Math.round(scrollInfo.scrollPercent) }}%
+            </span>
           </slot>
         </span>
       </button>
@@ -81,11 +86,19 @@
 
 <script setup lang="ts">
 import { computed, isVNode, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import type { CSSProperties } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useLocale } from '../../locale';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+  useThemeOverrides,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
 import type { ExBackTopProps, ExBackTopEmits, ExBackTopExposed, BackTopScrollInfo } from './types';
-import { resolveTarget, getScrollInfo, scrollToPosition, getPositionStyle, isMobile } from './utils';
+import { resolveTarget, getScrollInfo, scrollToPosition, getPositionStyle } from './utils';
 
 defineOptions({
   name: 'ExBackTop',
@@ -95,7 +108,7 @@ defineOptions({
 const props = withDefaults(defineProps<ExBackTopProps>(), {
   position: 'bottom-right',
   shape: 'circle',
-  size: 'medium',
+  size: undefined,
   visibilityHeight: 200,
   visibilityPercent: undefined,
   target: undefined,
@@ -116,6 +129,12 @@ const props = withDefaults(defineProps<ExBackTopProps>(), {
   class: undefined,
   style: undefined,
 });
+const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const stickyZIndex = useZIndexLayer('sticky');
+const themeOverrides = useThemeOverrides();
+const { t } = useLocale('backTop');
 
 const emit = defineEmits<ExBackTopEmits>();
 
@@ -131,24 +150,32 @@ const scrollInfo = reactive<BackTopScrollInfo>({
 
 let scrollTarget: HTMLElement | Window | null = null;
 let rafId: number | null = null;
+let scrollAbortController: AbortController | null = null;
+let mounted = false;
+const viewportWidth = ref(
+  typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerWidth
+);
 
 // ---------------------------------------------------------------------------
 // 派生状态
 // ---------------------------------------------------------------------------
-const deviceAllowed = computed(() => props.showOnMobile || !isMobile(props.mobileBreakpoint));
+const deviceAllowed = computed(
+  () => props.showOnMobile || viewportWidth.value > props.mobileBreakpoint
+);
 
 const iconIsComponent = computed(() => {
   const ic = props.icon;
   return !!ic && (isVNode(ic) || typeof ic === 'function' || typeof ic === 'object');
 });
 
-const iconSize = computed(() => ({ small: 18, medium: 20, large: 24 })[props.size]);
+const componentSize = useComponentSize(computed(() => props.size));
+const iconSize = computed(() => ({ small: 18, medium: 20, large: 24 })[componentSize.value]);
 
 const transitionName = computed(() =>
   props.animation === 'none' ? '' : `ex-back-top-${props.animation}`
 );
 
-const resolvedAriaLabel = computed(() => props.ariaLabel || props.text || 'Back to top');
+const resolvedAriaLabel = computed(() => props.ariaLabel || props.text || t('label'));
 
 const ringCircumference = computed(() => 2 * Math.PI * 21);
 const ringOffset = computed(() => ringCircumference.value * (1 - scrollInfo.scrollPercent / 100));
@@ -156,30 +183,46 @@ const ringOffset = computed(() => ringCircumference.value * (1 - scrollInfo.scro
 const rootClasses = computed(() => [
   'ex-back-top',
   `ex-back-top--${props.shape}`,
-  `ex-back-top--${props.size}`,
+  `ex-back-top--${componentSize.value}`,
   {
     'ex-back-top--with-text': !!props.text,
     'ex-back-top--with-progress': props.showProgress,
+    'ex-no-neon': !neonEffect.value,
+    'ex-no-animation': !animation.value,
   },
   ...normalizeCustomClass(props.class),
 ]);
 
-const rootStyle = computed<CSSProperties>(() => {
-  const base = getPositionStyle(props.position, props.offset);
-  if (props.zIndex !== undefined) base.zIndex = props.zIndex;
+const rootStyle = computed(() => {
+  const base = { ...themeOverrides.value, ...getPositionStyle(props.position, props.offset) };
+  base.zIndex = props.zIndex ?? stickyZIndex.value;
   if (!props.style) return base;
-  return typeof props.style === 'string'
-    ? ({ ...base, cssText: props.style } as unknown as CSSProperties)
-    : { ...base, ...props.style };
+  // Vue 会规范化样式数组，字符串样式只覆盖同名属性而不会清空固定定位。
+  return typeof props.style === 'string' ? [base, props.style] : { ...base, ...props.style };
 });
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const normalizedVisibilityPercent = computed(() => {
+  if (props.visibilityPercent === undefined || !Number.isFinite(props.visibilityPercent)) {
+    return undefined;
+  }
+  return Math.min(100, Math.max(0, props.visibilityPercent));
+});
+const normalizedVisibilityHeight = computed(() =>
+  Number.isFinite(props.visibilityHeight) ? Math.max(0, props.visibilityHeight) : 200
+);
 
 // ---------------------------------------------------------------------------
 // 滚动监听
 // ---------------------------------------------------------------------------
 const computeVisible = (info: BackTopScrollInfo) =>
-  props.visibilityPercent !== undefined
-    ? info.scrollPercent >= props.visibilityPercent
-    : info.scrollTop >= props.visibilityHeight;
+  normalizedVisibilityPercent.value !== undefined
+    ? info.scrollPercent >= normalizedVisibilityPercent.value
+    : info.scrollTop >= normalizedVisibilityHeight.value;
 
 const update = () => {
   if (!scrollTarget) return;
@@ -199,16 +242,21 @@ const onScroll = () => {
   });
 };
 
+const onResize = () => {
+  viewportWidth.value = window.innerWidth;
+  onScroll();
+};
+
 const bind = () => {
   scrollTarget = resolveTarget(props.target);
   scrollTarget.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
   update();
 };
 
 const unbind = () => {
   scrollTarget?.removeEventListener('scroll', onScroll);
-  window.removeEventListener('resize', onScroll);
+  window.removeEventListener('resize', onResize);
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -222,12 +270,26 @@ const unbind = () => {
 const scrollToTop = async (): Promise<void> => {
   if (scrolling.value || !scrollTarget) return;
   scrolling.value = true;
+  const controller = new AbortController();
+  scrollAbortController = controller;
   emit('scroll-start');
   try {
-    await scrollToPosition(scrollTarget, props.scrollTo, props.scrollBehavior, props.scrollDuration);
+    const reduceMotion = prefersReducedMotion();
+    const targetPosition = Number.isFinite(props.scrollTo) ? Math.max(0, props.scrollTo) : 0;
+    const duration = Number.isFinite(props.scrollDuration)
+      ? Math.max(0, props.scrollDuration)
+      : 400;
+    const completed = await scrollToPosition(
+      scrollTarget,
+      targetPosition,
+      reduceMotion ? 'auto' : props.scrollBehavior,
+      reduceMotion ? 0 : duration,
+      controller.signal
+    );
+    if (completed && mounted) emit('scroll-end');
   } finally {
     scrolling.value = false;
-    emit('scroll-end');
+    if (scrollAbortController === controller) scrollAbortController = null;
   }
 };
 
@@ -256,13 +318,28 @@ const hide = () => {
 watch(
   () => props.target,
   () => {
+    if (!mounted) return;
+    scrollAbortController?.abort();
     unbind();
     bind();
   }
 );
 
-onMounted(bind);
-onBeforeUnmount(unbind);
+watch([normalizedVisibilityHeight, normalizedVisibilityPercent], () => {
+  if (mounted) update();
+});
+
+onMounted(() => {
+  mounted = true;
+  viewportWidth.value = window.innerWidth;
+  bind();
+});
+onBeforeUnmount(() => {
+  mounted = false;
+  scrollAbortController?.abort();
+  scrollAbortController = null;
+  unbind();
+});
 
 defineExpose<ExBackTopExposed>({
   scrollToTop,
@@ -274,6 +351,7 @@ defineExpose<ExBackTopExposed>({
 
 <style scoped lang="scss">
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-back-top {
   position: fixed;
@@ -444,6 +522,22 @@ defineExpose<ExBackTopExposed>({
   .ex-back-top__ring-bar,
   .ex-back-top__line-fill {
     transition: none;
+  }
+}
+
+// Teleport 按钮脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-back-top.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-back-top.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
   }
 }
 

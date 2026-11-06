@@ -1,87 +1,140 @@
+@use '../../styles/performance' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/tokens' as *;
-
-// ============================================================================
-// List 列表组件样式 - 游戏主题
-// ============================================================================
 
 .ex-list {
   position: relative;
   width: 100%;
-  background: var(--ex-color-bg-secondary);
-  border-radius: var(--ex-radius-lg);
   overflow: hidden;
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-color-bg-secondary);
 
-  // 边框样式
   &--bordered {
     border: 1px solid var(--ex-color-border-primary);
   }
 
-  // 分割�?
-  &--split {
-    .ex-list__item {
-      border-bottom: 1px solid var(--ex-color-border-primary);
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-  }
-
-  // 可悬�?
-  &--hoverable {
-    .ex-list__item {
-      cursor: pointer;
-      transition: all 0.9s ease-in-out;
-
-      &:hover:not(.ex-list__item--disabled) {
-        background: var(--ex-color-bg-hover);
-        border-color: var(--ex-color-neon-blue-500);
-        @include neon-glow('blue', 'sm');
-      }
-    }
-  }
-
-  // 加载�?
-  &--loading {
-    pointer-events: none;
+  &--loading-empty {
+    min-height: 160px;
   }
 }
 
-// 列表�?
+.ex-list__items {
+  display: block;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  // 文档站等宿主环境可能为列表重新注入 marker，组件必须在自身边界内显式清除。
+  &::marker {
+    content: '';
+  }
+
+  &--grid {
+    display: grid;
+    grid-template-columns: repeat(var(--ex-list-grid-columns-xs), minmax(0, 1fr));
+    gap: var(--ex-list-grid-gutter);
+  }
+}
+
 .ex-list__item {
   position: relative;
-  padding: var(--ex-spacing-4) var(--ex-spacing-6);
-  background: transparent;
-  @include transition(all);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &::marker {
+    content: '';
+  }
 
   &--disabled {
     opacity: 0.5;
-    cursor: not-allowed;
   }
 }
 
-// 列表项内�?
-.ex-list__item-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ex-spacing-4);
+.ex-list--split .ex-list__item {
+  border-bottom: 1px solid var(--ex-color-border-primary);
+
+  &:last-child {
+    border-bottom: 0;
+  }
 }
 
-// 列表项主要内�?
+.ex-list__item-surface {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--ex-spacing-4) var(--ex-spacing-6);
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  background: transparent;
+  @include safe-transition((background-color, box-shadow));
+}
+
+.ex-list__item-primary-action {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: -2px;
+  }
+}
+
+.ex-list--clickable .ex-list__item-surface {
+  pointer-events: none;
+
+  :is(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [role='link'],
+    [contenteditable]:not([contenteditable='false'])
+  ) {
+    pointer-events: auto;
+  }
+}
+
+.ex-list--hoverable .ex-list__item:not(.ex-list__item--disabled):hover .ex-list__item-surface {
+  background: var(--ex-color-bg-hover);
+  box-shadow: inset 3px 0 0 var(--ex-color-neon-blue-500);
+}
+
+.ex-list__item-content {
+  display: flex;
+  gap: var(--ex-spacing-4);
+  align-items: center;
+  justify-content: space-between;
+}
+
 .ex-list__item-main {
   display: flex;
-  align-items: center;
-  gap: var(--ex-spacing-3);
   flex: 1;
+  gap: var(--ex-spacing-3);
+  align-items: center;
   min-width: 0;
 }
 
-// 前缀（图�?头像�?
 .ex-list__item-prefix {
-  flex-shrink: 0;
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: center;
 }
@@ -89,21 +142,27 @@
 .ex-list__item-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
   border: 2px solid var(--ex-color-neon-blue-500);
-  @include neon-glow('blue', 'sm');
+  border-radius: var(--ex-radius-full);
+  object-fit: cover;
+  box-shadow: 0 0 6px var(--ex-color-neon-blue-alpha-30);
 }
 
 .ex-list__item-icon {
-  display: block;
+  flex: none;
   color: var(--ex-color-neon-blue-500);
 }
 
-// 列表项主�?
 .ex-list__item-body {
   flex: 1;
   min-width: 0;
+}
+
+.ex-list__item-title,
+.ex-list__item-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ex-list__item-title {
@@ -111,86 +170,27 @@
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-medium);
   line-height: var(--ex-leading-normal);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ex-list__item-description {
+  margin-top: var(--ex-spacing-1);
   color: var(--ex-color-text-secondary);
   font-size: var(--ex-text-sm);
   line-height: var(--ex-leading-relaxed);
-  margin-top: var(--ex-spacing-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-// 额外内容
 .ex-list__item-extra {
-  flex-shrink: 0;
+  flex: none;
   color: var(--ex-color-text-tertiary);
   font-size: var(--ex-text-sm);
 }
 
-// 空数�?
 .ex-list__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   padding: var(--ex-spacing-8) var(--ex-spacing-4);
-  color: var(--ex-color-text-tertiary);
-  font-size: var(--ex-text-base);
-  text-align: center;
-
-  p {
-    margin: 0;
-  }
 }
-
-// 加载遮罩
-.ex-list__loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--ex-color-black-alpha-70);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  @include transition(opacity);
-
-  &-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid var(--ex-color-neon-blue-alpha-20);
-    border-top-color: var(--ex-color-neon-blue-500);
-    border-right-color: var(--ex-color-neon-blue-500);
-    border-radius: 50%;
-    animation: list-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    @include neon-glow('blue', 'md');
-  }
-}
-
-@keyframes list-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-// ============================================================================
-// 尺寸变体
-// ============================================================================
 
 .ex-list--small {
-  .ex-list__item {
+  .ex-list__item-surface {
     padding: var(--ex-spacing-2) var(--ex-spacing-4);
   }
 
@@ -198,7 +198,8 @@
     font-size: var(--ex-text-sm);
   }
 
-  .ex-list__item-description {
+  .ex-list__item-description,
+  .ex-list__item-extra {
     font-size: var(--ex-text-xs);
   }
 
@@ -208,27 +209,8 @@
   }
 }
 
-.ex-list--medium {
-  .ex-list__item {
-    padding: var(--ex-spacing-4) var(--ex-spacing-6);
-  }
-
-  .ex-list__item-title {
-    font-size: var(--ex-text-base);
-  }
-
-  .ex-list__item-description {
-    font-size: var(--ex-text-sm);
-  }
-
-  .ex-list__item-avatar {
-    width: 40px;
-    height: 40px;
-  }
-}
-
 .ex-list--large {
-  .ex-list__item {
+  .ex-list__item-surface {
     padding: var(--ex-spacing-6) var(--ex-spacing-8);
   }
 
@@ -236,7 +218,8 @@
     font-size: var(--ex-text-lg);
   }
 
-  .ex-list__item-description {
+  .ex-list__item-description,
+  .ex-list__item-extra {
     font-size: var(--ex-text-base);
   }
 
@@ -246,79 +229,45 @@
   }
 }
 
-// ============================================================================
-// 响应式适配 - 移动端优�?
-// ============================================================================
-
-@include mobile {
-  .ex-list {
-    border-radius: var(--ex-radius-base);
-  }
-
-  .ex-list__item {
-    padding: var(--ex-spacing-3) var(--ex-spacing-4);
-  }
-
-  .ex-list__item-content {
-    gap: var(--ex-spacing-3);
-  }
-
-  .ex-list__item-main {
-    gap: var(--ex-spacing-2);
-  }
-
-  .ex-list__item-title {
-    font-size: var(--ex-text-sm);
-  }
-
-  .ex-list__item-description {
-    font-size: var(--ex-text-xs);
-  }
-
-  .ex-list__item-avatar {
-    width: 36px;
-    height: 36px;
-  }
-
-  .ex-list__empty {
-    padding: var(--ex-spacing-6) var(--ex-spacing-3);
-    font-size: var(--ex-text-sm);
-
-    img {
-      width: 32px !important;
-      height: 32px !important;
-      margin-bottom: 8px !important;
-    }
+@include respond-to(sm) {
+  .ex-list__items--grid {
+    grid-template-columns: repeat(var(--ex-list-grid-columns-sm), minmax(0, 1fr));
   }
 }
 
-// ============================================================================
-// 无障碍支�?
-// ============================================================================
+@include respond-to(md) {
+  .ex-list__items--grid {
+    grid-template-columns: repeat(var(--ex-list-grid-columns-md), minmax(0, 1fr));
+  }
+}
+
+@include respond-to(lg) {
+  .ex-list__items--grid {
+    grid-template-columns: repeat(var(--ex-list-grid-columns-lg), minmax(0, 1fr));
+  }
+}
+
+@include respond-to(xl) {
+  .ex-list__items--grid {
+    grid-template-columns: repeat(var(--ex-list-grid-columns-xl), minmax(0, 1fr));
+  }
+}
+
+@include respond-to(2xl) {
+  .ex-list__items--grid {
+    grid-template-columns: repeat(var(--ex-list-grid-columns-xxl), minmax(0, 1fr));
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ex-list__item,
-  .ex-list__loading {
+  .ex-list__item-surface {
     transition: none;
   }
-
-  .ex-list__loading-spinner {
-    animation: none;
-  }
 }
 
-// 高对比度模式
-@media (prefers-contrast: high) {
-  .ex-list--bordered {
+@media (prefers-contrast: more) {
+  .ex-list--bordered,
+  .ex-list--split .ex-list__item {
     border-width: 2px;
   }
-
-  .ex-list--split .ex-list__item {
-    border-bottom-width: 2px;
-  }
-
-  .ex-list__item-avatar {
-    border-width: 3px;
-  }
 }
-

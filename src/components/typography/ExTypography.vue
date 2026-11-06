@@ -1,30 +1,58 @@
 <template>
   <component
     :is="actualTag"
+    ref="rootRef"
     :class="[
       'ex-typography',
-      `ex-typography--${variant}`,
-      `ex-typography--${size}`,
+      `ex-typography--${props.variant}`,
+      props.size ? `ex-typography--${props.size}` : undefined,
       {
-        'ex-typography--truncate': truncate,
-        'ex-typography--gradient': gradient,
-        'ex-typography--glow': glow,
-        'ex-typography--center': center,
-        'ex-typography--bold': bold,
-        'ex-typography--italic': italic,
-        'ex-typography--underline': underline,
+        'ex-typography--truncate': props.truncate,
+        'ex-typography--truncate-single-line': isSingleLineTruncate,
+        'ex-typography--truncate-multiline': isMultiLineTruncate,
+        'ex-typography--gradient': props.gradient,
+        'ex-typography--gradient-animated': props.gradient && props.gradientAnimated,
+        'ex-typography--cyberpunk': props.cyberpunk,
+        'ex-typography--terminal': props.terminal,
+        'ex-typography--glitch': isGlitchEnabled,
+        'ex-typography--glow': props.glow,
+        'ex-typography--center': props.center,
+        'ex-typography--bold': props.bold,
+        'ex-typography--italic': props.italic,
+        'ex-typography--underline': props.underline,
       },
     ]"
+    :data-ex-typography-text="isGlitchEnabled ? glitchText : undefined"
     :style="computedStyle"
+    :title="truncationTitle"
     v-bind="$attrs"
   >
-    <slot>{{ text }}</slot>
+    <template v-if="props.terminal">
+      <span class="ex-typography__terminal-output">
+        <slot>{{ props.text }}</slot>
+      </span>
+      <span
+        class="ex-typography__terminal-scanlines"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="ex-typography__terminal-overlay"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="ex-typography__terminal-frame"
+        aria-hidden="true"
+      ></span>
+    </template>
+    <slot v-else>
+      {{ props.text }}
+    </slot>
   </component>
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue';
-import type { ExTypographyProps } from './types';
+import { computed, onMounted, onUpdated, ref, useAttrs, useSlots, type CSSProperties } from 'vue';
+import type { ExTypographyProps, TypographyTag, TypographyVariant } from './types';
 
 defineOptions({
   name: 'ExTypography',
@@ -33,10 +61,12 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExTypographyProps>(), {
   variant: 'body',
-  size: 'md',
   color: 'text-primary',
   truncate: false,
   gradient: false,
+  gradientAnimated: false,
+  cyberpunk: false,
+  terminal: false,
   glow: false,
   center: false,
   bold: false,
@@ -45,42 +75,125 @@ const props = withDefaults(defineProps<ExTypographyProps>(), {
   maxLines: 1,
 });
 
-// 计算样式
+const DEFAULT_TEXT_GRADIENT =
+  'linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-cyber-cyan) 30%, var(--ex-color-secondary) 68%, var(--ex-color-accent) 100%)';
+
+const MIN_MULTILINE_LINES = 2;
+const THEME_COLOR_TOKENS = new Set([
+  'primary',
+  'secondary',
+  'accent',
+  'success',
+  'warning',
+  'error',
+  'danger',
+  'info',
+  'text-primary',
+  'text-secondary',
+  'text-tertiary',
+  'text-inverse',
+  'text-disabled',
+  'white',
+  'black',
+]);
+const DEFAULT_TAG_BY_VARIANT: Record<TypographyVariant, TypographyTag> = {
+  display: 'h1',
+  heading: 'h2',
+  title: 'h3',
+  body: 'p',
+  caption: 'span',
+  overline: 'span',
+};
+
+const attrs = useAttrs();
+const slots = useSlots();
+const rootRef = ref<HTMLElement>();
+const glitchText = ref(props.text ?? '');
+
+// 将异常的行数输入收敛为浏览器 line-clamp 可以稳定处理的正整数。
+const normalizedMaxLines = computed(() => {
+  const maxLines = Number(props.maxLines);
+
+  if (!Number.isFinite(maxLines)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(maxLines));
+});
+
+const isMultiLineTruncate = computed(
+  () => props.truncate && normalizedMaxLines.value >= MIN_MULTILINE_LINES
+);
+const isSingleLineTruncate = computed(() => props.truncate && !isMultiLineTruncate.value);
+const isGlitchEnabled = computed(
+  () => props.cyberpunk || props.variant === 'display' || props.variant === 'heading'
+);
+
+// 撕裂层是装饰性副本，需要同步插槽最终渲染出的纯文本，避免重复渲染插槽节点。
+const syncGlitchText = (): void => {
+  const renderedText = rootRef.value?.textContent ?? props.text ?? '';
+  const normalizedText = renderedText.replace(/\s+/g, ' ').trim();
+
+  if (normalizedText !== glitchText.value) {
+    glitchText.value = normalizedText;
+  }
+};
+
+onMounted(syncGlitchText);
+onUpdated(syncGlitchText);
+
+const isThemeColor = (color: string): boolean => THEME_COLOR_TOKENS.has(color.toLowerCase());
+
+/** 仅计算需要由属性驱动的样式，排版变体和文本效果仍由独立类控制。 */
 const computedStyle = computed<CSSProperties>(() => {
   const style: CSSProperties = {};
 
-  // 设置颜色：支持主题色名（如 'text-primary'）或原始 CSS 颜色值（如 '#fff' / 'rgb(...)' / 'var(...)'）
-  if (props.color && !props.gradient) {
-    const isRawColor = /^(#|rgb|hsl|var\(|color\()/i.test(props.color);
-    style.color = isRawColor ? props.color : `var(--ex-color-${props.color})`;
+  // 渐变优先于普通文字颜色，并为未挂载主题选择器的宿主提供语义色回退。
+  if (props.gradient) {
+    (style as Record<string, string>)['--ex-typography-gradient'] = DEFAULT_TEXT_GRADIENT;
+
+    // 渐变文本的 color 是透明的，显式提供发光颜色才能让 gradient + glow 同时可见。
+    if (props.glow) {
+      (style as Record<string, string>)['--ex-typography-glow-color'] = 'var(--ex-color-primary)';
+    }
   }
 
-  // 设置多行截断
-  if (props.truncate && props.maxLines > 1) {
+  // 仅将已注册的语义色映射为主题变量，其余交给浏览器解析为原始 CSS 颜色。
+  if (props.color && !props.gradient) {
+    const color = props.color.trim();
+    const normalizedColor = color.toLowerCase();
+    const resolvedColor =
+      props.terminal && normalizedColor === 'text-primary'
+        ? 'var(--ex-typography-terminal-color)'
+        : props.cyberpunk && normalizedColor === 'text-primary'
+          ? 'var(--ex-color-cyber-cyan)'
+          : isThemeColor(color)
+            ? `var(--ex-color-${normalizedColor})`
+            : color;
+    style.color = resolvedColor;
+  }
+
+  // 多行截断需要由浏览器的 line-clamp 布局共同完成。
+  if (isMultiLineTruncate.value) {
     style.display = '-webkit-box';
-    style.WebkitLineClamp = props.maxLines;
+    style.WebkitLineClamp = normalizedMaxLines.value;
     style.WebkitBoxOrient = 'vertical';
     style.overflow = 'hidden';
   }
 
-  // 合并自定义样式
+  // 调用方样式最后合并，保留 Vue 原生样式覆盖能力。
   return { ...style, ...props.customStyle };
 });
 
-// 获取默认标签映射
-const getDefaultTag = (variant: string): string => {
-  const tagMap: Record<string, string> = {
-    display: 'h1',
-    heading: 'h2',
-    title: 'h3',
-    body: 'p',
-    caption: 'span',
-    overline: 'span',
-  };
-  return tagMap[variant] || 'p';
-};
+/** 截断 text 属性时补充原文提示；插槽内容需要由调用方提供可访问名称。 */
+const truncationTitle = computed(() => {
+  if (!props.truncate || !props.text || slots.default || attrs.title !== undefined) {
+    return undefined;
+  }
 
-// 如果没有指定标签，使用默认映射
-const actualTag = computed(() => props.tag || getDefaultTag(props.variant));
+  return props.text;
+});
+
+const actualTag = computed(() => props.tag ?? DEFAULT_TAG_BY_VARIANT[props.variant] ?? 'p');
 </script>
 <style lang="scss" src="./ExTypography.scss" scoped></style>

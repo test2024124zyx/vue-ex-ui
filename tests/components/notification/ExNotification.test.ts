@@ -2,10 +2,17 @@
  * Notification 组件单元测试
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExNotification from '../../../src/components/notification/ExNotification.vue';
-import type { NotificationType, NotificationPosition } from '../../../src/components/notification/types';
+import type {
+  NotificationType,
+  NotificationPosition,
+} from '../../../src/components/notification/types';
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('ExNotification 组件', () => {
   describe('组件渲染', () => {
@@ -27,7 +34,7 @@ describe('ExNotification 组件', () => {
     it('渲染不同类型的通知', () => {
       const types: NotificationType[] = ['info', 'success', 'warning', 'error'];
 
-      types.forEach((type) => {
+      types.forEach(type => {
         const wrapper = mount(ExNotification, {
           props: {
             type,
@@ -41,9 +48,14 @@ describe('ExNotification 组件', () => {
     });
 
     it('渲染不同位置的通知', () => {
-      const positions: NotificationPosition[] = ['top-right', 'top-left', 'bottom-right', 'bottom-left'];
+      const positions: NotificationPosition[] = [
+        'top-right',
+        'top-left',
+        'bottom-right',
+        'bottom-left',
+      ];
 
-      positions.forEach((position) => {
+      positions.forEach(position => {
         const wrapper = mount(ExNotification, {
           props: {
             title: '测试标题',
@@ -51,7 +63,9 @@ describe('ExNotification 组件', () => {
             duration: 0,
           },
         });
-        expect(wrapper.find('.ex-notification').classes()).toContain(`ex-notification--${position}`);
+        expect(wrapper.find('.ex-notification').classes()).toContain(
+          `ex-notification--${position}`
+        );
       });
     });
 
@@ -163,8 +177,68 @@ describe('ExNotification 组件', () => {
         },
       });
 
-      const vm = wrapper.vm as { visible: boolean };
+      const vm = wrapper.vm as unknown as { visible: boolean };
       expect(typeof vm.visible).toBe('boolean');
+    });
+  });
+
+  describe('自动关闭计时', () => {
+    it('焦点仍在通知内时鼠标离开不会恢复计时', async () => {
+      vi.useFakeTimers();
+      const wrapper = mount(ExNotification, {
+        props: {
+          title: '交错暂停通知',
+          duration: 1000,
+        },
+      });
+      const notification = wrapper.get('.ex-notification');
+
+      await vi.advanceTimersByTimeAsync(300);
+      await notification.trigger('mouseenter');
+      await vi.advanceTimersByTimeAsync(200);
+      await notification.trigger('focusin');
+      await notification.trigger('mouseleave');
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(wrapper.emitted('close')).toBeUndefined();
+
+      await notification.trigger('focusout');
+      await vi.advanceTimersByTimeAsync(699);
+      expect(wrapper.emitted('close')).toBeUndefined();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(wrapper.emitted('close')).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(wrapper.emitted('close')).toHaveLength(1);
+      wrapper.unmount();
+    });
+
+    it('鼠标仍悬停时焦点移出不会恢复计时', async () => {
+      vi.useFakeTimers();
+      const wrapper = mount(ExNotification, {
+        props: {
+          title: '反向交错暂停通知',
+          duration: 1000,
+        },
+      });
+      const notification = wrapper.get('.ex-notification');
+
+      await vi.advanceTimersByTimeAsync(200);
+      await notification.trigger('focusin');
+      await notification.trigger('mouseenter');
+      await notification.trigger('focusout');
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(wrapper.emitted('close')).toBeUndefined();
+
+      await notification.trigger('mouseleave');
+      await vi.advanceTimersByTimeAsync(799);
+      expect(wrapper.emitted('close')).toBeUndefined();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(wrapper.emitted('close')).toHaveLength(1);
+      wrapper.unmount();
     });
   });
 
@@ -177,7 +251,7 @@ describe('ExNotification 组件', () => {
         },
       });
 
-      expect(wrapper.find('.ex-notification').attributes('role')).toBe('alert');
+      expect(wrapper.find('.ex-notification').attributes('role')).toBe('status');
     });
 
     it('info 类型使用 polite aria-live', () => {
@@ -225,7 +299,7 @@ describe('ExNotification 组件', () => {
         },
       });
 
-      expect(wrapper.find('.ex-notification__close').attributes('tabindex')).toBe('0');
+      expect(wrapper.find('.ex-notification__close').element.tagName).toBe('BUTTON');
     });
   });
 });

@@ -26,149 +26,221 @@ const toggleLoading3 = () => {
 
 最简单的占位效果。
 
+::: raw
 <div class="demo-container">
   <ExSkeleton />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
   <ExSkeleton />
 </template>
 ```
+
+:::
 
 ## 复杂组合
 
 更复杂的组合，包含头像、标题和段落。
 
+::: raw
 <div class="demo-container">
   <ExSkeleton avatar :title="true" :rows="4" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExSkeleton avatar :title="true" :rows="4" />
+  <ExSkeleton
+    avatar
+    :title="true"
+    :rows="4"
+  />
 </template>
 ```
+
+:::
 
 ## 动画效果
 
 通过 `animation` 属性可以设置不同的动画效果。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">脉冲动画（默认）</h4>
     <ExSkeleton animation="pulse" avatar :title="true" :rows="3" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">波浪动画</h4>
     <ExSkeleton animation="wave" avatar :title="true" :rows="3" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">无动画</h4>
     <ExSkeleton animation="none" avatar :title="true" :rows="3" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 脉冲动画 -->
-  <ExSkeleton animation="pulse" avatar :title="true" :rows="3" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">脉冲动画（默认）</h4>
+    <ExSkeleton
+      animation="pulse"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
 
-  <!-- 波浪动画 -->
-  <ExSkeleton animation="wave" avatar :title="true" :rows="3" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">波浪动画</h4>
+    <ExSkeleton
+      animation="wave"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
 
-  <!-- 无动画 -->
-  <ExSkeleton animation="none" avatar :title="true" :rows="3" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">无动画</h4>
+    <ExSkeleton
+      animation="none"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 不同变体
 
 通过 `variant` 属性可以使用预设的骨架屏样式。
 
+::: raw
 <div class="demo-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">文本</h4>
     <ExSkeleton variant="text" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">头像</h4>
     <ExSkeleton variant="avatar" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">标题</h4>
     <ExSkeleton variant="title" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">段落</h4>
     <ExSkeleton variant="paragraph" :rows="4" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">图片</h4>
     <ExSkeleton variant="image" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">按钮</h4>
     <ExSkeleton variant="button" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">卡片</h4>
     <ExSkeleton variant="card" />
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">文章</h4>
     <ExSkeleton variant="article" :rows="5" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 文本 -->
-  <ExSkeleton variant="text" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">文本</h4>
+    <ExSkeleton variant="text" />
+  </div>
 
-  <!-- 头像 -->
-  <ExSkeleton variant="avatar" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">头像</h4>
+    <ExSkeleton variant="avatar" />
+  </div>
 
-  <!-- 标题 -->
-  <ExSkeleton variant="title" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">标题</h4>
+    <ExSkeleton variant="title" />
+  </div>
 
-  <!-- 段落 -->
-  <ExSkeleton variant="paragraph" :rows="4" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">段落</h4>
+    <ExSkeleton
+      variant="paragraph"
+      :rows="4"
+    />
+  </div>
 
-  <!-- 图片 -->
-  <ExSkeleton variant="image" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">图片</h4>
+    <ExSkeleton variant="image" />
+  </div>
 
-  <!-- 按钮 -->
-  <ExSkeleton variant="button" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">按钮</h4>
+    <ExSkeleton variant="button" />
+  </div>
 
-  <!-- 卡片 -->
-  <ExSkeleton variant="card" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">卡片</h4>
+    <ExSkeleton variant="card" />
+  </div>
 
-  <!-- 文章 -->
-  <ExSkeleton variant="article" :rows="5" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">文章</h4>
+    <ExSkeleton
+      variant="article"
+      :rows="5"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 显示真实内容
 
 通过 `loading` 属性控制是否显示骨架屏。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton type="primary" @click="toggleLoading">
       {{ loading ? '显示内容' : '显示骨架屏' }}
     </ExButton>
   </div>
-  
+
   <ExSkeleton :loading="loading" avatar :title="true" :rows="3">
     <template #content>
       <ExPanel type="primary">
@@ -204,6 +276,9 @@ const toggleLoading3 = () => {
     </template>
   </ExSkeleton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -217,11 +292,21 @@ const toggleLoading = () => {
 </script>
 
 <template>
-  <ExButton type="primary" @click="toggleLoading">
-    {{ loading ? '显示内容' : '显示骨架屏' }}
-  </ExButton>
+  <div style="margin-bottom: 16px;">
+    <ExButton
+      type="primary"
+      @click="toggleLoading"
+    >
+      {{ loading ? '显示内容' : '显示骨架屏' }}
+    </ExButton>
+  </div>
 
-  <ExSkeleton :loading="loading" avatar :title="true" :rows="3">
+  <ExSkeleton
+    :loading="loading"
+    avatar
+    :title="true"
+    :rows="3"
+  >
     <template #content>
       <ExPanel type="primary">
         <template #icon>
@@ -232,9 +317,35 @@ const toggleLoading = () => {
             height="24"
           />
         </template>
-        <div>
-          <h3>玩家信息</h3>
-          <p>这是加载完成后显示的真实内容</p>
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <ExAvatar
+            size="large"
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+          />
+          <div>
+            <h3 style="margin: 0 0 8px 0; color: var(--ex-color-text-primary);">玩家信息</h3>
+            <p style="margin: 0; color: var(--ex-color-text-secondary);">
+              这是加载完成后显示的真实内容
+            </p>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <div>
+            <strong style="color: var(--ex-color-text-primary);">用户名：</strong>
+            <span style="color: var(--ex-color-neon-blue-500);">Player001</span>
+          </div>
+          <div>
+            <strong style="color: var(--ex-color-text-primary);">等级：</strong>
+            <span style="color: var(--ex-color-neon-blue-500);">Lv.50</span>
+          </div>
+          <div>
+            <strong style="color: var(--ex-color-text-primary);">经验值：</strong>
+            <span style="color: var(--ex-color-neon-blue-500);">12,580 / 15,000</span>
+          </div>
+          <div>
+            <strong style="color: var(--ex-color-text-primary);">战斗力：</strong>
+            <span style="color: var(--ex-color-neon-blue-500);">8,520</span>
+          </div>
         </div>
       </ExPanel>
     </template>
@@ -242,10 +353,13 @@ const toggleLoading = () => {
 </template>
 ```
 
+:::
+
 ## 列表骨架屏
 
 使用 `count` 属性可以渲染多个骨架屏，适合列表场景。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton type="primary" @click="toggleLoading2">
@@ -255,10 +369,10 @@ const toggleLoading = () => {
   <ExSkeleton :loading="loading2" avatar :title="true" :rows="2" :count="3">
     <template #content>
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <ExPanel 
-          v-for="i in 3" 
-          :key="i" 
-          type="primary" 
+        <ExPanel
+          v-for="i in 3"
+          :key="i"
+          type="primary"
           hoverable
         >
           <div style="display: flex; align-items: center; gap: 16px;">
@@ -274,22 +388,57 @@ const toggleLoading = () => {
     </template>
   </ExSkeleton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const loading = ref(true);
+const loading2 = ref(true);
+
+const toggleLoading2 = () => {
+  loading2.value = !loading2.value;
+};
 </script>
 
 <template>
-  <ExSkeleton :loading="loading" avatar :title="true" :rows="2" :count="3">
+  <div style="margin-bottom: 16px;">
+    <ExButton
+      type="primary"
+      @click="toggleLoading2"
+    >
+      {{ loading2 ? '显示列表' : '显示骨架屏' }}
+    </ExButton>
+  </div>
+  <ExSkeleton
+    :loading="loading2"
+    avatar
+    :title="true"
+    :rows="2"
+    :count="3"
+  >
     <template #content>
-      <div v-for="i in 3" :key="i">
-        <ExPanel type="primary" hoverable>
-          <div>
-            <h4>玩家 {{ i }}</h4>
-            <p>等级 {{ 40 + i * 5 }}</p>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <ExPanel
+          v-for="i in 3"
+          :key="i"
+          type="primary"
+          hoverable
+        >
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <ExAvatar :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=Player${i}`" />
+            <div style="flex: 1;">
+              <h4 style="margin: 0 0 8px 0; color: var(--ex-color-text-primary);">玩家 {{ i }}</h4>
+              <p style="margin: 0; color: var(--ex-color-text-secondary);">
+                等级 {{ 40 + i * 5 }} | 战斗力 {{ 8000 + i * 500 }}
+              </p>
+            </div>
+            <ExBadge
+              :count="i"
+              type="success"
+            />
           </div>
         </ExPanel>
       </div>
@@ -298,48 +447,81 @@ const loading = ref(true);
 </template>
 ```
 
+:::
+
 ## 自定义尺寸
 
 通过 `width` 和 `height` 属性可以自定义骨架屏的尺寸。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 16px;">
   <ExSkeleton variant="text" width="200px" />
   <ExSkeleton variant="text" width="50%" />
   <ExSkeleton variant="image" width="100%" height="150px" />
   <ExSkeleton variant="button" width="120px" height="40px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExSkeleton variant="text" width="200px" />
-  <ExSkeleton variant="text" width="50%" />
-  <ExSkeleton variant="image" width="100%" height="150px" />
-  <ExSkeleton variant="button" width="120px" height="40px" />
+  <ExSkeleton
+    variant="text"
+    width="200px"
+  />
+  <ExSkeleton
+    variant="text"
+    width="50%"
+  />
+  <ExSkeleton
+    variant="image"
+    width="100%"
+    height="150px"
+  />
+  <ExSkeleton
+    variant="button"
+    width="120px"
+    height="40px"
+  />
 </template>
 ```
+
+:::
 
 ## 自定义段落宽度
 
 通过 `rowsWidth` 属性可以自定义每行的宽度。
 
+::: raw
 <div class="demo-container">
-  <ExSkeleton 
-    :title="true" 
-    :rows="4" 
+  <ExSkeleton
+    :title="true"
+    :rows="4"
     :rows-width="['100%', '90%', '80%', '60%']"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExSkeleton :title="true" :rows="4" :rows-width="['100%', '90%', '80%', '60%']" />
+  <ExSkeleton
+    :title="true"
+    :rows="4"
+    :rows-width="['100%', '90%', '80%', '60%']"
+  />
 </template>
 ```
+
+:::
 
 ## 头像形状
 
 通过 `avatarShape` 属性可以设置头像的形状。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">圆形头像</h4>
@@ -354,24 +536,49 @@ const loading = ref(true);
     <ExSkeleton avatar avatar-shape="rounded" :title="true" :rows="2" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 圆形头像 -->
-  <ExSkeleton avatar avatar-shape="circle" :title="true" :rows="2" />
-
-  <!-- 方形头像 -->
-  <ExSkeleton avatar avatar-shape="square" :title="true" :rows="2" />
-
-  <!-- 圆角头像 -->
-  <ExSkeleton avatar avatar-shape="rounded" :title="true" :rows="2" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">圆形头像</h4>
+    <ExSkeleton
+      avatar
+      avatar-shape="circle"
+      :title="true"
+      :rows="2"
+    />
+  </div>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">方形头像</h4>
+    <ExSkeleton
+      avatar
+      avatar-shape="square"
+      :title="true"
+      :rows="2"
+    />
+  </div>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">圆角头像</h4>
+    <ExSkeleton
+      avatar
+      avatar-shape="rounded"
+      :title="true"
+      :rows="2"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 属性可以设置骨架屏的尺寸。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">小尺寸</h4>
@@ -386,31 +593,56 @@ const loading = ref(true);
     <ExSkeleton size="large" avatar :title="true" :rows="3" />
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 小尺寸 -->
-  <ExSkeleton size="small" avatar :title="true" :rows="3" />
-
-  <!-- 默认尺寸 -->
-  <ExSkeleton size="default" avatar :title="true" :rows="3" />
-
-  <!-- 大尺寸 -->
-  <ExSkeleton size="large" avatar :title="true" :rows="3" />
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">小尺寸</h4>
+    <ExSkeleton
+      size="small"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">默认尺寸</h4>
+    <ExSkeleton
+      size="default"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-primary);">大尺寸</h4>
+    <ExSkeleton
+      size="large"
+      avatar
+      :title="true"
+      :rows="3"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 自定义骨架屏
 
 使用默认插槽可以完全自定义骨架屏的内容。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton type="primary" @click="toggleLoading3">
       {{ loading3 ? '显示内容' : '显示骨架屏' }}
     </ExButton>
   </div>
-  
+
   <ExSkeleton :loading="loading3" variant="custom">
     <!-- 自定义骨架屏 -->
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
@@ -419,18 +651,18 @@ const loading = ref(true);
     <!-- 真实内容 -->
     <template #content>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-        <ExPanel 
-          v-for="i in 3" 
-          :key="i" 
+        <ExPanel
+          v-for="i in 3"
+          :key="i"
           :type="['primary', 'success', 'warning'][i - 1]"
           hoverable
         >
           <template #icon>
-            <img 
-              :src="`https://api.iconify.design/ri/${['trophy', 'medal', 'star'][i - 1]}-line.svg`" 
-              alt="图标" 
-              width="24" 
-              height="24" 
+            <img
+              :src="`https://api.iconify.design/ri/${['trophy', 'medal', 'star'][i - 1]}-line.svg`"
+              alt="图标"
+              width="24"
+              height="24"
             />
           </template>
           <div style="text-align: center;">
@@ -446,26 +678,68 @@ const loading = ref(true);
     </template>
   </ExSkeleton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const loading = ref(true);
+const loading3 = ref(true);
+
+const toggleLoading3 = () => {
+  loading3.value = !loading3.value;
+};
 </script>
 
 <template>
-  <ExSkeleton :loading="loading" variant="custom">
+  <div style="margin-bottom: 16px;">
+    <ExButton
+      type="primary"
+      @click="toggleLoading3"
+    >
+      {{ loading3 ? '显示内容' : '显示骨架屏' }}
+    </ExButton>
+  </div>
+
+  <ExSkeleton
+    :loading="loading3"
+    variant="custom"
+  >
     <!-- 自定义骨架屏 -->
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-      <ExSkeleton variant="card" v-for="i in 3" :key="i" />
+      <ExSkeleton
+        variant="card"
+        v-for="i in 3"
+        :key="i"
+      />
     </div>
-
     <!-- 真实内容 -->
     <template #content>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-        <ExPanel v-for="i in 3" :key="i" type="primary" hoverable>
-          <div>卡片内容 {{ i }}</div>
+        <ExPanel
+          v-for="i in 3"
+          :key="i"
+          :type="['primary', 'success', 'warning'][i - 1]"
+          hoverable
+        >
+          <template #icon>
+            <img
+              :src="`https://api.iconify.design/ri/${['trophy', 'medal', 'star'][i - 1]}-line.svg`"
+              alt="图标"
+              width="24"
+              height="24"
+            />
+          </template>
+          <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">
+              {{ [850, 85, 1250][i - 1] }}{{ i === 2 ? '/120' : '' }}{{ i === 3 ? 'h' : '' }}
+            </div>
+            <div style="color: var(--ex-color-text-secondary);">
+              {{ ['总胜场', '已解锁', '游戏时长'][i - 1] }}
+            </div>
+          </div>
         </ExPanel>
       </div>
     </template>
@@ -473,7 +747,11 @@ const loading = ref(true);
 </template>
 ```
 
+:::
+
 ## API
+
+省略 `size` 时继承最近的 `ExConfigProvider`；全局 `medium` 对应骨架屏的 `default`。显式设置的尺寸优先。
 
 ### Skeleton Props
 

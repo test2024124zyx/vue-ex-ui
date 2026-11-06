@@ -4,16 +4,19 @@
     :class="stepsClasses"
     :style="stepsStyles"
     role="navigation"
-    :aria-label="ariaLabel || 'Steps navigation'"
+    :aria-label="ariaLabel || t('navigation')"
   >
-    <slot />
+    <SlotContent />
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, provide, ref } from 'vue';
+import { computed, onMounted, onUpdated, provide, ref } from 'vue';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from './types';
+import { useSlotItems } from '../../composables/useSlotItems';
+import { useComponentSize } from '../config-provider/composables';
+import { useLocale } from '../../locale';
 
 defineOptions({
   name: 'ExSteps',
@@ -22,25 +25,29 @@ defineOptions({
 const props = withDefaults(defineProps<ExStepsProps>(), {
   current: 0,
   direction: 'horizontal',
-  size: 'medium',
+  size: undefined,
   status: 'process',
   progressDot: false,
   clickable: false,
 });
 
 const emit = defineEmits<ExStepsEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
+const { t } = useLocale('steps');
 
 const stepsRef = ref<HTMLDivElement>();
+const { items: slotItems, SlotContent } = useSlotItems('ExStep');
 // 按注册顺序保存各步骤的唯一标识；索引通过 indexOf 实时计算，
 // 这样动态增删/重排步骤后 isLast、状态判断等都会自动更新（避免自增计数器永久漂移）。
 const stepUids = ref<symbol[]>([]);
+const stepElements = new Map<symbol, () => HTMLElement | null>();
 
 // 计算属性
 const stepsClasses = computed(() => {
   const classes = ['ex-steps'];
 
   classes.push(`ex-steps--${props.direction}`);
-  classes.push(`ex-steps--${props.size}`);
+  classes.push(`ex-steps--${componentSize.value}`);
 
   if (props.progressDot) {
     classes.push('ex-steps--progress-dot');
@@ -62,7 +69,8 @@ const stepsStyles = computed(() => {
 });
 
 // 注册步骤（按文档顺序追加）
-const registerStep = (uid: symbol) => {
+const registerStep = (uid: symbol, getElement: () => HTMLElement | null) => {
+  stepElements.set(uid, getElement);
   if (!stepUids.value.includes(uid)) {
     stepUids.value.push(uid);
   }
@@ -74,14 +82,39 @@ const unregisterStep = (uid: symbol) => {
   if (index > -1) {
     stepUids.value.splice(index, 1);
   }
+  stepElements.delete(uid);
 };
 
+const syncStepOrder = (): void => {
+  const ordered = [...stepUids.value].sort((leftUid, rightUid) => {
+    const left = stepElements.get(leftUid)?.();
+    const right = stepElements.get(rightUid)?.();
+    if (!left || !right || left === right) return 0;
+    const position = left.compareDocumentPosition(right);
+    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+  });
+  if (ordered.some((uid, index) => uid !== stepUids.value[index])) {
+    stepUids.value = ordered;
+  }
+};
+
+onUpdated(syncStepOrder);
+
+// 子步骤在同一轮渲染中注册时，首个子步骤可能先缓存步骤总数；挂载后复制数组
+// 触发一次统一的响应式刷新，确保连接线和最后步骤标记反映完整的子步骤集合。
+onMounted(() => {
+  syncStepOrder();
+  stepUids.value = [...stepUids.value];
+});
+
 // 获取步骤当前索引（响应式）
-const getStepIndex = (uid: symbol) => stepUids.value.indexOf(uid);
+const getStepIndex = (uid: symbol) => {
+  return stepUids.value.indexOf(uid);
+};
 
 // 步骤点击事件
-const onStepClick = (index: number) => {
-  if (props.clickable) {
+const onStepClick = (index: number, childOverride = false) => {
+  if (props.clickable || childOverride) {
     emit('change', index);
   }
 };
@@ -91,10 +124,10 @@ const stepsContext: StepsContext = {
   current: computed(() => props.current),
   status: computed(() => props.status),
   direction: computed(() => props.direction),
-  size: computed(() => props.size),
+  size: componentSize,
   progressDot: computed(() => props.progressDot),
   clickable: computed(() => props.clickable),
-  stepCount: computed(() => stepUids.value.length),
+  stepCount: computed(() => Math.max(slotItems.value.length, stepUids.value.length)),
   registerStep,
   unregisterStep,
   getStepIndex,
@@ -107,7 +140,7 @@ provide('exSteps', stepsContext);
 const getElement = () => stepsRef.value || null;
 
 const goTo = (index: number) => {
-  if (index >= 0 && index < stepUids.value.length) {
+  if (Number.isInteger(index) && index >= 0 && index < stepUids.value.length) {
     emit('change', index);
   }
 };

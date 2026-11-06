@@ -68,10 +68,28 @@ describe('ExBadge with ConfigProvider', () => {
 
       const badges = wrapper.findAllComponents(ExBadge);
       expect(badges).toHaveLength(3);
-      badges.forEach((badge) => {
+      badges.forEach(badge => {
         const sup = badge.find('.ex-badge__sup');
         expect(sup.classes()).toContain('ex-badge__sup--small');
       });
+    });
+  });
+
+  describe('Locale Inheritance', () => {
+    it('uses the nearest ConfigProvider locale for accessible labels', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { locale: 'zh-CN' },
+        slots: {
+          default: '<ex-badge dot />',
+        },
+        global: {
+          components: { ExBadge },
+        },
+      });
+
+      expect(wrapper.findComponent(ExBadge).find('.ex-badge__sup').attributes('aria-label')).toBe(
+        '通知提示'
+      );
     });
   });
 
@@ -97,7 +115,7 @@ describe('ExBadge with ConfigProvider', () => {
       const badges = wrapper.findAllComponents(ExBadge);
       const outerSup = badges[0].find('.ex-badge__sup');
       const innerSup = badges[1].find('.ex-badge__sup');
-      
+
       expect(outerSup.classes()).toContain('ex-badge__sup--large');
       expect(innerSup.classes()).toContain('ex-badge__sup--small');
     });
@@ -157,7 +175,7 @@ describe('ExBadge with ConfigProvider', () => {
   describe('All sizes', () => {
     const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`correctly applies ${size} size from ConfigProvider`, () => {
         const wrapper = mount(ExConfigProvider, {
           props: { size },

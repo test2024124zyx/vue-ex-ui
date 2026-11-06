@@ -22,7 +22,7 @@
       <!-- 预设变体模式（count 控制重复渲染的骨架块数量） -->
       <template v-else>
         <div
-          v-for="n in count"
+          v-for="n in normalizedCount"
           :key="n"
           class="ex-skeleton__repeat"
         >
@@ -34,7 +34,10 @@
             <!-- 头像 -->
             <div
               class="ex-skeleton__avatar"
-              :class="[`ex-skeleton__avatar--${avatarShape}`, `ex-skeleton__avatar--${size}`]"
+              :class="[
+                `ex-skeleton__avatar--${avatarShape}`,
+                `ex-skeleton__avatar--${componentSize}`,
+              ]"
               :style="avatarStyle"
             />
 
@@ -52,11 +55,11 @@
 
               <!-- 段落 -->
               <div
-                v-if="rows > 0"
+                v-if="computedRows > 0"
                 class="ex-skeleton__paragraph"
               >
                 <div
-                  v-for="(_row, index) in rows"
+                  v-for="(_row, index) in computedRows"
                   :key="index"
                   class="ex-skeleton__row"
                   :style="getRowStyle(index)"
@@ -70,16 +73,59 @@
             v-else
             class="ex-skeleton__content"
           >
-            <!-- 标题 -->
             <div
-              v-if="title || variant === 'title'"
+              v-if="variant === 'list'"
+              class="ex-skeleton__list-item ex-skeleton__layout"
+            >
+              <div
+                class="ex-skeleton__avatar"
+                :class="[
+                  `ex-skeleton__avatar--${avatarShape}`,
+                  `ex-skeleton__avatar--${componentSize}`,
+                ]"
+                :style="avatarStyle"
+              />
+              <div class="ex-skeleton__content">
+                <div
+                  class="ex-skeleton__title"
+                  :style="titleStyle"
+                />
+                <div class="ex-skeleton__paragraph">
+                  <div
+                    v-for="rowIndex in computedRows"
+                    :key="rowIndex"
+                    class="ex-skeleton__row"
+                    :style="getRowStyle(rowIndex - 1)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-else-if="variant === 'table'"
+              class="ex-skeleton__table"
+            >
+              <div class="ex-skeleton__table-header ex-skeleton__title" />
+              <div
+                v-for="rowIndex in computedRows"
+                :key="rowIndex"
+                class="ex-skeleton__table-row ex-skeleton__row"
+              />
+            </div>
+
+            <div
+              v-else-if="title || variant === 'title' || variant === 'article'"
               class="ex-skeleton__title"
               :style="titleStyle"
             />
 
-            <!-- 段落 -->
             <div
-              v-if="rows > 0 || variant === 'paragraph'"
+              v-if="
+                variant === 'paragraph' ||
+                variant === 'article' ||
+                (variant === 'text' && hasExplicitRows) ||
+                (title && computedRows > 0)
+              "
               class="ex-skeleton__paragraph"
             >
               <div
@@ -92,7 +138,7 @@
 
             <!-- 单个元素变体 -->
             <div
-              v-if="['text', 'image', 'button', 'card'].includes(variant)"
+              v-if="['text', 'image', 'button', 'card', 'rect'].includes(variant)"
               class="ex-skeleton__element"
               :class="`ex-skeleton__element--${variant}`"
               :style="elementStyle"
@@ -119,9 +165,11 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
+import { computed, getCurrentInstance, ref } from 'vue';
 import type { ExSkeletonProps, ExSkeletonExposed } from './types';
 import { useLocale } from '../../locale';
+import { useGlobalSize } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExSkeleton',
@@ -131,7 +179,7 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
   loading: true,
   animation: 'pulse',
   shape: 'rounded',
-  size: 'default',
+  size: undefined,
   variant: 'text',
   active: true,
   count: 1,
@@ -142,14 +190,25 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
 });
 
 const { t } = useLocale('skeleton');
+const globalSize = useGlobalSize();
+// 骨架屏保留 default 的公开别名，缺省值映射到全局 medium。
+const componentSize = computed(
+  () => props.size ?? (globalSize.value === 'medium' ? 'default' : globalSize.value)
+);
 const skeletonRef = ref<HTMLDivElement>();
+const instance = getCurrentInstance();
+const hasExplicitRows = useRenderComputed(() => {
+  void props.rows;
+  const vnodeProps = instance?.vnode.props;
+  return Boolean(vnodeProps && Object.prototype.hasOwnProperty.call(vnodeProps, 'rows'));
+});
 
 // 计算属性
 const skeletonClasses = computed(() => {
   const classes = [
     'ex-skeleton',
     `ex-skeleton--${props.variant}`,
-    `ex-skeleton--${props.size}`,
+    `ex-skeleton--${componentSize.value}`,
     `ex-skeleton--${props.shape}`,
   ];
 
@@ -175,7 +234,7 @@ const skeletonStyles = computed(() => {
 
   if (props.style) {
     if (typeof props.style === 'string') {
-      return props.style;
+      return [styles, props.style];
     }
     Object.assign(styles, props.style);
   }
@@ -209,6 +268,10 @@ const titleStyle = computed(() => {
 const elementStyle = computed(() => {
   const styles: Record<string, string> = {};
 
+  if (props.variant === 'rect' && !props.height) {
+    styles.minHeight = '120px';
+  }
+
   if (props.width) {
     styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
   }
@@ -220,12 +283,11 @@ const elementStyle = computed(() => {
   return styles;
 });
 
-const computedRows = computed(() => {
-  if (props.variant === 'paragraph') {
-    return props.rows || 3;
-  }
-  return props.rows;
-});
+// 渲染数量必须为有限非负整数，零表示明确不渲染该部分。
+const normalizeCount = (value: number, fallback: number): number =>
+  Number.isFinite(value) && value >= 0 ? Math.trunc(value) : fallback;
+const normalizedCount = computed(() => normalizeCount(props.count, 1));
+const computedRows = computed(() => normalizeCount(props.rows, 3));
 
 const getRowStyle = (index: number) => {
   const styles: Record<string, string> = {};

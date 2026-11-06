@@ -62,7 +62,7 @@ describe('ExSwitch with ConfigProvider', () => {
 
       const switches = wrapper.findAllComponents(ExSwitch);
       expect(switches).toHaveLength(3);
-      switches.forEach((switchComponent) => {
+      switches.forEach(switchComponent => {
         expect(switchComponent.classes()).toContain('ex-switch--small');
       });
     });
@@ -147,7 +147,7 @@ describe('ExSwitch with ConfigProvider', () => {
   describe('All sizes', () => {
     const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`correctly applies ${size} size from ConfigProvider`, () => {
         const wrapper = mount(ExConfigProvider, {
           props: { size },

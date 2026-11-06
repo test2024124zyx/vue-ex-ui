@@ -1,9 +1,9 @@
-import type { App } from 'vue';
-import ExFileList from './ExFileList.vue';
+import ExFileListComponent from './ExFileList.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExFileList.install = (app: App) => {
-  app.component('ExFileList', ExFileList);
-};
+export const ExFileList: InstallableComponent<typeof ExFileListComponent> =
+  withInstall(ExFileListComponent);
 
-export default ExFileList;
+export * from './file-list-utils';
 export * from './types';
+export default ExFileList;

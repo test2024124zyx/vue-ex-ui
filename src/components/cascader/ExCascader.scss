@@ -1,10 +1,16 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-cascader {
+  --ex-cascader-menu-min-width: 180px;
+  --ex-cascader-content-max-height: 300px;
+
   position: relative;
   display: inline-block;
-  width: 100%;
+  width: 240px;
+  max-width: 100%;
   font-family: var(--ex-font-secondary);
+  box-sizing: border-box;
 
   // 输入框包装器
   &__input-wrapper {
@@ -13,19 +19,112 @@
     align-items: center;
   }
 
-  // 输入�?
+  &--multiple &__input-wrapper {
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-1);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    padding-right: var(--ex-input-action-width-md, 36px);
+    background: var(--ex-color-bg-secondary);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-base);
+    &:focus-within {
+      border-color: var(--ex-color-primary);
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
+  }
+
+  &--multiple &__input {
+    flex: 1;
+    min-width: 80px;
+    width: auto;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ex-spacing-1);
+    max-width: 100%;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    max-width: 100%;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    color: var(--ex-color-text-primary);
+    background: var(--ex-color-bg-tertiary);
+    font-size: var(--ex-text-sm);
+  }
+
+  &__tag-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__tag-remove {
+    border: 0;
+    padding: 0 var(--ex-spacing-1);
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__load-error {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-2);
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    color: var(--ex-color-text-secondary);
+    font-size: var(--ex-text-sm);
+  }
+
+  &__retry {
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: var(--ex-radius-sm);
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    color: var(--ex-color-primary);
+    background: var(--ex-color-bg-secondary);
+    cursor: pointer;
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  // 输入框
   &__input {
     width: 100%;
+    min-height: var(--ex-input-height-md, 40px);
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    padding-right: var(--ex-spacing-8);
+    padding-right: calc(var(--ex-input-action-width-md, 36px) + var(--ex-spacing-3));
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-base);
     color: var(--ex-color-text-primary);
     font-size: var(--ex-text-base);
     font-family: inherit;
+    line-height: var(--ex-leading-normal, 1.5);
     outline: none;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    box-sizing: border-box;
+    touch-action: manipulation;
+    transition-property: background-color, border-color, color, box-shadow, transform;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
     cursor: pointer;
 
     &::placeholder {
@@ -69,7 +168,10 @@
     border-radius: 50%;
     color: var(--ex-color-text-tertiary);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    touch-action: manipulation;
+    transition-property: background-color, border-color, color, box-shadow, transform;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
@@ -104,17 +206,119 @@
     left: 0;
     z-index: var(--ex-z-dropdown, 1000);
     min-width: 100%;
+    max-width: calc(100vw - var(--ex-spacing-4));
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-neon-blue-500);
     border-radius: var(--ex-radius-lg);
     box-shadow: 0 0 20px rgba(var(--ex-color-neon-blue-500-rgb), 0.3);
+    box-sizing: border-box;
+    overflow: auto;
+  }
+
+  // 浏览上下文：桌面端减少迷失感，移动端作为可点击的返回路径。
+  &__path {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-spacing-1);
+    min-width: 0;
+    padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    border-bottom: 1px solid var(--ex-color-border-primary);
+    color: var(--ex-color-text-tertiary);
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__path-button {
+    flex-shrink: 0;
+    max-width: 180px;
+    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    border: 0;
+    border-radius: var(--ex-radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--ex-text-sm);
+    cursor: pointer;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--ex-color-bg-hover);
+      color: var(--ex-color-neon-blue-500);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--ex-color-neon-blue-500);
+      outline-offset: -1px;
+    }
+
+    &--current {
+      color: var(--ex-color-neon-blue-500);
+      font-weight: var(--ex-font-medium);
+    }
+  }
+
+  &__path-separator {
+    flex-shrink: 0;
+    color: var(--ex-color-text-tertiary);
+    user-select: none;
+  }
+
+  &__search-results {
+    max-height: var(--ex-cascader-content-max-height);
+    overflow: auto;
+  }
+
+  // 搜索无结果时保留稳定的面板高度，并给出明确的状态反馈。
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ex-spacing-2);
+    min-height: var(--ex-input-height-md, 40px);
+    padding: var(--ex-spacing-6) var(--ex-spacing-4);
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    line-height: var(--ex-leading-normal, 1.5);
+    text-align: center;
+    user-select: none;
+    box-sizing: border-box;
+  }
+
+  &__search-result-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ex-spacing-1);
+  }
+
+  &__search-result-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__search-result-path {
+    overflow: hidden;
+    color: var(--ex-color-text-tertiary);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-normal);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   // 菜单容器
   &__menus {
     display: flex;
-    max-height: 300px;
+    max-width: 100%;
+    max-height: var(--ex-cascader-content-max-height);
     overflow: auto;
 
     // 自定义滚动条
@@ -140,7 +344,7 @@
   // 单个菜单
   &__menu {
     flex-shrink: 0;
-    min-width: 180px;
+    min-width: var(--ex-cascader-menu-min-width);
     border-right: 1px solid var(--ex-color-border-primary);
 
     &:last-child {
@@ -153,10 +357,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    min-height: var(--ex-input-height-md, 40px);
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
+    border: 0;
+    background: transparent;
     color: var(--ex-color-text-primary);
+    font: inherit;
+    text-align: left;
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    appearance: none;
+    box-sizing: border-box;
+    line-height: var(--ex-leading-normal, 1.5);
+    touch-action: manipulation;
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover:not(&--disabled) {
       background: var(--ex-color-bg-hover);
@@ -187,6 +404,28 @@
     }
   }
 
+  &__option-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--ex-spacing-5);
+    width: var(--ex-spacing-5);
+    min-width: var(--ex-spacing-5);
+    color: var(--ex-color-success);
+    opacity: 0;
+  }
+
+  &__option--selected &__option-state {
+    opacity: 1;
+  }
+
+  &__option-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+  }
+
   &__option-label {
     flex: 1;
     overflow: hidden;
@@ -208,31 +447,45 @@
   // 尺寸
   &--small {
     .ex-cascader__input {
+      min-height: var(--ex-input-height-sm, 32px);
       padding: var(--ex-spacing-1) var(--ex-spacing-2);
-      padding-right: var(--ex-spacing-6);
+      padding-right: calc(var(--ex-input-action-width-sm, 32px) + var(--ex-spacing-2));
       font-size: var(--ex-text-sm);
     }
 
     .ex-cascader__option {
+      min-height: var(--ex-input-height-sm, 32px);
       padding: var(--ex-spacing-1) var(--ex-spacing-2);
       font-size: var(--ex-text-sm);
+    }
+
+    .ex-cascader__empty {
+      min-height: var(--ex-input-height-sm, 32px);
+      padding: var(--ex-spacing-4) var(--ex-spacing-3);
     }
   }
 
   &--large {
     .ex-cascader__input {
+      min-height: var(--ex-input-height-lg, 48px);
       padding: var(--ex-spacing-3) var(--ex-spacing-4);
-      padding-right: var(--ex-spacing-10);
+      padding-right: calc(var(--ex-input-action-width-lg, 40px) + var(--ex-spacing-3));
       font-size: var(--ex-text-lg);
     }
 
     .ex-cascader__option {
+      min-height: var(--ex-input-height-lg, 48px);
       padding: var(--ex-spacing-3) var(--ex-spacing-4);
       font-size: var(--ex-text-base);
     }
+
+    .ex-cascader__empty {
+      min-height: var(--ex-input-height-lg, 48px);
+      padding: var(--ex-spacing-6) var(--ex-spacing-4);
+    }
   }
 
-  // 禁用状�?
+  // 禁用状态
   &--disabled {
     cursor: not-allowed;
 
@@ -241,28 +494,94 @@
     }
   }
 
-  // 响应�?
-  @media (max-width: 768px) {
-    &__dropdown {
-      position: fixed;
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 60vh;
-      border-radius: var(--ex-radius-lg) var(--ex-radius-lg) 0 0;
-    }
+  &--readonly {
+    cursor: default;
 
-    &__menus {
-      max-height: calc(60vh - 40px);
-    }
-
-    &__menu {
-      min-width: 150px;
+    .ex-cascader__input {
+      cursor: default;
     }
   }
 
-  // 无障碍支�?
+  // 响应式布局
+  @include desktop-first(md) {
+    // Teleport 模式也切换为底部面板，避免小屏幕上被输入框下方空间限制。
+    &__dropdown {
+      position: fixed !important;
+      top: auto !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100%;
+      min-width: 0 !important;
+      max-width: none !important;
+      max-height: 60vh !important;
+      border-radius: var(--ex-radius-lg) var(--ex-radius-lg) 0 0;
+    }
+
+    &__menus,
+    &__search-results {
+      --ex-cascader-content-max-height: calc(60vh - 40px);
+      max-height: calc(60vh - 40px);
+    }
+
+    &__menus {
+      display: block;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+
+    &__menu {
+      display: none;
+      width: 100%;
+      --ex-cascader-menu-min-width: 150px;
+      border-right: none;
+
+      &:last-child {
+        display: block;
+      }
+    }
+
+    &__path {
+      min-height: var(--ex-input-touch-target, 44px);
+      padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    }
+
+    &__path-button {
+      min-height: var(--ex-input-touch-target, 44px);
+      max-width: 160px;
+    }
+
+    &__option {
+      min-height: var(--ex-input-touch-target, 44px);
+    }
+
+    &__empty {
+      min-height: var(--ex-input-touch-target, 44px);
+    }
+  }
+
+  // 触摸设备使用统一的 44px 交互目标，桌面端继续保留紧凑尺寸。
+  @media (pointer: coarse) {
+    .ex-cascader__input {
+      min-height: var(--ex-input-touch-target, 44px);
+      padding-right: calc(var(--ex-input-touch-target, 44px) + var(--ex-spacing-2));
+    }
+
+    .ex-cascader__option {
+      min-height: var(--ex-input-touch-target, 44px);
+    }
+
+    .ex-cascader__clear {
+      width: var(--ex-input-touch-target, 44px);
+      min-width: var(--ex-input-touch-target, 44px);
+      height: var(--ex-input-touch-target, 44px);
+      min-height: var(--ex-input-touch-target, 44px);
+      padding: 0;
+    }
+  }
+
+  // 减少动态效果
   @media (prefers-reduced-motion: reduce) {
     .ex-cascader__input,
     .ex-cascader__option,
@@ -272,7 +591,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     .ex-cascader__input {
       border-width: 2px;
     }
@@ -282,7 +601,9 @@
 // 下拉动画
 .ex-cascader-dropdown-enter-active,
 .ex-cascader-dropdown-leave-active {
-  transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+  transition-duration: var(--ex-motion-duration-base);
+  transition-timing-function: var(--ex-motion-ease-in-out);
   transform-origin: top;
 }
 
@@ -292,3 +613,25 @@
   transform: scaleY(0.8);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ex-cascader-dropdown-enter-active,
+  .ex-cascader-dropdown-leave-active {
+    transition: none;
+  }
+}
+
+// Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-cascader__dropdown.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-cascader__dropdown.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

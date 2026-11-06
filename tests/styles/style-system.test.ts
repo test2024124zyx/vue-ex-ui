@@ -1,0 +1,478 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { compileString } from 'sass-embedded';
+import { globSync } from 'glob';
+
+const root = process.cwd();
+const loadPaths = [root, join(root, 'node_modules')];
+const STYLE_COMPILATION_TIMEOUT_MS = 60_000;
+const compilationCache = new Map<string, string>();
+
+const compile = (source: string): string => {
+  const cached = compilationCache.get(source);
+  if (cached !== undefined) return cached;
+
+  const css = compileString(source, {
+    loadPaths,
+    style: 'expanded',
+  }).css;
+  // 同一入口在多个契约中复用，缓存可避免重复启动 Sass 编译器并降低门禁抖动。
+  compilationCache.set(source, css);
+  return css;
+};
+
+const countOccurrences = (source: string, value: string): number => source.split(value).length - 1;
+
+describe('v2 样式系统边界', { timeout: STYLE_COMPILATION_TIMEOUT_MS }, () => {
+  it('多属性过渡生成独立长属性且保留统一时序', () => {
+    const css = compile(`
+      @use 'src/styles/mixins' as mixins;
+      @use 'src/styles/performance' as performance;
+      .normal { @include mixins.transition((color, transform)); }
+      .safe { @include performance.safe-transition((opacity, transform), 300ms); }
+    `);
+
+    expect(css).toContain('transition-property: color, transform;');
+    expect(css).toContain('transition-property: opacity, transform;');
+    expect(css).toContain('transition-duration: 300ms;');
+    expect(css).not.toContain('transition: opacity transform');
+  });
+
+  it('纯 mixin 模块不输出工具类，全局入口只输出一次性能工具类', () => {
+    const mixinCss = compile(`
+      @use 'src/styles/component-mixins' as component;
+      .probe { @include component.card-base; }
+    `);
+    const globalCss = compile("@use 'src/styles/index';");
+
+    expect(mixinCss).not.toContain('.ex-performance-container');
+    expect(countOccurrences(globalCss, '.ex-performance-container')).toBe(1);
+    expect(countOccurrences(globalCss, '.ex-no-animation')).toBe(1);
+  });
+
+  it('图片延迟渲染工具只输出有效 CSS 属性', () => {
+    const css = compile(`
+      @use 'src/styles/performance' as performance;
+      .image { @include performance.lazy-image; }
+    `);
+
+    expect(css).toContain('content-visibility: auto;');
+    expect(css).toContain('contain-intrinsic-size: auto 300px;');
+    expect(css).not.toContain('loading: lazy');
+    expect(css).not.toContain('decoding: async');
+  });
+
+  it('组件样式不会重复输出全局变量', () => {
+    const emptyCss = compile("@use 'src/components/empty/ExEmpty';");
+    const anchorLinkCss = compile("@use 'src/components/anchor/ExAnchorLink';");
+
+    expect(emptyCss).not.toContain(':root');
+    expect(anchorLinkCss).not.toContain(':root');
+  });
+
+  it('父子组件各自加载自己的样式文件', () => {
+    const anchorLink = readFileSync(join(root, 'src/components/anchor/ExAnchorLink.vue'), 'utf8');
+    const step = readFileSync(join(root, 'src/components/steps/ExStep.vue'), 'utf8');
+
+    expect(anchorLink).toContain('src="./ExAnchorLink.scss"');
+    expect(step).toContain('src="./ExStep.scss"');
+  });
+
+  it('基础样式不强制内联品牌字体，字体入口可独立加载', () => {
+    const baseCss = compile("@use 'src/styles/index';");
+    const fontCss = compile("@use 'src/styles/font';");
+
+    expect(baseCss).not.toContain('@font-face');
+    expect(fontCss).toContain('@font-face');
+    expect(fontCss).toContain('font-family: "Audiowide"');
+    expect(fontCss).toContain('font-family: "Noto Sans SC"');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-400-normal.woff2?no-inline');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-500-normal.woff2?no-inline');
+    expect(fontCss).toContain('noto-sans-sc-chinese-simplified-700-normal.woff2?no-inline');
+    expect(fontCss).not.toContain('.woff)');
+  });
+
+  it('源码根入口无样式副作用，完整构建与独立字体入口各自声明资源', () => {
+    const indexSource = readFileSync(join(root, 'src/index.ts'), 'utf8');
+    const fullStyleEntrySource = readFileSync(join(root, 'src/style-full.ts'), 'utf8');
+    const fontEntrySource = readFileSync(join(root, 'src/style-font.ts'), 'utf8');
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(indexSource).not.toContain('@fontsource/');
+    expect(indexSource).not.toContain("import './styles/");
+    expect(indexSource).not.toContain("import './style-full';");
+    expect(indexSource).not.toContain("import './style-font';");
+    expect(fullStyleEntrySource).toContain("import './style-font';");
+    expect(fullStyleEntrySource).toContain("import './styles/index.scss';");
+    expect(fontEntrySource).toContain('@fontsource/orbitron/latin-700.css');
+    expect(fontEntrySource).toContain('@fontsource/jetbrains-mono/latin-400.css');
+    expect(fontEntrySource).toContain('@fontsource/share-tech-mono/latin-400.css');
+    expect(fontEntrySource).toContain("import './styles/font.scss';");
+    expect(variablesCss).toContain(
+      '--ex-font-primary: Orbitron, Audiowide, Rajdhani, Noto Sans SC, sans-serif;'
+    );
+    expect(variablesCss).toContain(
+      '--ex-font-secondary: JetBrains Mono, Fira Code, Consolas, Noto Sans SC, monospace;'
+    );
+  });
+
+  it('Button 声明的每一种类型都生成实际样式选择器', () => {
+    const css = compile("@use 'src/components/button/ExButton';");
+
+    for (const type of ['default', 'error', 'ghost']) {
+      expect(css).toContain(`.ex-button--${type}`);
+    }
+  });
+
+  it('Icon 交互状态使用语义色、共享触控尺寸和统一动效 token', () => {
+    const css = compile("@use 'src/components/icon/ExIcon';");
+
+    expect(css).toContain('width: max(var(--ex-icon-size), var(--ex-button-touch-target))');
+    expect(css).toContain('min-width: var(--ex-button-touch-target)');
+    expect(css).toContain('color: var(--ex-color-primary-hover)');
+    expect(css).toContain('color: var(--ex-color-primary-active)');
+    expect(css).toContain(
+      'animation: ex-icon-spin var(--ex-motion-duration-slower) var(--ex-motion-ease-linear) infinite'
+    );
+    expect(css).toContain('outline: 3px solid currentColor');
+    expect(css).toContain('box-shadow: none');
+    expect(css).not.toContain('--ex-color-neon-blue');
+    expect(css).not.toContain('--ex-color-neon-pink');
+  });
+
+  it('Checkbox 使用原生键盘焦点、共享触控尺寸和无障碍颜色回退', () => {
+    const css = compile("@use 'src/components/checkbox/ExCheckbox';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('.ex-checkbox__input:focus-visible + .ex-checkbox__box');
+    expect(css).toContain('.ex-checkbox--circle .ex-checkbox__box');
+    expect(css).toContain('border-radius: 50%;');
+    expect(css).toContain('min-height: var(--ex-checkbox-touch-target);');
+    expect(css).toContain('@media (forced-colors: active)');
+    expect(css).not.toContain('opacity: 0.5');
+    expect(variablesCss).toContain('--ex-checkbox-box-size-sm: 16px;');
+    expect(variablesCss).toContain('--ex-checkbox-focus-ring-offset: 2px;');
+  });
+
+  it('Avatar 仅为显式交互实例提供悬停、键盘和触控反馈', () => {
+    const css = compile("@use 'src/components/avatar/ExAvatar';");
+    const groupCss = compile("@use 'src/components/avatar/ExAvatarGroup';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('box-sizing: border-box;');
+    expect(css).toContain('.ex-avatar--clickable');
+    expect(css).toContain('min-width: var(--ex-button-touch-target, 44px);');
+    expect(css).toContain('@media (hover: hover)');
+    expect(css).toContain('outline: 3px solid var(--ex-color-primary);');
+    expect(css).not.toContain('.ex-avatar:hover');
+    expect(groupCss).toContain('margin-left: var(--ex-avatar-spacing, 8px);');
+    expect(groupCss).toContain('var(--ex-color-primary-alpha-20)');
+    expect(groupCss).toContain('var(--ex-color-accent-alpha-20)');
+    expect(groupCss).not.toContain('rgba(var(--ex-color-neon-');
+    expect(variablesCss).toContain('--ex-avatar-spacing: 8px;');
+    expect(css).toContain('var(--ex-avatar-bg-icon, var(--ex-color-primary-alpha-10))');
+    expect(groupCss).toContain('var(--ex-avatar-group-border-color, var(--ex-color-bg-primary))');
+  });
+
+  it('Button 的幽灵和文本变体保持不同的视觉契约', () => {
+    const css = compile("@use 'src/components/button/ExButton';");
+    const ghostBlock = css.match(/\.ex-button--ghost\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+    const textBlock =
+      css.match(/\.ex-button--text,\s*\.ex-button--link\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+
+    expect(ghostBlock).toContain('--ex-button-bg: var(--ex-color-primary-alpha-05)');
+    expect(ghostBlock).toContain('--ex-button-border: var(--ex-color-primary-alpha-40)');
+    expect(ghostBlock).not.toContain('border-width: 0');
+    expect(textBlock).toContain('overflow: visible');
+    expect(textBlock).toContain('border-width: 0');
+  });
+
+  it('Divider 的颜色、粗细和响应式间距始终由同一组变量驱动', () => {
+    const css = compile("@use 'src/components/divider/ExDivider';");
+
+    expect(css).toContain('.ex-divider--dashed.ex-divider--horizontal .ex-divider__line');
+    expect(css).toContain('border-top: var(--ex-divider-size, 1px) dashed');
+    expect(css).toContain('var(--ex-divider-color, var(--ex-color-border-primary))');
+    expect(css).toContain('margin: var(--ex-divider-margin, 16px 0)');
+    expect(css).not.toContain("[style*='--ex-divider-color']");
+    expect(css).not.toContain('transition-property: all');
+  });
+
+  it('Space 使用公共间距 Token 并保留可收缩的 Flex 容器边界', () => {
+    const css = compile("@use 'src/components/space/ExSpace';");
+
+    expect(css).toContain('display: flex');
+    expect(css).toContain('min-width: 0');
+    expect(css).toContain('var(--ex-space-gap, var(--ex-spacing-4, 16px))');
+    expect(css).not.toContain('transition: none');
+  });
+
+  it('Image 使用组件 token 处理缓存占位、紧凑尺寸和安全预览层', () => {
+    const css = compile("@use 'src/components/image/ExImage';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(css).toContain('container: ex-image/inline-size');
+    expect(css).toContain('width: var(--ex-image-spinner-size)');
+    expect(css).toContain('@container ex-image (max-width: 63px)');
+    expect(css).toContain('env(safe-area-inset-top');
+    expect(css).toContain('var(--ex-image-preview-fade-duration)');
+    expect(css).not.toContain('transition: opacity 160ms ease');
+    expect(css).toContain('var(--ex-image-error-text-color, var(--ex-color-text-secondary))');
+    expect(variablesCss).toContain('--ex-image-preview-trigger-min-size: 44px');
+  });
+
+  it('Empty 的图片尺寸由组件变量驱动且不执行无休止装饰动画', () => {
+    const css = compile("@use 'src/components/empty/ExEmpty';");
+
+    expect(css).toContain('inline-size: var(--ex-empty-image-size');
+    expect(css).toContain('.ex-empty--custom');
+    expect(css).not.toContain('animation:');
+    expect(css).not.toContain('@keyframes');
+  });
+
+  it('FileDownload 只过渡确定进度且未知总量不依赖循环动画', () => {
+    const css = compile("@use 'src/components/file-download/ExFileDownload';");
+
+    expect(css).toContain('inline-size: var(--ex-file-download-progress)');
+    expect(css).toContain('transition-property: inline-size');
+    expect(css).toContain('.is-indeterminate');
+    expect(css).not.toContain('animation:');
+    expect(css).not.toContain('@keyframes');
+  });
+  it('赛博朋克视觉 token 和全局纹理保持可复用且支持无障碍回退', () => {
+    const css = compile("@use 'src/styles/index';");
+
+    expect(css).toContain('--ex-color-cyber-green: #00ff88');
+    expect(css).toContain('--ex-color-terminal-text: #14fdce');
+    expect(css).toContain('--ex-color-terminal-bg: #031e11');
+    expect(css).toContain('--ex-cyber-grid-size: 48px');
+    expect(css).toContain('.ex-app::after');
+    expect(css).toContain('@keyframes ex-cyber-scanline');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('所有高对比度媒体查询都使用标准 more 值', () => {
+    const invalidFiles = globSync('src/**/*.{scss,vue}', { cwd: root, windowsPathsNoEscape: true })
+      .filter(file => readFileSync(join(root, file), 'utf8').includes('(prefers-contrast: high)'))
+      .sort();
+
+    expect(invalidFiles).toEqual([]);
+  });
+
+  it('源码文本统一使用有效 UTF-8 编码', () => {
+    const decoder = new TextDecoder('utf-8', { fatal: true });
+    const invalidFiles = globSync('src/**/*.{scss,vue,ts}', {
+      cwd: root,
+      windowsPathsNoEscape: true,
+    })
+      .filter(file => {
+        try {
+          decoder.decode(readFileSync(join(root, file)));
+          return false;
+        } catch {
+          return true;
+        }
+      })
+      .sort();
+
+    expect(invalidFiles).toEqual([]);
+  });
+
+  it('减少动画偏好只停止运动，不移除静态状态层级', () => {
+    const source = readFileSync(join(root, 'src/styles/base/_accessibility.scss'), 'utf8');
+    const reducedMotionBlock = source.slice(
+      source.indexOf('@media (prefers-reduced-motion: reduce)'),
+      source.indexOf('// 高对比度偏好')
+    );
+
+    expect(reducedMotionBlock).not.toContain('box-shadow: none');
+    expect(reducedMotionBlock).not.toContain('text-shadow: none');
+    expect(reducedMotionBlock).not.toContain('backdrop-filter: none');
+    expect(reducedMotionBlock).not.toContain('filter: none');
+  });
+
+  it('基础样式只在 ExUI 作用域内修改宿主页面', () => {
+    const resetCss = compile("@use 'src/styles/base/reset';");
+    const accessibilityCss = compile("@use 'src/styles/base/accessibility';");
+    const printCss = compile("@use 'src/styles/base/print';");
+
+    expect(resetCss).toContain('.ex-app');
+    expect(resetCss).not.toMatch(/(^|\n)html\s*\{/);
+    expect(resetCss).not.toMatch(/(^|\n)\*\s*,/);
+    expect(accessibilityCss).toContain('.ex-sr-only');
+    expect(accessibilityCss).toContain('.ex-app .sr-only');
+    expect(accessibilityCss).not.toMatch(/(^|\n)\.sr-only\s*\{/);
+    expect(printCss).toContain('@media print');
+    expect(printCss).toContain('.ex-app');
+    expect(printCss).not.toMatch(/@media print\s*\{\s*\*/);
+  });
+
+  it('可选颜色工具由双主题状态驱动且不读取系统暗色偏好', () => {
+    const css = compile("@use 'src/styles/utilities/colors';");
+
+    expect(css).toContain('[data-theme=neon-blue] .dark\\:bg-primary');
+    expect(css).toContain('[data-theme=light] .high-contrast\\:text-primary');
+    expect(css).not.toContain('prefers-color-scheme');
+  });
+
+  it('两个主题都覆盖组件实际依赖的语义变量', () => {
+    const css = compile("@use 'src/styles/index';");
+
+    expect(css).toContain('--ex-color-accent-alpha-10: rgba(255, 59, 209, 0.1)');
+    expect(css).toContain('--ex-color-neon-blue-alpha-08: rgba(41, 171, 226, 0.08)');
+    expect(css).toContain('--ex-color-primary-alpha-80: rgba(41, 171, 226, 0.8)');
+    expect(css).toContain('--ex-color-primary-alpha-08: rgba(41, 171, 226, 0.08)');
+    expect(css).toContain('--ex-color-secondary-alpha-50: rgba(168, 107, 255, 0.5)');
+    expect(css).toContain('--ex-color-border: var(--ex-color-border-primary)');
+    expect(css).toContain('--ex-color-neon-blue-300: #72c8ef');
+    expect(css).toContain('--ex-color-neon-blue-300: #5a9be7');
+  });
+
+  it('Typography 响应式规则集中在组件内并保留尺寸覆盖契约', () => {
+    const typographyCss = compile("@use 'src/components/typography/ExTypography';");
+
+    expect(typographyCss).toContain('@media (max-width: 479px)');
+    expect(typographyCss).toContain('@media (max-width: 374px)');
+    expect(typographyCss).toContain('@media (min-width: 480px) and (max-width: 1023px)');
+    expect(typographyCss).toContain('@media (min-width: 1024px)');
+    expect(typographyCss).toContain('@media (min-width: 1400px)');
+    expect(typographyCss).toContain('--ex-typography-size: var(--ex-text-4xl)');
+    expect(typographyCss).toContain(
+      'font-size: var(--ex-typography-size, var(--ex-typography-variant-size))'
+    );
+    expect(typographyCss).toContain('background: none');
+    expect(typographyCss).toContain('text-rendering: optimizeLegibility');
+    expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-wide)');
+    expect(typographyCss).toContain('letter-spacing: var(--ex-tracking-widest)');
+    expect(typographyCss).toContain('font-variant-ligatures: contextual');
+    expect(typographyCss).toContain('--ex-typography-chromatic-opacity: 0.18');
+    expect(typographyCss).toContain('.ex-typography--glitch::before');
+    expect(typographyCss).toContain('.ex-typography--glitch::after');
+    expect(typographyCss).toContain('content: attr(data-ex-typography-text)');
+    expect(typographyCss).toContain('clip-path: inset(');
+    expect(typographyCss).toContain('@keyframes ex-typography-glitch-before');
+    expect(typographyCss).toContain('@keyframes ex-typography-glitch-after');
+    expect(typographyCss).toContain('animation: ex-cyber-glitch 4s steps(1, end) infinite');
+    expect(typographyCss).toContain('font-family: var(--ex-font-label)');
+    expect(typographyCss).toContain('text-wrap: balance');
+    expect(typographyCss).toContain(
+      '@supports not ((background-clip: text) or (-webkit-background-clip: text))'
+    );
+    expect(typographyCss).toContain('background-size: 100% 100%');
+    expect(typographyCss).toContain('display: inline-block');
+    expect(typographyCss).toContain('inline-size: fit-content');
+    expect(typographyCss).toContain('max-inline-size: 100%');
+    expect(typographyCss).toContain('.ex-typography--gradient.ex-typography--center');
+    expect(typographyCss).toContain('.ex-typography--gradient.ex-typography--truncate-multiline');
+    expect(typographyCss).toContain('background-clip: text');
+    expect(typographyCss).toContain('-webkit-background-clip: text');
+    expect(typographyCss).toContain('background-size: 220% 100%');
+    expect(typographyCss).toContain('.ex-typography--cyberpunk');
+    expect(typographyCss).toContain('--ex-typography-chromatic-left');
+    expect(typographyCss).toContain('--ex-color-cyber-magenta');
+    expect(typographyCss).toContain('.ex-typography--terminal');
+    expect(typographyCss).toContain('.ex-typography__terminal-output');
+    expect(typographyCss).toContain('.ex-typography__terminal-scanlines');
+    expect(typographyCss).toContain('.ex-typography__terminal-overlay');
+    expect(typographyCss).toContain('.ex-typography__terminal-frame');
+    expect(typographyCss).toContain('var(--ex-color-cyber-green, #14fdce)');
+    expect(typographyCss).toContain('var(--ex-color-cyber-green-rgb, 20, 253, 206)');
+    expect(typographyCss).toContain('var(--ex-color-bg-primary, #031e11)');
+    expect(typographyCss).toContain('--ex-typography-terminal-font-family');
+    expect(typographyCss).toContain('--ex-typography-terminal-glow-rgb');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-size');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-image');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-opacity: 0.2');
+    expect(typographyCss).toContain('--ex-typography-terminal-scanline-shadow-opacity: 0.6');
+    expect(typographyCss).toContain('background-clip: text');
+    expect(typographyCss).toContain('min-block-size: 12rem');
+    expect(typographyCss).toContain('padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem)');
+    expect(typographyCss).toContain('border: 1rem solid');
+    expect(typographyCss).toContain(
+      'background-size: 100% var(--ex-typography-terminal-scanline-size)'
+    );
+    expect(typographyCss).toContain('background-repeat: repeat');
+    expect(typographyCss).toContain('z-index: 2');
+    expect(typographyCss).toContain('pointer-events: none');
+    expect(typographyCss).toContain('@keyframes ex-typography-terminal-flicker');
+    expect(typographyCss).toContain('@keyframes ex-typography-terminal-glow');
+    expect(typographyCss).toContain('.ex-typography--gradient-animated');
+    expect(typographyCss).toContain(
+      'animation: ex-typography-gradient-shift 3s ease-in-out infinite'
+    );
+    expect(typographyCss).toContain('white-space: normal');
+    expect(typographyCss).not.toContain('.ex-typography--h1');
+    expect(typographyCss).not.toContain('.ex-typography--body1');
+    expect(typographyCss).not.toContain('.ex-typography--link');
+  });
+
+  it('首屏初始化脚本与组件样式只识别两个主题', () => {
+    const themeInit = readFileSync(join(root, 'public/theme-init.js'), 'utf8');
+    const virtualListStyles = readFileSync(
+      join(root, 'src/components/virtual-list/ExVirtualList.scss'),
+      'utf8'
+    );
+
+    expect(themeInit).toContain("var VALID_THEMES = ['neon-blue', 'light'];");
+    expect(themeInit).toContain("theme === 'neon-blue' ? 'dark' : 'light'");
+    expect(themeInit).not.toContain('neon-pink');
+    expect(themeInit).not.toContain('high-contrast');
+    expect(virtualListStyles).not.toContain('prefers-color-scheme');
+  });
+
+  it('核心组件使用切角、终端提示符和低频 CTA 色差效果', () => {
+    const buttonCss = compile("@use 'src/components/button/ExButton';");
+    const cardCss = compile("@use 'src/components/card/ExCard';");
+    const inputCss = compile("@use 'src/components/input/ExInput';");
+
+    expect(buttonCss).toContain('border: 2px solid var(--ex-button-border)');
+    expect(buttonCss).toContain('content: attr(data-ex-button-glitch-text)');
+    expect(buttonCss).toContain('clip-path: var(--ex-button-glitch-slice-1)');
+    expect(buttonCss).toContain('animation: ex-button-glitch-slices 1s steps(2, end) forwards');
+    expect(buttonCss).toContain('.ex-button--shape-slice');
+    expect(buttonCss).toContain('.ex-button--shape-notched');
+    expect(cardCss).toContain('clip-path: polygon(');
+    expect(cardCss).toContain('.ex-card.ex-terminal');
+    expect(inputCss).toContain('.ex-input__prompt');
+    expect(inputCss).not.toContain('content: ">"');
+    expect(inputCss).toContain('clip-path: polygon(');
+  });
+
+  it('共享切角控件使用形状发光而不是会被 clip-path 裁掉的阴影', () => {
+    const css = compile(`
+      @use 'src/styles/component-mixins' as component;
+      .control {
+        @include component.form-control-base;
+      }
+    `);
+
+    expect(css).toContain('filter: drop-shadow(0 0 8px var(--ex-color-neon-pink-alpha-30))');
+    expect(css).not.toContain('box-shadow: 0 0 10px var(--ex-color-neon-pink-alpha-30)');
+  });
+
+  it('Tag 将间距交给父级布局，并为关闭目标提供高对比度与最小触控尺寸', () => {
+    const tagCss = compile("@use 'src/components/tag/ExTag';");
+    const variablesCss = compile("@use 'src/styles/variables';");
+
+    expect(tagCss).not.toContain('.ex-tag + .ex-tag');
+    expect(tagCss).toContain(
+      '.ex-tag.is-closable:not(.is-round):has(> .ex-tag__close:focus-visible)'
+    );
+    expect(tagCss).not.toContain('.ex-tag.is-closable:not(.is-round):focus-within');
+    expect(tagCss).toContain('border-color: CanvasText !important;');
+    expect(tagCss).toContain('(forced-colors: active)');
+    expect(variablesCss).toContain('--ex-tag-close-size-sm: 24px;');
+    expect(variablesCss).toContain('--ex-tag-close-size-md: 24px;');
+  });
+
+  it('TagInput 将编辑容器设为无边框，并让输入框与操作按钮共享触控高度', () => {
+    const tagInputCss = compile("@use 'src/components/tag/ExTagInput';");
+    const wrapperCss = tagInputCss.match(/\.ex-tag-input__wrapper \{[\s\S]*?\n\}/)?.[0] ?? '';
+    const inputCss = tagInputCss.match(/\.ex-tag-input__input \{[\s\S]*?\n\}/)?.[0] ?? '';
+
+    expect(wrapperCss).toContain('border: 0;');
+    expect(wrapperCss).toContain('background: transparent;');
+    expect(inputCss).toContain('height: var(--ex-tag-input-action-size);');
+    expect(inputCss).toContain('border: 1px solid var(--ex-color-border-primary);');
+  });
+});

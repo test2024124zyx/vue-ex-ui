@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExTag from '../../../src/components/tag/ExTag.vue';
+import ExTagInput from '../../../src/components/tag/ExTagInput.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 // Mock ExIcon component
@@ -73,9 +74,26 @@ describe('ExTag with ConfigProvider', () => {
 
       const tags = wrapper.findAllComponents(ExTag);
       expect(tags).toHaveLength(3);
-      tags.forEach((tag) => {
+      tags.forEach(tag => {
         expect(tag.classes()).toContain('ex-tag--small');
       });
+    });
+  });
+
+  describe('Locale Inheritance', () => {
+    it('uses the nearest ConfigProvider locale for Tag and TagInput labels', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { locale: 'zh-CN' },
+        slots: {
+          default: '<ex-tag closable>标签</ex-tag><ex-tag-input />',
+        },
+        global: {
+          components: { ExTag, ExTagInput },
+        },
+      });
+
+      expect(wrapper.find('.ex-tag__close').attributes('aria-label')).toBe('移除标签');
+      expect(wrapper.find('.ex-tag-input__button').attributes('aria-label')).toBe('新标签');
     });
   });
 
@@ -173,7 +191,7 @@ describe('ExTag with ConfigProvider', () => {
   describe('All sizes', () => {
     const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`correctly applies ${size} size from ConfigProvider`, () => {
         const wrapper = mount(ExConfigProvider, {
           props: { size },

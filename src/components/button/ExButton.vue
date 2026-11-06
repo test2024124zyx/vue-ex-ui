@@ -2,90 +2,85 @@
   <button
     ref="buttonRef"
     :class="buttonClasses"
-    :style="buttonStyles"
+    :style="props.style"
+    :data-ex-button-glitch-text="glitchText || undefined"
     :type="nativeType"
     :disabled="disabled || loading"
     :autofocus="autofocus"
-    :aria-label="ariaLabel"
+    :aria-label="resolvedAriaLabel"
+    :aria-busy="loading || undefined"
     @click="handleClick"
     @focus="handleFocus"
     @blur="handleBlur"
   >
-    <!-- 加载中图标插槽 -->
-    <div
-      v-if="loading && $slots.loading"
+    <span
+      v-if="loading"
       class="ex-button__loading-icon"
+      aria-hidden="true"
     >
-      <slot name="loading" />
-    </div>
+      <slot name="loading">
+        <span
+          class="ex-button__loading-spinner"
+          aria-hidden="true"
+        ></span>
+      </slot>
+    </span>
 
-    <!-- 圆形按钮内容：优先显示图标，否则显示第一个字符 -->
-    <template v-if="circle && !loading">
-      <!-- 圆形按钮图标（优先显示前缀图标，然后后缀图标） -->
-      <div
-        v-if="$slots.prefix || $slots.suffix"
-        class="ex-button__icon ex-button__icon--circle"
-      >
-        <slot name="prefix">
-          <slot name="suffix" />
-        </slot>
-      </div>
-      <!-- 圆形按钮文字（只显示第一个字符） -->
-      <span
-        v-else-if="hasSlotContent || $slots.default"
-        class="ex-button__circle-text"
-      >
-        {{ getFirstCharacter() }}
-      </span>
-    </template>
+    <span
+      v-if="$slots.prefix"
+      class="ex-button__icon ex-button__icon--left"
+      aria-hidden="true"
+    >
+      <slot name="prefix"></slot>
+    </span>
 
-    <!-- 普通按钮内容 -->
-    <template v-else-if="!circle">
-      <!-- 左侧图标插槽 -->
-      <div
-        v-if="$slots.prefix && !loading"
-        class="ex-button__icon ex-button__icon--left"
-      >
-        <slot name="prefix" />
-      </div>
+    <span
+      v-if="showDefaultContent"
+      class="ex-button__content"
+    >
+      <template v-if="circleSlotText !== undefined">{{ circleDisplayText }}</template>
+      <slot v-else></slot>
+    </span>
 
-      <!-- 按钮内容 -->
-      <span
-        v-if="hasSlotContent || $slots.default"
-        class="ex-button__content"
-      >
-        <slot />
-      </span>
-
-      <!-- 右侧图标插槽 -->
-      <div
-        v-if="$slots.suffix && !loading"
-        class="ex-button__icon ex-button__icon--right"
-      >
-        <slot name="suffix" />
-      </div>
-    </template>
+    <span
+      v-if="$slots.suffix"
+      class="ex-button__icon ex-button__icon--right"
+      aria-hidden="true"
+    >
+      <slot name="suffix"></slot>
+    </span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, useSlots } from 'vue';
+import { useRenderComputed } from '../../composables/useRenderComputed';
+import { computed, onMounted, ref, useAttrs, useSlots, watch } from 'vue';
+import { getFirstGrapheme } from '../../utils/text';
+import { getPlainTextContent } from '../../utils/vnode';
 import type { ExButtonProps, ExButtonEmits, ExButtonExposed } from './types';
 
-import { useComponentSize } from '../config-provider/composables';
+import { useAnimation, useComponentSize, useNeonEffect } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExButton',
 });
 
+const defaultGlowTypes = new Set<NonNullable<ExButtonProps['type']>>([
+  'primary',
+  'success',
+  'warning',
+  'danger',
+  'error',
+  'info',
+]);
+
 const props = withDefaults(defineProps<ExButtonProps>(), {
-  type: 'primary',
-  size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
+  type: 'default',
+  size: undefined,
   shape: 'default',
   plain: false,
-  round: false,
-  circle: false,
+  glow: undefined,
   disabled: false,
   loading: false,
   block: false,
@@ -94,25 +89,99 @@ const props = withDefaults(defineProps<ExButtonProps>(), {
 });
 
 const emit = defineEmits<ExButtonEmits>();
-
+const attrs = useAttrs();
 const slots = useSlots();
+
 const buttonRef = ref<HTMLButtonElement>();
 
-// 使用全局尺寸配置
+// 显式尺寸优先，否则继承 ConfigProvider。
 const componentSize = useComponentSize(computed(() => props.size));
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const glowEnabled = computed(
+  () => neonEffect.value && (props.glow ?? defaultGlowTypes.has(props.type))
+);
+
+const plainSlotText = useRenderComputed(() => getPlainTextContent(slots.default?.({})));
+const circleSlotText = computed(() =>
+  props.shape === 'circle' && plainSlotText.value !== undefined
+    ? plainSlotText.value.trim()
+    : undefined
+);
+const circleDisplayText = computed(() => getFirstGrapheme(circleSlotText.value ?? ''));
+const glitchText = computed(() => {
+  if (!glowEnabled.value || props.loading || props.disabled) return undefined;
+
+  const text =
+    props.shape === 'circle'
+      ? circleDisplayText.value
+      : plainSlotText.value?.replace(/\s+/g, ' ').trim();
+
+  return text || undefined;
+});
+const nativeAriaLabel = useRenderComputed(() => {
+  const value = attrs['aria-label'];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+});
+const resolvedAriaLabel = computed(() => {
+  const explicitLabel = props.ariaLabel?.trim() || nativeAriaLabel.value;
+  if (explicitLabel) return explicitLabel;
+
+  if (circleSlotText.value) return circleSlotText.value;
+
+  if (props.loading) return plainSlotText.value?.trim() || undefined;
+
+  return undefined;
+});
+const showDefaultContent = useRenderComputed(
+  () => Boolean(slots.default) && !(props.shape === 'circle' && props.loading)
+);
 
 // 计算属性
+// 仅在开发环境提示缺少可访问名称的图标按钮，避免生产环境增加运行时开销。
+const warnIfMissingAccessibleName = () => {
+  if (!import.meta.env.DEV) return;
+
+  const button = buttonRef.value;
+  if (!button) return;
+
+  const contentText = button.querySelector('.ex-button__content')?.textContent?.trim();
+  const hasAccessibleName = Boolean(
+    button.getAttribute('aria-label')?.trim() ||
+    contentText ||
+    button.getAttribute('aria-labelledby')?.trim() ||
+    button.getAttribute('title')?.trim()
+  );
+
+  if (!hasAccessibleName) {
+    console.warn(
+      '[ExButton] 图标或空按钮必须提供 ariaLabel（模板属性可使用 aria-label），以保证可访问名称。'
+    );
+  }
+};
+
+onMounted(warnIfMissingAccessibleName);
+watch(
+  [() => props.ariaLabel, () => props.loading, () => props.shape],
+  warnIfMissingAccessibleName,
+  {
+    flush: 'post',
+  }
+);
+
 const buttonClasses = computed(() => {
   const classes = [
     'ex-button',
     `ex-button--${props.type}`,
     `ex-button--${componentSize.value}`,
     `ex-button--${props.shape}`,
+    `ex-button--shape-${props.shape}`,
   ];
 
   if (props.plain) classes.push('ex-button--plain');
-  if (props.round) classes.push('ex-button--round');
-  if (props.circle) classes.push('ex-button--circle');
+  if (glowEnabled.value) classes.push('ex-button--glow');
+  if (!neonEffect.value) classes.push('ex-button--no-neon');
+  if (!animation.value) classes.push('ex-button--no-animation');
   if (props.disabled) classes.push('ex-button--disabled');
   if (props.loading) classes.push('ex-button--loading');
   if (props.block) classes.push('ex-button--block');
@@ -120,63 +189,6 @@ const buttonClasses = computed(() => {
 
   return classes;
 });
-
-const buttonStyles = computed(() => {
-  if (!props.style) return undefined;
-
-  if (typeof props.style === 'string') {
-    return props.style;
-  }
-
-  return props.style;
-});
-
-// 仅检查插槽是否传入，不在 computed 中渲染插槽（渲染插槽属于渲染期副作用）
-const hasSlotContent = computed(() => {
-  return !!slots.default;
-});
-
-// 获取第一个字符（用于圆形按钮）
-const getFirstCharacter = () => {
-  if (!slots.default) return '';
-
-  try {
-    const slotContent = slots.default({});
-    if (!slotContent || slotContent.length === 0) return '';
-
-    // 递归提取文本内容
-    const extractText = (nodes: unknown[]): string => {
-      for (const node of nodes) {
-        if (typeof node === 'string') {
-          return node;
-        }
-        if (node && typeof node === 'object' && 'children' in node) {
-          const nodeObj = node as { children?: unknown; props?: { children?: unknown } };
-          if (typeof nodeObj.children === 'string') {
-            return nodeObj.children;
-          }
-          if (Array.isArray(nodeObj.children)) {
-            const text = extractText(nodeObj.children);
-            if (text) return text;
-          }
-        }
-        if (node && typeof node === 'object' && 'props' in node) {
-          const nodeObj = node as { props?: { children?: unknown } };
-          if (nodeObj.props && typeof nodeObj.props.children === 'string') {
-            return nodeObj.props.children;
-          }
-        }
-      }
-      return '';
-    };
-
-    const text = extractText(slotContent);
-    return text ? text.charAt(0).toUpperCase() : '';
-  } catch (_error) {
-    // 静默处理错误，返回空字符串
-    return '';
-  }
-};
 
 // 事件处理
 const handleClick = (event: MouseEvent) => {

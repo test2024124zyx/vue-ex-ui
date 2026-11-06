@@ -4,10 +4,14 @@
     :class="treeClasses"
     :style="treeStyles"
     role="tree"
+    :aria-label="ariaLabel"
+    :aria-multiselectable="multiple ? true : undefined"
+    :aria-disabled="disabled || undefined"
   >
     <!-- 虚拟滚动模式：扁平化 + 窗口化渲染 -->
     <div
       v-if="virtual"
+      ref="viewportRef"
       class="ex-tree__viewport"
       :style="viewportStyle"
       @scroll.passive="handleVirtualScroll"
@@ -18,16 +22,19 @@
       >
         <div :style="{ transform: `translateY(${topSpacerHeight}px)` }">
           <ExTreeNode
-            v-for="{ node, level } in virtualNodes"
+            v-for="{ node, level, position, setSize } in virtualNodes"
             :key="node.key"
             flat
             :node="node"
             :level="level"
-            :style="{ height: `${itemHeight}px` }"
-            :expanded-keys="internalExpandedKeys"
-            :selected-keys="internalSelectedKeys"
-            :checked-keys="internalCheckedKeys"
+            :position="position"
+            :set-size="setSize"
+            :style="{ height: `${safeItemHeight}px` }"
+            :expanded-keys="effectiveExpandedKeys"
+            :selected-keys="effectiveSelectedKeys"
+            :checked-keys="effectiveCheckedKeys"
             :half-checked-keys="halfCheckedKeys"
+            :active-key="renderedActiveKey"
             :selectable="selectable"
             :checkable="checkable"
             :show-line="showLine"
@@ -37,6 +44,8 @@
             @toggle="handleToggle"
             @select="handleSelect"
             @check="handleCheck"
+            @focus-node="handleFocusNode"
+            @navigate="handleNavigate"
             @node-click="handleNodeClick"
             @node-contextmenu="handleNodeContextmenu"
             @node-drag-start="handleNodeDragStart"
@@ -44,7 +53,13 @@
             @node-drag-leave="handleNodeDragLeave"
             @node-drag-end="handleNodeDragEnd"
             @node-drop="handleNodeDrop"
-          />
+          >
+            <template #default="{ node: slotNode }">
+              <slot :node="slotNode">
+                {{ slotNode.label }}
+              </slot>
+            </template>
+          </ExTreeNode>
         </div>
       </div>
     </div>
@@ -56,10 +71,11 @@
         :key="node.key"
         :node="node"
         :level="0"
-        :expanded-keys="internalExpandedKeys"
-        :selected-keys="internalSelectedKeys"
-        :checked-keys="internalCheckedKeys"
+        :expanded-keys="effectiveExpandedKeys"
+        :selected-keys="effectiveSelectedKeys"
+        :checked-keys="effectiveCheckedKeys"
         :half-checked-keys="halfCheckedKeys"
+        :active-key="renderedActiveKey"
         :selectable="selectable"
         :checkable="checkable"
         :show-line="showLine"
@@ -69,6 +85,8 @@
         @toggle="handleToggle"
         @select="handleSelect"
         @check="handleCheck"
+        @focus-node="handleFocusNode"
+        @navigate="handleNavigate"
         @node-click="handleNodeClick"
         @node-contextmenu="handleNodeContextmenu"
         @node-drag-start="handleNodeDragStart"
@@ -76,16 +94,27 @@
         @node-drag-leave="handleNodeDragLeave"
         @node-drag-end="handleNodeDragEnd"
         @node-drop="handleNodeDrop"
-      />
+      >
+        <template #default="{ node: slotNode }">
+          <slot :node="slotNode">
+            {{ slotNode.label }}
+          </slot>
+        </template>
+      </ExTreeNode>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { ref, computed, watch, provide, onBeforeUnmount } from 'vue';
-import type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode } from './types';
+import { ref, computed, watch, provide, onBeforeUnmount, nextTick } from 'vue';
+import { useControllableState } from '../../composables/useControllableState';
+import type { ExTreeProps, ExTreeEmits, ExTreeExposed, ExTreeSlots, TreeNode } from './types';
 import ExTreeNode from './ExTreeNode.vue';
+import { TREE_STATE_KEY } from './state';
+import { useTreeLoader } from './use-tree-loader';
+import { filterTreeNodes } from './tree-data';
+import { generateId } from '../../utils/id';
 
 defineOptions({
   name: 'ExTree',
@@ -115,62 +144,146 @@ const props = withDefaults(defineProps<ExTreeProps>(), {
 });
 
 const emit = defineEmits<ExTreeEmits>();
+defineSlots<ExTreeSlots>();
+
+const loader = useTreeLoader({
+  props,
+  onLoad: handleLoadedChildren,
+  onError: (error, node) => emit('load-error', error, node),
+});
+const treeData = computed(() => loader.tree.value.data);
+const { reloadNode, cancelNodeLoad, getNodeLoadState } = loader;
 
 const treeRef = ref<HTMLDivElement>();
+const viewportRef = ref<HTMLDivElement>();
+const measuredViewportHeight = ref(0);
+let viewportObserver: ResizeObserver | undefined;
+watch(
+  viewportRef,
+  element => {
+    viewportObserver?.disconnect();
+    measuredViewportHeight.value = element?.clientHeight ?? 0;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    viewportObserver = new ResizeObserver(() => {
+      measuredViewportHeight.value = element.clientHeight;
+    });
+    viewportObserver.observe(element);
+  },
+  { flush: 'post' }
+);
 const filterValue = ref('');
 
-// 内部状态（始终持有副本，避免原地 mutate 外部传入的 prop 数组）
-const internalExpandedKeys = ref<string[]>([
-  ...(props.expandedKeys ?? props.defaultExpandedKeys ?? []),
-]);
-const internalSelectedKeys = ref<string[]>([
-  ...(props.selectedKeys ?? props.defaultSelectedKeys ?? []),
-]);
-const internalCheckedKeys = ref<string[]>([
-  ...(props.checkedKeys ?? props.defaultCheckedKeys ?? []),
-]);
-const halfCheckedKeys = ref<string[]>([]);
+const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
+  const pending = [...nodes].reverse();
+  while (pending.length) {
+    const node = pending.pop()!;
+    if (!node.disabled) return node.key;
+    for (let index = (node.children?.length ?? 0) - 1; index >= 0; index--)
+      pending.push(node.children![index]!);
+  }
+  return null;
+};
+const activeKey = ref<string | null>(findFirstEnabledKey(treeData.value));
 
-// 节点映射
-const nodeMap = computed(() => {
-  const map = new Map<string, TreeNode>();
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      map.set(node.key, node);
-      if (node.children) {
-        traverse(node.children);
-      }
-    });
-  };
-  traverse(props.data);
-  return map;
+const collectExpandableKeys = (nodes: readonly TreeNode[]): string[] => {
+  const keys: string[] = [];
+  const pending = [...nodes].reverse();
+  while (pending.length) {
+    const node = pending.pop()!;
+    if (!node.disabled && loader.isExpandable(node)) {
+      keys.push(node.key);
+      const children = node.children ?? [];
+      for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
+    }
+  }
+  return keys;
+};
+
+const expandedState = useControllableState<string[]>({
+  controlledValue: () => props.expandedKeys,
+  defaultValue: () =>
+    props.defaultExpandAll ? collectExpandableKeys(treeData.value) : [...props.defaultExpandedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:expandedKeys', keys),
 });
+const selectedState = useControllableState<string[]>({
+  controlledValue: () => props.selectedKeys,
+  defaultValue: () => [...props.defaultSelectedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:selectedKeys', keys),
+});
+const checkedState = useControllableState<string[]>({
+  controlledValue: () => props.checkedKeys,
+  defaultValue: () => [...props.defaultCheckedKeys],
+  clone: keys => [...keys],
+  onChange: keys => emit('update:checkedKeys', keys),
+});
+
+const effectiveExpandedKeys = expandedState.value;
+const effectiveSelectedKeys = selectedState.value;
+const effectiveCheckedKeys = computed(() => {
+  if (props.checkStrictly) return checkedState.value.value;
+  const checked = new Set(checkedState.value.value);
+  const { nodes, parents } = treeIndex.value;
+  const inherited = new Set<string>();
+  // 前序传递已有勾选意图；不可勾选节点自身不被新增，后代沿用点击联动语义。
+  for (const node of nodes.values()) {
+    const parent = parents.get(node.key);
+    if (parent !== undefined && inherited.has(parent)) {
+      inherited.add(node.key);
+      if (isNodeCheckable(node)) checked.add(node.key);
+    }
+    if (isNodeCheckable(node) && checked.has(node.key)) inherited.add(node.key);
+  }
+  // 逆前序汇总完整的子级状态，外部值与用户点击使用相同的父子关系。
+  for (const node of [...nodes.values()].reverse()) {
+    const children = node.children?.filter(isNodeCheckable) ?? [];
+    if (isNodeCheckable(node) && children.length && children.every(child => checked.has(child.key)))
+      checked.add(node.key);
+  }
+  return [...checked];
+});
+const expandedKeySet = computed(() => new Set(effectiveExpandedKeys.value));
+const selectedKeySet = computed(() => new Set(effectiveSelectedKeys.value));
+const checkedKeySet = computed(() => new Set(effectiveCheckedKeys.value));
+
+// 仅在受控展开值实际生效后加载；数据变更与加载后的可见树统一走这一入口。
+watch(
+  [() => [...effectiveExpandedKeys.value], treeData, () => props.disabled, () => props.loadData],
+  () => loader.syncExpanded(effectiveExpandedKeys.value),
+  { immediate: true }
+);
+
+// 一次前序遍历建立节点与父节点索引，数据变化时统一重建。
+const treeIndex = computed(() => {
+  const nodes = new Map<string, TreeNode>();
+  const parents = new Map<string, string>();
+  const pending = treeData.value
+    .map(node => ({ node, parent: undefined as string | undefined }))
+    .reverse();
+  while (pending.length) {
+    const entry = pending.pop();
+    if (!entry) continue;
+    const { node, parent } = entry;
+    nodes.set(node.key, node);
+    if (parent !== undefined) parents.set(node.key, parent);
+    const children = node.children ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child) pending.push({ node: child, parent: node.key });
+    }
+  }
+  return { nodes, parents };
+});
+const nodeMap = computed(() => treeIndex.value.nodes);
 
 // 过滤后的数据
 const filteredData = computed(() => {
   if (!filterValue.value || !props.filterNodeMethod) {
-    return props.data;
+    return treeData.value;
   }
 
-  const filter = (nodes: TreeNode[]): TreeNode[] => {
-    const result: TreeNode[] = [];
-
-    for (const node of nodes) {
-      const match = props.filterNodeMethod!(filterValue.value, node);
-      const children = node.children ? filter(node.children) : [];
-
-      if (match || children.length > 0) {
-        result.push({
-          ...node,
-          children: children.length > 0 ? children : node.children,
-        });
-      }
-    }
-
-    return result;
-  };
-
-  return filter(props.data);
+  return filterTreeNodes(treeData.value, node => props.filterNodeMethod!(filterValue.value, node));
 });
 
 // 样式类
@@ -196,36 +309,66 @@ const treeStyles = computed(() => {
 // ============================================================================
 const scrollTop = ref(0);
 
+const safeItemHeight = computed(() =>
+  Number.isFinite(props.itemHeight) && props.itemHeight >= 1 ? Math.floor(props.itemHeight) : 28
+);
+const safeVirtualBuffer = computed(() =>
+  Number.isFinite(props.virtualBuffer) && props.virtualBuffer >= 0
+    ? Math.floor(props.virtualBuffer)
+    : 6
+);
+const safeViewportHeight = computed(() =>
+  typeof props.height === 'number' && Number.isFinite(props.height) && props.height > 0
+    ? props.height
+    : measuredViewportHeight.value || 400
+);
 const viewportStyle = computed(() => ({
-  height: typeof props.height === 'number' ? `${props.height}px` : props.height,
+  height:
+    typeof props.height === 'number'
+      ? `${safeViewportHeight.value}px`
+      : props.height.trim() || '400px',
   overflowY: 'auto' as const,
 }));
 
 // 扁平化所有当前可见节点（携带层级），仅展开的分支才向下递归
-const flattenedNodes = computed<{ node: TreeNode; level: number }[]>(() => {
-  const result: { node: TreeNode; level: number }[] = [];
-  const walk = (nodes: TreeNode[], level: number) => {
-    for (const node of nodes) {
-      result.push({ node, level });
-      if (
-        node.children &&
-        node.children.length > 0 &&
-        internalExpandedKeys.value.includes(node.key)
-      ) {
-        walk(node.children, level + 1);
+interface VisibleTreeNode {
+  node: TreeNode;
+  level: number;
+  position: number;
+  setSize: number;
+}
+const flattenedNodes = computed<VisibleTreeNode[]>(() => {
+  const result: VisibleTreeNode[] = [];
+  const stack = filteredData.value
+    .map((node, index, nodes) => ({ node, level: 0, position: index + 1, setSize: nodes.length }))
+    .reverse();
+  while (stack.length) {
+    const item = stack.pop()!;
+    result.push(item);
+    const children = item.node.children;
+    if (children && expandedKeySet.value.has(item.node.key)) {
+      for (let index = children.length - 1; index >= 0; index -= 1) {
+        stack.push({
+          node: children[index]!,
+          level: item.level + 1,
+          position: index + 1,
+          setSize: children.length,
+        });
       }
     }
-  };
-  walk(filteredData.value, 0);
+  }
   return result;
 });
 
 const virtualRange = computed(() => {
   const total = flattenedNodes.value.length;
-  const viewport = typeof props.height === 'number' ? props.height : 400;
-  const buffer = props.virtualBuffer;
-  const start = Math.max(0, Math.floor(scrollTop.value / props.itemHeight) - buffer);
-  const visibleCount = Math.ceil(viewport / props.itemHeight) + buffer * 2;
+  const viewport = safeViewportHeight.value;
+  const buffer = safeVirtualBuffer.value;
+  const visibleCount = Math.ceil(viewport / safeItemHeight.value) + buffer * 2;
+  const start = Math.min(
+    Math.max(0, total - visibleCount),
+    Math.max(0, Math.floor(scrollTop.value / safeItemHeight.value) - buffer)
+  );
   const end = Math.min(total, start + visibleCount);
   return { start, end };
 });
@@ -234,8 +377,37 @@ const virtualNodes = computed(() =>
   flattenedNodes.value.slice(virtualRange.value.start, virtualRange.value.end)
 );
 
-const topSpacerHeight = computed(() => virtualRange.value.start * props.itemHeight);
-const totalSpacerHeight = computed(() => flattenedNodes.value.length * props.itemHeight);
+watch(
+  flattenedNodes,
+  nodes => {
+    const enabledNodes = nodes.filter(({ node }) => !node.disabled);
+    if (enabledNodes.some(({ node }) => node.key === activeKey.value)) return;
+
+    const selectedNode = enabledNodes.find(({ node }) => selectedKeySet.value.has(node.key));
+    activeKey.value = selectedNode?.node.key ?? enabledNodes[0]?.node.key ?? null;
+  },
+  { immediate: true }
+);
+
+const renderedActiveKey = computed(() => {
+  if (!props.virtual) return activeKey.value;
+  const enabledNodes = virtualNodes.value.filter(({ node }) => !node.disabled);
+  if (enabledNodes.some(({ node }) => node.key === activeKey.value)) {
+    return activeKey.value;
+  }
+  return enabledNodes[0]?.node.key ?? null;
+});
+
+const topSpacerHeight = computed(() => virtualRange.value.start * safeItemHeight.value);
+const totalSpacerHeight = computed(() => flattenedNodes.value.length * safeItemHeight.value);
+watch([totalSpacerHeight, safeViewportHeight], () => {
+  const bounded = Math.min(
+    scrollTop.value,
+    Math.max(0, totalSpacerHeight.value - safeViewportHeight.value)
+  );
+  scrollTop.value = bounded;
+  if (viewportRef.value) viewportRef.value.scrollTop = bounded;
+});
 
 let virtualRaf: number | null = null;
 const handleVirtualScroll = (e: Event) => {
@@ -248,108 +420,54 @@ const handleVirtualScroll = (e: Event) => {
 };
 
 onBeforeUnmount(() => {
+  viewportObserver?.disconnect();
   if (virtualRaf !== null) {
     cancelAnimationFrame(virtualRaf);
     virtualRaf = null;
   }
 });
 
-// 监听外部变化
-watch(
-  () => props.expandedKeys,
-  val => {
-    if (val !== undefined) {
-      internalExpandedKeys.value = [...val];
-    }
-  }
-);
-
-watch(
-  () => props.selectedKeys,
-  val => {
-    if (val !== undefined) {
-      internalSelectedKeys.value = [...val];
-    }
-  }
-);
-
-watch(
-  () => props.checkedKeys,
-  val => {
-    if (val !== undefined) {
-      internalCheckedKeys.value = [...val];
-      updateHalfCheckedKeys();
-    }
-  }
-);
-
-// 暴露的方法（需要在 watch 之前定义）
-const expandAll = () => {
-  const keys: string[] = [];
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        keys.push(node.key);
-        traverse(node.children);
-      }
-    });
-  };
-  traverse(props.data);
-  internalExpandedKeys.value = keys;
-  emit('update:expandedKeys', keys);
-};
-
-// 默认展开所有
-watch(
-  () => props.defaultExpandAll,
-  val => {
-    if (val) {
-      expandAll();
-    }
-  },
-  { immediate: true }
-);
-
-// 更新半选状态
-const updateHalfCheckedKeys = () => {
+// 半选状态完全由真实 checkedKeys 推导，不维护可失步的第二份状态。
+const halfCheckedKeys = computed<string[]>(() => {
   if (props.checkStrictly) {
-    halfCheckedKeys.value = [];
-    return;
+    return [];
   }
 
+  const { nodes, parents } = treeIndex.value;
+  const orderedNodes = Array.from(nodes.values());
+  const counts = new Map<string, { total: number; checked: number }>();
   const half = new Set<string>();
-  const checked = new Set(internalCheckedKeys.value);
-
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        const childKeys = getAllChildKeys(node);
-        const checkedCount = childKeys.filter(key => checked.has(key)).length;
-
-        if (checkedCount > 0 && checkedCount < childKeys.length) {
-          half.add(node.key);
-        }
-
-        traverse(node.children);
-      }
-    });
-  };
-
-  traverse(props.data);
-  halfCheckedKeys.value = Array.from(half);
-};
+  // 逆前序保证先汇总孩子；每条父子边只处理一次，时间和空间均为 O(N)。
+  for (let index = orderedNodes.length - 1; index >= 0; index -= 1) {
+    const node = orderedNodes[index];
+    if (!node) continue;
+    const descendants = counts.get(node.key) ?? { total: 0, checked: 0 };
+    if (descendants.checked > 0 && descendants.checked < descendants.total) half.add(node.key);
+    const parent = parents.get(node.key);
+    if (parent === undefined) continue;
+    const parentCount = counts.get(parent) ?? { total: 0, checked: 0 };
+    const checkable = isNodeCheckable(node);
+    parentCount.total += descendants.total + Number(checkable);
+    parentCount.checked +=
+      descendants.checked + Number(checkable && checkedKeySet.value.has(node.key));
+    counts.set(parent, parentCount);
+  }
+  // 查询方法保持原来的前序结果顺序，索引优化不改变对外契约。
+  return orderedNodes.filter(node => half.has(node.key)).map(node => node.key);
+});
 
 // 获取所有子节点的 key
+const isNodeCheckable = (node: TreeNode): boolean => !node.disabled && node.checkable !== false;
+
 const getAllChildKeys = (node: TreeNode): string[] => {
   const keys: string[] = [];
-  const traverse = (n: TreeNode) => {
-    keys.push(n.key);
-    if (n.children) {
-      n.children.forEach(traverse);
-    }
-  };
-  if (node.children) {
-    node.children.forEach(traverse);
+  const pending = [...(node.children ?? [])].reverse();
+  // 异步返回可以包含深层完整子树，迭代遍历保留前序契约并避免调用栈溢出。
+  while (pending.length) {
+    const child = pending.pop()!;
+    if (isNodeCheckable(child)) keys.push(child.key);
+    const children = child.children ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
   }
   return keys;
 };
@@ -357,25 +475,11 @@ const getAllChildKeys = (node: TreeNode): string[] => {
 // 获取所有父节点的 key
 const getAllParentKeys = (key: string): string[] => {
   const keys: string[] = [];
-  const findParent = (nodes: TreeNode[], targetKey: string): TreeNode | null => {
-    for (const node of nodes) {
-      if (node.children) {
-        if (node.children.some(child => child.key === targetKey)) {
-          return node;
-        }
-        const parent = findParent(node.children, targetKey);
-        if (parent) return parent;
-      }
-    }
-    return null;
-  };
-
-  let currentKey = key;
-  while (true) {
-    const parent = findParent(props.data, currentKey);
-    if (!parent) break;
-    keys.push(parent.key);
-    currentKey = parent.key;
+  const parents = treeIndex.value.parents;
+  let parent = parents.get(key);
+  while (parent !== undefined) {
+    keys.push(parent);
+    parent = parents.get(parent);
   }
 
   return keys;
@@ -383,44 +487,52 @@ const getAllParentKeys = (key: string): string[] => {
 
 // 处理展开/收起（不可变更新 + emit 拷贝，避免外泄内部引用）
 const handleToggle = (node: TreeNode, expanded: boolean) => {
-  const has = internalExpandedKeys.value.includes(node.key);
+  if (props.disabled || node.disabled) return;
+  const currentKeys = effectiveExpandedKeys.value;
+  const has = expandedKeySet.value.has(node.key);
+  let nextKeys: string[];
 
   if (expanded && !has) {
-    internalExpandedKeys.value = [...internalExpandedKeys.value, node.key];
+    nextKeys = [...currentKeys, node.key];
   } else if (!expanded && has) {
-    internalExpandedKeys.value = internalExpandedKeys.value.filter(k => k !== node.key);
+    nextKeys = currentKeys.filter(key => key !== node.key);
   } else {
     return;
   }
 
-  emit('update:expandedKeys', [...internalExpandedKeys.value]);
-  emit('expand', [...internalExpandedKeys.value], node, expanded);
+  expandedState.request(nextKeys);
+  emit('expand', [...nextKeys], node, expanded);
 };
 
 // 处理选择
 const handleSelect = (node: TreeNode, selected: boolean) => {
-  if (!props.selectable || node.disabled || node.selectable === false) return;
+  if (props.disabled || !props.selectable || node.disabled || node.selectable === false) return;
+
+  const currentKeys = effectiveSelectedKeys.value;
+  let nextKeys: string[];
 
   if (props.multiple) {
-    const has = internalSelectedKeys.value.includes(node.key);
+    const has = selectedKeySet.value.has(node.key);
     if (selected && !has) {
-      internalSelectedKeys.value = [...internalSelectedKeys.value, node.key];
+      nextKeys = [...currentKeys, node.key];
     } else if (!selected && has) {
-      internalSelectedKeys.value = internalSelectedKeys.value.filter(k => k !== node.key);
+      nextKeys = currentKeys.filter(key => key !== node.key);
+    } else {
+      return;
     }
   } else {
-    internalSelectedKeys.value = selected ? [node.key] : [];
+    nextKeys = selected ? [node.key] : [];
   }
 
-  emit('update:selectedKeys', [...internalSelectedKeys.value]);
-  emit('select', [...internalSelectedKeys.value], node, selected);
+  selectedState.request(nextKeys);
+  emit('select', [...nextKeys], node, selected);
 };
 
 // 处理勾选
 const handleCheck = (node: TreeNode, checked: boolean) => {
-  if (!props.checkable || node.disabled || node.checkable === false) return;
+  if (props.disabled || !props.checkable || node.disabled || node.checkable === false) return;
 
-  const checkedSet = new Set(internalCheckedKeys.value);
+  const checkedSet = new Set(effectiveCheckedKeys.value);
 
   if (checked) {
     checkedSet.add(node.key);
@@ -432,8 +544,9 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
       parentKeys.forEach(parentKey => {
         const parentNode = nodeMap.value.get(parentKey);
         if (parentNode?.children) {
-          const allChildrenChecked = parentNode.children.every(child => checkedSet.has(child.key));
-          if (allChildrenChecked) {
+          const checkableChildren = parentNode.children.filter(isNodeCheckable);
+          const allChildrenChecked = checkableChildren.every(child => checkedSet.has(child.key));
+          if (isNodeCheckable(parentNode) && checkableChildren.length > 0 && allChildrenChecked) {
             checkedSet.add(parentKey);
           }
         }
@@ -449,16 +562,67 @@ const handleCheck = (node: TreeNode, checked: boolean) => {
     }
   }
 
-  internalCheckedKeys.value = Array.from(checkedSet);
-  updateHalfCheckedKeys();
-
-  emit('update:checkedKeys', [...internalCheckedKeys.value]);
-  emit('check', [...internalCheckedKeys.value], node, checked);
+  const nextKeys = Array.from(checkedSet);
+  checkedState.request(nextKeys);
+  emit('check', [...nextKeys], node, checked);
 };
+
+function handleLoadedChildren(node: TreeNode, children: TreeNode[]) {
+  // 加载结束时读取真实勾选状态，避免旧请求复活已经取消的选择。
+  if (props.checkable && !props.checkStrictly && checkedKeySet.value.has(node.key)) {
+    const next = new Set(effectiveCheckedKeys.value);
+    getAllChildKeys(node).forEach(key => next.add(key));
+    if (next.size !== checkedState.value.value.length) checkedState.request([...next]);
+  }
+  emit('load', node, children);
+}
 
 // 处理节点点击
 const handleNodeClick = (node: TreeNode, event: MouseEvent) => {
   emit('node-click', node, event);
+};
+
+const handleFocusNode = (node: TreeNode) => {
+  activeKey.value = node.key;
+};
+
+const focusNodeByKey = (key: string) => {
+  nextTick(() => {
+    const target = Array.from(
+      treeRef.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []
+    ).find(item => item.dataset.nodeKey === key);
+    target?.focus();
+  });
+};
+
+const handleNavigate = (
+  node: TreeNode,
+  key: 'ArrowDown' | 'ArrowUp' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+) => {
+  const enabledNodes = flattenedNodes.value.filter(item => !item.node.disabled);
+  const currentIndex = enabledNodes.findIndex(item => item.node.key === node.key);
+  let target: VisibleTreeNode | undefined = enabledNodes[currentIndex];
+  if (key === 'ArrowDown') target = enabledNodes[currentIndex + 1];
+  else if (key === 'ArrowUp') target = enabledNodes[currentIndex - 1];
+  else if (key === 'Home') target = enabledNodes[0];
+  else if (key === 'End') target = enabledNodes[enabledNodes.length - 1];
+  else if (key === 'ArrowRight') {
+    const child = node.children?.find(item => !item.disabled);
+    target = enabledNodes.find(item => item.node.key === child?.key);
+  } else if (key === 'ArrowLeft') {
+    const parent = treeIndex.value.parents.get(node.key);
+    target = enabledNodes.find(item => item.node.key === parent);
+  }
+  if (!target || target.node.key === node.key) return;
+
+  activeKey.value = target.node.key;
+  if (props.virtual) {
+    const targetIndex = flattenedNodes.value.findIndex(item => item.node.key === target.node.key);
+    const nextScrollTop = targetIndex * safeItemHeight.value;
+    scrollTop.value = nextScrollTop;
+    if (viewportRef.value) viewportRef.value.scrollTop = nextScrollTop;
+  }
+  focusNodeByKey(target.node.key);
 };
 
 // 处理节点右键
@@ -467,7 +631,25 @@ const handleNodeContextmenu = (node: TreeNode, event: MouseEvent) => {
 };
 
 // 拖拽相关
+const TREE_DRAG_TYPE = 'application/x-ex-ui-tree';
+let dragSession: { node: TreeNode; token: string } | undefined;
+const clearDragSession = () => {
+  dragSession = undefined;
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('dragstart', clearDragSession, true);
+    document.removeEventListener('dragend', clearDragSession, true);
+  }
+};
+watch([() => props.draggable, () => props.disabled, treeData], clearDragSession);
+onBeforeUnmount(clearDragSession);
 const handleNodeDragStart = (node: TreeNode, event: DragEvent) => {
+  if (!event.dataTransfer || !props.draggable || props.disabled) return;
+  clearDragSession();
+  dragSession = { node, token: generateId('ex-tree-drag') };
+  event.dataTransfer.setData(TREE_DRAG_TYPE, dragSession.token);
+  // 下次文档拖拽和本次结束都会撤销会话，避免兼容缺失自定义格式时接受旧来源。
+  document.addEventListener('dragstart', clearDragSession, true);
+  document.addEventListener('dragend', clearDragSession, true);
   emit('node-drag-start', node, event);
 };
 
@@ -480,6 +662,7 @@ const handleNodeDragLeave = (node: TreeNode, event: DragEvent) => {
 };
 
 const handleNodeDragEnd = (node: TreeNode, event: DragEvent) => {
+  clearDragSession();
   emit('node-drag-end', node, event);
 };
 
@@ -489,20 +672,31 @@ const handleNodeDrop = (
   position: 'before' | 'after' | 'inner',
   event: DragEvent
 ) => {
-  // 子组件只携带 key 透传，这里用 nodeMap 还原出完整的拖拽节点
-  const resolvedDragNode = nodeMap.value.get(dragNode.key) ?? dragNode;
+  // 只接受当前树发起的拖拽，保证事件中的 dragNode 始终是完整原始节点。
+  const session = dragSession;
+  clearDragSession();
+  const token = event.dataTransfer?.getData(TREE_DRAG_TYPE);
+  if (
+    !session ||
+    !event.dataTransfer ||
+    (token && token !== session.token) ||
+    session.node.key !== dragNode.key
+  )
+    return;
+  const resolvedDragNode = nodeMap.value.get(dragNode.key);
+  if (!resolvedDragNode || resolvedDragNode !== session.node) return;
   emit('node-drop', resolvedDragNode, dropNode, position, event);
 };
 
 // 其他暴露的方法
 const getSelectedNodes = (): TreeNode[] => {
-  return internalSelectedKeys.value
+  return effectiveSelectedKeys.value
     .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
 
 const getCheckedNodes = (): TreeNode[] => {
-  return internalCheckedKeys.value
+  return effectiveCheckedKeys.value
     .map(key => nodeMap.value.get(key))
     .filter((node): node is TreeNode => node !== undefined);
 };
@@ -513,34 +707,41 @@ const getHalfCheckedNodes = (): TreeNode[] => {
     .filter((node): node is TreeNode => node !== undefined);
 };
 
-const setSelected = (key: string, selected: boolean) => {
+const requestNodeSelection = (key: string, selected: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleSelect(node, selected);
+  if (!node || props.disabled || !props.selectable || node.disabled || node.selectable === false) {
+    return false;
   }
+  handleSelect(node, selected);
+  return true;
 };
 
-const setChecked = (key: string, checked: boolean) => {
+const requestNodeCheck = (key: string, checked: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleCheck(node, checked);
+  if (!node || props.disabled || !props.checkable || node.disabled || node.checkable === false) {
+    return false;
   }
+  handleCheck(node, checked);
+  return true;
 };
 
-const setExpanded = (key: string, expanded: boolean) => {
+const requestNodeExpansion = (key: string, expanded: boolean): boolean => {
   const node = nodeMap.value.get(key);
-  if (node) {
-    handleToggle(node, expanded);
-  }
+  if (!node || props.disabled || node.disabled) return false;
+  handleToggle(node, expanded);
+  return true;
 };
 
 const getNode = (key: string): TreeNode | null => {
   return nodeMap.value.get(key) || null;
 };
 
-const collapseAll = () => {
-  internalExpandedKeys.value = [];
-  emit('update:expandedKeys', []);
+const requestExpandAll = () => {
+  expandedState.request(collectExpandableKeys(treeData.value));
+};
+
+const requestCollapseAll = () => {
+  expandedState.request([]);
 };
 
 const filter = (value: string) => {
@@ -548,41 +749,57 @@ const filter = (value: string) => {
 
   // 过滤时自动展开命中节点的所有祖先，确保命中项可见
   if (value && props.filterNodeMethod) {
-    const toExpand = new Set(internalExpandedKeys.value);
-    const walk = (nodes: TreeNode[], ancestors: string[]) => {
-      for (const node of nodes) {
-        if (props.filterNodeMethod!(value, node)) {
-          ancestors.forEach(k => toExpand.add(k));
-        }
-        if (node.children && node.children.length > 0) {
-          walk(node.children, [...ancestors, node.key]);
-        }
+    const toExpand = new Set(effectiveExpandedKeys.value);
+    const matched = new Set<string>();
+    for (const node of [...treeIndex.value.nodes.values()].reverse()) {
+      if (!matched.has(node.key) && !props.filterNodeMethod!(value, node)) continue;
+      const parent = treeIndex.value.parents.get(node.key);
+      if (parent !== undefined) {
+        matched.add(parent);
       }
-    };
-    walk(props.data, []);
-    internalExpandedKeys.value = Array.from(toExpand);
-    emit('update:expandedKeys', [...internalExpandedKeys.value]);
+    }
+    for (const node of treeIndex.value.nodes.values())
+      if (matched.has(node.key)) toExpand.add(node.key);
+    const nextKeys = Array.from(toExpand);
+    if (
+      nextKeys.length !== effectiveExpandedKeys.value.length ||
+      nextKeys.some(key => !expandedKeySet.value.has(key))
+    ) {
+      expandedState.request(nextKeys);
+    }
   }
 };
 
 const getElement = () => treeRef.value || null;
 
 // 提供给子组件
+provide(TREE_STATE_KEY, {
+  expanded: expandedKeySet,
+  selected: selectedKeySet,
+  checked: checkedKeySet,
+  halfChecked: computed(() => new Set(halfCheckedKeys.value)),
+  isExpandable: loader.isExpandable,
+  getLoadState: getNodeLoadState,
+  reload: reloadNode,
+});
 provide('tree', {
   props,
   nodeMap,
 });
 
 defineExpose<ExTreeExposed>({
+  reloadNode,
+  cancelNodeLoad,
+  getNodeLoadState,
   getSelectedNodes,
   getCheckedNodes,
   getHalfCheckedNodes,
-  setSelected,
-  setChecked,
-  setExpanded,
+  requestNodeSelection,
+  requestNodeCheck,
+  requestNodeExpansion,
   getNode,
-  expandAll,
-  collapseAll,
+  requestExpandAll,
+  requestCollapseAll,
   filter,
   getElement,
 });

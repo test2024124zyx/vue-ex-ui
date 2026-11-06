@@ -5,7 +5,7 @@
 ## 特性
 
 - ✅ **完整的 ECharts 支持** - 支持所有 ECharts 图表类型（折线图、柱状图、饼图、散点图、雷达图、仪表盘等）
-- ✅ **赛博朋克风格** - 内置霓虹蓝、霓虹粉等主题，支持霓虹发光效果
+- ✅ **赛博朋克风格** - 内置赛博暗色和赛博亮色主题，支持收敛的霓虹发光效果
 - ✅ **响应式设计** - 自动调整大小，支持 ResizeObserver
 - ✅ **TypeScript 支持** - 完整的类型定义
 - ✅ **国际化** - 中英文双语支持
@@ -18,26 +18,31 @@
 
 ```vue
 <template>
-  <ex-chart :option="chartOption" height="400px" />
+  <ex-chart
+    :option="chartOption"
+    height="400px"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const chartOption = ref({
   xAxis: {
     type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
   },
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],
-    type: 'line',
-    smooth: true
-  }]
-})
+  series: [
+    {
+      data: [120, 200, 150, 80, 70, 110, 130],
+      type: 'line',
+      smooth: true,
+    },
+  ],
+});
 </script>
 ```
 
@@ -67,17 +72,19 @@ const chartOption = ref({
 
 ```vue
 <template>
-  <ex-config-provider theme="neon-pink" :neon-effect="true">
+  <ex-config-provider
+    theme="light"
+    :neon-effect="true"
+  >
     <ex-chart :option="chartOption" />
   </ex-config-provider>
 </template>
 ```
 
 支持的主题：
-- **neon-blue** - 霓虹蓝主题（默认）
-- **neon-pink** - 霓虹粉主题
-- **dark** - 暗黑主题
-- **light** - 明亮主题
+
+- **neon-blue** - 赛博暗色主题（默认）
+- **light** - 赛博亮色主题
 
 霓虹发光效果由全局配置 `neonEffect` 控制。
 
@@ -86,11 +93,7 @@ const chartOption = ref({
 自动调整大小，支持防抖延迟：
 
 ```vue
-<ex-chart 
-  :option="chartOption" 
-  :auto-resize="true" 
-  :resize-delay="300" 
-/>
+<ex-chart :option="chartOption" :auto-resize="true" :resize-delay="300" />
 ```
 
 ## 加载状态
@@ -118,11 +121,7 @@ const chartOption = ref({
 监听图表事件：
 
 ```vue
-<ex-chart 
-  :option="chartOption" 
-  @click="handleClick"
-  @finished="handleFinished"
-/>
+<ex-chart :option="chartOption" @click="handleClick" @finished="handleFinished" />
 ```
 
 ## 方法调用
@@ -131,25 +130,28 @@ const chartOption = ref({
 
 ```vue
 <template>
-  <ex-chart ref="chartRef" :option="chartOption" />
+  <ex-chart
+    ref="chartRef"
+    :option="chartOption"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const chartRef = ref()
+const chartRef = ref();
 
 // 获取 ECharts 实例
-const instance = chartRef.value?.getInstance()
+const instance = chartRef.value?.getInstance();
 
 // 调整大小
-chartRef.value?.resize()
+chartRef.value?.resize();
 
 // 清空图表
-chartRef.value?.clear()
+chartRef.value?.clear();
 
 // 导出图片
-const dataURL = chartRef.value?.getDataURL()
+const dataURL = chartRef.value?.getDataURL();
 </script>
 ```
 
@@ -168,19 +170,19 @@ import {
   createDefaultLegend,
   createDefaultTooltip,
   createDefaultGrid,
-} from 'vue-ex-ui'
+} from 'vue-ex-ui';
 
 // 获取主题配置
-const theme = getChartTheme('neon-blue')
+const theme = getChartTheme('neon-blue');
 
 // 应用霓虹发光
-applyNeonGlow(option, 'neon-blue')
+const glowingOption = applyNeonGlow(option, 'neon-blue');
 
 // 创建渐变色
-const gradient = createGradientColor('#00f0ff', '#ff007f')
+const gradient = createGradientColor('#00f0ff', '#ff007f');
 
 // 格式化数字
-const formatted = formatNumber(1234567) // "1.23M"
+const formatted = formatNumber(1234567); // "1.23M"
 ```
 
 ## 性能优化
@@ -198,15 +200,15 @@ const formatted = formatNumber(1234567) // "1.23M"
 
 ## 浏览器兼容性
 
-- Chrome >= 90
-- Firefox >= 88
-- Safari >= 14
-- Edge >= 90
+- Chrome >= 108
+- Firefox >= 121
+- Safari >= 16
+- Edge >= 108
 
 ## 依赖
 
-- Vue 3.4+
-- ECharts 6.0+
+- Vue ^3.5.41
+- ECharts ^6.1.0
 
 ## 许可证
 

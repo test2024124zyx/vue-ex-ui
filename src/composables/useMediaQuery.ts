@@ -1,121 +1,88 @@
-/**
- * useMediaQuery - 响应式媒体查询 Hook
- * 用于安全地监听媒体查询变化，自动处理内存清理
- */
-
-import { ref, onMounted, onUnmounted, Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import type { Ref } from 'vue';
 
 export interface UseMediaQueryOptions {
-  /**
-   * 初始值（用于 SSR）
-   */
-  initialValue?: boolean
+  /** SSR 或不支持媒体查询时使用的初始值。 */
+  initialValue?: boolean;
 }
 
 /**
- * 监听媒体查询
- * @param query - 媒体查询字符串，如 '(max-width: 768px)'
- * @param options - 配置选项
- * @returns 是否匹配的响应式引用
+ * 监听媒体查询并随组件作用域自动清理。
  */
-export function useMediaQuery(
-  query: string,
-  options: UseMediaQueryOptions = {}
-): Ref<boolean> {
-  const { initialValue = false } = options
-  const matches = ref(initialValue)
-
-  // SSR 安全检查
-  if (typeof window === 'undefined') {
-    return matches
+export function useMediaQuery(query: string, options: UseMediaQueryOptions = {}): Ref<boolean> {
+  if (!query.trim()) {
+    throw new TypeError('[ExUI] 媒体查询不能为空');
   }
 
-  let mediaQueryList: MediaQueryList | null = null
+  const matches = ref(options.initialValue ?? false);
+  let mediaQueryList: MediaQueryList | null = null;
 
-  const updateMatches = (e: MediaQueryListEvent | MediaQueryList) => {
-    matches.value = e.matches
-  }
+  const updateMatches = (event: MediaQueryListEvent | MediaQueryList): void => {
+    matches.value = event.matches;
+  };
 
   onMounted(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
     try {
-      mediaQueryList = window.matchMedia(query)
-      
-      // 设置初始值
-      matches.value = mediaQueryList.matches
-
-      // 添加监听器（兼容新旧 API）
-      if (mediaQueryList.addEventListener) {
-        mediaQueryList.addEventListener('change', updateMatches)
-      } else {
-        // 兼容旧版浏览器
-        mediaQueryList.addListener(updateMatches)
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.warn(`Failed to create media query: ${query}`, error);
-      }
+      mediaQueryList = window.matchMedia(query);
+      matches.value = mediaQueryList.matches;
+    } catch {
+      // 不支持的查询保持调用方提供的初始值，不污染宿主控制台。
+      return;
     }
-  })
 
-  onUnmounted(() => {
-    if (mediaQueryList) {
-      try {
-        // 移除监听器（兼容新旧 API）
-        if (mediaQueryList.removeEventListener) {
-          mediaQueryList.removeEventListener('change', updateMatches)
-        } else {
-          // 兼容旧版浏览器
-          mediaQueryList.removeListener(updateMatches)
-        }
-      } catch (error) {
-        console.warn('Failed to remove media query listener', error)
-      }
-      mediaQueryList = null
+    if (typeof mediaQueryList.addEventListener === 'function') {
+      mediaQueryList.addEventListener('change', updateMatches);
+    } else {
+      mediaQueryList.addListener(updateMatches);
     }
-  })
+  });
 
-  return matches
+  onBeforeUnmount(() => {
+    if (!mediaQueryList) return;
+
+    if (typeof mediaQueryList.removeEventListener === 'function') {
+      mediaQueryList.removeEventListener('change', updateMatches);
+    } else {
+      mediaQueryList.removeListener(updateMatches);
+    }
+    mediaQueryList = null;
+  });
+
+  return matches;
 }
 
-/**
- * 监听多个媒体查询
- * @param queries - 媒体查询对象，键为名称，值为查询字符串
- * @returns 匹配结果的响应式对象
- */
 export function useMediaQueries<T extends Record<string, string>>(
   queries: T
-): Record<keyof T, Ref<boolean>> {
-  const result = {} as Record<keyof T, Ref<boolean>>
+): { [K in keyof T]: Ref<boolean> } {
+  const result = {} as { [K in keyof T]: Ref<boolean> };
 
-  for (const key in queries) {
-    const queryValue = queries[key]
-    if (queryValue) {
-      result[key] = useMediaQuery(queryValue)
+  for (const key of Object.keys(queries) as Array<keyof T>) {
+    const query = queries[key];
+    if (typeof query !== 'string') {
+      throw new TypeError(`[ExUI] 媒体查询 ${String(key)} 必须是字符串`);
     }
+    result[key] = useMediaQuery(query);
   }
 
-  return result
+  return result;
 }
 
-/**
- * 预定义的断点查询
- */
 export const breakpointQueries = {
-  xs: '(max-width: 575px)',
-  sm: '(min-width: 576px) and (max-width: 767px)',
-  md: '(min-width: 768px) and (max-width: 991px)',
-  lg: '(min-width: 992px) and (max-width: 1199px)',
-  xl: '(min-width: 1200px) and (max-width: 1599px)',
-  xxl: '(min-width: 1600px)',
+  xs: '(max-width: 479px)',
+  sm: '(min-width: 480px) and (max-width: 767px)',
+  md: '(min-width: 768px) and (max-width: 1023px)',
+  lg: '(min-width: 1024px) and (max-width: 1279px)',
+  xl: '(min-width: 1280px) and (max-width: 1535px)',
+  xxl: '(min-width: 1536px)',
   mobile: '(max-width: 767px)',
-  tablet: '(min-width: 768px) and (max-width: 1199px)',
-  desktop: '(min-width: 1200px)',
-} as const
+  tablet: '(min-width: 768px) and (max-width: 1279px)',
+  desktop: '(min-width: 1280px)',
+} as const;
 
-/**
- * 使用预定义断点
- * @returns 各断点的匹配状态
- */
-export function useBreakpoints() {
-  return useMediaQueries(breakpointQueries)
+export function useBreakpoints(): {
+  [K in keyof typeof breakpointQueries]: Ref<boolean>;
+} {
+  return useMediaQueries(breakpointQueries);
 }

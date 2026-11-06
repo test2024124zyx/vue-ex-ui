@@ -1,9 +1,10 @@
-import type { App } from 'vue';
-import ExFileDownload from './ExFileDownload.vue';
+import ExFileDownloadComponent from './ExFileDownload.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExFileDownload.install = (app: App) => {
-  app.component('ExFileDownload', ExFileDownload);
-};
+export const ExFileDownload: InstallableComponent<typeof ExFileDownloadComponent> =
+  withInstall(ExFileDownloadComponent);
 
-export default ExFileDownload;
+export * from './download-utils';
+export * from './errors';
 export * from './types';
+export default ExFileDownload;

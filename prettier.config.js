@@ -9,5 +9,7 @@ export default {
   htmlWhitespaceSensitivity: 'ignore',
   bracketSpacing: true,
   bracketSameLine: false,
-  arrowParens: 'avoid'
-}
+  arrowParens: 'avoid',
+  // Vue 模板每行只保留一个属性，与项目的 ESLint 模板规则保持一致。
+  singleAttributePerLine: true,
+};

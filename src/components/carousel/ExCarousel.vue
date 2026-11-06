@@ -5,8 +5,11 @@
     :style="carouselStyles"
     role="region"
     :aria-label="ariaLabel || t('carousel.carousel')"
+    tabindex="0"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
+    @focusin="handleFocusIn"
+    @focusout="handleFocusOut"
   >
     <!-- 轮播容器 -->
     <div class="ex-carousel__container">
@@ -18,18 +21,20 @@
         @touchstart="handleTouchStart"
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
+        @touchcancel="resetTouch"
       >
-        <slot />
+        <SlotContent />
       </div>
 
       <!-- 前一个按钮 -->
       <button
         v-if="arrow !== 'never'"
-        v-show="arrow === 'always' || (arrow === 'hover' && isHovering)"
+        v-show="arrow === 'always' || (arrow === 'hover' && (isHovering || isFocusWithin))"
         class="ex-carousel__arrow ex-carousel__arrow--prev"
         :class="{ 'ex-carousel__arrow--disabled': !canGoPrev }"
         :disabled="!canGoPrev"
         :aria-label="t('carousel.previous')"
+        type="button"
         @click="prev"
       >
         <slot name="arrow-prev">
@@ -44,11 +49,12 @@
       <!-- 下一个按钮 -->
       <button
         v-if="arrow !== 'never'"
-        v-show="arrow === 'always' || (arrow === 'hover' && isHovering)"
+        v-show="arrow === 'always' || (arrow === 'hover' && (isHovering || isFocusWithin))"
         class="ex-carousel__arrow ex-carousel__arrow--next"
         :class="{ 'ex-carousel__arrow--disabled': !canGoNext }"
         :disabled="!canGoNext"
         :aria-label="t('carousel.next')"
+        type="button"
         @click="next"
       >
         <slot name="arrow-next">
@@ -74,6 +80,7 @@
         :class="{ 'ex-carousel__indicator--active': index === currentIndex }"
         :aria-label="`${t('carousel.goToSlide')} ${index + 1}`"
         :aria-current="index === currentIndex ? 'true' : 'false'"
+        type="button"
         @click="goTo(index)"
       >
         <span class="ex-carousel__indicator-dot" />
@@ -88,18 +95,26 @@ import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, onMounted, onBeforeUnmount, provide, watch } from 'vue';
 import type { ExCarouselProps, ExCarouselEmits, ExCarouselExposed } from './types';
 import { useI18n } from '../../locale';
+import { carouselContextKey } from './context';
+import { useSlotItems } from '../../composables/useSlotItems';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCarousel',
 });
 
+const DEFAULT_AUTOPLAY_INTERVAL = 3000;
+const TRANSITION_DURATION_MS = 300;
+const GESTURE_INTENT_THRESHOLD_PX = 12;
+const SWIPE_TRIGGER_THRESHOLD_PX = 50;
+
 // 注意：布尔类型 prop 未传时 Vue 默认转为 false，因此必须用 withDefaults 显式给出真值默认，
 // 否则 `props.xxx ?? true` 会因 `false ?? true === false` 而失效（导致指示器不显示、循环失效等）
 const props = withDefaults(defineProps<ExCarouselProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   height: '400px',
   autoplay: true,
-  interval: 3000,
+  interval: DEFAULT_AUTOPLAY_INTERVAL,
   loop: true,
   arrow: 'hover',
   indicatorPosition: 'bottom',
@@ -110,10 +125,9 @@ const props = withDefaults(defineProps<ExCarouselProps>(), {
 });
 
 // 设置默认值
-const modelValue = computed(() => props.modelValue ?? 0);
 const height = computed(() => props.height ?? '400px');
 const autoplay = computed(() => props.autoplay ?? true);
-const interval = computed(() => props.interval ?? 3000);
+const interval = computed(() => props.interval ?? DEFAULT_AUTOPLAY_INTERVAL);
 const loop = computed(() => props.loop ?? true);
 const arrow = computed(() => props.arrow ?? 'hover');
 const indicatorPosition = computed(() => props.indicatorPosition ?? 'bottom');
@@ -128,32 +142,104 @@ const { t } = useI18n();
 
 const carouselRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
-const currentIndex = ref(modelValue.value);
+const carouselState = useControllableState<number>({
+  controlledValue: () => props.modelValue,
+  defaultValue: 0,
+});
+const requestedIndex = carouselState.value;
+const currentIndex = computed(() => normalizeIndex(requestedIndex.value));
 const isHovering = ref(false);
+const isFocusWithin = ref(false);
+const prefersReducedMotion = ref(false);
 const autoplayTimer = ref<number>();
-const itemCount = ref(0);
+const { items: slotItems, SlotContent } = useSlotItems('ExCarouselItem');
+const mountedItemCount = ref(0);
+const itemCount = computed(() => Math.max(slotItems.value.length, mountedItemCount.value));
 const isTransitioning = ref(false);
+let transitionTimer: number | undefined;
+let mounted = false;
+let itemObserver: MutationObserver | undefined;
+let reducedMotionQuery: MediaQueryList | null = null;
 
 // 触摸相关
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchEndX = ref(0);
 const touchEndY = ref(0);
+const touchActive = ref(false);
+const touchIntent = ref<'carousel' | 'page' | null>(null);
 
-// 子组件注册（支持动态增删，索引由 getItemIndex 实时计算，避免一次性快照错位）
+// 子项索引以真实 DOM 顺序为准，保证 keyed 节点重排后语义与视觉顺序一致。
 const itemUids = ref<number[]>([]);
-const registerItem = (uid: number) => {
-  if (!itemUids.value.includes(uid)) {
-    itemUids.value = [...itemUids.value, uid];
+const itemElements = new Map<number, HTMLElement>();
+const elementUids = new Map<HTMLElement, number>();
+
+const normalizeIndex = (value: number, count = itemCount.value): number => {
+  const integer = Number.isFinite(value) ? Math.trunc(value) : 0;
+  if (count <= 0) return Math.max(0, integer);
+  return Math.min(Math.max(0, integer), count - 1);
+};
+
+const reconcileCurrentIndex = (emitCorrection: boolean) => {
+  const nextIndex = normalizeIndex(requestedIndex.value);
+  if (nextIndex === requestedIndex.value) return;
+
+  const previousIndex = requestedIndex.value;
+  carouselState.request(nextIndex);
+  if (emitCorrection) {
+    emit('update:modelValue', nextIndex);
+    emit('change', nextIndex, previousIndex);
   }
 };
+
+const syncItemOrder = () => {
+  const orderedUids = trackRef.value
+    ? Array.from(trackRef.value.children)
+        .map(element => elementUids.get(element as HTMLElement))
+        .filter((uid): uid is number => uid !== undefined)
+    : [];
+  const orderChanged =
+    orderedUids.length !== itemUids.value.length ||
+    orderedUids.some((uid, index) => uid !== itemUids.value[index]);
+  const previousCount = mountedItemCount.value;
+
+  if (orderChanged) {
+    itemUids.value = orderedUids;
+  }
+  mountedItemCount.value = orderedUids.length;
+
+  if (itemCount.value < previousCount) {
+    reconcileCurrentIndex(true);
+  }
+  if (mounted && itemCount.value !== previousCount) {
+    startAutoplay();
+  }
+};
+
+const registerItem = (uid: number, element?: HTMLElement) => {
+  if (!element) {
+    if (!itemUids.value.includes(uid)) itemUids.value.push(uid);
+    return;
+  }
+  const previousElement = itemElements.get(uid);
+  if (previousElement && previousElement !== element) {
+    elementUids.delete(previousElement);
+  }
+  itemElements.set(uid, element);
+  elementUids.set(element, uid);
+  syncItemOrder();
+};
+
 const unregisterItem = (uid: number) => {
-  itemUids.value = itemUids.value.filter(u => u !== uid);
+  const element = itemElements.get(uid);
+  if (element) elementUids.delete(element);
+  itemElements.delete(uid);
+  syncItemOrder();
 };
 const getItemIndex = (uid: number) => itemUids.value.indexOf(uid);
 
 // 提供给子组件
-provide('carousel', {
+provide(carouselContextKey, {
   currentIndex,
   direction,
   effect,
@@ -202,10 +288,14 @@ const trackStyles = computed(() => {
   if (effect.value === 'slide') {
     if (direction.value === 'horizontal') {
       styles.transform = `translateX(-${currentIndex.value * 100}%)`;
-      styles.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      styles.transition = prefersReducedMotion.value
+        ? 'none'
+        : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     } else {
       styles.transform = `translateY(-${currentIndex.value * 100}%)`;
-      styles.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      styles.transition = prefersReducedMotion.value
+        ? 'none'
+        : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     }
   } else if (effect.value === 'fade') {
     // Fade 效果由 CSS 处理，移除 transform
@@ -217,37 +307,25 @@ const trackStyles = computed(() => {
 });
 
 const canGoPrev = computed(() => {
-  return loop.value || currentIndex.value > 0;
+  return loop.value ? itemCount.value > 1 : currentIndex.value > 0;
 });
 
 const canGoNext = computed(() => {
-  return loop.value || currentIndex.value < itemCount.value - 1;
+  return loop.value ? itemCount.value > 1 : currentIndex.value < itemCount.value - 1;
 });
 
-// 方法
-const updateItemCount = () => {
-  if (trackRef.value) {
-    itemCount.value = trackRef.value.children.length;
-  }
-};
-
 const goTo = (index: number) => {
-  if (isTransitioning.value) return;
+  if (isTransitioning.value || itemCount.value === 0) return;
 
-  const newIndex = Math.max(0, Math.min(index, itemCount.value - 1));
+  const newIndex = normalizeIndex(index);
 
   if (newIndex === currentIndex.value) return;
 
-  isTransitioning.value = true;
   const oldIndex = currentIndex.value;
-  currentIndex.value = newIndex;
+  carouselState.request(newIndex);
 
   emit('update:modelValue', newIndex);
   emit('change', newIndex, oldIndex);
-
-  setTimeout(() => {
-    isTransitioning.value = false;
-  }, 300);
 };
 
 const next = () => {
@@ -275,17 +353,28 @@ const prev = () => {
 };
 
 const startAutoplay = () => {
-  if (!autoplay.value || itemCount.value <= 1) return;
-
   stopAutoplay();
+  if (
+    !autoplay.value ||
+    itemCount.value <= 1 ||
+    prefersReducedMotion.value ||
+    isFocusWithin.value ||
+    (isHovering.value && pauseOnHover.value)
+  ) {
+    return;
+  }
 
+  const delay =
+    Number.isFinite(interval.value) && interval.value > 0
+      ? interval.value
+      : DEFAULT_AUTOPLAY_INTERVAL;
   autoplayTimer.value = window.setInterval(() => {
     next();
-  }, interval.value);
+  }, delay);
 };
 
 const stopAutoplay = () => {
-  if (autoplayTimer.value) {
+  if (autoplayTimer.value !== undefined) {
     clearInterval(autoplayTimer.value);
     autoplayTimer.value = undefined;
   }
@@ -307,6 +396,19 @@ const handleMouseLeave = () => {
   }
 };
 
+const handleFocusIn = () => {
+  isFocusWithin.value = true;
+  stopAutoplay();
+};
+
+const handleFocusOut = (event: FocusEvent) => {
+  if (event.relatedTarget instanceof Node && carouselRef.value?.contains(event.relatedTarget)) {
+    return;
+  }
+  isFocusWithin.value = false;
+  if (autoplay.value && !(isHovering.value && pauseOnHover.value)) startAutoplay();
+};
+
 // 触摸事件处理
 const handleTouchStart = (e: TouchEvent) => {
   const touch = e.touches[0];
@@ -314,9 +416,27 @@ const handleTouchStart = (e: TouchEvent) => {
 
   touchStartX.value = touch.clientX;
   touchStartY.value = touch.clientY;
+  touchEndX.value = touch.clientX;
+  touchEndY.value = touch.clientY;
+  touchActive.value = true;
+  touchIntent.value = null;
+};
+
+const resolveTouchIntent = () => {
+  if (touchIntent.value !== null) return;
+
+  const dx = Math.abs(touchEndX.value - touchStartX.value);
+  const dy = Math.abs(touchEndY.value - touchStartY.value);
+  if (Math.max(dx, dy) < GESTURE_INTENT_THRESHOLD_PX) return;
+
+  touchIntent.value =
+    (direction.value === 'horizontal' && dx > dy) || (direction.value === 'vertical' && dy > dx)
+      ? 'carousel'
+      : 'page';
 };
 
 const handleTouchMove = (e: TouchEvent) => {
+  if (!touchActive.value) return;
   const touch = e.touches[0];
   if (!touch) return;
 
@@ -324,24 +444,43 @@ const handleTouchMove = (e: TouchEvent) => {
   touchEndY.value = touch.clientY;
 
   // 滑动方向与轮播方向一致时阻止默认滚动，避免与页面滚动冲突
-  const dx = Math.abs(touchEndX.value - touchStartX.value);
-  const dy = Math.abs(touchEndY.value - touchStartY.value);
-  if (
-    (direction.value === 'horizontal' && dx > dy) ||
-    (direction.value === 'vertical' && dy > dx)
-  ) {
+  resolveTouchIntent();
+  if (touchIntent.value === 'carousel') {
     if (e.cancelable) e.preventDefault();
   }
 };
 
-const handleTouchEnd = () => {
+const resetTouch = () => {
+  touchActive.value = false;
+  touchStartX.value = 0;
+  touchStartY.value = 0;
+  touchEndX.value = 0;
+  touchEndY.value = 0;
+  touchIntent.value = null;
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (!touchActive.value) return;
+
+  // touchmove 可能因系统事件合并或短促手势而缺失，结束事件中的 changedTouches 才是最终位置。
+  const touch = e.changedTouches[0];
+  if (touch) {
+    touchEndX.value = touch.clientX;
+    touchEndY.value = touch.clientY;
+  }
+
+  resolveTouchIntent();
+
+  if (touchIntent.value !== 'carousel') {
+    resetTouch();
+    return;
+  }
+
   const deltaX = touchEndX.value - touchStartX.value;
   const deltaY = touchEndY.value - touchStartY.value;
 
-  const threshold = 50;
-
   if (direction.value === 'horizontal') {
-    if (Math.abs(deltaX) > threshold) {
+    if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD_PX) {
       if (deltaX > 0) {
         prev();
       } else {
@@ -349,7 +488,7 @@ const handleTouchEnd = () => {
       }
     }
   } else {
-    if (Math.abs(deltaY) > threshold) {
+    if (Math.abs(deltaY) > SWIPE_TRIGGER_THRESHOLD_PX) {
       if (deltaY > 0) {
         prev();
       } else {
@@ -358,56 +497,87 @@ const handleTouchEnd = () => {
     }
   }
 
-  touchStartX.value = 0;
-  touchStartY.value = 0;
-  touchEndX.value = 0;
-  touchEndY.value = 0;
+  resetTouch();
 };
 
-// 监听 modelValue 变化（受控）：直接同步 currentIndex，绕过过渡锁，避免脱节
-watch(modelValue, newValue => {
-  if (newValue !== currentIndex.value) {
-    const max = Math.max(0, itemCount.value - 1);
-    const clamped = Math.max(0, Math.min(newValue, max));
-    if (clamped !== currentIndex.value) {
-      const oldIndex = currentIndex.value;
-      currentIndex.value = clamped;
-      emit('change', clamped, oldIndex);
+// 外部越界值只发修正请求；父级回写不重复触发用户 change 事件。
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (newValue === undefined) return;
+    const clamped = normalizeIndex(newValue);
+    if (clamped !== newValue) {
+      emit('update:modelValue', clamped);
     }
   }
-});
+);
+
+// 只有已确认索引产生真实切换时才锁定过渡，拒绝请求不会阻断后续操作。
+watch(
+  carouselState.value,
+  (nextIndex, previousIndex) => {
+    if (!mounted || normalizeIndex(nextIndex) === normalizeIndex(previousIndex)) return;
+    if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
+    isTransitioning.value = !prefersReducedMotion.value;
+    if (!isTransitioning.value) return;
+    transitionTimer = window.setTimeout(() => {
+      isTransitioning.value = false;
+      transitionTimer = undefined;
+    }, TRANSITION_DURATION_MS);
+  },
+  { flush: 'sync' }
+);
 
 // 自动播放配置变化时重启定时器（运行时改 autoplay/interval 生效）
-watch([autoplay, interval], () => {
+watch([autoplay, interval, pauseOnHover], () => {
   stopAutoplay();
-  if (!(isHovering.value && pauseOnHover.value)) {
+  if (!(isHovering.value && pauseOnHover.value) && !isFocusWithin.value) {
     startAutoplay();
   }
 });
 
+const handleReducedMotionChange = (event: MediaQueryListEvent): void => {
+  prefersReducedMotion.value = event.matches;
+  if (event.matches) stopAutoplay();
+  else if (!isFocusWithin.value && !(isHovering.value && pauseOnHover.value)) startAutoplay();
+};
+
 // 生命周期
 onMounted(() => {
-  updateItemCount();
+  mounted = true;
+  if (typeof window.matchMedia === 'function') {
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    prefersReducedMotion.value = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener?.('change', handleReducedMotionChange);
+  }
+  syncItemOrder();
+  reconcileCurrentIndex(true);
   startAutoplay();
 
   // 监听子元素变化
   if (trackRef.value) {
-    const observer = new MutationObserver(() => {
-      updateItemCount();
+    itemObserver = new MutationObserver(() => {
+      syncItemOrder();
     });
 
-    observer.observe(trackRef.value, {
+    itemObserver.observe(trackRef.value, {
       childList: true,
-    });
-
-    onBeforeUnmount(() => {
-      observer.disconnect();
     });
   }
 });
 
 onBeforeUnmount(() => {
+  mounted = false;
+  itemObserver?.disconnect();
+  itemObserver = undefined;
+  reducedMotionQuery?.removeEventListener?.('change', handleReducedMotionChange);
+  reducedMotionQuery = null;
   stopAutoplay();
+  resetTouch();
+  if (transitionTimer !== undefined) {
+    window.clearTimeout(transitionTimer);
+    transitionTimer = undefined;
+  }
 });
 
 // 暴露的方法

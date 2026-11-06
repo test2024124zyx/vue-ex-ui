@@ -33,7 +33,7 @@
   &--neon {
     background: var(--ex-color-bg-primary);
     border: 1px solid var(--ex-color-primary);
-    box-shadow: 
+    box-shadow:
       0 0 10px var(--ex-color-primary-alpha-30),
       inset 0 0 10px var(--ex-color-primary-alpha-10);
 
@@ -42,7 +42,7 @@
     }
 
     &:hover {
-      box-shadow: 
+      box-shadow:
         0 0 15px var(--ex-color-primary-alpha-40),
         inset 0 0 15px var(--ex-color-primary-alpha-15);
     }
@@ -50,11 +50,7 @@
 
   // 游戏样式
   &--gaming {
-    background: linear-gradient(
-      135deg,
-      var(--ex-color-bg-secondary),
-      var(--ex-color-bg-tertiary)
-    );
+    background: linear-gradient(135deg, var(--ex-color-bg-secondary), var(--ex-color-bg-tertiary));
     border: 2px solid transparent;
     background-clip: padding-box;
     position: relative;
@@ -156,7 +152,7 @@
     border-color: var(--ex-color-error);
 
     &.ex-barcode--neon {
-      box-shadow: 
+      box-shadow:
         0 0 10px var(--ex-color-error-alpha-30),
         inset 0 0 10px var(--ex-color-error-alpha-10);
     }
@@ -180,13 +176,21 @@
 
 // 抖动动画
 @keyframes ex-barcode-shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-4px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(4px);
   }
 }

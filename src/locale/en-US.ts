@@ -1,4 +1,7 @@
-export default {
+const enUS = {
+  // 评分控件
+  rate: { label: 'Rating' },
+  steps: { navigation: 'Steps navigation' },
   // Common
   common: {
     confirm: 'Confirm',
@@ -22,6 +25,7 @@ export default {
   // Form validators
   validators: {
     required: 'This field is required',
+    type: 'Invalid value type',
     email: 'Please enter a valid email address',
     url: 'Please enter a valid URL',
     number: 'Please enter a valid number',
@@ -30,6 +34,7 @@ export default {
     max: 'No more than {max} characters allowed',
     minValue: 'Value cannot be less than {min}',
     maxValue: 'Value cannot be greater than {max}',
+    len: 'Must be exactly {len} characters or items',
     pattern: 'Invalid format',
     enum: 'Value is not in the allowed set',
   },
@@ -48,9 +53,7 @@ export default {
 
   // Input
   input: {
-    placeholder: 'Please input',
     clear: 'Clear',
-    search: 'Search',
     showPassword: 'Show Password',
     hidePassword: 'Hide Password',
     validationSuccess: 'Validation passed',
@@ -72,6 +75,9 @@ export default {
     empty: 'No Data',
     less: 'Less',
     more: 'More',
+    ariaLabel: 'Data heatmap',
+    legend: 'Color scale from less to more',
+    invalidRange: 'The date range must be valid and no longer than 366 days',
   },
 
   // List
@@ -110,6 +116,7 @@ export default {
 
   // Barcode
   barcode: {
+    label: 'Barcode',
     generating: 'Generating...',
     error: 'Barcode generation failed',
     download: 'Download Barcode',
@@ -132,8 +139,26 @@ export default {
     close: 'Close',
   },
 
+  // Anchor navigation
+  anchor: {
+    label: 'Anchor navigation',
+  },
+
+  // Back to top
+  backTop: {
+    label: 'Back to top',
+  },
+
   // Table
   table: {
+    editError: 'Unable to save this row. Please retry.',
+    editConflict: 'This row changed while editing. Cancel and edit the latest record.',
+    editCell: 'Edit {column}',
+    actions: 'Actions',
+    resizeColumn: 'Resize {column}',
+    moveColumnBefore: 'Move {column} before the previous column',
+    moveColumnAfter: 'Move {column} after the next column',
+    reorderColumn: 'Reorder {column}',
     loading: 'Loading...',
     empty: 'No Data',
     selectAll: 'Select All',
@@ -199,6 +224,8 @@ export default {
   // Badge
   badge: {
     more: '{count}+',
+    dot: 'Notification indicator',
+    status: 'Status indicator',
   },
 
   // Card
@@ -216,7 +243,12 @@ export default {
     loading: 'Loading...',
     error: 'Load Error',
     preview: 'Preview',
+    openPreview: 'Preview {alt}',
+    previewDialog: 'Preview: {alt}',
+    previewLoading: 'Loading preview...',
+    previewError: 'Preview failed to load',
     closePreview: 'Close preview',
+    retry: 'Retry',
     alt: 'Image',
   },
 
@@ -265,6 +297,7 @@ export default {
 
   // Dialog
   dialog: {
+    label: 'Dialog',
     close: 'Close',
     confirm: 'Confirm',
     cancel: 'Cancel',
@@ -281,6 +314,9 @@ export default {
   // Time Picker
   timePicker: {
     selectTime: 'Select Time',
+    selectRange: 'Select time range',
+    rangeSeparator: 'to',
+    invalidRangeOrder: 'The end time must not be earlier than the start time.',
     hour: 'Hour',
     minute: 'Minute',
     second: 'Second',
@@ -296,6 +332,12 @@ export default {
     confirm: 'Confirm',
     clear: 'Clear',
     hex: 'HEX',
+    trigger: 'Choose color',
+    panel: 'Color picker panel',
+    saturationValue: 'Saturation and brightness',
+    hue: 'Hue',
+    alpha: 'Opacity',
+    selectColor: 'Choose color',
   },
 
   // Tree Select
@@ -304,13 +346,18 @@ export default {
     noData: 'No data',
     loading: 'Loading...',
     clear: 'Clear',
+    removeTag: 'Remove selection',
     searchPlaceholder: 'Search...',
   },
 
   // Date Picker
   datePicker: {
+    placeholder: 'Select date',
+    disabledTime: 'This time is unavailable. Adjust the hour, minute, or second.',
+    panel: 'Date picker panel',
     startDate: 'Start date',
     endDate: 'End date',
+    rangeSeparator: 'to',
     weekdaysShort: 'Su,Mo,Tu,We,Th,Fr,Sa',
     monthsShort: 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
   },
@@ -371,6 +418,8 @@ export default {
 
   // Selector
   selector: {
+    loadError: 'Unable to load options. Please retry.',
+    retry: 'Retry',
     placeholder: 'Select',
     searchPlaceholder: 'Search...',
     noData: 'No Data',
@@ -382,20 +431,11 @@ export default {
     comboboxLabel: 'Select option',
   },
 
-  // Upload
-  upload: {
-    selectFile: 'Select File',
-    uploading: 'Uploading...',
-    dragHint: 'Click or drag files to this area to upload',
-    dragDescription: 'Support for single or bulk upload',
-    acceptTip: 'Supported formats: {accept}',
-    maxSizeTip: 'File size should not exceed {size}',
-    maxCountTip: 'Maximum {count} files allowed',
-    uploadSuccess: 'Upload Success',
-    uploadError: 'Upload Failed',
-    preview: 'Preview',
-    download: 'Download',
-    remove: 'Remove',
+  // 树节点异步加载
+  tree: {
+    loading: 'Loading child nodes',
+    loadError: 'Failed to load child nodes',
+    retryLoad: 'Retry loading',
   },
 
   // Skeleton
@@ -480,10 +520,13 @@ export default {
   code: {
     copy: 'Copy',
     copied: 'Copied',
+    copyFailed: 'Copy failed',
     edit: 'Edit',
     readonly: 'Read Only',
     codeBlock: 'code block',
     editor: 'Code editor',
+    tabExitInstructions: 'Press Escape, then Tab or Shift+Tab to leave the code editor.',
+    tabExitReady: 'Tab and Shift+Tab now leave the code editor.',
   },
 
   // Carousel
@@ -499,80 +542,108 @@ export default {
   cascader: {
     placeholder: 'Please select',
     noData: 'No Data',
+    noSearchResults: 'No matching results',
     loading: 'Loading...',
+    panel: 'Cascader options',
+    searchResults: 'Search results',
+    currentPath: 'Current path',
+    allOptions: 'All options',
+    level: 'Level {level}',
   },
 
   // File Management
   fileUpload: {
     selectFile: 'Select File',
-    uploading: 'Uploading...',
+    uploadGroup: 'File upload',
     dragHint: 'Click or drag files to this area to upload',
     dragDescription: 'Support for single or bulk upload',
     acceptTip: 'Supported formats: {accept}',
-    maxSizeTip: 'File size should not exceed {size}',
-    maxCountTip: 'Maximum {count} files allowed',
-    uploadSuccess: 'Upload Success',
-    uploadError: 'Upload Failed',
-    preview: 'Preview',
-    download: 'Download',
-    remove: 'Remove',
+    maxFileSizeTip: 'Each file must not exceed {size}',
+    previewFile: 'Preview {name}',
+    removeFile: 'Remove {name}',
+    uploadProgress: 'Upload progress for {name}',
+    statusReady: 'Ready to upload',
+    statusQueued: 'Queued',
+    statusPaused: 'Paused',
+    statusCancelling: 'Cancelling',
+    startUpload: 'Upload {name}',
+    pauseUpload: 'Pause upload {name}',
+    resumeUpload: 'Resume upload {name}',
+    retryUpload: 'Retry upload {name}',
+    cancelUpload: 'Cancel upload {name}',
+    statusUploading: 'Uploading',
+    statusSuccess: 'Uploaded',
+    statusError: 'Upload failed',
   },
 
   fileDownload: {
     download: 'Download',
     downloading: 'Downloading...',
-    downloadSuccess: 'Download Success',
+    downloadRequested: 'Download requested',
+    downloadReady: 'Download ready',
     downloadError: 'Download Failed',
-    pause: 'Pause',
-    resume: 'Resume',
-    cancel: 'Cancel',
+    progressLabel: 'Download progress',
   },
 
   filePreview: {
     preview: 'Preview',
-    close: 'Close',
-    download: 'Download',
     downloadFile: 'Download file',
     loading: 'Loading...',
-    zoomIn: 'Zoom In',
-    zoomOut: 'Zoom Out',
-    rotateLeft: 'Rotate Left',
-    rotateRight: 'Rotate Right',
-    reset: 'Reset',
+    loadFailed: 'Unable to load this file',
+    textTooLarge: 'This text file is too large to preview',
+    empty: 'No file to preview',
+    invalidSource: 'This file address cannot be previewed',
+    closePreview: 'Close preview',
+    previousFile: 'Previous file',
+    nextFile: 'Next file',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    resetZoom: 'Reset zoom',
+    rotateCounterclockwise: 'Rotate counterclockwise',
+    rotateClockwise: 'Rotate clockwise',
+    pdfDocument: 'PDF document',
     unsupported: 'Preview not supported for this file type',
   },
 
   imageCrop: {
-    crop: 'Crop',
+    editor: 'Image crop editor',
+    toolbar: 'Crop actions',
     cancel: 'Cancel',
-    confirm: 'Confirm',
     confirmCrop: 'Confirm crop',
     reset: 'Reset',
-    zoomIn: 'Zoom In',
-    zoomOut: 'Zoom Out',
-    rotateLeft: 'Rotate Left',
-    rotateRight: 'Rotate Right',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    rotateLeft: 'Rotate left',
+    rotateRight: 'Rotate right',
+    sourceLoading: 'Loading image',
+    cropArea: 'Crop area',
+    resizeNorth: 'Resize crop area north',
+    resizeSouth: 'Resize crop area south',
+    resizeEast: 'Resize crop area east',
+    resizeWest: 'Resize crop area west',
+    resizeNorthwest: 'Resize crop area northwest',
+    resizeNortheast: 'Resize crop area northeast',
+    resizeSouthwest: 'Resize crop area southwest',
+    resizeSoutheast: 'Resize crop area southeast',
   },
 
   imageCompress: {
-    compress: 'Compress',
     compressing: 'Compressing...',
-    compressSuccess: 'Compress Success',
     compressError: 'Compress Failed',
+    loadError: 'Image loading failed',
     download: 'Download',
     reset: 'Reset',
     original: 'Original',
     compressed: 'Compressed',
-    quality: 'Quality',
-    size: 'Size',
-    dimension: 'Dimension',
+    preview: 'Image compression comparison',
+    sourceLoading: 'Loading source image',
+    noPreview: 'No image preview',
     mode: 'Compress mode',
     targetSize: 'Target size (KB)',
     maxWidth: 'Max width (px)',
     maxHeight: 'Max height (px)',
     outputFormat: 'Output format',
     startCompress: 'Start compress',
-    minValue: 'Min {value}',
     qualityFirst: 'Quality first',
     sizeFirst: 'Size first',
     dimensionFirst: 'Dimension first',
@@ -580,9 +651,9 @@ export default {
   },
 
   fileList: {
+    sortBy: 'Sort by',
     empty: 'No files',
     loading: 'Loading...',
-    search: 'Search files',
     searchPlaceholder: 'Search files...',
     name: 'Name',
     size: 'Size',
@@ -591,16 +662,22 @@ export default {
     folder: 'Folder',
     selectAll: 'Select All',
     unselectAll: 'Unselect All',
-    preview: 'Preview',
-    download: 'Download',
-    delete: 'Delete',
+    selectVisible: 'Select visible files',
+    unselectVisible: 'Unselect visible files',
+    selectFile: 'Select {name}',
+    previewFile: 'Preview {name}',
+    downloadFile: 'Download {name}',
+    deleteFile: 'Delete {name}',
     actions: 'Actions',
-    rename: 'Rename',
-    sort: 'Sort',
-    viewMode: 'View Mode',
+    sortAscending: 'Sort ascending',
+    sortDescending: 'Sort descending',
     list: 'List',
     grid: 'Grid',
     table: 'Table',
+    tree: 'Tree',
+    listAria: 'File list',
+    gridAria: 'File grid',
+    tableAria: 'File table',
   },
 
   numberInput: {
@@ -618,15 +695,25 @@ export default {
   // Tag
   tag: {
     addTag: 'New Tag',
-    addTagButton: '+ New Tag',
+    addTagButton: 'New Tag',
     inputPlaceholder: 'Enter tag name',
     confirm: 'Confirm',
     cancel: 'Cancel',
     close: 'Remove tag',
+    duplicate: 'Tag "{value}" already exists',
   },
 
   // Chart
   chart: {
+    dataZoom: 'Zoom area',
+    dataZoomRestore: 'Restore zoom',
+    line: 'Line',
+    bar: 'Bar',
+    stack: 'Stack',
+    tiled: 'Unstack',
+    keyboardInstructions:
+      'Use arrow keys to explore data, Home and End to jump, Enter to activate, and Escape to clear the highlight.',
+    dataNavigation: 'Chart data navigation',
     chart: 'Chart',
     loading: 'Chart loading...',
     noData: 'No Data',
@@ -657,3 +744,7 @@ export default {
     autoSubmit: 'Auto-submitting soon',
   },
 };
+
+export type BuiltInLocale = typeof enUS;
+
+export default enUS;

@@ -75,7 +75,7 @@ describe('ExRadio with ConfigProvider', () => {
 
       const radios = wrapper.findAllComponents(ExRadio);
       expect(radios).toHaveLength(3);
-      radios.forEach((radio) => {
+      radios.forEach(radio => {
         expect(radio.classes()).toContain('ex-radio--small');
       });
     });
@@ -130,7 +130,7 @@ describe('ExRadioGroup with ConfigProvider', () => {
 
       // 子单选框也应该继承尺寸
       const radios = wrapper.findAllComponents(ExRadio);
-      radios.forEach((radio) => {
+      radios.forEach(radio => {
         expect(radio.classes()).toContain('ex-radio--large');
       });
     });
@@ -157,7 +157,7 @@ describe('ExRadioGroup with ConfigProvider', () => {
 
       // 子单选框应该继承 group 的尺寸
       const radios = wrapper.findAllComponents(ExRadio);
-      radios.forEach((radio) => {
+      radios.forEach(radio => {
         expect(radio.classes()).toContain('ex-radio--small');
       });
     });

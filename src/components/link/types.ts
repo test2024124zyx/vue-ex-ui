@@ -1,70 +1,50 @@
-/**
- * 链接类型
- */
+/** 链接视觉类型。 */
 export type LinkType = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default';
 
-/**
- * 链接尺寸
- */
+/** 链接尺寸。 */
 export type LinkSize = 'small' | 'medium' | 'large';
 
-/**
- * 链接目标
- */
-export type LinkTarget = '_self' | '_blank' | '_parent' | '_top';
+/** 原生浏览上下文名称，并保留常用目标值的类型提示。 */
+export type LinkTarget = '_self' | '_blank' | '_parent' | '_top' | (string & Record<never, never>);
 
-/**
- * 链接组件属性接口
- */
+/** 链接组件属性。 */
 export interface ExLinkProps {
-  /** 链接地址 */
+  /** 导航地址；省略时组件渲染为动作按钮。 */
   href?: string;
-  /** 路由地址（Vue Router） */
-  to?: string | object;
-  /** 链接类型 */
+  /** 链接视觉类型。 */
   type?: LinkType;
-  /** 链接尺寸 */
+  /** 链接尺寸。 */
   size?: LinkSize;
-  /** 是否禁用 */
+  /** 是否禁用交互。 */
   disabled?: boolean;
-  /** 是否显示下划线 */
+  /** 是否显示文本下划线。 */
   underline?: boolean;
-  /** 链接目标 */
+  /** 原生链接目标浏览上下文。 */
   target?: LinkTarget;
-  /** 图标位置 */
+  /** 通用 icon 插槽的位置。 */
   iconPlacement?: 'left' | 'right';
-  /** 是否显示外部链接图标 */
+  /** 绝对网络地址是否显示外链图标。 */
   showExternalIcon?: boolean;
-  /** 自定义CSS类名 */
-  class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: string | Record<string, string | number>;
-  /** 无障碍标签 */
-  ariaLabel?: string;
-  /** rel 属性 */
+  /** 原生 rel 令牌。target 为 _blank 时会强制补充 noopener。 */
   rel?: string;
 }
 
-/**
- * 链接组件事件接口
- */
+/** 链接组件事件。 */
 export interface ExLinkEmits {
-  /** 点击事件 */
+  /** 有效链接或动作按钮的点击事件。 */
   click: [event: MouseEvent];
-  /** 聚焦事件 */
+  /** 有效链接或动作按钮的聚焦事件。 */
   focus: [event: FocusEvent];
-  /** 失焦事件 */
+  /** 有效链接或动作按钮的失焦事件。 */
   blur: [event: FocusEvent];
 }
 
-/**
- * 链接组件暴露的方法接口
- */
+/** 链接组件暴露方法。 */
 export interface ExLinkExposed {
-  /** 聚焦链接 */
+  /** 聚焦有效根元素。 */
   focus: () => void;
-  /** 失焦链接 */
+  /** 移除根元素焦点。 */
   blur: () => void;
-  /** 获取链接DOM元素 */
-  getElement: () => HTMLElement | null;
+  /** 获取真实锚点或按钮元素。 */
+  getElement: () => HTMLAnchorElement | HTMLButtonElement | null;
 }

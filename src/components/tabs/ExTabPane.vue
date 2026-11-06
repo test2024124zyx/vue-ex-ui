@@ -2,22 +2,22 @@
   <div
     v-if="shouldRender"
     v-show="isActive"
-    :id="`${tabsUid}-panel-${name}`"
+    :id="getPanelId(name)"
     ref="paneRef"
     :class="paneClasses"
     :style="paneStyles"
     role="tabpanel"
     :aria-hidden="!isActive"
-    :aria-labelledby="`${tabsUid}-tab-${name}`"
+    :aria-labelledby="getTabId(name)"
     :tabindex="isActive ? 0 : undefined"
   >
-    <slot />
+    <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, inject, onMounted, onUnmounted } from 'vue';
+import { computed, ref, inject, onMounted, onUnmounted, watch } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
 
 defineOptions({
@@ -33,20 +33,33 @@ const props = withDefaults(defineProps<ExTabPaneProps>(), {
 const paneRef = ref<HTMLDivElement>();
 
 // 从父组件注入
-const tabsUid = inject<string>('exTabsUid', '');
+inject<string>('exTabsUid', '');
+const getTabId = inject<(name: string | number) => string>(
+  'getTabId',
+  name => `ex-tabs-tab-${name}`
+);
+const getPanelId = inject<(name: string | number) => string>(
+  'getPanelId',
+  name => `ex-tabs-panel-${name}`
+);
 const activeTab = inject<{ value: string | number }>('activeTab', { value: '' });
 const registerPane = inject<(pane: Record<string, unknown>) => void>('registerPane', () => {});
+const updatePane = inject<(registeredName: string | number, pane: Record<string, unknown>) => void>(
+  'updatePane',
+  () => {}
+);
 const unregisterPane = inject<(name: string | number) => void>('unregisterPane', () => {});
+const registeredName = ref(props.name);
 
 // 计算属性
 const isActive = computed(() => activeTab.value === props.name);
+
+const hasBeenActive = ref(false);
 
 const shouldRender = computed(() => {
   if (!props.lazy) return true;
   return isActive.value || hasBeenActive.value;
 });
-
-const hasBeenActive = ref(false);
 
 // 监听激活状态
 const checkActive = () => {
@@ -54,6 +67,16 @@ const checkActive = () => {
     hasBeenActive.value = true;
   }
 };
+
+watch(isActive, checkActive, { immediate: true });
+
+watch(
+  () => [props.name, props.label, props.disabled, props.closable] as const,
+  ([name, label, disabled, closable], [previousName]) => {
+    updatePane(previousName, { name, label, disabled, closable });
+    registeredName.value = name;
+  }
+);
 
 const paneClasses = computed(() => {
   const classes = ['ex-tab-pane'];
@@ -84,7 +107,7 @@ onMounted(() => {
 
 // 卸载时注销，否则被删除的标签仍残留在导航里（导致"删除不了"）
 onUnmounted(() => {
-  unregisterPane(props.name);
+  unregisterPane(registeredName.value);
 });
 
 // 暴露的方法

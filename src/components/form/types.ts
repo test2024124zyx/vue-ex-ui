@@ -25,6 +25,7 @@ export type ValidatorFunction = (
 // 内置验证器类型
 export interface BuiltinValidators {
   required: ValidatorFunction;
+  type: ValidatorFunction;
   email: ValidatorFunction;
   url: ValidatorFunction;
   number: ValidatorFunction;
@@ -34,6 +35,7 @@ export interface BuiltinValidators {
   max: ValidatorFunction;
   minValue: ValidatorFunction;
   maxValue: ValidatorFunction;
+  len: ValidatorFunction;
   pattern: ValidatorFunction;
   enum: ValidatorFunction;
 }
@@ -55,14 +57,14 @@ export interface FormRule {
   maxValue?: number;
   /** 正则表达式 */
   pattern?: RegExp;
-  /** 自定义验证函数 */
-  validator?: (rule: FormRule, value: unknown, callback: (error?: string) => void) => void;
-  /** 异步验证函数 */
+  /** 自定义验证函数：调用 callback 或返回 Promise；混用时首次完成生效。 */
+  validator?: (rule: FormRule, value: unknown, callback: ValidatorCallback) => void | Promise<void>;
+  /** 异步验证函数：Promise resolve 表示成功，reject 表示失败；也兼容 callback。 */
   asyncValidator?: (
     rule: FormRule,
     value: unknown,
     callback: (error?: string) => void
-  ) => Promise<void>;
+  ) => void | Promise<void>;
   /** 验证类型 */
   type?:
     | 'string'
@@ -98,6 +100,8 @@ export interface FormValidateResult {
   valid: boolean;
   /** 错误信息 */
   errors: FormValidateError[];
+  /** 当前结果是否已被更新的一次验证取代 */
+  outOfDate?: boolean;
 }
 
 export interface FormValidateError {
@@ -107,6 +111,16 @@ export interface FormValidateError {
   message: string;
   /** 字段值 */
   value: unknown;
+}
+
+/** 单个表单项的验证结果 */
+export interface FormItemValidateResult {
+  /** 是否验证通过 */
+  valid: boolean;
+  /** 错误消息 */
+  error?: string;
+  /** 当前结果是否已被更新的一次验证取代 */
+  outOfDate?: boolean;
 }
 
 // ============================================================================
@@ -142,6 +156,10 @@ export interface ExFormProps {
   validateOnRuleChange?: boolean;
   /** 滚动到第一个错误字段 */
   scrollToError?: boolean;
+  /** 错误字段滚动后是否自动聚焦控件 */
+  focusToError?: boolean;
+  /** 错误字段的滚动行为配置 */
+  scrollIntoViewOptions?: ScrollIntoViewOptions | boolean;
   /** 自定义类名 */
   customClass?: string;
   /** 自定义样式 */
@@ -239,7 +257,7 @@ export interface FormInstance {
   /** 清除验证结果 */
   clearValidate: (props?: string | string[]) => void;
   /** 滚动到指定字段 */
-  scrollToField: (prop: string) => void;
+  scrollToField: (prop: string, options?: ScrollIntoViewOptions | boolean) => void;
   /** 获取字段值 */
   getFieldValue: (prop: string) => unknown;
   /** 设置字段值 */
@@ -256,7 +274,7 @@ export interface FormInstance {
 
 export interface FormItemInstance {
   /** 验证字段 */
-  validate: (trigger?: string) => Promise<{ valid: boolean; error?: string }>;
+  validate: (trigger?: string) => Promise<FormItemValidateResult>;
   /** 重置字段 */
   resetField: () => void;
   /** 清除验证结果 */
@@ -279,7 +297,13 @@ export interface FormContext {
   /** 移除字段 */
   removeField: (field: FormItemContext) => void;
   /** 验证字段 */
-  validateField: (prop: string, trigger?: string) => Promise<{ valid: boolean; error?: string }>;
+  validateField: (prop: string, trigger?: string) => Promise<FormItemValidateResult>;
+  /** 通知表单字段验证结果 */
+  notifyFieldValidate: (
+    prop: string,
+    result: FormItemValidateResult,
+    snapshot?: { value: unknown }
+  ) => void;
   /** 重置字段 */
   resetField: (prop: string) => void;
   /** 清除验证 */
@@ -299,8 +323,10 @@ export interface FormItemContext {
   validateStatus: FormValidateStatus;
   /** 错误消息 */
   validateMessage: string;
+  /** 内部校验版本；汇总结果时识别已完成字段随后发生的值或规则变化。 */
+  readonly validationRevision?: number;
   /** 验证字段 */
-  validate: (trigger?: string) => Promise<{ valid: boolean; error?: string }>;
+  validate: (trigger?: string) => Promise<FormItemValidateResult>;
   /** 重置字段 */
   resetField: () => void;
   /** 清除验证 */

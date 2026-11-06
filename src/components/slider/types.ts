@@ -49,6 +49,8 @@ export interface ExSliderProps {
   step?: number;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
   /** 是否为范围选择 */
   range?: boolean;
   /** 是否显示输入框 */

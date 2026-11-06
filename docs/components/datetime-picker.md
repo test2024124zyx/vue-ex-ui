@@ -1,66 +1,42 @@
 # DateTimePicker 日期时间选择器
 
-用于选择日期或日期时间的组件。
+用于选择日期、日期时间、年、月、ISO 周或对应范围。
 
 <script setup>
 import { ref } from 'vue'
 
-const date1 = ref(null)
-const date2 = ref(new Date())
-const date3 = ref(null)
-const date4 = ref(null)
-const dateRange1 = ref(null)
-const dateRange2 = ref([new Date(2024, 0, 1), new Date(2024, 0, 7)])
-const dateRange3 = ref(null)
-const datetime1 = ref(null)
-const datetime2 = ref(new Date())
-const datetimeRange1 = ref(null)
+const date = ref(new Date())
+const datetime = ref(null)
+const dateRange = ref(null)
+const datetimeRange = ref(null)
+const year = ref(null)
+const month = ref(null)
+const week = ref(null)
+const monthRange = ref(null)
+const appointment = ref(null)
+const businessHours = () => ({
+  disabledHours: () => [0, 1, 2, 3, 4, 5, 6, 7, 20, 21, 22, 23],
+  disabledMinutes: (hour) => hour === 19 ? [30, 45] : [],
+})
 
-const disabledDate = (date) => {
-  // 禁用今天之前的日期
+const disabledDate = (value) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  return date < today
-}
-
-const handleChange = (value) => {
-  console.log('Date changed:', value)
+  return value < today
 }
 </script>
 
-## 基础用法
+## 日期
 
-最基础的日期选择器用法。
+::: raw
 
 <div class="demo-container">
-  <ExDateTimePicker
-    v-model="date1"
-    placeholder="请选择日期"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const date = ref(null);
-</script>
-
-<template>
   <ExDateTimePicker v-model="date" placeholder="请选择日期" />
-</template>
-```
-
-## 默认值
-
-可以设置默认选中的日期。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="date2"
-    placeholder="请选择日期"
-  />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -70,307 +46,35 @@ const date = ref(new Date());
 </script>
 
 <template>
-  <ExDateTimePicker v-model="date" placeholder="请选择日期" />
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="date"
+      placeholder="请选择日期"
+    />
+  </div>
 </template>
 ```
 
-## 不同尺寸
+:::
 
-提供三种尺寸的日期选择器。
+## 日期时间
 
-<div class="demo-container" style="display: flex; flex-direction: column; gap: 16px; align-items: flex-start;">
-  <ExDateTimePicker
-    v-model="date1"
-    size="small"
-    placeholder="小尺寸"
-  />
-  <ExDateTimePicker
-    v-model="date1"
-    size="medium"
-    placeholder="中等尺寸"
-  />
-  <ExDateTimePicker
-    v-model="date1"
-    size="large"
-    placeholder="大尺寸"
-  />
-</div>
+`time-step` 约束分钟输入，最终值会吸附到有效刻度。
 
-```vue
-<template>
-  <ExDateTimePicker v-model="date" size="small" placeholder="小尺寸" />
-
-  <ExDateTimePicker v-model="date" size="medium" placeholder="中等尺寸" />
-
-  <ExDateTimePicker v-model="date" size="large" placeholder="大尺寸" />
-</template>
-```
-
-## 禁用日期
-
-可以通过 `disabledDate` 函数禁用特定日期。
+::: raw
 
 <div class="demo-container">
   <ExDateTimePicker
-    v-model="date3"
-    :disabled-date="disabledDate"
-    placeholder="只能选择今天及以后的日期"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const date = ref(null);
-
-const disabledDate = (date) => {
-  // 禁用今天之前的日期
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return date < today;
-};
-</script>
-
-<template>
-  <ExDateTimePicker
-    v-model="date"
-    :disabled-date="disabledDate"
-    placeholder="只能选择今天及以后的日期"
-  />
-</template>
-```
-
-## 不可清空
-
-设置 `clearable` 为 `false` 可以禁用清空功能。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="date2"
-    :clearable="false"
-    placeholder="不可清空"
-  />
-</div>
-
-```vue
-<template>
-  <ExDateTimePicker v-model="date" :clearable="false" placeholder="不可清空" />
-</template>
-```
-
-## 禁用状态
-
-禁用日期选择器。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="date2"
-    disabled
-    placeholder="禁用状态"
-  />
-</div>
-
-```vue
-<template>
-  <ExDateTimePicker v-model="date" disabled placeholder="禁用状态" />
-</template>
-```
-
-## 只读状态
-
-只读状态的日期选择器。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="date2"
-    readonly
-    placeholder="只读状态"
-  />
-</div>
-
-```vue
-<template>
-  <ExDateTimePicker v-model="date" readonly placeholder="只读状态" />
-</template>
-```
-
-## 自定义格式
-
-可以通过 `format` 属性自定义日期格式。
-
-<div class="demo-container" style="display: flex; flex-direction: column; gap: 16px; align-items: flex-start;">
-  <ExDateTimePicker
-    v-model="date2"
-    format="YYYY-MM-DD"
-    placeholder="YYYY-MM-DD"
-  />
-  <ExDateTimePicker
-    v-model="date2"
-    format="YYYY/MM/DD"
-    placeholder="YYYY/MM/DD"
-  />
-  <ExDateTimePicker
-    v-model="date2"
-    format="DD-MM-YYYY"
-    placeholder="DD-MM-YYYY"
-  />
-</div>
-
-```vue
-<template>
-  <ExDateTimePicker v-model="date" format="YYYY-MM-DD" placeholder="YYYY-MM-DD" />
-
-  <ExDateTimePicker v-model="date" format="YYYY/MM/DD" placeholder="YYYY/MM/DD" />
-
-  <ExDateTimePicker v-model="date" format="DD-MM-YYYY" placeholder="DD-MM-YYYY" />
-</template>
-```
-
-## 事件监听
-
-监听日期选择器的各种事件。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="date4"
-    placeholder="选择日期查看事件"
-    @change="handleChange"
-    @clear="() => console.log('Cleared')"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const date = ref(null);
-
-const handleChange = (value) => {
-  console.log('Date changed:', value);
-};
-</script>
-
-<template>
-  <ExDateTimePicker
-    v-model="date"
-    placeholder="选择日期查看事件"
-    @change="handleChange"
-    @clear="() => console.log('Cleared')"
-  />
-</template>
-```
-
-## 日期范围选择
-
-通过设置 `type="daterange"` 可以选择日期范围。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="dateRange1"
-    type="daterange"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const dateRange = ref(null);
-</script>
-
-<template>
-  <ExDateTimePicker
-    v-model="dateRange"
-    type="daterange"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</template>
-```
-
-## 默认日期范围
-
-可以设置默认的日期范围。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="dateRange2"
-    type="daterange"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const dateRange = ref([new Date(2024, 0, 1), new Date(2024, 0, 7)]);
-</script>
-
-<template>
-  <ExDateTimePicker
-    v-model="dateRange"
-    type="daterange"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</template>
-```
-
-## 限制日期范围
-
-可以通过 `disabledDate` 函数限制可选择的日期范围。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="dateRange3"
-    type="daterange"
-    :disabled-date="disabledDate"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</div>
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const dateRange = ref(null);
-
-const disabledDate = (date) => {
-  // 禁用今天之前的日期
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return date < today;
-};
-</script>
-
-<template>
-  <ExDateTimePicker
-    v-model="dateRange"
-    type="daterange"
-    :disabled-date="disabledDate"
-    start-placeholder="开始日期"
-    end-placeholder="结束日期"
-  />
-</template>
-```
-
-## 日期时间选择
-
-通过设置 `type="datetime"` 可以同时选择日期和时间。
-
-<div class="demo-container">
-  <ExDateTimePicker
-    v-model="datetime1"
+    v-model="datetime"
     type="datetime"
-    placeholder="请选择日期时间"
+    format="YYYY/MM/DD HH:mm"
+    :time-step="15"
   />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -380,46 +84,68 @@ const datetime = ref(null);
 </script>
 
 <template>
-  <ExDateTimePicker v-model="datetime" type="datetime" placeholder="请选择日期时间" />
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="datetime"
+      type="datetime"
+      format="YYYY/MM/DD HH:mm"
+      :time-step="15"
+    />
+  </div>
 </template>
 ```
 
-## 默认日期时间
+:::
 
-可以设置默认的日期时间值。
+## 日期范围
+
+::: raw
 
 <div class="demo-container">
   <ExDateTimePicker
-    v-model="datetime2"
-    type="datetime"
-    placeholder="请选择日期时间"
+    v-model="dateRange"
+    type="daterange"
+    start-placeholder="开始日期"
+    end-placeholder="结束日期"
   />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
 import { ref } from 'vue';
 
-const datetime = ref(new Date());
+const dateRange = ref(null);
 </script>
 
 <template>
-  <ExDateTimePicker v-model="datetime" type="datetime" placeholder="请选择日期时间" />
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="dateRange"
+      type="daterange"
+      start-placeholder="开始日期"
+      end-placeholder="结束日期"
+    />
+  </div>
 </template>
 ```
 
-## 日期时间范围选择
+:::
 
-通过设置 `type="datetimerange"` 可以选择日期时间范围。
+## 日期时间范围
+
+::: raw
 
 <div class="demo-container">
-  <ExDateTimePicker
-    v-model="datetimeRange1"
-    type="datetimerange"
-    start-placeholder="开始时间"
-    end-placeholder="结束时间"
-  />
+  <ExDateTimePicker v-model="datetimeRange" type="datetimerange" :time-step="5" />
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -429,166 +155,249 @@ const datetimeRange = ref(null);
 </script>
 
 <template>
-  <ExDateTimePicker
-    v-model="datetimeRange"
-    type="datetimerange"
-    start-placeholder="开始时间"
-    end-placeholder="结束时间"
-  />
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="datetimeRange"
+      type="datetimerange"
+      :time-step="5"
+    />
+  </div>
 </template>
 ```
 
-## 主题示例
+:::
 
-展示风格的日期选择器应用场景。
+## 禁用日期与状态
 
-<div class="demo-container" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 0, 127, 0.05)); padding: 32px;">
-  <div style="max-width: 400px;">
-    <h3 style="margin: 0 0 24px; color: var(--ex-color-neon-blue-500); font-family: var(--ex-font-primary); text-transform: uppercase;">
-      活动报名
-    </h3>
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <div>
-        <label style="display: block; margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
-          选择参赛日期
-        </label>
-        <ExDateTimePicker
-          v-model="date1"
-          size="large"
-          placeholder="请选择参赛日期"
-          :disabled-date="disabledDate"
-        />
-      </div>
-      <div style="padding: 16px; background: var(--ex-color-bg-secondary); border: 1px solid var(--ex-color-border-primary); border-radius: var(--ex-radius-base);">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--ex-color-text-secondary);">选中日期：</span>
-          <span style="color: var(--ex-color-neon-blue-500); font-weight: 600;">
-            {{ date1 ? new Date(date1).toLocaleDateString('zh-CN') : '未选择' }}
-          </span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--ex-color-text-secondary);">报名状态：</span>
-          <span :style="{ color: date1 ? 'var(--ex-color-success)' : 'var(--ex-color-text-tertiary)' }">
-            {{ date1 ? '✓ 已选择' : '待选择' }}
-          </span>
-        </div>
-      </div>
-      <div style="margin-top: 24px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--ex-color-text-secondary); font-size: 14px;">
-          选择活动周期
-        </label>
-        <ExDateTimePicker
-          v-model="dateRange1"
-          type="daterange"
-          size="large"
-          start-placeholder="活动开始"
-          end-placeholder="活动结束"
-          :disabled-date="disabledDate"
-        />
-      </div>
-      <div v-if="dateRange1 && dateRange1.length === 2" style="margin-top: 16px; padding: 16px; background: var(--ex-color-bg-secondary); border: 1px solid var(--ex-color-border-primary); border-radius: var(--ex-radius-base);">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--ex-color-text-secondary);">活动开始：</span>
-          <span style="color: var(--ex-color-neon-blue-500); font-weight: 600;">
-            {{ new Date(dateRange1[0]).toLocaleDateString('zh-CN') }}
-          </span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--ex-color-text-secondary);">活动结束：</span>
-          <span style="color: var(--ex-color-neon-pink-500); font-weight: 600;">
-            {{ new Date(dateRange1[1]).toLocaleDateString('zh-CN') }}
-          </span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--ex-color-text-secondary);">活动天数：</span>
-          <span style="color: var(--ex-color-success); font-weight: 600;">
-            {{ Math.ceil((dateRange1[1] - dateRange1[0]) / (1000 * 60 * 60 * 24)) + 1 }} 天
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
+::: raw
+
+<div class="demo-container demo-container--row">
+  <ExDateTimePicker v-model="date" :disabled-date="disabledDate" />
+  <ExDateTimePicker v-model="date" readonly />
+  <ExDateTimePicker v-model="date" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+import { ref } from 'vue';
+
+const date = ref(new Date());
+
+const disabledDate = value => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return value < today;
+};
+</script>
+
 <template>
-  <div>
-    <h3>活动报名</h3>
-
-    <div>
-      <label>选择参赛日期</label>
-      <ExDateTimePicker
-        v-model="date"
-        size="large"
-        placeholder="请选择参赛日期"
-        :disabled-date="disabledDate"
-      />
-    </div>
-
-    <div>
-      <div>选中日期：{{ date ? new Date(date).toLocaleDateString('zh-CN') : '未选择' }}</div>
-      <div>报名状态：{{ date ? '✓ 已选择' : '待选择' }}</div>
-    </div>
+  <div class="demo-container demo-container--row">
+    <ExDateTimePicker
+      v-model="date"
+      :disabled-date="disabledDate"
+    />
+    <ExDateTimePicker
+      v-model="date"
+      readonly
+    />
+    <ExDateTimePicker
+      v-model="date"
+      disabled
+    />
   </div>
 </template>
 ```
+
+:::
+
+## 年、月与 ISO 周
+
+`year`、`month`、`week` 分别选择完整周期，范围模式为 `yearrange`、`monthrange`、`weekrange`。
+年值返回当年 1 月 1 日，月值返回当月 1 日，周值返回 ISO 周一，均为本地零点。
+ISO 周以周一开始，包含周四的年份作为周年；例如 2021 年 1 月 1 日属于 `2020-W53`，值为 2020 年 12 月 28 日。
+周的默认格式为 `GGGG-[W]WW`，`GGGG` 表示 ISO 周年，`WW` 表示两位周数，方括号用于转义文字。
+
+::: raw
+
+<div class="demo-container demo-container--row">
+  <ExDateTimePicker v-model="year" type="year" aria-label="选择年份" />
+  <ExDateTimePicker v-model="month" type="month" aria-label="选择月份" />
+  <ExDateTimePicker v-model="week" type="week" aria-label="选择 ISO 周" />
+  <ExDateTimePicker v-model="monthRange" type="monthrange" aria-label="选择月份范围" />
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const year = ref(null);
+const month = ref(null);
+const week = ref(null);
+const monthRange = ref(null);
+</script>
+
+<template>
+  <div class="demo-container demo-container--row">
+    <ExDateTimePicker
+      v-model="year"
+      type="year"
+      aria-label="选择年份"
+    />
+    <ExDateTimePicker
+      v-model="month"
+      type="month"
+      aria-label="选择月份"
+    />
+    <ExDateTimePicker
+      v-model="week"
+      type="week"
+      aria-label="选择 ISO 周"
+    />
+    <ExDateTimePicker
+      v-model="monthRange"
+      type="monthrange"
+      aria-label="选择月份范围"
+    />
+  </div>
+</template>
+```
+
+:::
+
+年月网格支持方向键、Home / End 和 PageUp / PageDown；禁用周期会被跳过。
+`disabled-date` 在这些模式下按**周期起点**判定，不扫描周期中的每一天。反向选择范围时按周期起点排序。
+`show-time` 只对日历日期模式生效，年月周模式不会附加时间。
+
+## 独立限制时间
+
+`disabled-time(date, endpoint)` 返回时、分、秒的禁用规则。单值端点为 `start`，范围端点为 `start` / `end`。
+回调收到独立日期副本。禁用时间会显示反馈并阻止确认；规则运行时变化、日期变化或另一个时间维度变化都会重新校验。
+
+::: raw
+
+<div class="demo-container">
+  <ExDateTimePicker v-model="appointment" type="datetime" :time-step="15" :disabled-time="businessHours" aria-label="预约营业时间" />
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const appointment = ref(null);
+const businessHours = () => ({
+  disabledHours: () => [0, 1, 2, 3, 4, 5, 6, 7, 20, 21, 22, 23],
+  disabledMinutes: hour => (hour === 19 ? [30, 45] : []),
+});
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExDateTimePicker
+      v-model="appointment"
+      type="datetime"
+      :time-step="15"
+      :disabled-time="businessHours"
+      aria-label="预约营业时间"
+    />
+  </div>
+</template>
+```
+
+:::
+
+```ts
+const disabledTime = (date: Date, endpoint: 'start' | 'end') => ({
+  disabledHours: () => (endpoint === 'start' ? [0, 1, 2, 3, 4, 5, 6, 7] : []),
+  disabledMinutes: (hour: number) => (hour === 19 ? [30, 45] : []),
+  disabledSeconds: (hour: number, minute: number) =>
+    date.getDay() === 0 && hour === 19 && minute === 15 ? [30] : [],
+});
+```
+
+## 确认值与受控状态
+
+提供 `model-value` 后，输入框只显示父级已确认的值；父级拒绝更新时不会显示被拒绝的草稿。
+省略 `model-value` 使用内部状态，重新打开面板保留最后一次确认。显式 `null` 是受控空值。
+日期时间在确认前、范围只选第一个端点时都不会更新输入框；Escape、外部点击或禁用控件会丢弃未确认草稿。
 
 ## API
 
-### DateTimePicker Props
+### Props
 
-| 属性                      | 说明                   | 类型                                                                          | 默认值         |
-| ------------------------- | ---------------------- | ----------------------------------------------------------------------------- | -------------- |
-| `model-value` / `v-model` | 绑定值                 | `Date \| [Date, Date] \| null`                                                | `null`         |
-| `type`                    | 选择器类型             | `'date' \| 'datetime' \| 'daterange' \| 'datetimerange' \| 'month' \| 'year'` | `'date'`       |
-| `size`                    | 尺寸                   | `'small' \| 'medium' \| 'large'`                                              | `'medium'`     |
-| `placeholder`             | 占位符                 | `string`                                                                      | `''`           |
-| `start-placeholder`       | 范围选择时的开始占位符 | `string`                                                                      | `'开始日期'`   |
-| `end-placeholder`         | 范围选择时的结束占位符 | `string`                                                                      | `'结束日期'`   |
-| `format`                  | 日期格式               | `string`                                                                      | `'YYYY-MM-DD'` |
-| `disabled`                | 是否禁用               | `boolean`                                                                     | `false`        |
-| `readonly`                | 是否只读               | `boolean`                                                                     | `false`        |
-| `clearable`               | 是否可清空             | `boolean`                                                                     | `true`         |
-| `disabled-date`           | 禁用日期函数           | `(date: Date) => boolean`                                                     | —              |
-| `show-today`              | 是否显示今天按钮       | `boolean`                                                                     | `true`         |
-| `aria-label`              | 无障碍标签             | `string`                                                                      | —              |
+| 属性                      | 说明                                                    | 类型                             | 默认值       |
+| ------------------------- | ------------------------------------------------------- | -------------------------------- | ------------ |
+| `model-value` / `v-model` | 当前日期或日期范围                                      | `Date \| [Date, Date] \| null`   | `null`       |
+| `type`                    | 选择模式，包含上述十种模式                              | `DateTimePickerType`             | `'date'`     |
+| `id`                      | 原生输入框 ID，支持外部 label 关联                      | `string`                         | —            |
+| `size`                    | 组件尺寸                                                | `'small' \| 'medium' \| 'large'` | 跟随全局配置 |
+| `placeholder`             | 输入框占位文本                                          | `string`                         | 本地化文本   |
+| `start-placeholder`       | 范围起点占位文本                                        | `string`                         | 本地化文本   |
+| `end-placeholder`         | 范围终点占位文本                                        | `string`                         | 本地化文本   |
+| `format`                  | 日期时间格式；另支持 ISO `GGGG` / `WW` 和 `[文字]` 转义 | `string`                         | 按模式决定   |
+| `disabled`                | 是否禁用全部交互                                        | `boolean`                        | `false`      |
+| `readonly`                | 是否只读并禁止打开面板                                  | `boolean`                        | `false`      |
+| `clearable`               | 是否允许清空                                            | `boolean`                        | `true`       |
+| `disabled-date`           | 判断某个本地日历日期是否不可选择                        | `(date: Date) => boolean`        | —            |
+| `disabled-time`           | 日期时间端点的时分秒禁用规则                            | `DisabledTimeFn`                 | —            |
+| `show-time`               | 在日期模式中额外启用时间选择                            | `boolean`                        | `false`      |
+| `time-step`               | 分钟步长，规范范围 1～60                                | `number`                         | `1`          |
+| `show-today`              | 是否显示“今天”按钮                                      | `boolean`                        | `true`       |
+| `teleported`              | 是否将面板传送到 body，避免祖先 overflow 裁剪           | `boolean`                        | `true`       |
+| `aria-label`              | 输入框无障碍名称                                        | `string`                         | 使用占位文本 |
 
-### DateTimePicker Events
+### Events
 
-| 事件名               | 说明         | 类型                                            |
-| -------------------- | ------------ | ----------------------------------------------- |
-| `update:model-value` | 值改变时触发 | `(value: Date \| [Date, Date] \| null) => void` |
-| `change`             | 值改变时触发 | `(value: Date \| [Date, Date] \| null) => void` |
-| `focus`              | 聚焦时触发   | `(event: FocusEvent) => void`                   |
-| `blur`               | 失焦时触发   | `(event: FocusEvent) => void`                   |
-| `clear`              | 清空时触发   | `() => void`                                    |
+| 事件名               | 说明                       | 类型                                   |
+| -------------------- | -------------------------- | -------------------------------------- |
+| `update:model-value` | 已确认值发生变化           | `(value: DateTimePickerValue) => void` |
+| `change`             | 一次日期或时间选择正式提交 | `(value: DateTimePickerValue) => void` |
+| `visible-change`     | 面板可见状态变化           | `(visible: boolean) => void`           |
+| `focus` / `blur`     | 输入框焦点事件             | `(event: FocusEvent) => void`          |
+| `clear`              | 当前值被清空               | `() => void`                           |
 
-### DateTimePicker Methods
+### Methods
 
-| 方法名       | 说明             | 类型                           |
-| ------------ | ---------------- | ------------------------------ |
-| `focus`      | 使输入框获取焦点 | `() => void`                   |
-| `blur`       | 使输入框失去焦点 | `() => void`                   |
-| `getElement` | 获取组件DOM元素  | `() => HTMLDivElement \| null` |
+| 方法名       | 说明           | 类型                           |
+| ------------ | -------------- | ------------------------------ |
+| `focus`      | 聚焦输入框     | `() => void`                   |
+| `blur`       | 移除输入框焦点 | `() => void`                   |
+| `getElement` | 获取组件根元素 | `() => HTMLDivElement \| null` |
 
-## 无障碍支持
+### 键盘操作
 
-- 使用语义化的 HTML 标签和 ARIA 属性
-- 完整的键盘导航支持
-- 支持屏幕阅读器
-- 所有按钮都有明确的 `aria-label`
-- 支持减少动画偏好设置
-
-## 主题定制
-
-日期时间选择器跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，无需单独配置。
+| 按键                  | 行为                   |
+| --------------------- | ---------------------- |
+| `Enter` / `Space`     | 打开或关闭面板         |
+| `ArrowDown`           | 打开面板并聚焦当前日期 |
+| `Arrow`               | 按天或按周移动日期焦点 |
+| `Home` / `End`        | 移动到当前周首日或末日 |
+| `PageUp` / `PageDown` | 移动到上个月或下个月   |
+| `Escape`              | 取消草稿并关闭面板     |
 
 <style scoped>
 .demo-container {
   padding: 24px;
+  margin: 16px 0;
   background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+}
+
+.demo-container--row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 </style>

@@ -20,6 +20,7 @@ const handleCopy = (code) => {
 
 最基础的轮播图用法。
 
+::: raw
 <div class="demo-container">
   <ExCarousel>
     <ExCarouselItem>
@@ -42,27 +43,51 @@ const handleCopy = (code) => {
     </ExCarouselItem>
   </ExCarousel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
   <ExCarousel>
     <ExCarouselItem>
-      <div>Slide 1</div>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+      >
+        <h2>Slide 1</h2>
+        <p>第一张幻灯片</p>
+      </div>
     </ExCarouselItem>
     <ExCarouselItem>
-      <div>Slide 2</div>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+      >
+        <h2>Slide 2</h2>
+        <p>第二张幻灯片</p>
+      </div>
     </ExCarouselItem>
     <ExCarouselItem>
-      <div>Slide 3</div>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+      >
+        <h2>Slide 3</h2>
+        <p>第三张幻灯片</p>
+      </div>
     </ExCarouselItem>
   </ExCarousel>
 </template>
 ```
 
+:::
+
 ## 指示器位置
 
 通过 `indicator-position` 属性可以设置指示器的位置。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">顶部指示器</h4>
@@ -79,7 +104,7 @@ const handleCopy = (code) => {
       </ExCarouselItem>
     </ExCarousel>
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">外部指示器</h4>
     <ExCarousel indicator-position="outside" :height="250">
@@ -96,25 +121,71 @@ const handleCopy = (code) => {
     </ExCarousel>
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 顶部指示器 -->
-  <ExCarousel indicator-position="top">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">顶部指示器</h4>
+    <ExCarousel
+      indicator-position="top"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+        >
+          <h3>Top Indicators</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 
-  <!-- 外部指示器 -->
-  <ExCarousel indicator-position="outside">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">外部指示器</h4>
+    <ExCarousel
+      indicator-position="outside"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+        >
+          <h3>Outside Indicators</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 </template>
 ```
+
+:::
 
 ## 箭头显示
 
 通过 `arrow` 属性可以控制箭头的显示时机。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">始终显示箭头</h4>
@@ -131,7 +202,7 @@ const handleCopy = (code) => {
       </ExCarouselItem>
     </ExCarousel>
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">不显示箭头</h4>
     <ExCarousel arrow="never" :height="250">
@@ -148,30 +219,71 @@ const handleCopy = (code) => {
     </ExCarousel>
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 始终显示 -->
-  <ExCarousel arrow="always">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">始终显示箭头</h4>
+    <ExCarousel
+      arrow="always"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"
+        >
+          <h3>Always Show Arrows</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 
-  <!-- 悬停显示（默认） -->
-  <ExCarousel arrow="hover">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
-
-  <!-- 不显示 -->
-  <ExCarousel arrow="never">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">不显示箭头</h4>
+    <ExCarousel
+      arrow="never"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"
+        >
+          <h3>No Arrows</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 </template>
 ```
+
+:::
 
 ## 切换效果
 
 支持滑动和淡入淡出两种切换效果。
 
+::: raw
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">滑动效果（默认）</h4>
@@ -193,7 +305,7 @@ const handleCopy = (code) => {
       </ExCarouselItem>
     </ExCarousel>
   </div>
-  
+
   <div>
     <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">淡入淡出效果</h4>
     <ExCarousel effect="fade" :height="250">
@@ -215,25 +327,87 @@ const handleCopy = (code) => {
     </ExCarousel>
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <!-- 滑动效果 -->
-  <ExCarousel effect="slide">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">滑动效果（默认）</h4>
+    <ExCarousel
+      effect="slide"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+        >
+          <h3>Slide Effect</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+        >
+          <h3>Slide 3</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 
-  <!-- 淡入淡出效果 -->
-  <ExCarousel effect="fade">
-    <ExCarouselItem>...</ExCarouselItem>
-  </ExCarousel>
+  <div>
+    <h4 style="margin-bottom: 12px; color: var(--ex-color-text-secondary);">淡入淡出效果</h4>
+    <ExCarousel
+      effect="fade"
+      :height="250"
+    >
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"
+        >
+          <h3>Fade Effect</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"
+        >
+          <h3>Slide 2</h3>
+        </div>
+      </ExCarouselItem>
+      <ExCarouselItem>
+        <div
+          class="demo-slide"
+          style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"
+        >
+          <h3>Slide 3</h3>
+        </div>
+      </ExCarouselItem>
+    </ExCarousel>
+  </div>
 </template>
 ```
+
+:::
 
 ## 垂直方向
 
 通过 `direction` 属性可以设置垂直方向的轮播。
 
+::: raw
 <div class="demo-container">
   <ExCarousel direction="vertical" :height="300">
     <ExCarouselItem>
@@ -253,21 +427,51 @@ const handleCopy = (code) => {
     </ExCarouselItem>
   </ExCarousel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCarousel direction="vertical" :height="300">
-    <ExCarouselItem>...</ExCarouselItem>
-    <ExCarouselItem>...</ExCarouselItem>
-    <ExCarouselItem>...</ExCarouselItem>
+  <ExCarousel
+    direction="vertical"
+    :height="300"
+  >
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+      >
+        <h3>Vertical Slide 1</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+      >
+        <h3>Vertical Slide 2</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+      >
+        <h3>Vertical Slide 3</h3>
+      </div>
+    </ExCarouselItem>
   </ExCarousel>
 </template>
 ```
+
+:::
 
 ## 自动播放
 
 通过 `autoplay` 和 `interval` 属性可以控制自动播放。
 
+::: raw
 <div class="demo-container">
   <ExCarousel :autoplay="true" :interval="2000" :height="250">
     <ExCarouselItem>
@@ -288,19 +492,53 @@ const handleCopy = (code) => {
     </ExCarouselItem>
   </ExCarousel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCarousel :autoplay="true" :interval="2000">
-    <ExCarouselItem>...</ExCarouselItem>
+  <ExCarousel
+    :autoplay="true"
+    :interval="2000"
+    :height="250"
+  >
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"
+      >
+        <h3>Auto Play</h3>
+        <p>2秒切换一次</p>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"
+      >
+        <h3>Slide 2</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"
+      >
+        <h3>Slide 3</h3>
+      </div>
+    </ExCarouselItem>
   </ExCarousel>
 </template>
 ```
+
+:::
 
 ## 禁用循环
 
 设置 `loop` 为 `false` 可以禁用循环播放。
 
+::: raw
 <div class="demo-container">
   <ExCarousel :loop="false" :height="250">
     <ExCarouselItem>
@@ -321,19 +559,52 @@ const handleCopy = (code) => {
     </ExCarouselItem>
   </ExCarousel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExCarousel :loop="false">
-    <ExCarouselItem>...</ExCarouselItem>
+  <ExCarousel
+    :loop="false"
+    :height="250"
+  >
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+      >
+        <h3>No Loop</h3>
+        <p>到达最后一张后不会循环</p>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+      >
+        <h3>Slide 2</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+      >
+        <h3>Slide 3</h3>
+      </div>
+    </ExCarouselItem>
   </ExCarousel>
 </template>
 ```
+
+:::
 
 ## 手动控制
 
 通过 `v-model` 可以手动控制当前显示的幻灯片。
 
+::: raw
 <div class="demo-container">
   <ExCarousel v-model="currentSlide" :height="250" @change="handleChange">
     <ExCarouselItem>
@@ -363,6 +634,9 @@ const handleCopy = (code) => {
     </ExSpace>
   </div>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -376,14 +650,65 @@ const handleChange = (current, prev) => {
 </script>
 
 <template>
-  <ExCarousel v-model="currentSlide" @change="handleChange">
-    <ExCarouselItem>...</ExCarouselItem>
+  <ExCarousel
+    v-model="currentSlide"
+    :height="250"
+    @change="handleChange"
+  >
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+      >
+        <h3>Slide 1</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+      >
+        <h3>Slide 2</h3>
+      </div>
+    </ExCarouselItem>
+    <ExCarouselItem>
+      <div
+        class="demo-slide"
+        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"
+      >
+        <h3>Slide 3</h3>
+      </div>
+    </ExCarouselItem>
   </ExCarousel>
-
-  <div>当前幻灯片: {{ currentSlide + 1 }}</div>
-  <ExButton @click="currentSlide = 0">第1张</ExButton>
+  <div style="margin-top: 16px; text-align: center;">
+    <p style="color: var(--ex-color-text-secondary); margin-bottom: 12px;">
+      当前幻灯片: {{ currentSlide + 1 }}
+    </p>
+    <ExSpace>
+      <ExButton
+        size="small"
+        @click="currentSlide = 0"
+      >
+        第1张
+      </ExButton>
+      <ExButton
+        size="small"
+        @click="currentSlide = 1"
+      >
+        第2张
+      </ExButton>
+      <ExButton
+        size="small"
+        @click="currentSlide = 2"
+      >
+        第3张
+      </ExButton>
+    </ExSpace>
+  </div>
 </template>
 ```
+
+:::
 
 ## API
 

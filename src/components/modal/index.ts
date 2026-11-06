@@ -1,10 +1,7 @@
-import type { App } from 'vue';
-import ExModal from './ExModal.vue';
+import ExModalComponent from './ExModal.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExModal.install = (app: App) => {
-  app.component('ExModal', ExModal);
-};
+export const ExModal: InstallableComponent<typeof ExModalComponent> = withInstall(ExModalComponent);
 
+export * from './types';
 export default ExModal;
-export { ExModal };
-export type * from './types';

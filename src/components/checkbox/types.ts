@@ -6,6 +6,7 @@ import type { VNode } from 'vue';
 
 export type CheckboxValue = boolean | string | number;
 export type CheckboxSize = 'small' | 'medium' | 'large';
+export type CheckboxShape = 'square' | 'circle';
 export type CheckboxStatus = 'default' | 'success' | 'warning' | 'error';
 
 // ============================================================================
@@ -21,10 +22,26 @@ export interface ExCheckboxProps {
   falseValue?: boolean | string | number;
   /** 复选框的值（在 CheckboxGroup 中使用） */
   value?: string | number;
+  /** 原生复选框的 name 属性 */
+  name?: string;
+  /** 原生复选框的 id 属性 */
+  id?: string;
+  /** 原生复选框的 tabindex 属性 */
+  tabindex?: string | number;
   /** 复选框标签 */
   label?: string;
+  /** 原生复选框的无障碍名称；无可见标签时必须提供。 */
+  ariaLabel?: string;
+  /** 外部关联的无障碍标签 ID 列表 */
+  ariaLabelledby?: string;
+  /** 外部关联的无障碍描述 ID 列表 */
+  ariaDescribedby?: string;
+  /** 中间状态对应的受控内容区域 ID */
+  ariaControls?: string;
   /** 组件大小 */
   size?: CheckboxSize;
+  /** 复选框外观形状 */
+  shape?: CheckboxShape;
   /** 组件状态 */
   status?: CheckboxStatus;
   /** 是否禁用 */
@@ -54,6 +71,8 @@ export interface ExCheckboxProps {
 export interface ExCheckboxEmits {
   /** 值变化事件 */
   'update:modelValue': [value: boolean | string | number];
+  /** 中间状态变化事件 */
+  'update:indeterminate': [value: boolean];
   /** 变化事件 */
   change: [value: boolean | string | number, event: Event];
   /** 聚焦事件 */
@@ -97,12 +116,16 @@ export interface ExCheckboxInstance {
 export interface ExCheckboxGroupProps {
   /** 绑定值 */
   modelValue?: Array<string | number>;
+  /** 复选框组根元素的 id 属性 */
+  id?: string;
   /** 选项列表 */
   options?: CheckboxOption[];
   /** 表单域 name 属性 */
   name?: string;
   /** 组件大小 */
   size?: CheckboxSize;
+  /** 复选框外观形状 */
+  shape?: CheckboxShape;
   /** 组件状态 */
   status?: CheckboxStatus;
   /** 是否禁用 */
@@ -117,6 +140,12 @@ export interface ExCheckboxGroupProps {
   vertical?: boolean;
   /** 标签文本 */
   label?: string;
+  /** 无可见标签时的无障碍名称 */
+  ariaLabel?: string;
+  /** 外部关联的无障碍标签 ID 列表 */
+  ariaLabelledby?: string;
+  /** 外部关联的无障碍描述 ID 列表 */
+  ariaDescribedby?: string;
   /** 是否必填 */
   required?: boolean;
   /** 帮助文本 */

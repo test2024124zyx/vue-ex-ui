@@ -1,105 +1,127 @@
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-loading-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: var(--ex-z-loading, 1100);
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--ex-loading-bar-z-index, var(--ex-z-loading, 1100));
+  height: var(--ex-loading-bar-height, 3px);
+  overflow: hidden;
   pointer-events: none;
+  contain: layout paint style;
+
+  &--no-animation &__bar {
+    transition: none;
+    will-change: auto;
+  }
+
+  &--no-animation &__glow,
+  &--no-animation &__flow {
+    animation: none;
+  }
+
+  &--no-neon &__bar {
+    box-shadow: none;
+  }
 
   &__bar {
     position: relative;
-    height: 3px;
-    background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
-    box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
-    transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    background: var(--ex-loading-bar-color, var(--ex-loading-bar-state-background));
+    box-shadow: 0 0 10px var(--ex-loading-bar-color, var(--ex-loading-bar-state-glow));
+    transform: scaleX(var(--ex-loading-bar-progress, 0));
+    transform-origin: left center;
+    transition: transform var(--ex-motion-duration-base, 200ms) var(--ex-motion-ease-out, ease-out);
+    will-change: transform;
 
-    // 霓虹发光效果
-    &__glow {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--ex-color-white-alpha-50) 50%,
-        transparent 100%
-      );
-      animation: ex-loading-bar-glow 1.5s ease-in-out infinite;
-    }
-
-    // 流动动画
-    &__flow {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: linear-gradient(
-        45deg,
-        var(--ex-color-white-alpha-20) 25%,
-        transparent 25%,
-        transparent 50%,
-        var(--ex-color-white-alpha-20) 50%,
-        var(--ex-color-white-alpha-20) 75%,
-        transparent 75%,
-        transparent
-      );
-      background-size: 20px 20px;
-      animation: ex-loading-bar-flow 0.5s linear infinite;
-    }
-
-    // 状态样�?
     &--loading {
-      background: linear-gradient(90deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
-      box-shadow: 0 0 10px var(--ex-color-primary-alpha-60);
+      --ex-loading-bar-state-background: linear-gradient(
+        90deg,
+        var(--ex-color-primary),
+        var(--ex-color-secondary)
+      );
+      --ex-loading-bar-state-glow: var(--ex-color-primary-alpha-60);
     }
 
     &--success {
-      background: linear-gradient(90deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
-      box-shadow: 0 0 10px var(--ex-color-success-alpha-60);
+      --ex-loading-bar-state-background: linear-gradient(
+        90deg,
+        var(--ex-color-success),
+        var(--ex-color-success-hover)
+      );
+      --ex-loading-bar-state-glow: var(--ex-color-success-alpha-60);
     }
 
     &--error {
-      background: linear-gradient(90deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
-      box-shadow: 0 0 10px var(--ex-color-error-alpha-60);
+      --ex-loading-bar-state-background: linear-gradient(
+        90deg,
+        var(--ex-color-error),
+        var(--ex-color-error-light)
+      );
+      --ex-loading-bar-state-glow: var(--ex-color-error-alpha-60);
     }
 
     &--warning {
-      background: linear-gradient(90deg, var(--ex-color-warning) 0%, var(--ex-color-warning-hover) 100%);
-      box-shadow: 0 0 10px var(--ex-color-warning-alpha-60);
+      --ex-loading-bar-state-background: linear-gradient(
+        90deg,
+        var(--ex-color-warning),
+        var(--ex-color-warning-hover)
+      );
+      --ex-loading-bar-state-glow: var(--ex-color-warning-alpha-60);
     }
+  }
+
+  &__glow,
+  &__flow {
+    position: absolute;
+    inset: 0;
+  }
+
+  &__glow {
+    background: linear-gradient(90deg, transparent, var(--ex-color-white-alpha-50), transparent);
+    animation: ex-loading-bar-glow 1.5s ease-in-out infinite;
+  }
+
+  &__flow {
+    background-image: linear-gradient(
+      45deg,
+      var(--ex-color-white-alpha-20) 25%,
+      transparent 25%,
+      transparent 50%,
+      var(--ex-color-white-alpha-20) 50%,
+      var(--ex-color-white-alpha-20) 75%,
+      transparent 75%
+    );
+    background-size: 20px 20px;
+    animation: ex-loading-bar-flow 500ms linear infinite;
+  }
+
+  &:dir(rtl) &__bar {
+    transform-origin: right center;
   }
 }
 
-// 动画
 @keyframes ex-loading-bar-glow {
-  0% {
+  from {
     transform: translateX(-100%);
   }
-  100% {
+
+  to {
     transform: translateX(100%);
   }
 }
 
 @keyframes ex-loading-bar-flow {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
+  to {
     background-position: 20px 0;
   }
 }
 
-// 过渡动画
 .ex-loading-bar-fade-enter-active,
 .ex-loading-bar-fade-leave-active {
-  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  transition: opacity var(--ex-motion-duration-fast, 150ms) var(--ex-motion-ease-out, ease-out);
 }
 
 .ex-loading-bar-fade-enter-from,
@@ -107,10 +129,12 @@
   opacity: 0;
 }
 
-// 无障碍支�?
 @media (prefers-reduced-motion: reduce) {
+  .ex-loading-bar-fade-enter-active,
+  .ex-loading-bar-fade-leave-active,
   .ex-loading-bar__bar {
     transition: none;
+    will-change: auto;
   }
 
   .ex-loading-bar__glow,
@@ -119,4 +143,21 @@
   }
 }
 
+.ex-loading-bar.ex-loading-bar--no-animation {
+  @include effect-boundary {
+    animation: none;
+    transition: none;
+  }
+}
 
+@media (forced-colors: active) {
+  .ex-loading-bar__bar {
+    background: Highlight;
+    box-shadow: none;
+  }
+
+  .ex-loading-bar__glow,
+  .ex-loading-bar__flow {
+    display: none;
+  }
+}

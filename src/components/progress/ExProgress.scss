@@ -21,9 +21,13 @@
     .ex-progress__bar {
       position: relative;
       height: 8px;
-      background: linear-gradient(135deg, var(--ex-color-primary) 0%, var(--ex-color-secondary) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-primary) 0%,
+        var(--ex-color-secondary) 100%
+      );
       border-radius: var(--ex-radius-full);
-      transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+      transition: width var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
       overflow: hidden;
       box-shadow: 0 0 10px var(--ex-color-primary-alpha-50);
     }
@@ -118,7 +122,11 @@
   // 状态样- 游戏主题增强
   &--success {
     .ex-progress__bar {
-      background: linear-gradient(135deg, var(--ex-color-success) 0%, var(--ex-color-success-mid) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-success) 0%,
+        var(--ex-color-success-mid) 100%
+      );
       box-shadow: 0 0 10px var(--ex-color-success-alpha-50);
     }
 
@@ -129,7 +137,11 @@
 
   &--exception {
     .ex-progress__bar {
-      background: linear-gradient(135deg, var(--ex-color-danger) 0%, var(--ex-color-danger-mid) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-danger) 0%,
+        var(--ex-color-danger-mid) 100%
+      );
       box-shadow: 0 0 10px var(--ex-color-error-alpha-50);
     }
 
@@ -140,7 +152,11 @@
 
   &--warning {
     .ex-progress__bar {
-      background: linear-gradient(135deg, var(--ex-color-warning) 0%, var(--ex-color-warning-hover) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-warning) 0%,
+        var(--ex-color-warning-hover) 100%
+      );
       box-shadow: 0 0 10px var(--ex-color-warning-alpha-50);
     }
 
@@ -164,7 +180,7 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    
+
     svg {
       display: block;
       overflow: visible;
@@ -176,7 +192,9 @@
   }
 
   .ex-progress__circle-path {
-    transition: stroke-dashoffset 0.6s ease;
+    transition:
+      stroke-dashoffset 0.6s ease,
+      stroke-dasharray 0.6s ease;
     filter: drop-shadow(0 0 8px currentColor);
   }
 
@@ -213,8 +231,6 @@
       filter: drop-shadow(0 0 4px currentColor);
     }
   }
-
-
 
   // 波浪进度条（矩形）
   &--wave {
@@ -315,10 +331,8 @@
     }
   }
 
-
-
   // 响应式设
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &--line {
       .ex-progress__text-outside {
         min-width: 40px;
@@ -347,7 +361,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     .ex-progress__track {
       border: 1px solid var(--ex-color-border-primary);
     }
@@ -357,15 +371,3 @@
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

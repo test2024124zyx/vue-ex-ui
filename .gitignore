@@ -21,6 +21,8 @@ dist-ssr/
 coverage/
 .nyc_output/
 *.lcov
+test-results/
+playwright-report/
 
 # 日志
 *.log

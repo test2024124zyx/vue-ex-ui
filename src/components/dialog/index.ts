@@ -1,10 +1,8 @@
-import type { App } from 'vue';
-import ExDialog from './ExDialog.vue';
+import ExDialogComponent from './ExDialog.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExDialog.install = (app: App) => {
-  app.component('ExDialog', ExDialog);
-};
+export const ExDialog: InstallableComponent<typeof ExDialogComponent> =
+  withInstall(ExDialogComponent);
 
 export default ExDialog;
-export { ExDialog };
 export type * from './types';

@@ -1,6 +1,6 @@
-import type { App } from 'vue';
-import ExTimeline from './ExTimeline.vue';
-import ExTimelineItem from './ExTimelineItem.vue';
+import ExTimelineComponent from './ExTimeline.vue';
+import ExTimelineItemComponent from './ExTimelineItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type {
@@ -16,14 +16,11 @@ export type {
 } from './types';
 
 // 导出组件
-export { ExTimeline, ExTimelineItem };
+export const ExTimelineItem: InstallableComponent<typeof ExTimelineItemComponent> =
+  withInstall(ExTimelineItemComponent);
+export const ExTimeline: InstallableComponent<typeof ExTimelineComponent> = withInstall(
+  ExTimelineComponent,
+  { ExTimelineItem }
+);
 
-// 组件安装插件
-export const TimelinePlugin = {
-  install(app: App) {
-    app.component('ExTimeline', ExTimeline);
-    app.component('ExTimelineItem', ExTimelineItem);
-  },
-};
-
-export default TimelinePlugin;
+export default ExTimeline;

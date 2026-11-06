@@ -20,16 +20,16 @@
   border-radius: var(--ex-radius-lg);
   backdrop-filter: blur(8px);
   @include transition(all);
-  
+
   // 霓虹发光效果
   @include neon-glow('blue', 'sm');
-  
+
   // 悬停效果
   &:hover {
     border-color: var(--ex-color-neon-pink-400);
     @include neon-glow('pink', 'sm');
   }
-  
+
   // 聚焦效果（当内部有焦点时）
   &:focus-within {
     border-color: var(--ex-color-neon-pink-500);
@@ -46,19 +46,19 @@
   position: relative;
   height: 100%;
   overflow: auto;
-  
+
   // 自定义滚动条 - 赛博朋克风格
   &::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: var(--ex-color-bg-tertiary-alpha-50);
     border-radius: 5px;
     margin: 4px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: linear-gradient(
       135deg,
@@ -68,7 +68,7 @@
     border-radius: 5px;
     border: 2px solid var(--ex-color-bg-tertiary-alpha-50);
     @include transition(all);
-    
+
     &:hover {
       background: linear-gradient(
         135deg,
@@ -77,17 +77,17 @@
       );
       @include neon-glow('pink', 'sm');
     }
-    
+
     &:active {
       background: var(--ex-gradient-secondary);
     }
   }
-  
+
   // 滚动条角落
   &::-webkit-scrollbar-corner {
     background: var(--ex-color-bg-tertiary-alpha-50);
   }
-  
+
   // Firefox 滚动条样式
   scrollbar-width: thin;
   scrollbar-color: var(--ex-color-neon-blue-500) var(--ex-color-bg-tertiary-alpha-50);
@@ -115,11 +115,9 @@
   top: 0;
   left: 0;
   right: 0;
-  
-  // 只在滚动时启用 will-change 优化
-  &.is-scrolling {
-    will-change: transform;
-  }
+  backface-visibility: hidden;
+  contain: layout style;
+  will-change: transform;
 }
 
 // ============================================================================
@@ -131,13 +129,16 @@
   box-sizing: border-box;
   border-bottom: 1px solid var(--ex-color-border-primary);
   background: transparent;
-  @include transition(all);
-  
-  // 移除最后一项的边框
-  &:last-child {
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+    background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+
+  // 只移除数据集真实末项的边框，不能把虚拟窗口末项误当成列表末项。
+  &.is-last {
     border-bottom: none;
   }
-  
+
   // 悬停效果 - 赛博朋克风格
   &:hover {
     background: linear-gradient(
@@ -147,7 +148,7 @@
       var(--ex-color-neon-blue-alpha-05) 100%
     );
     border-bottom-color: var(--ex-color-neon-blue-alpha-30);
-    
+
     // 左侧霓虹指示条
     &::before {
       content: '';
@@ -166,7 +167,7 @@
       @include transition(opacity);
     }
   }
-  
+
   // 激活/点击效果
   &:active {
     background: linear-gradient(
@@ -176,30 +177,26 @@
       var(--ex-color-neon-pink-alpha-10) 100%
     );
     border-bottom-color: var(--ex-color-neon-pink-alpha-40);
-    
+
     &::before {
-      background: linear-gradient(
-        to bottom,
-        var(--ex-color-neon-pink-500),
-        var(--ex-color-accent)
-      );
+      background: linear-gradient(to bottom, var(--ex-color-neon-pink-500), var(--ex-color-accent));
       @include neon-glow('pink', 'sm');
     }
   }
-  
+
   // 聚焦效果（键盘导航）
   &:focus-visible {
     outline: none;
     background: var(--ex-color-neon-blue-alpha-10);
     border-bottom-color: var(--ex-color-neon-blue-500);
     box-shadow: inset 0 0 0 2px var(--ex-color-neon-blue-500);
-    
+
     &::before {
       opacity: 1;
       width: 4px;
     }
   }
-  
+
   // 左侧指示条默认隐藏
   &::before {
     opacity: 0;
@@ -215,19 +212,19 @@
     @include flex-center;
     min-height: 200px;
   }
-  
+
   .ex-virtual-list__empty {
     text-align: center;
     color: var(--ex-color-text-tertiary);
     padding: var(--ex-spacing-8);
-    
+
     &-icon {
       font-size: 48px;
       margin-bottom: var(--ex-spacing-4);
       opacity: 0.5;
       @include neon-text('blue');
     }
-    
+
     &-text {
       font-size: var(--ex-text-base);
       font-family: var(--ex-font-secondary);
@@ -241,7 +238,7 @@
 
 .ex-virtual-list--loading {
   pointer-events: none;
-  
+
   .ex-virtual-list__loading {
     position: absolute;
     top: 0;
@@ -252,7 +249,7 @@
     background: var(--ex-color-bg-primary-alpha-80);
     backdrop-filter: blur(8px);
     z-index: 10;
-    
+
     &-spinner {
       width: 48px;
       height: 48px;
@@ -307,34 +304,34 @@
 @include mobile {
   .ex-virtual-list {
     border-width: 1px;
-    
+
     &:hover {
       // 移动端禁用悬停效果
       border-color: var(--ex-color-neon-blue-500);
       box-shadow: var(--ex-shadow-neon-sm);
     }
   }
-  
+
   .ex-virtual-list__wrapper {
     &::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
   }
-  
+
   .ex-virtual-list__item {
-    // 移动端增加触摸目标大小
-    min-height: 44px;
-    
+    // 行高由虚拟窗口的统一计算决定，不能在移动端单独放大。
+    min-height: 0;
+
     &:hover::before {
       // 移动端禁用悬停指示条
       opacity: 0;
     }
-    
+
     // 移动端激活效果
     &:active {
       background: var(--ex-color-neon-pink-alpha-15);
-      
+
       &::before {
         opacity: 1;
       }
@@ -353,11 +350,11 @@
   .ex-virtual-list__wrapper::-webkit-scrollbar-thumb {
     transition: none;
   }
-  
+
   .ex-virtual-list:focus-within {
     transform: none;
   }
-  
+
   .ex-virtual-list__loading-spinner {
     animation: none;
     border-top-color: var(--ex-color-neon-blue-500);
@@ -368,15 +365,15 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-virtual-list {
     border-width: 3px;
     box-shadow: none;
   }
-  
+
   .ex-virtual-list__item {
     border-bottom-width: 2px;
-    
+
     &:hover,
     &:focus-visible {
       box-shadow: inset 0 0 0 3px var(--ex-color-neon-blue-500);
@@ -384,32 +381,27 @@
   }
 }
 
-// 暗色主题偏好
-@media (prefers-color-scheme: dark) {
-  .ex-virtual-list {
-    background: var(--ex-color-bg-primary);
-  }
-}
-
 // ============================================================================
 // 性能优化 - 低端设备
 // ============================================================================
 
-@media (max-width: 768px) and (max-height: 1024px) {
-  .ex-virtual-list {
-    backdrop-filter: none;
-    background: var(--ex-color-bg-secondary);
-    box-shadow: none;
-    
-    &:hover {
+@include desktop-first(md) {
+  @media (max-height: 1024px) {
+    .ex-virtual-list {
+      backdrop-filter: none;
+      background: var(--ex-color-bg-secondary);
       box-shadow: none;
+
+      &:hover {
+        box-shadow: none;
+      }
     }
-  }
-  
-  .ex-virtual-list__item {
-    &:hover::before,
-    &:active::before {
-      box-shadow: none;
+
+    .ex-virtual-list__item {
+      &:hover::before,
+      &:active::before {
+        box-shadow: none;
+      }
     }
   }
 }

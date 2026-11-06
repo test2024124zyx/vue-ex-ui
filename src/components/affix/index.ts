@@ -1,9 +1,8 @@
-import type { App } from 'vue';
-import ExAffix from './ExAffix.vue';
+import ExAffixComponent from './ExAffix.vue';
+import { withInstall } from '../../utils/install';
+import type { InstallableComponent } from '../../utils/install';
 
-ExAffix.install = (app: App) => {
-  app.component('ExAffix', ExAffix);
-};
+export const ExAffix: InstallableComponent<typeof ExAffixComponent> = withInstall(ExAffixComponent);
 
 export default ExAffix;
 export * from './types';

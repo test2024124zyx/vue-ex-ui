@@ -43,17 +43,28 @@ const handleClick = (item, index) => {
 
 基础的面包屑导航。
 
+::: raw
+
 <div class="demo-container">
   <ExBreadcrumb :items="items1" @click="handleClick" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items" @click="handleClick" />
+  <div class="demo-container">
+    <ExBreadcrumb
+      :items="items1"
+      @click="handleClick"
+    />
+  </div>
 </template>
 
 <script setup>
-const items = [
+const items1 = [
   { label: '首页', path: '/' },
   { label: '产品中心', path: '/products' },
   { label: '电子设备', path: '/products/electronics' },
@@ -66,41 +77,16 @@ const handleClick = (item, index) => {
 </script>
 ```
 
+:::
+
 ## 带图标
 
 通过 `icon` 插槽为面包屑项添加图标。
 
+::: raw
+
 <div class="demo-container">
   <ExBreadcrumb :items="items2" @click="handleClick">
-    <template #icon="{ item, index }">
-      <img 
-        v-if="index === 0" 
-        src="https://api.iconify.design/ri/home-line.svg" 
-        alt="" 
-        width="16" 
-        height="16"
-      >
-      <img 
-        v-else-if="index === 1" 
-        src="https://api.iconify.design/ri/user-line.svg" 
-        alt="" 
-        width="16" 
-        height="16"
-      >
-      <img 
-        v-else 
-        src="https://api.iconify.design/ri/file-user-line.svg" 
-        alt="" 
-        width="16" 
-        height="16"
-      >
-    </template>
-  </ExBreadcrumb>
-</div>
-
-```vue
-<template>
-  <ExBreadcrumb :items="items" @click="handleClick">
     <template #icon="{ item, index }">
       <img
         v-if="index === 0"
@@ -125,20 +111,66 @@ const handleClick = (item, index) => {
       />
     </template>
   </ExBreadcrumb>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <div class="demo-container">
+    <ExBreadcrumb
+      :items="items2"
+      @click="handleClick"
+    >
+      <template #icon="{ item, index }">
+        <img
+          v-if="index === 0"
+          src="https://api.iconify.design/ri/home-line.svg"
+          alt=""
+          width="16"
+          height="16"
+        />
+        <img
+          v-else-if="index === 1"
+          src="https://api.iconify.design/ri/user-line.svg"
+          alt=""
+          width="16"
+          height="16"
+        />
+        <img
+          v-else
+          src="https://api.iconify.design/ri/file-user-line.svg"
+          alt=""
+          width="16"
+          height="16"
+        />
+      </template>
+    </ExBreadcrumb>
+  </div>
 </template>
 
 <script setup>
-const items = [
+const items2 = [
   { label: '首页', path: '/' },
   { label: '用户管理', path: '/users' },
   { label: '用户详情' },
 ];
+
+const handleClick = (item, index) => {
+  console.log('点击面包屑:', item, '索引:', index);
+};
 </script>
 ```
+
+:::
 
 ## 自定义分隔符
 
 使用 `separator` 属性自定义分隔符。
+
+::: raw
 
 <div class="demo-container vertical">
   <ExBreadcrumb :items="items1" separator=">" />
@@ -146,81 +178,168 @@ const items = [
   <ExBreadcrumb :items="items1" separator="·" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items" separator=">" />
-  <ExBreadcrumb :items="items" separator="-" />
-  <ExBreadcrumb :items="items" separator="·" />
+  <div class="demo-container vertical">
+    <ExBreadcrumb
+      :items="items1"
+      separator=">"
+    />
+    <ExBreadcrumb
+      :items="items1"
+      separator="-"
+    />
+    <ExBreadcrumb
+      :items="items1"
+      separator="·"
+    />
+  </div>
 </template>
+
+<script setup>
+const items1 = [
+  { label: '首页', path: '/' },
+  { label: '产品中心', path: '/products' },
+  { label: '电子设备', path: '/products/electronics' },
+  { label: '智能手机' },
+];
+</script>
 ```
+
+:::
 
 ## 图标分隔符
 
 使用 `separator` 插槽设置图标分隔符。
 
+::: raw
+
 <div class="demo-container vertical">
   <ExBreadcrumb :items="items1">
     <template #separator>
-      <ExIcon src="https://api.iconify.design/ri/arrow-right-s-line.svg" alt="" color="#ffffff"/>
+      <ExIcon src="https://api.iconify.design/ri/arrow-right-s-line.svg" alt="" color="#ffffff" />
     </template>
   </ExBreadcrumb>
   <ExBreadcrumb :items="items1">
     <template #separator>
-      <ExIcon src="https://api.iconify.design/ri/arrow-right-line.svg" alt="" color="#ffffff"/>
+      <ExIcon src="https://api.iconify.design/ri/arrow-right-line.svg" alt="" color="#ffffff" />
     </template>
   </ExBreadcrumb>
   <ExBreadcrumb :items="items1">
     <template #separator>
-      <ExIcon src="https://api.iconify.design/ri/arrow-right-double-line.svg" alt="" color="#ffffff"/>
+      <ExIcon src="https://api.iconify.design/ri/arrow-right-double-line.svg" alt="" color="#ffffff" />
     </template>
   </ExBreadcrumb>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items">
-    <template #separator>
-      <ExIcon src="https://api.iconify.design/ri/arrow-right-line.svg" color="#ffffff" />
-    </template>
-  </ExBreadcrumb>
+  <div class="demo-container vertical">
+    <ExBreadcrumb :items="items1">
+      <template #separator>
+        <ExIcon
+          src="https://api.iconify.design/ri/arrow-right-s-line.svg"
+          alt=""
+          color="#ffffff"
+        />
+      </template>
+    </ExBreadcrumb>
+    <ExBreadcrumb :items="items1">
+      <template #separator>
+        <ExIcon
+          src="https://api.iconify.design/ri/arrow-right-line.svg"
+          alt=""
+          color="#ffffff"
+        />
+      </template>
+    </ExBreadcrumb>
+    <ExBreadcrumb :items="items1">
+      <template #separator>
+        <ExIcon
+          src="https://api.iconify.design/ri/arrow-right-double-line.svg"
+          alt=""
+          color="#ffffff"
+        />
+      </template>
+    </ExBreadcrumb>
+  </div>
 </template>
+
+<script setup>
+const items1 = [
+  { label: '首页', path: '/' },
+  { label: '产品中心', path: '/products' },
+  { label: '电子设备', path: '/products/electronics' },
+  { label: '智能手机' },
+];
+</script>
 ```
+
+:::
 
 ## 最大显示项数
 
 当面包屑项过多时，可以通过 `max-items` 属性限制显示数量，中间部分会显示省略号。
+
+::: raw
 
 <div class="demo-container vertical">
   <div class="demo-item">
     <p class="demo-description">显示全部（6项）</p>
     <ExBreadcrumb :items="items3" />
   </div>
-  
+
   <div class="demo-item">
     <p class="demo-description">最多显示 4 项</p>
     <ExBreadcrumb :items="items3" :max-items="4" />
   </div>
-  
+
   <div class="demo-item">
     <p class="demo-description">最多显示 3 项</p>
     <ExBreadcrumb :items="items3" :max-items="3" />
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <!-- 显示全部 -->
-  <ExBreadcrumb :items="items" />
+  <div class="demo-container vertical">
+    <div class="demo-item">
+      <p class="demo-description">显示全部（6项）</p>
+      <ExBreadcrumb :items="items3" />
+    </div>
 
-  <!-- 最多显示 4 项 -->
-  <ExBreadcrumb :items="items" :max-items="4" />
+    <div class="demo-item">
+      <p class="demo-description">最多显示 4 项</p>
+      <ExBreadcrumb
+        :items="items3"
+        :max-items="4"
+      />
+    </div>
 
-  <!-- 最多显示 3 项 -->
-  <ExBreadcrumb :items="items" :max-items="3" />
+    <div class="demo-item">
+      <p class="demo-description">最多显示 3 项</p>
+      <ExBreadcrumb
+        :items="items3"
+        :max-items="3"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup>
-const items = [
+const items3 = [
   { label: '首页', path: '/' },
   { label: '文档', path: '/docs' },
   { label: '组件', path: '/docs/components' },
@@ -231,73 +350,155 @@ const items = [
 </script>
 ```
 
+:::
+
 ## 禁用状态
 
 通过 `disabled` 属性禁用某个面包屑项。
+
+::: raw
 
 <div class="demo-container">
   <ExBreadcrumb :items="items4" @click="handleClick" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items" @click="handleClick" />
+  <div class="demo-container">
+    <ExBreadcrumb
+      :items="items4"
+      @click="handleClick"
+    />
+  </div>
 </template>
 
 <script setup>
-const items = [
+const items4 = [
   { label: '首页', path: '/' },
   { label: '设置', path: '/settings' },
   { label: '账户设置', path: '/settings/account', disabled: true },
   { label: '个人信息' },
 ];
+
+const handleClick = (item, index) => {
+  console.log('点击面包屑:', item, '索引:', index);
+};
 </script>
 ```
+
+:::
 
 ## 不同尺寸
 
 提供三种尺寸：`small`、`medium`（默认）、`large`。
+
+::: raw
 
 <div class="demo-container vertical">
   <div class="demo-item">
     <p class="demo-description">小尺寸</p>
     <ExBreadcrumb :items="items1" size="small" />
   </div>
-  
+
   <div class="demo-item">
     <p class="demo-description">中等尺寸（默认）</p>
     <ExBreadcrumb :items="items1" size="medium" />
   </div>
-  
+
   <div class="demo-item">
     <p class="demo-description">大尺寸</p>
     <ExBreadcrumb :items="items1" size="large" />
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items" size="small" />
-  <ExBreadcrumb :items="items" size="medium" />
-  <ExBreadcrumb :items="items" size="large" />
+  <div class="demo-container vertical">
+    <div class="demo-item">
+      <p class="demo-description">小尺寸</p>
+      <ExBreadcrumb
+        :items="items1"
+        size="small"
+      />
+    </div>
+
+    <div class="demo-item">
+      <p class="demo-description">中等尺寸（默认）</p>
+      <ExBreadcrumb
+        :items="items1"
+        size="medium"
+      />
+    </div>
+
+    <div class="demo-item">
+      <p class="demo-description">大尺寸</p>
+      <ExBreadcrumb
+        :items="items1"
+        size="large"
+      />
+    </div>
+  </div>
 </template>
+
+<script setup>
+const items1 = [
+  { label: '首页', path: '/' },
+  { label: '产品中心', path: '/products' },
+  { label: '电子设备', path: '/products/electronics' },
+  { label: '智能手机' },
+];
+</script>
 ```
+
+:::
 
 ## 禁用点击
 
 通过 `clickable` 属性禁用所有面包屑项的点击功能。
 
+::: raw
+
 <div class="demo-container">
   <ExBreadcrumb :items="items1" :clickable="false" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBreadcrumb :items="items" :clickable="false" />
+  <div class="demo-container">
+    <ExBreadcrumb
+      :items="items1"
+      :clickable="false"
+    />
+  </div>
 </template>
+
+<script setup>
+const items1 = [
+  { label: '首页', path: '/' },
+  { label: '产品中心', path: '/products' },
+  { label: '电子设备', path: '/products/electronics' },
+  { label: '智能手机' },
+];
+</script>
 ```
 
+:::
+
 ## API
+
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
 
 ### Breadcrumb Props
 

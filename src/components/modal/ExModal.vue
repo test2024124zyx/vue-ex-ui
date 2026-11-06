@@ -3,133 +3,151 @@
     to="body"
     :disabled="!appendToBody"
   >
-    <div
-      v-if="visible"
-      class="ex-modal-root"
-      :style="rootStyles"
-      v-bind="$attrs"
+    <Transition
+      name="ex-modal-fade"
+      @after-leave="handleAfterClose"
     >
-      <!-- 遮罩层 -->
-      <Transition name="ex-modal-mask-fade">
-        <div
-          v-if="mask && visible"
-          class="ex-modal-mask"
-          @click="handleMaskClick"
-        />
-      </Transition>
-
-      <!-- 模态框包装器 -->
       <div
-        ref="wrapRef"
-        class="ex-modal-wrap"
-        :class="wrapClasses"
-        @click.self="handleMaskClick"
+        v-if="shouldRender"
+        v-show="overlayActive"
+        class="ex-modal-root"
+        :class="rootClasses"
+        :data-theme="configTheme"
+        :style="rootStyles"
       >
-        <Transition
-          name="ex-modal-zoom"
-          @after-leave="handleAfterClose"
+        <div
+          v-if="mask"
+          class="ex-modal-mask"
+          aria-hidden="true"
+          @click="handleMaskClick"
+        ></div>
+
+        <div
+          class="ex-modal-wrap"
+          :class="wrapClasses"
+          @click.self="handleMaskClick"
         >
           <div
-            v-if="visible"
             ref="modalRef"
-            class="ex-modal"
+            v-bind="panelAttrs"
             :class="modalClasses"
             :style="modalStyles"
-            role="dialog"
-            :aria-modal="mask"
-            :aria-label="ariaLabel || title"
-            :aria-labelledby="title ? titleId : undefined"
+            :role="dialogRole"
+            :aria-modal="mask ? 'true' : undefined"
+            :aria-label="accessibleLabel"
+            :aria-labelledby="labelledBy"
           >
             <div class="ex-modal-content">
-              <!-- 关闭按钮 -->
-              <button
-                v-if="showClose"
-                type="button"
-                class="ex-modal-close"
-                :aria-label="t('close')"
-                @click="handleCancel"
-              >
-                <slot name="closeIcon">
-                  <ExIcon
-                    icon="close-line"
-                    :size="20"
-                    aria-hidden="true"
-                  />
-                </slot>
-              </button>
-
-              <!-- 头部 -->
               <div
                 v-if="hasHeader"
                 class="ex-modal-header"
               >
                 <div
-                  v-if="$slots.icon"
+                  v-if="hasIcon"
                   class="ex-modal-header__icon"
+                  aria-hidden="true"
                 >
-                  <slot name="icon" />
+                  <slot name="icon"></slot>
                 </div>
-                <div
+                <h2
+                  v-if="hasTitle"
                   :id="titleId"
                   class="ex-modal-title"
                 >
                   <slot name="title">
                     {{ title }}
                   </slot>
-                </div>
+                </h2>
+
+                <button
+                  v-if="showClose"
+                  type="button"
+                  class="ex-modal-close"
+                  :aria-label="t('close')"
+                  @click="handleCancel"
+                >
+                  <slot name="closeIcon">
+                    <ExIcon
+                      icon="close-line"
+                      :size="20"
+                      aria-hidden="true"
+                    />
+                  </slot>
+                </button>
               </div>
 
-              <!-- 内容 -->
               <div
                 class="ex-modal-body"
                 :style="bodyStyle"
               >
-                <slot />
+                <slot></slot>
               </div>
 
-              <!-- 底部 -->
               <div
                 v-if="hasFooter"
                 class="ex-modal-footer"
               >
                 <slot name="footer">
-                  <ExButton @click="handleCancel">
-                    {{ cancelText || t('cancel') }}
+                  <ExButton
+                    type="default"
+                    @click="handleCancel"
+                  >
+                    {{ resolvedCancelText }}
                   </ExButton>
                   <ExButton
-                    :type="okType"
+                    :type="normalizedOkType"
                     :loading="confirmLoading"
                     @click="handleOk"
                   >
-                    {{ okText || t('ok') }}
+                    {{ resolvedOkText }}
                   </ExButton>
                 </slot>
               </div>
             </div>
           </div>
-        </Transition>
+        </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, useSlots } from 'vue';
-import type { ExModalProps, ExModalEmits, ExModalExposed } from './types';
-import { useLocale } from '../../locale';
-import { generateId } from '../../utils/id';
+import { computed, ref, useAttrs, useId, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
+import ExIcon from '../icon/ExIcon.vue';
+import {
+  useAnimation,
+  useGlobalSize,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+  useZIndexLayer,
+} from '../config-provider/composables';
+import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
+import { useLocale } from '../../locale';
+import { hasRenderableContent } from '../../utils/vnode';
+import type {
+  ExModalEmits,
+  ExModalExposed,
+  ExModalProps,
+  ExModalSlots,
+  ModalOkType,
+  ModalSize,
+  ModalType,
+} from './types';
 
 defineOptions({
   name: 'ExModal',
   inheritAttrs: false,
 });
 
+const globalSize = useGlobalSize();
+const slots = defineSlots<ExModalSlots>();
 const props = withDefaults(defineProps<ExModalProps>(), {
   modelValue: false,
-  size: 'medium',
+  size: undefined,
   type: 'default',
   showClose: true,
   mask: true,
@@ -138,125 +156,212 @@ const props = withDefaults(defineProps<ExModalProps>(), {
   okType: 'primary',
   confirmLoading: false,
   centered: false,
-  zIndex: 1000,
+  zIndex: undefined,
   appendToBody: true,
   destroyOnClose: false,
   showFooter: true,
+  lockScroll: true,
 });
 
 const emit = defineEmits<ExModalEmits>();
-
+const attrs = useAttrs();
 const { t } = useLocale('dialog');
-
-const wrapRef = ref<HTMLDivElement>();
+const baseZIndex = useZIndexLayer('modal');
+const configTheme = useConfigTheme();
+const neonEffect = useNeonEffect();
+const animation = useAnimation();
+const themeOverrides = useThemeOverrides();
 const modalRef = ref<HTMLDivElement>();
-const visible = ref(props.modelValue);
-const titleId = `ex-modal-title-${generateId()}`;
+const titleId = `ex-modal-title-${useId()}`;
 
-// 获取 slots
-const slots = useSlots();
+const MODAL_SIZES = new Set<ModalSize>(['small', 'medium', 'large']);
+const MODAL_TYPES = new Set<ModalType>([
+  'default',
+  'primary',
+  'success',
+  'warning',
+  'danger',
+  'info',
+]);
+const MODAL_OK_TYPES = new Set<ModalOkType>(['default', 'primary', 'success', 'warning', 'danger']);
+const DEFAULT_MODAL_Z_INDEX = 1050;
+const CONTROLLED_PANEL_ATTRS = new Set(['aria-label', 'aria-labelledby', 'aria-modal', 'role']);
+const OBSOLETE_ATTRS = new Set(['arialabel']);
 
-// 计算属性
-const hasHeader = computed((): boolean => {
-  return !!(props.title || slots.title || slots.icon);
-});
-
-const hasFooter = computed((): boolean => {
-  // 传入 footer 插槽时始终渲染；否则由 showFooter 控制默认按钮区
-  return slots.footer !== undefined || props.showFooter;
-});
-
-const wrapClasses = computed(() => {
-  const classes = ['ex-modal-wrap'];
-  if (props.centered) classes.push('ex-modal-wrap--centered');
-  if (props.wrapClassName) classes.push(props.wrapClassName);
-  return classes;
-});
-
-const modalClasses = computed(() => {
-  const classes = ['ex-modal'];
-  if (props.size) classes.push(`ex-modal--${props.size}`);
-  if (props.type) classes.push(`ex-modal--${props.type}`);
-  return classes;
-});
-
-const modalStyles = computed(() => {
-  const styles: Record<string, string> = {};
-  if (props.width) {
-    styles.width = typeof props.width === 'number' ? `${props.width}px` : props.width;
-  }
-  return styles;
-});
-
-// 根容器样式：以 CSS 变量统一 z-index，可由 prop 覆盖
-const rootStyles = computed(() => {
-  const styles: Record<string, string> = {
-    zIndex: 'calc(var(--ex-z-modal) - 1000 + var(--ex-z-index-base, 1000))',
-  };
-  if (props.zIndex !== undefined) {
-    styles['--ex-z-modal'] = String(props.zIndex);
-  }
-  return styles;
-});
-
-// 同步父级 modelValue 到内部 visible
-watch(
-  () => props.modelValue,
-  newVal => {
-    visible.value = newVal;
-  }
+/** 运行时非法枚举值必须回退，不能生成不存在的样式类。 */
+const normalizedSize = computed<ModalSize>(() =>
+  MODAL_SIZES.has(props.size as ModalSize) ? (props.size as ModalSize) : globalSize.value
+);
+const normalizedType = computed<ModalType>(() =>
+  MODAL_TYPES.has(props.type as ModalType) ? (props.type as ModalType) : 'default'
+);
+const normalizedOkType = computed<ModalOkType>(() =>
+  MODAL_OK_TYPES.has(props.okType as ModalOkType) ? (props.okType as ModalOkType) : 'primary'
 );
 
-// 浮层通用机制：滚动锁定、自动聚焦、焦点陷阱、Esc 关闭、卸载清理
-// （与 ExDialog 共用同一套 useOverlay 实现，消除重复逻辑）
-useOverlay({
+const readTextAttribute = (name: string): string | undefined => {
+  const value = attrs[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+const nativeAriaLabel = computed(() => readTextAttribute('aria-label'));
+const nativeLabelledBy = computed(() => readTextAttribute('aria-labelledby'));
+const dialogRole = computed(() =>
+  typeof attrs.role === 'string' && attrs.role.trim().toLowerCase() === 'alertdialog'
+    ? 'alertdialog'
+    : 'dialog'
+);
+const panelAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => {
+      if (CONTROLLED_PANEL_ATTRS.has(key)) return false;
+      return !OBSOLETE_ATTRS.has(key.replace(/-/g, '').toLowerCase());
+    })
+  )
+);
+
+const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
+  modelValue: () => props.modelValue,
+  beforeOpen: () => props.beforeOpen,
+  beforeClose: () => props.beforeClose,
+  requestModelValue: value => emit('update:modelValue', value),
+  onOpen: () => emit('open'),
+  onClose: () => emit('close'),
+  onGuardError: (error, phase) => emit('guardError', error, phase),
+  skipRedundantRequests: true,
+});
+
+const shouldRender = computed(
+  () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
+);
+const hasTitle = computed(() =>
+  slots.title
+    ? hasRenderableContent(slots.title())
+    : typeof props.title === 'string' && props.title.trim().length > 0
+);
+const hasIcon = computed(() => hasRenderableContent(slots.icon?.()));
+const hasHeader = computed(() => hasTitle.value || hasIcon.value || props.showClose);
+const hasFooter = computed(() =>
+  slots.footer ? hasRenderableContent(slots.footer()) : props.showFooter
+);
+const accessibleLabel = computed(() => {
+  if (nativeAriaLabel.value) return nativeAriaLabel.value;
+  if (nativeLabelledBy.value || hasTitle.value) return undefined;
+  return t('label');
+});
+const labelledBy = computed(() => {
+  if (nativeAriaLabel.value) return undefined;
+  return nativeLabelledBy.value ?? (hasTitle.value ? titleId : undefined);
+});
+const resolvedOkText = computed(() => props.okText?.trim() || t('ok'));
+const resolvedCancelText = computed(() => props.cancelText?.trim() || t('cancel'));
+
+const rootClasses = computed(() => ({
+  'ex-modal-root--modeless': !props.mask,
+  'ex-modal-root--no-motion': !animation.value,
+}));
+const requestedZIndex = computed(() => {
+  const fallback =
+    Number.isFinite(baseZIndex.value) && baseZIndex.value >= 0
+      ? Math.floor(baseZIndex.value)
+      : DEFAULT_MODAL_Z_INDEX;
+  const zIndex =
+    typeof props.zIndex === 'number' && Number.isFinite(props.zIndex) && props.zIndex >= 0
+      ? Math.floor(props.zIndex)
+      : fallback;
+  return zIndex;
+});
+const rootStyles = computed<CSSProperties>(() => ({
+  ...themeOverrides.value,
+  zIndex: overlayZIndex.value,
+}));
+const wrapClasses = computed(() => [
+  {
+    'ex-modal-wrap--centered': props.centered,
+  },
+  props.wrapClassName,
+]);
+const modalClasses = computed(() => [
+  'ex-modal',
+  `ex-modal--${normalizedSize.value}`,
+  `ex-modal--${normalizedType.value}`,
+  { 'ex-modal--neon': neonEffect.value },
+]);
+
+/** 仅接受正的有限像素数值；字符串交由浏览器按 CSS 长度规则校验。 */
+const normalizedWidth = computed<string | undefined>(() => {
+  const width: unknown = props.width;
+  if (typeof width === 'number') {
+    return Number.isFinite(width) && width > 0 ? `${width}px` : undefined;
+  }
+  if (typeof width !== 'string') return undefined;
+  const normalized = width.trim();
+  return normalized || undefined;
+});
+const modalStyles = computed<CSSProperties>(() =>
+  normalizedWidth.value ? { width: normalizedWidth.value } : {}
+);
+
+const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   active: () => visible.value,
   container: modalRef,
+  zIndex: () => requestedZIndex.value,
+  lockScroll: () => props.mask && props.lockScroll,
   closeOnEscape: () => props.keyboard,
-  onEscape: () => handleCancel(),
+  onEscape: async () => {
+    await requestCloseIntent('cancel');
+  },
+  trapFocus: () => props.mask,
+  autoFocus: () => props.mask,
   restoreFocus: true,
 });
 
-// 点击遮罩层
-const handleMaskClick = () => {
-  if (props.maskClosable) {
-    handleCancel();
+type CloseIntent = 'ok' | 'cancel' | 'api';
+let pendingCloseIntent: Promise<boolean> | null = null;
+
+/** 所有关闭入口共享同一任务，避免异步守卫期间重复发出业务事件。 */
+const requestCloseIntent = (intent: CloseIntent): Promise<boolean> => {
+  if (!props.modelValue) return Promise.resolve(false);
+  if (pendingCloseIntent) return pendingCloseIntent;
+
+  if (intent === 'ok') emit('ok');
+  else if (intent === 'cancel') emit('cancel');
+
+  const operation = requestClose();
+  pendingCloseIntent = operation;
+  const clearPending = () => {
+    if (pendingCloseIntent === operation) pendingCloseIntent = null;
+  };
+  void operation.then(clearPending, clearPending);
+  return operation;
+};
+
+watch(
+  () => props.modelValue,
+  () => {
+    pendingCloseIntent = null;
   }
+);
+
+const handleMaskClick = (): void => {
+  if (!props.mask || !props.maskClosable) return;
+  void requestCloseIntent('cancel');
 };
-
-// 确认
-const handleOk = async () => {
-  emit('ok');
-  if (props.beforeClose) {
-    const result = await props.beforeClose();
-    if (result === false) return;
-  }
-  emit('update:modelValue', false);
+const handleOk = (): void => {
+  void requestCloseIntent('ok');
 };
-
-// 取消
-const handleCancel = async () => {
-  emit('cancel');
-  if (props.beforeClose) {
-    const result = await props.beforeClose();
-    if (result === false) return;
-  }
-  emit('update:modelValue', false);
+const handleCancel = (): void => {
+  void requestCloseIntent('cancel');
 };
+const handleAfterClose = (): void => emit('afterClose');
 
-// 关闭后的回调
-// 说明：模态框根节点使用 v-if（visible）渲染，关闭后内容即从 DOM 卸载，
-// 因此插槽内容默认在每次关闭时销毁、下次打开重建。destroyOnClose 保留用于语义表达。
-const handleAfterClose = () => {
-  emit('afterClose');
+const open = (): void => {
+  pendingCloseIntent = null;
+  requestOpen();
 };
+const close = (): Promise<boolean> => requestCloseIntent('api');
+const getElement = (): HTMLDivElement | null => modalRef.value ?? null;
 
-// 暴露的方法
-const getElement = () => modalRef.value || null;
-
-defineExpose<ExModalExposed>({
-  getElement,
-});
+defineExpose<ExModalExposed>({ open, close, getElement });
 </script>
 
 <style scoped lang="scss" src="./ExModal.scss"></style>

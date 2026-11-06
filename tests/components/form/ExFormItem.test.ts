@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import ExForm from '../../../src/components/form/ExForm.vue';
+import type { FormItemInstance } from '../../../src/components/form/types';
 
 describe('ExFormItem', () => {
   describe('Rendering', () => {
@@ -49,9 +50,7 @@ describe('ExFormItem', () => {
           labelAlign: 'left',
         },
       });
-      expect(wrapper.find('.ex-form-item__label').classes()).toContain(
-        'ex-form-item__label--left'
-      );
+      expect(wrapper.find('.ex-form-item__label').classes()).toContain('ex-form-item__label--left');
     });
 
     it('applies label placement', () => {
@@ -87,7 +86,7 @@ describe('ExFormItem', () => {
   describe('Sizes', () => {
     const sizes = ['small', 'medium', 'large'] as const;
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExFormItem, {
           props: { size },
@@ -106,6 +105,7 @@ describe('ExFormItem', () => {
         },
       });
       expect(wrapper.classes()).toContain('is-required');
+      expect(wrapper.findAll('.ex-form-item__required-mark')).toHaveLength(1);
     });
 
     it('shows required mark from rules', () => {
@@ -116,15 +116,27 @@ describe('ExFormItem', () => {
           rules: { required: true, message: 'Required' },
         },
       });
-      // 规则需要通过 Form 上下文传递，单独测试时不会显示
-      expect(wrapper.props('rules')).toEqual({ required: true, message: 'Required' });
+      expect(wrapper.classes()).toContain('is-required');
+      expect(wrapper.find('.ex-form-item__required-mark').exists()).toBe(true);
+    });
+
+    it('keeps exactly one required mark for top labels', () => {
+      const wrapper = mount(ExFormItem, {
+        props: {
+          label: 'Username',
+          required: true,
+          labelPlacement: 'top',
+        },
+      });
+
+      expect(wrapper.findAll('.ex-form-item__required-mark')).toHaveLength(1);
     });
   });
 
   describe('Validation Status', () => {
     const statuses = ['success', 'warning', 'error', 'validating'] as const;
 
-    statuses.forEach((status) => {
+    statuses.forEach(status => {
       it(`renders ${status} status correctly`, () => {
         const wrapper = mount(ExFormItem, {
           props: {
@@ -190,6 +202,21 @@ describe('ExFormItem', () => {
       });
       expect(wrapper.find('.ex-form-item__help').exists()).toBe(false);
       expect(wrapper.find('.ex-form-item__error').exists()).toBe(true);
+    });
+
+    it('clears a controlled error when the error prop becomes empty', async () => {
+      const wrapper = mount(ExFormItem, {
+        props: {
+          label: 'Username',
+          error: 'Invalid username',
+        },
+      });
+
+      expect(wrapper.find('.ex-form-item__error').exists()).toBe(true);
+      await wrapper.setProps({ error: '' });
+
+      expect(wrapper.find('.ex-form-item__error').exists()).toBe(false);
+      expect(wrapper.classes()).not.toContain('is-error');
     });
   });
 
@@ -295,7 +322,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.validate).toBe('function');
     });
 
@@ -306,7 +333,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.resetField).toBe('function');
     });
 
@@ -317,7 +344,7 @@ describe('ExFormItem', () => {
           label: 'Username',
         },
       });
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as FormItemInstance;
       expect(typeof vm.clearValidate).toBe('function');
     });
   });

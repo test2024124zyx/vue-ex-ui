@@ -1,9 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import ExTooltip from '../../../src/components/tooltip/ExTooltip.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
+import type { ExTooltipExposed, TooltipPlacement } from '../../../src/components/tooltip/types';
 
 describe('ExTooltip', () => {
+  it('淡入淡出动画使用有效的 transition 简写', () => {
+    const styleSource = readFileSync(
+      join(process.cwd(), 'src/components/tooltip/ExTooltip.scss'),
+      'utf8'
+    );
+
+    expect(styleSource).toContain(
+      'transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);'
+    );
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -92,7 +107,7 @@ describe('ExTooltip', () => {
       const wrapper = mount(ExTooltip, {
         props: {
           content: '提示内容',
-          placement: placement as any,
+          placement: placement as TooltipPlacement,
         },
         slots: {
           default: '<button>触发按钮</button>',
@@ -294,6 +309,21 @@ describe('ExTooltip', () => {
 
       expect(document.querySelector('.ex-tooltip__popper')).toBeFalsy();
     });
+
+    it('运行时禁用应该取消待显示任务并关闭已显示内容', async () => {
+      const wrapper = mount(ExTooltip, {
+        props: { content: '提示内容', openDelay: 100 },
+        slots: { default: '<button>触发按钮</button>' },
+        attachTo: document.body,
+      });
+
+      await wrapper.trigger('mouseenter');
+      await wrapper.setProps({ disabled: true });
+      vi.advanceTimersByTime(100);
+      await nextTick();
+
+      expect(document.querySelector('.ex-tooltip__popper')).toBeFalsy();
+    });
   });
 
   describe('手动控制', () => {
@@ -321,6 +351,66 @@ describe('ExTooltip', () => {
       await nextTick();
 
       expect(document.querySelector('.ex-tooltip__popper')).toBeFalsy();
+    });
+
+    it('初始 modelValue=true 时首屏就应该显示', async () => {
+      mount(ExTooltip, {
+        props: { content: '提示内容', modelValue: true },
+        slots: { default: '<button>触发按钮</button>' },
+        attachTo: document.body,
+      });
+      await nextTick();
+
+      expect(document.querySelector('.ex-tooltip__popper')).toBeTruthy();
+    });
+
+    it('用户触发应该发出 update:modelValue', async () => {
+      const wrapper = mount(ExTooltip, {
+        props: { content: '提示内容', trigger: 'click' },
+        slots: { default: '<button>触发按钮</button>' },
+        attachTo: document.body,
+      });
+
+      await wrapper.trigger('click');
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([true]);
+    });
+  });
+
+  describe('复合触发与可访问性', () => {
+    it('hover-focus 下鼠标离开不应该关闭仍保持焦点的提示', async () => {
+      const wrapper = mount(ExTooltip, {
+        props: { content: '提示内容', trigger: 'hover-focus', closeDelay: 0 },
+        slots: { default: '<button>触发按钮</button>' },
+        attachTo: document.body,
+      });
+
+      await wrapper.trigger('focusin');
+      await wrapper.trigger('mouseenter');
+      await wrapper.trigger('mouseleave');
+      await nextTick();
+
+      expect(document.querySelector('.ex-tooltip__popper')).toBeTruthy();
+
+      await wrapper.trigger('focusout');
+      await nextTick();
+      expect(document.querySelector('.ex-tooltip__popper')).toBeFalsy();
+    });
+
+    it('aria-describedby 应该落在真实触发按钮上', async () => {
+      const wrapper = mount(ExTooltip, {
+        props: { content: '提示内容' },
+        slots: { default: '<button class="real-trigger">触发按钮</button>' },
+        attachTo: document.body,
+      });
+
+      await wrapper.trigger('mouseenter');
+      await nextTick();
+      const button = wrapper.find('.real-trigger');
+      const tooltip = document.querySelector<HTMLElement>('[role="tooltip"]')!;
+
+      expect(button.attributes('aria-describedby')).toBe(tooltip.id);
+      expect(wrapper.attributes('aria-describedby')).toBeUndefined();
     });
   });
 
@@ -360,8 +450,29 @@ describe('ExTooltip', () => {
       await nextTick();
 
       const popper = document.querySelector('.ex-tooltip__popper') as HTMLElement;
-      // z-index 通过 CSS 变量体系下发（--ex-z-tooltip 参与 calc 计算）
-      expect(popper?.style.getPropertyValue('--ex-z-tooltip')).toBe('3000');
+      expect(popper.style.zIndex).toBe('3000');
+    });
+
+    it('Teleport 浮层继承 ConfigProvider 的语义层级和效果开关', async () => {
+      const wrapper = mount(ExConfigProvider, {
+        attachTo: document.body,
+        props: { zIndex: 2400, neonEffect: false, animation: false },
+        slots: {
+          default: () =>
+            h(
+              ExTooltip,
+              { modelValue: true, content: '提示内容' },
+              { default: () => h('button', '触发按钮') }
+            ),
+        },
+      });
+      await nextTick();
+
+      const popper = document.querySelector<HTMLElement>('.ex-tooltip__popper')!;
+      expect(popper.style.zIndex).toBe('2490');
+      expect(popper.classList).toContain('ex-no-neon');
+      expect(popper.classList).toContain('ex-no-animation');
+      wrapper.unmount();
     });
   });
 
@@ -442,7 +553,7 @@ describe('ExTooltip', () => {
         },
       });
 
-      const exposed = wrapper.vm as any;
+      const exposed = wrapper.vm as unknown as ExTooltipExposed;
       expect(exposed.show).toBeDefined();
       expect(exposed.hide).toBeDefined();
       expect(exposed.updatePosition).toBeDefined();

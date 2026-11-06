@@ -4,79 +4,81 @@
     :class="itemClasses"
     :style="itemStyles"
   >
-    <!-- 面板头部 -->
     <div
-      :id="`ex-collapse-header-${name}`"
-      class="ex-collapse-item__header"
+      class="ex-collapse-item__header-row"
       :class="{ 'is-disabled': isDisabled }"
-      role="button"
-      :tabindex="isDisabled ? -1 : 0"
-      :aria-expanded="isActive"
-      :aria-controls="`ex-collapse-content-${name}`"
-      :aria-disabled="isDisabled"
-      :aria-label="ariaLabel || title"
-      @click="handleClick"
-      @keydown.enter="handleClick"
-      @keydown.space.prevent="handleClick"
     >
-      <!-- 左侧图标 -->
-      <div
-        v-if="showArrow && expandIconPosition === 'left'"
-        class="ex-collapse-item__arrow ex-collapse-item__arrow--left"
-        :class="{ 'is-active': isActive }"
+      <!-- 切换区使用原生按钮，避免手工模拟键盘和禁用语义。 -->
+      <button
+        :id="headerId"
+        type="button"
+        class="ex-collapse-item__header"
+        :disabled="isDisabled"
+        :tabindex="isDisabled ? -1 : 0"
+        :aria-expanded="isActive"
+        :aria-controls="contentId"
+        :aria-label="ariaLabel"
+        @click="handleClick"
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <span
+          v-if="showArrow && expandIconPosition === 'left'"
+          class="ex-collapse-item__arrow ex-collapse-item__arrow--left"
+          :class="{ 'is-active': isActive }"
+          aria-hidden="true"
         >
-          <path
-            d="M4 6L8 10L12 6"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </div>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            focusable="false"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 6L8 10L12 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
 
-      <!-- 标题插槽 -->
-      <div class="ex-collapse-item__title">
-        <slot name="title">
-          {{ title }}
-        </slot>
-      </div>
+        <span class="ex-collapse-item__title">
+          <slot name="title">
+            {{ title }}
+          </slot>
+        </span>
 
-      <!-- 右侧图标 -->
-      <div
-        v-if="showArrow && expandIconPosition === 'right'"
-        class="ex-collapse-item__arrow ex-collapse-item__arrow--right"
-        :class="{ 'is-active': isActive }"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <span
+          v-if="showArrow && expandIconPosition === 'right'"
+          class="ex-collapse-item__arrow ex-collapse-item__arrow--right"
+          :class="{ 'is-active': isActive }"
+          aria-hidden="true"
         >
-          <path
-            d="M4 6L8 10L12 6"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </div>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            focusable="false"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 6L8 10L12 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
 
-      <!-- 额外内容插槽 -->
+      <!-- 额外操作与切换按钮并列，允许安全放置链接或按钮。 -->
       <div
         v-if="$slots.extra"
         class="ex-collapse-item__extra"
-        @click.stop
       >
         <slot name="extra" />
       </div>
@@ -92,10 +94,10 @@
     >
       <div
         v-show="isActive"
-        :id="`ex-collapse-content-${name}`"
+        :id="contentId"
         class="ex-collapse-item__wrap"
         role="region"
-        :aria-labelledby="`ex-collapse-header-${name}`"
+        :aria-labelledby="headerId"
       >
         <div class="ex-collapse-item__content">
           <slot />
@@ -107,8 +109,9 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, inject, ref } from 'vue';
-import type { ExCollapseItemProps, ExCollapseItemExposed, CollapseItemName } from './types';
+import { computed, getCurrentInstance, inject, onBeforeUnmount, ref, useId, watch } from 'vue';
+import type { ExCollapseItemProps, ExCollapseItemExposed } from './types';
+import { collapseContextKey } from './context';
 
 defineOptions({
   name: 'ExCollapseItem',
@@ -119,27 +122,32 @@ const props = withDefaults(defineProps<ExCollapseItemProps>(), {
   showArrow: true,
 });
 
-// Refs
+// 元素引用与 ARIA 关联标识。
 const itemRef = ref<HTMLDivElement>();
+const itemId = `ex-collapse-${useId()}`;
+const headerId = `${itemId}-header`;
+const contentId = `${itemId}-content`;
 
-// 注入父组件的上下文
-const collapseContext = inject<{
-  activeNames: { value: CollapseItemName[] };
-  accordion: { value: boolean };
-  disabled: { value: boolean };
-  expandIconPosition: { value: 'left' | 'right' };
-  isActive: (name: CollapseItemName) => boolean;
-  handleItemClick: (name: CollapseItemName) => void;
-}>('exCollapse', {
-  activeNames: { value: [] },
-  accordion: { value: false },
-  disabled: { value: false },
-  expandIconPosition: { value: 'left' },
-  isActive: () => false,
-  handleItemClick: () => {},
-});
+const collapseContext = inject(collapseContextKey, null);
+if (!collapseContext) {
+  throw new Error('ExCollapseItem 必须作为 ExCollapse 的子组件使用');
+}
+const instance = getCurrentInstance();
+if (!instance) {
+  throw new Error('ExCollapseItem 初始化失败');
+}
 
-// 计算属性
+collapseContext.registerItem(props.name, instance.uid);
+watch(
+  () => props.name,
+  (name, previousName) => {
+    collapseContext.registerItem(name, instance.uid);
+    collapseContext.unregisterItem(previousName, instance.uid);
+  }
+);
+onBeforeUnmount(() => collapseContext.unregisterItem(props.name, instance.uid));
+
+// 运行时状态由父容器统一管理。
 const isActive = computed(() => collapseContext.isActive(props.name));
 const isDisabled = computed(() => props.disabled || collapseContext.disabled.value);
 const expandIconPosition = computed(() => collapseContext.expandIconPosition.value);
@@ -161,23 +169,19 @@ const itemStyles = computed(() => {
   return props.style;
 });
 
-// 方法
 const handleClick = () => {
   if (isDisabled.value) return;
   collapseContext.handleItemClick(props.name);
 };
 
-const toggle = () => {
-  if (isDisabled.value) return;
-  collapseContext.handleItemClick(props.name);
-};
+const toggle = handleClick;
 
 // 动画钩子
 const onEnter = (el: Element) => {
   const element = el as HTMLElement;
   element.style.height = '0';
   element.style.overflow = 'hidden';
-  // 强制重排
+  // 读取布局前强制刷新起始高度，确保浏览器创建过渡帧。
   void element.offsetHeight;
   element.style.height = `${element.scrollHeight}px`;
 };
@@ -192,7 +196,7 @@ const onLeave = (el: Element) => {
   const element = el as HTMLElement;
   element.style.height = `${element.scrollHeight}px`;
   element.style.overflow = 'hidden';
-  // 强制重排
+  // 读取布局前强制刷新起始高度，确保浏览器创建过渡帧。
   void element.offsetHeight;
   element.style.height = '0';
 };
@@ -203,8 +207,7 @@ const onAfterLeave = (el: Element) => {
   element.style.overflow = '';
 };
 
-// 暴露的方法
-const getElement = () => itemRef.value || null;
+const getElement = () => itemRef.value ?? null;
 
 defineExpose<ExCollapseItemExposed>({
   getElement,

@@ -45,6 +45,10 @@ export interface ExCardProps {
   footerStyle?: string | Record<string, string | number>;
   /** 无障碍标签 */
   ariaLabel?: string;
+  /** 点击监听器作为属性参与响应式更新，保持 @click 的使用方式。 */
+  onClick?: ((event: MouseEvent) => void) | Array<(event: MouseEvent) => void>;
+  /** 单次点击仍由 Vue 的事件分发器控制。 */
+  onClickOnce?: ((event: MouseEvent) => void) | Array<(event: MouseEvent) => void>;
 }
 
 /**

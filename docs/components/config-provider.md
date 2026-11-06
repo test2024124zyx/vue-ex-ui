@@ -1,10 +1,12 @@
 # ConfigProvider 全局配置
 
-为组件提供统一的全局化配置，包括主题、语言、尺寸等。ConfigProvider 使用 Vue 的 provide/inject 机制，为所有子组件提供配置上下文。
+为组件提供统一的主题、语言、尺寸与浮层层级。ConfigProvider 使用 Vue 的
+provide/inject 机制隔离子树配置；默认包装器使用 `display: contents`，不会额外占满父容器
+或改变 Flex/Grid 子项关系。
 
 <script setup>
 import { ref } from 'vue'
-const themelist = ['neon-blue','neon-pink','dark','matrix','light']
+const themelist = ['neon-blue', 'light']
 const current_theme = ref(0)
 const current_size = ref(0)
 const sizelist = ['small','medium','large']
@@ -33,6 +35,7 @@ const changesize = () => {
 
 在应用的最外层使用 ConfigProvider 包裹，所有子组件都会继承配置。
 
+::: raw
 <div class="demo-container">
 <ExPanel>
 <template #extra>
@@ -53,15 +56,25 @@ const changesize = () => {
   </ExConfigProvider>
 </ExPanel>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExConfigProvider theme="neon-blue" locale="zh-CN" size="medium">
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    size="medium"
+  >
     <ExButton type="primary">主要按钮</ExButton>
     <ExButton type="success">成功按钮</ExButton>
     <ExButton type="warning">警告按钮</ExButton>
   </ExConfigProvider>
-  <ExConfigProvider theme="high-contrast" size="small">
+  <ExConfigProvider
+    theme="light"
+    size="small"
+  >
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
       <ExButton type="primary">主要按钮</ExButton>
       <ExButton type="success">成功按钮</ExButton>
@@ -72,18 +85,18 @@ const changesize = () => {
 </template>
 ```
 
+:::
+
 ::: tip 提示
 ConfigProvider 会自动将配置传递给所有子组件，无需手动传递 props。
 :::
 
 ## 国际化（i18n）
 
-ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方式完成初始化。
+ExUI 默认提供轻量中英文翻译。需要 App 级语言状态或自定义文案时，安装
+`createLocaleProvider()`；每个 App 的 composer 相互隔离。
 
-- 推荐方式：使用 ExUI 提供的 `createLocaleProvider`
-- 手动方式：自行创建 `createI18n` 并注入 ExUI 的语言包
-
-### 一、快速开始（推荐）
+### App 级语言插件
 
 ```ts
 import { createApp } from 'vue';
@@ -104,42 +117,46 @@ app.use(i18nProvider);
 app.mount('#app');
 ```
 
-### 二、手动集成 vue-i18n
+未安装可选的 `vue-i18n` 时，上述插件自动保留轻量实现；安装后只会在当前 App 内创建 ExUI
+私有的增强翻译器，不会异步调用 `app.use()`，也不会覆盖另一个 App 或模块级 `setLocale()`
+状态。它不向宿主暴露 vue-i18n 注入；宿主仍须自行 `app.use(i18n)`，并将同一个响应式语言状态
+传给 vue-i18n 与 `ExConfigProvider.locale`。
+
+### 编程式服务继承配置
+
+完整安装 ExUI 或单独安装服务组件后，`app.config.globalProperties` 上的 `$message`、
+`$notification`、`$loadingBar` 都是当前 App 独享的实例。组件 `setup()` 内需要继承最近的
+ConfigProvider（包括主题、语言、z-index）时，使用对应 hook：
 
 ```ts
-import { createApp } from 'vue';
-import App from './App.vue';
-import { createI18n } from 'vue-i18n';
-import { enUS, zhCN } from 'vue-ex-ui';
+import {
+  useLoadingBarService,
+  useLoadingService,
+  useMessageService,
+  useNotificationService,
+} from 'vue-ex-ui';
 
-const app = createApp(App);
-
-const i18n = createI18n({
-  legacy: false,
-  locale: 'zh-CN',
-  messages: {
-    'en-US': enUS,
-    'zh-CN': zhCN,
-  },
-});
-
-app.use(i18n);
-app.mount('#app');
+const message = useMessageService();
+const notification = useNotificationService();
+const loading = useLoadingService();
+const loadingBar = useLoadingBarService();
 ```
+
+这些 hook 在同一 ConfigProvider 内复用服务，并在 Provider 卸载时清理 DOM 与计时器。
+直接导入的 `message` / `notification` / `loadingBar` 是 setup 外使用的模块级便捷单例，不会
+猜测某个 App 的上下文。
 
 ### 组件中使用
 
 ```ts
-// 方式A：vue-i18n 原生 API
-import { useI18n } from 'vue-i18n';
-const { t, locale } = useI18n();
+// ExUI API（未安装 vue-i18n 时自动使用内置翻译）
+import { useI18n as useExI18n, useLocale } from 'vue-ex-ui';
+const exI18n = useExI18n();
+const { t: translateMenu, locale } = useLocale('menu');
 
-// 方式B：ExUI 代理的 useI18n（未安装 vue-i18n 时自动降级到内置翻译）
-import { useI18n as useExI18n } from 'vue-ex-ui';
-const { t: tm } = useExI18n();
-
-// 注意：从 'vue-ex-ui' 导入的 useLocale() 返回的是「当前语言」(ComputedRef<SupportedLocale>)，
-// 见下方 Composables，不是作用域翻译函数。
+// 宿主 API 仅在应用入口已自行 app.use(i18n) 后可用
+import { useI18n as useHostI18n } from 'vue-i18n';
+const hostI18n = useHostI18n();
 ```
 
 ---
@@ -148,6 +165,7 @@ const { t: tm } = useExI18n();
 
 通过 `theme` 属性可以切换不同的主题风格。点击按钮查看不同主题效果。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
     <ExButton 
@@ -156,27 +174,6 @@ const { t: tm } = useExI18n();
       @click="theme = 'neon-blue'"
     >
       霓虹蓝
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'neon-pink' ? 'primary' : 'secondary'"
-      @click="theme = 'neon-pink'"
-    >
-      霓虹粉
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'dark' ? 'primary' : 'secondary'"
-      @click="theme = 'dark'"
-    >
-      暗黑
-    </ExButton>
-    <ExButton 
-      size="small"
-      :type="theme === 'matrix' ? 'primary' : 'secondary'"
-      @click="theme = 'matrix'"
-    >
-      矩阵
     </ExButton>
     <ExButton 
       size="small"
@@ -211,6 +208,9 @@ const { t: tm } = useExI18n();
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -229,10 +229,13 @@ const theme = ref('neon-blue');
 </template>
 ```
 
+:::
+
 ## 语言切换
 
 通过 `locale` 属性可以切换界面语言。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -248,11 +251,14 @@ const theme = ref('neon-blue');
       English
     </ExButton>
   </div>
-  
+
   <ExConfigProvider :locale="locale">
     <ExEmpty />
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -268,10 +274,13 @@ const locale = ref('zh-CN');
 </template>
 ```
 
+:::
+
 ## 全局尺寸
 
 通过 `size` 属性可以设置所有组件的默认尺寸。点击按钮查看不同尺寸效果。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px; display: flex; gap: 8px;">
     <ExButton 
@@ -296,7 +305,7 @@ const locale = ref('zh-CN');
       大尺寸
     </ExButton>
   </div>
-  
+
   <ExConfigProvider :size="customSize">
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -318,6 +327,9 @@ const locale = ref('zh-CN');
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -334,10 +346,13 @@ const size = ref('medium');
 </template>
 ```
 
+:::
+
 ## 霓虹效果控制
 
 通过 `neon-effect` 属性可以全局控制霓虹发光效果。禁用后，所有组件的发光效果都会消失。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -372,6 +387,9 @@ const size = ref('medium');
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -388,10 +406,13 @@ const neonEffect = ref(true);
 </template>
 ```
 
+:::
+
 ## 动画控制
 
 通过 `animation` 属性可以全局控制动画效果。禁用后，所有过渡和动画都会被移除。
 
+::: raw
 <div class="demo-container">
   <div style="margin-bottom: 16px;">
     <ExButton 
@@ -423,10 +444,13 @@ const neonEffect = ref(true);
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 无障碍支持
 ConfigProvider 会自动尊重用户的 `prefers-reduced-motion` 设置。如果用户在系统中启用了"减少动画"选项，动画会自动禁用。
 :::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
@@ -443,33 +467,21 @@ const animation = ref(true);
 </template>
 ```
 
-## 自定义命名空间
-
-通过 `namespace` 属性可以自定义 CSS 类名前缀。
-
-<div class="demo-container">
-  <ExConfigProvider namespace="custom">
-    <ExButton type="primary">自定义命名空间按钮</ExButton>
-  </ExConfigProvider>
-</div>
-
-```vue
-<template>
-  <ExConfigProvider namespace="custom">
-    <ExButton type="primary">自定义命名空间按钮</ExButton>
-  </ExConfigProvider>
-</template>
-```
+:::
 
 ## 自定义 z-index
 
 通过 `z-index` 属性可以自定义组件的 z-index 基础值。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider :z-index="2000">
     <ExButton type="primary">z-index 基础值为 2000</ExButton>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -479,10 +491,13 @@ const animation = ref(true);
 </template>
 ```
 
+:::
+
 ## 综合演示
 
 一个完整的示例，展示如何组合使用多个配置选项。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider 
     :theme="customTheme" 
@@ -508,17 +523,10 @@ const animation = ref(true);
               </ExButton>
               <ExButton 
                 size="small"
-                :type="customTheme === 'neon-pink' ? 'primary' : 'secondary'"
-                @click="customTheme = 'neon-pink'"
+                :type="customTheme === 'light' ? 'primary' : 'secondary'"
+                @click="customTheme = 'light'"
               >
-                霓虹粉
-              </ExButton>
-              <ExButton 
-                size="small"
-                :type="customTheme === 'dark' ? 'primary' : 'secondary'"
-                @click="customTheme = 'dark'"
-              >
-                暗黑
+                赛博亮色
               </ExButton>
             </div>
           </div>
@@ -592,15 +600,45 @@ const animation = ref(true);
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 实时预览
 上面的演示是完全交互式的，你可以实时调整配置并查看效果。所有配置都会立即应用到子组件。
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const customTheme = ref('neon-blue');
+const customSize = ref('medium');
+const neonEffect = ref(true);
+const animation = ref(true);
+</script>
+
+<template>
+  <ExConfigProvider
+    :theme="customTheme"
+    :size="customSize"
+    :neon-effect="neonEffect"
+    :animation="animation"
+    locale="zh-CN"
+  >
+    <ExCard type="primary">配置控制面板</ExCard>
+    <ExCard>效果预览</ExCard>
+  </ExConfigProvider>
+</template>
+```
+
 :::
 
 ## 嵌套使用
 
 ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider theme="neon-blue" size="medium">
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -613,10 +651,10 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
           <ExTag type="primary">外层标签</ExTag>
         </div>
       </div>
-      <ExConfigProvider theme="neon-pink" size="small">
-        <div style="padding: 16px; background: rgba(255, 0, 127, 0.1); border-radius: 8px;">
+      <ExConfigProvider theme="light" size="small">
+        <div style="padding: 16px; background: rgba(22, 104, 220, 0.1); border-radius: 8px;">
           <div style="margin-bottom: 12px; color: var(--ex-color-text-secondary); font-size: 14px;">
-            内层配置：霓虹粉主题 + 小尺寸（覆盖外层）
+            内层配置：赛博亮色主题 + 小尺寸（覆盖外层）
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <ExButton type="primary">内层按钮</ExButton>
@@ -627,23 +665,35 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
     </div>
   </ExConfigProvider>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExConfigProvider theme="neon-blue" size="medium">
+  <ExConfigProvider
+    theme="neon-blue"
+    size="medium"
+  >
     <ExButton type="primary">外层配置</ExButton>
 
-    <ExConfigProvider theme="neon-pink" size="small">
+    <ExConfigProvider
+      theme="light"
+      size="small"
+    >
       <ExButton type="primary">内层配置覆盖</ExButton>
     </ExConfigProvider>
   </ExConfigProvider>
 </template>
 ```
 
+:::
+
 ## 实际应用场景
 
 一个完整的游戏应用示例，展示如何在实际项目中使用 ConfigProvider。
 
+::: raw
 <div class="demo-container">
   <ExConfigProvider theme="neon-blue" locale="zh-CN" size="medium">
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -698,9 +748,28 @@ ConfigProvider 支持嵌套使用，内层配置会覆盖外层配置。
     </div>
   </ExConfigProvider>
 </div>
+:::
 
 ::: tip 应用场景
 这个示例展示了如何在应用中使用 ConfigProvider 来统一管理主题、尺寸等配置。所有组件都会自动继承这些配置，无需手动传递 props。
+:::
+
+::: details 查看示例代码
+
+```vue
+<template>
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    size="medium"
+  >
+    <ExCard type="primary">游戏大厅</ExCard>
+    <ExCard hoverable>统计信息</ExCard>
+    <ExButton type="primary">开始游戏</ExButton>
+  </ExConfigProvider>
+</template>
+```
+
 :::
 
 ## 组合式 API
@@ -711,12 +780,11 @@ ConfigProvider 提供了一系列组合式 API，方便在组件中使用配置�
 <script setup>
 import {
   useConfig,
-  useTheme,
+  useConfigTheme,
   useGlobalSize,
   useComponentSize,
   useNeonEffect,
   useAnimation,
-  useNamespace,
   useZIndex,
 } from 'vue-ex-ui';
 
@@ -724,7 +792,7 @@ import {
 const config = useConfig();
 
 // 获取主题
-const theme = useTheme();
+const theme = useConfigTheme();
 
 // 获取全局尺寸
 const globalSize = useGlobalSize();
@@ -738,52 +806,28 @@ const neonEffect = useNeonEffect();
 // 获取动画开关
 const animation = useAnimation();
 
-// 获取命名空间工具
-const { namespace, b, e, m, em, is } = useNamespace('button');
-
 // 获取 z-index
 const zIndex = useZIndex(10); // 基础值 + 10
 </script>
-```
-
-### useNamespace 示例
-
-`useNamespace` 提供了 BEM 命名规范的工具函数：
-
-```vue
-<script setup>
-import { useNamespace } from 'vue-ex-ui';
-
-const ns = useNamespace('button');
-
-// b() -> 'ex-button'
-// e('icon') -> 'ex-button__icon'
-// m('primary') -> 'ex-button--primary'
-// em('icon', 'left') -> 'ex-button__icon--left'
-// is('disabled') -> 'is-disabled'
-</script>
-
-<template>
-  <button :class="[ns.b(), ns.m('primary'), ns.is('disabled', disabled)]">
-    <span :class="ns.e('icon')">Icon</span>
-    <span :class="ns.e('text')">Text</span>
-  </button>
-</template>
 ```
 
 ## API
 
 ### ConfigProvider Props
 
-| 属性          | 说明                                                                               | 类型                                                                             | 默认值        |
-| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------- |
-| `theme`       | 主题（`'high-contrast'` 为 `'matrix'` 的兼容别名，保留待后续作真无障碍高对比主题） | `'neon-blue' \| 'neon-pink' \| 'dark' \| 'matrix' \| 'light' \| 'high-contrast'` | `'neon-blue'` |
-| `locale`      | 语言                                                                               | `'zh-CN' \| 'en-US'`                                                             | `'en-US'`     |
-| `size`        | 全局组件尺寸                                                                       | `'small' \| 'medium' \| 'large'`                                                 | `'medium'`    |
-| `neon-effect` | 是否启用霓虹效果                                                                   | `boolean`                                                                        | `true`        |
-| `animation`   | 是否启用动画                                                                       | `boolean`                                                                        | `true`        |
-| `namespace`   | CSS 类名前缀                                                                       | `string`                                                                         | `'ex'`        |
-| `z-index`     | z-index 基础值                                                                     | `number`                                                                         | `1000`        |
+未指定 `theme` 时继承父级 Provider，根 Provider 跟随 `setTheme()` 的全局主题。
+`theme-overrides` 接收 `ThemeOverrides` 类型的 `--ex-*` CSS 变量，逐层合并；局部显式值优先。
+这些变量也会传递到组件的 Teleport 浮层，既有 `style` 中的 `--ex-*` 变量同样参与合并。
+
+| 属性              | 说明             | 类型                             | 默认值             |
+| ----------------- | ---------------- | -------------------------------- | ------------------ |
+| `theme`           | 赛博朋克主题     | `'neon-blue' \| 'light'`         | 继承父级或全局主题 |
+| `theme-overrides` | 品牌主题变量     | `ThemeOverrides`                 | `{}`               |
+| `locale`          | 语言             | `'zh-CN' \| 'en-US'`             | `'en-US'`          |
+| `size`            | 全局组件尺寸     | `'small' \| 'medium' \| 'large'` | `'medium'`         |
+| `neon-effect`     | 是否启用霓虹效果 | `boolean`                        | `true`             |
+| `animation`       | 是否启用动画     | `boolean`                        | `true`             |
+| `z-index`         | z-index 基础值   | `number`                         | `1000`             |
 
 ### ConfigProvider Slots
 
@@ -801,12 +845,12 @@ const ns = useNamespace('button');
 function useConfig(): ConfigContext;
 ```
 
-#### useTheme()
+#### useConfigTheme()
 
 获取当前主题。
 
 ```typescript
-function useTheme(): ComputedRef<Theme>;
+function useConfigTheme(): ComputedRef<Theme>;
 ```
 
 #### useLocale()
@@ -851,21 +895,6 @@ function useNeonEffect(): ComputedRef<boolean>;
 function useAnimation(): ComputedRef<boolean>;
 ```
 
-#### useNamespace(block?)
-
-获取命名空间工具（BEM 规范）。
-
-```typescript
-function useNamespace(block?: string): {
-  namespace: ComputedRef<string>;
-  b: ComputedRef<string>;
-  e: (element: string) => ComputedRef<string>;
-  m: (modifier: string) => ComputedRef<string>;
-  em: (element: string, modifier: string) => ComputedRef<string>;
-  is: (name: string, state?: boolean | Ref<boolean>) => ComputedRef<string>;
-};
-```
-
 #### useZIndex(offset?)
 
 获取 z-index 值。
@@ -883,7 +912,12 @@ function useZIndex(offset?: number): ComputedRef<number>;
 ```vue
 <!-- App.vue -->
 <template>
-  <ExConfigProvider theme="neon-blue" locale="zh-CN" :neon-effect="true" :animation="true">
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
+    :neon-effect="true"
+    :animation="true"
+  >
     <RouterView />
   </ExConfigProvider>
 </template>
@@ -901,8 +935,8 @@ function useZIndex(offset?: number): ComputedRef<number>;
       <ExButton type="primary">主要按钮</ExButton>
     </div>
 
-    <!-- 特定区域使用霓虹粉主题 -->
-    <ExConfigProvider theme="neon-pink">
+    <!-- 特定区域使用赛博亮色主题 -->
+    <ExConfigProvider theme="light">
       <div class="special-section">
         <ExButton type="primary">特殊按钮</ExButton>
       </div>
@@ -935,8 +969,7 @@ if (savedTheme) {
   <ExConfigProvider :theme="theme">
     <div class="theme-switcher">
       <ExButton @click="theme = 'neon-blue'">霓虹蓝</ExButton>
-      <ExButton @click="theme = 'neon-pink'">霓虹粉</ExButton>
-      <ExButton @click="theme = 'dark'">暗黑</ExButton>
+      <ExButton @click="theme = 'light'">赛博亮色</ExButton>
     </div>
 
     <RouterView />
@@ -956,7 +989,7 @@ ConfigProvider 会自动处理无障碍相关的配置：
 <template>
   <ExConfigProvider
     :animation="!prefersReducedMotion"
-    :theme="prefersDarkMode ? 'dark' : 'neon-blue'"
+    :theme="prefersDarkMode ? 'neon-blue' : 'light'"
   >
     <App />
   </ExConfigProvider>
@@ -975,11 +1008,11 @@ ConfigProvider 支持通过 CSS 变量进行主题定制：
   --ex-color-bg-primary: #0a0a0a;
 }
 
-/* 自定义霓虹粉主题 */
-[data-theme='neon-pink'] {
-  --ex-color-primary: #ff007f;
-  --ex-color-secondary: #00f0ff;
-  --ex-color-bg-primary: #0a0a0a;
+/* 自定义赛博亮色主题 */
+[data-theme='light'] {
+  --ex-color-primary: #1668dc;
+  --ex-color-secondary: #08979c;
+  --ex-color-bg-primary: #f4f7fb;
 }
 ```
 

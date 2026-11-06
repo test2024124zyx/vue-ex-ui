@@ -1,75 +1,133 @@
-// ExEllipsis 文本省略组件样式
-// 游戏主题风格 - ClutchZone
-
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/performance' as *;
-@use '../../styles/component-mixins' as *;
 
 .ex-ellipsis {
+  --ex-ellipsis-control-hit-size: var(--ex-button-touch-target, 44px);
+  --ex-ellipsis-control-visual-inset: 10px;
+
   position: relative;
   width: 100%;
-  font-family: var(--ex-font-secondary);
+  min-width: 0;
+  font-family: var(--ex-ellipsis-font-family, var(--ex-font-secondary));
   color: var(--ex-color-text-primary);
 
-  // ============================================================================
-  // 内容区域
-  // ============================================================================
-  
+  :deep(.ex-ellipsis__tooltip) {
+    display: block;
+    width: 100%;
+  }
+
+  :deep(.ex-ellipsis__tooltip:focus-visible) {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
+    border-radius: var(--ex-radius-base);
+  }
+
   &__content {
+    box-sizing: border-box;
     line-height: var(--ex-leading-relaxed);
-    word-break: break-word;
-    @include safe-transition(all);
+    overflow-wrap: anywhere;
 
     &.is-ellipsis {
       display: -webkit-box;
-      -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--ex-ellipsis-lines, 1);
     }
 
     &.is-expanded {
       display: block;
+      overflow: visible;
       -webkit-line-clamp: unset;
     }
   }
 
-  // ============================================================================
-  // 操作按钮区域
-  // ============================================================================
-  
   &__actions {
-    margin-top: var(--ex-spacing-2);
     display: flex;
     justify-content: flex-start;
+    margin-top: var(--ex-spacing-2);
+  }
+
+  &--control-inline.ex-ellipsis--has-control &__content {
+    // 为最后一行的可操作区域预留完整命中区，避免文字与按钮发生重叠。
+    padding-inline-end: calc(var(--ex-ellipsis-control-hit-size) + var(--ex-spacing-1));
+  }
+
+  &__inline-control {
+    position: absolute;
+    inset-inline-end: 0;
+    bottom: 0;
+    display: inline-flex;
+    box-sizing: border-box;
+    width: var(--ex-ellipsis-control-hit-size);
+    height: var(--ex-ellipsis-control-hit-size);
+    min-width: var(--ex-ellipsis-control-hit-size);
+    min-height: var(--ex-ellipsis-control-hit-size);
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--ex-color-primary);
+    background: transparent;
+    border: 0;
+    border-radius: var(--ex-radius-full);
+    cursor: pointer;
+    touch-action: manipulation;
+    isolation: isolate;
+    transition:
+      color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+      transform var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+
+    &::before {
+      position: absolute;
+      inset: var(--ex-ellipsis-control-visual-inset);
+      z-index: 0;
+      box-sizing: border-box;
+      content: '';
+      background: var(--ex-color-bg-secondary);
+      border: 1px solid var(--ex-color-primary-alpha-30);
+      border-radius: var(--ex-radius-full);
+      pointer-events: none;
+      transition:
+        background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+        border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+        box-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
+    }
+
+    .ex-ellipsis__btn-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-border-focus);
+      outline-offset: 2px;
+    }
   }
 
   &__btn {
     display: inline-flex;
     align-items: center;
     gap: var(--ex-spacing-1);
+    min-width: var(--ex-button-touch-target, 44px);
+    min-height: var(--ex-button-touch-target, 44px);
     padding: var(--ex-spacing-1) var(--ex-spacing-3);
+    font-size: var(--ex-text-sm);
+    font-weight: var(--ex-font-medium);
+    color: var(--ex-color-neon-blue-500);
+    cursor: pointer;
     background: transparent;
     border: 1px solid var(--ex-color-neon-blue-500);
     border-radius: var(--ex-radius-base);
-    color: var(--ex-color-neon-blue-500);
-    font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-medium);
-    cursor: pointer;
     outline: none;
-    @include safe-transition(all);
-    @include optimized-neon-glow('blue', 'sm');
-
-    &:hover {
-      border-color: var(--ex-color-neon-pink-500);
-      color: var(--ex-color-neon-pink-500);
-      @include optimized-neon-glow('pink', 'md');
-      transform: translateY(-1px);
-    }
+    box-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-20);
+    touch-action: manipulation;
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
 
     &:active {
       transform: translateY(0);
-      @include optimized-neon-glow('pink', 'sm');
     }
 
     &:focus-visible {
@@ -90,12 +148,13 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    @include safe-transition(transform);
+    transition: transform var(--ex-motion-duration-base) var(--ex-motion-ease-out);
 
-    svg {
+    svg,
+    :deep(.ex-icon) {
+      display: block;
       width: 100%;
       height: 100%;
-      display: block;
     }
 
     &.is-expanded {
@@ -103,29 +162,10 @@
     }
   }
 
-  // ============================================================================
-  // 状态样�?
-  // ============================================================================
-  
-  &--expanded {
-    .ex-ellipsis__content {
-      animation: expand-in 0.3s var(--ex-motion-ease-out);
-    }
-  }
-
-  &--expandable {
-    .ex-ellipsis__content {
-      cursor: default;
-    }
-  }
-
-  // ============================================================================
-  // 响应式设�?
-  // ============================================================================
-  
   @include mobile {
+    --ex-ellipsis-control-visual-inset: 8px;
+
     &__btn {
-      min-height: 36px;
       padding: var(--ex-spacing-2) var(--ex-spacing-4);
       font-size: var(--ex-text-base);
     }
@@ -134,49 +174,64 @@
       width: 18px;
       height: 18px;
     }
-  }
 
-  // ============================================================================
-  // 无障碍支�?
-  // ============================================================================
-  
-  @media (prefers-reduced-motion: reduce) {
-    &__content,
-    &__btn,
-    &__btn-icon {
-      transition: none;
-      animation: none;
-    }
-
-    &__btn:hover {
-      transform: none;
-    }
-  }
-
-  // 高对比度模式
-  @media (prefers-contrast: high) {
-    &__btn {
-      border-width: 2px;
-
-      &:focus-visible {
-        outline-width: 3px;
-      }
+    &--control-inline.ex-ellipsis--has-control .ex-ellipsis__content {
+      padding-inline-end: calc(var(--ex-ellipsis-control-hit-size) + var(--ex-spacing-1));
     }
   }
 }
 
-// ============================================================================
-// 动画定义
-// ============================================================================
-
-@keyframes expand-in {
-  from {
-    opacity: 0.8;
-    max-height: 0;
+@media (hover: hover) {
+  .ex-ellipsis__btn:hover {
+    color: var(--ex-color-neon-pink-500);
+    border-color: var(--ex-color-neon-pink-500);
+    box-shadow: 0 0 12px var(--ex-color-neon-pink-alpha-30);
+    transform: translateY(-1px);
   }
-  to {
-    opacity: 1;
-    max-height: 1000px;
+
+  .ex-ellipsis__inline-control:hover {
+    color: var(--ex-color-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .ex-ellipsis__inline-control:hover::before {
+    background: var(--ex-color-primary-alpha-10);
+    border-color: var(--ex-color-primary);
+    box-shadow: 0 0 10px var(--ex-color-primary-alpha-30);
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ex-ellipsis__btn,
+  .ex-ellipsis__inline-control,
+  .ex-ellipsis__btn-icon,
+  .ex-ellipsis__inline-control::before {
+    transition: none;
+  }
+
+  .ex-ellipsis__btn:hover,
+  .ex-ellipsis__inline-control:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-ellipsis__btn,
+  .ex-ellipsis__inline-control::before {
+    border-width: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .ex-ellipsis__btn {
+    color: ButtonText;
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .ex-ellipsis__inline-control::before {
+    background: ButtonFace;
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+}

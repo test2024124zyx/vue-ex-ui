@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExAlert from '../../../src/components/alert/ExAlert.vue';
 
+interface AlertExposed {
+  close: () => void;
+}
+
 describe('ExAlert', () => {
   describe('Rendering', () => {
     it('renders correctly with default props', () => {
@@ -196,7 +200,7 @@ describe('ExAlert', () => {
       expect(wrapper.find('.custom-close').exists()).toBe(true);
     });
 
-    it('supports keyboard close (Enter)', async () => {
+    it('uses a native button so keyboard activation follows browser semantics', () => {
       const wrapper = mount(ExAlert, {
         props: {
           title: 'Alert',
@@ -205,12 +209,11 @@ describe('ExAlert', () => {
       });
 
       const closeBtn = wrapper.find('.ex-alert__close');
-      await closeBtn.trigger('keydown.enter');
-
-      expect(wrapper.emitted('close')).toBeTruthy();
+      expect(closeBtn.element.tagName).toBe('BUTTON');
+      expect(closeBtn.attributes('type')).toBe('button');
     });
 
-    it('supports keyboard close (Space)', async () => {
+    it('close 事件始终提供 MouseEvent 而不是伪造的类型断言', async () => {
       const wrapper = mount(ExAlert, {
         props: {
           title: 'Alert',
@@ -218,10 +221,9 @@ describe('ExAlert', () => {
         },
       });
 
-      const closeBtn = wrapper.find('.ex-alert__close');
-      await closeBtn.trigger('keydown.space');
+      await wrapper.find('.ex-alert__close').trigger('click');
 
-      expect(wrapper.emitted('close')).toBeTruthy();
+      expect(wrapper.emitted('close')?.[0]?.[0]).toBeInstanceOf(MouseEvent);
     });
   });
 
@@ -320,7 +322,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       expect(typeof vm.close).toBe('function');
     });
 
@@ -331,7 +333,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       vm.close();
       await wrapper.vm.$nextTick();
 
@@ -393,8 +395,8 @@ describe('ExAlert', () => {
       });
 
       const closeBtn = wrapper.find('.ex-alert__close');
-      expect(closeBtn.attributes('tabindex')).toBe('0');
-      expect(closeBtn.attributes('role')).toBe('button');
+      expect(closeBtn.element.tagName).toBe('BUTTON');
+      expect(closeBtn.attributes('type')).toBe('button');
     });
   });
 
@@ -419,7 +421,7 @@ describe('ExAlert', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as AlertExposed;
       vm.close();
       await wrapper.vm.$nextTick();
 

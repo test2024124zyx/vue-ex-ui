@@ -2,6 +2,8 @@
 // 性能优化相关的样式和混合器
 
 @use 'sass:map';
+@use 'sass:meta';
+@use 'sass:string';
 @use 'tokens' as *;
 
 // ============================================================================
@@ -26,8 +28,44 @@
 }
 
 // 条件性应用过渡（仅在用户允许时）
+@function _is-safe-transition-duration($value) {
+  // 数值与名称中含 duration 的 CSS 变量均视为时长，其余参数兼容为属性列表。
+  @if meta.type-of($value) == 'number' {
+    @return true;
+  }
+
+  @return string.index(meta.inspect($value), 'duration') != null;
+}
+
+// 将 all 收敛为实际会变化的属性，避免性能敏感组件触发隐式布局动画。
+@function _resolve-safe-transition-properties($properties) {
+  @if $properties == all {
+    @return (background-color, border-color, color, opacity, transform, box-shadow, filter);
+  }
+
+  @return $properties;
+}
+
 @mixin safe-transition($properties: all, $duration: 200ms, $timing: ease) {
-  transition: $properties $duration $timing;
+  $transition-properties: _resolve-safe-transition-properties($properties);
+  $resolved-properties: $transition-properties;
+  $resolved-duration: $duration;
+  $resolved-timing: $timing;
+
+  @if not _is-safe-transition-duration($duration) {
+    $resolved-properties: ($transition-properties, $duration);
+    $resolved-duration: 200ms;
+
+    @if $timing != ease {
+      $resolved-properties: ($transition-properties, $duration, $timing);
+      $resolved-timing: ease;
+    }
+  }
+
+  // 长写法同时支持单属性与属性列表，避免第二个属性被误当成持续时间。
+  transition-property: $resolved-properties;
+  transition-duration: $resolved-duration;
+  transition-timing-function: $resolved-timing;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -79,12 +117,9 @@
   }
 }
 
-// GPU 加速优化
+// 合成提示不覆盖业务变换，也不强制为静态元素创建三维上下文。
 @mixin gpu-accelerate {
-  transform: translateZ(0);
   will-change: transform;
-  backface-visibility: hidden;
-  perspective: 1000px;
 }
 
 // 移除 GPU 加速（动画结束后）
@@ -98,10 +133,10 @@
   contain-intrinsic-size: auto 500px; // 估计高度
 }
 
-// 图片懒加载优化
+// 图片延迟渲染优化；网络懒加载必须由原生 loading/decoding 属性负责。
 @mixin lazy-image {
-  loading: lazy;
-  decoding: async;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
 }
 
 // 字体加载优化
@@ -307,88 +342,4 @@
   will-change: auto;
 
   @include respect-motion-preference;
-}
-
-// ============================================================================
-// 性能优化工具类
-// ============================================================================
-
-// 性能优化的容器
-.ex-performance-container {
-  @include content-visibility(auto);
-  @include prevent-layout-shift;
-}
-
-// 性能优化的列表
-.ex-performance-list {
-  @include virtual-scroll-container;
-
-  > * {
-    @include virtual-list-item;
-  }
-}
-
-// 性能优化的图片
-.ex-performance-image {
-  @include lazy-image;
-  content-visibility: auto;
-}
-
-// 性能优化的文本
-.ex-performance-text {
-  @include optimized-text-rendering;
-}
-
-// GPU 加速的元素
-.ex-gpu-accelerated {
-  @include gpu-accelerate;
-}
-
-// 低端设备隐藏
-.ex-hide-on-low-end {
-  @include low-end-device {
-    display: none !important;
-  }
-}
-
-// 高端设备显示
-.ex-show-on-high-end {
-  display: none;
-
-  @include high-end-device {
-    display: block;
-  }
-}
-
-// 禁用动画类
-.ex-no-animation {
-  animation: none !important;
-  transition: none !important;
-}
-
-// 禁用效果类
-.ex-no-effects {
-  box-shadow: none !important;
-  text-shadow: none !important;
-  backdrop-filter: none !important;
-  filter: none !important;
-}
-
-// ============================================================================
-// 性能监控辅助
-// ============================================================================
-
-// 标记性能关键元素
-[data-performance-critical] {
-  contain: layout style;
-}
-
-// 标记可延迟加载元素
-[data-performance-defer] {
-  content-visibility: auto;
-}
-
-// 标记静态元素（不会改变）
-[data-performance-static] {
-  contain: strict;
 }

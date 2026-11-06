@@ -2,7 +2,7 @@
 @use '../../styles/tokens' as *;
 
 // ============================================================================
-// Skeleton 骨架屏组件样�?- 游戏主题
+// Skeleton 骨架屏组件样式 - 游戏主题
 // ============================================================================
 
 .ex-skeleton {
@@ -10,7 +10,7 @@
   display: block;
   width: 100%;
 
-  // 屏幕阅读器专用文�?
+  // 屏幕阅读器专用文本
   &__sr-only {
     @include sr-only;
   }
@@ -31,14 +31,14 @@
   // 头像
   &__avatar {
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
     background: linear-gradient(
       135deg,
       var(--ex-color-neon-blue-alpha-10),
       var(--ex-color-neon-pink-alpha-10)
     );
     border: 1px solid var(--ex-color-neon-blue-alpha-20);
-    overflow: hidden;
-    position: relative;
 
     // 形状
     &--circle {
@@ -72,8 +72,10 @@
 
   // 标题
   &__title {
-    height: 20px;
+    position: relative;
+    overflow: hidden;
     width: 40%;
+    height: 20px;
     margin-bottom: var(--ex-spacing-3);
     background: linear-gradient(
       135deg,
@@ -82,8 +84,6 @@
     );
     border: 1px solid var(--ex-color-neon-blue-alpha-20);
     border-radius: var(--ex-radius-sm);
-    position: relative;
-    overflow: hidden;
   }
 
   // 段落
@@ -93,10 +93,12 @@
     gap: var(--ex-spacing-2);
   }
 
-  // 段落�?
+  // 段落行
   &__row {
-    height: 16px;
+    position: relative;
+    overflow: hidden;
     width: 100%;
+    height: 16px;
     background: linear-gradient(
       135deg,
       var(--ex-color-neon-blue-alpha-10),
@@ -104,8 +106,6 @@
     );
     border: 1px solid var(--ex-color-neon-blue-alpha-15);
     border-radius: var(--ex-radius-sm);
-    position: relative;
-    overflow: hidden;
 
     &:last-child {
       width: 60%;
@@ -114,6 +114,8 @@
 
   // 单个元素
   &__element {
+    position: relative;
+    overflow: hidden;
     background: linear-gradient(
       135deg,
       var(--ex-color-neon-blue-alpha-10),
@@ -121,27 +123,25 @@
     );
     border: 1px solid var(--ex-color-neon-blue-alpha-20);
     border-radius: var(--ex-radius-md);
-    position: relative;
-    overflow: hidden;
 
     &--text {
-      height: 16px;
       width: 100%;
+      height: 16px;
     }
 
     &--image {
-      height: 200px;
       width: 100%;
+      height: 200px;
     }
 
     &--button {
-      height: 40px;
       width: 120px;
+      height: 40px;
     }
 
     &--card {
-      height: 300px;
       width: 100%;
+      height: 300px;
     }
   }
 
@@ -166,12 +166,12 @@
     .ex-skeleton__row,
     .ex-skeleton__element {
       &::after {
-        content: '';
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
+        content: '';
         background: linear-gradient(
           90deg,
           transparent,
@@ -203,8 +203,8 @@
 
   &--title {
     .ex-skeleton__title {
-      height: 24px;
       width: 50%;
+      height: 24px;
     }
   }
 
@@ -223,8 +223,8 @@
 
   &--button {
     .ex-skeleton__element {
-      height: 40px;
       width: 120px;
+      height: 40px;
       border-radius: var(--ex-radius-base);
     }
   }
@@ -250,8 +250,8 @@
 
   &--article {
     .ex-skeleton__title {
-      height: 32px;
       width: 70%;
+      height: 32px;
       margin-bottom: var(--ex-spacing-4);
     }
 
@@ -329,7 +329,7 @@
 }
 
 // ============================================================================
-// 动画关键�?- 游戏主题
+// 动画关键帧 - 游戏主题
 // ============================================================================
 
 @keyframes skeleton-pulse {
@@ -338,6 +338,7 @@
     opacity: 1;
     box-shadow: 0 0 10px var(--ex-color-neon-blue-alpha-20);
   }
+
   50% {
     opacity: 0.6;
     box-shadow: 0 0 20px var(--ex-color-neon-pink-alpha-30);
@@ -348,6 +349,7 @@
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -396,7 +398,7 @@
 }
 
 // ============================================================================
-// 无障碍支�?
+// 无障碍支持
 // ============================================================================
 
 @media (prefers-reduced-motion: reduce) {
@@ -418,7 +420,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-skeleton {
     &__avatar,
     &__title,
@@ -436,7 +438,9 @@
 
 .ex-skeleton-fade-enter-active,
 .ex-skeleton-fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 .ex-skeleton-fade-enter-from {
@@ -448,4 +452,3 @@
   opacity: 0;
   transform: translateY(10px);
 }
-

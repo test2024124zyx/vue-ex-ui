@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress';
+import { docsDemoPlugin } from './demo-server';
 
 export default defineConfig({
   title: 'ExUI',
@@ -20,6 +21,7 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [docsDemoPlugin()],
     css: {
       preprocessorOptions: {
         scss: {
@@ -82,9 +84,11 @@ export default defineConfig({
             { text: '介绍', link: '/guide/' },
             { text: '快速开始', link: '/guide/quickstart' },
             { text: '按需加载', link: '/guide/on-demand' },
+            { text: 'Tree Shaking', link: '/guide/tree-shaking' },
             { text: '可选依赖', link: '/guide/optional-dependencies' },
             { text: '主题定制', link: '/guide/theming' },
             { text: '主题使用指南', link: '/guide/theme-usage' },
+            { text: '主题 API', link: '/guide/theme-api' },
           ],
         },
       ],
@@ -143,6 +147,7 @@ export default defineConfig({
             { text: 'Empty 空状态', link: '/components/empty' },
             { text: 'Progress 进度组件', link: '/components/progress' },
             { text: 'Table 表格', link: '/components/table' },
+            { text: 'Table 高级能力', link: '/components/table-advanced' },
             { text: 'Tabs 选项卡', link: '/components/tabs' },
             { text: 'Panel 面板', link: '/components/panel' },
             { text: 'Code 代码', link: '/components/code' },

@@ -3,16 +3,31 @@
 点击元素，弹出气泡式的确认框。
 
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount } from 'vue'
 
-const confirmLoading = ref(false)
+const SUBMIT_DELAY_MS = 2000
+let submitTimer
+let resolveSubmit
 
-const handleConfirm = () => {
-  confirmLoading.value = true
-  setTimeout(() => {
-    confirmLoading.value = false
-  }, 2000)
+// 模拟提交请求；组件在 Promise 完成前保持打开并显示加载状态。
+const beforeSubmit = () => {
+  // 气泡关闭后再次提交时，先结束上一轮模拟请求。
+  clearTimeout(submitTimer)
+  resolveSubmit?.(false)
+  return new Promise(resolve => {
+    resolveSubmit = resolve
+    submitTimer = setTimeout(() => {
+      submitTimer = undefined
+      resolveSubmit = undefined
+      resolve(true)
+    }, SUBMIT_DELAY_MS)
+  })
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(submitTimer)
+  resolveSubmit?.(false)
+})
 
 const beforeConfirm = () => {
   // 使用浏览器原生确认对话框进行二次确认
@@ -27,11 +42,17 @@ const beforeConfirm = () => {
 
 最简单的用法。
 
+::: raw
+
 <div class="demo-container">
   <ExPopconfirm title="确定要删除这条记录吗？">
     <ExButton type="danger">删除</ExButton>
   </ExPopconfirm>
 </div>
+
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -41,9 +62,13 @@ const beforeConfirm = () => {
 </template>
 ```
 
+:::
+
 ## 不同类型
 
 通过 `type` 属性可以设置不同类型的确认框。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExPopconfirm title="这是一个默认确认框" type="default">
@@ -66,21 +91,58 @@ const beforeConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="这是一个主要确认框" type="primary">
+  <ExPopconfirm
+    title="这是一个默认确认框"
+    type="default"
+  >
+    <ExButton>默认</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="这是一个主要确认框"
+    type="primary"
+  >
     <ExButton type="primary">主要</ExButton>
   </ExPopconfirm>
-
-  <ExPopconfirm title="确定要删除吗？" type="danger">
+  <ExPopconfirm
+    title="确定要执行此操作吗？"
+    type="success"
+  >
+    <ExButton type="success">成功</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="此操作可能有风险"
+    type="warning"
+  >
+    <ExButton type="warning">警告</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="确定要删除吗？"
+    type="danger"
+  >
     <ExButton type="danger">危险</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="这是一条提示信息"
+    type="info"
+  >
+    <ExButton type="info">信息</ExButton>
   </ExPopconfirm>
 </template>
 ```
 
+:::
+
 ## 带描述信息
 
 通过 `description` 属性可以添加描述信息。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExPopconfirm 
@@ -99,17 +161,36 @@ const beforeConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="删除账号" description="删除后将无法恢复，确定要继续吗？" type="danger">
+  <ExPopconfirm
+    title="删除账号"
+    description="删除后将无法恢复，确定要继续吗？"
+    type="danger"
+  >
     <ExButton type="danger">删除账号</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="提交表单"
+    description="提交后将发送邮件通知，是否确认提交？"
+    type="primary"
+  >
+    <ExButton type="primary">提交</ExButton>
   </ExPopconfirm>
 </template>
 ```
 
+:::
+
 ## 自定义按钮文字
 
 通过 `okText` 和 `cancelText` 属性可以自定义按钮文字。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExPopconfirm 
@@ -129,17 +210,37 @@ const beforeConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="确定要退出登录吗？" ok-text="退出" cancel-text="再想想">
+  <ExPopconfirm
+    title="确定要退出登录吗？"
+    ok-text="退出"
+    cancel-text="再想想"
+  >
     <ExButton>退出登录</ExButton>
+  </ExPopconfirm>
+  <ExPopconfirm
+    title="确定要发布文章吗？"
+    ok-text="立即发布"
+    cancel-text="暂不发布"
+    type="primary"
+  >
+    <ExButton type="primary">发布文章</ExButton>
   </ExPopconfirm>
 </template>
 ```
 
+:::
+
 ## 自定义图标
 
 通过 `icon` 插槽可以自定义图标。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
   <ExPopconfirm title="确定要清空购物车吗？" type="warning">
@@ -156,9 +257,16 @@ const beforeConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="确定要清空购物车吗？" type="warning">
+  <ExPopconfirm
+    title="确定要清空购物车吗？"
+    type="warning"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/shopping-cart-line.svg"
@@ -169,12 +277,30 @@ const beforeConfirm = () => {
     </template>
     <ExButton type="warning">清空购物车</ExButton>
   </ExPopconfirm>
+  <ExPopconfirm
+    title="确定要收藏这篇文章吗？"
+    type="success"
+  >
+    <template #icon>
+      <img
+        src="https://api.iconify.design/ri/heart-line.svg"
+        alt="收藏"
+        width="20"
+        height="20"
+      />
+    </template>
+    <ExButton type="success">收藏</ExButton>
+  </ExPopconfirm>
 </template>
 ```
+
+:::
 
 ## 不同位置
 
 通过 `placement` 属性可以设置弹出位置。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
   <div style="display: flex; gap: 12px;">
@@ -225,56 +351,164 @@ const beforeConfirm = () => {
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="确定要删除吗？" placement="top">
-    <ExButton>上边</ExButton>
-  </ExPopconfirm>
-
-  <ExPopconfirm title="确定要删除吗？" placement="bottom">
-    <ExButton>下边</ExButton>
-  </ExPopconfirm>
+  <div style="display: flex; gap: 12px;">
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="top-start"
+    >
+      <ExButton>上左</ExButton>
+    </ExPopconfirm>
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="top"
+    >
+      <ExButton>上边</ExButton>
+    </ExPopconfirm>
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="top-end"
+    >
+      <ExButton>上右</ExButton>
+    </ExPopconfirm>
+  </div>
+  <div style="display: flex; gap: 12px; width: 100%; justify-content: space-between;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="left-start"
+      >
+        <ExButton>左上</ExButton>
+      </ExPopconfirm>
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="left"
+      >
+        <ExButton>左边</ExButton>
+      </ExPopconfirm>
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="left-end"
+      >
+        <ExButton>左下</ExButton>
+      </ExPopconfirm>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="right-start"
+      >
+        <ExButton>右上</ExButton>
+      </ExPopconfirm>
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="right"
+      >
+        <ExButton>右边</ExButton>
+      </ExPopconfirm>
+      <ExPopconfirm
+        title="确定要删除吗？"
+        placement="right-end"
+      >
+        <ExButton>右下</ExButton>
+      </ExPopconfirm>
+    </div>
+  </div>
+  <div style="display: flex; gap: 12px;">
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="bottom-start"
+    >
+      <ExButton>下左</ExButton>
+    </ExPopconfirm>
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="bottom"
+    >
+      <ExButton>下边</ExButton>
+    </ExPopconfirm>
+    <ExPopconfirm
+      title="确定要删除吗？"
+      placement="bottom-end"
+    >
+      <ExButton>下右</ExButton>
+    </ExPopconfirm>
+  </div>
 </template>
 ```
 
+:::
+
 ## 确认加载状态
 
-通过 `confirmLoading` 属性可以让确认按钮处于加载状态。
+`before-confirm` 返回 Promise 时，组件会保持气泡打开并自动显示加载状态，成功后触发 `confirm` 并关闭。下面用两秒延时模拟提交；返回 `false` 可保留气泡。`confirm-loading` 适合由外部状态控制按钮加载，不应在 `confirm` 事件触发后才开始异步等待。
+
+::: raw
 
 <div class="demo-container">
   <ExPopconfirm 
     title="确定要提交吗？"
-    :confirm-loading="confirmLoading"
-    @confirm="handleConfirm"
+    :before-confirm="beforeSubmit"
   >
     <ExButton type="primary">提交</ExButton>
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="确定要提交吗？" :confirm-loading="confirmLoading" @confirm="handleConfirm">
+  <ExPopconfirm
+    title="确定要提交吗？"
+    :before-confirm="beforeSubmit"
+  >
     <ExButton type="primary">提交</ExButton>
   </ExPopconfirm>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onBeforeUnmount } from 'vue';
 
-const confirmLoading = ref(false);
+const SUBMIT_DELAY_MS = 2000;
+let submitTimer;
+let resolveSubmit;
 
-const handleConfirm = () => {
-  confirmLoading.value = true;
-  setTimeout(() => {
-    confirmLoading.value = false;
-  }, 2000);
+// 模拟提交请求；组件在 Promise 完成前保持打开并显示加载状态。
+const beforeSubmit = () => {
+  // 气泡关闭后再次提交时，先结束上一轮模拟请求。
+  clearTimeout(submitTimer);
+  resolveSubmit?.(false);
+  return new Promise(resolve => {
+    resolveSubmit = resolve;
+    submitTimer = setTimeout(() => {
+      submitTimer = undefined;
+      resolveSubmit = undefined;
+      resolve(true);
+    }, SUBMIT_DELAY_MS);
+  });
 };
+
+onBeforeUnmount(() => {
+  clearTimeout(submitTimer);
+  resolveSubmit?.(false);
+});
 </script>
 ```
+
+:::
 
 ## 隐藏取消按钮
 
 设置 `:show-cancel="false"` 可以隐藏取消按钮。
+
+::: raw
 
 <div class="demo-container">
   <ExPopconfirm 
@@ -286,17 +520,29 @@ const handleConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="这是一条提示信息" :show-cancel="false" type="info">
+  <ExPopconfirm
+    title="这是一条提示信息"
+    :show-cancel="false"
+    type="info"
+  >
     <ExButton type="info">查看提示</ExButton>
   </ExPopconfirm>
 </template>
 ```
 
+:::
+
 ## 事件处理
 
 可以监听 `confirm` 和 `cancel` 事件。
+
+::: raw
 
 <div class="demo-container">
   <ExPopconfirm 
@@ -309,33 +555,30 @@ const handleConfirm = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPopconfirm
     title="确定要删除这条记录吗？"
     type="danger"
-    @confirm="handleConfirm"
-    @cancel="handleCancel"
+    @confirm="() => console.log('确认删除')"
+    @cancel="() => console.log('取消删除')"
   >
     <ExButton type="danger">删除记录</ExButton>
   </ExPopconfirm>
 </template>
-
-<script setup>
-const handleConfirm = () => {
-  console.log('确认删除');
-  // 执行删除操作
-};
-
-const handleCancel = () => {
-  console.log('取消删除');
-};
-</script>
 ```
+
+:::
 
 ## 确认前回调
 
 通过 `beforeConfirm` 属性可以在确认前执行回调，返回 `false` 可以阻止确认。
+
+::: raw
 
 <div class="demo-container">
   <ExPopconfirm 
@@ -347,21 +590,33 @@ const handleCancel = () => {
   </ExPopconfirm>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopconfirm title="确定要删除吗？" :before-confirm="beforeConfirm" type="danger">
+  <ExPopconfirm
+    title="确定要删除吗？"
+    :before-confirm="beforeConfirm"
+    type="danger"
+  >
     <ExButton type="danger">二次确认</ExButton>
   </ExPopconfirm>
 </template>
 
 <script setup>
 const beforeConfirm = () => {
-  // 返回 false 可以阻止确认
-  // 这里可以执行异步验证、显示自定义对话框等
-  return confirm('再次确认：真的要删除吗？');
+  // 使用浏览器原生确认对话框进行二次确认
+  if (typeof window !== 'undefined' && window.confirm) {
+    return window.confirm('再次确认：真的要删除吗？');
+  }
+  return true;
 };
 </script>
 ```
+
+:::
 
 ## API
 
@@ -388,11 +643,12 @@ const beforeConfirm = () => {
 
 ### Popconfirm Events
 
-| 事件名           | 说明               | 类型                         |
-| ---------------- | ------------------ | ---------------------------- |
-| `confirm`        | 点击确认按钮时触发 | `() => void`                 |
-| `cancel`         | 点击取消按钮时触发 | `() => void`                 |
-| `update:visible` | 显示状态变化时触发 | `(visible: boolean) => void` |
+| 事件名           | 说明                                | 类型                         |
+| ---------------- | ----------------------------------- | ---------------------------- |
+| `confirm`        | 点击确认按钮时触发                  | `() => void`                 |
+| `cancel`         | 点击取消按钮时触发                  | `() => void`                 |
+| `update:visible` | 显示状态变化时触发                  | `(visible: boolean) => void` |
+| `confirm-error`  | 确认前校验抛错或 Promise 拒绝时触发 | `(error: unknown) => void`   |
 
 ### Popconfirm Slots
 
@@ -458,7 +714,7 @@ Popconfirm 基于 [Popover](/components/popover) 实现，复用同一套全局�
 
 ```css
 :root {
-  --ex-color-bg-elevated: #11151c;    /* 气泡背景 */
+  --ex-color-bg-elevated: #11151c; /* 气泡背景 */
   --ex-color-border-primary: #1f2a37; /* 边框 */
   --ex-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.55); /* 投影 */
 }

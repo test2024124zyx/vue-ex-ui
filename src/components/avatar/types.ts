@@ -21,14 +21,24 @@ export interface ExAvatarProps {
   size?: AvatarSize;
   /** 头像形状 */
   shape?: AvatarShape;
+  /** 是否启用头像点击交互；启用后根节点使用原生 button 语义。 */
+  clickable?: boolean;
   /** 图片地址 */
   src?: string;
   /** 图片srcset属性 */
   srcset?: string;
-  /** 图片alt属性 */
+  /** 图片 alt 属性；传入空字符串可将图片标记为装饰内容。 */
   alt?: string;
+  /** 响应式图片尺寸描述。 */
+  sizes?: string;
+  /** 图片加载策略。 */
+  loading?: 'eager' | 'lazy';
+  /** 图片解码策略。 */
+  decoding?: 'sync' | 'async' | 'auto';
+  /** 图片引用策略。 */
+  referrerPolicy?: ReferrerPolicy;
 
-  /** 文字内容（当没有图片和图标时显示） */
+  /** 文字内容（当没有图片和图标时显示首个完整字素） */
   text?: string;
   /** 背景颜色 */
   backgroundColor?: string;
@@ -38,8 +48,6 @@ export interface ExAvatarProps {
   draggable?: boolean;
   /** 跨域设置 */
   crossOrigin?: 'anonymous' | 'use-credentials' | '';
-  /** 文字间距 */
-  gap?: number;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
@@ -80,14 +88,21 @@ export interface ExAvatarGroupProps {
   maxCount?: number;
   /** 超出数量的样式 */
   maxStyle?: Record<string, string | number>;
+  /** 头像组的无障碍名称。 */
+  ariaLabel?: string;
   /** 头像尺寸 */
   size?: AvatarSize;
   /** 头像形状 */
   shape?: AvatarShape;
-  /** 头像间距 */
+  /** 相邻头像间距；负值表示重叠。 */
   spacing?: number | string;
   /** 自定义CSS类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
   style?: string | Record<string, string | number>;
+}
+
+export interface ExAvatarGroupEmits {
+  /** 点击溢出计数头像时返回隐藏数量。 */
+  overflowClick: [count: number];
 }

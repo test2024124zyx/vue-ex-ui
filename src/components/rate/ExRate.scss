@@ -52,7 +52,7 @@
       display: inline-flex;
       opacity: 0;
       @include safe-transition(all);
-      
+
       // 发光效果应用到图标
       :deep(.ex-icon) {
         @include optimized-neon-glow('blue', 'md');
@@ -73,7 +73,7 @@
     // 半选状态
     &.is-half {
       .ex-rate__icon--void {
-        opacity: 0.3;
+        opacity: 1;
       }
 
       .ex-rate__icon--active {
@@ -93,7 +93,8 @@
 
   // 脉冲动画
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1.2);
     }
     50% {

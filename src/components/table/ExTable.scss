@@ -79,9 +79,19 @@
   }
 
   .ex-table__body .ex-table__cell {
+    box-sizing: border-box;
+    height: calc(var(--ex-table-row-height) - 1px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // td 的垂直 padding 和内部控件最小内容高度不能撑大固定行高。
+  .ex-table__body > .ex-table__row > td {
+    box-sizing: border-box;
+    height: var(--ex-table-row-height);
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .ex-table__spacer-row {
@@ -91,10 +101,106 @@
   }
 }
 
+// 树展开和详情展开使用独立按钮，键盘焦点不依赖整行点击。
+.ex-table__tree-toggle,
+.ex-table__detail-toggle,
+.ex-table__tree-indent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--ex-spacing-6);
+  width: var(--ex-spacing-6);
+  height: var(--ex-spacing-6);
+}
+
+.ex-table__tree-toggle,
+.ex-table__detail-toggle {
+  padding: 0;
+  color: var(--ex-color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-sm);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--ex-color-primary);
+    background: var(--ex-color-bg-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}
+
+.ex-table__detail-column {
+  width: var(--ex-spacing-10);
+  padding: var(--ex-spacing-2);
+  text-align: center;
+}
+
+.ex-table__expanded-cell {
+  padding: 0;
+  background: var(--ex-color-bg-elevated);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+}
+
+.ex-table__actions-column {
+  padding: var(--ex-spacing-2) var(--ex-spacing-3);
+  border-bottom: 1px solid var(--ex-color-border-primary);
+  white-space: nowrap;
+}
+
+.ex-table__expanded-content,
+.ex-table__pagination {
+  padding: var(--ex-spacing-4);
+}
+
+.ex-table__expanded-content {
+  overflow-wrap: anywhere;
+}
+
+.ex-table__pagination {
+  border-top: 1px solid var(--ex-color-border-primary);
+}
+
+.ex-table__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// 卡片和编辑反馈按内容测量，避免固定行高裁剪错误信息。
+.ex-table--virtual.ex-table--dynamic-rows {
+  .ex-table__body .ex-table__cell,
+  .ex-table__body > .ex-table__row > td {
+    height: auto;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .ex-table__body > .ex-table__row > td {
+    padding-top: var(--ex-spacing-2);
+    padding-bottom: var(--ex-spacing-2);
+  }
+}
+
 // 表格主体
 .ex-table__main {
+  // 显式保留原生表格格式上下文，宿主文章样式不能创建额外滚动祖先。
+  display: table;
   width: 100%;
   min-width: 100%; // 确保表格至少占满容器宽度
+  overflow: visible;
   border-collapse: collapse;
   table-layout: auto;
 }
@@ -107,6 +213,7 @@
 
 // 表头单元格
 .ex-table__header-cell {
+  position: relative;
   padding: var(--ex-spacing-3) var(--ex-spacing-4);
   color: var(--ex-color-text-primary);
   font-size: var(--ex-text-sm);
@@ -122,6 +229,47 @@
     &:hover {
       background: var(--ex-color-bg-hover);
     }
+  }
+}
+
+.ex-table__sort-button {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+}
+
+.ex-table__cell--fixed-left,
+.ex-table__cell--fixed-right {
+  background: var(--ex-color-bg-elevated);
+}
+
+.ex-table__body-cell.ex-table__cell--fixed-left,
+.ex-table__body-cell.ex-table__cell--fixed-right {
+  background: var(--ex-color-bg-primary);
+}
+
+.ex-table__cell--ellipsis {
+  max-width: 0;
+
+  .ex-table__cell-content {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -459,20 +607,12 @@
 
     &::before {
       left: 0;
-      background: linear-gradient(
-        to right,
-        var(--ex-color-bg-secondary),
-        transparent
-      );
+      background: linear-gradient(to right, var(--ex-color-bg-secondary), transparent);
     }
 
     &::after {
       right: 0;
-      background: linear-gradient(
-        to left,
-        var(--ex-color-bg-secondary),
-        transparent
-      );
+      background: linear-gradient(to left, var(--ex-color-bg-secondary), transparent);
     }
   }
 
@@ -529,7 +669,7 @@
 }
 
 // 超小屏幕（<375px）
-@media (max-width: 374px) {
+@include desktop-first(micro) {
   .ex-table__main {
     min-width: 500px; // 更小的最小宽度
   }
@@ -564,7 +704,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-table--bordered {
     border-width: 2px;
 

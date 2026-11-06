@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExRadioGroup from '../../../src/components/radio/ExRadioGroup.vue';
 import ExRadio from '../../../src/components/radio/ExRadio.vue';
-import type { ExRadioGroupProps } from '../../../src/components/radio/types';
+import type {
+  ExRadioGroupInstance,
+  ExRadioGroupProps,
+  RadioValue,
+} from '../../../src/components/radio/types';
 
 // Mock ExIcon component
 vi.mock('../../../src/components/icon/ExIcon.vue', () => ({
@@ -66,13 +70,30 @@ describe('ExRadioGroup', () => {
 
       expect(wrapper.find('.ex-radio-group__required').exists()).toBe(true);
     });
+
+    it('required 应该传递给组内所有原生单选框', () => {
+      const wrapper = mount(ExRadioGroup, {
+        props: { required: true },
+        slots: {
+          default: `
+            <ExRadio value="1">Option 1</ExRadio>
+            <ExRadio value="2">Option 2</ExRadio>
+          `,
+        },
+        global: { components: { ExRadio } },
+      });
+
+      wrapper.findAll('input[type="radio"]').forEach(radio => {
+        expect((radio.element as HTMLInputElement).required).toBe(true);
+      });
+    });
   });
 
   // 尺寸测试
   describe('Sizes', () => {
     const sizes: ExRadioGroupProps['size'][] = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`renders ${size} size correctly`, () => {
         const wrapper = mount(ExRadioGroup, {
           props: { size },
@@ -91,14 +112,9 @@ describe('ExRadioGroup', () => {
 
   // 状态测试
   describe('Status', () => {
-    const statuses: ExRadioGroupProps['status'][] = [
-      'default',
-      'success',
-      'warning',
-      'error',
-    ];
+    const statuses: ExRadioGroupProps['status'][] = ['default', 'success', 'warning', 'error'];
 
-    statuses.forEach((status) => {
+    statuses.forEach(status => {
       it(`renders ${status} status correctly`, () => {
         const wrapper = mount(ExRadioGroup, {
           props: { status },
@@ -121,8 +137,6 @@ describe('ExRadioGroup', () => {
       const wrapper = mount(ExRadioGroup, {
         props: {
           modelValue: '',
-          'onUpdate:modelValue': (value: string) =>
-            wrapper.setProps({ modelValue: value }),
         },
         slots: {
           default: `
@@ -204,7 +218,7 @@ describe('ExRadioGroup', () => {
 
       expect(wrapper.classes()).toContain('ex-radio-group--disabled');
       const radioWrappers = wrapper.findAllComponents(ExRadio);
-      radioWrappers.forEach((radioWrapper) => {
+      radioWrappers.forEach(radioWrapper => {
         expect(radioWrapper.classes()).toContain('ex-radio--disabled');
       });
     });
@@ -251,7 +265,7 @@ describe('ExRadioGroup', () => {
 
       expect(wrapper.classes()).toContain('ex-radio-group--readonly');
       const radioWrappers = wrapper.findAllComponents(ExRadio);
-      radioWrappers.forEach((radioWrapper) => {
+      radioWrappers.forEach(radioWrapper => {
         expect(radioWrapper.classes()).toContain('ex-radio--readonly');
       });
     });
@@ -333,9 +347,19 @@ describe('ExRadioGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExRadioGroupInstance;
       expect(typeof vm.getValue).toBe('function');
       expect(vm.getValue()).toBe('test');
+    });
+
+    it.each([false, 0])('getValue 应该保留假值 %s', modelValue => {
+      const wrapper = mount(ExRadioGroup, {
+        props: { modelValue },
+        slots: { default: '<ExRadio :value="0">Option</ExRadio>' },
+        global: { components: { ExRadio } },
+      });
+
+      expect((wrapper.vm as unknown as ExRadioGroupInstance).getValue()).toBe(modelValue);
     });
 
     it('exposes setValue method', () => {
@@ -351,8 +375,24 @@ describe('ExRadioGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExRadioGroupInstance;
       expect(typeof vm.setValue).toBe('function');
+    });
+
+    it('setValue 应该执行与用户操作相同的校验', async () => {
+      const wrapper = mount(ExRadioGroup, {
+        props: {
+          modelValue: 'ok',
+          rules: [(value: RadioValue) => value === 'ok' || 'invalid'],
+        },
+        slots: { default: '<ExRadio value="ok">Option</ExRadio>' },
+        global: { components: { ExRadio } },
+      });
+
+      (wrapper.vm as unknown as ExRadioGroupInstance).setValue('bad');
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('.ex-radio-group__error').text()).toContain('invalid');
     });
 
     it('exposes getRadioGroupElement method', () => {
@@ -365,8 +405,9 @@ describe('ExRadioGroup', () => {
         },
       });
 
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm as unknown as ExRadioGroupInstance;
       expect(typeof vm.getRadioGroupElement).toBe('function');
+      expect(vm.getRadioGroupElement()).toBe(wrapper.element);
     });
   });
 
@@ -426,6 +467,15 @@ describe('ExRadioGroup', () => {
       expect(group.attributes('aria-labelledby')).toBeTruthy();
       expect(group.attributes('aria-describedby')).toBeTruthy();
     });
+
+    it('没有可见标签时不应该引用不存在的 aria-labelledby', () => {
+      const wrapper = mount(ExRadioGroup, {
+        slots: { default: '<ExRadio value="1">Option</ExRadio>' },
+        global: { components: { ExRadio } },
+      });
+
+      expect(wrapper.find('[role="radiogroup"]').attributes('aria-labelledby')).toBeUndefined();
+    });
   });
 
   // Name 属性测试
@@ -447,7 +497,7 @@ describe('ExRadioGroup', () => {
       });
 
       const radios = wrapper.findAll('input[type="radio"]');
-      radios.forEach((radio) => {
+      radios.forEach(radio => {
         expect(radio.attributes('name')).toBe('test-group');
       });
     });

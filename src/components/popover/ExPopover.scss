@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-popover {
   display: inline-block;
@@ -25,7 +26,9 @@
     bottom: 0;
     border-radius: var(--ex-radius-lg);
     pointer-events: none;
-    box-shadow: inset 0 0 20px var(--ex-color-primary-alpha-30), 0 0 20px var(--ex-color-primary-alpha-20);
+    box-shadow:
+      inset 0 0 20px var(--ex-color-primary-alpha-30),
+      0 0 20px var(--ex-color-primary-alpha-20);
     border: 1px solid var(--ex-color-primary);
     opacity: 0.8;
   }
@@ -160,8 +163,9 @@
 // 过渡动画
 .ex-popover-fade-enter-active,
 .ex-popover-fade-leave-active {
-  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out),
-    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  transition:
+    opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 }
 
 .ex-popover-fade-enter-from,
@@ -171,7 +175,7 @@
 }
 
 // 响应式设�?
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-popover__popper {
     max-width: calc(100vw - 32px);
     padding: var(--ex-spacing-2);
@@ -192,10 +196,24 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-popover__popper {
     border-width: 2px;
   }
 }
 
+// Teleport 浮层脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-popover__popper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
 
+.ex-popover__popper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

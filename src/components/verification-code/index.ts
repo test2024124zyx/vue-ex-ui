@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExVerificationCode from './ExVerificationCode.vue';
+import ExVerificationCodeComponent from './ExVerificationCode.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type {
@@ -17,13 +17,7 @@ export type {
 export { isValidChar, filterValidChars } from './types';
 
 // 导出组件
-export { ExVerificationCode };
+export const ExVerificationCode: InstallableComponent<typeof ExVerificationCodeComponent> =
+  withInstall(ExVerificationCodeComponent);
 
-// 组件安装插件
-export const ExVerificationCodePlugin = {
-  install(app: App) {
-    app.component('ExVerificationCode', ExVerificationCode);
-  },
-};
-
-export default ExVerificationCodePlugin;
+export default ExVerificationCode;

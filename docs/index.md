@@ -2,9 +2,9 @@
 layout: home
 
 hero:
-  name: "ExUI"
-  text: "Vue3 Cyberpunk UI Library"
-  tagline: "移动端优先的响应式赛博朋克主题组件库"
+  name: 'ExUI'
+  text: 'Vue3 Cyberpunk UI Library'
+  tagline: '移动端优先的响应式赛博朋克主题组件库'
   image:
     src: /logo.svg
     alt: ExUI
@@ -34,5 +34,5 @@ features:
     details: 内置多语言支持，轻松构建全球化应用
   - icon: ♿
     title: 无障碍
-    details: 遵循WCAG标准，支持键盘导航和屏幕阅读器
+    details: 遵循 WCAG 标准，支持键盘导航和屏幕阅读器
 ---

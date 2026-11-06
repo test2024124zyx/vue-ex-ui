@@ -8,6 +8,14 @@
 @use 'sass:color';
 @use 'tokens' as *;
 
+// 组件默认值在消费处解析，避免根节点提前解析主题别名；显式全局覆盖仍然优先。
+@function component-var($component, $name) {
+  @if not map.has-key($components, $component, $name) {
+    @error '未知组件变量：#{$component}.#{$name}';
+  }
+  @return var(--ex-#{$component}-#{$name}, #{map.get($components, $component, $name)});
+}
+
 // ============================================================================
 // 单位转换函数 (Unit Conversion Functions)
 // ============================================================================
@@ -46,7 +54,7 @@
 @function fluid-size($min-size, $max-size, $min-width: 320px, $max-width: 1200px) {
   $slope: math.div($max-size - $min-size, $max-width - $min-width);
   $intersection: -$min-width * $slope + $min-size;
-  
+
   @return clamp(#{$min-size}, #{$intersection} + #{$slope * 100vw}, #{$max-size});
 }
 
@@ -86,7 +94,7 @@
   @if type-of($color2) == 'string' {
     $color2: get-color($color2);
   }
-  
+
   @if $color1 and $color2 {
     @return mix($color1, $color2, $weight);
   } @else {
@@ -100,7 +108,7 @@
   @if type-of($color) == 'string' {
     $color: get-color($color);
   }
-  
+
   @if $color {
     @return lighten($color, $amount);
   } @else {
@@ -114,7 +122,7 @@
   @if type-of($color) == 'string' {
     $color: get-color($color);
   }
-  
+
   @if $color {
     @return darken($color, $amount);
   } @else {
@@ -127,7 +135,7 @@
 @function contrast-ratio($color1, $color2) {
   $l1: lightness($color1);
   $l2: lightness($color2);
-  
+
   @if $l1 > $l2 {
     @return math.div($l1 + 5, $l2 + 5);
   } @else {
@@ -139,7 +147,7 @@
 @function readable-color($background, $light: #ffffff, $dark: #000000) {
   $light-contrast: contrast-ratio($background, $light);
   $dark-contrast: contrast-ratio($background, $dark);
-  
+
   @if $light-contrast > $dark-contrast {
     @return $light;
   } @else {
@@ -192,7 +200,11 @@
 
 // 响应式尺寸
 @function responsive-size($mobile, $desktop, $breakpoint: 768px) {
-  @return clamp(#{$mobile}, #{$mobile} + (#{$desktop} - #{$mobile}) * ((100vw - 320px) / (#{$breakpoint} - 320px)), #{$desktop});
+  @return clamp(
+    #{$mobile},
+    #{$mobile} + (#{$desktop} - #{$mobile}) * ((100vw - 320px) / (#{$breakpoint} - 320px)),
+    #{$desktop}
+  );
 }
 
 // ============================================================================
@@ -283,12 +295,12 @@
 // 断点范围
 @function breakpoint-range($min, $max: null) {
   $min-value: get-breakpoint($min);
-  
+
   @if $max {
     $max-value: get-breakpoint($max);
-    @return "(min-width: #{$min-value}) and (max-width: #{$max-value - 1px})";
+    @return '(min-width: #{$min-value}) and (max-width: #{$max-value - 1px})';
   } @else {
-    @return "(min-width: #{$min-value})";
+    @return '(min-width: #{$min-value})';
   }
 }
 
@@ -370,11 +382,12 @@
 // 字符串替换
 @function str-replace($string, $search, $replace: '') {
   $index: string.index($string, $search);
-  
+
   @if $index {
-    @return string.slice($string, 1, $index - 1) + $replace + str-replace(string.slice($string, $index + string.length($search)), $search, $replace);
+    @return string.slice($string, 1, $index - 1) + $replace +
+      str-replace(string.slice($string, $index + string.length($search)), $search, $replace);
   }
-  
+
   @return $string;
 }
 
@@ -408,17 +421,20 @@
 
 // 验证颜色值
 @function is-valid-color($value) {
-  @return type-of($value) == 'color' or (type-of($value) == 'string' and map.has-key($colors, $value));
+  @return type-of($value) == 'color' or
+    (type-of($value) == 'string' and map.has-key($colors, $value));
 }
 
 // 验证尺寸值
 @function is-valid-size($value) {
-  @return type-of($value) == 'number' or (type-of($value) == 'string' and map.has-key($sizes, $value));
+  @return type-of($value) == 'number' or
+    (type-of($value) == 'string' and map.has-key($sizes, $value));
 }
 
 // 验证间距值
 @function is-valid-spacing($value) {
-  @return type-of($value) == 'number' or (type-of($value) == 'string' and map.has-key($spacing, $value));
+  @return type-of($value) == 'number' or
+    (type-of($value) == 'string' and map.has-key($spacing, $value));
 }
 
 // ============================================================================
@@ -468,12 +484,28 @@
 // 按钮尺寸计算
 @function button-size($size) {
   $sizes: (
-    sm: (height: 24px, padding: 12px, font-size: 14px),
-    md: (height: 32px, padding: 16px, font-size: 16px),
-    lg: (height: 40px, padding: 24px, font-size: 18px),
-    xl: (height: 48px, padding: 32px, font-size: 20px)
+    sm: (
+      height: 24px,
+      padding: 12px,
+      font-size: 14px,
+    ),
+    md: (
+      height: 32px,
+      padding: 16px,
+      font-size: 16px,
+    ),
+    lg: (
+      height: 40px,
+      padding: 24px,
+      font-size: 18px,
+    ),
+    xl: (
+      height: 48px,
+      padding: 32px,
+      font-size: 20px,
+    ),
   );
-  
+
   @if map.has-key($sizes, $size) {
     @return map.get($sizes, $size);
   } @else {
@@ -485,11 +517,23 @@
 // 输入框尺寸计算
 @function input-size($size) {
   $sizes: (
-    sm: (height: 24px, padding: 8px, font-size: 14px),
-    md: (height: 32px, padding: 12px, font-size: 16px),
-    lg: (height: 40px, padding: 16px, font-size: 18px)
+    sm: (
+      height: 24px,
+      padding: 8px,
+      font-size: 14px,
+    ),
+    md: (
+      height: 32px,
+      padding: 12px,
+      font-size: 16px,
+    ),
+    lg: (
+      height: 40px,
+      padding: 16px,
+      font-size: 18px,
+    ),
   );
-  
+
   @if map.has-key($sizes, $size) {
     @return map.get($sizes, $size);
   } @else {
@@ -500,16 +544,10 @@
 
 // 容器最大宽度
 @function container-max-width($breakpoint) {
-  $widths: (
-    sm: 640px,
-    md: 768px,
-    lg: 1024px,
-    xl: 1280px,
-    2xl: 1536px
-  );
-  
-  @if map.has-key($widths, $breakpoint) {
-    @return map.get($widths, $breakpoint);
+  $size-key: container-#{$breakpoint};
+
+  @if map.has-key($sizes, $size-key) {
+    @return map.get($sizes, $size-key);
   } @else {
     @warn "Container width for '#{$breakpoint}' not found";
     @return 100%;

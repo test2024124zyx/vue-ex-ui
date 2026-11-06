@@ -1,9 +1,11 @@
 <template>
   <div
+    ref="groupRef"
     :class="groupClasses"
     :style="groupStyles"
     role="radiogroup"
-    :aria-labelledby="labelId"
+    v-bind="fieldAriaAttrs"
+    :aria-labelledby="hasGroupLabel ? labelId : fieldAriaAttrs['aria-labelledby']"
     :aria-describedby="ariaDescribedBy"
   >
     <!-- 标签 -->
@@ -17,13 +19,15 @@
         <span
           v-if="required"
           class="ex-radio-group__required"
-        >*</span>
+        >
+          *
+        </span>
       </slot>
     </label>
 
     <!-- 单选框容器 -->
     <div class="ex-radio-group__content">
-      <slot />
+      <slot></slot>
     </div>
 
     <!-- 底部信息 -->
@@ -66,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, provide, useSlots } from 'vue';
+import { computed, ref, watch, provide, useSlots, nextTick } from 'vue';
 import type {
   ExRadioGroupProps,
   ExRadioGroupEmits,
@@ -76,8 +80,8 @@ import type {
 } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExRadioGroup',
@@ -98,18 +102,33 @@ defineSlots<ExRadioGroupSlots>();
 
 const slots = useSlots();
 const { t } = useI18n();
-
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
+const groupRef = ref<HTMLDivElement>();
+const hasGroupLabel = computed(() => Boolean(props.label || slots.label));
 
 // 组内共享的 name：未显式传入时自动生成唯一值，保证同组各 radio 的
 // name 一致——原生单选语义（方向键导航、屏幕阅读器成组）才能生效。
 const radioName = computed(() => props.name || groupId);
 
 const currentErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    currentErrorMessage.value = props.errorMessage || '';
+  },
+  { flush: 'post' }
+);
+const nativeRestorers = new Set<() => void>();
 
 // 计算属性
 const showErrorMessage = computed(() => {
@@ -131,7 +150,7 @@ const ariaDescribedBy = computed(() => {
     ids.push(`${groupId}-error`);
   }
 
-  return ids.length > 0 ? ids.join(' ') : undefined;
+  return mergeAriaIds(...ids, fieldAriaAttrs.value['aria-describedby']);
 });
 
 // 样式类
@@ -140,8 +159,8 @@ const groupClasses = computed(() => {
 
   if (componentSize.value) classes.push(`ex-radio-group--${componentSize.value}`);
   if (props.status) classes.push(`ex-radio-group--${props.status}`);
-  if (props.disabled) classes.push('ex-radio-group--disabled');
-  if (props.readonly) classes.push('ex-radio-group--readonly');
+  if (disabled.value) classes.push('ex-radio-group--disabled');
+  if (readonly.value) classes.push('ex-radio-group--readonly');
   if (props.vertical) classes.push('ex-radio-group--vertical');
   if (props.status === 'error' || showErrorMessage.value) {
     classes.push('ex-radio-group--error');
@@ -157,13 +176,16 @@ const groupStyles = computed(() => {
 
 // 更新值的方法
 const updateValue = (value: RadioValue) => {
-  if (props.disabled || props.readonly) return;
+  if (!interactive.value) return;
 
   // 验证
   validateGroup(value);
 
   emit('update:modelValue', value);
   emit('change', value);
+  formItem?.onFieldChange();
+  // 原生单选会同时取消旧项，必须恢复整个组，且只涉及当前实例注册的控件。
+  void nextTick(() => nativeRestorers.forEach(restore => restore()));
 };
 
 // 验证单选框组
@@ -185,6 +207,16 @@ const validateGroup = (value: RadioValue) => {
   return true;
 };
 
+watch(
+  [() => props.modelValue, () => props.rules],
+  () => {
+    if (!currentErrorMessage.value || props.errorMessage) return;
+    if (props.modelValue === undefined) currentErrorMessage.value = '';
+    else validateGroup(props.modelValue);
+  },
+  { deep: true }
+);
+
 // 监听错误信息变化
 watch(
   () => props.errorMessage,
@@ -205,31 +237,39 @@ provide('radioGroup', {
   },
   size: computed(() => componentSize.value),
   get status() {
-    return props.status;
+    return (
+      (props.status !== 'default' ? props.status : undefined) ||
+      formItem?.status?.value ||
+      props.status
+    );
   },
   get disabled() {
-    return props.disabled;
+    return disabled.value;
   },
   get readonly() {
-    return props.readonly;
+    return readonly.value;
+  },
+  get required() {
+    return props.required;
   },
   updateValue,
+  registerRadio(restore: () => void) {
+    nativeRestorers.add(restore);
+    return () => nativeRestorers.delete(restore);
+  },
 });
 
 // 暴露方法
 const getValue = (): string | number | boolean => {
-  return props.modelValue || '';
+  return props.modelValue ?? '';
 };
 
 const setValue = (value: RadioValue) => {
-  if (props.disabled || props.readonly) return;
-
-  emit('update:modelValue', value);
-  emit('change', value);
+  updateValue(value);
 };
 
 const getRadioGroupElement = () => {
-  return null;
+  return groupRef.value || null;
 };
 
 defineExpose<ExRadioGroupInstance>({

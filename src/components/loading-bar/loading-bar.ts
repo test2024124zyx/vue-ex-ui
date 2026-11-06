@@ -1,176 +1,257 @@
-import { createVNode, render, type VNode } from 'vue';
+import { createApp, h, inject, shallowReactive } from 'vue';
+import type { App, AppContext, InjectionKey } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
+import { useComponentServiceScope } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
 import ExLoadingBarComponent from './ExLoadingBar.vue';
-import type { LoadingBarOptions, LoadingBarInstance } from './types';
+import {
+  DEFAULT_LOADING_BAR_HEIGHT,
+  getNextLoadingBarPercentage,
+  INITIAL_LOADING_BAR_PERCENTAGE,
+  MAX_TRICKLE_PERCENTAGE,
+  mergeLoadingBarOptions,
+  normalizeLoadingBarPercentage,
+} from './loading-bar-utils';
+import type {
+  LoadingBarOptions,
+  LoadingBarService,
+  LoadingBarStatus,
+  NormalizedLoadingBarOptions,
+} from './types';
 
-// LoadingBar 实例
-let instance: { vnode: VNode; container: HTMLElement } | null = null;
-let percentage = 0;
-let status: 'loading' | 'success' | 'error' | 'warning' = 'loading';
-let timer: number | undefined;
-let hideTimer: number | undefined;
+const TRICKLE_INTERVAL = 200;
+const SUCCESS_HOLD_DURATION = 500;
+const TERMINAL_HOLD_DURATION = 1500;
+const LEAVE_CLEANUP_DURATION = 200;
 
-// 默认配置
-const defaultOptions: Required<LoadingBarOptions> = {
-  color: undefined as unknown as string,
-  height: 3,
-  duration: 3000,
-  zIndex: 9999,
-};
+interface LoadingBarRenderState extends NormalizedLoadingBarOptions {
+  visible: boolean;
+  percentage: number;
+  status: LoadingBarStatus;
+}
 
-let currentOptions = { ...defaultOptions };
+class LoadingBarController {
+  private app: App<Element> | null = null;
+  private host: HTMLDivElement | null = null;
+  private options: NormalizedLoadingBarOptions;
+  private readonly state: LoadingBarRenderState;
+  private trickleTimer: ReturnType<typeof setTimeout> | undefined;
+  private terminalTimer: ReturnType<typeof setTimeout> | undefined;
+  private cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly appContext: AppContext | undefined;
 
-// 创建 LoadingBar 实例
-const createInstance = () => {
-  if (instance) return instance;
+  constructor(defaults: LoadingBarOptions, appContext?: AppContext) {
+    this.options = mergeLoadingBarOptions(
+      { color: undefined, height: DEFAULT_LOADING_BAR_HEIGHT, zIndex: undefined },
+      defaults
+    );
+    this.appContext = appContext;
+    this.state = shallowReactive({
+      ...this.options,
+      visible: false,
+      percentage: 0,
+      status: 'loading',
+    });
+  }
 
-  const container = document.createElement('div');
-  container.className = 'ex-loading-bar-container';
-  document.body.appendChild(container);
+  private resolveScopedZIndex(): number | undefined {
+    const config = this.appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined;
+  }
 
-  const vnode = createVNode(ExLoadingBarComponent, {
-    percentage: 0,
-    status: 'loading',
-    height: currentOptions.height,
-    color: currentOptions.color,
-    duration: currentOptions.duration,
-    zIndex: currentOptions.zIndex,
-  });
+  config(options: LoadingBarOptions): void {
+    // 合并函数先完成全部校验，失败时不会产生部分更新。
+    const normalized = mergeLoadingBarOptions(this.options, options);
+    this.options = normalized;
+    Object.assign(this.state, normalized);
+  }
 
-  render(vnode, container);
+  start(): void {
+    this.clearTimers();
+    if (!this.show('loading', INITIAL_LOADING_BAR_PERCENTAGE)) return;
+    this.scheduleTrickle();
+  }
 
-  instance = { vnode, container };
-  return instance;
-};
+  finish(): void {
+    this.complete('success', SUCCESS_HOLD_DURATION);
+  }
 
-// 更新实例
-const updateInstance = () => {
-  if (!instance) return;
+  error(): void {
+    this.complete('error', TERMINAL_HOLD_DURATION);
+  }
 
-  const props = {
-    percentage,
-    status,
-    height: currentOptions.height,
-    color: currentOptions.color,
-    duration: currentOptions.duration,
-    zIndex: currentOptions.zIndex,
-  };
+  warning(): void {
+    this.complete('warning', TERMINAL_HOLD_DURATION);
+  }
 
-  const vnode = createVNode(ExLoadingBarComponent, props);
-  render(vnode, instance.container);
-  instance.vnode = vnode;
-};
-
-// 显示 LoadingBar
-const show = () => {
-  createInstance();
-  updateInstance();
-};
-
-// 隐藏 LoadingBar
-const hide = () => {
-  if (!instance) return;
-
-  // 延迟销毁
-  hideTimer = window.setTimeout(() => {
-    if (instance) {
-      render(null, instance.container);
-      if (document.body.contains(instance.container)) {
-        document.body.removeChild(instance.container);
-      }
-      instance = null;
+  update(value: number): void {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new TypeError('LoadingBar percentage 必须是有限数值');
     }
-  }, 300);
-};
 
-// 清除定时器
-const clearTimers = () => {
-  if (timer) {
-    clearTimeout(timer);
-    timer = undefined;
-  }
-  if (hideTimer) {
-    clearTimeout(hideTimer);
-    hideTimer = undefined;
-  }
-};
-
-// LoadingBar API
-export const loadingBar: LoadingBarInstance & {
-  config: (options: LoadingBarOptions) => void;
-} = {
-  /**
-   * 配置 LoadingBar
-   */
-  config(options: LoadingBarOptions) {
-    currentOptions = { ...currentOptions, ...options };
-  },
-
-  /**
-   * 开始加载
-   */
-  start() {
-    clearTimers();
-    percentage = 0;
-    status = 'loading';
-    show();
-
-    // 模拟进度增长
-    const increment = () => {
-      if (percentage < 90) {
-        const diff = Math.random() * 10;
-        percentage = Math.min(percentage + diff, 90);
-        updateInstance();
-        timer = window.setTimeout(increment, 200);
-      }
-    };
-
-    increment();
-  },
-
-  /**
-   * 完成加载
-   */
-  finish() {
-    clearTimers();
-    percentage = 100;
-    status = 'success';
-    updateInstance();
-
-    timer = window.setTimeout(() => {
-      hide();
-      percentage = 0;
-      status = 'loading';
-    }, 500);
-  },
-
-  /**
-   * 加载失败
-   */
-  error() {
-    clearTimers();
-    percentage = 100;
-    status = 'error';
-    updateInstance();
-
-    timer = window.setTimeout(() => {
-      hide();
-      percentage = 0;
-      status = 'loading';
-    }, 1500);
-  },
-
-  /**
-   * 更新进度
-   */
-  update(value: number) {
-    clearTimers();
-    percentage = Math.max(0, Math.min(100, value));
-    updateInstance();
-
+    const percentage = normalizeLoadingBarPercentage(value);
     if (percentage === 100) {
       this.finish();
+      return;
     }
-  },
-};
+
+    // 手动更新后停止自动推进，避免服务擅自覆盖调用方给出的确定进度。
+    this.clearTimers();
+    this.show('loading', percentage);
+  }
+
+  destroy(): void {
+    this.clearTimers();
+    this.releaseHost();
+    this.resetProgressState();
+  }
+
+  private show(status: LoadingBarStatus, percentage: number): boolean {
+    this.state.status = status;
+    this.state.percentage = percentage;
+    this.state.visible = true;
+
+    try {
+      if (this.ensureMounted()) return true;
+    } catch (error) {
+      this.state.visible = false;
+      throw error;
+    }
+
+    // SSR 或 body 尚不可用时保持无副作用，后续调用仍可正常重试。
+    this.state.visible = false;
+    return false;
+  }
+
+  private complete(status: Exclude<LoadingBarStatus, 'loading'>, holdDuration: number): void {
+    this.clearTimers();
+    if (!this.show(status, 100)) return;
+
+    this.terminalTimer = setTimeout(() => {
+      this.terminalTimer = undefined;
+      this.state.visible = false;
+      this.cleanupTimer = setTimeout(() => {
+        this.cleanupTimer = undefined;
+        this.releaseHost();
+        this.resetProgressState();
+      }, LEAVE_CLEANUP_DURATION);
+    }, holdDuration);
+  }
+
+  private scheduleTrickle(): void {
+    this.trickleTimer = setTimeout(() => {
+      this.trickleTimer = undefined;
+      if (!this.state.visible || this.state.status !== 'loading') return;
+
+      this.state.percentage = getNextLoadingBarPercentage(this.state.percentage);
+      if (this.state.percentage < MAX_TRICKLE_PERCENTAGE) this.scheduleTrickle();
+    }, TRICKLE_INTERVAL);
+  }
+
+  private ensureMounted(): boolean {
+    if (typeof document === 'undefined' || !document.body) return false;
+
+    if (this.app && this.host?.isConnected) return true;
+    if (this.app || this.host) this.releaseHost();
+
+    const host = document.createElement('div');
+    host.className = 'ex-loading-bar-host';
+    host.setAttribute('data-ex-loading-bar-host', '');
+    document.body.appendChild(host);
+
+    const app = createApp({
+      name: 'ExLoadingBarServiceHost',
+      render: () =>
+        h(ExLoadingBarComponent, {
+          visible: this.state.visible,
+          percentage: this.state.percentage,
+          status: this.state.status,
+          color: this.state.color,
+          height: this.state.height,
+          zIndex: this.state.zIndex ?? this.resolveScopedZIndex(),
+        }),
+    });
+
+    if (this.appContext) {
+      app._context.provides = Object.create(this.appContext.provides) as AppContext['provides'];
+    }
+
+    try {
+      app.mount(host);
+    } catch (error) {
+      host.remove();
+      throw error;
+    }
+
+    this.app = app;
+    this.host = host;
+    return true;
+  }
+
+  private releaseHost(): void {
+    this.app?.unmount();
+    this.host?.remove();
+    this.app = null;
+    this.host = null;
+  }
+
+  private resetProgressState(): void {
+    this.state.visible = false;
+    this.state.percentage = 0;
+    this.state.status = 'loading';
+    Object.assign(this.state, this.options);
+  }
+
+  private clearTimers(): void {
+    if (this.trickleTimer !== undefined) clearTimeout(this.trickleTimer);
+    if (this.terminalTimer !== undefined) clearTimeout(this.terminalTimer);
+    if (this.cleanupTimer !== undefined) clearTimeout(this.cleanupTimer);
+    this.trickleTimer = undefined;
+    this.terminalTimer = undefined;
+    this.cleanupTimer = undefined;
+  }
+}
+
+/** 创建状态、DOM 与计时器完全隔离的 LoadingBar 服务。 */
+export function createLoadingBar(
+  defaults: LoadingBarOptions = {},
+  appContext?: AppContext
+): LoadingBarService {
+  const controller = new LoadingBarController(defaults, appContext);
+
+  // 使用闭包保持方法可安全解构调用，同时隐藏控制器内部状态。
+  return {
+    config: options => controller.config(options),
+    start: () => controller.start(),
+    finish: () => controller.finish(),
+    error: () => controller.error(),
+    warning: () => controller.warning(),
+    update: percentage => controller.update(percentage),
+    destroy: () => controller.destroy(),
+  };
+}
+
+/** 直接导入时使用的全局单例。 */
+export const loadingBar = createLoadingBar();
+
+/** 当前 Vue App 的 LoadingBar 服务注入键。 */
+export const LOADING_BAR_SERVICE_KEY: InjectionKey<LoadingBarService> =
+  createSharedInjectionKey('loading-bar-service');
+
+/** 获取最近 ConfigProvider 或当前 Vue App 的 LoadingBar 服务。 */
+export function useLoadingBarService(): LoadingBarService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(
+      LOADING_BAR_SERVICE_KEY,
+      appContext => createLoadingBar({}, appContext),
+      service => service.destroy()
+    );
+  }
+  return inject(LOADING_BAR_SERVICE_KEY, loadingBar);
+}
 
 export default loadingBar;

@@ -28,13 +28,7 @@
 
   // 反转顺序
   &--reverse {
-    &.ex-timeline--vertical {
-      flex-direction: column-reverse;
-    }
-
-    &.ex-timeline--horizontal {
-      flex-direction: row-reverse;
-    }
+    // 反向顺序由真实 DOM 完成，避免视觉顺序与辅助技术读取顺序相反。
   }
 }
 

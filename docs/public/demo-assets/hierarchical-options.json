@@ -1,0 +1,26 @@
+{
+  "north": [
+    { "value": "beijing", "label": "北京市", "isLeaf": false },
+    { "value": "tianjin", "label": "天津市", "isLeaf": false }
+  ],
+  "east": [
+    { "value": "shanghai", "label": "上海市", "isLeaf": false },
+    { "value": "zhejiang", "label": "浙江省", "isLeaf": false }
+  ],
+  "beijing": [
+    { "value": "chaoyang", "label": "朝阳区", "isLeaf": true },
+    { "value": "haidian", "label": "海淀区", "isLeaf": true }
+  ],
+  "tianjin": [
+    { "value": "heping", "label": "和平区", "isLeaf": true },
+    { "value": "nankai", "label": "南开区", "isLeaf": true }
+  ],
+  "shanghai": [
+    { "value": "pudong", "label": "浦东新区", "isLeaf": true },
+    { "value": "xuhui", "label": "徐汇区", "isLeaf": true }
+  ],
+  "zhejiang": [
+    { "value": "hangzhou", "label": "杭州市", "isLeaf": true },
+    { "value": "ningbo", "label": "宁波市", "isLeaf": true, "disabled": true }
+  ]
+}

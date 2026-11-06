@@ -1,311 +1,244 @@
-import type * as echarts from 'echarts';
+import type { ChartComponentOption, ChartGradient, ChartOption, ChartSeriesOption } from './types';
+import type { Theme } from '../../types/theme';
+import { t as translate } from '../../locale';
+
+const DARK_CHART_PALETTE = [
+  '#00f0ff',
+  '#29abe2',
+  '#a86bff',
+  '#ff3bd1',
+  '#00d4e6',
+  '#54d1ff',
+  '#ff54dd',
+  '#87e8ff',
+];
+
+const LIGHT_CHART_PALETTE = [
+  '#1668dc',
+  '#08979c',
+  '#722ed1',
+  '#e024b4',
+  '#0958d9',
+  '#13c2c2',
+  '#a61d7a',
+  '#389e0d',
+];
+
+const CHART_FONT_FAMILY = 'Rajdhani, Inter, sans-serif';
+const CHART_TITLE_FONT_FAMILY = 'Audiowide, Orbitron, sans-serif';
+
+interface ChartThemePalette {
+  series: string[];
+  text: string;
+  title: string;
+  mutedText: string;
+  surface: string;
+  border: string;
+}
+
+export interface ChartPalette {
+  text: string;
+  mutedText: string;
+  accent: string;
+  surface: string;
+  border: string;
+  accentFill?: string;
+  accentArea?: string;
+}
+
+const getThemePalette = (theme: Theme): ChartThemePalette => {
+  if (theme === 'light') {
+    return {
+      series: LIGHT_CHART_PALETTE,
+      text: '#1a2332',
+      title: '#101828',
+      mutedText: '#5a6b7d',
+      surface: '#ffffff',
+      border: '#c4cdd8',
+    };
+  }
+
+  return {
+    series: DARK_CHART_PALETTE,
+    text: '#e6f0ff',
+    title: '#ffffff',
+    mutedText: '#b3c7d9',
+    surface: '#0f1720',
+    border: '#374151',
+  };
+};
 
 /**
- * 获取图表主题配置
+ * 获取与全局双主题契约一致的图表主题配置。
  */
-export function getChartTheme(theme: string): object {
-  const themes: Record<string, object> = {
-    'neon-blue': {
-      color: [
-        '#00f0ff',
-        '#29ABE2',
-        '#a86bff',
-        '#ff3bd1',
-        '#00d4e6',
-        '#54d1ff',
-        '#ff54dd',
-        '#87e8ff',
-      ],
-      backgroundColor: 'transparent',
+export function getChartTheme(theme: Theme, overrides: Partial<ChartThemePalette> = {}): object {
+  const palette = { ...getThemePalette(theme), ...overrides };
+  // ECharts 的坐标轴不会继承全局 textStyle，必须显式提供各坐标类型的语义色。
+  const axisTheme = () => ({
+    axisLine: { lineStyle: { color: palette.border } },
+    axisTick: { lineStyle: { color: palette.border } },
+    axisLabel: { color: palette.mutedText },
+    nameTextStyle: { color: palette.mutedText },
+    splitLine: { lineStyle: { color: palette.border } },
+  });
+
+  return {
+    color: palette.series,
+    backgroundColor: 'transparent',
+    categoryAxis: axisTheme(),
+    valueAxis: axisTheme(),
+    logAxis: axisTheme(),
+    timeAxis: axisTheme(),
+    legend: { textStyle: { color: palette.text } },
+    textStyle: {
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
+    },
+    title: {
       textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
+        color: palette.title,
+        fontFamily: CHART_TITLE_FONT_FAMILY,
       },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontFamily: 'Audiowide, Orbitron, sans-serif',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
-      },
-      line: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 3,
-        },
-        symbolSize: 8,
-        symbol: 'circle',
-        smooth: true,
-      },
-      bar: {
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0],
-        },
-      },
-      pie: {
-        itemStyle: {
-          borderRadius: 4,
-          borderColor: '#0f1720',
-          borderWidth: 2,
-        },
-      },
-      radar: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 2,
-        },
-        symbolSize: 6,
-        symbol: 'circle',
-        smooth: false,
-      },
-      candlestick: {
-        itemStyle: {
-          color: '#10b981',
-          color0: '#ef4444',
-          borderColor: '#10b981',
-          borderColor0: '#ef4444',
-        },
+      subtextStyle: {
+        color: palette.mutedText,
       },
     },
-    'neon-pink': {
-      color: [
-        '#ff007f',
-        '#ff3bd1',
-        '#a86bff',
-        '#00f0ff',
-        '#ff54dd',
-        '#e6006b',
-        '#29ABE2',
-        '#ff87e6',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
+    line: {
+      itemStyle: {
+        borderWidth: 2,
       },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontFamily: 'Audiowide, Orbitron, sans-serif',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
+      lineStyle: {
+        width: 3,
       },
-      line: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 3,
-        },
-        symbolSize: 8,
-        symbol: 'circle',
-        smooth: true,
-      },
-      bar: {
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0],
-        },
-      },
-      pie: {
-        itemStyle: {
-          borderRadius: 4,
-          borderColor: '#0f1720',
-          borderWidth: 2,
-        },
-      },
-      radar: {
-        itemStyle: {
-          borderWidth: 2,
-        },
-        lineStyle: {
-          width: 2,
-        },
-        symbolSize: 6,
-        symbol: 'circle',
-        smooth: false,
-      },
-      candlestick: {
-        itemStyle: {
-          color: '#10b981',
-          color0: '#ef4444',
-          borderColor: '#10b981',
-          borderColor0: '#ef4444',
-        },
+      symbolSize: 8,
+      symbol: 'circle',
+      smooth: true,
+    },
+    bar: {
+      itemStyle: {
+        borderRadius: [4, 4, 0, 0],
       },
     },
-    dark: {
-      color: [
-        '#5470c6',
-        '#91cc75',
-        '#fac858',
-        '#ee6666',
-        '#73c0de',
-        '#3ba272',
-        '#fc8452',
-        '#9a60b4',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#e6f0ff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-        },
-        subtextStyle: {
-          color: '#b3c7d9',
-        },
+    pie: {
+      itemStyle: {
+        borderRadius: 4,
+        borderColor: palette.surface,
+        borderWidth: 2,
       },
     },
-    light: {
-      color: [
-        '#5470c6',
-        '#91cc75',
-        '#fac858',
-        '#ee6666',
-        '#73c0de',
-        '#3ba272',
-        '#fc8452',
-        '#9a60b4',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#333333',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
+    radar: {
+      itemStyle: {
+        borderWidth: 2,
       },
-      title: {
-        textStyle: {
-          color: '#333333',
-        },
-        subtextStyle: {
-          color: '#666666',
-        },
+      lineStyle: {
+        width: 2,
+      },
+      symbolSize: 6,
+      symbol: 'circle',
+      smooth: false,
+    },
+    candlestick: {
+      itemStyle: {
+        color: '#10b981',
+        color0: '#ef4444',
+        borderColor: '#10b981',
+        borderColor0: '#ef4444',
       },
     },
-    matrix: {
-      color: [
-        '#00f0ff',
-        '#ff3bd1',
-        '#00ff00',
-        '#ffff00',
-        '#ff0000',
-        '#00ffff',
-        '#ff00ff',
-        '#ffffff',
-      ],
-      backgroundColor: 'transparent',
-      textStyle: {
-        color: '#ffffff',
-        fontFamily: 'Rajdhani, Inter, sans-serif',
-      },
-      title: {
-        textStyle: {
-          color: '#ffffff',
-          fontWeight: 'bold',
-        },
-        subtextStyle: {
-          color: '#ffffff',
-        },
-      },
-    },
-    custom: {},
+  };
+}
+
+/**
+ * 将赛博发光效果应用到图表系列，不修改调用方传入的原始配置。
+ */
+export function applyNeonGlow(option: ChartOption, theme: Theme): ChartOption {
+  if (!option.series) return { ...option };
+
+  const glowColor = theme === 'light' ? 'rgba(22, 104, 220, 0.25)' : 'rgba(0, 240, 255, 0.3)';
+
+  const enhanceSeries = (series: ChartSeriesOption): ChartSeriesOption => {
+    const enhanced = { ...series };
+
+    if (series.type === 'line') {
+      enhanced.lineStyle = {
+        ...series.lineStyle,
+        shadowBlur: 10,
+        shadowColor: glowColor,
+      };
+      enhanced.itemStyle = {
+        ...series.itemStyle,
+        shadowBlur: 10,
+        shadowColor: glowColor,
+      };
+    }
+
+    if (series.type === 'bar' || series.type === 'pie' || series.type === 'scatter') {
+      enhanced.itemStyle = {
+        ...series.itemStyle,
+        shadowBlur: series.type === 'pie' ? 15 : 10,
+        shadowColor: glowColor,
+      };
+    }
+
+    if (series.type === 'radar') {
+      enhanced.lineStyle = {
+        ...series.lineStyle,
+        shadowBlur: 10,
+        shadowColor: glowColor,
+      };
+      enhanced.itemStyle = {
+        ...series.itemStyle,
+        shadowBlur: 10,
+        shadowColor: glowColor,
+      };
+    }
+
+    return enhanced;
   };
 
-  const key = theme === 'high-contrast' ? 'matrix' : theme;
-  return (themes[key] || themes['neon-blue']) as object;
+  return {
+    ...option,
+    series: Array.isArray(option.series)
+      ? option.series.map(enhanceSeries)
+      : enhanceSeries(option.series),
+  };
 }
 
 /**
- * 应用霓虹发光效果到图表配置
+ * 获取图表附属控件使用的语义调色板。
  */
-export function applyNeonGlow(option: echarts.EChartsOption, theme: string): void {
-  if (!option.series) return;
+export const getChartPalette = (theme: Theme): ChartPalette => {
+  if (theme === 'light') {
+    return {
+      text: '#1a2332',
+      mutedText: '#5a6b7d',
+      accent: '#1668dc',
+      surface: '#ffffff',
+      border: '#c4cdd8',
+    };
+  }
 
-  const glowColor = theme === 'neon-pink' ? 'rgba(255, 0, 127, 0.3)' : 'rgba(0, 240, 255, 0.3)';
-
-  const series = Array.isArray(option.series) ? option.series : [option.series];
-
-  series.forEach(s => {
-    if (!s) return;
-
-    // 折线图发光效果
-    if (s.type === 'line') {
-      s.lineStyle = {
-        ...s.lineStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-      s.itemStyle = {
-        ...s.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 柱状图发光效果
-    if (s.type === 'bar') {
-      s.itemStyle = {
-        ...s.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 饼图发光效果
-    if (s.type === 'pie') {
-      s.itemStyle = {
-        ...s.itemStyle,
-        shadowBlur: 15,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 散点图发光效果
-    if (s.type === 'scatter') {
-      s.itemStyle = {
-        ...s.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    // 雷达图发光效果
-    if (s.type === 'radar') {
-      s.lineStyle = {
-        ...s.lineStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-      s.itemStyle = {
-        ...s.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-  });
-}
+  return {
+    text: '#e6f0ff',
+    mutedText: '#b3c7d9',
+    accent: '#00f0ff',
+    surface: '#0f1720',
+    border: '#374151',
+  };
+};
 
 /**
- * 生成渐变色配置
+ * 生成渐变色配置。
  */
 export function createGradientColor(
   color1: string,
   color2: string,
   direction: 'horizontal' | 'vertical' = 'vertical'
-): echarts.LinearGradientObject {
+): ChartGradient {
   return {
     type: 'linear',
     x: 0,
-    y: direction === 'vertical' ? 0 : 0,
+    y: 0,
     x2: direction === 'horizontal' ? 1 : 0,
     y2: direction === 'vertical' ? 1 : 0,
     colorStops: [
@@ -316,69 +249,84 @@ export function createGradientColor(
 }
 
 /**
- * 格式化数值
+ * 使用统一单位格式化数值。
  */
 export function formatNumber(value: number, decimals = 2): string {
-  if (value >= 1e9) {
-    return `${(value / 1e9).toFixed(decimals)}B`;
+  const safeDecimals = Number.isFinite(decimals)
+    ? Math.min(100, Math.max(0, Math.trunc(decimals)))
+    : 2;
+  const magnitude = Math.abs(value);
+  if (magnitude >= 1e9) {
+    return `${(value / 1e9).toFixed(safeDecimals)}B`;
   }
-  if (value >= 1e6) {
-    return `${(value / 1e6).toFixed(decimals)}M`;
+  if (magnitude >= 1e6) {
+    return `${(value / 1e6).toFixed(safeDecimals)}M`;
   }
-  if (value >= 1e3) {
-    return `${(value / 1e3).toFixed(decimals)}K`;
+  if (magnitude >= 1e3) {
+    return `${(value / 1e3).toFixed(safeDecimals)}K`;
   }
-  return value.toFixed(decimals);
+  return value.toFixed(safeDecimals);
 }
 
 /**
- * 生成默认的工具栏配置
+ * 生成默认工具栏配置。
  */
-export function createDefaultToolbox(): echarts.ToolboxComponentOption {
+export function createDefaultToolbox(
+  theme: Theme = 'neon-blue',
+  t: (key: string) => string = translate,
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
+
   return {
     feature: {
       saveAsImage: {
-        title: '保存为图片',
+        title: t('chart.saveAsImage'),
         pixelRatio: 2,
       },
       dataView: {
-        title: '数据视图',
+        title: t('chart.dataView'),
         readOnly: false,
       },
       restore: {
-        title: '还原',
+        title: t('chart.restore'),
       },
       dataZoom: {
         title: {
-          zoom: '区域缩放',
-          back: '区域缩放还原',
+          zoom: t('chart.dataZoom'),
+          back: t('chart.dataZoomRestore'),
         },
       },
       magicType: {
         title: {
-          line: '切换为折线图',
-          bar: '切换为柱状图',
-          stack: '切换为堆叠',
-          tiled: '切换为平铺',
+          line: t('chart.line'),
+          bar: t('chart.bar'),
+          stack: t('chart.stack'),
+          tiled: t('chart.tiled'),
         },
         type: ['line', 'bar', 'stack'],
       },
     },
     iconStyle: {
-      borderColor: '#e6f0ff',
+      borderColor: palette.text,
     },
     emphasis: {
       iconStyle: {
-        borderColor: '#00f0ff',
+        borderColor: palette.accent,
       },
     },
   };
 }
 
 /**
- * 生成默认的数据缩放配置
+ * 生成默认数据缩放配置。
  */
-export function createDefaultDataZoom(): echarts.DataZoomComponentOption[] {
+export function createDefaultDataZoom(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption[] {
+  const palette = { ...getChartPalette(theme), ...overrides };
+
   return [
     {
       type: 'slider',
@@ -387,23 +335,23 @@ export function createDefaultDataZoom(): echarts.DataZoomComponentOption[] {
       start: 0,
       end: 100,
       textStyle: {
-        color: '#e6f0ff',
+        color: palette.text,
       },
-      borderColor: '#374151',
-      fillerColor: 'rgba(0, 240, 255, 0.2)',
+      borderColor: palette.border,
+      fillerColor: palette.accentFill ?? `${palette.accent}33`,
       handleStyle: {
-        color: '#00f0ff',
-        borderColor: '#00f0ff',
+        color: palette.accent,
+        borderColor: palette.accent,
       },
       moveHandleStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
       },
       selectedDataBackground: {
         lineStyle: {
-          color: '#00f0ff',
+          color: palette.accent,
         },
         areaStyle: {
-          color: 'rgba(0, 240, 255, 0.3)',
+          color: palette.accentArea ?? `${palette.accent}4d`,
         },
       },
     },
@@ -417,61 +365,70 @@ export function createDefaultDataZoom(): echarts.DataZoomComponentOption[] {
 }
 
 /**
- * 生成默认的图例配置
+ * 生成默认图例配置。
  */
-export function createDefaultLegend(): echarts.LegendComponentOption {
+export function createDefaultLegend(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
+
   return {
     textStyle: {
-      color: '#e6f0ff',
-      fontFamily: 'Rajdhani, Inter, sans-serif',
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
     },
     pageTextStyle: {
-      color: '#e6f0ff',
+      color: palette.mutedText,
     },
-    pageIconColor: '#00f0ff',
-    pageIconInactiveColor: '#374151',
+    pageIconColor: palette.accent,
+    pageIconInactiveColor: palette.border,
   };
 }
 
 /**
- * 生成默认的提示框配置
+ * 生成默认提示框配置。
  */
-export function createDefaultTooltip(): echarts.TooltipComponentOption {
+export function createDefaultTooltip(
+  theme: Theme = 'neon-blue',
+  overrides: Partial<ChartPalette> = {}
+): ChartComponentOption {
+  const palette = { ...getChartPalette(theme), ...overrides };
+
   return {
     trigger: 'axis',
-    backgroundColor: 'rgba(15, 23, 32, 0.95)',
-    borderColor: '#00f0ff',
+    backgroundColor: palette.surface,
+    borderColor: palette.accent,
     borderWidth: 1,
     textStyle: {
-      color: '#e6f0ff',
-      fontFamily: 'Rajdhani, Inter, sans-serif',
+      color: palette.text,
+      fontFamily: CHART_FONT_FAMILY,
     },
-    // 确保 tooltip 不被容器遮挡
     appendToBody: true,
     confine: false,
     axisPointer: {
       type: 'cross',
       lineStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
         type: 'dashed',
       },
       crossStyle: {
-        color: '#00f0ff',
+        color: palette.accent,
       },
       label: {
-        backgroundColor: '#0f1720',
-        borderColor: '#00f0ff',
+        backgroundColor: palette.surface,
+        borderColor: palette.accent,
         borderWidth: 1,
-        color: '#e6f0ff',
+        color: palette.text,
       },
     },
   };
 }
 
 /**
- * 生成默认的网格配置
+ * 生成默认网格配置。
  */
-export function createDefaultGrid(): echarts.GridComponentOption {
+export function createDefaultGrid(): ChartComponentOption {
   return {
     left: '3%',
     right: '4%',
