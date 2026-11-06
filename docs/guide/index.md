@@ -32,6 +32,6 @@ ExUI 的最低浏览器版本如下（移动端需使用对应版本或更新的
 
 ## 版本
 
-当前版本：`v1.0.1`
+当前版本：`v3.0.0`
 
 查看 [更新日志](https://github.com/zhuhanxin0308/vue-ex-ui/releases) 了解版本变化。
