@@ -1,395 +1,332 @@
 # LoadingBar 加载条
 
-全局加载进度条，用于页面顶部显示加载进度。带有霓虹发光效果的赛博朋克主题加载条组件。
+用于路由切换、异步请求等全局进度反馈。命令式服务默认挂载到 `document.body`，声明式组件留在当前 Vue 渲染树中。
 
 <script setup>
-import { loadingBar } from '../../src/components/loading-bar/loading-bar'
+import { onBeforeUnmount, ref } from 'vue'
+import { createLoadingBar, loadingBar } from '../../src/components/loading-bar'
 
-const startLoading = () => {
+const start = () => loadingBar.start()
+const finish = () => loadingBar.finish()
+const fail = () => loadingBar.error()
+const warn = () => loadingBar.warning()
+const update = percentage => loadingBar.update(percentage)
+
+const useCustomAppearance = () => {
+  loadingBar.config({ color: '#ff007f', height: 5, zIndex: 1200 })
   loadingBar.start()
 }
 
-const finishLoading = () => {
-  loadingBar.finish()
+const resetAppearance = () => {
+  loadingBar.config({ color: undefined, height: 3, zIndex: undefined })
+  loadingBar.destroy()
 }
 
-const errorLoading = () => {
-  loadingBar.error()
-}
-
-const updateLoading = (value) => {
-  loadingBar.update(value)
-}
-
-const simulateLoading = () => {
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.update(30)
-  }, 500)
-  
-  setTimeout(() => {
-    loadingBar.update(60)
-  }, 1000)
-  
-  setTimeout(() => {
-    loadingBar.update(90)
-  }, 1500)
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
-
-const simulateError = () => {
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.update(50)
-  }, 500)
-  
-  setTimeout(() => {
-    loadingBar.error()
-  }, 1000)
-}
-
-const customColor = () => {
-  loadingBar.config({
-    color: '#ff007f',
-    height: 4
-  })
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
-
-const gradientColor = () => {
-  loadingBar.config({
-    color: (percentage) => {
-      if (percentage < 30) return '#ef4444'
-      if (percentage < 70) return '#f59e0b'
-      return '#10b981'
-    },
-    height: 5
-  })
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 3000)
-}
+const routeLoadingBar = createLoadingBar({ height: 6, color: '#8b5cf6' })
+const visible = ref(true)
+const percentage = ref(40)
+const status = ref('loading')
+onBeforeUnmount(() => { loadingBar.destroy(); routeLoadingBar.destroy() })
 </script>
 
-## 基础用法
+## 全局服务
 
-通过调用 `loadingBar.start()` 开始加载，`loadingBar.finish()` 完成加载。
+`start()` 会自动推进到 90% 以内；调用 `finish()`、`error()` 或 `warning()` 后，加载条展示对应终态并自动清理。
 
+::: raw
 <div class="demo-container">
-  <ExButton type="primary" @click="startLoading">开始加载</ExButton>
-  <ExButton type="success" @click="finishLoading">完成加载</ExButton>
-  <ExButton type="danger" @click="errorLoading">加载失败</ExButton>
+  <ExButton type="primary" @click="start">开始</ExButton>
+  <ExButton type="success" @click="finish">完成</ExButton>
+  <ExButton type="danger" @click="fail">失败</ExButton>
+  <ExButton type="warning" @click="warn">警告</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<script setup>
-import { loadingBar } from 'vue-ex-ui'
+<script setup lang="ts">
+import { onBeforeUnmount } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
 
-const startLoading = () => {
-  loadingBar.start()
-}
-
-const finishLoading = () => {
-  loadingBar.finish()
-}
-
-const errorLoading = () => {
-  loadingBar.error()
-}
+const start = () => loadingBar.start();
+const finish = () => loadingBar.finish();
+const fail = () => loadingBar.error();
+const warn = () => loadingBar.warning();
+onBeforeUnmount(() => loadingBar.destroy());
 </script>
 
 <template>
-  <ExButton type="primary" @click="startLoading">开始加载</ExButton>
-  <ExButton type="success" @click="finishLoading">完成加载</ExButton>
-  <ExButton type="danger" @click="errorLoading">加载失败</ExButton>
+  <div class="demo-container">
+    <ExButton
+      type="primary"
+      @click="start"
+    >
+      开始
+    </ExButton>
+    <ExButton
+      type="success"
+      @click="finish"
+    >
+      完成
+    </ExButton>
+    <ExButton
+      type="danger"
+      @click="fail"
+    >
+      失败
+    </ExButton>
+    <ExButton
+      type="warning"
+      @click="warn"
+    >
+      警告
+    </ExButton>
+  </div>
 </template>
 ```
 
-## 更新进度
+:::
 
-通过 `loadingBar.update(percentage)` 可以手动更新进度。
+## 手动进度
 
+`update()` 会显示加载条并切换为手动进度。输入会限制在 0-100；传入 `100` 等同于进入成功终态，`NaN` 与无限值会抛出 `TypeError`。
+
+::: raw
 <div class="demo-container">
-  <ExButton @click="() => updateLoading(0)">0%</ExButton>
-  <ExButton @click="() => updateLoading(25)">25%</ExButton>
-  <ExButton @click="() => updateLoading(50)">50%</ExButton>
-  <ExButton @click="() => updateLoading(75)">75%</ExButton>
-  <ExButton @click="() => updateLoading(100)">100%</ExButton>
+  <ExButton @click="update(0)">0%</ExButton>
+  <ExButton @click="update(25)">25%</ExButton>
+  <ExButton @click="update(50)">50%</ExButton>
+  <ExButton @click="update(75)">75%</ExButton>
+  <ExButton @click="update(100)">100%</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { onBeforeUnmount } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
 
-const updateLoading = (value) => {
-  loadingBar.update(value)
-}
+const update = percentage => loadingBar.update(percentage);
+onBeforeUnmount(() => loadingBar.destroy());
 </script>
 
 <template>
-  <ExButton @click="() => updateLoading(0)">0%</ExButton>
-  <ExButton @click="() => updateLoading(50)">50%</ExButton>
-  <ExButton @click="() => updateLoading(100)">100%</ExButton>
+  <div class="demo-container">
+    <ExButton @click="update(0)">0%</ExButton>
+    <ExButton @click="update(25)">25%</ExButton>
+    <ExButton @click="update(50)">50%</ExButton>
+    <ExButton @click="update(75)">75%</ExButton>
+    <ExButton @click="update(100)">100%</ExButton>
+  </div>
 </template>
 ```
 
-## 模拟加载过程
+:::
 
-模拟一个完整的加载过程。
+## 视觉配置
 
+::: raw
 <div class="demo-container">
-  <ExButton type="primary" @click="simulateLoading">模拟加载成功</ExButton>
-  <ExButton type="danger" @click="simulateError">模拟加载失败</ExButton>
+  <ExButton type="primary" @click="useCustomAppearance">应用配置并开始</ExButton>
+  <ExButton @click="resetAppearance">恢复默认并清理</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <script setup>
-import { loadingBar } from 'vue-ex-ui'
+import { onBeforeUnmount } from 'vue';
+import { loadingBar } from 'vue-ex-ui';
 
-const simulateLoading = () => {
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.update(30)
-  }, 500)
-  
-  setTimeout(() => {
-    loadingBar.update(60)
-  }, 1000)
-  
-  setTimeout(() => {
-    loadingBar.update(90)
-  }, 1500)
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
-
-const simulateError = () => {
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.update(50)
-  }, 500)
-  
-  setTimeout(() => {
-    loadingBar.error()
-  }, 1000)
-}
+const useCustomAppearance = () => {
+  loadingBar.config({ color: '#ff007f', height: 5, zIndex: 1200 });
+  loadingBar.start();
+};
+const resetAppearance = () => {
+  loadingBar.config({ color: undefined, height: 3, zIndex: undefined });
+  loadingBar.destroy();
+};
+onBeforeUnmount(() => loadingBar.destroy());
 </script>
 
 <template>
-  <ExButton type="primary" @click="simulateLoading">模拟加载成功</ExButton>
-  <ExButton type="danger" @click="simulateError">模拟加载失败</ExButton>
+  <div class="demo-container">
+    <ExButton
+      type="primary"
+      @click="useCustomAppearance"
+    >
+      应用配置并开始
+    </ExButton>
+    <ExButton @click="resetAppearance">恢复默认并清理</ExButton>
+  </div>
 </template>
 ```
 
-## 自定义配置
+:::
 
-通过 `loadingBar.config()` 可以自定义加载条的样式。
+高度必须在 1-16 之间，层级必须为非负有限值，字符串颜色不能为空。非法配置会抛出异常并保留此前有效配置。
 
+## 独立服务
+
+需要隔离多个应用或微前端的状态时，使用 `createLoadingBar()`。销毁后同一服务仍可重新使用。
+
+::: raw
 <div class="demo-container">
-  <ExButton type="primary" @click="customColor">自定义颜色</ExButton>
-  <ExButton type="success" @click="gradientColor">渐变颜色</ExButton>
+  <ex-button @click="routeLoadingBar.start()">开始独立服务</ex-button>
+  <ex-button @click="routeLoadingBar.update(60)">独立进度 60%</ex-button>
+  <ex-button @click="routeLoadingBar.finish()">完成独立服务</ex-button>
+  <ex-button @click="routeLoadingBar.destroy()">销毁独立服务</ex-button>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<script setup>
-import { loadingBar } from 'vue-ex-ui'
+<script setup lang="ts">
+import { onBeforeUnmount } from 'vue';
+import { createLoadingBar } from 'vue-ex-ui';
 
-const customColor = () => {
-  loadingBar.config({
-    color: '#ff007f',
-    height: 4
-  })
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 2000)
-}
+const routeLoadingBar = createLoadingBar({ height: 6, color: '#8b5cf6' });
 
-const gradientColor = () => {
-  loadingBar.config({
-    color: (percentage) => {
-      if (percentage < 30) return '#ef4444'
-      if (percentage < 70) return '#f59e0b'
-      return '#10b981'
-    },
-    height: 5
-  })
-  loadingBar.start()
-  
-  setTimeout(() => {
-    loadingBar.finish()
-  }, 3000)
-}
+onBeforeUnmount(() => routeLoadingBar.destroy());
 </script>
 
 <template>
-  <ExButton type="primary" @click="customColor">自定义颜色</ExButton>
-  <ExButton type="success" @click="gradientColor">渐变颜色</ExButton>
+  <div class="demo-container">
+    <ex-button @click="routeLoadingBar.start()">开始独立服务</ex-button>
+    <ex-button @click="routeLoadingBar.update(60)">独立进度 60%</ex-button>
+    <ex-button @click="routeLoadingBar.finish()">完成独立服务</ex-button>
+    <ex-button @click="routeLoadingBar.destroy()">销毁独立服务</ex-button>
+  </div>
 </template>
 ```
+
+:::
+
+安装 `ExLoadingBar` 或完整组件库后，每个 Vue App 会获得独立的 `this.$loadingBar`。在
+ConfigProvider 子树的 `setup()` 中使用 `useLoadingBarService()` 可继承主题和 z-index，
+并在 Provider 卸载时自动销毁；直接导入的 `loadingBar` 是 setup 外的模块级便捷单例。
+
+## 声明式组件
+
+此示例将进度条留在局部容器中，便于同时调整进度、终态和显隐。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="visible = !visible">{{ visible ? '隐藏' : '显示' }}</ex-button>
+  <ex-button @click="percentage = Math.max(0, percentage - 20)">减少 20%</ex-button>
+  <ex-button @click="percentage = Math.min(100, percentage + 20)">增加 20%</ex-button>
+  <label>状态 <select v-model="status"><option value="loading">加载中</option><option value="success">成功</option><option value="error">失败</option><option value="warning">警告</option></select></label>
+  <p role="status">当前进度 {{ percentage }}%</p>
+  <ex-loading-bar :visible="visible" :percentage="percentage" :status="status" :height="6" aria-label="数据同步进度" style="position: relative; width: 100%;" />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { LoadingBarStatus } from 'vue-ex-ui';
+
+const visible = ref(true);
+const percentage = ref(40);
+const status = ref<LoadingBarStatus>('loading');
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-button @click="visible = !visible">{{ visible ? '隐藏' : '显示' }}</ex-button>
+    <ex-button @click="percentage = Math.max(0, percentage - 20)">减少 20%</ex-button>
+    <ex-button @click="percentage = Math.min(100, percentage + 20)">增加 20%</ex-button>
+    <label>
+      状态
+      <select v-model="status">
+        <option value="loading">加载中</option>
+        <option value="success">成功</option>
+        <option value="error">失败</option>
+        <option value="warning">警告</option>
+      </select>
+    </label>
+    <p role="status">当前进度 {{ percentage }}%</p>
+    <ex-loading-bar
+      :visible="visible"
+      :percentage="percentage"
+      :status="status"
+      :height="6"
+      aria-label="数据同步进度"
+      style="position: relative; width: 100%;"
+    />
+  </div>
+</template>
+```
+
+:::
 
 ## 路由集成
 
-可以与 Vue Router 集成，在路由切换时显示加载条。
+```ts
+import { loadingBar } from 'vue-ex-ui';
 
-```typescript
-import { createRouter } from 'vue-router'
-import { loadingBar } from 'vue-ex-ui'
-
-const router = createRouter({
-  // ...
-})
-
-router.beforeEach((to, from, next) => {
-  loadingBar.start()
-  next()
-})
+router.beforeEach(() => {
+  loadingBar.start();
+});
 
 router.afterEach(() => {
-  loadingBar.finish()
-})
+  loadingBar.finish();
+});
 
 router.onError(() => {
-  loadingBar.error()
-})
-
-export default router
+  loadingBar.error();
+});
 ```
 
-## API 请求集成
+## 组件 API
 
-可以与 Axios 等 HTTP 库集成，在请求时显示加载条。
+| 属性         | 说明                         | 类型                                         | 默认值       |
+| ------------ | ---------------------------- | -------------------------------------------- | ------------ |
+| `visible`    | 是否渲染                     | `boolean`                                    | `true`       |
+| `percentage` | 当前进度，限制在 0-100       | `number`                                     | `0`          |
+| `status`     | 当前状态                     | `loading \| success \| error \| warning`     | `loading`    |
+| `height`     | 高度，限制在 1-16 像素       | `number`                                     | `3`          |
+| `color`      | 固定颜色或按百分比计算的颜色 | `string \| ((percentage: number) => string)` | 主题状态色   |
+| `zIndex`     | 非负层级                     | `number`                                     | 全局层级令牌 |
 
-```typescript
-import axios from 'axios'
-import { loadingBar } from 'vue-ex-ui'
+组件保留 `class`、`style`、`aria-*` 和 `data-*` 等原生属性；进度角色和值由组件维护。
 
-// 请求拦截器
-axios.interceptors.request.use(
-  (config) => {
-    loadingBar.start()
-    return config
-  },
-  (error) => {
-    loadingBar.error()
-    return Promise.reject(error)
-  }
-)
+## 服务 API
 
-// 响应拦截器
-axios.interceptors.response.use(
-  (response) => {
-    loadingBar.finish()
-    return response
-  },
-  (error) => {
-    loadingBar.error()
-    return Promise.reject(error)
-  }
-)
-```
-
-## API
-
-### LoadingBar 方法
-
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `loadingBar.start` | 开始加载 | `() => void` |
-| `loadingBar.finish` | 完成加载 | `() => void` |
-| `loadingBar.error` | 加载失败 | `() => void` |
-| `loadingBar.update` | 更新进度 | `(percentage: number) => void` |
-| `loadingBar.config` | 配置加载条 | `(options: LoadingBarOptions) => void` |
+| 方法      | 类型                                   | 说明                       |
+| --------- | -------------------------------------- | -------------------------- |
+| `config`  | `(options: LoadingBarOptions) => void` | 更新视觉配置               |
+| `start`   | `() => void`                           | 开始并自动推进             |
+| `update`  | `(percentage: number) => void`         | 显示指定手动进度           |
+| `finish`  | `() => void`                           | 显示成功终态               |
+| `error`   | `() => void`                           | 显示失败终态               |
+| `warning` | `() => void`                           | 显示警告终态               |
+| `destroy` | `() => void`                           | 清理 DOM、状态与全部计时器 |
 
 ### LoadingBarOptions
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `color` | 进度条颜色 | `string \| ((percentage: number) => string)` | — |
-| `height` | 进度条高度（像素） | `number` | `3` |
-| `duration` | 动画持续时间（毫秒） | `number` | `3000` |
-| `zIndex` | 层级 | `number` | `9999` |
-
-## 全局配置
-
-可以在 Vue 应用中全局使用：
-
-```typescript
-import { createApp } from 'vue'
-import { loadingBar } from 'vue-ex-ui'
-import App from './App.vue'
-
-const app = createApp(App)
-
-// 挂载到全局属性
-app.config.globalProperties.$loadingBar = loadingBar
-
-// 全局配置
-loadingBar.config({
-  color: '#00f0ff',
-  height: 3,
-  duration: 3000,
-  zIndex: 9999
-})
-
-app.mount('#app')
-```
-
-然后在组件中使用：
-
-```vue
-<script setup>
-import { getCurrentInstance } from 'vue'
-
-const instance = getCurrentInstance()
-const loadingBar = instance?.appContext.config.globalProperties.$loadingBar
-
-const startLoading = () => {
-  loadingBar.start()
-}
-</script>
-```
-
-## 特性
-
-- 🌃 赛博朋克主题设计，带有霓虹发光效果
-- 🌈 支持自定义颜色和渐变色
-- 📊 自动模拟进度增长
-- 🎯 支持手动控制进度
-- ⚡ 流畅的动画效果
-- 🔧 灵活的配置选项
-- 📱 响应式设计
-
-## 主题定制
-
-加载条跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，颜色与高度可通过组件 `color` / `height` 属性调整。
+| 属性     | 类型                                         | 默认值       |
+| -------- | -------------------------------------------- | ------------ |
+| `color`  | `string \| ((percentage: number) => string)` | 主题状态色   |
+| `height` | `number`                                     | `3`          |
+| `zIndex` | `number`                                     | 全局层级令牌 |
 
 <style scoped>
 .demo-container {
-  padding: 24px;
-  background: var(--ex-color-bg-secondary);
-  border: 1px solid var(--ex-color-border-primary);
-  border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--ex-color-border-primary);
+  border-radius: var(--ex-radius-lg);
 }
 </style>

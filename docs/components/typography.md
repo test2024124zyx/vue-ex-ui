@@ -1,248 +1,367 @@
 # Typography 排版
 
-Typography 组件用于展示各种文本内容，支持多种变体、尺寸和样式修饰符。
+用于标题、正文、说明文字及独立文本效果。组件默认采用终端等宽字体、展示字体、宽字距和克制的 RGB 色差，赛博朋克是 Typography 的基础视觉，不需要额外开启属性。
 
-## 基础用法
+## 文本层级
 
-最简单的文字展示。
+`variant` 决定文本的语义层级和默认排版；如果只需要改变字号，可单独使用 `size`。
 
 ::: raw
 
-<div class="vp-raw demo-container">
-  <ex-typography>这是默认的正文文本</ex-typography>
-  <ex-typography class="vp-raw" variant="heading">这是标题文本</ex-typography>
-  <ex-typography variant="caption">这是说明文本</ex-typography>
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography variant="display">智能运营中心</ex-typography>
+  <ex-typography variant="heading">本月业务概览</ex-typography>
+  <ex-typography variant="title">增长趋势</ex-typography>
+  <ex-typography variant="body">统一展示业务数据、项目进度和客户动态。</ex-typography>
+  <ex-typography variant="caption">数据更新于 2 分钟前</ex-typography>
+  <ex-typography variant="overline">BUSINESS INSIGHT</ex-typography>
 </div>
 :::
 
+::: details 查看示例代码
+
 ```vue
-<template>
-  <ex-typography>这是默认的正文文本</ex-typography>
-  <ex-typography variant="heading">这是标题文本</ex-typography>
-  <ex-typography variant="caption">这是说明文本</ex-typography>
-</template>
+<ex-typography variant="display">智能运营中心</ex-typography>
+<ex-typography variant="heading">本月业务概览</ex-typography>
+<ex-typography variant="title">增长趋势</ex-typography>
+<ex-typography variant="body">统一展示业务数据、项目进度和客户动态。</ex-typography>
+<ex-typography variant="caption">数据更新于 2 分钟前</ex-typography>
+<ex-typography variant="overline">BUSINESS INSIGHT</ex-typography>
 ```
 
-## 文本变体
+:::
 
-Typography 支持多种文本变体，适用于不同的使用场景。
+## 文本来源
 
-<div class="vp-raw demo-container">
-  <ex-typography variant="display" class="demo-item">Display - 展示文本</ex-typography>
-  <ex-typography variant="heading" class="demo-item">Heading - 标题文本</ex-typography>
-  <ex-typography variant="title" class="demo-item">Title - 副标题文本</ex-typography>
-  <ex-typography variant="body" class="demo-item">Body - 正文文本</ex-typography>
-  <ex-typography variant="caption" class="demo-item">Caption - 说明文本</ex-typography>
-  <ex-typography variant="overline" class="demo-item">OVERLINE - 上标文本</ex-typography>
+组件支持通过 `text` 属性或默认插槽提供内容；默认插槽的优先级高于 `text`。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography variant="body" text="通过 text 属性传入文本"></ex-typography>
+  <ex-typography variant="body">通过默认插槽传入文本</ex-typography>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography variant="display">Display - 展示文本</ex-typography>
-  <ex-typography variant="heading">Heading - 标题文本</ex-typography>
-  <ex-typography variant="title">Title - 副标题文本</ex-typography>
-  <ex-typography variant="body">Body - 正文文本</ex-typography>
-  <ex-typography variant="caption">Caption - 说明文本</ex-typography>
-  <ex-typography variant="overline">OVERLINE - 上标文本</ex-typography>
-</template>
+<ex-typography variant="body" text="通过 text 属性传入文本"></ex-typography>
+<ex-typography variant="body">通过默认插槽传入文本</ex-typography>
 ```
 
-## 文本尺寸
+:::
 
-支持多种尺寸规格，从 xs 到 4xl。
+## 渐变文本效果
 
-<div class="vp-raw demo-container">
-    <ex-typography size="xs" class="demo-item">Extra Small (xs)</ex-typography>
-    <ex-typography size="sm" class="demo-item">Small (sm)</ex-typography>
-    <ex-typography size="md" class="demo-item">Medium (md)</ex-typography>
-    <ex-typography size="lg" class="demo-item">Large (lg)</ex-typography>
-    <ex-typography size="xl" class="demo-item">Extra Large (xl)</ex-typography>
-    <ex-typography size="2xl" class="demo-item">2X Large (2xl)</ex-typography>
-    <ex-typography size="3xl" class="demo-item">3X Large (3xl)</ex-typography>
-    <ex-typography size="4xl" class="demo-item">4X Large (4xl)</ex-typography>
+`gradient` 是独立文本效果，默认使用从左到右的静态渐变，可应用于任意文本层级和 HTML 标签。组件会按文本内容宽度绘制色带，长文本仍会在容器内正常换行。静态模式展示完整渐变色带；需要让色带持续位移时，再显式添加 `gradient-animated`。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography
+    variant="heading"
+    gradient
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #00d4ff 0%, #a86bff 50%, #ff3bd1 100%)' }"
+  >
+    静态渐变：跨区域业务增长 28.6%
+  </ex-typography>
+  <ex-typography
+    variant="heading"
+    gradient
+    gradient-animated
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #00ff88 0%, #00d4ff 35%, #ff00ff 100%)' }"
+  >
+    动态渐变：实时数据流
+  </ex-typography>
+  <ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
+  <ex-typography variant="caption" gradient>渐变说明文字</ex-typography>
+  <ex-typography
+    tag="span"
+    variant="body"
+    gradient
+    :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%)' }"
+  >
+    自定义渐变色
+  </ex-typography>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography size="xs">Extra Small (xs)</ex-typography>
-  <ex-typography size="sm">Small (sm)</ex-typography>
-  <ex-typography size="md">Medium (md)</ex-typography>
-  <ex-typography size="lg">Large (lg)</ex-typography>
-  <ex-typography size="xl">Extra Large (xl)</ex-typography>
-  <ex-typography size="2xl">2X Large (2xl)</ex-typography>
-  <ex-typography size="3xl">3X Large (3xl)</ex-typography>
-  <ex-typography size="4xl">4X Large (4xl)</ex-typography>
-</template>
+<ex-typography
+  variant="heading"
+  gradient
+  :custom-style="{
+    '--ex-typography-gradient': 'linear-gradient(90deg, #00d4ff 0%, #a86bff 50%, #ff3bd1 100%)',
+  }"
+>
+  静态渐变：跨区域业务增长 28.6%
+</ex-typography>
+<ex-typography
+  variant="heading"
+  gradient
+  gradient-animated
+  :custom-style="{
+    '--ex-typography-gradient': 'linear-gradient(90deg, #00ff88 0%, #00d4ff 35%, #ff00ff 100%)',
+  }"
+>
+  动态渐变：实时数据流
+</ex-typography>
+<ex-typography variant="body" gradient>正文同样可以使用渐变效果</ex-typography>
+<ex-typography variant="caption" gradient>渐变说明文字</ex-typography>
+<ex-typography
+  tag="span"
+  variant="body"
+  gradient
+  :custom-style="{ '--ex-typography-gradient': 'linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%)' }"
+>
+  自定义渐变色
+</ex-typography>
 ```
 
-## 赛博朋克化效果
+:::
 
-支持渐变色彩和发光效果，营造赛博氛围。
+## 赛博朋克字体基线与增强效果
 
-  <div class="demo-container dark-bg">
-    <ex-typography variant="display" gradient glow class="demo-item">
-      渐变发光文本
-    </ex-typography>
-    <ex-typography variant="heading" gradient class="demo-item">
-      渐变文本
-    </ex-typography>
-    <ex-typography variant="title" glow class="demo-item">
-      发光文本
-    </ex-typography>
-    <ex-typography variant="body" color="primary" class="demo-item">
-      主色调文本
-    </ex-typography>
-  </div>
+所有 Typography 层级默认共享赛博朋克基线：拉丁字符使用 Orbitron、JetBrains Mono 和 Share Tech Mono，简体中文使用随包的 Noto Sans SC，避免依赖系统字体；同时统一保留终端字距与低强度静态 RGB 色差。`display` / `heading` 默认启用低频撕裂层；`body` / `caption` 保持稳定可读，但不会退回普通字体或普通视觉。`cyberpunk` 用于把任意变体提升为更强的霓虹色差、展示字体和撕裂效果。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography variant="display" gradient>NEON COMMAND CENTER</ex-typography>
+  <ex-typography variant="heading">系统状态：ONLINE</ex-typography>
+  <ex-typography variant="body">终端链路已建立，等待下一条指令。</ex-typography>
+  <ex-typography variant="body" cyberpunk>强化模式：色差与霓虹效果已提升。</ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography variant="display" gradient glow>渐变发光文本</ex-typography>
-  <ex-typography variant="heading" gradient>渐变文本</ex-typography>
-  <ex-typography variant="title" glow>发光文本</ex-typography>
-  <ex-typography variant="body" color="primary">主色调文本</ex-typography>
-</template>
+<ex-typography variant="display" gradient>NEON COMMAND CENTER</ex-typography>
+<ex-typography variant="heading">系统状态：ONLINE</ex-typography>
+<ex-typography variant="body">终端链路已建立，等待下一条指令。</ex-typography>
+<ex-typography variant="body" cyberpunk>强化模式：色差与霓虹效果已提升。</ex-typography>
 ```
 
-## 文本修饰
+:::
 
-支持多种文本修饰效果。
+## 尺寸与修饰
 
-<div class="vp-raw demo-container">
-    <ex-typography bold class="demo-item">粗体文本</ex-typography>
-    <ex-typography italic class="demo-item">斜体文本</ex-typography>
-    <ex-typography underline class="demo-item">下划线文本</ex-typography>
-    <ex-typography center class="demo-item">居中文本</ex-typography>
-    <ex-typography truncate class="demo-item" style="width: 200px;">
-      这是一段很长的文本，会被截断显示省略号
-    </ex-typography>
-  </div>
+`size` 会覆盖变体的默认字号；`bold`、`italic`、`underline`、`glow` 和 `center` 可以独立组合使用。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography size="xs">Extra Small</ex-typography>
+  <ex-typography size="sm">Small</ex-typography>
+  <ex-typography size="md" bold>Medium Bold</ex-typography>
+  <ex-typography size="lg" italic>Large Italic</ex-typography>
+  <ex-typography size="xl" underline>Extra Large Underline</ex-typography>
+  <ex-typography size="2xl" glow color="primary">2X Large Glow</ex-typography>
+  <ex-typography size="3xl">3X Large</ex-typography>
+  <ex-typography size="4xl">4X Large</ex-typography>
+  <ex-typography center>Centered Text</ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography bold>粗体文本</ex-typography>
-  <ex-typography italic>斜体文本</ex-typography>
-  <ex-typography underline>下划线文本</ex-typography>
-  <ex-typography center>居中文本</ex-typography>
-  <ex-typography truncate style="width: 200px;">
-    这是一段很长的文本，会被截断显示省略号
+<ex-typography size="xs">Extra Small</ex-typography>
+<ex-typography size="sm">Small</ex-typography>
+<ex-typography size="md" bold>Medium Bold</ex-typography>
+<ex-typography size="lg" italic>Large Italic</ex-typography>
+<ex-typography size="xl" underline>Extra Large Underline</ex-typography>
+<ex-typography size="2xl" glow color="primary">2X Large Glow</ex-typography>
+<ex-typography size="3xl">3X Large</ex-typography>
+<ex-typography size="4xl">4X Large</ex-typography>
+<ex-typography center>Centered Text</ex-typography>
+```
+
+:::
+
+## 文本截断
+
+::: raw
+
+<div class="vp-raw demo-container typography-truncate">
+  <ex-typography truncate>
+    单行内容过长时显示省略号，并保持当前容器布局稳定。
   </ex-typography>
-</template>
-```
-
-## 多行截断
-
-支持多行文本截断。
-
-<div class="vp-raw demo-container">
-    <ex-typography 
-      truncate 
-      :max-lines="3" 
-      class="demo-item"
-      style="width: 300px;"
-    >
-      这是一段很长的文本内容，用来演示多行截断的效果。当文本超过指定的行数时，会显示省略号。这个功能在卡片布局和列表项中特别有用，可以保持界面的整洁和一致性。
-    </ex-typography>
-  </div>
-
-```vue
-<template>
-  <ex-typography truncate :max-lines="3" style="width: 300px;">
-    这是一段很长的文本内容，用来演示多行截断的效果...
+  <ex-typography truncate :max-lines="2">
+    多行文本可通过 max-lines 指定保留行数。组件在达到限制后截断剩余内容，适合列表摘要、卡片说明和搜索结果等紧凑场景。
   </ex-typography>
-</template>
-```
+  <ex-typography
+    text="使用 text 属性传入完整文本，截断后会自动提供 title 提示。"
+    truncate
+  />
+</div>
+:::
 
-## HTML 标签
-
-可以指定渲染的 HTML 标签。
-
-<div class="vp-raw demo-container">
-    <ex-typography tag="h1" class="demo-item">H1 标签</ex-typography>
-    <ex-typography tag="h2" class="demo-item">H2 标签</ex-typography>
-    <ex-typography tag="p" class="demo-item">P 标签</ex-typography>
-    <ex-typography tag="span" class="demo-item">Span 标签</ex-typography>
-    <ex-typography tag="div" class="demo-item">Div 标签</ex-typography>
-  </div>
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography tag="h1">H1 标签</ex-typography>
-  <ex-typography tag="h2">H2 标签</ex-typography>
-  <ex-typography tag="p">P 标签</ex-typography>
-  <ex-typography tag="span">Span 标签</ex-typography>
-  <ex-typography tag="div">Div 标签</ex-typography>
-</template>
+<ex-typography truncate>
+  单行内容过长时显示省略号，并保持当前容器布局稳定。
+</ex-typography>
+<ex-typography truncate :max-lines="2">
+  多行文本可通过 max-lines 指定保留行数。组件在达到限制后截断剩余内容，适合列表摘要、卡片说明和搜索结果等紧凑场景。
+</ex-typography>
+<ex-typography text="使用 text 属性传入完整文本，截断后会自动提供 title 提示。" truncate />
 ```
 
-## 自定义样式
+:::
 
-支持自定义样式和颜色。
+通过 `text` 属性传入内容并启用截断时，组件会自动将完整文本放入 `title` 提示；使用默认插槽时，请按需自行传入 `title` 或 `aria-label`。
 
-<div class="vp-raw demo-container">
-    <ex-typography 
-      :custom-style="{ fontSize: '24px', fontWeight: 'bold' }"
-      class="demo-item"
-    >
-      自定义字体大小和粗细
-    </ex-typography>
-    <ex-typography 
-      color="secondary"
-      class="demo-item"
-    >
-      次要颜色文本
-    </ex-typography>
-    <ex-typography 
-      :custom-style="{ color: '#ff6b6b' }"
-      class="demo-item"
-    >
-      自定义颜色文本
-    </ex-typography>
-  </div>
+## 标签与颜色
+
+`tag` 控制最终渲染的 HTML 标签，`color` 既支持已注册的语义色，也支持原始 CSS 颜色值。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack">
+  <ex-typography tag="h2" variant="title">语义化 H2 标题</ex-typography>
+  <ex-typography tag="span" color="success">已完成</ex-typography>
+  <ex-typography tag="span" color="#8b5cf6">自定义 CSS 颜色</ex-typography>
+  <ex-typography tag="label" color="text-secondary">表单说明标签</ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ex-typography :custom-style="{ fontSize: '24px', fontWeight: 'bold' }">
-    自定义字体大小和粗细
+<ex-typography tag="h2" variant="title">语义化 H2 标题</ex-typography>
+<ex-typography tag="span" color="success">已完成</ex-typography>
+<ex-typography tag="span" color="#8b5cf6">自定义 CSS 颜色</ex-typography>
+<ex-typography tag="label" color="text-secondary">表单说明标签</ex-typography>
+```
+
+:::
+
+## CRT 终端文字效果
+
+设置 `terminal` 后，Typography 会使用终端等宽字体、墨绿屏幕底色、穿过字符的复古横向扫描线、低强度屏幕辉光和轻微 CRT 闪烁。效果默认关闭，不会改变普通文本的排版；`prefers-reduced-motion`、高对比度和强制颜色模式会自动关闭装饰动画。
+
+::: raw
+
+<div class="vp-raw demo-container typography-stack terminal-typography-demo">
+  <ex-typography terminal tag="div" variant="body">
+    <strong class="terminal-screen-title">SYSTEM ASSAULT</strong>
+    <span class="terminal-screen-copy">wonton soup lights denim free-market BASE jump smart- bicycle Chiba semiotics realism franchise RAF. human free-market marketing towards alcohol alcohol nano- courier market cartel monofilament boy Legba construct. geodesic systemic katana advert man human chrome engine receding meta- Chiba tower construct media. towards denim drone nano- sensory gang paranoid Legba woman media corrupted film skyscraper saturation point. fluidity youtube carbon digital systema rebar ablative neon refrigerator sensory market face forwards alcohol free-market. neural sentient narrative camera crypto- singularity pre- ablative Legba Tokyo DIY RAF sensory carbon.</span>
   </ex-typography>
-  <ex-typography color="secondary">次要颜色文本</ex-typography>
-  <ex-typography :custom-style="{ color: '#ff6b6b' }">自定义颜色文本</ex-typography>
-</template>
+  <ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
+  <ex-typography
+    terminal
+    :custom-style="{
+      '--ex-typography-terminal-color': '#14fdce',
+      '--ex-typography-terminal-background': '#031e11',
+      '--ex-typography-terminal-color-rgb': '20, 253, 206',
+    }"
+  >
+    可通过 customStyle 覆盖终端主题色
+  </ex-typography>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<ex-typography terminal tag="div" variant="body">
+  <strong class="terminal-screen-title">SYSTEM ASSAULT</strong>
+  <span class="terminal-screen-copy">wonton soup lights denim free-market BASE jump smart- bicycle Chiba semiotics realism franchise RAF. human free-market marketing towards alcohol alcohol nano- courier market cartel monofilament boy Legba construct. geodesic systemic katana advert man human chrome engine receding meta- Chiba tower construct media. towards denim drone nano- sensory gang paranoid Legba woman media corrupted film skyscraper saturation point. fluidity youtube carbon digital systema rebar ablative neon refrigerator sensory market face forwards alcohol free-market. neural sentient narrative camera crypto- singularity pre- ablative Legba Tokyo DIY RAF sensory carbon.</span>
+</ex-typography>
+<ex-typography terminal text="> SYSTEM STATUS: ONLINE" />
+<ex-typography
+  terminal
+  :custom-style="{
+    '--ex-typography-terminal-color': '#14fdce',
+    '--ex-typography-terminal-background': '#031e11',
+    '--ex-typography-terminal-color-rgb': '20, 253, 206',
+  }"
+>
+  可通过 customStyle 覆盖终端主题色
+</ex-typography>
 ```
+
+:::
+
+终端模式下 `text-primary` 会映射为终端青绿色；显式传入 `color` 或启用 `gradient` 时仍保留原有优先级。
 
 ## API
 
 ### Props
 
-| 参数        | 说明                                                          | 类型                                                                                                                                         | 默认值                |
-| ----------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| variant     | 文本变体                                                      | `'display' \| 'heading' \| 'title' \| 'body' \| 'caption' \| 'overline'`                                                                     | `'body'`              |
-| size        | 文本尺寸                                                      | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| '3xl' \| '4xl'`                                                                            | `'md'`                |
-| tag         | HTML 标签                                                     | `string`                                                                                                                                     | 根据 variant 自动选择 |
-| text        | 文本内容                                                      | `string`                                                                                                                                     | -                     |
-| color       | 文本颜色：主题色名或原始 CSS 颜色值（`#fff`/`rgb()`/`var()`） | `'primary' \| 'secondary' \| 'success' \| 'warning' \| 'error' \| 'info' \| 'text-primary' \| 'text-secondary' \| 'text-disabled' \| string` | `'text-primary'`      |
-| truncate    | 是否截断                                                      | `boolean`                                                                                                                                    | `false`               |
-| maxLines    | 最大行数（truncate 为 true 时有效）                           | `number`                                                                                                                                     | `1`                   |
-| gradient    | 是否使用渐变色                                                | `boolean`                                                                                                                                    | `false`               |
-| glow        | 是否使用发光效果                                              | `boolean`                                                                                                                                    | `false`               |
-| center      | 是否居中对齐                                                  | `boolean`                                                                                                                                    | `false`               |
-| bold        | 是否粗体                                                      | `boolean`                                                                                                                                    | `false`               |
-| italic      | 是否斜体                                                      | `boolean`                                                                                                                                    | `false`               |
-| underline   | 是否下划线                                                    | `boolean`                                                                                                                                    | `false`               |
-| customStyle | 自定义样式                                                    | `CSSProperties`                                                                                                                              | -                     |
+| 参数               | 说明                                        | 类型                                                            | 默认值              |
+| ------------------ | ------------------------------------------- | --------------------------------------------------------------- | ------------------- |
+| `text`             | 无默认插槽时显示的文本                      | `string`                                                        | —                   |
+| `tag`              | HTML 标签                                   | `h1 \| h2 \| h3 \| h4 \| h5 \| h6 \| p \| span \| div \| label` | 根据 `variant` 推导 |
+| `variant`          | 文本层级                                    | `display \| heading \| title \| body \| caption \| overline`    | `body`              |
+| `size`             | 显式字号；未设置时保留 `variant` 的字号     | `xs \| sm \| md \| lg \| xl \| 2xl \| 3xl \| 4xl`               | —                   |
+| `color`            | 主题色名或有效 CSS 颜色                     | `TypographyColor \| string`                                     | `text-primary`      |
+| `truncate`         | 是否截断文本                                | `boolean`                                                       | `false`             |
+| `maxLines`         | 截断时保留的最大行数，非整数会向下取整      | `number`                                                        | `1`                 |
+| `gradient`         | 是否启用渐变文本效果                        | `boolean`                                                       | `false`             |
+| `gradientAnimated` | 是否启用渐变背景动态位移（需要 `gradient`） | `boolean`                                                       | `false`             |
+| `cyberpunk`        | 是否启用强化赛博朋克文字效果                | `boolean`                                                       | `false`             |
+| `terminal`         | 是否启用 CRT 终端文字效果                   | `boolean`                                                       | `false`             |
+| `glow`             | 是否启用发光效果                            | `boolean`                                                       | `false`             |
+| `center`           | 是否居中                                    | `boolean`                                                       | `false`             |
+| `bold`             | 是否加粗                                    | `boolean`                                                       | `false`             |
+| `italic`           | 是否斜体                                    | `boolean`                                                       | `false`             |
+| `underline`        | 是否显示下划线                              | `boolean`                                                       | `false`             |
+| `customStyle`      | 合并到根元素的样式                          | `CSSProperties`                                                 | —                   |
+
+在 Vue 模板中，驼峰属性使用 kebab-case：`max-lines`、`gradient-animated` 和 `custom-style`。`terminal` 可直接写为布尔属性。
 
 ### Slots
 
-| 名称    | 说明     |
-| ------- | -------- |
-| default | 文本内容 |
+| 名称      | 说明                        |
+| --------- | --------------------------- |
+| `default` | 文本内容，优先级高于 `text` |
 
-### 默认标签映射
+<style scoped>
+.typography-stack {
+  display: grid;
+  gap: 12px;
+}
 
-| Variant  | 默认标签 |
-| -------- | -------- |
-| display  | h1       |
-| heading  | h2       |
-| title    | h3       |
-| body     | p        |
-| caption  | span     |
-| overline | span     |
+.terminal-typography-demo {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.terminal-typography-demo > .ex-typography {
+  width: 100%;
+}
+
+.terminal-screen-title {
+  display: block;
+  color: inherit;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: var(--ex-font-normal);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.terminal-screen-copy {
+  display: block;
+  margin-top: 1rem;
+  color: inherit;
+  font-size: clamp(1rem, 1.4vw, 1.5rem);
+  line-height: 1.2;
+}
+
+.typography-truncate {
+  display: grid;
+  gap: 18px;
+  max-width: 520px;
+}
+</style>

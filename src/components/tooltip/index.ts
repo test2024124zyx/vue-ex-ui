@@ -1,5 +1,5 @@
-import type { App } from 'vue';
-import ExTooltip from './ExTooltip.vue';
+import ExTooltipComponent from './ExTooltip.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExTooltipProps,
   ExTooltipEmits,
@@ -20,13 +20,7 @@ export type {
 };
 
 // 导出组件
-export { ExTooltip };
+export const ExTooltip: InstallableComponent<typeof ExTooltipComponent> =
+  withInstall(ExTooltipComponent);
 
-// 组件安装插件
-export const ExTooltipPlugin = {
-  install(app: App) {
-    app.component('ExTooltip', ExTooltip);
-  },
-};
-
-export default ExTooltipPlugin;
+export default ExTooltip;

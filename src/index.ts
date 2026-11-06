@@ -2,107 +2,118 @@ import type { App, Plugin } from 'vue';
 
 // 导入所有
 import ExAffix from './components/affix';
-import ExAlert from './components/alert';
+import { ExAlert } from './components/alert';
 import ExAnchor, { ExAnchorLink } from './components/anchor';
-import ExAvatar from './components/avatar';
-import ExBadge from './components/badge';
-import ExBreadcrumb, { ExBreadcrumbItem } from './components/breadcrumb';
-import ExButton from './components/button';
+import { ExAvatar, ExAvatarGroup } from './components/avatar';
+import { ExBadge } from './components/badge';
+import { ExBreadcrumb, ExBreadcrumbItem } from './components/breadcrumb';
+import { ExButton } from './components/button';
 import ExCard from './components/card';
-import ExCheckbox, { ExCheckboxGroup } from './components/checkbox';
+import { ExCheckbox, ExCheckboxGroup } from './components/checkbox';
 import ExCollapse, { ExCollapseItem } from './components/collapse';
 import ExConfigProvider from './components/config-provider';
 import ExDialog from './components/dialog';
-import ExDivider from './components/divider';
-import ExDrawer from './components/drawer';
+import { ExDivider } from './components/divider';
+import { ExDrawer } from './components/drawer';
 import ExDropdown, { ExDropdownItem } from './components/dropdown';
-import ExEllipsis from './components/ellipsis';
+import { ExEllipsis } from './components/ellipsis';
 import ExEmpty from './components/empty';
-import FlexPlugin, { ExFlex, ExFlexItem } from './components/flex';
+import { ExFlex, ExFlexItem } from './components/flex';
 import ExForm, { ExFormItem } from './components/form';
-import GridPlugin, { ExGrid, ExGridItem } from './components/grid';
-import ExHeatmap from './components/heatmap';
-import ExIcon from './components/icon';
+import { ExGrid, ExGridItem } from './components/grid';
+import { ExHeatmap } from './components/heatmap';
+import { ExIcon } from './components/icon';
 import ExTag, { ExTagInput } from './components/tag';
-import {
-  LayoutPlugin,
-  ExLayout,
-  ExHeader,
-  ExContent,
-  ExFooter,
-  ExSider,
-  ExContainer,
-} from './components/layout';
-import ExImage from './components/image';
-import ExDateTimePicker from './components/datetime-picker';
-import ExInput from './components/input';
-import ExLink from './components/link';
-import ExList from './components/list';
+import { ExLayout, ExHeader, ExContent, ExFooter, ExSider, ExContainer } from './components/layout';
+import { ExImage } from './components/image';
+import { ExDateTimePicker } from './components/datetime-picker';
+import { ExInput } from './components/input';
+import { ExLink } from './components/link';
+import { ExList } from './components/list';
 import ExLoading, {
+  createLoadingService,
+  LOADING_SERVICE_KEY,
   loadingService,
   showLoading,
   hideLoading,
   destroyLoading,
+  useLoadingService,
 } from './components/loading';
 import LoadingPlugin from './components/loading/LoadingService';
-import ExLoadingBar, { loadingBar } from './components/loading-bar';
-import MenuPlugin, { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
-import ExMessage, { message } from './components/message';
+import {
+  ExLoadingBar,
+  createLoadingBar,
+  loadingBar,
+  LOADING_BAR_SERVICE_KEY,
+  useLoadingBarService,
+} from './components/loading-bar';
+import { ExMenu, ExMenuItem, ExSubMenu } from './components/menu';
+import {
+  ExMessage,
+  createMessageService,
+  message,
+  MESSAGE_SERVICE_KEY,
+  useMessageService,
+} from './components/message';
 import ExModal from './components/modal';
-import ExNotification, { notification } from './components/notification';
-import ExPagination from './components/pagination';
+import {
+  ExNotification,
+  createNotificationService,
+  notification,
+  NOTIFICATION_SERVICE_KEY,
+  useNotificationService,
+} from './components/notification';
+import { ExPagination } from './components/pagination';
 import ExPanel from './components/panel';
 import ExPopconfirm from './components/popconfirm';
 import ExPopover from './components/popover';
-import ExProgress from './components/progress';
+import { ExProgress } from './components/progress';
 import ExQRCode from './components/qrcode';
 import ExBarcode from './components/barcode';
-import ExRadio, { ExRadioGroup } from './components/radio';
+import { ExRadio, ExRadioGroup } from './components/radio';
 import ExRate from './components/rate';
-import ExSelect from './components/select';
+import { ExSelect } from './components/select';
 import ExSkeleton from './components/skeleton';
 import ExSlider from './components/slider';
-import ExSpace from './components/space';
-import ExSteps, { ExStep } from './components/steps';
+import { ExSpace } from './components/space';
+import { ExSteps, ExStep } from './components/steps';
 import ExSwitch from './components/switch';
 import ExTable from './components/table';
 import ExTabs, { ExTabPane } from './components/tabs';
-import ExTooltip from './components/tooltip';
-import ExTree from './components/tree';
-import ExTypography from './components/typography';
-import ExVirtualList from './components/virtual-list';
-import ExWatermark from './components/watermark';
+import { ExTooltip } from './components/tooltip';
+import { ExTree } from './components/tree';
+import { ExTypography } from './components/typography';
+import { ExVirtualList } from './components/virtual-list';
+import { ExWatermark } from './components/watermark';
 import ExFileUpload from './components/file-upload';
 import ExFileDownload from './components/file-download';
 import ExFilePreview from './components/file-preview';
 import ExImageCrop from './components/image-crop';
 import ExImageCompress from './components/image-compress';
 import ExFileList from './components/file-list';
-import ExCalendar from './components/calendar';
-import TimelinePlugin, { ExTimeline, ExTimelineItem } from './components/timeline';
+import { ExCalendar } from './components/calendar';
+import { ExTimeline, ExTimelineItem } from './components/timeline';
 import ExCode from './components/code';
-import CarouselPlugin, { ExCarousel, ExCarouselItem } from './components/carousel';
+import { ExCarousel, ExCarouselItem } from './components/carousel';
 import ExCascader from './components/cascader';
 import ExNumberInput from './components/number-input';
 import ExBackTop from './components/back-top';
-import ExPageHeader from './components/page-header';
-import ExChart from './components/chart';
-import ExVerificationCode from './components/verification-code';
+import { ExPageHeader } from './components/page-header';
+import { ExChart } from './components/chart';
+import { ExVerificationCode } from './components/verification-code';
 import ExColorPicker from './components/color-picker';
 import ExTimePicker from './components/time-picker';
 import ExTreeSelect from './components/tree-select';
 import ExDescriptions, { ExDescriptionsItem } from './components/descriptions';
 
-// 导入样式（全局导入时自动引入）
-import './styles/index.scss';
-
-// 导出所有组
-export {
+// v2 统一公共组件契约：每个 Ex* 导出都必须既可渲染，也可独立 app.use。
+const publicComponents = [
   ExAffix,
   ExAlert,
   ExAnchor,
   ExAnchorLink,
   ExAvatar,
+  ExAvatarGroup,
   ExBadge,
   ExBreadcrumb,
   ExBreadcrumbItem,
@@ -140,7 +151,110 @@ export {
   ExList,
   ExLoading,
   ExLoadingBar,
-  MenuPlugin,
+  ExMenu,
+  ExMenuItem,
+  ExSubMenu,
+  ExMessage,
+  ExModal,
+  ExNotification,
+  ExPagination,
+  ExPanel,
+  ExPopconfirm,
+  ExPopover,
+  ExProgress,
+  ExQRCode,
+  ExBarcode,
+  ExRadio,
+  ExRadioGroup,
+  ExRate,
+  ExSelect,
+  ExSkeleton,
+  ExSlider,
+  ExSpace,
+  ExSteps,
+  ExStep,
+  ExSwitch,
+  ExTable,
+  ExTabs,
+  ExTabPane,
+  ExTooltip,
+  ExTree,
+  ExTypography,
+  ExVirtualList,
+  ExWatermark,
+  ExDateTimePicker,
+  ExTag,
+  ExTagInput,
+  ExFileUpload,
+  ExFileDownload,
+  ExFilePreview,
+  ExImageCrop,
+  ExImageCompress,
+  ExFileList,
+  ExCalendar,
+  ExTimeline,
+  ExTimelineItem,
+  ExCode,
+  ExCarousel,
+  ExCarouselItem,
+  ExCascader,
+  ExNumberInput,
+  ExChart,
+  ExBackTop,
+  ExPageHeader,
+  ExVerificationCode,
+  ExColorPicker,
+  ExTimePicker,
+  ExTreeSelect,
+  ExDescriptions,
+  ExDescriptionsItem,
+] as const;
+
+// 导出所有组
+export {
+  ExAffix,
+  ExAlert,
+  ExAnchor,
+  ExAnchorLink,
+  ExAvatar,
+  ExAvatarGroup,
+  ExBadge,
+  ExBreadcrumb,
+  ExBreadcrumbItem,
+  ExButton,
+  ExCard,
+  ExCheckbox,
+  ExCheckboxGroup,
+  ExCollapse,
+  ExCollapseItem,
+  ExConfigProvider,
+  ExDialog,
+  ExDivider,
+  ExDrawer,
+  ExDropdown,
+  ExDropdownItem,
+  ExEllipsis,
+  ExEmpty,
+  ExFlex,
+  ExFlexItem,
+  ExForm,
+  ExFormItem,
+  ExGrid,
+  ExGridItem,
+  ExHeatmap,
+  ExIcon,
+  ExLayout,
+  ExHeader,
+  ExContent,
+  ExFooter,
+  ExSider,
+  ExContainer,
+  ExImage,
+  ExInput,
+  ExLink,
+  ExList,
+  ExLoading,
+  ExLoadingBar,
   ExMenu,
   ExMenuItem,
   ExSubMenu,
@@ -199,13 +313,27 @@ export {
   ExDescriptions,
   ExDescriptionsItem,
   notification,
+  createNotificationService,
+  NOTIFICATION_SERVICE_KEY,
+  useNotificationService,
   message,
+  createMessageService,
+  MESSAGE_SERVICE_KEY,
+  useMessageService,
+  createLoadingBar,
   loadingBar,
+  LOADING_BAR_SERVICE_KEY,
+  useLoadingBarService,
+  createLoadingService,
+  LOADING_SERVICE_KEY,
   loadingService,
   showLoading,
   hideLoading,
   destroyLoading,
+  useLoadingService,
 };
+
+export { ICONS, getBuiltinIcon, isBuiltinIcon } from './components/icon';
 
 // 导出类型
 export type * from './components/affix/types';
@@ -222,15 +350,18 @@ export type * from './components/collapse/types';
 export type * from './components/config-provider/types';
 export type * from './components/dialog/types';
 export type * from './components/divider/types';
-export type { DrawerPlacement, DrawerSize } from './components/drawer/types';
+export type * from './components/drawer/types';
 export type * from './components/dropdown/types';
 export type * from './components/ellipsis/types';
 export type * from './components/empty/types';
 export type * from './components/flex/types';
+export type { FlexGapPreset, FlexLength } from './components/flex/flex-utils';
 export type * from './components/form/types';
 export type * from './components/grid/types';
+export type { GridBreakpoint, NormalizedGridGutter } from './components/grid/grid-utils';
 export type * from './components/heatmap/types';
 export type * from './components/icon/types';
+export type { BuiltinIconName } from './components/icon/icons';
 export type * from './components/layout/types';
 export type * from './components/image/types';
 export type * from './components/input/types';
@@ -238,24 +369,29 @@ export type * from './components/link/types';
 export type * from './components/list/types';
 export type * from './components/loading/types';
 export type {
+  ExLoadingBarExposed,
+  ExLoadingBarProps,
+  LoadingBarColor,
   LoadingBarOptions,
-  LoadingBarInstance,
+  LoadingBarService,
   LoadingBarStatus,
 } from './components/loading-bar/types';
 export type * from './components/menu/types';
-export type { MessageOptions, MessageInstance, MessageType } from './components/message/types';
+export type * from './components/message/types';
 export type * from './components/modal/types';
-export type {
-  NotificationOptions,
-  NotificationInstance,
-  NotificationType,
-  NotificationPosition,
-} from './components/notification/types';
+export type * from './components/notification/types';
 export type * from './components/pagination/types';
 export type * from './components/panel/types';
 export type * from './components/popconfirm/types';
-export type { PopoverPlacement, PopoverTrigger } from './components/popover/types';
-export type { ProgressType, ProgressStatus, ProgressColor } from './components/progress/types';
+export type * from './components/popover/types';
+export type {
+  ExProgressProps,
+  ExProgressEmits,
+  ExProgressExposed,
+  ProgressType,
+  ProgressStatus,
+  ProgressColor,
+} from './components/progress/types';
 export type * from './components/qrcode/types';
 export type * from './components/barcode/types';
 export type * from './components/radio/types';
@@ -264,21 +400,45 @@ export type * from './components/select/types';
 export type * from './components/skeleton/types';
 export type * from './components/slider/types';
 export type * from './components/space/types';
+export { SPACE_SIZE_PRESETS, resolveSpaceGap } from './components/space/space-utils';
+export type { SpaceGap, SpaceSizePreset } from './components/space/space-utils';
 export type * from './components/steps/types';
 export type * from './components/switch/types';
 export type * from './components/table/types';
 export type * from './components/tabs/types';
-export type { TooltipPlacement, TooltipTrigger, TooltipEffect } from './components/tooltip/types';
+export type {
+  ExTooltipProps,
+  ExTooltipEmits,
+  ExTooltipExposed,
+  TooltipPlacement,
+  TooltipTrigger,
+  TooltipEffect,
+} from './components/tooltip/types';
 export type * from './components/tree/types';
 export type * from './components/typography/types';
 export type * from './components/virtual-list/types';
 export type * from './components/watermark/types';
 export type * from './components/tag/types';
 export type * from './components/file-upload/types';
+export type {
+  ExFileUploadErrorCode,
+  ExFileUploadErrorOptions,
+} from './components/file-upload/errors';
 export type * from './components/file-download/types';
+export type {
+  ExFileDownloadErrorCode,
+  ExFileDownloadErrorOptions,
+} from './components/file-download/errors';
 export type * from './components/file-preview/types';
+export type {
+  ExFilePreviewErrorCode,
+  ExFilePreviewErrorOptions,
+} from './components/file-preview/errors';
+export type { PreviewScaleConfig } from './components/file-preview/preview-utils';
 export type * from './components/image-crop/types';
+export type { ImageCropErrorCode } from './components/image-crop/errors';
 export type * from './components/image-compress/types';
+export type { ImageCompressErrorCode } from './components/image-compress/errors';
 export type * from './components/file-list/types';
 export type * from './components/calendar/types';
 export type * from './components/timeline/types';
@@ -294,117 +454,84 @@ export type * from './components/color-picker/types';
 export type * from './components/time-picker/types';
 export type * from './components/tree-select/types';
 export type * from './components/descriptions/types';
+export {
+  FLEX_GAP_PRESETS,
+  normalizeFlexFactor,
+  normalizeFlexOrder,
+  resolveFlexBasis,
+  resolveFlexGap,
+  resolveFlexShorthand,
+} from './components/flex/flex-utils';
+export {
+  createGridItemStyles,
+  GRID_BREAKPOINTS,
+  GRID_GUTTER_PRESETS,
+  normalizeGridGutter,
+  normalizeGridLine,
+  normalizeGridOrder,
+  normalizeGridSpan,
+} from './components/grid/grid-utils';
+export { ExFileUploadError } from './components/file-upload/errors';
+export {
+  cloneUploadFileList,
+  formatUploadFileSize,
+  getUploadResponseUrl,
+  matchesUploadAccept,
+  normalizeUploadLimit,
+  normalizeUploadMaxFileSize,
+  normalizeUploadPercent,
+} from './components/file-upload/upload-utils';
+export { ExFileDownloadError } from './components/file-download/errors';
+export { ExFilePreviewError } from './components/file-preview/errors';
+export { ExImageCropError } from './components/image-crop/errors';
+export { ExImageCompressError } from './components/image-compress/errors';
+export {
+  compressImage,
+  compressImages,
+  downloadCompressedImage,
+  formatBytes,
+} from './components/image-compress/utils';
+export {
+  clampPreviewIndex,
+  clampPreviewScale,
+  detectPreviewType,
+  normalizePreviewRotation,
+  resolvePreviewScaleConfig,
+  validatePreviewUrl,
+} from './components/file-preview/preview-utils';
 // 导出 Config Provider
 export * from './components/config-provider/composables';
+export * from './components/config-provider/z-index';
 export {
   enUS,
   zhCN,
   createLocaleProvider,
   useI18n,
+  useLocale,
   setLocale,
   getCurrentLocale,
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
 } from './locale';
 
-// 所有组件列
-// 修复组件安装问题
-const components = [
-  ExAffix,
-  ExAlert,
-  ExAnchor,
-  ExAnchorLink,
-  ExAvatar,
-  ExBadge,
-  ExBreadcrumb,
-  ExBreadcrumbItem,
-  ExButton,
-  ExCard,
-  ExCheckbox,
-  ExCheckboxGroup,
-  ExCollapse,
-  ExCollapseItem,
-  ExConfigProvider,
-  ExDialog,
-  ExDivider,
-  ExDrawer,
-  ExDropdown,
-  ExEllipsis,
-  ExEmpty,
-  FlexPlugin,
-  ExForm,
-  ExFormItem,
-  GridPlugin,
-  ExHeatmap,
-  ExIcon,
-  LayoutPlugin,
-  ExImage,
-  ExInput,
-  ExLink,
-  ExList,
-  ExLoading,
-  ExLoadingBar,
-  MenuPlugin,
-  ExMessage,
-  ExModal,
-  ExNotification,
-  ExPagination,
-  ExPanel,
-  ExPopconfirm,
-  ExPopover,
-  ExProgress,
-  ExQRCode,
-  ExBarcode,
-  ExRadio,
-  ExRadioGroup,
-  ExRate,
-  ExSelect,
-  ExSkeleton,
-  ExSlider,
-  ExSpace,
-  ExSteps,
-  ExStep,
-  ExSwitch,
-  ExTable,
-  ExTabs,
-  ExTabPane,
-  ExDateTimePicker,
-  ExTooltip,
-  ExTree,
-  ExTypography,
-  ExVirtualList,
-  ExWatermark,
-  ExTag,
-  ExTagInput,
-  ExFileUpload,
-  ExFileDownload,
-  ExFilePreview,
-  ExImageCrop,
-  ExImageCompress,
-  ExFileList,
-  ExCalendar,
-  TimelinePlugin,
-  ExCode,
-  CarouselPlugin,
-  ExCascader,
-  ExNumberInput,
-  ExChart,
-  ExBackTop,
-  ExPageHeader,
-  ExVerificationCode,
-  ExColorPicker,
-  ExTimePicker,
-  ExTreeSelect,
-  ExDescriptions,
-];
-
 // 安装函数
-const install: Plugin['install'] = (app: App) => {
-  components.forEach(component => {
-    if (component && typeof component === 'object' && 'install' in component) {
-      app.use(component as { install: (app: App) => void });
+const getPublicComponentPlugins = (): readonly Plugin[] => {
+  // 仅在真正安装整包插件时计算附属组件，根命名导入不会保留整库安装图。
+  const publicComponentSet = new Set<unknown>(publicComponents);
+  const attachedPublicComponents = new Set<unknown>();
+  for (const component of publicComponents) {
+    for (const value of Object.values(component)) {
+      if (publicComponentSet.has(value)) attachedPublicComponents.add(value);
     }
-  });
+  }
+  return publicComponents.filter(component => !attachedPublicComponents.has(component)) as Plugin[];
+};
+
+const install: Plugin['install'] = (app: App) => {
+  for (const component of getPublicComponentPlugins()) {
+    app.use(component);
+  }
+
   // 注册 v-loading 指令与 $loading 全局服务
   app.use(LoadingPlugin);
 };
@@ -431,17 +558,13 @@ export {
   usePersistedTheme,
   saveThemeToStorage,
   loadThemeFromStorage,
+  isTheme,
+  DEFAULT_THEME,
+  VALID_THEMES,
 } from './composables/useTheme';
 
 // 导出主题类型和工具函
-export type {
-  Theme,
-  ThemeConfig,
-  ThemeVariables,
-  CustomThemeConfig,
-  ThemeSwitchOptions,
-  ThemeChangeEvent,
-} from './types/theme.d';
-export { THEME_CONFIGS, getThemeConfig, isDarkTheme, isHighContrastTheme } from './types/theme.d';
+export type { Theme, ThemeConfig, ThemeVariables, ThemeChangeEvent } from './types/theme';
+export { THEME_CONFIGS, THEME_NAMES, getThemeConfig, isDarkTheme } from './types/theme';
 
 export * from './utils';

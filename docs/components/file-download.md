@@ -1,390 +1,443 @@
 # FileDownload 文件下载
 
-支持多种下载方式，显示下载进度的文件下载组件。
+在浏览器中触发链接下载，或通过 Fetch / XHR 获取文件并报告读取进度。
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { DEMO_SERVICE_PREFIX } from '../.vitepress/demo-contract'
+
+const serviceReady = ref(false)
+const serviceMessage = ref('正在检查演示服务…')
+const serviceController = new AbortController()
+const unknownTotal = ref(false)
+const failFetch = ref(false)
+const fetchStatus = ref('等待下载')
+const fetchProgress = ref({ loaded: 0, total: null, percent: null })
+const fetchUrl = computed(() => `${DEMO_SERVICE_PREFIX}/download?length=${unknownTotal.value ? 'unknown' : 'known'}&outcome=${failFetch.value ? 'error' : 'success'}`)
+const downloader = ref()
+const xhrActive = ref(false)
+const xhrStatus = ref('等待下载')
+const customStatus = ref('等待下载')
+const onFetchStart = () => { fetchStatus.value = '正在读取响应'; fetchProgress.value = { loaded: 0, total: null, percent: null } }
+const onFetchSuccess = blob => { fetchStatus.value = `响应读取完成：${blob.size} 字节，已交给浏览器下载` }
+const onFetchError = error => { fetchStatus.value = error.message }
+const onXhrStart = () => { xhrActive.value = true; xhrStatus.value = '正在下载，可以取消' }
+const onXhrSuccess = () => { xhrActive.value = false; xhrStatus.value = '响应读取完成，已交给浏览器下载' }
+const onXhrError = error => { xhrActive.value = false; xhrStatus.value = error.message }
+const onXhrCancel = () => { xhrActive.value = false; xhrStatus.value = '请求已取消，可以重新下载' }
+const onCustomError = error => { customStatus.value = error.message }
+
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: serviceController.signal })
+    if (serviceController.signal.aborted) return
+    const ready = response.ok && (await response.json()).demo === true
+    if (serviceController.signal.aborted) return
+    serviceReady.value = ready
+  } catch {
+    if (serviceController.signal.aborted) return
+    serviceReady.value = false
+  }
+  if (serviceController.signal.aborted) return
+  serviceMessage.value = serviceReady.value
+    ? '演示服务已连接，下载内容会分段返回，便于观察进度和取消。'
+    : '演示服务不可用。请在仓库运行 npm run docs:dev 或 npm run docs:preview 后重试。'
+})
+onBeforeUnmount(() => serviceController.abort())
+
+const cancelDownload = () => {
+  if (!downloader.value?.cancel()) xhrStatus.value = '当前没有活动请求'
+}
 </script>
 
-## 基础用法
+Link 示例使用随文档发布的 CSV 文件。其余网络示例需要仓库内的演示服务；纯静态部署需同时接入该服务，或将示例 URL 替换为自己的测试接口。
 
-使用 `link` 方法进行简单的文件下载。
+<p role="status">{{ serviceMessage }}</p>
 
+## Link 传输
+
+`link` 只负责创建并点击下载链接。浏览器接管后组件会触发 `trigger`，不会把未知的磁盘保存结果报告为 `success`。
+
+::: raw
 <div class="demo-container">
-  <ExSpace>
-    <ExFileDownload
-      url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920"
-      filename="game-screenshot.jpg"
-      method="link"
-      button-text="下载游戏截图"
-    />
-    <ExFileDownload
-      url="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920"
-      filename="racing-game.jpg"
-      method="link"
-      button-text="下载赛车图片"
-      button-type="success"
-    />
-  </ExSpace>
+  <ex-file-download
+    url="/demo-assets/download-sample.csv"
+    filename="download-sample.csv"
+    transport="link"
+    button-text="下载示例表格"
+  />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExFileDownload
-    url="https://example.com/file.pdf"
-    filename="document.pdf"
-    method="link"
-    button-text="下载文件"
+  <ex-file-download
+    url="/demo-assets/download-sample.csv"
+    filename="download-sample.csv"
+    transport="link"
+    button-text="下载示例表格"
   />
 </template>
 ```
 
-## 显示下载进度
+:::
 
-使用 `xhr` 或 `fetch` 方法可以显示下载进度。
+## Fetch 与进度
 
+Fetch 和 XHR 会在响应读取完成后创建 Blob 下载。服务端未提供 `Content-Length` 时，`percent` 与 `total` 为 `null`，组件只显示已读取字节。
+
+::: raw
 <div class="demo-container">
-  <ExFileDownload
-    url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=3840"
-    filename="large-image.jpg"
-    method="xhr"
-    :show-progress="true"
-    button-text="下载大图（显示进度）"
+  <label><input v-model="unknownTotal" type="checkbox" /> 不提供总大小</label>
+  <label><input v-model="failFetch" type="checkbox" /> 演示 HTTP 503 错误</label>
+  <ex-file-download
+    :url="fetchUrl"
+    :disabled="!serviceReady"
+    filename="fetch-report.csv"
+    transport="fetch"
+    @start="onFetchStart"
+    @progress="fetchProgress = $event"
+    @success="onFetchSuccess"
+    @error="onFetchError"
   />
+  <output aria-live="polite">{{ fetchStatus }}</output>
+  <output>已读取 {{ fetchProgress.loaded }} 字节；{{ fetchProgress.total === null ? '总大小未知' : `总大小 ${fetchProgress.total} 字节` }}</output>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExFileDownload
-    url="https://example.com/large-file.zip"
-    filename="game-assets.zip"
-    method="xhr"
-    :show-progress="true"
-  />
-</template>
-```
-
-## 不同下载方式
-
-支持三种下载方式：`link`、`fetch`、`xhr`。
-
-<div class="demo-container">
-  <ExSpace direction="vertical" :size="12">
-    <div>
-      <div style="color: var(--ex-color-text-secondary); font-size: 14px; margin-bottom: 8px;">
-        Link 方式（简单快速，无进度）
-      </div>
-      <ExFileDownload
-        url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-        filename="image-link.jpg"
-        method="link"
-        button-text="Link 下载"
-        button-size="small"
-      />
-    </div>
-    <div>
-      <div style="color: var(--ex-color-text-secondary); font-size: 14px; margin-bottom: 8px;">
-        Fetch 方式（支持进度，现代浏览器）
-      </div>
-      <ExFileDownload
-        url="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800"
-        filename="image-fetch.jpg"
-        method="fetch"
-        :show-progress="true"
-        button-text="Fetch 下载"
-        button-size="small"
-        button-type="success"
-      />
-    </div>
-    <div>
-      <div style="color: var(--ex-color-text-secondary); font-size: 14px; margin-bottom: 8px;">
-        XHR 方式（支持进度，兼容性好）
-      </div>
-      <ExFileDownload
-        url="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800"
-        filename="image-xhr.jpg"
-        method="xhr"
-        :show-progress="true"
-        button-text="XHR 下载"
-        button-size="small"
-        button-type="warning"
-      />
-    </div>
-  </ExSpace>
-</div>
-
-```vue
-<template>
-  <!-- Link 方式 -->
-  <ExFileDownload
-    url="https://example.com/file.pdf"
-    filename="document.pdf"
-    method="link"
-  />
-  
-  <!-- Fetch 方式 -->
-  <ExFileDownload
-    url="https://example.com/file.zip"
-    filename="archive.zip"
-    method="fetch"
-    :show-progress="true"
-  />
-  
-  <!-- XHR 方式 -->
-  <ExFileDownload
-    url="https://example.com/file.zip"
-    filename="archive.zip"
-    method="xhr"
-    :show-progress="true"
-  />
-</template>
-```
-
-## 自动下载
-
-设置 `auto-download` 为 `true` 可以在组件挂载时自动开始下载。
-
-> 下方演示为避免打开页面即触发下载，特意设置了 `:auto-download="false"`，请点击按钮体验；实际使用时按需改为 `true`。
-
-<div class="demo-container">
-  <ExFileDownload
-    url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    filename="auto-download.jpg"
-    method="link"
-    :auto-download="false"
-    button-text="点击下载"
-  />
-</div>
-
-```vue
-<template>
-  <ExFileDownload
-    url="https://example.com/file.pdf"
-    filename="document.pdf"
-    method="link"
-    :auto-download="true"
-  />
-</template>
-```
-
-## 自定义按钮
-
-可以自定义下载按钮的样式和内容。
-
-<div class="demo-container">
-  <ExSpace>
-    <ExFileDownload
-      url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920"
-      filename="custom-button.jpg"
-      method="link"
-      button-text="自定义按钮"
-      button-type="primary"
-      button-size="large"
-    />
-    <ExFileDownload
-      url="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920"
-      filename="custom-button-2.jpg"
-      method="link"
-      button-type="danger"
-      button-size="small"
-      button-text="小按钮"
-    />
-  </ExSpace>
-</div>
-
-```vue
-<template>
-  <ExFileDownload
-    url="https://example.com/file.pdf"
-    filename="document.pdf"
-    method="link"
-    button-text="立即下载"
-    button-type="primary"
-    button-size="large"
-  />
-</template>
-```
-
-## 游戏资源下载示例
-
-展示游戏资源包的下载列表。
-
-<div class="demo-container">
-  <ExSpace direction="vertical" :size="16">
-    <ExCard hoverable>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="https://api.iconify.design/ri/folder-zip-line.svg" alt="压缩包" width="32" height="32" style="filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);">
-          <div>
-            <div style="font-weight: 600; color: var(--ex-color-text-primary);">角色资源包</div>
-            <div style="font-size: 12px; color: var(--ex-color-text-secondary); margin-top: 4px;">包含所有角色模型和贴图 (125 MB)</div>
-          </div>
-        </div>
-        <ExFileDownload
-          url="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920"
-          filename="characters.zip"
-          method="link"
-          button-text="下载"
-          button-size="small"
-        />
-      </div>
-    </ExCard>
-    <ExCard hoverable>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="https://api.iconify.design/ri/music-line.svg" alt="音频" width="32" height="32" style="filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);">
-          <div>
-            <div style="font-weight: 600; color: var(--ex-color-text-primary);">音频资源包</div>
-            <div style="font-size: 12px; color: var(--ex-color-text-secondary); margin-top: 4px;">背景音乐和音效文件 (85 MB)</div>
-          </div>
-        </div>
-        <ExFileDownload
-          url="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920"
-          filename="audio.zip"
-          method="link"
-          button-text="下载"
-          button-size="small"
-          button-type="success"
-        />
-      </div>
-    </ExCard>
-    <ExCard hoverable>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="https://api.iconify.design/ri/map-line.svg" alt="地图" width="32" height="32" style="filter: brightness(0) saturate(100%) invert(70%) sepia(10%) saturate(500%) hue-rotate(180deg);">
-          <div>
-            <div style="font-weight: 600; color: var(--ex-color-text-primary);">地图资源包</div>
-            <div style="font-size: 12px; color: var(--ex-color-text-secondary); margin-top: 4px;">所有游戏地图和场景 (256 MB)</div>
-          </div>
-        </div>
-        <ExFileDownload
-          url="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1920"
-          filename="maps.zip"
-          method="link"
-          button-text="下载"
-          button-size="small"
-          button-type="warning"
-        />
-      </div>
-    </ExCard>
-  </ExSpace>
-</div>
-
-```vue
-<template>
-  <ExSpace direction="vertical">
-    <ExCard v-for="pack in resourcePacks" :key="pack.id" hoverable>
-      <div class="resource-pack">
-        <div class="resource-pack__info">
-          <h4>{{ pack.name }}</h4>
-          <p>{{ pack.description }} ({{ pack.size }})</p>
-        </div>
-        <ExFileDownload
-          :url="pack.url"
-          :filename="pack.filename"
-          method="link"
-          button-size="small"
-        />
-      </div>
-    </ExCard>
-  </ExSpace>
-</template>
-
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
-const resourcePacks = ref([
-  {
-    id: 1,
-    name: '角色资源包',
-    description: '包含所有角色模型和贴图',
-    size: '125 MB',
-    url: '/downloads/characters.zip',
-    filename: 'characters.zip',
-  },
-  // ...
-])
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const serviceReady = ref(false);
+const unknownTotal = ref(false);
+const failFetch = ref(false);
+const fetchStatus = ref('等待下载');
+const fetchProgress = ref({ loaded: 0, total: null, percent: null });
+const fetchUrl = computed(
+  () =>
+    `${DEMO_SERVICE_PREFIX}/download?length=${unknownTotal.value ? 'unknown' : 'known'}&outcome=${failFetch.value ? 'error' : 'success'}`
+);
+const onFetchStart = () => {
+  fetchStatus.value = '正在读取响应';
+  fetchProgress.value = { loaded: 0, total: null, percent: null };
+};
+const onFetchSuccess = blob => {
+  fetchStatus.value = `响应读取完成：${blob.size} 字节，已交给浏览器下载`;
+};
+const onFetchError = error => {
+  fetchStatus.value = error.message;
+};
+const controller = new AbortController();
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) fetchStatus.value = '演示服务不可用';
+  } catch {
+    if (!controller.signal.aborted) fetchStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
 </script>
+
+<template>
+  <div class="demo-container">
+    <label>
+      <input
+        v-model="unknownTotal"
+        type="checkbox"
+      />
+      不提供总大小
+    </label>
+    <label>
+      <input
+        v-model="failFetch"
+        type="checkbox"
+      />
+      演示 HTTP 503 错误
+    </label>
+    <ex-file-download
+      :url="fetchUrl"
+      :disabled="!serviceReady"
+      filename="fetch-report.csv"
+      transport="fetch"
+      @start="onFetchStart"
+      @progress="fetchProgress = $event"
+      @success="onFetchSuccess"
+      @error="onFetchError"
+    />
+    <output aria-live="polite">{{ fetchStatus }}</output>
+    <output>
+      已读取 {{ fetchProgress.loaded }} 字节；{{
+        fetchProgress.total === null ? '总大小未知' : `总大小 ${fetchProgress.total} 字节`
+      }}
+    </output>
+  </div>
+</template>
 ```
+
+:::
+
+显式 `filename` 的优先级高于响应的 `Content-Disposition` 和 URL 路径文件名。
+
+## 取消请求
+
+`cancel()` 只会在存在活动 Fetch / XHR 请求时返回 `true` 并触发 `cancel`。Link 已由浏览器接管，不能取消。
+
+::: raw
+<div class="demo-container">
+  <ex-file-download
+    ref="downloader"
+    :url="`${DEMO_SERVICE_PREFIX}/download`"
+    :disabled="!serviceReady"
+    transport="xhr"
+    @start="onXhrStart"
+    @success="onXhrSuccess"
+    @error="onXhrError"
+    @cancel="onXhrCancel"
+  />
+  <ex-button :disabled="!xhrActive" @click="cancelDownload">取消下载</ex-button>
+  <output aria-live="polite">{{ xhrStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const serviceReady = ref(false);
+const downloader = ref();
+const xhrActive = ref(false);
+const xhrStatus = ref('等待下载');
+const onXhrStart = () => {
+  xhrActive.value = true;
+  xhrStatus.value = '正在下载，可以取消';
+};
+const onXhrSuccess = () => {
+  xhrActive.value = false;
+  xhrStatus.value = '响应读取完成，已交给浏览器下载';
+};
+const onXhrError = error => {
+  xhrActive.value = false;
+  xhrStatus.value = error.message;
+};
+const onXhrCancel = () => {
+  xhrActive.value = false;
+  xhrStatus.value = '请求已取消，可以重新下载';
+};
+const controller = new AbortController();
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) xhrStatus.value = '演示服务不可用';
+  } catch {
+    if (!controller.signal.aborted) xhrStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
+const cancelDownload = () => {
+  if (!downloader.value?.cancel()) xhrStatus.value = '当前没有活动请求';
+};
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-download
+      ref="downloader"
+      :url="`${DEMO_SERVICE_PREFIX}/download`"
+      :disabled="!serviceReady"
+      transport="xhr"
+      @start="onXhrStart"
+      @success="onXhrSuccess"
+      @error="onXhrError"
+      @cancel="onXhrCancel"
+    />
+    <ex-button
+      :disabled="!xhrActive"
+      @click="cancelDownload"
+    >
+      取消下载
+    </ex-button>
+    <output aria-live="polite">{{ xhrStatus }}</output>
+  </div>
+</template>
+```
+
+:::
+
+## 自定义触发器和进度
+
+默认插槽替换触发器，`progress` 插槽只替换活动请求的进度视图。
+
+::: raw
+<div class="demo-container">
+  <ex-file-download
+    :url="`${DEMO_SERVICE_PREFIX}/download?length=unknown`"
+    :disabled="!serviceReady"
+    transport="fetch"
+    @start="customStatus = '正在获取'"
+    @success="customStatus = '响应读取完成，已交给浏览器下载'"
+    @error="onCustomError"
+    @cancel="customStatus = '已取消'"
+  >
+    <template #default="{ download, cancel, status, disabled }">
+      <ex-button :disabled="disabled" @click="download">{{ status === 'downloading' ? '正在获取' : '获取文件' }}</ex-button>
+      <ex-button v-if="status === 'downloading'" @click="cancel">取消</ex-button>
+    </template>
+    <template #progress="{ progress }">
+      <output>已读取 {{ progress.loaded }} 字节</output>
+    </template>
+  </ex-file-download>
+  <output aria-live="polite">{{ customStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+
+const DEMO_SERVICE_PREFIX = '/__exui_demo__';
+const serviceReady = ref(false);
+const customStatus = ref('等待下载');
+const onCustomError = error => {
+  customStatus.value = error.message;
+};
+const controller = new AbortController();
+onMounted(async () => {
+  try {
+    const response = await fetch(`${DEMO_SERVICE_PREFIX}/health`, { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    const ready = response.ok && (await response.json()).demo === true;
+    if (controller.signal.aborted) return;
+    serviceReady.value = ready;
+    if (!serviceReady.value) customStatus.value = '演示服务不可用';
+  } catch {
+    if (!controller.signal.aborted) customStatus.value = '演示服务不可用';
+  }
+});
+onBeforeUnmount(() => controller.abort());
+</script>
+
+<template>
+  <div class="demo-container">
+    <ex-file-download
+      :url="`${DEMO_SERVICE_PREFIX}/download?length=unknown`"
+      :disabled="!serviceReady"
+      transport="fetch"
+      @start="customStatus = '正在获取'"
+      @success="customStatus = '响应读取完成，已交给浏览器下载'"
+      @error="onCustomError"
+      @cancel="customStatus = '已取消'"
+    >
+      <template #default="{ download, cancel, status, disabled }">
+        <ex-button
+          :disabled="disabled"
+          @click="download"
+        >
+          {{ status === 'downloading' ? '正在获取' : '获取文件' }}
+        </ex-button>
+        <ex-button
+          v-if="status === 'downloading'"
+          @click="cancel"
+        >
+          取消
+        </ex-button>
+      </template>
+      <template #progress="{ progress }">
+        <output>已读取 {{ progress.loaded }} 字节</output>
+      </template>
+    </ex-file-download>
+    <output aria-live="polite">{{ customStatus }}</output>
+  </div>
+</template>
+```
+
+:::
 
 ## API
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| url | 下载URL | string | - |
-| filename | 文件名 | string | - |
-| method | 下载方式 | 'link' \| 'fetch' \| 'xhr' | 'link' |
-| show-progress | 是否显示进度 | boolean | true |
-| auto-download | 是否自动下载 | boolean | false |
-| button-text | 按钮文本 | string | '下载' |
-| button-type | 按钮类型 | ButtonType | 'primary' |
-| button-size | 按钮尺寸 | ButtonSize | 'medium' |
-| headers | 请求头 | Record<string, string> | - |
-| with-credentials | 是否携带cookie | boolean | false |
+| 参数             | 说明                             | 类型                         | 默认值      |
+| ---------------- | -------------------------------- | ---------------------------- | ----------- |
+| url              | HTTP、HTTPS、Blob 或相对下载地址 | `string`                     | 必填        |
+| filename         | 建议文件名                       | `string`                     | 响应或 URL  |
+| transport        | 下载传输方式                     | `'link' \| 'fetch' \| 'xhr'` | `'link'`    |
+| show-progress    | 活动 Fetch / XHR 是否显示进度    | `boolean`                    | `true`      |
+| headers          | Fetch / XHR 请求头               | `Record<string, string>`     | -           |
+| max-bytes        | Fetch / XHR 最大缓冲字节数       | `number`                     | `536870912` |
+| with-credentials | Fetch 使用 include，XHR 携带凭证 | `boolean`                    | `false`     |
+| button-text      | 固定按钮文案                     | `string`                     | 按状态翻译  |
+| button-type      | 默认按钮类型                     | `ButtonType`                 | `'primary'` |
+| button-size      | 默认按钮尺寸                     | `ButtonSize`                 | `'medium'`  |
+| disabled         | 是否禁用                         | `boolean`                    | `false`     |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| start | 开始下载时触发 | `() => void` |
-| progress | 下载进度更新时触发（仅 `fetch` / `xhr` 方式） | `(percent: number, loaded: number, total: number) => void` |
-| success | 下载成功时触发（`link` 方式会立即以空 Blob 触发） | `(blob: Blob) => void` |
-| error | 下载失败时触发 | `(error: Error) => void` |
-| pause | 暂停下载时触发 | `() => void` |
-| resume | 恢复下载时触发 | `() => void` |
-| cancel | 取消下载时触发 | `() => void` |
+| 事件名   | 说明                                       | 类型                                           |
+| -------- | ------------------------------------------ | ---------------------------------------------- |
+| start    | 有效下载开始处理                           | `(transport: ExFileDownloadTransport) => void` |
+| progress | Fetch / XHR 已读取数据                     | `(progress: ExFileDownloadProgress) => void`   |
+| trigger  | Link 已交给浏览器；不表示文件保存成功      | `(url: string, filename: string) => void`      |
+| success  | Fetch / XHR 响应读取完成并已创建 Blob 下载 | `(blob: Blob, filename: string) => void`       |
+| error    | 输入、协议、HTTP、网络或浏览器能力错误     | `(error: ExFileDownloadError) => void`         |
+| cancel   | 活动 Fetch / XHR 已被调用方取消            | `() => void`                                   |
 
 ### Slots
 
-| 插槽名 | 说明 | 作用域参数 |
-| --- | --- | --- |
-| default | 自定义触发器（替换默认按钮与进度条） | `{ download: () => void, status: DownloadStatus, percent: number }` |
+| 名称     | 说明           | 作用域参数                             |
+| -------- | -------------- | -------------------------------------- |
+| default  | 自定义触发器   | `ExFileDownloadSlotProps`              |
+| progress | 自定义进度视图 | `{ progress: ExFileDownloadProgress }` |
 
-使用默认插槽完全自定义触发器：
+### Exposes
 
-```vue
-<ExFileDownload url="https://example.com/file.zip" filename="file.zip" method="xhr">
-  <template #default="{ download, status, percent }">
-    <button :disabled="status === 'downloading'" @click="download">
-      {{ status === 'downloading' ? `下载中 ${percent}%` : '下载' }}
-    </button>
-  </template>
-</ExFileDownload>
-```
+| 方法名     | 说明                           | 类型                                  |
+| ---------- | ------------------------------ | ------------------------------------- |
+| download   | 下载并返回所有路径的可判别结果 | `() => Promise<ExFileDownloadResult>` |
+| cancel     | 是否实际取消了活动请求         | `() => boolean`                       |
+| getElement | 获取根元素                     | `() => HTMLDivElement \| null`        |
 
-### Methods
+`download()` 不会用空 Blob 模拟 Link 成功，也不会因业务失败产生未处理 Promise rejection。调用方可通过 `outcome` 区分 `triggered`、`success`、`cancelled`、`ignored` 和 `error`。
 
-通过模板 ref 调用：
+## 安全与无障碍
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| download | 手动触发下载 | `() => void` |
-| pause | 暂停下载（`fetch` / `xhr` 方式） | `() => void` |
-| resume | 恢复下载（从头重新下载，非断点续传） | `() => void` |
-| cancel | 取消下载 | `() => void` |
-| getElement | 获取组件根 DOM 元素 | `() => HTMLDivElement \| null` |
-
-::: warning 关于暂停 / 恢复
-组件不支持 HTTP Range 断点续传，`resume()` 会从头重新发起下载。`pause` / `cancel` 仅对 `fetch`、`xhr` 方式有效，`link` 方式由浏览器接管，无法中止。
-:::
-
-## 无障碍支持
-
-- 默认触发器使用 `ExButton`，原生支持键盘聚焦与 Enter / Space 触发。
-- 下载过程中按钮进入 `loading` 与 `disabled` 状态，避免重复触发。
-
-## 主题定制
-
-文件下载跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配，按钮样式可通过 `button-type` / `button-size` 调整，或使用默认插槽完全自定义。
+- 下载地址拒绝 `javascript:`、`data:` 与 `file:` 协议。
+- 文件名会移除路径、控制字符和跨平台保留字符。
+- 默认触发器使用原生按钮语义；进度条提供确定或不确定的 ARIA 进度状态。
+- Fetch / XHR 仍受浏览器同源策略和服务端 CORS 配置约束。
 
 <style scoped>
 .demo-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 24px;
-  background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+  background: var(--ex-color-bg-secondary);
+}
+
+output {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
 }
 </style>

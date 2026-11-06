@@ -1,91 +1,72 @@
 <template>
-  <section
+  <div
     ref="layoutRef"
     :class="layoutClasses"
-    :style="layoutStyles"
   >
-    <slot />
-  </section>
+    <slot></slot>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, provide, ref } from 'vue';
-import type { ExLayoutProps, ExLayoutExposed } from './types';
+import { layoutContextKey } from './context';
+import type { ExLayoutExposed, ExLayoutProps } from './types';
 
-defineOptions({
-  name: 'ExLayout',
-});
+defineOptions({ name: 'ExLayout' });
 
-const props = withDefaults(defineProps<ExLayoutProps>(), {
-  hasSider: false,
-  direction: 'vertical',
-});
+const props = defineProps<ExLayoutProps>();
+const layoutRef = ref<HTMLDivElement>();
+const siderCount = ref(0);
 
-const layoutRef = ref<HTMLElement>();
+const registerSider = (): (() => void) => {
+  siderCount.value += 1;
+  let registered = true;
+  return () => {
+    if (!registered) return;
+    registered = false;
+    siderCount.value = Math.max(0, siderCount.value - 1);
+  };
+};
 
-// 提供布局上下文
-provide('ex-layout', {
-  hasSider: computed(() => props.hasSider),
-});
+provide(layoutContextKey, { registerSider });
 
-// 计算类名
-const layoutClasses = computed(() => {
-  const classes = ['ex-layout'];
+const effectiveDirection = computed(
+  () => props.direction ?? (siderCount.value > 0 ? 'horizontal' : 'vertical')
+);
+const layoutClasses = computed(() => [
+  'ex-layout',
+  `ex-layout--${effectiveDirection.value}`,
+  {
+    'ex-layout--auto': props.direction === undefined,
+    'ex-layout--has-sider': siderCount.value > 0,
+  },
+]);
 
-  if (props.hasSider) {
-    classes.push('ex-layout--has-sider');
-  }
+const getElement = (): HTMLDivElement | null => layoutRef.value ?? null;
 
-  classes.push(`ex-layout--${props.direction}`);
-
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
-});
-
-// 计算样式
-const layoutStyles = computed(() => {
-  if (!props.style) return undefined;
-  return typeof props.style === 'string' ? props.style : props.style;
-});
-
-// 暴露方法
-const getElement = () => layoutRef.value || null;
-
-defineExpose<ExLayoutExposed>({
-  getElement,
-});
+defineExpose<ExLayoutExposed>({ getElement });
 </script>
 
 <style scoped lang="scss">
-@use '../../styles/mixins' as *;
-
 .ex-layout {
   display: flex;
-  flex: auto;
-  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
-  background: var(--ex-color-bg-primary);
-  color: var(--ex-color-text-primary);
+  color: inherit;
 
-  // 水平布局
   &--horizontal {
     flex-direction: row;
   }
 
-  // 垂直布局
   &--vertical {
     flex-direction: column;
   }
 
-  // 有侧边栏的布局
-  &--has-sider {
+  // 首次渲染和 SSR 阶段尚未注册子组件时，由 DOM 结构保证方向正确。
+  &--auto:has(> .ex-sider) {
     flex-direction: row;
-
-    > .ex-layout {
-      flex-direction: column;
-    }
   }
 }
 </style>

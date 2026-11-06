@@ -17,24 +17,25 @@
   background: transparent;
   border: 2px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+  @include chamfer(var(--ex-chamfer-sm));
   color: var(--ex-color-text-primary);
   font-family: var(--ex-font-secondary);
   font-weight: var(--ex-font-medium);
   outline: none;
   @include safe-transition(all);
   @include optimized-text-rendering;
-  
+
   &::placeholder {
     color: var(--ex-color-text-tertiary);
     font-weight: var(--ex-font-normal);
     opacity: 0.7;
   }
-  
+
   &:focus {
     border-color: var(--ex-color-neon-pink-500);
-    @include optimized-neon-glow('pink', 'md');
+    @include chamfer-glow('pink', 'md');
   }
-  
+
   &:disabled {
     cursor: not-allowed;
     opacity: 0.6;
@@ -86,13 +87,14 @@
     var(--ex-color-bg-primary-alpha-90) 100%
   );
   border: 2px solid var(--ex-color-neon-blue-500);
+  @include chamfer(var(--ex-chamfer-sm));
   @include optimized-backdrop-blur(8px);
-  @include optimized-neon-glow('blue', 'sm');
+  @include chamfer-glow('blue', 'sm');
   @include safe-transition(all);
-  
+
   &:hover {
     border-color: var(--ex-color-neon-pink-400);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
     transform: translateY(-1px);
   }
 }
@@ -101,19 +103,20 @@
 @mixin component-variant-ghost {
   background: transparent;
   border: 2px solid var(--ex-color-border-primary);
+  @include chamfer(var(--ex-chamfer-sm));
   box-shadow: none;
   @include safe-transition(all);
-  
+
   &:hover {
     border-color: var(--ex-color-neon-blue-400);
     background: var(--ex-color-bg-secondary-alpha-30);
   }
-  
+
   &:focus,
   &.is-focused {
     border-color: var(--ex-color-neon-pink-500);
     background: var(--ex-color-bg-secondary-alpha-50);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
   }
 }
 
@@ -121,19 +124,20 @@
 @mixin component-variant-filled {
   background: var(--ex-color-bg-tertiary);
   border: 2px solid transparent;
+  @include chamfer(var(--ex-chamfer-sm));
   box-shadow: none;
   @include safe-transition(all);
-  
+
   &:hover {
     background: var(--ex-color-bg-secondary);
     border-color: var(--ex-color-neon-blue-400);
   }
-  
+
   &:focus,
   &.is-focused {
     background: var(--ex-color-bg-secondary);
     border-color: var(--ex-color-neon-pink-500);
-    @include optimized-neon-glow('pink', 'sm');
+    @include chamfer-glow('pink', 'sm');
   }
 }
 
@@ -155,12 +159,12 @@
   color: var(--ex-color-text-secondary);
   cursor: pointer;
   @include safe-transition(all);
-  
+
   &:hover {
     background: var(--ex-color-neon-pink-alpha-10);
     transform: scale(1.1);
   }
-  
+
   &:active {
     transform: scale(0.95);
   }
@@ -174,7 +178,7 @@
   padding: 0 var(--ex-spacing-3);
   color: var(--ex-color-text-secondary);
   @include safe-transition(color);
-  
+
   .is-focused & {
     color: var(--ex-color-neon-pink-400);
   }
@@ -189,18 +193,18 @@
   background: var(--ex-color-bg-surface);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
+  @include chamfer(var(--ex-chamfer-md));
   box-shadow: var(--ex-shadow-md);
   overflow: hidden;
 }
 
 // 卡片悬停效果
 @mixin card-hover {
-  @include safe-transition(transform, box-shadow);
-  
+  @include safe-transition((transform, box-shadow));
+
   &:hover {
     transform: translateY(-4px);
-    box-shadow: var(--ex-shadow-lg);
-    @include optimized-neon-glow('blue', 'sm');
+    filter: drop-shadow(0 0 8px var(--ex-color-primary-alpha-30));
   }
 }
 
@@ -261,7 +265,7 @@
   font-weight: var(--ex-font-medium);
   color: var(--ex-color-text-secondary);
   @include safe-transition(color);
-  
+
   .is-focused & {
     color: var(--ex-color-neon-blue-500);
     text-shadow: 0 0 8px var(--ex-color-neon-blue-alpha-30);
@@ -285,12 +289,12 @@
       height: 36px;
       font-size: var(--ex-text-base);
     }
-    
+
     &--medium .control {
       height: 44px;
       font-size: var(--ex-text-lg);
     }
-    
+
     &--large .control {
       height: 52px;
       font-size: var(--ex-text-xl);
@@ -306,7 +310,7 @@
 @mixin component-disabled {
   cursor: not-allowed;
   opacity: 0.6;
-  
+
   * {
     cursor: not-allowed;
     pointer-events: none;
@@ -322,7 +326,7 @@
   cursor: default;
   pointer-events: none;
   position: relative;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -340,4 +344,3 @@
 
 // 注意：关键帧动画统一定义在 animations/keyframes.scss
 // 这里使用 ex-spin 关键帧
-

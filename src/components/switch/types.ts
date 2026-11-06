@@ -29,6 +29,8 @@ export interface ExSwitchProps {
   inactiveColor?: string;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
   /** 是否加载中 */
   loading?: boolean;
   /** 开关大小 */

@@ -29,42 +29,42 @@
   @each $name, $value in $colors {
     --ex-color-#{$name}: #{$value};
   }
-  
+
   // 字体变量
   @each $name, $value in $typography {
     --ex-#{$name}: #{$value};
   }
-  
+
   // 间距变量
   @each $name, $value in $spacing {
     --ex-spacing-#{$name}: #{$value};
   }
-  
+
   // 尺寸变量
   @each $name, $value in $sizes {
     --ex-size-#{$name}: #{$value};
   }
-  
+
   // 圆角变量
   @each $name, $value in $radius {
     --ex-radius-#{$name}: #{$value};
   }
-  
+
   // 阴影变量
   @each $name, $value in $shadows {
     --ex-shadow-#{$name}: #{$value};
   }
-  
+
   // 动画变量
   @each $name, $value in $motion {
     --ex-motion-#{$name}: #{$value};
   }
-  
+
   // Z-Index 变量
   @each $name, $value in $z-index {
     --ex-z-#{$name}: #{$value};
   }
-  
+
   // 断点变量
   @each $name, $value in $breakpoints {
     --ex-breakpoint-#{$name}: #{$value};
@@ -83,7 +83,7 @@
 
 // 减少动画
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :where([data-theme='neon-blue'], [data-theme='light'], .ex-app, .ex-config-provider) {
     --ex-motion-duration-fast: 0ms;
     --ex-motion-duration-base: 0ms;
     --ex-motion-duration-medium: 0ms;
@@ -93,8 +93,8 @@
 }
 
 // 高对比度偏好
-@media (prefers-contrast: high) {
-  :root {
+@media (prefers-contrast: more) {
+  :where([data-theme='neon-blue'], [data-theme='light'], .ex-app, .ex-config-provider) {
     --ex-color-border-primary: var(--ex-color-text-primary);
     --ex-shadow-neon-sm: 0 0 0 2px var(--ex-color-primary);
     --ex-shadow-neon-md: 0 0 0 3px var(--ex-color-primary);
@@ -102,13 +102,6 @@
 }
 
 // 暗色主题偏好
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ex-color-bg-primary: #0a0a0a;
-    --ex-color-text-primary: #ffffff;
-  }
-}
-
 // ============================================================================
 // 响应式变量 (Responsive Variables)
 // ============================================================================
@@ -144,6 +137,9 @@
 // 组件特定变量 (Component Specific Variables)
 // ============================================================================
 
+// 主题相关的组件默认值由 component-var() 在使用处解析，不能在根节点固化。
+// 同名 CSS 变量保留为覆盖入口，支持用户在 :root、局部容器或 Provider 显式配置。
+
 :root {
   // 按钮组件
   --ex-button-height-sm: var(--ex-size-sm);
@@ -156,73 +152,128 @@
   --ex-button-padding-x-xl: var(--ex-spacing-8);
   // 与输入框/选择器统一的交互圆角（统一三档圆角语言：交互 lg / 容器 lg / 浮层 xl）
   --ex-button-radius: var(--ex-radius-lg);
+  --ex-button-touch-target: 44px;
   --ex-button-font-weight: var(--ex-font-medium);
   // 亮色填充按钮上的文字「墨色」——深色油墨保证 WCAG AA 对比度（霓虹灯管式）
   --ex-button-ink-on-bright: #0a0f16;
-  
+
   // 输入框组件
   --ex-input-height-sm: 32px;
   --ex-input-height-md: 40px;
   --ex-input-height-lg: 48px;
-  --ex-input-padding-x: var(--ex-spacing-3);
+  --ex-input-padding-x-sm: var(--ex-spacing-3);
+  --ex-input-padding-x-md: var(--ex-spacing-4);
+  --ex-input-padding-x-lg: var(--ex-spacing-5);
+  --ex-input-padding-x: var(--ex-input-padding-x-md);
   --ex-input-padding-y: var(--ex-spacing-2);
   --ex-input-radius: var(--ex-radius-md);
   --ex-input-border-width: 1px;
   --ex-input-focus-ring-width: 2px;
-  
+  --ex-input-action-width-sm: 32px;
+  --ex-input-action-width-md: 36px;
+  --ex-input-action-width-lg: 40px;
+  // 输入框操作按钮与移动端控件共用 44px 触控目标。
+  --ex-input-touch-target: var(--ex-button-touch-target);
+  --ex-input-touch-font-size: 16px;
+
+  // 复选框组件：视觉尺寸与触控尺寸分离，避免小尺寸控件牺牲可操作性。
+  --ex-checkbox-box-size-sm: 16px;
+  --ex-checkbox-box-size-md: 18px;
+  --ex-checkbox-box-size-lg: 20px;
+  --ex-checkbox-box-border-width: 2px;
+  --ex-checkbox-label-gap: var(--ex-spacing-2);
+  --ex-checkbox-touch-target: var(--ex-button-touch-target);
+  --ex-checkbox-focus-ring-width: 2px;
+  --ex-checkbox-focus-ring-offset: 2px;
+
   // 卡片组件
   --ex-card-padding-sm: var(--ex-spacing-4);
   --ex-card-padding-md: var(--ex-spacing-6);
   --ex-card-padding-lg: var(--ex-spacing-8);
   --ex-card-radius: var(--ex-radius-lg);
-  --ex-card-shadow: var(--ex-shadow-md);
-  
+
   // 模态框组件
-  --ex-modal-backdrop-blur: 8px;
-  --ex-modal-max-width-sm: 400px;
-  --ex-modal-max-width-md: 500px;
-  --ex-modal-max-width-lg: 600px;
-  --ex-modal-max-width-xl: 800px;
-  --ex-modal-padding: var(--ex-spacing-6);
-  --ex-modal-radius: var(--ex-radius-xl);
+  --ex-modal-width-small: #{map.get($components, modal, width-small)};
+  --ex-modal-width-medium: #{map.get($components, modal, width-medium)};
+  --ex-modal-width-large: #{map.get($components, modal, width-large)};
+  --ex-modal-padding: #{map.get($components, modal, padding)};
+  --ex-modal-radius: #{map.get($components, modal, radius)};
 
   // 头像组件
-  --ex-avatar-size-small: 32px;
-  --ex-avatar-size-medium: 40px;
-  --ex-avatar-size-large: 48px;
-  --ex-avatar-font-size-small: 14px;
-  --ex-avatar-font-size-medium: 16px;
-  --ex-avatar-font-size-large: 20px;
-  --ex-avatar-border-width: 2px;
-  --ex-avatar-overlap: 8px;
-  --ex-avatar-bg-default: var(--ex-color-bg-secondary);
-  --ex-avatar-bg-icon: var(--ex-color-neon-blue-alpha-10);
-  --ex-avatar-bg-icon-hover: var(--ex-color-neon-blue-alpha-20);
-  --ex-avatar-bg-text: var(--ex-color-neon-pink-alpha-10);
-  --ex-avatar-bg-text-hover: var(--ex-color-neon-pink-alpha-20);
-  --ex-avatar-text-color: var(--ex-color-text-primary);
-  --ex-avatar-border-color: var(--ex-color-border-primary);
-  --ex-avatar-z-index: 10;
-  
+  --ex-avatar-size-small: #{map.get($components, avatar, size-small)};
+  --ex-avatar-size-medium: #{map.get($components, avatar, size-medium)};
+  --ex-avatar-size-large: #{map.get($components, avatar, size-large)};
+  --ex-avatar-font-size-small: #{map.get($components, avatar, font-size-small)};
+  --ex-avatar-font-size-medium: #{map.get($components, avatar, font-size-medium)};
+  --ex-avatar-font-size-large: #{map.get($components, avatar, font-size-large)};
+  --ex-avatar-border-width: #{map.get($components, avatar, border-width)};
+  --ex-avatar-spacing: #{map.get($components, avatar, spacing)};
+  // 保留旧变量，避免已有主题在升级后失去间距配置。
+  --ex-avatar-overlap: var(--ex-avatar-spacing);
+  --ex-avatar-z-index: #{map.get($components, avatar, z-index)};
+
+  // 图片组件
+  --ex-image-spinner-size: #{map.get($components, image, spinner-size)};
+  --ex-image-spinner-size-mobile: #{map.get($components, image, spinner-size-mobile)};
+  --ex-image-spinner-size-compact: #{map.get($components, image, spinner-size-compact)};
+  --ex-image-spinner-border-width: #{map.get($components, image, spinner-border-width)};
+  --ex-image-spinner-border-width-mobile: #{map.get(
+      $components,
+      image,
+      spinner-border-width-mobile
+    )};
+  --ex-image-spinner-border-width-compact: #{map.get(
+      $components,
+      image,
+      spinner-border-width-compact
+    )};
+  --ex-image-error-min-width: #{map.get($components, image, error-min-width)};
+  --ex-image-error-min-height: #{map.get($components, image, error-min-height)};
+  --ex-image-error-icon-size: #{map.get($components, image, error-icon-size)};
+  --ex-image-error-icon-size-compact: #{map.get($components, image, error-icon-size-compact)};
+  --ex-image-error-icon-opacity: #{map.get($components, image, error-icon-opacity)};
+  --ex-image-error-compact-padding: #{map.get($components, image, error-compact-padding)};
+  --ex-image-retry-min-size: #{map.get($components, image, retry-min-size)};
+  --ex-image-retry-padding-x: #{map.get($components, image, retry-padding-x)};
+  --ex-image-retry-padding-y: #{map.get($components, image, retry-padding-y)};
+  --ex-image-retry-font-size: #{map.get($components, image, retry-font-size)};
+  --ex-image-preview-trigger-min-size: #{map.get($components, image, preview-trigger-min-size)};
+  --ex-image-preview-hint-size: #{map.get($components, image, preview-hint-size)};
+  --ex-image-preview-hint-size-compact: #{map.get($components, image, preview-hint-size-compact)};
+  --ex-image-preview-hint-icon-size: #{map.get($components, image, preview-hint-icon-size)};
+  --ex-image-preview-hint-icon-size-compact: #{map.get(
+      $components,
+      image,
+      preview-hint-icon-size-compact
+    )};
+  --ex-image-preview-hint-opacity: #{map.get($components, image, preview-hint-opacity)};
+  --ex-image-preview-hint-initial-scale: #{map.get($components, image, preview-hint-initial-scale)};
+  --ex-image-preview-hint-active-scale: #{map.get($components, image, preview-hint-active-scale)};
+  --ex-image-preview-close-icon-size: #{map.get($components, image, preview-close-icon-size)};
+  --ex-image-preview-fade-duration: #{map.get($components, image, preview-fade-duration)};
+  --ex-image-preview-backdrop-blur: #{map.get($components, image, preview-backdrop-blur)};
+  --ex-image-preview-hover-translate-y: #{map.get($components, image, preview-hover-translate-y)};
+  --ex-image-preview-hover-scale: #{map.get($components, image, preview-hover-scale)};
+
   // 导航组件
   --ex-nav-height: 64px;
   --ex-nav-padding-x: var(--ex-spacing-4);
   --ex-nav-item-padding-x: var(--ex-spacing-3);
   --ex-nav-item-padding-y: var(--ex-spacing-2);
-  
+
   // 表格组件
   --ex-table-cell-padding-x: var(--ex-spacing-3);
   --ex-table-cell-padding-y: var(--ex-spacing-2);
   --ex-table-header-height: 48px;
   --ex-table-row-height: 40px;
-  
+
   // 工具提示组件
   --ex-tooltip-padding-x: var(--ex-spacing-2);
   --ex-tooltip-padding-y: var(--ex-spacing-1);
   --ex-tooltip-radius: var(--ex-radius-base);
   --ex-tooltip-font-size: var(--ex-text-sm);
   --ex-tooltip-max-width: 200px;
-  
+
   // 徽章组件
   --ex-badge-z-index: 10;
   --ex-badge-min-width: 18px;
@@ -231,34 +282,34 @@
   --ex-badge-font-size: var(--ex-text-xs);
   --ex-badge-font-weight: var(--ex-font-medium);
   --ex-badge-border-width: 2px;
-  --ex-badge-border-radius: 10px;
-  --ex-badge-transition: all var(--ex-motion-duration-base) var(--ex-motion-easing-standard);
-  
+  --ex-badge-border-radius: var(--ex-radius-none);
+  --ex-badge-transition:
+    background var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    opacity var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+
   // 徽章尺寸
   --ex-badge-sm-min-width: 14px;
   --ex-badge-sm-height: 14px;
   --ex-badge-sm-padding-x: 4px;
   --ex-badge-sm-font-size: var(--ex-text-xs);
-  --ex-badge-sm-border-radius: 8px;
+  --ex-badge-sm-border-radius: var(--ex-radius-none);
   --ex-badge-sm-dot-size: 8px;
-  
-  --ex-badge-md-min-width: 18px;
-  --ex-badge-md-height: 18px;
-  --ex-badge-md-padding-x: 6px;
-  --ex-badge-md-font-size: var(--ex-text-xs);
-  --ex-badge-md-border-radius: 10px;
-  --ex-badge-md-dot-size: 10px;
-  
+
   --ex-badge-lg-min-width: 22px;
   --ex-badge-lg-height: 22px;
   --ex-badge-lg-padding-x: 8px;
   --ex-badge-lg-font-size: var(--ex-text-sm);
-  --ex-badge-lg-border-radius: 12px;
+  --ex-badge-lg-border-radius: var(--ex-radius-none);
   --ex-badge-lg-dot-size: 12px;
-  
+  --ex-badge-dot-size: 10px;
+  --ex-badge-status-dot-size: 6px;
+  --ex-badge-status-dot-ring-width: 1px;
+
   // 分割线组件
-  --ex-divider-color: #{map.get($components, divider, color)};
-  --ex-divider-text-color: #{map.get($components, divider, text-color)};
   --ex-divider-font-size: #{map.get($components, divider, font-size)};
   --ex-divider-margin: #{map.get($components, divider, margin)};
   --ex-divider-vertical-margin: #{map.get($components, divider, vertical-margin)};
@@ -284,4 +335,13 @@
   --ex-tag-font-size-lg: var(--ex-text-base);
   --ex-tag-radius: var(--ex-radius-sm);
   --ex-tag-border-width: 1px;
+  --ex-tag-close-size-sm: 24px;
+  --ex-tag-close-size-md: 24px;
+  --ex-tag-close-size-lg: 28px;
+
+  // 标签输入组件
+  --ex-tag-input-action-size: var(--ex-button-touch-target);
+  --ex-tag-input-input-min-width-sm: 80px;
+  --ex-tag-input-input-min-width-md: 100px;
+  --ex-tag-input-input-min-width-lg: 120px;
 }

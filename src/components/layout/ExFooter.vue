@@ -3,132 +3,104 @@
     ref="footerRef"
     :class="footerClasses"
     :style="footerStyles"
-    role="contentinfo"
   >
-    <!-- 左侧插槽 -->
+    <!-- 存在具名区域时，默认插槽稳定回退到中间区域。 -->
+    <template v-if="$slots.left || $slots.center || $slots.right">
+      <div
+        v-if="$slots.left"
+        class="ex-footer__left"
+      >
+        <slot name="left"></slot>
+      </div>
+      <div
+        v-if="$slots.center || $slots.default"
+        class="ex-footer__center"
+      >
+        <slot
+          v-if="$slots.center"
+          name="center"
+        ></slot>
+        <slot v-else></slot>
+      </div>
+      <div
+        v-if="$slots.right"
+        class="ex-footer__right"
+      >
+        <slot name="right"></slot>
+      </div>
+    </template>
     <div
-      v-if="$slots.left"
-      class="ex-footer__left"
-    >
-      <slot name="left" />
-    </div>
-
-    <!-- 中间插槽 -->
-    <div
-      v-if="$slots.center"
-      class="ex-footer__center"
-    >
-      <slot name="center" />
-    </div>
-
-    <!-- 默认插槽 -->
-    <div
-      v-if="$slots.default && !$slots.left && !$slots.center && !$slots.right"
+      v-else
       class="ex-footer__content"
     >
-      <slot />
-    </div>
-
-    <!-- 右侧插槽 -->
-    <div
-      v-if="$slots.right"
-      class="ex-footer__right"
-    >
-      <slot name="right" />
+      <slot></slot>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref } from 'vue';
-import type { ExFooterProps, ExFooterExposed } from './types';
-import { useNeonEffect, useAnimation } from '../config-provider/composables';
+import { useAnimation, useNeonEffect, useZIndexLayer } from '../config-provider/composables';
+import { normalizeLayoutLength } from './layout-utils';
+import type { ExFooterExposed, ExFooterProps } from './types';
 
-defineOptions({
-  name: 'ExFooter',
-});
+defineOptions({ name: 'ExFooter' });
 
 const props = withDefaults(defineProps<ExFooterProps>(), {
   height: 64,
   fixed: false,
-  // 默认 undefined，使未显式设置时回退到 ConfigProvider 的全局 neon-effect
   neonBorder: undefined,
   blur: false,
 });
 
 const footerRef = ref<HTMLElement>();
-
-// 全局配置
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
+const stickyZIndex = useZIndexLayer('sticky');
 
-// 计算类名
-const footerClasses = computed(() => {
-  const classes = ['ex-footer'];
+const footerClasses = computed(() => [
+  'ex-footer',
+  {
+    'ex-footer--fixed': props.fixed,
+    'ex-footer--neon-border': props.neonBorder ?? globalNeonEffect.value,
+    'ex-footer--blur': props.blur,
+    'ex-footer--no-animation': !globalAnimation.value,
+  },
+]);
+const footerStyles = computed<Record<string, string>>(() => ({
+  '--ex-footer-height': normalizeLayoutLength(props.height, 64),
+  ...(props.fixed ? { zIndex: String(stickyZIndex.value) } : {}),
+}));
 
-  if (props.fixed) classes.push('ex-footer--fixed');
-  // 支持全局霓虹效果配置
-  if (props.neonBorder || (props.neonBorder === undefined && globalNeonEffect.value)) {
-    classes.push('ex-footer--neon-border');
-  }
-  if (props.blur) classes.push('ex-footer--blur');
-  // 支持全局动画配置
-  if (!globalAnimation.value) classes.push('ex-footer--no-animation');
+const getElement = (): HTMLElement | null => footerRef.value ?? null;
 
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
-});
-
-// 计算样式
-const footerStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  // 高度
-  if (props.height) {
-    styles.height = typeof props.height === 'number' ? `${props.height}px` : props.height;
-  }
-
-  // 合并用户样式
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    } else {
-      Object.assign(styles, props.style);
-    }
-  }
-
-  return styles;
-});
-
-// 暴露方法
-const getElement = () => footerRef.value || null;
-
-defineExpose<ExFooterExposed>({
-  getElement,
-});
+defineExpose<ExFooterExposed>({ getElement });
 </script>
 
 <style scoped lang="scss">
 @use '../../styles/mixins' as *;
 
 .ex-footer {
+  box-sizing: border-box;
   display: flex;
+  flex: 0 0 var(--ex-footer-height);
   align-items: center;
-  padding: 0 var(--ex-spacing-6);
+  height: var(--ex-footer-height);
+  min-height: var(--ex-footer-height);
+  padding-inline: var(--ex-spacing-6);
   background: var(--ex-color-bg-secondary);
   border-top: 1px solid var(--ex-color-border-primary);
-  @include transition(all);
+  transition:
+    background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+    box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
-  // 左中右布局
   &__left,
   &__center,
   &__right {
     display: flex;
     align-items: center;
+    min-width: 0;
     gap: var(--ex-spacing-4);
   }
 
@@ -137,7 +109,7 @@ defineExpose<ExFooterExposed>({
   }
 
   &__center {
-    flex: 1;
+    flex: 1 1 auto;
     justify-content: center;
   }
 
@@ -146,41 +118,32 @@ defineExpose<ExFooterExposed>({
   }
 
   &__content {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
-  // 固定定位
   &--fixed {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: auto 0 0;
     z-index: var(--ex-z-sticky);
   }
 
-  // 霓虹边框
   &--neon-border {
     border-top-color: var(--ex-color-primary);
     box-shadow: 0 -2px 8px var(--ex-color-primary-alpha-20);
   }
 
-  // 背景模糊
   &--blur {
     background: var(--ex-color-bg-secondary-alpha-80);
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
-  // 禁用动画
-  &--no-animation,
-  &--no-animation * {
-    transition: none !important;
-    animation: none !important;
+  &--no-animation {
+    transition: none;
   }
 
-  // 响应式
   @include mobile {
-    padding: 0 var(--ex-spacing-4);
+    padding-inline: var(--ex-spacing-4);
   }
 }
 </style>

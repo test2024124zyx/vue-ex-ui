@@ -3,7 +3,7 @@
  * ExVerificationCode 验证码输入组件
  * 专业的 OTP/验证码输入组件，采用分离式输入格子设计
  */
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, useId } from 'vue';
 import type {
   ExVerificationCodeProps,
   ExVerificationCodeEmits,
@@ -11,12 +11,14 @@ import type {
 } from './types';
 import { isValidChar, filterValidChars } from './types';
 import { useI18n } from '../../locale';
-import { useComponentSize, useNeonEffect, useAnimation } from '../config-provider/composables';
+import { useNeonEffect, useAnimation } from '../config-provider/composables';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
+import ExIcon from '../icon/ExIcon.vue';
 
 defineOptions({ name: 'ExVerificationCode' });
 
 const props = withDefaults(defineProps<ExVerificationCodeProps>(), {
-  modelValue: '',
+  modelValue: undefined,
   length: 6,
   inputMode: 'numeric',
   size: undefined, // 使用全局配置
@@ -43,7 +45,8 @@ const props = withDefaults(defineProps<ExVerificationCodeProps>(), {
 });
 
 // 使用全局配置
-const componentSize = useComponentSize(computed(() => props.size));
+const field = useFormFieldState(props);
+const { disabled, readonly, size: componentSize } = field;
 const neonEffect = useNeonEffect();
 const animation = useAnimation();
 
@@ -55,9 +58,30 @@ const { t } = useI18n();
 // 组件引用
 const containerRef = ref<HTMLDivElement | null>(null);
 const hiddenInputRef = ref<HTMLInputElement | null>(null);
+const idSuffix = useId().replace(/:/g, '');
+const inputId = `ex-verification-code-${idSuffix}`;
+const labelId = `${inputId}-label`;
+const helpId = `${inputId}-help`;
+const inputLabelledBy = computed(() => (props.label ? labelId : field.labelledBy.value));
+const inputAriaLabel = computed(() =>
+  inputLabelledBy.value ? undefined : props.ariaLabel || t('verificationCode.ariaLabel')
+);
+const inputDescribedBy = computed(() =>
+  mergeAriaIds(field.describedBy.value, props.helpText || props.errorMessage ? helpId : undefined)
+);
+
+const MIN_CODE_LENGTH = 1;
+const MAX_CODE_LENGTH = 12;
+const DEFAULT_CODE_LENGTH = 6;
+const normalizedLength = computed(() => {
+  const length = Number(props.length);
+  if (Number.isNaN(length)) return DEFAULT_CODE_LENGTH;
+  if (!Number.isFinite(length)) return length > 0 ? MAX_CODE_LENGTH : MIN_CODE_LENGTH;
+  return Math.min(MAX_CODE_LENGTH, Math.max(MIN_CODE_LENGTH, Math.trunc(length)));
+});
 
 // 内部状态
-const cells = ref<string[]>(Array(props.length).fill(''));
+const cells = ref<string[]>(Array(normalizedLength.value).fill(''));
 const focusedIndex = ref(0);
 const isFocused = ref(false);
 const isMasked = ref(props.mask);
@@ -73,7 +97,7 @@ const currentValue = computed(() => cells.value.join(''));
 
 // 计算属性：是否完成
 const isComplete = computed(() => {
-  return cells.value.every(cell => cell !== '') && cells.value.length === props.length;
+  return cells.value.every(cell => cell !== '') && cells.value.length === normalizedLength.value;
 });
 
 // 计算属性：组件类名
@@ -83,8 +107,8 @@ const componentClasses = computed(() => {
     `ex-verification-code--${componentSize.value}`,
     `ex-verification-code--${props.variant}`,
     {
-      'ex-verification-code--disabled': props.disabled,
-      'ex-verification-code--readonly': props.readonly,
+      'ex-verification-code--disabled': disabled.value,
+      'ex-verification-code--readonly': readonly.value,
       'ex-verification-code--focused': isFocused.value,
       'ex-verification-code--error': props.status === 'error',
       'ex-verification-code--success': props.status === 'success',
@@ -104,53 +128,122 @@ const cellStyle = computed(() => {
   if (props.cellWidth) {
     style.width = typeof props.cellWidth === 'number' ? `${props.cellWidth}px` : props.cellWidth;
   }
+  return style;
+});
+
+const cellsStyle = computed(() => {
+  const style: Record<string, string> = {};
   if (props.cellGap) {
-    style.marginRight = typeof props.cellGap === 'number' ? `${props.cellGap}px` : props.cellGap;
+    style.gap = typeof props.cellGap === 'number' ? `${props.cellGap}px` : props.cellGap;
   }
   return style;
 });
 
 // 计算属性：隐藏输入框的属性
 const hiddenInputAttrs = computed(() => {
+  const charset = props.inputMode === 'numeric' ? '[0-9]' : '[A-Za-z0-9]';
   return {
     inputmode: (props.inputMode === 'numeric' ? 'numeric' : 'text') as 'numeric' | 'text',
-    pattern: props.inputMode === 'numeric' ? '[0-9]*' : undefined,
+    pattern: `${charset}{${normalizedLength.value}}`,
     autocomplete: 'one-time-code' as const,
   };
 });
 
-// 监听 modelValue 变化
+function synchronizeConfirmedValue(force = false) {
+  if (props.modelValue === undefined && !force) return;
+  const filtered = filterValidChars(props.modelValue || '', props.inputMode);
+  const chars = filtered.slice(0, normalizedLength.value).split('');
+  if (chars.join('') !== currentValue.value || force) {
+    cancelAutoSubmit();
+    if (maskDelayTimer) clearTimeout(maskDelayTimer);
+    maskDelayTimer = null;
+    lastInputIndex.value = -1;
+    cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
+    focusedIndex.value = Math.min(chars.length, normalizedLength.value - 1);
+  }
+  if (hiddenInputRef.value) hiddenInputRef.value.value = currentValue.value;
+}
+
+// 监听 modelValue 变化；外部替换撤销原验证码对应的延迟提交。
 watch(
   () => props.modelValue,
-  (newValue) => {
-    if (newValue !== currentValue.value) {
-      const filtered = filterValidChars(newValue || '', props.inputMode);
-      const chars = filtered.slice(0, props.length).split('');
-      cells.value = [...chars, ...Array(props.length - chars.length).fill('')];
-    }
-  },
+  () => synchronizeConfirmedValue(),
   { immediate: true }
+);
+
+watch(
+  () => field.formItem?.resetRevision?.value,
+  () => {
+    synchronizeConfirmedValue(true);
+  },
+  { flush: 'post' }
 );
 
 // 监听 length 变化
 watch(
   () => props.length,
-  (newLength) => {
+  () => {
+    const newLength = normalizedLength.value;
+    const previousValue = currentValue.value;
     const currentChars = cells.value.filter(c => c !== '');
-    cells.value = [...currentChars.slice(0, newLength), ...Array(Math.max(0, newLength - currentChars.length)).fill('')];
+    cells.value = [
+      ...currentChars.slice(0, newLength),
+      ...Array(Math.max(0, newLength - currentChars.length)).fill(''),
+    ];
     if (focusedIndex.value >= newLength) {
       focusedIndex.value = Math.max(0, newLength - 1);
     }
+    const nextValue = currentValue.value;
+    if (nextValue !== previousValue) {
+      emit('update:modelValue', nextValue);
+      emit('input', nextValue);
+      emit('change', nextValue);
+      cancelAutoSubmit();
+    }
+  }
+);
+
+watch(
+  () => props.inputMode,
+  () => {
+    const previousValue = currentValue.value;
+    const filtered = filterValidChars(previousValue, props.inputMode)
+      .slice(0, normalizedLength.value)
+      .split('');
+    cells.value = [...filtered, ...Array(normalizedLength.value - filtered.length).fill('')];
+    if (currentValue.value !== previousValue) updateValue();
+  }
+);
+
+watch(
+  () => [disabled.value, readonly.value, props.autoSubmit] as const,
+  ([disabled, readonly, autoSubmit]) => {
+    if (disabled || readonly || !autoSubmit) cancelAutoSubmit();
   }
 );
 
 // 监听 mask 属性变化
 watch(
   () => props.mask,
-  (newMask) => {
+  newMask => {
     isMasked.value = newMask;
   }
 );
+
+watch([() => props.mask, () => props.maskDelay], () => {
+  if (maskDelayTimer) clearTimeout(maskDelayTimer);
+  maskDelayTimer = null;
+  lastInputIndex.value = -1;
+});
+
+// 原生输入保留完整验证码，既支持浏览器校验，也向辅助技术提供真实字段值。
+watch([currentValue, focusedIndex], async () => {
+  await nextTick();
+  const input = hiddenInputRef.value;
+  if (!input) return;
+  input.value = currentValue.value;
+  input.setSelectionRange(focusedIndex.value, Math.min(focusedIndex.value + 1, input.value.length));
+});
 
 /**
  * 更新值并触发事件
@@ -160,6 +253,8 @@ function updateValue() {
   emit('update:modelValue', value);
   emit('input', value);
   emit('change', value);
+  field.formItem?.onFieldInput?.();
+  field.formItem?.onFieldChange();
 
   // 检查是否完成
   if (isComplete.value) {
@@ -168,20 +263,28 @@ function updateValue() {
   } else {
     cancelAutoSubmit();
   }
+  void nextTick(() => synchronizeConfirmedValue());
 }
 
 /**
  * 处理自动提交
  */
 function handleAutoSubmit() {
-  if (!props.autoSubmit || props.disabled || props.readonly) return;
+  if (!props.autoSubmit || !field.interactive.value) return;
 
   cancelAutoSubmit();
   isPendingSubmit.value = true;
 
+  const submittedValue = currentValue.value;
   autoSubmitTimer = setTimeout(() => {
-    if (isComplete.value) {
-      emit('submit', currentValue.value);
+    autoSubmitTimer = null;
+    if (
+      isComplete.value &&
+      currentValue.value === submittedValue &&
+      props.autoSubmit &&
+      field.interactive.value
+    ) {
+      emit('submit', submittedValue);
     }
     isPendingSubmit.value = false;
   }, props.autoSubmitDelay);
@@ -209,17 +312,35 @@ function getFirstEmptyIndex(): number {
  * 处理输入
  */
 function handleInput(event: Event) {
-  if (props.disabled || props.readonly) return;
+  if (!field.interactive.value) return;
 
   const input = event.target as HTMLInputElement;
-  const value = input.value;
+  const nativeEvent = event as InputEvent;
+  if (nativeEvent.isComposing) return;
+  const replacement = Boolean(nativeEvent.inputType && nativeEvent.data === null);
+  const value = nativeEvent.data ?? input.value;
 
-  if (!value) return;
+  // 自动填充、剪切等替换事件提供整个原生值；普通字符输入继续按当前格子编辑。
+  if (replacement) {
+    const chars = filterValidChars(value, props.inputMode)
+      .slice(0, normalizedLength.value)
+      .split('');
+    cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
+    focusedIndex.value = Math.min(chars.length, normalizedLength.value - 1);
+    lastInputIndex.value = -1;
+    updateValue();
+    input.value = currentValue.value;
+    return;
+  }
 
-  // 获取最后一个有效字符
+  if (!value) {
+    input.value = currentValue.value;
+    return;
+  }
+
   const chars = filterValidChars(value, props.inputMode);
   if (!chars) {
-    input.value = '';
+    input.value = currentValue.value;
     return;
   }
 
@@ -229,37 +350,40 @@ function handleInput(event: Event) {
     focusedIndex.value = firstEmptyIndex;
   }
 
-  // 处理单字符输入
-  const char = chars[chars.length - 1];
-  if (char && isValidChar(char, props.inputMode)) {
-    cells.value[focusedIndex.value] = char;
-    lastInputIndex.value = focusedIndex.value;
+  const availableLength = normalizedLength.value - focusedIndex.value;
+  const inputChars = chars.slice(0, availableLength).split('');
+  inputChars.forEach((char, offset) => {
+    if (isValidChar(char, props.inputMode)) {
+      const targetIndex = focusedIndex.value + offset;
+      cells.value[targetIndex] = char;
+      lastInputIndex.value = props.maskDelay > 0 ? targetIndex : -1;
+    }
+  });
 
+  if (inputChars.length > 0) {
     // 处理遮罩延迟
     if (props.mask && props.maskDelay > 0) {
       if (maskDelayTimer) clearTimeout(maskDelayTimer);
       maskDelayTimer = setTimeout(() => {
         lastInputIndex.value = -1;
+        maskDelayTimer = null;
       }, props.maskDelay);
     }
 
-    // 移动到下一个格子
-    if (focusedIndex.value < props.length - 1) {
-      focusedIndex.value++;
-    }
+    const firstEmptyIndex = getFirstEmptyIndex();
+    focusedIndex.value = firstEmptyIndex === -1 ? normalizedLength.value - 1 : firstEmptyIndex;
 
     updateValue();
   }
 
-  input.value = '';
+  input.value = currentValue.value;
 }
 
 /**
  * 处理键盘事件
  */
 function handleKeyDown(event: KeyboardEvent) {
-  if (props.disabled || props.readonly) {
-    event.preventDefault();
+  if (!field.interactive.value) {
     return;
   }
 
@@ -283,7 +407,7 @@ function handleKeyDown(event: KeyboardEvent) {
     case 'ArrowRight': {
       // 顺序输入限制：不能向右移动到空格子之后
       const firstEmptyIndex = getFirstEmptyIndex();
-      const maxAllowedIndex = firstEmptyIndex !== -1 ? firstEmptyIndex : props.length - 1;
+      const maxAllowedIndex = firstEmptyIndex !== -1 ? firstEmptyIndex : normalizedLength.value - 1;
       if (focusedIndex.value < maxAllowedIndex) {
         focusedIndex.value++;
       }
@@ -297,7 +421,7 @@ function handleKeyDown(event: KeyboardEvent) {
     case 'End': {
       // 顺序输入限制：End 键跳转到第一个空格子或最后一个已填充的格子
       const emptyIndex = getFirstEmptyIndex();
-      focusedIndex.value = emptyIndex !== -1 ? emptyIndex : props.length - 1;
+      focusedIndex.value = emptyIndex !== -1 ? emptyIndex : normalizedLength.value - 1;
       event.preventDefault();
       break;
     }
@@ -325,10 +449,10 @@ function handleBackspace() {
 function handleDelete() {
   if (cells.value[focusedIndex.value] !== '') {
     // 删除当前格子并左移后续内容
-    for (let i = focusedIndex.value; i < props.length - 1; i++) {
+    for (let i = focusedIndex.value; i < normalizedLength.value - 1; i++) {
       cells.value[i] = cells.value[i + 1] ?? '';
     }
-    cells.value[props.length - 1] = '';
+    cells.value[normalizedLength.value - 1] = '';
     updateValue();
   }
 }
@@ -338,7 +462,7 @@ function handleDelete() {
  * 顺序输入限制：始终从第一个空格子开始粘贴
  */
 function handlePaste(event: ClipboardEvent) {
-  if (props.disabled || props.readonly) {
+  if (!field.interactive.value) {
     event.preventDefault();
     return;
   }
@@ -357,17 +481,17 @@ function handlePaste(event: ClipboardEvent) {
   }
 
   // 从第一个空格子开始填充
-  const chars = validChars.slice(0, props.length - startIndex).split('');
+  const chars = validChars.slice(0, normalizedLength.value - startIndex).split('');
   chars.forEach((char, index) => {
     const targetIndex = startIndex + index;
-    if (targetIndex < props.length) {
+    if (targetIndex < normalizedLength.value) {
       cells.value[targetIndex] = char;
     }
   });
 
   // 更新焦点位置到下一个空格子
   const newFirstEmpty = getFirstEmptyIndex();
-  focusedIndex.value = newFirstEmpty !== -1 ? newFirstEmpty : props.length - 1;
+  focusedIndex.value = newFirstEmpty !== -1 ? newFirstEmpty : normalizedLength.value - 1;
 
   updateValue();
 }
@@ -377,17 +501,17 @@ function handlePaste(event: ClipboardEvent) {
  * 顺序输入限制：只能点击已填充的格子或第一个空格子
  */
 function handleCellClick(index: number) {
-  if (props.disabled) return;
-  
+  if (disabled.value) return;
+
   const firstEmptyIndex = getFirstEmptyIndex();
-  
+
   // 如果点击的位置超过第一个空格子，自动跳转到第一个空格子
   if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
     focusedIndex.value = firstEmptyIndex;
   } else {
     focusedIndex.value = index;
   }
-  
+
   hiddenInputRef.value?.focus();
 }
 
@@ -405,12 +529,14 @@ function handleFocus(event: FocusEvent) {
 function handleBlur(event: FocusEvent) {
   isFocused.value = false;
   emit('blur', event);
+  field.formItem?.onFieldBlur();
 }
 
 /**
  * 切换遮罩显示
  */
 function toggleMask() {
+  if (disabled.value) return;
   isMasked.value = !isMasked.value;
 }
 
@@ -435,21 +561,17 @@ function getCellDisplay(index: number): string {
  * 判断是否应该显示分隔符
  */
 function shouldShowSeparator(index: number): boolean {
-  return props.separatorPositions.includes(index + 1) && index < props.length - 1;
+  return props.separatorPositions.includes(index + 1) && index < normalizedLength.value - 1;
 }
 
 /**
  * 获取格子的 ARIA 标签
  */
-function getCellAriaLabel(index: number): string {
-  return t('verificationCode.cellLabel', { current: index + 1, total: props.length });
-}
-
 // 暴露的方法
 function focus() {
   // 顺序输入限制：聚焦到第一个空格子
   const firstEmptyIndex = getFirstEmptyIndex();
-  focusedIndex.value = firstEmptyIndex !== -1 ? firstEmptyIndex : props.length - 1;
+  focusedIndex.value = firstEmptyIndex !== -1 ? firstEmptyIndex : normalizedLength.value - 1;
   hiddenInputRef.value?.focus();
 }
 
@@ -458,18 +580,20 @@ function blur() {
 }
 
 function clear() {
-  cells.value = Array(props.length).fill('');
+  cells.value = Array(normalizedLength.value).fill('');
   focusedIndex.value = 0;
   cancelAutoSubmit();
   emit('clear');
   emit('update:modelValue', '');
   emit('change', '');
+  field.formItem?.onFieldChange();
+  void nextTick(() => synchronizeConfirmedValue());
 }
 
 function setValue(value: string) {
   const filtered = filterValidChars(value || '', props.inputMode);
-  const chars = filtered.slice(0, props.length).split('');
-  cells.value = [...chars, ...Array(props.length - chars.length).fill('')];
+  const chars = filtered.slice(0, normalizedLength.value).split('');
+  cells.value = [...chars, ...Array(normalizedLength.value - chars.length).fill('')];
   updateValue();
 }
 
@@ -524,37 +648,52 @@ defineExpose<ExVerificationCodeExposed>({
     <!-- 标签 -->
     <label
       v-if="label"
+      :id="labelId"
+      :for="inputId"
       class="ex-verification-code__label"
     >
       {{ label }}
       <span
         v-if="required"
         class="ex-verification-code__required"
-      >*</span>
+      >
+        *
+      </span>
     </label>
 
     <!-- 格子容器 -->
     <div
       class="ex-verification-code__cells"
-      :aria-label="ariaLabel || t('verificationCode.ariaLabel')"
+      :style="cellsStyle"
+      :aria-label="inputAriaLabel"
+      :aria-labelledby="inputLabelledBy"
       role="group"
     >
       <!-- 隐藏的输入框（用于移动端键盘和自动填充） -->
       <input
+        :id="inputId"
         ref="hiddenInputRef"
         class="ex-verification-code__hidden-input"
-        type="text"
+        :type="isMasked ? 'password' : 'text'"
+        :value="currentValue"
         :inputmode="hiddenInputAttrs.inputmode"
         :pattern="hiddenInputAttrs.pattern"
         :autocomplete="hiddenInputAttrs.autocomplete"
         :disabled="disabled"
         :readonly="readonly"
+        :aria-label="inputAriaLabel"
+        :aria-labelledby="inputLabelledBy"
+        :aria-describedby="inputDescribedBy"
+        :aria-invalid="status === 'error' || field.invalid.value ? 'true' : undefined"
+        :aria-errormessage="field.invalid.value ? field.describedBy.value : undefined"
+        :aria-required="required ? 'true' : undefined"
+        :required="required"
         @input="handleInput"
         @keydown="handleKeyDown"
         @paste="handlePaste"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
 
       <!-- 格子 -->
       <template
@@ -573,11 +712,7 @@ defineExpose<ExVerificationCodeExposed>({
             },
           ]"
           :style="cellStyle"
-          :aria-label="getCellAriaLabel(index)"
-          :aria-current="isFocused && focusedIndex === index ? 'true' : undefined"
-          role="textbox"
-          :aria-readonly="readonly"
-          :aria-disabled="disabled"
+          aria-hidden="true"
           @click="handleCellClick(index)"
         >
           <span class="ex-verification-code__cell-content">
@@ -587,7 +722,7 @@ defineExpose<ExVerificationCodeExposed>({
           <span
             v-if="isFocused && focusedIndex === index && !cells[index]"
             class="ex-verification-code__cursor"
-          />
+          ></span>
         </div>
 
         <!-- 分隔符 -->
@@ -604,11 +739,15 @@ defineExpose<ExVerificationCodeExposed>({
         v-if="showMaskToggle && mask"
         type="button"
         class="ex-verification-code__mask-toggle"
+        :disabled="disabled"
         :aria-label="isMasked ? t('verificationCode.showCode') : t('verificationCode.hideCode')"
         @click="toggleMask"
       >
-        <span v-if="isMasked">👁</span>
-        <span v-else>👁‍🗨</span>
+        <ExIcon
+          :icon="isMasked ? 'eye-line' : 'eye-off-line'"
+          :size="16"
+          aria-hidden="true"
+        />
       </button>
     </div>
 
@@ -617,12 +756,13 @@ defineExpose<ExVerificationCodeExposed>({
       v-if="loading"
       class="ex-verification-code__loading"
     >
-      <span class="ex-verification-code__loading-spinner" />
+      <span class="ex-verification-code__loading-spinner"></span>
     </div>
 
     <!-- 帮助文本 / 错误信息 -->
     <div
       v-if="helpText || errorMessage"
+      :id="helpId"
       :class="[
         'ex-verification-code__help',
         { 'ex-verification-code__help--error': status === 'error' && errorMessage },

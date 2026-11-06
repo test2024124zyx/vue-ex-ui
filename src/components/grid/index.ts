@@ -1,15 +1,13 @@
-import type { App } from 'vue';
-import ExGrid from './ExGrid.vue';
-import ExGridItem from './ExGridItem.vue';
+import ExGridComponent from './ExGrid.vue';
+import ExGridItemComponent from './ExGridItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-export { ExGrid, ExGridItem };
+export const ExGridItem: InstallableComponent<typeof ExGridItemComponent> =
+  withInstall(ExGridItemComponent);
+export const ExGrid: InstallableComponent<typeof ExGridComponent> = withInstall(ExGridComponent, {
+  ExGridItem,
+});
+export * from './grid-utils';
 export * from './types';
 
-export const GridPlugin = {
-  install(app: App) {
-    app.component('ExGrid', ExGrid);
-    app.component('ExGridItem', ExGridItem);
-  },
-};
-
-export default GridPlugin;
+export default ExGrid;

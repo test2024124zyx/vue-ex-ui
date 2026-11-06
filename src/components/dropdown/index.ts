@@ -1,13 +1,12 @@
-import type { App } from 'vue';
-import ExDropdown from './ExDropdown.vue';
-import ExDropdownItem from './ExDropdownItem.vue';
+import ExDropdownComponent from './ExDropdown.vue';
+import ExDropdownItemComponent from './ExDropdownItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 添加 install 方法
-ExDropdown.install = (app: App) => {
-  app.component('ExDropdown', ExDropdown);
-  app.component('ExDropdownItem', ExDropdownItem);
-};
+export const ExDropdownItem: InstallableComponent<typeof ExDropdownItemComponent> =
+  withInstall(ExDropdownItemComponent);
+export const ExDropdown: InstallableComponent<typeof ExDropdownComponent> & {
+  Item: typeof ExDropdownItem;
+} = withInstall(ExDropdownComponent, { Item: ExDropdownItem });
 
-export default ExDropdown;
-export { ExDropdown, ExDropdownItem };
 export * from './types';
+export default ExDropdown;

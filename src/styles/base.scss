@@ -9,11 +9,11 @@
 // 导入基础样式模块
 // ============================================================================
 
-// 安全、必要的最小重置（box-sizing、focus-visible 等）——可全局生效而不改宿主外观。
+// 安全、必要的最小重置（box-sizing、focus-visible 等）——只作用于 ExUI 控件或 .ex-app。
 @use 'base/reset';
-// 仅类名选择器（.sr-only / .skip-link），不污染裸元素。
+// 仅作用于 ExUI 命名空间或 .ex-app 内的无障碍辅助类，不污染宿主页面。
 @use 'base/accessibility';
-// 打印样式，仅在 @media print 下生效。
+// 打印样式仅作用于用户主动启用的 .ex-app 区域。
 @use 'base/print';
 
 // 以下模块只暴露 `base-styles` mixin，会改动宿主裸元素外观，
@@ -35,18 +35,57 @@
 
 .ex-app {
   position: relative;
+  isolation: isolate;
   min-height: 100%;
   font-family: var(--ex-font-secondary);
   font-size: var(--ex-text-base);
   font-weight: var(--ex-font-normal);
   line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
-  background: var(--ex-gradient-bg);
+  background-color: var(--ex-color-bg-primary);
+  background-image: var(--ex-gradient-bg);
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  // 让纹理伪元素留在内容下方，同时不改变组件自身的布局上下文
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  // 全局网格与扫描线是静态低对比纹理，不参与交互，也不遮挡焦点
+  &::before,
+  &::after {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    content: '';
+    pointer-events: none;
+  }
+
+  &::before {
+    background-image:
+      linear-gradient(
+        rgba(var(--ex-color-cyber-green-rgb), var(--ex-cyber-grid-opacity)) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(var(--ex-color-cyber-cyan-rgb), var(--ex-cyber-grid-opacity)) 1px,
+        transparent 1px
+      );
+    background-size: var(--ex-cyber-grid-size) var(--ex-cyber-grid-size);
+    opacity: 0.9;
+  }
+
+  &::after {
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.9) 2px 4px);
+    opacity: var(--ex-cyber-scanline-opacity);
+    animation: ex-cyber-scanline var(--ex-cyber-scanline-duration) linear infinite;
+  }
 
   // 页面级裸元素样式（排版、列表、表格、表单、媒体）——仅在 .ex-app 内生效
   @include typography.base-styles;
@@ -126,21 +165,43 @@
     color: var(--ex-color-text-inverse);
   }
 
-  // 仅在高性能设备上应用背景光晕
-  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
-    &::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background:
-        radial-gradient(circle at 20% 80%, var(--ex-color-neon-blue-alpha-10) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, var(--ex-color-neon-pink-alpha-10) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-      will-change: auto;
+  // 动效偏好与高对比度模式下保留可读性优先级
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
     }
+  }
+
+  @media (prefers-contrast: more), (forced-colors: active) {
+    &::before,
+    &::after {
+      opacity: 0;
+    }
+  }
+}
+
+// 可选的标题/状态色差类：组件库提供能力，但不默认让所有文本闪烁
+.ex-cyber-glitch {
+  animation: ex-cyber-glitch 4s steps(1, end) infinite;
+}
+
+// Provider 使用自己的实例边界规则；手动工具类也不能越过内部的新 Provider。
+$manual-animation-root: '[class~="ex-no-animation"]:not([data-ex-provider])';
+$manual-animation-boundary: ':not(:is(#{$manual-animation-root} [data-ex-provider], #{$manual-animation-root} [data-ex-provider] *))';
+#{$manual-animation-root} .ex-app#{$manual-animation-boundary}::after,
+[class~='ex-no-animation'].ex-app::after {
+  animation: none !important;
+}
+
+#{$manual-animation-root} .ex-cyber-glitch#{$manual-animation-boundary} {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-cyber-glitch {
+    animation: none;
+    text-shadow:
+      -1px 0 var(--ex-color-cyber-magenta),
+      1px 0 var(--ex-color-cyber-cyan);
   }
 }

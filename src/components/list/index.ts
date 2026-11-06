@@ -1,19 +1,19 @@
-import type { App } from 'vue';
-import ExList from './ExList.vue';
-import type { ExListProps, ExListEmits, ExListExposed } from './types';
+import ExListComponent from './ExList.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件类型
-export type { ExListProps, ExListEmits, ExListExposed };
-export type { ListSize, ListItem } from './types';
+export type {
+  ExListEmits,
+  ExListExposed,
+  ExListProps,
+  ExListSlots,
+  ListGrid,
+  ListItem,
+  ListItemKey,
+  ListItemKeyResolver,
+  ListSize,
+  ListSlotProps,
+} from './types';
 
-// 导出组件
-export { ExList };
+export const ExList: InstallableComponent<typeof ExListComponent> = withInstall(ExListComponent);
 
-// 组件安装插件
-export const ExListPlugin = {
-  install(app: App) {
-    app.component('ExList', ExList);
-  },
-};
-
-export default ExListPlugin;
+export default ExList;

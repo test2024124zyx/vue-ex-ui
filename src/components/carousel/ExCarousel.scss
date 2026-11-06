@@ -33,6 +33,7 @@
   &--horizontal {
     .ex-carousel__track {
       flex-direction: row;
+      touch-action: pan-y;
     }
   }
 
@@ -40,6 +41,7 @@
   &--vertical {
     .ex-carousel__track {
       flex-direction: column;
+      touch-action: pan-x;
     }
   }
 
@@ -119,7 +121,9 @@
     border-radius: 50%;
     color: var(--ex-color-text-primary);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition-property: background-color, border-color, color, opacity, transform, box-shadow;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
     outline: none;
 
     &:hover:not(&--disabled) {
@@ -208,7 +212,9 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition-property: background-color, border-color, color, opacity, transform, box-shadow;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
     outline: none;
 
     &:focus-visible {
@@ -237,13 +243,15 @@
     display: block;
     width: 8px;
     height: 8px;
-    background: rgba(var(--ex-color-white-rgb), 0.3);
+    background: var(--ex-color-text-secondary);
     border-radius: 50%;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition-property: background-color, border-color, color, opacity, transform, box-shadow;
+    transition-duration: var(--ex-motion-duration-base);
+    transition-timing-function: var(--ex-motion-ease-in-out);
   }
 
   // 响应式
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     &__arrow {
       width: 40px;
       height: 40px;
@@ -289,7 +297,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     border-width: 2px;
 
     .ex-carousel__arrow {
@@ -297,5 +305,3 @@
     }
   }
 }
-
-

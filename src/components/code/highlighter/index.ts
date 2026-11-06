@@ -6,7 +6,12 @@
  */
 
 import { escapeHtml, type Token, tokenize, tokenizeLines } from './engine';
-import { getGrammar, isLanguageSupported, normalizeLanguage, SUPPORTED_LANGUAGES } from './grammars';
+import {
+  getGrammar,
+  isLanguageSupported,
+  normalizeLanguage,
+  SUPPORTED_LANGUAGES,
+} from './grammars';
 
 export type { Token } from './engine';
 export { SUPPORTED_LANGUAGES, isLanguageSupported, normalizeLanguage };

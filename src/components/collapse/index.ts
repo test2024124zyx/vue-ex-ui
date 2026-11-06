@@ -1,12 +1,13 @@
-import type { App } from 'vue';
-import ExCollapse from './ExCollapse.vue';
-import ExCollapseItem from './ExCollapseItem.vue';
+import ExCollapseComponent from './ExCollapse.vue';
+import ExCollapseItemComponent from './ExCollapseItem.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExCollapse.install = (app: App) => {
-  app.component(ExCollapse.name as string, ExCollapse);
-  app.component(ExCollapseItem.name as string, ExCollapseItem);
-};
+export const ExCollapseItem: InstallableComponent<typeof ExCollapseItemComponent> =
+  withInstall(ExCollapseItemComponent);
+export const ExCollapse: InstallableComponent<typeof ExCollapseComponent> = withInstall(
+  ExCollapseComponent,
+  { ExCollapseItem }
+);
 
 export default ExCollapse;
-export { ExCollapse, ExCollapseItem };
-export * from './types';
+export type * from './types';

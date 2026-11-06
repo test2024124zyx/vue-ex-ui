@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-drawer-wrapper {
   position: fixed;
@@ -9,6 +10,14 @@
   bottom: 0;
   z-index: var(--ex-z-modal, 1050);
   overflow: hidden;
+
+  &--modeless {
+    pointer-events: none;
+
+    .ex-drawer {
+      pointer-events: auto;
+    }
+  }
 }
 
 .ex-drawer-mask {
@@ -126,7 +135,12 @@
     border-radius: var(--ex-radius-md);
     color: var(--ex-color-text-tertiary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
     outline: none;
 
     &:hover {
@@ -206,6 +220,16 @@
   }
 }
 
+.ex-drawer-wrapper-fade-enter-active,
+.ex-drawer-wrapper-fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ex-drawer-wrapper-fade-enter-from,
+.ex-drawer-wrapper-fade-leave-to {
+  opacity: 0;
+}
+
 // 遮罩层过渡动画
 .ex-drawer-mask-fade-enter-active,
 .ex-drawer-mask-fade-leave-active {
@@ -262,7 +286,7 @@
 }
 
 // 响应式设计
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-drawer {
     &--left,
     &--right {
@@ -296,6 +320,8 @@
 
 // 无障碍支持
 @media (prefers-reduced-motion: reduce) {
+  .ex-drawer-wrapper-fade-enter-active,
+  .ex-drawer-wrapper-fade-leave-active,
   .ex-drawer-mask-fade-enter-active,
   .ex-drawer-mask-fade-leave-active,
   .ex-drawer-slide-left-enter-active,
@@ -319,7 +345,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-drawer {
     border-width: 2px;
 
@@ -330,4 +356,18 @@
   }
 }
 
+// Teleport 包装器脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-drawer-wrapper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
 
+.ex-drawer-wrapper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

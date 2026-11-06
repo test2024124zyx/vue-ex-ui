@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 @use '../../styles/component-mixins' as *;
 @use '../../styles/performance' as *;
 
@@ -17,13 +18,22 @@
   background: var(--ex-color-bg-secondary);
   box-shadow: var(--ex-shadow-xl);
   pointer-events: all;
-  cursor: pointer;
+  cursor: default;
   @include safe-transition(all);
   @include optimized-text-rendering;
   @include optimized-backdrop-blur(12px);
 
-  &:hover {
+  &--clickable {
+    cursor: pointer;
+  }
+
+  &--clickable:hover {
     transform: translateX(-4px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
   }
 
   // ============================================================================
@@ -44,19 +54,23 @@
 
     // 图标颜色变体
     &--info {
-      filter: brightness(0) saturate(100%) invert(67%) sepia(89%) saturate(1000%) hue-rotate(166deg) brightness(101%) contrast(101%);
+      filter: brightness(0) saturate(100%) invert(67%) sepia(89%) saturate(1000%) hue-rotate(166deg)
+        brightness(101%) contrast(101%);
     }
 
     &--success {
-      filter: brightness(0) saturate(100%) invert(67%) sepia(52%) saturate(500%) hue-rotate(100deg) brightness(95%) contrast(90%);
+      filter: brightness(0) saturate(100%) invert(67%) sepia(52%) saturate(500%) hue-rotate(100deg)
+        brightness(95%) contrast(90%);
     }
 
     &--warning {
-      filter: brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%) hue-rotate(10deg) brightness(100%) contrast(95%);
+      filter: brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%) hue-rotate(10deg)
+        brightness(100%) contrast(95%);
     }
 
     &--error {
-      filter: brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(1000%) hue-rotate(310deg) brightness(100%) contrast(100%);
+      filter: brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(1000%) hue-rotate(310deg)
+        brightness(100%) contrast(100%);
     }
   }
 
@@ -89,8 +103,16 @@
   // ============================================================================
 
   &__close {
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
     margin-left: var(--ex-spacing-3);
+    padding: 0;
+    appearance: none;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 0;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -117,8 +139,18 @@
 
     img {
       display: block;
-      filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(180deg) brightness(100%) contrast(90%);
+      filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(180deg)
+        brightness(100%) contrast(90%);
     }
+  }
+
+  &--no-animation {
+    transition: none;
+    animation: none;
+  }
+
+  &--no-neon {
+    box-shadow: var(--ex-shadow-base);
   }
 
   // ============================================================================
@@ -135,7 +167,7 @@
     @include optimized-neon-glow('blue', 'sm');
 
     .ex-notification__title {
-      color: var(--ex-color-neon-blue-400);
+      color: var(--ex-color-neon-blue-500);
     }
   }
 
@@ -146,7 +178,7 @@
       rgba(var(--ex-color-success-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-success-alpha-30);
-    box-shadow: 
+    box-shadow:
       var(--ex-shadow-xl),
       0 0 10px var(--ex-color-success-alpha-20);
 
@@ -162,7 +194,7 @@
       rgba(var(--ex-color-warning-rgb), 0.05) 100%
     );
     border-color: var(--ex-color-warning-alpha-30);
-    box-shadow: 
+    box-shadow:
       var(--ex-shadow-xl),
       0 0 10px var(--ex-color-warning-alpha-20);
 
@@ -181,7 +213,7 @@
     @include optimized-neon-glow('pink', 'sm');
 
     .ex-notification__title {
-      color: var(--ex-color-neon-pink-400);
+      color: var(--ex-color-neon-pink-500);
     }
   }
 
@@ -325,6 +357,21 @@
 // ============================================================================
 // 减少动画偏好
 // ============================================================================
+
+.ex-notification.ex-notification--no-animation {
+  @include effect-boundary {
+    animation: none;
+    transition: none;
+  }
+}
+
+.ex-notification.ex-notification--no-neon {
+  @include effect-boundary {
+    box-shadow: none;
+    text-shadow: none;
+    filter: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .ex-notification {

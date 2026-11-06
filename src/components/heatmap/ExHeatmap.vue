@@ -3,126 +3,226 @@
     ref="heatmapRef"
     :class="heatmapClasses"
     :style="heatmapStyles"
+    role="group"
+    :aria-label="ariaLabel || t('ariaLabel')"
+    :aria-describedby="hasCalendar ? legendId : undefined"
   >
-    <!-- 月份标签 -->
-    <div
-      v-if="showMonthLabels && data.length > 0"
-      class="ex-heatmap__months"
-    >
-      <div
-        v-for="(month, index) in monthLabels"
-        :key="index"
-        class="ex-heatmap__month-label"
-        :style="{ left: month.offset + 'px' }"
-      >
-        {{ month.label }}
-      </div>
-    </div>
-
-    <!-- 热力图主体 -->
-    <div
-      v-if="data.length > 0"
-      class="ex-heatmap__body"
-    >
-      <!-- 星期标签 -->
-      <div
-        v-if="showWeekLabels"
-        class="ex-heatmap__weeks"
-      >
-        <div
-          v-for="(week, index) in weekLabels"
-          :key="index"
-          class="ex-heatmap__week-label"
-        >
-          {{ week }}
-        </div>
-      </div>
-
-      <!-- 热力图网格 -->
-      <div class="ex-heatmap__grid">
-        <div
-          v-for="(week, weekIndex) in gridData"
-          :key="weekIndex"
-          class="ex-heatmap__column"
-        >
+    <template v-if="hasCalendar">
+      <div class="ex-heatmap__viewport">
+        <div class="ex-heatmap__calendar">
           <div
-            v-for="(day, dayIndex) in week"
-            :key="dayIndex"
-            :class="getCellClasses(day)"
-            :style="getCellStyle(day)"
-            :title="getCellTitle(day)"
-            role="button"
-            :tabindex="0"
-            :aria-label="getCellTitle(day)"
-            @click="handleCellClick(day, $event)"
-            @keydown="handleCellKeydown(day, $event)"
-            @mouseenter="handleCellHover(day)"
-            @mouseleave="handleCellHover(null)"
-            @focus="handleCellHover(day)"
-            @blur="handleCellHover(null)"
+            v-if="showMonthLabels"
+            class="ex-heatmap__months"
+            aria-hidden="true"
           >
+            <span
+              v-if="showWeekLabels"
+              class="ex-heatmap__month-spacer"
+            ></span>
+            <div class="ex-heatmap__month-grid">
+              <span
+                v-for="month in monthSlots"
+                :key="month.key"
+                class="ex-heatmap__month-slot"
+              >
+                {{ month.label }}
+              </span>
+            </div>
+          </div>
+
+          <div class="ex-heatmap__body">
             <div
-              v-if="showTooltip && hoveredCell === day"
-              class="ex-heatmap__tooltip"
+              v-if="showWeekLabels"
+              class="ex-heatmap__weeks"
+              aria-hidden="true"
             >
-              <div class="ex-heatmap__tooltip-date">
-                {{ formatDate(day.date) }}
-              </div>
-              <div class="ex-heatmap__tooltip-value">
-                {{ day.value || 0 }}
+              <span
+                v-for="(label, index) in weekLabels"
+                :key="index"
+                class="ex-heatmap__week-label"
+              >
+                {{ label }}
+              </span>
+            </div>
+
+            <div class="ex-heatmap__grid">
+              <div
+                v-for="(row, rowIndex) in calendarRows"
+                :key="rowIndex"
+                class="ex-heatmap__row"
+              >
+                <template
+                  v-for="day in row"
+                  :key="day.source.date"
+                >
+                  <button
+                    v-if="day.source.inRange"
+                    type="button"
+                    :class="['ex-heatmap__cell', `ex-heatmap__cell--level-${day.level}`]"
+                    :data-date="day.source.date"
+                    :tabindex="activeDate === day.source.date ? 0 : -1"
+                    :aria-label="day.accessibleLabel"
+                    :aria-describedby="
+                      tooltipActive && activeTooltipCell?.source.date === day.source.date
+                        ? tooltipId
+                        : undefined
+                    "
+                    @click="handleCellClick(day, $event)"
+                    @keydown="handleCellKeydown(day, $event)"
+                    @mouseenter="handleCellEnter(day)"
+                    @mouseleave="handleCellLeave(day)"
+                    @focus="handleCellFocus(day)"
+                    @blur="handleCellBlur(day)"
+                  ></button>
+                  <span
+                    v-else
+                    class="ex-heatmap__placeholder"
+                    aria-hidden="true"
+                  ></span>
+                </template>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 图例 -->
-    <div
-      v-if="data.length > 0"
-      class="ex-heatmap__legend"
-    >
-      <span class="ex-heatmap__legend-label">{{ t('heatmap.less') }}</span>
       <div
-        v-for="level in 5"
-        :key="level"
-        class="ex-heatmap__legend-item"
-        :data-level="level - 1"
+        :id="legendId"
+        class="ex-heatmap__legend"
+        role="img"
+        :aria-label="t('legend')"
+      >
+        <span
+          class="ex-heatmap__legend-label"
+          aria-hidden="true"
+        >
+          {{ t('less') }}
+        </span>
+        <span
+          v-for="level in [0, 1, 2, 3, 4]"
+          :key="level"
+          class="ex-heatmap__legend-item"
+          :data-level="level"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="ex-heatmap__legend-label"
+          aria-hidden="true"
+        >
+          {{ t('more') }}
+        </span>
+      </div>
+    </template>
+
+    <div
+      v-else-if="rangeError"
+      class="ex-heatmap__empty ex-heatmap__empty--error"
+      role="alert"
+    >
+      <ExIcon
+        class="ex-heatmap__empty-icon"
+        icon="calendar-line"
+        :size="48"
+        aria-hidden="true"
       />
-      <span class="ex-heatmap__legend-label">{{ t('heatmap.more') }}</span>
+      <p>{{ t('invalidRange') }}</p>
     </div>
 
-    <!-- 空数据 -->
     <div
-      v-if="data.length === 0"
+      v-else
       class="ex-heatmap__empty"
     >
       <slot name="empty">
         <ExIcon
+          class="ex-heatmap__empty-icon"
           icon="calendar-line"
           :size="48"
-          style="opacity: 0.3; margin-bottom: 12px"
           aria-hidden="true"
         />
-        <p>{{ emptyText || t('heatmap.empty') }}</p>
+        <p>{{ emptyText ?? t('empty') }}</p>
       </slot>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="tooltipActive && activeTooltipCell"
+        :id="tooltipId"
+        ref="tooltipRef"
+        :class="tooltipClasses"
+        :data-theme="configTheme"
+        :data-placement="tooltipPlacement"
+        :style="tooltipStyle"
+        role="tooltip"
+      >
+        <div class="ex-heatmap__tooltip-date">
+          {{ activeTooltipCell.displayDate }}
+        </div>
+        <div class="ex-heatmap__tooltip-value">
+          {{ activeTooltipCell.source.value }}
+        </div>
+        <span
+          class="ex-heatmap__tooltip-arrow"
+          aria-hidden="true"
+        ></span>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  watch,
+  type CSSProperties,
+  type StyleValue,
+} from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useOverlay } from '../../composables/useOverlay';
+import { useLocale } from '../../locale';
+import { computeFloatingPosition, type FloatingPlacement } from '../../utils/floating';
+import { generateId } from '../../utils/id';
+import {
+  useAnimation,
+  useComponentSize,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+  useZIndexLayer,
+} from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref } from 'vue';
-import type { ExHeatmapProps, ExHeatmapEmits, ExHeatmapExposed, HeatmapDataItem } from './types';
-import { useI18n } from '../../locale';
+import {
+  createHeatmapCalendar,
+  getHeatmapLevel,
+  normalizeHeatmapData,
+  normalizeHeatmapMetric,
+  resolveHeatmapMaximum,
+  resolveHeatmapRange,
+  type HeatmapCalendarCell,
+} from './heatmap-utils';
+import type { ExHeatmapEmits, ExHeatmapExposed, ExHeatmapProps, HeatmapDataItem } from './types';
 
 defineOptions({
   name: 'ExHeatmap',
 });
 
+interface HeatmapViewCell {
+  source: HeatmapCalendarCell;
+  level: 0 | 1 | 2 | 3 | 4;
+  displayDate: string;
+  accessibleLabel: string;
+}
+
+const CELL_SIZES = {
+  small: 24,
+  medium: 28,
+  large: 32,
+} as const;
+
 const props = withDefaults(defineProps<ExHeatmapProps>(), {
-  size: 'medium',
+  size: undefined,
   theme: 'neon',
   showMonthLabels: true,
   showWeekLabels: true,
@@ -132,194 +232,323 @@ const props = withDefaults(defineProps<ExHeatmapProps>(), {
 });
 
 const emit = defineEmits<ExHeatmapEmits>();
-
+const configTheme = useConfigTheme();
+const animation = useAnimation();
+const neonEffect = useNeonEffect();
+const tooltipZIndex = useZIndexLayer('tooltip');
+const themeOverrides = useThemeOverrides();
+const { t, locale } = useLocale('heatmap');
 const heatmapRef = ref<HTMLDivElement>();
-const hoveredCell = ref<HeatmapDataItem | null>(null);
-const { t } = useI18n();
+const tooltipRef = ref<HTMLDivElement>();
+const tooltipId = generateId('ex-heatmap-tooltip');
+const legendId = generateId('ex-heatmap-legend');
+const activeDate = ref<string | null>(null);
+const hoveredDate = ref<string | null>(null);
+const focusedDate = ref<string | null>(null);
+const tooltipPlacement = ref<FloatingPlacement>('top');
+const tooltipPositionStyle = ref<CSSProperties>({
+  position: 'fixed',
+  top: '0',
+  left: '0',
+  visibility: 'hidden',
+});
+let tooltipListenersAttached = false;
 
-// 计算属性
-const heatmapClasses = computed(() => {
-  const classes = ['ex-heatmap', `ex-heatmap--${props.size}`, `ex-heatmap--${props.theme}`];
+const heatmapClasses = computed(() => [
+  'ex-heatmap',
+  `ex-heatmap--${componentSize.value}`,
+  `ex-heatmap--${props.theme}`,
+  ...normalizeCustomClass(props.class),
+]);
+const tooltipClasses = computed(() => [
+  'ex-heatmap__tooltip',
+  `ex-heatmap__tooltip--${props.theme}`,
+  {
+    'ex-no-animation': !animation.value,
+    'ex-no-neon': !neonEffect.value,
+  },
+]);
+const tooltipStyle = computed<CSSProperties>(() => ({
+  ...themeOverrides.value,
+  ...tooltipPositionStyle.value,
+  zIndex: overlayZIndex.value,
+}));
 
-  classes.push(...normalizeCustomClass(props.class));
+const componentSize = useComponentSize(computed(() => props.size));
+const cellSize = computed(() => CELL_SIZES[componentSize.value]);
+const normalizedGap = computed(() => normalizeHeatmapMetric(props.gap, 4, 64));
+const normalizedRadius = computed(() =>
+  normalizeHeatmapMetric(props.radius, 2, cellSize.value / 2)
+);
+const componentStyle = computed<CSSProperties>(
+  () =>
+    ({
+      '--ex-heatmap-cell-size': `${cellSize.value}px`,
+      '--ex-heatmap-gap': `${normalizedGap.value}px`,
+      '--ex-heatmap-radius': `${normalizedRadius.value}px`,
+    }) as CSSProperties
+);
+const heatmapStyles = computed<StyleValue>(() => [componentStyle.value, props.style]);
 
-  return classes;
+const rangeResult = computed(() => resolveHeatmapRange(props.startDate, props.endDate));
+const rangeError = computed(() => !rangeResult.value.ok);
+const normalizedData = computed(() => normalizeHeatmapData(props.data));
+const hasCalendar = computed(() => rangeResult.value.ok && normalizedData.value.size > 0);
+
+const calendarWeeks = computed<HeatmapCalendarCell[][]>(() => {
+  const result = rangeResult.value;
+  if (!result.ok || normalizedData.value.size === 0) return [];
+  return createHeatmapCalendar(normalizedData.value, result.range);
 });
 
-const heatmapStyles = computed(() => {
-  if (!props.style) return undefined;
-  if (typeof props.style === 'string') return props.style;
-  return props.style;
-});
+const visibleMaximum = computed(() =>
+  resolveHeatmapMaximum(
+    calendarWeeks.value.flat().filter(cell => cell.inRange),
+    props.maxValue
+  )
+);
 
-// 计算日期范围
-const dateRange = computed(() => {
-  const end = props.endDate ? new Date(props.endDate) : new Date();
-  const start = props.startDate
-    ? new Date(props.startDate)
-    : new Date(end.getTime() - 364 * 24 * 60 * 60 * 1000); // 默认显示一年
+const dateFormatter = computed(
+  () =>
+    new Intl.DateTimeFormat(locale.value, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+);
+const monthFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: 'short' }));
+const weekdayFormatter = computed(
+  () => new Intl.DateTimeFormat(locale.value, { weekday: 'short' })
+);
 
-  return { start, end };
-});
+const viewWeeks = computed<HeatmapViewCell[][]>(() =>
+  calendarWeeks.value.map(week =>
+    week.map(source => {
+      const displayDate = dateFormatter.value.format(source.dateValue);
+      return {
+        source,
+        level: getHeatmapLevel(source.value, visibleMaximum.value),
+        displayDate,
+        accessibleLabel: `${displayDate}: ${source.value}`,
+      };
+    })
+  )
+);
 
-// 计算最大值
-const maxValue = computed(() => {
-  if (props.maxValue) return props.maxValue;
-  return Math.max(...props.data.map(d => d.value), 1);
-});
+const calendarRows = computed(() =>
+  Array.from(
+    { length: 7 },
+    (_, dayIndex) =>
+      viewWeeks.value.map(week => week[dayIndex]).filter(Boolean) as HeatmapViewCell[]
+  )
+);
 
-// 生成网格数据
-const gridData = computed(() => {
-  const { start, end } = dateRange.value;
-  const weeks: HeatmapDataItem[][] = [];
-  const dataMap = new Map(props.data.map(d => [d.date, d]));
+const interactiveCells = computed(() => viewWeeks.value.flat().filter(day => day.source.inRange));
+const cellByDate = computed(
+  () => new Map(interactiveCells.value.map(day => [day.source.date, day]))
+);
 
-  // 找到开始日期所在周的周日
-  const startDay = new Date(start);
-  startDay.setDate(startDay.getDate() - startDay.getDay());
+const monthSlots = computed(() =>
+  calendarWeeks.value.map((week, weekIndex) => {
+    const firstOfMonth = week.find(cell => cell.inRange && cell.dateValue.getDate() === 1);
+    const labelCell =
+      firstOfMonth ?? (weekIndex === 0 ? week.find(cell => cell.inRange) : undefined);
+    return {
+      key: week[0]?.date ?? String(weekIndex),
+      label: labelCell ? monthFormatter.value.format(labelCell.dateValue) : '',
+    };
+  })
+);
 
-  let currentDate = new Date(startDay);
-  let currentWeek: HeatmapDataItem[] = [];
+const weekLabels = computed(() =>
+  Array.from({ length: 7 }, (_, dayIndex) =>
+    dayIndex % 2 === 1 ? weekdayFormatter.value.format(new Date(2024, 0, 7 + dayIndex)) : ''
+  )
+);
 
-  while (currentDate <= end) {
-    const dateStr = formatDateStr(currentDate);
-    const data = dataMap.get(dateStr);
-
-    currentWeek.push({
-      date: dateStr,
-      value: data?.value || 0,
-      ...data,
-    });
-
-    if (currentWeek.length === 7) {
-      weeks.push(currentWeek);
-      currentWeek = [];
+watch(
+  interactiveCells,
+  cells => {
+    const availableDates = new Set(cells.map(day => day.source.date));
+    if (!activeDate.value || !availableDates.has(activeDate.value)) {
+      activeDate.value = cells[0]?.source.date ?? null;
     }
+    if (hoveredDate.value && !availableDates.has(hoveredDate.value)) {
+      hoveredDate.value = null;
+    }
+    if (focusedDate.value && !availableDates.has(focusedDate.value)) {
+      focusedDate.value = null;
+    }
+  },
+  { immediate: true }
+);
 
-    currentDate.setDate(currentDate.getDate() + 1);
+const requestedTooltipDate = computed(() => focusedDate.value ?? hoveredDate.value);
+const activeTooltipCell = computed(() => {
+  if (!props.showTooltip || !requestedTooltipDate.value) return null;
+  return cellByDate.value.get(requestedTooltipDate.value) ?? null;
+});
+
+const dismissTooltip = () => {
+  hoveredDate.value = null;
+  focusedDate.value = null;
+};
+
+const { active: tooltipActive, zIndex: overlayZIndex } = useOverlay({
+  active: () => Boolean(activeTooltipCell.value),
+  container: tooltipRef,
+  zIndex: () => tooltipZIndex.value,
+  lockScroll: () => false,
+  trapFocus: () => false,
+  autoFocus: () => false,
+  closeOnEscape: () => true,
+  onEscape: dismissTooltip,
+  onParentClose: dismissTooltip,
+});
+
+const toEventData = (cell: HeatmapCalendarCell): HeatmapDataItem => {
+  const { dateValue: _dateValue, inRange: _inRange, hasData: _hasData, ...data } = cell;
+  return data;
+};
+
+const handleCellClick = (day: HeatmapViewCell, event: MouseEvent) => {
+  emit('cell-click', toEventData(day.source), event);
+};
+
+const handleCellEnter = (day: HeatmapViewCell) => {
+  hoveredDate.value = day.source.date;
+  emit('cell-hover', toEventData(day.source));
+};
+
+const handleCellLeave = (day: HeatmapViewCell) => {
+  if (hoveredDate.value === day.source.date) hoveredDate.value = null;
+  emit('cell-hover', null);
+};
+
+const handleCellFocus = (day: HeatmapViewCell) => {
+  activeDate.value = day.source.date;
+  focusedDate.value = day.source.date;
+};
+
+const handleCellBlur = (day: HeatmapViewCell) => {
+  if (focusedDate.value === day.source.date) focusedDate.value = null;
+};
+
+const focusCell = (index: number) => {
+  const cells = interactiveCells.value;
+  if (cells.length === 0) return;
+  const targetIndex = Math.min(Math.max(index, 0), cells.length - 1);
+  const target = cells[targetIndex];
+  if (!target) return;
+
+  activeDate.value = target.source.date;
+  nextTick(() => {
+    heatmapRef.value
+      ?.querySelector<HTMLButtonElement>(`[data-date="${target.source.date}"]`)
+      ?.focus();
+  });
+};
+
+const handleCellKeydown = (day: HeatmapViewCell, event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    dismissTooltip();
+    return;
   }
 
-  if (currentWeek.length > 0) {
-    weeks.push(currentWeek);
+  const currentIndex = interactiveCells.value.findIndex(
+    cell => cell.source.date === day.source.date
+  );
+  if (currentIndex < 0) return;
+
+  let targetIndex: number | null = null;
+  if (event.key === 'ArrowUp') targetIndex = currentIndex - 1;
+  if (event.key === 'ArrowDown') targetIndex = currentIndex + 1;
+  if (event.key === 'ArrowLeft') targetIndex = currentIndex - 7;
+  if (event.key === 'ArrowRight') targetIndex = currentIndex + 7;
+  if (event.key === 'Home') {
+    targetIndex = event.ctrlKey || event.metaKey ? 0 : currentIndex - day.source.dateValue.getDay();
   }
+  if (event.key === 'End') {
+    targetIndex =
+      event.ctrlKey || event.metaKey
+        ? interactiveCells.value.length - 1
+        : currentIndex + (6 - day.source.dateValue.getDay());
+  }
+  if (targetIndex === null) return;
 
-  return weeks;
-});
+  event.preventDefault();
+  focusCell(targetIndex);
+};
 
-// 月份标签
-const monthLabels = computed(() => {
-  const labels: { label: string; offset: number }[] = [];
-  const cellSize = getCellSize();
-  const gap = props.gap;
+const updateTooltipPosition = () => {
+  const day = activeTooltipCell.value;
+  const floating = tooltipRef.value;
+  const root = heatmapRef.value;
+  if (!day || !floating || !root || typeof window === 'undefined') return;
 
-  gridData.value.forEach((week, _index) => {
-    const firstDay = week[0];
-    if (firstDay) {
-      const date = new Date(firstDay.date);
-      if (date.getDate() <= 7) {
-        labels.push({
-          label: date.toLocaleDateString('zh-CN', { month: 'short' }),
-          offset: _index * (cellSize + gap),
-        });
-      }
-    }
+  const reference = root.querySelector<HTMLButtonElement>(`[data-date="${day.source.date}"]`);
+  if (!reference) return;
+
+  const referenceRect = reference.getBoundingClientRect();
+  const floatingRect = floating.getBoundingClientRect();
+  const position = computeFloatingPosition({
+    reference: referenceRect,
+    floating: { width: floatingRect.width, height: floatingRect.height },
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    placement: 'top',
+    offset: 8,
+    padding: 8,
   });
 
-  return labels;
-});
-
-// 星期标签（取周一/三/五，跟随语言包）
-const weekLabels = computed(() => {
-  const days = t('calendar.weekdaysShort').split(',');
-  return [days[1], days[3], days[5]];
-});
-
-// 获取单元格大小
-const getCellSize = () => {
-  const sizes = { small: 10, medium: 12, large: 14 };
-  return sizes[props.size];
-};
-
-// 获取单元格类名
-const getCellClasses = (day: HeatmapDataItem) => {
-  const classes = ['ex-heatmap__cell'];
-  const level = getLevel(day.value);
-  classes.push(`ex-heatmap__cell--level-${level}`);
-  return classes;
-};
-
-// 获取单元格样式
-const getCellStyle = (_day: HeatmapDataItem) => {
-  const cellSize = getCellSize();
-  return {
-    width: `${cellSize}px`,
-    height: `${cellSize}px`,
-    borderRadius: `${props.radius}px`,
+  tooltipPlacement.value = position.placement;
+  tooltipPositionStyle.value = {
+    position: 'fixed',
+    top: `${position.y}px`,
+    left: `${position.x}px`,
+    visibility: 'visible',
   };
 };
 
-// 获取单元格标题
-const getCellTitle = (day: HeatmapDataItem) => {
-  return `${formatDate(day.date)}: ${day.value || 0}`;
+const attachTooltipListeners = () => {
+  if (tooltipListenersAttached || typeof window === 'undefined') return;
+  window.addEventListener('resize', updateTooltipPosition);
+  window.addEventListener('scroll', updateTooltipPosition, true);
+  tooltipListenersAttached = true;
 };
 
-// 计算颜色等级（0-4）
-const getLevel = (value: number) => {
-  if (value === 0) return 0;
-  const ratio = value / maxValue.value;
-  if (ratio <= 0.2) return 1;
-  if (ratio <= 0.4) return 2;
-  if (ratio <= 0.6) return 3;
-  return 4;
+const detachTooltipListeners = () => {
+  if (!tooltipListenersAttached || typeof window === 'undefined') return;
+  window.removeEventListener('resize', updateTooltipPosition);
+  window.removeEventListener('scroll', updateTooltipPosition, true);
+  tooltipListenersAttached = false;
 };
 
-// 格式化日期字符串
-const formatDateStr = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+watch(
+  [activeTooltipCell, tooltipActive],
+  ([day, active]) => {
+    if (!day || !active) {
+      detachTooltipListeners();
+      return;
+    }
 
-// 格式化日期显示
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+    tooltipPositionStyle.value = {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      visibility: 'hidden',
+    };
+    attachTooltipListeners();
+    nextTick(updateTooltipPosition);
+  },
+  { flush: 'post' }
+);
 
-// 事件处理（任意单元格均可点击，由消费方决定如何处理空值日）
-const handleCellClick = (day: HeatmapDataItem, event: MouseEvent) => {
-  emit('cell-click', day, event);
-};
+onBeforeUnmount(detachTooltipListeners);
 
-// 键盘支持（Enter/Space 触发点击）
-const handleCellKeydown = (day: HeatmapDataItem, event: KeyboardEvent) => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    emit('cell-click', day, event as unknown as MouseEvent);
-  }
-};
-
-const handleCellHover = (day: HeatmapDataItem | null) => {
-  hoveredCell.value = day;
-  emit('cell-hover', day);
-};
-
-// 暴露的方法
-const getElement = () => heatmapRef.value || null;
-
-// 刷新：清除当前悬浮/聚焦的瞬时状态（网格数据由 props 响应式驱动，会自动重渲染）
-const refresh = () => {
-  hoveredCell.value = null;
-};
+const getElement = () => heatmapRef.value ?? null;
 
 defineExpose<ExHeatmapExposed>({
   getElement,
-  refresh,
 });
 </script>
 

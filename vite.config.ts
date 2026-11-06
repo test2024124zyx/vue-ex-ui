@@ -1,17 +1,65 @@
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
+import browserTargets from './browser-targets.json';
 
 /// <reference types="vitest" />
 
+const fullStyleEntryPath = normalizePath(resolve(import.meta.dirname, 'src/index.ts'));
+
+const addVueShimReference = (filePath: string, content: string) => {
+  if (filePath.endsWith('shims-vue.d.ts') || !content.includes('.vue')) return;
+  const shimPath = normalizePath(
+    relative(dirname(filePath), resolve(import.meta.dirname, 'dist/shims-vue.d.ts'))
+  );
+  const referencePath = shimPath.startsWith('.') ? shimPath : `./${shimPath}`;
+  return { content: `/// <reference path="${referencePath}" />\n${content}` };
+};
+
+/** Vite 的模块 ID 可能使用任一平台分隔符并携带查询参数。 */
+export const isFullStyleEntryId = (id: string): boolean => {
+  const [path] = id.split('?', 1);
+  return normalizePath(path.replace(/\\/gu, '/')) === fullStyleEntryPath;
+};
+
 export default defineConfig({
+  base: './',
   plugins: [
+    {
+      name: 'ex-ui-full-style-entry',
+      enforce: 'pre',
+      transform(code, id) {
+        if (isFullStyleEntryId(id)) {
+          // 直接注入 CSS 模块，避免 package.json 的 sideEffects 规则把仅含样式导入的 TS 包装模块裁掉。
+          return [
+            "import '@fontsource/orbitron/latin-700.css';",
+            "import '@fontsource/orbitron/latin-900.css';",
+            "import '@fontsource/jetbrains-mono/latin-400.css';",
+            "import '@fontsource/jetbrains-mono/latin-500.css';",
+            "import '@fontsource/jetbrains-mono/latin-700.css';",
+            "import '@fontsource/share-tech-mono/latin-400.css';",
+            "import './styles/font.scss';",
+            "import './styles/index.scss';",
+            code,
+          ].join('\n');
+        }
+        return null;
+      },
+    },
     vue(),
     dts({
       insertTypesEntry: true,
+      copyDtsFiles: true,
       include: ['src/**/*'],
+      beforeWriteFile: addVueShimReference,
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+      afterDiagnostic(diagnostics) {
+        // 声明生成错误必须直接阻断发布，不能只打印后继续成功退出。
+        if (diagnostics.length > 0) {
+          throw new Error(`声明生成失败，共发现 ${diagnostics.length} 个类型诊断`);
+        }
+      },
     }),
   ],
   css: {
@@ -22,8 +70,10 @@ export default defineConfig({
     },
   },
   build: {
+    target: browserTargets,
+    cssTarget: browserTargets,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'ExUI',
       formats: ['es', 'cjs'],
       // 产物实际为 ESM 与 CommonJS（非 UMD），文件名如实命名
@@ -38,6 +88,7 @@ export default defineConfig({
         'qrcode',
         'jsbarcode',
         'lunar-javascript',
+        'tus-js-client',
       ],
       output: {
         exports: 'named',
@@ -62,11 +113,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
-  },
-  esbuild: {
-    target: 'es2020',
   },
   define: {
     __EX_UI_VERSION__: JSON.stringify(process.env.npm_package_version),

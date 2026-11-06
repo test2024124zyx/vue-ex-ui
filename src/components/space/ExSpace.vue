@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, defineOptions, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useGlobalSize } from '../config-provider/composables';
 import type { ExSpaceProps } from './types';
+import { SPACE_SIZE_PRESETS, resolveSpaceGap } from './space-utils';
 
 defineOptions({ name: 'ExSpace' });
 
@@ -8,24 +10,18 @@ const rootRef = ref<HTMLElement>();
 const getElement = () => rootRef.value || null;
 defineExpose({ getElement });
 
-const presetMap = {
-  small: 8,
-  medium: 12,
-  large: 16,
-} as const;
-
 const props = withDefaults(defineProps<ExSpaceProps>(), {
   direction: 'horizontal',
-  size: 'medium',
   wrap: false,
   align: 'start',
   justify: 'start',
 });
 
+const globalSize = useGlobalSize();
 const isVertical = computed(() => props.direction === 'vertical');
-const gapPx = computed(() => {
-  if (typeof props.size === 'number') return props.size;
-  return presetMap[props.size] ?? presetMap.medium;
+const gapValue = computed(() => {
+  const size = props.size ?? globalSize.value;
+  return resolveSpaceGap(size) ?? `${SPACE_SIZE_PRESETS.medium}px`;
 });
 
 const classes = computed(() => [`ex-space--${props.direction}`, props.wrap ? 'is-wrap' : '']);
@@ -69,14 +65,13 @@ const alignItems = computed(() => {
     class="ex-space"
     :class="classes"
     :style="{
-      '--ex-space-gap': gapPx + 'px',
-      display: 'flex',
+      '--ex-space-gap': gapValue,
       flexDirection: isVertical ? 'column' : 'row',
       flexWrap: wrap ? 'wrap' : 'nowrap',
       justifyContent: justifyContent,
       alignItems: alignItems,
     }"
   >
-    <slot />
+    <slot></slot>
   </div>
 </template>

@@ -1,0 +1,23 @@
+// 浮层只管理自身及未进入新 Provider 的后代，外层 Provider 不影响边界判定。
+@mixin effect-boundary {
+  $root: &;
+
+  &,
+  & :deep(*:not(:is(#{$root} [data-ex-provider], #{$root} [data-ex-provider] *))) {
+    @content;
+  }
+}
+
+// 内建装饰元素也遵循相同边界，伪元素后缀放在排除条件之后。
+@mixin effect-descendants($targets, $pseudo: '') {
+  $root: &;
+
+  @each $target in $targets {
+    &
+      :deep(
+        #{$target}:not(:is(#{$root} [data-ex-provider], #{$root} [data-ex-provider] *))#{$pseudo}
+      ) {
+      @content;
+    }
+  }
+}

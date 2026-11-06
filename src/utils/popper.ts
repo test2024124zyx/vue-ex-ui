@@ -41,6 +41,17 @@ const OPPOSITE: Record<PopperSide, PopperSide> = {
 };
 
 const VIEWPORT_PADDING = 8;
+const ARROW_EDGE_PADDING = 16;
+const PLACEMENT_ALIASES: Record<string, PopperPlacement> = {
+  topLeft: 'top-start',
+  topRight: 'top-end',
+  bottomLeft: 'bottom-start',
+  bottomRight: 'bottom-end',
+  leftTop: 'left-start',
+  leftBottom: 'left-end',
+  rightTop: 'right-start',
+  rightBottom: 'right-end',
+};
 
 /**
  * 计算浮层相对视口的 fixed 坐标（配合 position: fixed 使用）
@@ -59,10 +70,12 @@ export function calcPopperPosition(
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  const parts = placement.split('-');
+  const parts = (PLACEMENT_ALIASES[placement] ?? placement).split('-');
   const rawSide = parts[0] ?? 'top';
   const rawAlign = parts[1];
-  let side: PopperSide = (['top', 'bottom', 'left', 'right'].includes(rawSide) ? rawSide : 'top') as PopperSide;
+  let side: PopperSide = (
+    ['top', 'bottom', 'left', 'right'].includes(rawSide) ? rawSide : 'top'
+  ) as PopperSide;
   const align: PopperAlign = rawAlign === 'start' || rawAlign === 'end' ? rawAlign : undefined;
 
   // 主轴翻转：当前侧空间不足且对侧空间更大时翻转
@@ -88,27 +101,57 @@ export function calcPopperPosition(
   switch (side) {
     case 'top':
       top = trigger.top - popper.height - offset;
-      left = align === 'start' ? trigger.left : align === 'end' ? trigger.right - popper.width : centerX;
+      left =
+        align === 'start' ? trigger.left : align === 'end' ? trigger.right - popper.width : centerX;
       break;
     case 'bottom':
       top = trigger.bottom + offset;
-      left = align === 'start' ? trigger.left : align === 'end' ? trigger.right - popper.width : centerX;
+      left =
+        align === 'start' ? trigger.left : align === 'end' ? trigger.right - popper.width : centerX;
       break;
     case 'left':
       left = trigger.left - popper.width - offset;
-      top = align === 'start' ? trigger.top : align === 'end' ? trigger.bottom - popper.height : centerY;
+      top =
+        align === 'start'
+          ? trigger.top
+          : align === 'end'
+            ? trigger.bottom - popper.height
+            : centerY;
       break;
     case 'right':
       left = trigger.right + offset;
-      top = align === 'start' ? trigger.top : align === 'end' ? trigger.bottom - popper.height : centerY;
+      top =
+        align === 'start'
+          ? trigger.top
+          : align === 'end'
+            ? trigger.bottom - popper.height
+            : centerY;
       break;
   }
 
   // 视口夹取，避免浮层超出可视区域
-  if (left < VIEWPORT_PADDING) left = VIEWPORT_PADDING;
-  if (left + popper.width > vw - VIEWPORT_PADDING) left = vw - popper.width - VIEWPORT_PADDING;
-  if (top < VIEWPORT_PADDING) top = VIEWPORT_PADDING;
-  if (top + popper.height > vh - VIEWPORT_PADDING) top = vh - popper.height - VIEWPORT_PADDING;
+  const maxLeft = Math.max(VIEWPORT_PADDING, vw - popper.width - VIEWPORT_PADDING);
+  const maxTop = Math.max(VIEWPORT_PADDING, vh - popper.height - VIEWPORT_PADDING);
+  left = Math.max(VIEWPORT_PADDING, Math.min(left, maxLeft));
+  top = Math.max(VIEWPORT_PADDING, Math.min(top, maxTop));
 
   return { top, left, placement: align ? `${side}-${align}` : side };
+}
+
+/** 以夹取后的浮层为坐标原点，将箭头中心投影到触发元素中心，并避开圆角边缘。 */
+export function calcPopperArrowStyle(
+  trigger: DOMRect,
+  popper: PopperRect,
+  position: PopperPositionResult
+): Record<string, string> {
+  const horizontal = /^(top|bottom)/.test(position.placement);
+  const size = horizontal ? popper.width : popper.height;
+  const center = horizontal
+    ? trigger.left + trigger.width / 2 - position.left
+    : trigger.top + trigger.height / 2 - position.top;
+  const padding = Math.min(ARROW_EDGE_PADDING, size / 2);
+  const coordinate = `${Math.max(padding, Math.min(center, size - padding))}px`;
+  return horizontal
+    ? { left: coordinate, right: 'auto', transform: 'translateX(-50%) rotate(45deg)' }
+    : { top: coordinate, bottom: 'auto', transform: 'translateY(-50%) rotate(45deg)' };
 }

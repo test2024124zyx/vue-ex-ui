@@ -1,6 +1,6 @@
-import type { App } from 'vue';
-import ExAvatar from './ExAvatar.vue';
-import ExAvatarGroup from './ExAvatarGroup.vue';
+import ExAvatarComponent from './ExAvatar.vue';
+import ExAvatarGroupComponent from './ExAvatarGroup.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type {
   ExAvatarProps,
   ExAvatarEmits,
@@ -22,15 +22,11 @@ export type {
   AvatarType,
 };
 
-// 导出组件
-export { ExAvatar, ExAvatarGroup };
+export const ExAvatarGroup: InstallableComponent<typeof ExAvatarGroupComponent> =
+  withInstall(ExAvatarGroupComponent);
+export const ExAvatar: InstallableComponent<typeof ExAvatarComponent> = withInstall(
+  ExAvatarComponent,
+  { ExAvatarGroup }
+);
 
-// 组件安装插件
-export const ExAvatarPlugin = {
-  install(app: App) {
-    app.component('ExAvatar', ExAvatar);
-    app.component('ExAvatarGroup', ExAvatarGroup);
-  },
-};
-
-export default ExAvatarPlugin;
+export default ExAvatar;

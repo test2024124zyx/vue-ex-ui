@@ -2,61 +2,65 @@
   <div
     :class="groupClasses"
     :style="groupStyles"
+    role="group"
+    :aria-label="groupAriaLabel"
   >
-    <!-- 显示的头像 -->
     <template
       v-for="(vnode, index) in displayAvatars"
-      :key="index"
+      :key="vnode.key ?? index"
     >
       <slot
         name="avatar"
         :vnode="vnode"
         :index="index"
       >
-        <component
-          :is="vnode"
-          :size="size || vnode.props?.size"
-          :shape="shape || vnode.props?.shape"
-          :class="['ex-avatar-group__item', vnode.props?.class]"
+        <AvatarGroupItem
+          :vnode="vnode"
+          :size="size"
+          :shape="shape"
         />
       </slot>
     </template>
 
-    <!-- 超出数量显示 -->
-    <ex-avatar
+    <button
       v-if="hasOverflow"
-      :size="size"
-      :shape="shape"
-      :style="maxStyle"
-      :text="overflowText"
-      :aria-label="overflowAriaLabel"
-      :title="overflowTitle"
+      type="button"
       class="ex-avatar-group__overflow"
+      :aria-label="overflowAriaLabel"
+      :title="overflowAriaLabel"
       @click="handleOverflowClick"
-    />
+    >
+      <ExAvatar
+        :size="size"
+        :shape="shape"
+        :style="maxStyle"
+        aria-hidden="true"
+        class="ex-avatar-group__overflow-avatar"
+      >
+        <span class="ex-avatar-group__overflow-count">{{ overflowText }}</span>
+      </ExAvatar>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Fragment, computed, isVNode, useSlots } from 'vue';
+import type { Component, VNode } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, useSlots } from 'vue';
-import type { VNode, Component } from 'vue';
-import type { ExAvatarGroupProps } from './types';
+import { useRenderComputed } from '../../composables/useRenderComputed';
 import { useI18n } from '../../locale';
+import AvatarGroupItem from './AvatarGroupItem';
 import ExAvatar from './ExAvatar.vue';
+import type { ExAvatarGroupEmits, ExAvatarGroupProps } from './types';
 
-defineOptions({
-  name: 'ExAvatarGroup',
-});
+defineOptions({ name: 'ExAvatarGroup' });
+
+const DEFAULT_AVATAR_SPACING = '8px';
 
 const props = withDefaults(defineProps<ExAvatarGroupProps>(), {
-  spacing: '8px',
+  spacing: DEFAULT_AVATAR_SPACING,
 });
-
-const emit = defineEmits<{
-  overflowClick: [count: number];
-}>();
-
+const emit = defineEmits<ExAvatarGroupEmits>();
 defineSlots<{
   default?: () => VNode[];
   avatar?: (props: { vnode: VNode; index: number }) => VNode[];
@@ -65,84 +69,65 @@ defineSlots<{
 const slots = useSlots();
 const { t } = useI18n();
 
-// 从插槽中获取头像数据 - 简化逻辑
-const avatars = computed(() => {
-  const defaultSlot = slots.default?.();
-  if (!defaultSlot) return [];
-
-  // 简化的插槽解析 - 直接使用插槽内容而不是提取props
-  return defaultSlot.filter(vnode => {
-    return (
-      vnode &&
-      vnode.type &&
-      typeof vnode.type === 'object' &&
-      (vnode.type as Component).name === 'ExAvatar'
-    );
+const flattenVNodes = (nodes: unknown[]): VNode[] =>
+  nodes.flatMap(node => {
+    if (!isVNode(node)) return [];
+    if (node.type === Fragment && Array.isArray(node.children)) {
+      return flattenVNodes(node.children);
+    }
+    return [node];
   });
-});
 
-const displayAvatars = computed(() => {
-  if (!props.maxCount || avatars.value.length <= props.maxCount) {
-    return avatars.value;
+const isAvatarVNode = (vnode: VNode): boolean => {
+  if (vnode.type === ExAvatar) return true;
+  if (typeof vnode.type !== 'object') return false;
+  const component = vnode.type as Component & { __name?: string };
+  return component.name === 'ExAvatar' || component.__name === 'ExAvatar';
+};
+
+const avatars = useRenderComputed(() =>
+  flattenVNodes(slots.default?.() ?? []).filter(isAvatarVNode)
+);
+const visibleLimit = computed(() => {
+  if (props.maxCount === undefined) return Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(props.maxCount)) return 0;
+  return Math.max(0, Math.trunc(props.maxCount));
+});
+const displayAvatars = computed(() => avatars.value.slice(0, visibleLimit.value));
+const overflowCount = computed(() => Math.max(0, avatars.value.length - visibleLimit.value));
+const hasOverflow = computed(() => overflowCount.value > 0);
+const overflowText = computed(() => `+${overflowCount.value}`);
+const overflowAriaLabel = computed(() => t('avatar.groupMore', { count: overflowCount.value }));
+const groupAriaLabel = computed(() => props.ariaLabel?.trim() || t('avatar.avatarGroup'));
+
+const groupClasses = computed(() => ['ex-avatar-group', ...normalizeCustomClass(props.class)]);
+
+const normalizedSpacing = computed(() => {
+  if (typeof props.spacing === 'number') {
+    return Number.isFinite(props.spacing) ? `${props.spacing}px` : DEFAULT_AVATAR_SPACING;
   }
-  return avatars.value.slice(0, props.maxCount);
-});
 
-const hasOverflow = computed(() => {
-  return props.maxCount && avatars.value.length > props.maxCount;
-});
-
-const overflowCount = computed(() => {
-  if (!hasOverflow.value) return 0;
-  return avatars.value.length - (props.maxCount || 0);
-});
-
-// 国际化计算属性
-const overflowText = computed(() => {
-  return `+${overflowCount.value}`;
-});
-
-const overflowAriaLabel = computed(() => {
-  return t('avatar.groupMore', { count: overflowCount.value });
-});
-
-const overflowTitle = computed(() => {
-  return overflowAriaLabel.value;
-});
-
-const groupClasses = computed(() => {
-  const classes = ['ex-avatar-group'];
-
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
+  if (typeof props.spacing !== 'string') return DEFAULT_AVATAR_SPACING;
+  const spacing = props.spacing.trim();
+  return spacing || DEFAULT_AVATAR_SPACING;
 });
 
 const groupStyles = computed(() => {
-  const styles: Record<string, string> = {};
+  const styles: Record<string, string | number> = {
+    '--ex-avatar-spacing': normalizedSpacing.value,
+  };
 
-  // 设置头像重叠间距
-  if (props.spacing) {
-    const spacing = typeof props.spacing === 'number' ? `${props.spacing}px` : props.spacing;
-    styles['--ex-avatar-overlap'] = spacing;
+  if (!props.style) return styles;
+  if (typeof props.style === 'string') {
+    const generated = Object.entries(styles)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ');
+    return `${generated}; ${props.style}`;
   }
-
-  // 合并用户自定义样式
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    } else {
-      Object.assign(styles, props.style);
-    }
-  }
-
-  return styles;
+  return { ...styles, ...props.style };
 });
 
-const handleOverflowClick = () => {
-  emit('overflowClick', overflowCount.value);
-};
+const handleOverflowClick = (): void => emit('overflowClick', overflowCount.value);
 </script>
+
 <style scoped lang="scss" src="./ExAvatarGroup.scss"></style>

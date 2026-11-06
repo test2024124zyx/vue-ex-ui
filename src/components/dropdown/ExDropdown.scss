@@ -1,65 +1,100 @@
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-dropdown {
-  display: inline-block;
   position: relative;
+  display: inline-block;
 
   &__trigger {
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
   }
 
   &--disabled {
-    opacity: 0.5;
     cursor: not-allowed;
+    opacity: 0.5;
 
     .ex-dropdown__trigger {
-      cursor: not-allowed;
       pointer-events: none;
     }
   }
 
   &__menu {
+    --ex-dropdown-enter-x: 0;
+    --ex-dropdown-enter-y: -6px;
+
     position: fixed;
-    z-index: var(--ex-z-dropdown, 1000);
+    z-index: var(--ex-z-dropdown, 1020);
     min-width: 160px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+    color: var(--ex-color-text-primary);
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
     border-radius: var(--ex-radius-base);
-    box-shadow: 0 4px 12px var(--ex-color-black-alpha-15);
-    @include transition(all);
+    box-shadow: var(--ex-shadow-lg);
+    outline: none;
+    @include custom-scrollbar;
     @include neon-glow('blue', 'sm');
+
+    &[data-placement^='top'] {
+      --ex-dropdown-enter-y: 6px;
+    }
+
+    &[data-placement^='left'] {
+      --ex-dropdown-enter-x: 6px;
+      --ex-dropdown-enter-y: 0;
+    }
+
+    &[data-placement^='right'] {
+      --ex-dropdown-enter-x: -6px;
+      --ex-dropdown-enter-y: 0;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-neon-blue-500);
+      outline-offset: 2px;
+    }
   }
 
   &__menu-content {
     padding: var(--ex-spacing-2) 0;
   }
-
-  &__divider {
-    height: 1px;
-    margin: var(--ex-spacing-2) 0;
-    background: var(--ex-color-border-primary);
-  }
-
-  // 无障碍支�?
-  @media (prefers-reduced-motion: reduce) {
-    * {
-      transition: none !important;
-    }
-  }
 }
 
-// 过渡动画
 .ex-dropdown-fade-enter-active,
 .ex-dropdown-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-out);
 }
 
 .ex-dropdown-fade-enter-from,
 .ex-dropdown-fade-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translate(var(--ex-dropdown-enter-x), var(--ex-dropdown-enter-y));
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ex-dropdown-fade-enter-active,
+  .ex-dropdown-fade-leave-active {
+    transition: none;
+  }
+}
+
+// Teleport 菜单脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-dropdown__menu.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-dropdown__menu.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

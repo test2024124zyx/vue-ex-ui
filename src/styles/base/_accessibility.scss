@@ -8,12 +8,14 @@
 // ============================================================================
 
 // 屏幕阅读器专用内容
-.sr-only {
+.ex-sr-only,
+.ex-app .sr-only {
   @include sr-only;
 }
 
 // 跳转链接
-.skip-link {
+.ex-skip-link,
+.ex-app .skip-link {
   position: absolute;
   top: -40px;
   left: 6px;
@@ -24,7 +26,7 @@
   border-radius: var(--ex-radius-md);
   z-index: var(--ex-z-skipLink);
   @include transition(top);
-  
+
   &:focus {
     top: 6px;
   }
@@ -32,52 +34,53 @@
 
 // 减少动画偏好
 @media (prefers-reduced-motion: reduce) {
-  // 针对所有元素禁用动画和过渡
-  html {
-    scroll-behavior: auto;
-  }
-  
-  *,
-  *::before,
-  *::after {
+  // 仅对 ExUI 应用区域和 ExUI 控件禁用动画，避免修改宿主页面。
+  .ex-app,
+  .ex-app *,
+  .ex-app *::before,
+  .ex-app *::after,
+  [class^='ex-'],
+  [class*=' ex-'],
+  [class^='ex-']::before,
+  [class^='ex-']::after,
+  [class*=' ex-']::before,
+  [class*=' ex-']::after {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
     transition-duration: 0.01ms;
   }
-  
-  // 禁用复杂效果（仅针对有这些效果的元素）
-  [class*="neon"],
-  [class*="glow"],
-  [class*="shadow"] {
-    box-shadow: none;
-    text-shadow: none;
-    backdrop-filter: none;
-    filter: none;
+
+  .ex-app {
+    scroll-behavior: auto;
   }
-  
-  // 简化背景
-  body::before {
+
+  // 隐藏持续扫描的全局装饰层，静态阴影与滤镜仍保留状态层级。
+  .ex-app::before {
     display: none;
   }
 }
 
 // 高对比度偏好
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   // 移除装饰性效果
-  [class*="neon"],
-  [class*="glow"],
-  [class*="shadow"] {
+  [class^='ex-'],
+  [class*=' ex-'] {
     text-shadow: none;
     box-shadow: none;
   }
-  
+
   // 增强链接可见性
-  a {
+  .ex-app a,
+  [class^='ex-'] a,
+  [class*=' ex-'] a {
     text-decoration: underline;
   }
-  
+
   // 增强表单元素边框
-  button, input, select, textarea {
+  .ex-app button,
+  .ex-app input,
+  .ex-app select,
+  .ex-app textarea {
     border: 2px solid currentColor;
   }
 }

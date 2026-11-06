@@ -1,31 +1,37 @@
-import type { App } from 'vue';
-import ExLoadingBar from './ExLoadingBar.vue';
-import { loadingBar } from './loading-bar';
-import type {
+import ExLoadingBarComponent from './ExLoadingBar.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
+import { createLoadingBar, LOADING_BAR_SERVICE_KEY } from './loading-bar';
+import type { LoadingBarService } from './types';
+
+export type {
+  ExLoadingBarExposed,
   ExLoadingBarProps,
+  LoadingBarColor,
   LoadingBarOptions,
-  LoadingBarInstance,
+  LoadingBarService,
   LoadingBarStatus,
 } from './types';
 
-// 导出组件类型
-export type {
-  ExLoadingBarProps,
-  LoadingBarOptions,
-  LoadingBarInstance,
-  LoadingBarStatus,
+export { createLoadingBar, loadingBar } from './loading-bar';
+export { LOADING_BAR_SERVICE_KEY, useLoadingBarService } from './loading-bar';
+
+export const ExLoadingBar: InstallableComponent<typeof ExLoadingBarComponent> =
+  withInstall(ExLoadingBarComponent);
+
+const installComponent = ExLoadingBar.install;
+ExLoadingBar.install = app => {
+  installComponent(app);
+  const service = createLoadingBar({}, app._context);
+  app.config.globalProperties.$loadingBar = service;
+  app.provide(LOADING_BAR_SERVICE_KEY, service);
+  app.onUnmount(() => service.destroy());
 };
 
-// 导出组件和 API
-export { ExLoadingBar, loadingBar };
+declare module 'vue' {
+  interface ComponentCustomProperties {
+    /** 当前应用安装的 LoadingBar 服务。 */
+    $loadingBar: LoadingBarService;
+  }
+}
 
-// 组件安装插件
-export const ExLoadingBarPlugin = {
-  install(app: App) {
-    app.component('ExLoadingBar', ExLoadingBar);
-    // 将 loadingBar 方法挂载到全局属性
-    app.config.globalProperties.$loadingBar = loadingBar;
-  },
-};
-
-export default ExLoadingBarPlugin;
+export default ExLoadingBar;

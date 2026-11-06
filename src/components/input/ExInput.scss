@@ -1,565 +1,485 @@
-@use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
-@use '../../styles/component-mixins' as *;
-@use '../../styles/performance' as *;
 
 .ex-input {
-  position: relative;
+  --ex-input-control-height: var(--ex-input-height-md);
+  --ex-input-control-padding: var(--ex-input-padding-x-md, var(--ex-spacing-4));
+  --ex-input-control-font-size: var(--ex-text-base);
+  --ex-input-action-width: var(--ex-input-action-width-md, 36px);
+  --ex-input-border-color: var(--ex-color-border-primary);
+  --ex-input-background: var(--ex-color-bg-secondary);
+
+  box-sizing: border-box;
   display: flex;
-  flex-direction: column;
   width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  color: var(--ex-color-text-primary);
   font-family: var(--ex-font-secondary);
-  
-  // 使用设计令牌系统的高度变量
-  --input-height: var(--ex-input-height-md);
-  
-  // 标签
-  &__label {
-    @include form-label;
-    cursor: pointer;
-    @include safe-transition(color);
-    
-    // 标签悬停效果（仅在支持悬停的设备上）
-    @include hover-capable {
-      &:hover {
-        color: var(--ex-color-neon-blue-500);
-      }
-    }
-    
-    // 聚焦时标签高亮
-    .ex-input--focused & {
-      color: var(--ex-color-neon-blue-500);
-    }
+}
+
+.ex-input__label {
+  display: inline-flex;
+  width: fit-content;
+  align-items: baseline;
+  margin-bottom: var(--ex-spacing-1);
+  color: var(--ex-color-text-secondary);
+  cursor: pointer;
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-medium);
+  letter-spacing: var(--ex-tracking-wide);
+  line-height: 1.5;
+  text-transform: uppercase;
+  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+.ex-input__required {
+  margin-inline-start: 2px;
+  color: var(--ex-color-error);
+}
+
+.ex-input__wrapper {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.ex-input__inner {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: var(--ex-input-control-height);
+  flex: 1 1 auto;
+  align-items: center;
+  border: var(--ex-input-border-width, 1px) solid var(--ex-input-border-color);
+  border-radius: var(--ex-radius-none);
+  background: var(--ex-input-background);
+  @include chamfer(var(--ex-chamfer-sm));
+  transition:
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    filter var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+// Neon 输入框默认采用终端提示符，显示逻辑由组件根据 prompt/show-prompt 控制。
+.ex-input__prompt {
+  flex: none;
+  margin-inline-start: var(--ex-spacing-3);
+  color: var(--ex-color-primary);
+  font-family: var(--ex-font-mono);
+  font-weight: var(--ex-font-bold);
+  text-shadow: 0 0 6px var(--ex-color-primary-alpha-30);
+}
+
+.ex-input__control {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  padding: 0 var(--ex-input-control-padding);
+  border: 0;
+  border-radius: inherit;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--ex-input-control-font-size);
+  font-weight: var(--ex-font-normal);
+  line-height: 1.5;
+
+  // 基础表单样式使用 `.ex-app input:focus`，需要在聚焦态显式覆盖其边框与阴影。
+  &:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
   }
-  
-  &__required {
-    @include required-indicator;
-  }
-  
-  // 输入框容
-  &__wrapper {
-    @include flex-center-vertical;
-    width: 100%;
-  }
-  
-  &__inner {
-    @include flex-center-vertical;
-    flex: 1;
-    height: var(--input-height);
-    background: linear-gradient(
-      135deg,
-      var(--ex-color-bg-secondary-alpha-80) 0%,
-      var(--ex-color-bg-primary-alpha-90) 100%
-    );
-    border: 2px solid var(--ex-color-neon-blue-500);
-    border-radius: var(--ex-radius-lg);
-    @include optimized-backdrop-blur(8px);
-    @include prevent-layout-shift;
-    overflow: hidden;
-    @include safe-transition(all);
-    
-    // 仅在支持悬停的设备上应用悬停效果
-    @include hover-capable {
-      .ex-input__wrapper:hover & {
-        border-color: var(--ex-color-neon-pink-400);
-      }
-      
-      // 标签悬停时高亮输入框
-      .ex-input__label:hover ~ .ex-input__wrapper & {
-        border-color: var(--ex-color-neon-pink-400);
-      }
-    }
-    
-    .ex-input--focused & {
-      border-color: var(--ex-color-neon-pink-500);
-      @include optimized-neon-glow('pink', 'md');
-      transform: translateY(-1px);
-    }
-  }
-  
-  // 输入框控
-  &__control {
-    flex: 1;
-    width: 100%;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    color: var(--ex-color-text-primary);
-    font-family: var(--ex-font-secondary);
-    font-weight: var(--ex-font-medium);
-    line-height: 1.5;
-    letter-spacing: 0.01em;
-    outline: none;
-    padding: 0 var(--ex-spacing-4);
-    @include safe-transition(all);
-    @include optimized-text-rendering;
-    
-    &::placeholder {
-      color: var(--ex-color-text-tertiary);
-      font-weight: var(--ex-font-normal);
-      opacity: 0.85; // 确保符合 WCAG 对比度要求（至少 4.5:1）
-    }
-    
-    // 自定义聚焦环
-    &:focus-visible {
-      outline: 2px solid var(--ex-color-neon-pink-500);
-      outline-offset: -2px;
-      border-radius: var(--ex-radius-md);
-    }
-    
-    &--with-prefix { padding-left: 0; }
-    &--with-suffix { padding-right: 0; }
-  }
-  
-  // 前缀/后缀
-  &__prefix,
-  &__suffix {
-    display: flex;
-    align-items: center;
-    gap: var(--ex-spacing-3); // 使用 12px 间距，符合 8px 网格系统
-    padding: 0 var(--ex-spacing-3);
-    color: var(--ex-color-text-secondary);
-    flex-shrink: 0;
-    @include safe-transition(color);
-    
-    .ex-input--focused & {
-      color: var(--ex-color-neon-pink-400);
-    }
-  }
-  
-  &__prefix { 
-    padding-left: var(--ex-spacing-4);
-    padding-right: var(--ex-spacing-2);
-    
-    // 有前置内容时，调整padding
-    .ex-input--with-prepend & {
-      padding-left: var(--ex-spacing-3);
-    }
-  }
-  
-  &__suffix { 
-    padding-left: var(--ex-spacing-2);
-    padding-right: var(--ex-spacing-4);
-    
-    // 有后置内容时，调整padding
-    .ex-input--with-append & {
-      padding-right: var(--ex-spacing-3);
-    }
-  }
-  
-  // 清除/密码切换图标容器
-  &__clear-icon,
-  &__password-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    position: relative;
-    cursor: pointer;
-    @include safe-transition(all);
-    
-    // 扩大触摸区域（桌面端 8px，移动端 12px 以满足 44x44px 最小触摸区域）
-    &::before {
-      content: '';
-      position: absolute;
-      top: -8px;
-      left: -8px;
-      right: -8px;
-      bottom: -8px;
-      border-radius: 50%;
-      
-      // 移动端扩大触摸区域
-      @include touch-device {
-        top: -12px;
-        left: -12px;
-        right: -12px;
-        bottom: -12px;
-      }
-    }
-    
-    // 仅在支持悬停的设备上应用悬停效果
-    @include hover-capable {
-      &:hover {
-        color: var(--ex-color-neon-pink-500);
-        transform: scale(1.1);
-      }
-    }
-    
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-  
-  // 字数统计
-  &__word-limit {
-    font-size: var(--ex-text-xs);
+
+  &::placeholder {
     color: var(--ex-color-text-tertiary);
-    font-family: var(--ex-font-mono);
-    white-space: nowrap;
-    
-    .ex-input--error & {
-      color: var(--ex-color-error);
-    }
+    opacity: 1;
   }
-  
-  // 前置/后置内容
-  &__prepend,
-  &__append {
-    display: flex;
-    align-items: center;
-    padding: 0 var(--ex-spacing-4);
-    background: var(--ex-color-bg-tertiary-alpha-50);
-    border: 2px solid var(--ex-color-neon-blue-500);
-    color: var(--ex-color-text-secondary);
-    font-size: var(--ex-text-sm);
-    white-space: nowrap;
-    height: var(--input-height);
-    box-shadow: none;
-    @include safe-transition(all);
-    
-    // 悬停时与 inner 保持相同的边框颜色（仅在支持悬停的设备上）
-    @include hover-capable {
-      .ex-input__wrapper:hover & {
-        border-color: var(--ex-color-neon-pink-400);
-      }
-    }
-    
-    // 聚焦时与 inner 保持相同的边框颜色和位移
-    .ex-input--focused & {
-      border-color: var(--ex-color-neon-pink-500);
-      transform: translateY(-1px);
-    }
+
+  &:disabled {
+    cursor: not-allowed;
   }
-  
-  &__prepend {
-    border-right: none;
-    border-radius: var(--ex-radius-lg) 0 0 var(--ex-radius-lg);
-  }
-  
-  &__append {
-    border-left: none;
-    border-radius: 0 var(--ex-radius-lg) var(--ex-radius-lg) 0;
-  }
-  
-  // 有前置内容时，移inner 的左边框和左圆角
-  &--with-prepend &__inner {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: none;
-  }
-  
-  // 有后置内容时，移inner 的右边框和右圆角
-  &--with-append &__inner {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-right: none;
-  }
-  
-  // 尺寸适配 - 使用设计令牌系统
-  &--small {
-    --input-height: var(--ex-input-height-sm);
-  }
-  
-  &--medium {
-    --input-height: var(--ex-input-height-md);
-  }
-  
-  &--large {
-    --input-height: var(--ex-input-height-lg);
-  }
-  
-  // 帮助文本/错误信息
-  &__help {
-    @include helper-text-container;
-  }
-  
-  &__help-text {
-    @include helper-text;
-  }
-  
-  &__error {
-    @include error-text;
-    
-    &-icon {
-      flex-shrink: 0;
-    }
-  }
-  
-  &__success {
-    display: flex;
-    align-items: center;
-    gap: var(--ex-spacing-1);
-    font-size: var(--ex-text-sm);
-    color: var(--ex-color-success);
-    line-height: 1.4;
-    
-    &-icon {
-      flex-shrink: 0;
-    }
-    
-    &-text {
-      flex: 1;
-    }
-  }
-  
-  // ============================================================================
-  // 尺寸变体 - 使用 mixin
-  // ============================================================================
-  
-  &--small .ex-input__control {
-    @include form-control-size('small');
-  }
-  
-  &--medium .ex-input__control {
-    @include form-control-size('medium');
-  }
-  
-  &--large .ex-input__control {
-    @include form-control-size('large');
-  }
-  
-  // ============================================================================
-  // 变体样式 - 使用 mixin
-  // ============================================================================
-  
-  &--ghost .ex-input__inner {
-    @include component-variant-ghost;
-    
-    .ex-input--focused & {
-      border-color: var(--ex-color-neon-pink-500);
-      background: var(--ex-color-bg-secondary-alpha-50);
-      @include optimized-neon-glow('pink', 'sm');
-    }
-  }
-  
-  &--filled .ex-input__inner {
-    @include component-variant-filled;
-    
-    .ex-input--focused & {
-      background: var(--ex-color-bg-secondary);
-      border-color: var(--ex-color-neon-pink-500);
-      @include optimized-neon-glow('pink', 'sm');
-    }
-  }
-  
-  // ============================================================================
-  // 状态样- 使用 mixin
-  // ============================================================================
-  
-  &--success {
-    .ex-input__inner {
-      @include form-control-status('success');
-      border-color: var(--ex-color-success);
-    }
-    
-    .ex-input__prepend,
-    .ex-input__append {
-      border-color: var(--ex-color-success);
-    }
-  }
-  
-  &--warning {
-    .ex-input__inner {
-      @include form-control-status('warning');
-      border-color: var(--ex-color-warning);
-    }
-    
-    .ex-input__prepend,
-    .ex-input__append {
-      border-color: var(--ex-color-warning);
-    }
-  }
-  
-  &--error {
-    .ex-input__inner {
-      @include form-control-status('error');
-      border-color: var(--ex-color-error);
-    }
-    
-    .ex-input__prepend,
-    .ex-input__append {
-      border-color: var(--ex-color-error);
-    }
-  }
-  
-  // 禁用状态 - 确保在所有主题下都清晰可辨
-  &--disabled {
-    @include component-disabled;
-  }
-  
-  &--disabled &__inner {
-    border-color: var(--ex-color-border-secondary);
-    background: var(--ex-color-bg-tertiary);
-    box-shadow: none;
-    opacity: 0.5;
-    filter: grayscale(0.5); // 增加灰度以提升禁用状态的视觉反馈
-  }
-  
-  &--disabled &__prepend,
-  &--disabled &__append {
-    border-color: var(--ex-color-border-secondary);
-    background: var(--ex-color-bg-tertiary);
-    opacity: 0.5;
-    filter: grayscale(0.5);
-  }
-  
-  // 只读状
-  &--readonly .ex-input__control {
+
+  &:read-only:not(:disabled) {
     cursor: default;
-    background: var(--ex-color-bg-tertiary-alpha-30);
-  }
-  
-  // ============================================================================
-  // 文本域样
-  // ============================================================================
-  
-  &--textarea {
-    .ex-input__inner {
-      height: auto; // 文本域不使用固定高度
-    }
-    
-    .ex-input__control {
-      height: auto;
-      min-height: 80px;
-      padding: var(--ex-spacing-3) var(--ex-spacing-4);
-      line-height: 1.6;
-      resize: vertical;
-      
-      @include custom-scrollbar(
-        6px,
-        var(--ex-color-neon-blue-alpha-20),
-        var(--ex-color-neon-blue-500)
-      );
-    }
-  }
-  
-  // ============================================================================
-  // 响应式设计 - 移动端优化
-  // ============================================================================
-  
-  @include mobile-form-control-sizes;
-  
-  // 移动端触摸优化
-  @include touch-device {
-    &__label {
-      font-size: var(--ex-text-base); // 移动端标签字体稍大
-      margin-bottom: var(--ex-spacing-2);
-    }
-    
-    &__control {
-      font-size: var(--ex-text-base); // 防止 iOS 自动缩放
-      
-      &::placeholder {
-        font-size: var(--ex-text-base);
-      }
-    }
-    
-    // 移动端增加内边距，提升触摸体验
-    &--small &__control {
-      padding: 0 var(--ex-spacing-4);
-    }
-    
-    &--medium &__control {
-      padding: 0 var(--ex-spacing-5);
-    }
-    
-    &--large &__control {
-      padding: 0 var(--ex-spacing-6);
-    }
-  }
-  
-  // ============================================================================
-  // 无障碍和特殊效果
-  // ============================================================================
-  
-  &__control:focus-visible {
-    outline: none;
-  }
-  
-  @media (prefers-contrast: high) {
-    &__inner {
-      border-width: 3px;
-    }
-    
-    &--focused &__inner {
-      border-width: 4px;
-    }
-    
-    &__control::placeholder {
-      opacity: 1;
-    }
-  }
-  
-  // 暗黑模式优化
-  @media (prefers-color-scheme: dark) {
-    &__inner {
-      border-width: 2px;
-    }
-    
-    &__control {
-      font-weight: var(--ex-font-semibold);
-    }
-  }
-  
-  // 低端设备优化 - 使用更高优先级的选择器而非 !important
-  @include low-end-device {
-    &.ex-input &__inner {
-      backdrop-filter: none;
-      background: var(--ex-color-bg-secondary);
-      box-shadow: none;
-    }
   }
 }
 
-// ============================================================================
-// 动画
-// ============================================================================
-
-.ex-input-help-enter-active,
-.ex-input-help-leave-active {
-  @include safe-transition(all, 200ms);
+.ex-input__prefix,
+.ex-input__suffix {
+  display: flex;
+  min-width: 0;
+  flex: none;
+  align-items: center;
+  color: var(--ex-color-text-secondary);
 }
 
-.ex-input-help-enter-from,
-.ex-input-help-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
+.ex-input__prefix {
+  padding-inline-start: var(--ex-input-control-padding);
 }
 
-// 高端设备特效 - 仅在悬停和聚焦时激活，避免持续消耗 GPU
-@include high-end-device {
+.ex-input__suffix {
+  gap: var(--ex-spacing-1);
+  padding-inline-end: calc(var(--ex-input-control-padding) / 2);
+}
+
+.ex-input__action {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: var(--ex-input-action-width);
+  min-width: var(--ex-input-action-min-width, 24px);
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ex-radius-none);
+  outline: 0;
+  background: transparent;
+  color: var(--ex-color-text-secondary);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+
+  &:focus-visible {
+    outline: var(--ex-input-focus-ring-width, 2px) solid var(--ex-color-primary);
+    outline-offset: -3px;
+  }
+}
+
+.ex-input__word-limit {
+  flex: none;
+  color: var(--ex-color-text-tertiary);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ex-input__prepend,
+.ex-input__append {
+  box-sizing: border-box;
+  display: flex;
+  height: var(--ex-input-control-height);
+  flex: none;
+  align-items: center;
+  padding: 0 var(--ex-spacing-4);
+  border: var(--ex-input-border-width, 1px) solid var(--ex-input-border-color);
+  border-radius: var(--ex-radius-none);
+  background: var(--ex-color-bg-tertiary);
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+  white-space: nowrap;
+  transition:
+    border-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+.ex-input__prepend {
+  border-inline-end: 0;
+  border-radius: var(--ex-radius-none);
+}
+
+.ex-input__append {
+  border-inline-start: 0;
+  border-radius: var(--ex-radius-none);
+}
+
+// 带前后置内容时，切角作用于整个组合输入框，避免缺口落入主体输入区。
+.ex-input--with-prepend .ex-input__wrapper,
+.ex-input--with-append .ex-input__wrapper {
+  @include chamfer(var(--ex-chamfer-sm));
+}
+
+.ex-input--with-prepend .ex-input__inner,
+.ex-input--with-append .ex-input__inner {
+  clip-path: none;
+}
+
+.ex-input--with-prepend .ex-input__inner {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.ex-input--with-append .ex-input__inner {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.ex-input--small {
+  --ex-input-control-height: var(--ex-input-height-sm);
+  --ex-input-control-padding: var(--ex-input-padding-x-sm, var(--ex-spacing-3));
+  --ex-input-control-font-size: var(--ex-text-sm);
+  --ex-input-action-width: var(--ex-input-action-width-sm, 32px);
+}
+
+.ex-input--large {
+  --ex-input-control-height: var(--ex-input-height-lg);
+  --ex-input-control-padding: var(--ex-input-padding-x-lg, var(--ex-spacing-5));
+  --ex-input-control-font-size: var(--ex-text-lg);
+  --ex-input-action-width: var(--ex-input-action-width-lg, 40px);
+}
+
+.ex-input--neon {
+  // 视觉强调跟随当前主题主色，避免粉色、浅色等主题仍固定显示蓝色边框。
+  --ex-input-border-color: var(--ex-color-primary);
+  --ex-input-background: linear-gradient(
+    135deg,
+    var(--ex-color-bg-secondary-alpha-80),
+    var(--ex-color-bg-primary-alpha-90)
+  );
+}
+
+.ex-input--ghost {
+  --ex-input-border-color: var(--ex-color-border-primary);
+  --ex-input-background: transparent;
+}
+
+.ex-input--filled {
+  --ex-input-border-color: transparent;
+  --ex-input-background: var(--ex-color-bg-tertiary);
+}
+
+.ex-input--focused {
+  .ex-input__label {
+    color: var(--ex-color-primary);
+  }
+
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: var(--ex-color-primary);
+  }
+}
+
+.ex-input--success {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: var(--ex-color-success);
+  }
+}
+
+.ex-input--warning {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: var(--ex-color-warning);
+  }
+}
+
+.ex-input--error {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: var(--ex-color-error);
+  }
+
   .ex-input__inner {
-    &::before {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      background: linear-gradient(45deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-pink-500), var(--ex-color-neon-blue-500));
-      background-size: 200% 200%;
-      border-radius: inherit;
-      opacity: 0;
-      z-index: -1;
-      @include safe-transition(opacity, 300ms);
-      animation-play-state: paused; // 默认暂停动画
-    }
-    
-    // 仅在悬停或聚焦时播放动画
-    @include hover-capable {
-      &:hover::before,
-      .ex-input--focused &::before {
-        opacity: 0.3;
-        animation: border-flow 2s linear infinite;
-        animation-play-state: running;
-      }
-    }
+    filter: drop-shadow(0 0 4px var(--ex-color-error-alpha-20));
+  }
+
+  .ex-input__word-limit {
+    color: var(--ex-color-error);
   }
 }
 
-@keyframes border-flow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.ex-input--disabled {
+  .ex-input__label,
+  .ex-input__prefix,
+  .ex-input__suffix {
+    color: var(--ex-color-text-disabled);
+  }
+
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: var(--ex-color-border-secondary);
+    background: var(--ex-color-bg-tertiary);
+    color: var(--ex-color-text-disabled);
+    box-shadow: none;
+    opacity: 0.7;
+  }
 }
 
+.ex-input--readonly:not(.ex-input--disabled) .ex-input__inner {
+  background: var(--ex-color-bg-tertiary-alpha-30);
+}
+
+.ex-input--textarea {
+  .ex-input__inner {
+    height: auto;
+    min-height: var(--ex-input-control-height);
+    align-items: flex-start;
+  }
+
+  .ex-input__control {
+    height: auto;
+    min-height: var(--ex-input-control-height);
+    padding-block: var(--ex-input-padding-y, var(--ex-spacing-3));
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .ex-input__prefix,
+  .ex-input__suffix {
+    padding-block-start: var(--ex-spacing-2);
+  }
+
+  .ex-input__action {
+    height: var(--ex-input-control-height);
+  }
+
+  .ex-input__prepend,
+  .ex-input__append {
+    height: auto;
+    min-height: var(--ex-input-control-height);
+    align-items: flex-start;
+    padding-block-start: var(--ex-spacing-3);
+  }
+}
+
+.ex-input--autosize .ex-input__control {
+  resize: none;
+}
+
+.ex-input__message {
+  margin-block-start: var(--ex-spacing-2);
+  color: var(--ex-color-text-tertiary);
+  font-size: var(--ex-text-sm);
+  line-height: 1.4;
+}
+
+.ex-input__help-text,
+.ex-input__error,
+.ex-input__success {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-spacing-1);
+}
+
+.ex-input__error {
+  color: var(--ex-color-error);
+}
+
+.ex-input__success {
+  color: var(--ex-color-success);
+}
+
+.ex-input-message-enter-active,
+.ex-input-message-leave-active {
+  transition:
+    opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    transform var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
+}
+
+.ex-input-message-enter-from,
+.ex-input-message-leave-to {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+  .ex-input:not(.ex-input--disabled) .ex-input__wrapper:hover {
+    .ex-input__inner,
+    .ex-input__prepend,
+    .ex-input__append {
+      border-color: var(--ex-color-primary-hover);
+    }
+  }
+
+  .ex-input__action:hover {
+    background: var(--ex-color-primary-alpha-10);
+    color: var(--ex-color-primary);
+  }
+}
+
+// 触控设备上保持控件与操作按钮的最小命中区域，避免小尺寸输入框难以操作。
+@media (pointer: coarse), (max-width: 575px) {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    min-height: var(--ex-input-touch-target, 44px);
+  }
+
+  .ex-input__inner {
+    height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__inner {
+    height: auto;
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__control {
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input--textarea .ex-input__prepend,
+  .ex-input--textarea .ex-input__append {
+    min-height: max(var(--ex-input-control-height), var(--ex-input-touch-target, 44px));
+  }
+
+  .ex-input__control {
+    font-size: max(var(--ex-input-control-font-size), var(--ex-input-touch-font-size, 16px));
+  }
+
+  .ex-input__suffix {
+    gap: var(--ex-spacing-2);
+  }
+
+  .ex-input__action {
+    width: max(var(--ex-input-action-width), var(--ex-input-touch-target, 44px));
+    min-width: var(--ex-input-touch-target, 44px);
+    min-height: var(--ex-input-touch-target, 44px);
+  }
+
+  .ex-input--textarea .ex-input__action {
+    height: var(--ex-input-touch-target, 44px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-input__label,
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append,
+  .ex-input__action,
+  .ex-input-message-enter-active,
+  .ex-input-message-leave-active {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-width: 2px;
+  }
+
+  .ex-input__action:focus-visible {
+    outline-width: 3px;
+    outline-color: currentColor;
+  }
+}
+
+@media (forced-colors: active) {
+  .ex-input__inner,
+  .ex-input__prepend,
+  .ex-input__append {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    filter: none;
+  }
+}

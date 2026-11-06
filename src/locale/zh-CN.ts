@@ -1,4 +1,9 @@
-export default {
+import type { BuiltInLocale } from './en-US';
+
+const zhCN = {
+  // 评分控件
+  rate: { label: '评分' },
+  steps: { navigation: '步骤导航' },
   // 通用
   common: {
     confirm: '确认',
@@ -22,6 +27,7 @@ export default {
   // 表单校验
   validators: {
     required: '此字段为必填项',
+    type: '字段类型不正确',
     email: '请输入有效的邮箱地址',
     url: '请输入有效的网址',
     number: '请输入有效的数字',
@@ -30,6 +36,7 @@ export default {
     max: '最多允许 {max} 个字符',
     minValue: '值不能小于 {min}',
     maxValue: '值不能大于 {max}',
+    len: '长度必须为 {len} 个字符或项目',
     pattern: '格式不正确',
     enum: '值不在允许的范围内',
   },
@@ -48,9 +55,7 @@ export default {
 
   // 输入框
   input: {
-    placeholder: '请输入',
     clear: '清空',
-    search: '搜索',
     showPassword: '显示密码',
     hidePassword: '隐藏密码',
     validationSuccess: '验证通过',
@@ -72,6 +77,9 @@ export default {
     empty: '暂无数据',
     less: '少',
     more: '多',
+    ariaLabel: '数据热力图',
+    legend: '由少到多的颜色等级',
+    invalidRange: '日期范围必须有效且不能超过 366 天',
   },
 
   // 列表
@@ -110,6 +118,7 @@ export default {
 
   // 条码
   barcode: {
+    label: '条形码',
     generating: '生成中...',
     error: '条码生成失败',
     download: '下载条码',
@@ -132,8 +141,26 @@ export default {
     close: '关闭',
   },
 
+  // 锚点导航
+  anchor: {
+    label: '锚点导航',
+  },
+
+  // 返回顶部
+  backTop: {
+    label: '返回顶部',
+  },
+
   // 表格
   table: {
+    editError: '保存失败，请重试',
+    editConflict: '记录已在编辑期间更新，请取消后重新编辑',
+    editCell: '编辑{column}',
+    actions: '操作',
+    resizeColumn: '调整{column}列宽',
+    moveColumnBefore: '将{column}移到前一列之前',
+    moveColumnAfter: '将{column}移到后一列之后',
+    reorderColumn: '调整{column}列顺序',
     loading: '加载中...',
     empty: '暂无数据',
     selectAll: '全选',
@@ -199,6 +226,8 @@ export default {
   // 徽章
   badge: {
     more: '{count}+',
+    dot: '通知提示',
+    status: '状态提示',
   },
 
   // 卡片
@@ -216,7 +245,12 @@ export default {
     loading: '加载中...',
     error: '加载失败',
     preview: '预览',
+    openPreview: '预览{alt}',
+    previewDialog: '图片预览：{alt}',
+    previewLoading: '预览图加载中...',
+    previewError: '预览图加载失败',
     closePreview: '关闭预览',
+    retry: '重试',
     alt: '图片',
   },
 
@@ -265,6 +299,7 @@ export default {
 
   // 对话框
   dialog: {
+    label: '对话框',
     close: '关闭',
     confirm: '确认',
     cancel: '取消',
@@ -281,6 +316,9 @@ export default {
   // 时间选择器
   timePicker: {
     selectTime: '选择时间',
+    selectRange: '选择时间范围',
+    rangeSeparator: '至',
+    invalidRangeOrder: '结束时间不能早于开始时间。',
     hour: '时',
     minute: '分',
     second: '秒',
@@ -296,6 +334,12 @@ export default {
     confirm: '确定',
     clear: '清空',
     hex: 'HEX',
+    trigger: '选择颜色',
+    panel: '颜色选择面板',
+    saturationValue: '饱和度与明度',
+    hue: '色相',
+    alpha: '透明度',
+    selectColor: '选择颜色',
   },
 
   // 树选择
@@ -304,13 +348,18 @@ export default {
     noData: '暂无数据',
     loading: '加载中...',
     clear: '清空',
+    removeTag: '移除选择',
     searchPlaceholder: '搜索...',
   },
 
   // 日期选择器
   datePicker: {
+    placeholder: '请选择日期',
+    disabledTime: '该时间不可选择，请调整时、分或秒。',
+    panel: '日期选择面板',
     startDate: '开始日期',
     endDate: '结束日期',
+    rangeSeparator: '至',
     weekdaysShort: '日,一,二,三,四,五,六',
     monthsShort: '1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月',
   },
@@ -371,6 +420,8 @@ export default {
 
   // 选择器
   selector: {
+    loadError: '加载失败，请重试',
+    retry: '重试',
     placeholder: '请选择',
     searchPlaceholder: '搜索...',
     noData: '暂无数据',
@@ -382,20 +433,11 @@ export default {
     comboboxLabel: '选择一个选项',
   },
 
-  // 上传
-  upload: {
-    selectFile: '选择文件',
-    uploading: '上传中...',
-    dragHint: '点击或拖拽文件到此区域上传',
-    dragDescription: '支持单个或批量上传',
-    acceptTip: '支持格式：{accept}',
-    maxSizeTip: '文件大小不超过 {size}',
-    maxCountTip: '最多上传 {count} 个文件',
-    uploadSuccess: '上传成功',
-    uploadError: '上传失败',
-    preview: '预览',
-    download: '下载',
-    remove: '删除',
+  // 树节点异步加载
+  tree: {
+    loading: '正在加载子节点',
+    loadError: '子节点加载失败',
+    retryLoad: '重试加载',
   },
 
   // 骨架屏
@@ -480,10 +522,13 @@ export default {
   code: {
     copy: '复制',
     copied: '已复制',
+    copyFailed: '复制失败',
     edit: '编辑',
     readonly: '只读',
     codeBlock: '代码块',
     editor: '代码编辑器',
+    tabExitInstructions: '按 Escape 后，再按 Tab 或 Shift+Tab 离开代码编辑器。',
+    tabExitReady: '现在可按 Tab 或 Shift+Tab 离开代码编辑器。',
   },
 
   // 走马灯
@@ -499,80 +544,108 @@ export default {
   cascader: {
     placeholder: '请选择',
     noData: '暂无数据',
+    noSearchResults: '未找到匹配项',
     loading: '加载中...',
+    panel: '级联选项',
+    searchResults: '搜索结果',
+    currentPath: '当前路径',
+    allOptions: '全部选项',
+    level: '第 {level} 级',
   },
 
   // 文件管理
   fileUpload: {
     selectFile: '选择文件',
-    uploading: '上传中...',
+    uploadGroup: '文件上传',
     dragHint: '点击或拖拽文件到此区域上传',
     dragDescription: '支持单个或批量上传',
     acceptTip: '支持格式：{accept}',
-    maxSizeTip: '文件大小不超过 {size}',
-    maxCountTip: '最多上传 {count} 个文件',
-    uploadSuccess: '上传成功',
-    uploadError: '上传失败',
-    preview: '预览',
-    download: '下载',
-    remove: '删除',
+    maxFileSizeTip: '每个文件不超过 {size}',
+    previewFile: '预览 {name}',
+    removeFile: '移除 {name}',
+    uploadProgress: '{name} 的上传进度',
+    statusReady: '等待上传',
+    statusQueued: '排队中',
+    statusPaused: '已暂停',
+    statusCancelling: '取消中',
+    startUpload: '上传 {name}',
+    pauseUpload: '暂停上传 {name}',
+    resumeUpload: '继续上传 {name}',
+    retryUpload: '重试上传 {name}',
+    cancelUpload: '取消上传 {name}',
+    statusUploading: '上传中',
+    statusSuccess: '上传完成',
+    statusError: '上传失败',
   },
 
   fileDownload: {
     download: '下载',
     downloading: '下载中...',
-    downloadSuccess: '下载成功',
+    downloadRequested: '已请求下载',
+    downloadReady: '文件已就绪',
     downloadError: '下载失败',
-    pause: '暂停',
-    resume: '继续',
-    cancel: '取消',
+    progressLabel: '下载进度',
   },
 
   filePreview: {
     preview: '预览',
-    close: '关闭',
-    download: '下载',
     downloadFile: '下载文件',
     loading: '加载中...',
+    loadFailed: '无法加载此文件',
+    textTooLarge: '文本文件过大，无法预览',
+    empty: '没有可预览的文件',
+    invalidSource: '此文件地址无法预览',
+    closePreview: '关闭预览',
+    previousFile: '上一个文件',
+    nextFile: '下一个文件',
     zoomIn: '放大',
     zoomOut: '缩小',
-    rotateLeft: '逆时针旋转',
-    rotateRight: '顺时针旋转',
-    reset: '重置',
+    resetZoom: '重置缩放',
+    rotateCounterclockwise: '逆时针旋转',
+    rotateClockwise: '顺时针旋转',
+    pdfDocument: 'PDF 文档',
     unsupported: '不支持预览此文件类型',
   },
 
   imageCrop: {
-    crop: '裁剪',
+    editor: '图片裁剪编辑器',
+    toolbar: '裁剪操作',
     cancel: '取消',
-    confirm: '确认',
     confirmCrop: '确认裁剪',
     reset: '重置',
     zoomIn: '放大',
     zoomOut: '缩小',
     rotateLeft: '逆时针旋转',
     rotateRight: '顺时针旋转',
+    sourceLoading: '正在加载图片',
+    cropArea: '裁剪区域',
+    resizeNorth: '向上调整裁剪区域',
+    resizeSouth: '向下调整裁剪区域',
+    resizeEast: '向右调整裁剪区域',
+    resizeWest: '向左调整裁剪区域',
+    resizeNorthwest: '调整裁剪区域左上角',
+    resizeNortheast: '调整裁剪区域右上角',
+    resizeSouthwest: '调整裁剪区域左下角',
+    resizeSoutheast: '调整裁剪区域右下角',
   },
 
   imageCompress: {
-    compress: '压缩',
     compressing: '压缩中...',
-    compressSuccess: '压缩成功',
     compressError: '压缩失败',
+    loadError: '图片加载失败',
     download: '下载',
     reset: '重置',
     original: '原图',
     compressed: '压缩后',
-    quality: '质量',
-    size: '大小',
-    dimension: '尺寸',
+    preview: '图片压缩对比',
+    sourceLoading: '正在加载原图',
+    noPreview: '暂无图片预览',
     mode: '压缩模式',
     targetSize: '目标大小 (KB)',
     maxWidth: '最大宽度 (px)',
     maxHeight: '最大高度 (px)',
     outputFormat: '输出格式',
     startCompress: '开始压缩',
-    minValue: '最小 {value}',
     qualityFirst: '质量优先',
     sizeFirst: '大小优先',
     dimensionFirst: '尺寸优先',
@@ -580,9 +653,9 @@ export default {
   },
 
   fileList: {
+    sortBy: '排序字段',
     empty: '暂无文件',
     loading: '加载中...',
-    search: '搜索文件',
     searchPlaceholder: '搜索文件...',
     name: '名称',
     size: '大小',
@@ -591,16 +664,22 @@ export default {
     folder: '文件夹',
     selectAll: '全选',
     unselectAll: '取消全选',
-    preview: '预览',
-    download: '下载',
-    delete: '删除',
+    selectVisible: '选择当前可见文件',
+    unselectVisible: '取消选择当前可见文件',
+    selectFile: '选择 {name}',
+    previewFile: '预览 {name}',
+    downloadFile: '下载 {name}',
+    deleteFile: '删除 {name}',
     actions: '操作',
-    rename: '重命名',
-    sort: '排序',
-    viewMode: '视图模式',
+    sortAscending: '按升序排列',
+    sortDescending: '按降序排列',
     list: '列表',
     grid: '网格',
     table: '表格',
+    tree: '树形',
+    listAria: '文件列表',
+    gridAria: '文件网格',
+    tableAria: '文件表格',
   },
 
   numberInput: {
@@ -618,15 +697,24 @@ export default {
   // 标签
   tag: {
     addTag: '新标签',
-    addTagButton: '+ 新标签',
+    addTagButton: '新标签',
     inputPlaceholder: '请输入标签名称',
     confirm: '确认',
     cancel: '取消',
     close: '移除标签',
+    duplicate: '标签“{value}”已存在',
   },
 
   // 图表
   chart: {
+    dataZoom: '区域缩放',
+    dataZoomRestore: '还原缩放',
+    line: '折线图',
+    bar: '柱状图',
+    stack: '堆叠',
+    tiled: '取消堆叠',
+    keyboardInstructions: '使用方向键浏览数据，Home 和 End 跳至首尾，Enter 激活，Escape 清除高亮。',
+    dataNavigation: '图表数据导航',
     chart: '图表',
     loading: '图表加载中...',
     noData: '暂无数据',
@@ -656,4 +744,6 @@ export default {
     loading: '验证中...',
     autoSubmit: '即将自动提交',
   },
-};
+} satisfies BuiltInLocale;
+
+export default zhCN;

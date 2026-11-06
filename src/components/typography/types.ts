@@ -5,11 +5,11 @@ export interface ExTypographyProps {
   /** 文本内容 */
   text?: string;
   /** HTML 标签类型 */
-  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'div' | 'label';
+  tag?: TypographyTag;
   /** 文本变体 */
-  variant?: 'display' | 'heading' | 'title' | 'body' | 'caption' | 'overline';
+  variant?: TypographyVariant;
   /** 文本大小 */
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+  size?: TypographySize;
   /**
    * 文本颜色：可填主题色名（如 'primary' / 'text-secondary'，映射为 var(--ex-color-*)），
    * 也可直接填原始 CSS 颜色值（如 '#fff' / 'rgb(...)' / 'var(...)'）。
@@ -19,6 +19,12 @@ export interface ExTypographyProps {
   truncate?: boolean;
   /** 是否使用渐变色 */
   gradient?: boolean;
+  /** 是否启用渐变背景动态位移，需要同时启用 gradient */
+  gradientAnimated?: boolean;
+  /** 是否启用强化赛博朋克文字风格（基础赛博字体与标题色差默认开启） */
+  cyberpunk?: boolean;
+  /** 是否启用 CRT 终端文字效果（等宽字体、扫描线、屏幕辉光与轻微闪烁） */
+  terminal?: boolean;
   /** 是否使用霓虹发光效果 */
   glow?: boolean;
   /** 是否居中对齐 */
@@ -29,7 +35,7 @@ export interface ExTypographyProps {
   italic?: boolean;
   /** 是否下划线 */
   underline?: boolean;
-  /** 最大行数（用于多行截断） */
+  /** 最大行数（用于多行截断，传入小数时按不超过它的整数处理） */
   maxLines?: number;
   /** 自定义样式 */
   customStyle?: CSSProperties;
@@ -45,23 +51,20 @@ export type TypographySize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 
 export type TypographyColor =
   | 'primary'
   | 'secondary'
+  | 'accent'
   | 'success'
   | 'warning'
   | 'error'
+  | 'danger'
   | 'info'
   | 'text-primary'
   | 'text-secondary'
-  | 'text-disabled';
+  | 'text-tertiary'
+  | 'text-inverse'
+  | 'text-disabled'
+  | 'white'
+  | 'black';
 
 /** Typography HTML 标签类型 */
 export type TypographyTag =
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'h4'
-  | 'h5'
-  | 'h6'
-  | 'p'
-  | 'span'
-  | 'div'
-  | 'label';
+  'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'div' | 'label';

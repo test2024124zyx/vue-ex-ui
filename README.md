@@ -1,9 +1,9 @@
 # 🎮 ExUI - Vue3 Cyberpunk UI Component Library
 
-<img src="https://img.shields.io/badge/Vue-3.4+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
+<img src="https://img.shields.io/badge/Vue-3.5+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
 <img src="https://img.shields.io/badge/TypeScript-5.9+-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-<img src="https://img.shields.io/badge/Vite-7.1+-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
-<img src="https://img.shields.io/badge/SCSS-1.92+-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="SCSS">
+<img src="https://img.shields.io/badge/Vite-8.2+-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+<img src="https://img.shields.io/badge/Sass-1.102+-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="Sass">
 <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 
 **移动端优先的响应式 Vue3 组件库 | 赛博朋克主题风格**
@@ -25,7 +25,7 @@ ExUI 是一个专为赛博朋克风格应用打造的 Vue3 组件库，灵感来
 - **🔧 开发友好** - 完整的 TypeScript 支持，类型安全
 - **🌍 国际化** - 内置中英文支持，易于扩展
 - **♿ 无障碍** - 遵循 WCAG 标准，支持键盘导航和屏幕阅读器
-- **🎭 多主题** - 4 种内置主题，支持动态切换和自定义
+- **🎭 双主题** - 赛博暗色与赛博亮色两种内置主题，支持动态切换和自定义
 
 ### 🎨 视觉风格
 
@@ -127,8 +127,16 @@ const handleSubmit = () => {
 
 <template>
   <div>
-    <ExInput v-model="value" placeholder="请输入" />
-    <ExButton type="primary" @click="handleSubmit">提交</ExButton>
+    <ExInput
+      v-model="value"
+      placeholder="请输入"
+    />
+    <ExButton
+      type="primary"
+      @click="handleSubmit"
+    >
+      提交
+    </ExButton>
   </div>
 </template>
 ```
@@ -142,20 +150,42 @@ const handleSubmit = () => {
 <template>
   <div class="cyberpunk-app">
     <!-- 赛博朋克风格按钮 -->
-    <ex-button type="primary" size="large" :loading="loading">启动系统</ex-button>
+    <ex-button
+      type="primary"
+      size="large"
+      :loading="loading"
+    >
+      启动系统
+    </ex-button>
 
     <!-- 用户信息卡片 -->
-    <ex-card class="user-stats" type="neon" hoverable>
-      <ex-avatar :src="userAvatar" size="large" />
-      <ex-badge :count="99" type="primary">
+    <ex-card
+      class="user-stats"
+      type="neon"
+      hoverable
+    >
+      <ex-avatar
+        :src="userAvatar"
+        size="large"
+      />
+      <ex-badge
+        :count="99"
+        type="primary"
+      >
         <!-- 内置图标：icon 属性引用注册表中的图标名 -->
-        <ex-icon icon="star-fill" :size="20" />
+        <ex-icon
+          icon="star-fill"
+          :size="20"
+        />
       </ex-badge>
     </ex-card>
 
     <!-- 赛博朋克布局 -->
     <ex-layout has-sider>
-      <ex-sider neon-border collapsible>
+      <ex-sider
+        neon-border
+        collapsible
+      >
         <ex-menu>
           <ex-menu-item>控制中心</ex-menu-item>
           <ex-menu-item>数据面板</ex-menu-item>
@@ -163,16 +193,25 @@ const handleSubmit = () => {
       </ex-sider>
 
       <ex-layout>
-        <ex-header neon-border blur>
+        <ex-header
+          neon-border
+          blur
+        >
           <template #left>
-            <img src="/logo.png" alt="Logo" />
+            <img
+              src="/logo.png"
+              alt="Logo"
+            />
           </template>
           <template #right>
             <ex-button type="primary">登录</ex-button>
           </template>
         </ex-header>
 
-        <ex-content grid scanline>
+        <ex-content
+          grid
+          scanline
+        >
           <h1>欢迎来到赛博世界</h1>
         </ex-content>
 
@@ -199,7 +238,7 @@ const playerAvatar = ref('/avatar.jpg');
 ### 🎯 开发进度跟踪
 
 <details open>
-<summary><strong>✅ 通用基础组件 (12/12) - 100%</strong></summary>
+<summary><strong>通用基础组件（12 个模块）</strong></summary>
 
 - [x] **Typography** - 排版文本组件
 - [x] **Icon** - 图标组件（内置 SVG 图标注册表，无网络依赖）
@@ -217,7 +256,7 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details open>
-<summary><strong>✅ 表单类组件 (15/15) - 100%</strong></summary>
+<summary><strong>表单类组件（15 个模块）</strong></summary>
 
 - [x] **Input** - 文本输入框
 - [x] **NumberInput** - 数字输入框
@@ -228,21 +267,33 @@ const playerAvatar = ref('/avatar.jpg');
 - [x] **Switch** - 开关
 - [x] **Slider** - 滑块
 - [x] **DateTimePicker** - 日期时间选择器
+- [x] **TimePicker** - 时间及时间范围选择器
+- [x] **ColorPicker** - 颜色选择器
+- [x] **TreeSelect** - 树选择器，支持异步加载和虚拟滚动
+- [x] **VerificationCode** - 验证码输入
 - [x] **Rate** - 评分组件
+- [x] **Form** - 表单容器及验证
+
+</details>
+
+<details open>
+<summary><strong>文件管理组件（6 个模块）</strong></summary>
+
 - [x] **FileUpload** - 文件上传
 - [x] **FileDownload** - 文件下载
 - [x] **FilePreview** - 文件预览
 - [x] **ImageCrop** - 图片裁剪
 - [x] **ImageCompress** - 图片压缩
 - [x] **FileList** - 文件列表/资源管理
-- [x] **Form** - 表单容器及验证
 
 </details>
 
 <details open>
-<summary><strong>✅ 数据展示组件 (17/17) - 100%</strong></summary>
+<summary><strong>数据展示组件（18 个模块）</strong></summary>
 
 - [x] **Tag** - 标签/标记
+- [x] **Descriptions** - 描述列表
+- [x] **Chart** - 图表与数据导航
 - [x] **List** - 列表
 - [x] **Empty** - 空状态提示
 - [x] **VirtualList** - 虚拟列表
@@ -262,7 +313,7 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details open>
-<summary><strong>✅ 导航与布局组件 (11/11) - 100%</strong></summary>
+<summary><strong>导航与布局组件（13 个模块）</strong></summary>
 
 - [x] **Layout** - 布局容器（Header/Sider/Content/Footer）
 - [x] **Grid** - 栅格布局
@@ -275,11 +326,13 @@ const playerAvatar = ref('/avatar.jpg');
 - [x] **Steps** - 步骤条
 - [x] **Anchor** - 锚点/页面内导航
 - [x] **Pagination** - 分页器
+- [x] **BackTop** - 回到顶部
+- [x] **PageHeader** - 页头
 
 </details>
 
 <details open>
-<summary><strong>✅ 反馈与交互组件 (12/12) - 100%</strong></summary>
+<summary><strong>反馈与交互组件（12 个模块）</strong></summary>
 
 - [x] **Dialog** - 对话框
 - [x] **Modal** - 模态对话框
@@ -297,25 +350,28 @@ const playerAvatar = ref('/avatar.jpg');
 </details>
 
 <details>
-<summary><strong>🔧 全局配置组件 (1/1) - 100%</strong></summary>
+<summary><strong>全局配置（1 个模块）</strong></summary>
 
 - [x] **ConfigProvider** - 全局化配置（主题、国际化、尺寸）
 
 </details>
 
-### 📊 总体进度
+### 验证与组件统计
 
-```
-总计组件: 80+ 个（含 DatePicker / TimePicker / Calendar 等独立组件）
-测试用例: 1200+ 全部通过 ✅
-```
+当前提供 77 个组件模块、100 个公开组件（包含附属组件）。日期选择统一由
+`ExDateTimePicker` 提供，没有独立的 `ExDatePicker` 导出。
 
-### 🎨 主题系统
+`npm run test:coverage` 同时检查整体和每个组件模块的语句、分支、函数、行覆盖率，
+每项均要求至少 80%。`npm run test:browser` 在 Chromium、Firefox、WebKit 中验证
+全部组件的双主题渲染，以及键盘、窄屏、异步选择和 tus 上传流程。
+当前验证结果以 CI 和本地命令输出为准。
 
-- ✅ **Neon Blue** - 霓虹蓝主题（默认）
-- ✅ **Neon Pink** - 玫瑰粉主题
+### 🎨 双主题系统
+
+- ✅ **Cyber Dark (`neon-blue`)** - 赛博暗色主题（默认）
+- ✅ **Cyber Light (`light`)** - 赛博亮色主题
 - ✅ **Dark** - GitHub Dark 风格
-- ✅ **High Contrast** - 矩阵绿黑客风格
+- ✅ **可访问性增强** - 通过 `prefers-contrast` 和 `forced-colors` 增强边界，不创建第三个主题
 - ✅ 支持动态主题切换
 - ✅ 支持系统主题跟随
 - ✅ 支持主题持久化
@@ -358,13 +414,17 @@ const playerAvatar = ref('/avatar.jpg');
 ### 📏 间距系统
 
 ```scss
---ex-space-xs: 4px; // 极小间距
---ex-space-sm: 8px; // 小间距
---ex-space-md: 16px; // 中等间距
---ex-space-lg: 24px; // 大间距
---ex-space-xl: 32px; // 超大间距
---ex-space-xxl: 48px; // 巨大间距
+--ex-spacing-1: 4px;
+--ex-spacing-2: 8px;
+--ex-spacing-3: 12px;
+--ex-spacing-4: 16px;
+--ex-spacing-5: 20px;
+--ex-spacing-6: 24px;
+--ex-spacing-8: 32px;
+--ex-spacing-12: 48px;
 ```
+
+`Space`、`Flex` 和 `Grid` 共用上述数字刻度；Space 的 `small`、`medium`、`large` 分别对应 `8px`、`16px`、`24px`。
 
 ### 🎭 动画系统
 
@@ -386,7 +446,7 @@ const playerAvatar = ref('/avatar.jpg');
 import { setTheme, useTheme, usePersistedTheme } from 'vue-ex-ui';
 
 // 手动切换主题
-setTheme('neon-pink');
+setTheme('light');
 
 // 使用主题 Hook
 const { theme, setTheme, toggleTheme } = useTheme();
@@ -399,12 +459,11 @@ const { theme } = usePersistedTheme();
 
 ## 🌍 国际化（i18n）
 
-ExUI 统一使用 vue-i18n（Composition API）。你可以选择以下任一方式完成初始化。
+ExUI 拥有独立的语言状态与翻译器。`createLocaleProvider()` 只为 ExUI 组件和从
+`vue-ex-ui` 导出的 `useI18n()` / `useLocale()` 提供 App 级隔离；它不会为宿主业务安装
+`vue-i18n`，也不会让宿主直接使用 `vue-i18n` 的 `useI18n()`。
 
-- 推荐方式：使用 ExUI 提供的 `createLocaleProvider`
-- 手动方式：自行创建 `createI18n` 并注入 ExUI 的语言包
-
-### 一、快速开始（推荐）
+### 一、只配置 ExUI
 
 ```ts
 import { createApp } from 'vue';
@@ -425,13 +484,18 @@ app.use(i18nProvider);
 app.mount('#app');
 ```
 
-### 二、手动集成 vue-i18n
+即使项目没有安装 `vue-i18n`，ExUI 也会使用内置中英文翻译。若已安装，
+`createLocaleProvider()` 可以在自己的隔离作用域内增强翻译，但不会注册宿主插件。
+
+### 二、宿主业务同时使用 vue-i18n
+
+宿主必须自行创建并同步安装 `vue-i18n`；ExUI 与宿主的消息表也分别配置：
 
 ```ts
 import { createApp } from 'vue';
 import App from './App.vue';
 import { createI18n } from 'vue-i18n';
-import { enUS, zhCN } from 'vue-ex-ui';
+import { createLocaleProvider, enUS, zhCN } from 'vue-ex-ui';
 
 const app = createApp(App);
 
@@ -443,21 +507,28 @@ const i18n = createI18n({
     'zh-CN': zhCN,
   },
 });
+const exLocale = createLocaleProvider({ locale: 'zh-CN' });
 
 app.use(i18n);
+app.use(exLocale);
 app.mount('#app');
 ```
+
+切换语言时，应让宿主 `vue-i18n` 的 `locale` 与 `ExConfigProvider` 的 `locale` 读取
+同一个响应式语言状态；这样 ExUI 会保留 `createLocaleProvider({ messages })` 的自定义文案，
+同时只覆盖当前 Provider 子树选择的语言，不会修改其他 App。
 
 ### 组件中使用
 
 ```ts
-// 方式A：vue-i18n
-import { useI18n } from 'vue-i18n';
-const { t, locale } = useI18n();
-
-// 方式B：ExUI 提供的作用域翻译（内部优先代理到 vue-i18n）
-import { useLocale } from 'vue-ex-ui';
+// ExUI 翻译器：只依赖 createLocaleProvider 或内置回退
+import { useI18n as useExI18n, useLocale } from 'vue-ex-ui';
+const exI18n = useExI18n();
 const { t: tm } = useLocale('menu');
+
+// 宿主翻译器：仅在 main.ts 已执行 app.use(i18n) 后可用
+import { useI18n as useHostI18n } from 'vue-i18n';
+const hostI18n = useHostI18n();
 
 // 示例
 tm('search'); // => '搜索菜单'
@@ -465,8 +536,9 @@ tm('search'); // => '搜索菜单'
 
 ### 依赖与外部化
 
-- 组件库将 `vue-i18n` 标记为 external（见 vite.config），并声明为 peerDependencies。
-- 请在宿主项目安装：`npm i vue-i18n`，并按上述任一方式完成初始化。
+- `vue-i18n` 是可选 peer 依赖；只使用 ExUI 内置翻译时无需安装。
+- 宿主业务需要其 API 时执行 `npm i vue-i18n`，并自行 `createI18n()` 与 `app.use(i18n)`。
+- `createLocaleProvider({ messages })` 只覆盖 ExUI 文案，不会写入宿主 `vue-i18n` 的消息表。
 
 ---
 
@@ -479,16 +551,21 @@ ExUI 采用移动端优先的响应式设计策略：
 ```scss
 $breakpoints: (
   xs: 0px,
-  // 手机竖屏 (< 576px)
-  sm: 576px,
-  // 手机横屏 (≥ 576px)
+  micro: 375px,
+  // 小屏手机内容边界
+  sm: 480px,
+  // 手机横屏
+  compact: 640px,
+  // 紧凑桌面内容边界
   md: 768px,
-  // 平板竖屏 (≥ 768px)
-  lg: 992px,
-  // 平板横屏/小桌面 (≥ 992px)
-  xl: 1200px,
-  // 桌面 (≥ 1200px)
-  xxl: 1400px, // 大桌面 (≥ 1400px)
+  // 平板竖屏
+  lg: 1024px,
+  // 平板横屏/小屏桌面
+  xl: 1280px,
+  // 桌面
+  wide: 1400px,
+  // 宽屏桌面
+  2xl: 1536px, // 大屏桌面
 );
 ```
 
@@ -498,7 +575,7 @@ $breakpoints: (
 - **手势支持** - Carousel 支持触摸滑动切换
 - **性能优化** - 图片懒加载、虚拟滚动
 - **自适应布局** - 流式布局，自动适配屏幕尺寸
-- **离线可用** - 图标与字体全部内置，无运行时网络请求
+- **离线可用** - 图标内置，品牌字体和简体中文 Noto Sans SC 字体资源随完整 `style.css` 或按需 `font.css` 提供，无运行时网络请求
 
 ### 📱 响应式示例
 
@@ -506,7 +583,11 @@ $breakpoints: (
 <template>
   <!-- 在移动端自动调整布局 -->
   <ex-layout has-sider>
-    <ex-sider :collapsed="isMobile" :breakpoint="768" @breakpoint="handleBreakpoint">
+    <ex-sider
+      :collapsed="isMobile"
+      :breakpoint="768"
+      @breakpoint="handleBreakpoint"
+    >
       侧边栏内容
     </ex-sider>
     <ex-content>主要内容</ex-content>
@@ -528,19 +609,19 @@ const handleBreakpoint = broken => {
 
 ## 🛠️ 技术栈
 
-| 技术                 | 版本  | 说明                     |
-| -------------------- | ----- | ------------------------ |
-| **Vue**              | 3.4+  | 渐进式 JavaScript 框架   |
-| **TypeScript**       | 5.9+  | 类型安全的 JavaScript    |
-| **Vite**             | 7.1+  | 下一代前端构建工具       |
-| **SCSS**             | 1.92+ | CSS 预处理器             |
-| **内置 SVG 图标**    | -     | 60+ 内联图标，零网络依赖 |
-| **Vitest**           | 3.2+  | 单元测试框架             |
-| **VitePress**        | 1.6+  | 文档生成工具             |
-| **Vue I18n**         | 11.1+ | 国际化支持               |
-| **JsBarcode**        | 3.12+ | 条码生成库               |
-| **QRCode**           | 1.5+  | 二维码生成库             |
-| **Lunar JavaScript** | 1.7+  | 农历支持                 |
+| 技术                 | 版本   | 说明                     |
+| -------------------- | ------ | ------------------------ |
+| **Vue**              | 3.5+   | 渐进式 JavaScript 框架   |
+| **TypeScript**       | 5.9+   | 类型安全的 JavaScript    |
+| **Vite**             | 8.2+   | 下一代前端构建工具       |
+| **SCSS**             | 1.102+ | CSS 预处理器             |
+| **内置 SVG 图标**    | -      | 60+ 内联图标，零网络依赖 |
+| **Vitest**           | 4.1+   | 单元测试框架             |
+| **VitePress**        | 1.6+   | 文档生成工具             |
+| **Vue I18n**         | 11.4+  | 国际化支持               |
+| **JsBarcode**        | 3.12+  | 条码生成库               |
+| **QRCode**           | 1.5+   | 二维码生成库             |
+| **Lunar JavaScript** | 1.7+   | 农历支持                 |
 
 ---
 
@@ -553,7 +634,7 @@ const handleBreakpoint = broken => {
 - **扫描线** - 经典赛博朋克扫描线动画
 - **网格背景** - 未来科技感网格背景
 - **毛玻璃** - 现代模糊背景效果
-- **动态主题** - 4 种赛博朋克主题实时切换
+- **动态主题** - 两种赛博朋克主题实时切换
 
 ### 🎨 特色组件效果
 
@@ -571,8 +652,8 @@ const handleBreakpoint = broken => {
 <!-- 霓虹卡片 -->
 <ex-card type="neon" hoverable />
 
-<!-- 渐变按钮 -->
-<ex-button type="primary" gradient />
+<!-- 主按钮与光效开关 -->
+<ex-button type="primary" :glow="false">执行操作</ex-button>
 ```
 
 ---

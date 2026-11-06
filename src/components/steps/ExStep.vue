@@ -8,8 +8,7 @@
     :aria-current="isCurrent ? 'step' : undefined"
     :aria-disabled="props.disabled"
     @click="handleClick"
-    @keydown.enter="handleClick"
-    @keydown.space.prevent="handleClick"
+    @keydown="handleKeydown"
   >
     <!-- 步骤头部 -->
     <div class="ex-step__head">
@@ -94,6 +93,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, onBeforeUnmount, ref } from 'vue';
 import type { ExStepProps, ExStepExposed, StepsContext } from './types';
 import ExIcon from '../icon/ExIcon.vue';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExStep',
@@ -111,7 +111,7 @@ const stepsContext = inject<StepsContext>('exSteps')!;
 
 // 注册步骤（索引由父组件按文档顺序实时计算，支持动态增删/重排）
 const uid = Symbol('ex-step');
-stepsContext.registerStep(uid);
+stepsContext.registerStep(uid, () => stepRef.value ?? null);
 const stepIndex = computed(() => stepsContext.getStepIndex(uid));
 
 // 组件卸载时注销
@@ -246,8 +246,20 @@ const statusIcon = computed(() => {
 // 事件处理
 const handleClick = () => {
   if (!props.disabled && isClickable.value) {
-    stepsContext.onStepClick(stepIndex.value);
+    stepsContext.onStepClick(stepIndex.value, props.clickable === true);
   }
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (
+    event.target !== event.currentTarget ||
+    event.defaultPrevented ||
+    isComposingKeyboardEvent(event)
+  )
+    return;
+  if (!isClickable.value || props.disabled || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  handleClick();
 };
 
 // 暴露的方法
@@ -260,4 +272,4 @@ defineExpose<ExStepExposed>({
 });
 </script>
 
-<style scoped lang="scss" src="./ExSteps.scss"></style>
+<style scoped lang="scss" src="./ExStep.scss"></style>

@@ -12,23 +12,36 @@ const visible = ref(false)
 
 最简单的用法，鼠标点击时显示气泡卡片。
 
+::: raw
+
 <div class="demo-container">
   <ExPopover content="这是一段内容" title="标题">
     <ExButton>点击显示</ExButton>
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopover content="这是一段内容" title="标题">
+  <ExPopover
+    content="这是一段内容"
+    title="标题"
+  >
     <ExButton>点击显示</ExButton>
   </ExPopover>
 </template>
 ```
 
+:::
+
 ## 不同位置
 
 通过 `placement` 属性可以设置气泡卡片的显示位置，支持 12 个方向。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 24px;">
   <div style="display: flex; justify-content: center; gap: 12px;">
@@ -79,21 +92,116 @@ const visible = ref(false)
   </div>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopover content="Top 内容" title="Top" placement="top">
-    <ExButton>上边</ExButton>
-  </ExPopover>
-  
-  <ExPopover content="Bottom 内容" title="Bottom" placement="bottom">
-    <ExButton>下边</ExButton>
-  </ExPopover>
+  <div style="display: flex; justify-content: center; gap: 12px;">
+    <ExPopover
+      content="Top Start 内容"
+      title="Top Start"
+      placement="top-start"
+    >
+      <ExButton>上左</ExButton>
+    </ExPopover>
+    <ExPopover
+      content="Top 内容"
+      title="Top"
+      placement="top"
+    >
+      <ExButton>上边</ExButton>
+    </ExPopover>
+    <ExPopover
+      content="Top End 内容"
+      title="Top End"
+      placement="top-end"
+    >
+      <ExButton>上右</ExButton>
+    </ExPopover>
+  </div>
+  <div style="display: flex; justify-content: space-between;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <ExPopover
+        content="Left Start 内容"
+        title="Left Start"
+        placement="left-start"
+      >
+        <ExButton>左上</ExButton>
+      </ExPopover>
+      <ExPopover
+        content="Left 内容"
+        title="Left"
+        placement="left"
+      >
+        <ExButton>左边</ExButton>
+      </ExPopover>
+      <ExPopover
+        content="Left End 内容"
+        title="Left End"
+        placement="left-end"
+      >
+        <ExButton>左下</ExButton>
+      </ExPopover>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <ExPopover
+        content="Right Start 内容"
+        title="Right Start"
+        placement="right-start"
+      >
+        <ExButton>右上</ExButton>
+      </ExPopover>
+      <ExPopover
+        content="Right 内容"
+        title="Right"
+        placement="right"
+      >
+        <ExButton>右边</ExButton>
+      </ExPopover>
+      <ExPopover
+        content="Right End 内容"
+        title="Right End"
+        placement="right-end"
+      >
+        <ExButton>右下</ExButton>
+      </ExPopover>
+    </div>
+  </div>
+  <div style="display: flex; justify-content: center; gap: 12px;">
+    <ExPopover
+      content="Bottom Start 内容"
+      title="Bottom Start"
+      placement="bottom-start"
+    >
+      <ExButton>下左</ExButton>
+    </ExPopover>
+    <ExPopover
+      content="Bottom 内容"
+      title="Bottom"
+      placement="bottom"
+    >
+      <ExButton>下边</ExButton>
+    </ExPopover>
+    <ExPopover
+      content="Bottom End 内容"
+      title="Bottom End"
+      placement="bottom-end"
+    >
+      <ExButton>下右</ExButton>
+    </ExPopover>
+  </div>
 </template>
 ```
+
+:::
 
 ## 触发方式
 
 通过 `trigger` 属性可以设置不同的触发方式。
+
+::: raw
 
 <div class="demo-container">
   <ExPopover content="鼠标悬停触发" title="Hover" trigger="hover">
@@ -107,25 +215,45 @@ const visible = ref(false)
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopover content="鼠标悬停触发" title="Hover" trigger="hover">
+  <ExPopover
+    content="鼠标悬停触发"
+    title="Hover"
+    trigger="hover"
+  >
     <ExButton>悬停触发</ExButton>
   </ExPopover>
-  
-  <ExPopover content="点击触发" title="Click" trigger="click">
+
+  <ExPopover
+    content="点击触发"
+    title="Click"
+    trigger="click"
+  >
     <ExButton>点击触发</ExButton>
   </ExPopover>
-  
-  <ExPopover content="聚焦触发" title="Focus" trigger="focus">
+
+  <ExPopover
+    content="聚焦触发"
+    title="Focus"
+    trigger="focus"
+  >
     <ExButton>聚焦触发</ExButton>
   </ExPopover>
 </template>
 ```
 
+:::
+
 ## 自定义内容
 
 通过插槽可以自定义气泡卡片的内容。
+
+::: raw
 
 <div class="demo-container">
   <ExPopover>
@@ -148,20 +276,35 @@ const visible = ref(false)
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
   <ExPopover>
     <template #title>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <img src="icon.svg" alt="图标" width="16" height="16" />
+        <img
+          src="https://api.iconify.design/ri/information-line.svg"
+          alt="信息"
+          width="16"
+          height="16"
+          style="filter: drop-shadow(0 0 4px var(--ex-color-primary));"
+        />
         <span>自定义标题</span>
       </div>
     </template>
     <template #content>
-      <div>
-        <p>这是自定义的内容区域</p>
-        <div>
-          <ExButton size="small" type="primary">确定</ExButton>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="margin: 0;">这是自定义的内容区域</p>
+        <div style="display: flex; gap: 8px;">
+          <ExButton
+            size="small"
+            type="primary"
+          >
+            确定
+          </ExButton>
           <ExButton size="small">取消</ExButton>
         </div>
       </div>
@@ -171,9 +314,13 @@ const visible = ref(false)
 </template>
 ```
 
+:::
+
 ## 自定义宽度
 
 通过 `width` 属性可以设置气泡卡片的宽度。
+
+::: raw
 
 <div class="demo-container">
   <ExPopover content="默认宽度的气泡卡片" title="默认宽度">
@@ -187,21 +334,44 @@ const visible = ref(false)
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopover content="默认宽度的气泡卡片" title="默认宽度">
+  <ExPopover
+    content="默认宽度的气泡卡片"
+    title="默认宽度"
+  >
     <ExButton>默认宽度</ExButton>
   </ExPopover>
-  
-  <ExPopover :width="300" content="自定义宽度 300px 的气泡卡片" title="300px">
+
+  <ExPopover
+    :width="300"
+    content="自定义宽度 300px 的气泡卡片"
+    title="300px"
+  >
     <ExButton>宽度 300px</ExButton>
+  </ExPopover>
+
+  <ExPopover
+    width="400px"
+    content="自定义宽度 400px 的气泡卡片"
+    title="400px"
+  >
+    <ExButton>宽度 400px</ExButton>
   </ExPopover>
 </template>
 ```
 
+:::
+
 ## 手动控制
 
 通过 `v-model` 可以手动控制气泡卡片的显示和隐藏。
+
+::: raw
 
 <div class="demo-container" style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
   <div style="display: flex; gap: 12px;">
@@ -213,26 +383,40 @@ const visible = ref(false)
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
+const visible = ref(false);
 </script>
 
 <template>
-  <ExButton @click="visible = true">显示</ExButton>
-  <ExButton @click="visible = false">隐藏</ExButton>
-  
-  <ExPopover content="手动控制的气泡卡片" title="手动控制" v-model="visible" trigger="manual">
+  <div style="display: flex; gap: 12px;">
+    <ExButton @click="visible = true">显示</ExButton>
+    <ExButton @click="visible = false">隐藏</ExButton>
+  </div>
+  <ExPopover
+    content="手动控制的气泡卡片"
+    title="手动控制"
+    v-model="visible"
+    trigger="manual"
+  >
     <ExButton>目标元素</ExButton>
   </ExPopover>
 </template>
 ```
 
+:::
+
 ## 赛博朋克主题示例
 
 展示赛博朋克场景中的气泡卡片应用。
+
+::: raw
 
 <div class="demo-container" style="display: flex; gap: 12px; flex-wrap: wrap;">
   <ExPopover placement="top" :width="280">
@@ -296,76 +480,167 @@ const visible = ref(false)
   </ExPopover>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExPopover placement="top" :width="280">
+  <ExPopover
+    placement="top"
+    :width="280"
+  >
     <template #title>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <img src="icon.svg" alt="玩家" width="16" height="16" />
+        <img
+          src="https://api.iconify.design/ri/user-line.svg"
+          alt="玩家"
+          width="16"
+          height="16"
+          style="filter: drop-shadow(0 0 4px var(--ex-color-primary));"
+        />
         <span>玩家信息</span>
       </div>
     </template>
     <template #content>
-      <div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <ExAvatar size="large">P1</ExAvatar>
           <div>
-            <div>Player001</div>
-            <div>等级 50 • 战士</div>
+            <div style="font-weight: bold; color: var(--ex-color-primary);">Player001</div>
+            <div style="font-size: 12px; color: var(--ex-color-text-tertiary);">等级 50 • 战士</div>
           </div>
+        </div>
+        <div style="display: flex; gap: 8px; font-size: 12px;">
+          <ExBadge
+            :count="850"
+            type="primary"
+          >
+            <span
+              style="padding: 4px 8px; background: var(--ex-color-bg-tertiary); border-radius: 4px;"
+            >
+              胜场
+            </span>
+          </ExBadge>
+          <ExBadge
+            :count="120"
+            type="success"
+          >
+            <span
+              style="padding: 4px 8px; background: var(--ex-color-bg-tertiary); border-radius: 4px;"
+            >
+              成就
+            </span>
+          </ExBadge>
         </div>
       </div>
     </template>
-    <ExButton type="primary">玩家信息</ExButton>
+    <ExButton type="primary">
+      <template #prefix>
+        <img
+          src="https://api.iconify.design/ri/user-line.svg"
+          alt="玩家"
+          width="16"
+          height="16"
+        />
+      </template>
+      玩家信息
+    </ExButton>
+  </ExPopover>
+  <ExPopover
+    placement="top"
+    :width="300"
+  >
+    <template #title>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <img
+          src="https://api.iconify.design/ri/trophy-line.svg"
+          alt="成就"
+          width="16"
+          height="16"
+          style="filter: drop-shadow(0 0 4px var(--ex-color-warning));"
+        />
+        <span>最新成就</span>
+      </div>
+    </template>
+    <template #content>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div
+          style="padding: 8px; background: var(--ex-color-bg-tertiary); border-radius: 4px; border-left: 3px solid var(--ex-color-warning);"
+        >
+          <div style="font-weight: bold; color: var(--ex-color-warning);">🏆 战场老兵</div>
+          <div style="font-size: 12px; margin-top: 4px;">完成 100 场对战</div>
+        </div>
+        <div
+          style="padding: 8px; background: var(--ex-color-bg-tertiary); border-radius: 4px; border-left: 3px solid var(--ex-color-success);"
+        >
+          <div style="font-weight: bold; color: var(--ex-color-success);">⭐ 连胜大师</div>
+          <div style="font-size: 12px; margin-top: 4px;">达成 10 连胜</div>
+        </div>
+      </div>
+    </template>
+    <ExButton type="warning">
+      <template #prefix>
+        <img
+          src="https://api.iconify.design/ri/trophy-line.svg"
+          alt="成就"
+          width="16"
+          height="16"
+        />
+      </template>
+      成就系统
+    </ExButton>
   </ExPopover>
 </template>
 ```
+
+:::
 
 ## API
 
 ### Popover Props
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `title` | 标题 | `string` | — |
-| `content` | 内容 | `string` | — |
-| `placement` | 出现位置 | `'top' \| 'top-start' \| 'top-end' \| 'bottom' \| 'bottom-start' \| 'bottom-end' \| 'left' \| 'left-start' \| 'left-end' \| 'right' \| 'right-start' \| 'right-end'` | `'top'` |
-| `trigger` | 触发方式 | `'hover' \| 'click' \| 'focus' \| 'manual'` | `'click'` |
-| `show-arrow` | 是否显示箭头 | `boolean` | `true` |
-| `disabled` | 是否禁用 | `boolean` | `false` |
-| `offset` | 偏移量（像素） | `number` | `12` |
-| `width` | 宽度 | `string \| number` | `'auto'` |
-| `transition` | 过渡动画名称 | `string` | `'ex-popover-fade'` |
-| `open-delay` | 延迟显示（毫秒） | `number` | `0` |
-| `close-delay` | 延迟隐藏（毫秒） | `number` | `200` |
-| `custom-class` | 自定义类名 | `string` | — |
-| `z-index` | 层级 | `number` | `2000` |
-| `v-model` | 手动控制显示 | `boolean` | — |
-| `aria-label` | 无障碍标签 | `string` | — |
+| 参数           | 说明             | 类型                                                                                                                                                                 | 默认值              |
+| -------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `title`        | 标题             | `string`                                                                                                                                                             | —                   |
+| `content`      | 内容             | `string`                                                                                                                                                             | —                   |
+| `placement`    | 出现位置         | `'top' \| 'top-start' \| 'top-end' \| 'bottom' \| 'bottom-start' \| 'bottom-end' \| 'left' \| 'left-start' \| 'left-end' \| 'right' \| 'right-start' \| 'right-end'` | `'top'`             |
+| `trigger`      | 触发方式         | `'hover' \| 'click' \| 'focus' \| 'manual'`                                                                                                                          | `'click'`           |
+| `show-arrow`   | 是否显示箭头     | `boolean`                                                                                                                                                            | `true`              |
+| `disabled`     | 是否禁用         | `boolean`                                                                                                                                                            | `false`             |
+| `offset`       | 偏移量（像素）   | `number`                                                                                                                                                             | `12`                |
+| `width`        | 宽度             | `string \| number`                                                                                                                                                   | `'auto'`            |
+| `transition`   | 过渡动画名称     | `string`                                                                                                                                                             | `'ex-popover-fade'` |
+| `open-delay`   | 延迟显示（毫秒） | `number`                                                                                                                                                             | `0`                 |
+| `close-delay`  | 延迟隐藏（毫秒） | `number`                                                                                                                                                             | `200`               |
+| `custom-class` | 自定义类名       | `string`                                                                                                                                                             | —                   |
+| `z-index`      | 层级             | `number`                                                                                                                                                             | `2000`              |
+| `v-model`      | 手动控制显示     | `boolean`                                                                                                                                                            | —                   |
+| `aria-label`   | 无障碍标签       | `string`                                                                                                                                                             | —                   |
 
 ### Popover Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
+| 事件名               | 说明                                 | 类型                       |
+| -------------------- | ------------------------------------ | -------------------------- |
 | `update:model-value` | 显示状态变化时触发（配合 `v-model`） | `(value: boolean) => void` |
-| `show` | 显示时触发 | `() => void` |
-| `hide` | 隐藏时触发 | `() => void` |
+| `show`               | 显示时触发                           | `() => void`               |
+| `hide`               | 隐藏时触发                           | `() => void`               |
 
 ### Popover Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
-| `default` | 触发元素 |
-| `title` | 自定义标题 |
+| 插槽名    | 说明       |
+| --------- | ---------- |
+| `default` | 触发元素   |
+| `title`   | 自定义标题 |
 | `content` | 自定义内容 |
 
 ### Popover Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `show` | 显示气泡卡片 | `() => void` |
-| `hide` | 隐藏气泡卡片 | `() => void` |
-| `updatePosition` | 更新位置 | `() => void` |
+| 方法名           | 说明         | 类型         |
+| ---------------- | ------------ | ------------ |
+| `show`           | 显示气泡卡片 | `() => void` |
+| `hide`           | 隐藏气泡卡片 | `() => void` |
+| `updatePosition` | 更新位置     | `() => void` |
 
 ## 与 Tooltip 的区别
 
@@ -386,14 +661,18 @@ const visible = ref(false)
 
 ```vue
 <template>
-  <ExPopover v-model="open" title="标题" content="内容">
+  <ExPopover
+    v-model="open"
+    title="标题"
+    content="内容"
+  >
     <ExButton>点我</ExButton>
   </ExPopover>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const open = ref(false)
+import { ref } from 'vue';
+const open = ref(false);
 </script>
 ```
 
@@ -427,7 +706,7 @@ Popover 不定义独立的组件级变量，而是消费 ExUI 全局设计令牌
 
 ```css
 :root {
-  --ex-color-bg-elevated: #11151c;    /* 气泡背景 */
+  --ex-color-bg-elevated: #11151c; /* 气泡背景 */
   --ex-color-border-primary: #1f2a37; /* 边框 */
   --ex-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.55); /* 投影 */
 }

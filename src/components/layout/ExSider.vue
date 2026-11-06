@@ -1,41 +1,57 @@
 <template>
-  <!-- 遮罩层（仅在 broken 状态且未收起时显示） -->
   <Teleport
-    v-if="isBroken && !internalCollapsed"
+    v-if="isOverlayVisible"
     to="body"
   >
-    <div
+    <button
+      type="button"
       class="ex-sider__mask"
-      @click="handleMaskClick"
-    />
+      :data-theme="configTheme"
+      :class="{ 'is-no-animation': !globalAnimation }"
+      :style="maskStyles"
+      :aria-label="locale.collapse"
+      @click="requestCollapsed(true, 'mask')"
+    ></button>
   </Teleport>
 
   <aside
+    v-bind="$attrs"
     ref="siderRef"
     :class="siderClasses"
     :style="siderStyles"
+    :aria-label="resolvedAriaLabel"
+    :role="isOverlayVisible ? 'dialog' : undefined"
+    :aria-modal="isOverlayVisible ? 'true' : undefined"
+    :hidden="isOverlayOpen && !isOverlayVisible"
+    :tabindex="isOverlayVisible ? -1 : undefined"
   >
-    <!-- 侧边栏内容 -->
-    <div class="ex-sider__content">
-      <slot />
+    <div
+      :id="contentId"
+      class="ex-sider__content"
+      :hidden="isZeroWidth"
+      :inert="isZeroWidth ? true : undefined"
+    >
+      <slot></slot>
     </div>
 
-    <!-- 收起触发器 -->
-    <div
+    <button
       v-if="collapsible && trigger"
+      type="button"
       :class="['ex-sider__trigger', `ex-sider__trigger--${trigger}`]"
-      :aria-label="internalCollapsed ? locale.expand : locale.collapse"
-      role="button"
-      tabindex="0"
-      @click="handleToggle"
-      @keydown.enter="handleToggle"
-      @keydown.space.prevent="handleToggle"
+      :aria-label="collapsed ? locale.expand : locale.collapse"
+      :aria-expanded="!collapsed"
+      :aria-controls="contentId"
+      @click="toggle"
     >
       <slot
         name="trigger"
-        :collapsed="internalCollapsed"
+        :collapsed="collapsed"
+        :broken="isBroken"
       >
-        <div class="ex-sider__trigger-icon">
+        <span
+          class="ex-sider__trigger-icon"
+          aria-hidden="true"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -46,211 +62,227 @@
           >
             <polyline
               v-if="position === 'left'"
-              :points="internalCollapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"
+              :points="collapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"
             />
             <polyline
               v-else
-              :points="internalCollapsed ? '15 18 9 12 15 6' : '9 18 15 12 9 6'"
+              :points="collapsed ? '15 18 9 12 15 6' : '9 18 15 12 9 6'"
             />
           </svg>
-        </div>
+        </span>
       </slot>
-    </div>
+    </button>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { ExSiderProps, ExSiderEmits, ExSiderExposed } from './types';
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useOverlay } from '../../composables/useOverlay';
+import { useControllableState } from '../../composables/useControllableState';
 import { useLocale } from '../../locale';
-import { useNeonEffect, useAnimation } from '../config-provider/composables';
+import { generateId } from '../../utils/id';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useZIndexLayer,
+  useThemeOverrides,
+} from '../config-provider/composables';
+import { layoutContextKey } from './context';
+import {
+  getSiderBreakpointQuery,
+  isZeroLayoutLength,
+  normalizeLayoutLength,
+  normalizeTransitionDuration,
+} from './layout-utils';
+import type { ExSiderEmits, ExSiderExposed, ExSiderProps, SiderCollapseSource } from './types';
 
 defineOptions({
   name: 'ExSider',
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<ExSiderProps>(), {
   width: 256,
   collapsedWidth: 80,
-  collapsed: false,
+  collapsed: undefined,
+  defaultCollapsed: false,
   collapsible: false,
   trigger: 'bottom',
   position: 'left',
-  // 默认 undefined，使未显式设置时回退到 ConfigProvider 的全局 neon-effect
   neonBorder: undefined,
   blur: false,
   transitionDuration: 300,
+  ariaLabel: '',
 });
-
 const emit = defineEmits<ExSiderEmits>();
 
 const siderRef = ref<HTMLElement>();
-const internalCollapsed = ref(props.collapsed);
 const isBroken = ref(false);
-
-// 全局配置
+const contentId = generateId('ex-sider-content');
+const layoutContext = inject(layoutContextKey, null);
 const { t } = useLocale('layout');
 const globalNeonEffect = useNeonEffect();
 const globalAnimation = useAnimation();
+const configTheme = useConfigTheme();
+const overlayZIndex = useZIndexLayer('overlay');
+const themeOverrides = useThemeOverrides();
 
-// 国际化
+// 未传 collapsed 时由内部状态管理；受控模式只向外请求变更。
+const collapsedState = useControllableState<boolean>({
+  controlledValue: () => props.collapsed,
+  defaultValue: () => props.defaultCollapsed,
+  onChange: value => emit('update:collapsed', value),
+});
+const collapsed = collapsedState.value;
+const isOverlayOpen = computed(() => isBroken.value && !collapsed.value);
+
 const locale = computed(() => ({
+  label: t('sider.label'),
   expand: t('sider.expand'),
   collapse: t('sider.collapse'),
 }));
+const resolvedAriaLabel = computed(() => props.ariaLabel.trim() || locale.value.label);
+const activeWidth = computed(() =>
+  normalizeLayoutLength(
+    collapsed.value ? props.collapsedWidth : props.width,
+    collapsed.value ? 80 : 256
+  )
+);
+const isZeroWidth = computed(() => collapsed.value && isZeroLayoutLength(activeWidth.value));
 
-// 监听 collapsed prop 变化
+const siderClasses = computed(() => [
+  'ex-sider',
+  `ex-sider--${props.position}`,
+  {
+    'ex-sider--collapsed': collapsed.value,
+    'ex-sider--broken': isBroken.value,
+    'ex-sider--zero-width': isZeroWidth.value,
+    'ex-sider--neon-border': props.neonBorder ?? globalNeonEffect.value,
+    'ex-sider--blur': props.blur,
+    'ex-sider--no-animation': !globalAnimation.value,
+    [`ex-sider--trigger-${props.trigger}`]: props.collapsible && Boolean(props.trigger),
+  },
+]);
+const siderStyles = computed<Record<string, string>>(() => {
+  const styles: Record<string, string> = {
+    ...themeOverrides.value,
+    '--ex-sider-width': activeWidth.value,
+    '--ex-sider-transition-duration':
+      normalizeTransitionDuration(props.transitionDuration, 300) + 'ms',
+  };
+  if (isBroken.value) styles.zIndex = String(overlay.zIndex.value);
+  return styles;
+});
+const maskStyles = computed<Record<string, string>>(() => ({
+  ...themeOverrides.value,
+  zIndex: String(overlay.zIndex.value - 1),
+}));
+
+const requestCollapsed = (value: boolean, source: SiderCollapseSource): void => {
+  if (source !== 'responsive') collapsedByResponsive = false;
+  if (value === collapsed.value) return;
+  collapsedState.request(value);
+  emit('collapse', value, source);
+};
+
+const toggle = (): void => requestCollapsed(!collapsed.value, 'trigger');
+const overlay = useOverlay({
+  active: () => isOverlayOpen.value,
+  scopeActive: () => !isBroken.value || !collapsed.value,
+  container: siderRef,
+  zIndex: () => overlayZIndex.value,
+  onEscape: () => requestCollapsed(true, 'mask'),
+  restoreFocus: true,
+});
+const isOverlayVisible = overlay.active;
+
+let mediaQuery: MediaQueryList | null = null;
+let mediaChangeListener: ((event: MediaQueryListEvent) => void) | null = null;
+let breakpointInitialized = false;
+let mounted = false;
+let unregisterSider: (() => void) | null = null;
+let collapsedByResponsive = false;
+
+const detachMediaQuery = (): void => {
+  if (mediaQuery && mediaChangeListener) {
+    if (typeof mediaQuery.removeEventListener === 'function') {
+      mediaQuery.removeEventListener('change', mediaChangeListener);
+    } else {
+      mediaQuery.removeListener(mediaChangeListener);
+    }
+  }
+  mediaQuery = null;
+  mediaChangeListener = null;
+  breakpointInitialized = false;
+};
+
+const applyBreakpointMatches = (matches: boolean): void => {
+  const broken = !matches;
+  if (breakpointInitialized && broken === isBroken.value) return;
+  breakpointInitialized = true;
+  isBroken.value = broken;
+  emit('breakpoint', broken);
+  if (broken && !collapsed.value) {
+    collapsedByResponsive = true;
+    requestCollapsed(true, 'responsive');
+  } else if (!broken && collapsedByResponsive) {
+    collapsedByResponsive = false;
+    requestCollapsed(false, 'responsive');
+  }
+};
+
+const setupBreakpoint = (): void => {
+  const wasBroken = isBroken.value;
+  detachMediaQuery();
+
+  if (
+    !props.breakpoint ||
+    typeof window === 'undefined' ||
+    typeof window.matchMedia !== 'function'
+  ) {
+    if (wasBroken) {
+      isBroken.value = false;
+      emit('breakpoint', false);
+    }
+    return;
+  }
+
+  const query = getSiderBreakpointQuery(props.breakpoint);
+  if (!query) return;
+  mediaQuery = window.matchMedia(query);
+  applyBreakpointMatches(mediaQuery.matches);
+  mediaChangeListener = event => applyBreakpointMatches(event.matches);
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', mediaChangeListener);
+  } else {
+    mediaQuery.addListener(mediaChangeListener);
+  }
+};
+
 watch(
-  () => props.collapsed,
-  value => {
-    internalCollapsed.value = value;
+  () => props.breakpoint,
+  () => {
+    if (mounted) setupBreakpoint();
   }
 );
 
-// 计算类名
-const siderClasses = computed(() => {
-  const classes = ['ex-sider', `ex-sider--${props.position}`];
-
-  if (internalCollapsed.value) classes.push('ex-sider--collapsed');
-  // 支持全局霓虹效果配置
-  if (props.neonBorder || (props.neonBorder === undefined && globalNeonEffect.value)) {
-    classes.push('ex-sider--neon-border');
-  }
-  if (props.blur) classes.push('ex-sider--blur');
-  if (isBroken.value) classes.push('ex-sider--broken');
-  // 支持全局动画配置
-  if (!globalAnimation.value) classes.push('ex-sider--no-animation');
-
-  classes.push(...normalizeCustomClass(props.class));
-
-  return classes;
-});
-
-// 计算样式
-const siderStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  // 宽度
-  const width = internalCollapsed.value ? props.collapsedWidth : props.width;
-  styles.width = typeof width === 'number' ? `${width}px` : width;
-  styles.minWidth = styles.width;
-  styles.maxWidth = styles.width;
-  styles.flex = `0 0 ${styles.width}`;
-
-  // 动画时长
-  styles['--ex-sider-transition-duration'] = `${props.transitionDuration}ms`;
-
-  // 合并用户样式
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    } else {
-      Object.assign(styles, props.style);
-    }
-  }
-
-  return styles;
-});
-
-// 切换收起状态
-const handleToggle = () => {
-  internalCollapsed.value = !internalCollapsed.value;
-  emit('update:collapsed', internalCollapsed.value);
-  emit('collapse', internalCollapsed.value, 'clickTrigger');
-};
-
-// 点击遮罩层关闭侧边栏
-const handleMaskClick = () => {
-  if (isBroken.value && !internalCollapsed.value) {
-    internalCollapsed.value = true;
-    emit('update:collapsed', true);
-    emit('collapse', true, 'clickTrigger');
-  }
-};
-
-// 响应式断点处理
-let mediaQuery: MediaQueryList | null = null;
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-// 防抖处理函数
-const debounce = <T extends unknown[]>(fn: (...args: T) => void, delay: number) => {
-  return (...args: T) => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-    debounceTimer = setTimeout(() => {
-      fn(...args);
-      debounceTimer = null;
-    }, delay);
-  };
-};
-
-const handleBreakpoint = (e: MediaQueryListEvent | MediaQueryList) => {
-  // 当屏幕宽度小于断点时，broken = true
-  const broken = !e.matches;
-  isBroken.value = broken;
-  emit('breakpoint', broken);
-
-  // 当断点触发时自动收起侧边栏
-  if (broken && !internalCollapsed.value) {
-    internalCollapsed.value = true;
-    emit('update:collapsed', true);
-    emit('collapse', true, 'responsive');
-  }
-};
-
-// 使用防抖优化性能（150ms延迟）
-const debouncedHandleBreakpoint = debounce(handleBreakpoint, 150);
-
 onMounted(() => {
-  if (props.breakpoint && typeof window !== 'undefined') {
-    // 使用 max-width 查询，当屏幕小于断点时触发
-    // 断点值与项目标准一致：480/768/1024/1280/1536
-    const breakpoints: Record<string, string> = {
-      xs: '(max-width: 479px)', // 小于 480px 时触发
-      sm: '(max-width: 767px)', // 小于 768px 时触发
-      md: '(max-width: 1023px)', // 小于 1024px 时触发
-      lg: '(max-width: 1279px)', // 小于 1280px 时触发
-      xl: '(max-width: 1535px)', // 小于 1536px 时触发
-      '2xl': '(max-width: 1919px)', // 小于 1920px 时触发
-    };
-
-    const query = breakpoints[props.breakpoint];
-    if (query) {
-      mediaQuery = window.matchMedia(query);
-      // 初始化时不使用防抖
-      handleBreakpoint(mediaQuery);
-      // 后续变化使用防抖优化性能
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mediaQuery.addEventListener('change', debouncedHandleBreakpoint as any);
-    }
-  }
+  mounted = true;
+  unregisterSider = layoutContext?.registerSider() ?? null;
+  setupBreakpoint();
 });
 
-onUnmounted(() => {
-  // 清理事件监听器
-  if (mediaQuery) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mediaQuery.removeEventListener('change', debouncedHandleBreakpoint as any);
-  }
-  // 清理防抖定时器
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
+onBeforeUnmount(() => {
+  mounted = false;
+  detachMediaQuery();
+  unregisterSider?.();
+  unregisterSider = null;
 });
 
-// 暴露方法
-const getElement = () => siderRef.value || null;
-const toggle = () => handleToggle();
+const getElement = (): HTMLElement | null => siderRef.value ?? null;
 
-defineExpose<ExSiderExposed>({
-  getElement,
-  toggle,
-});
+defineExpose<ExSiderExposed>({ getElement, toggle });
 </script>
 
 <style scoped lang="scss">
@@ -258,146 +290,196 @@ defineExpose<ExSiderExposed>({
 
 .ex-sider {
   position: relative;
+  box-sizing: border-box;
+  flex: 0 0 var(--ex-sider-width);
+  width: var(--ex-sider-width);
+  min-width: var(--ex-sider-width);
+  max-width: var(--ex-sider-width);
+  min-height: 0;
+  overflow: visible;
   background: var(--ex-color-bg-secondary);
-  // 使用CSS变量控制动画时长
-  transition: all var(--ex-sider-transition-duration, 300ms) var(--ex-motion-ease-out);
+  transition:
+    width var(--ex-sider-transition-duration) var(--ex-motion-ease-out),
+    min-width var(--ex-sider-transition-duration) var(--ex-motion-ease-out),
+    max-width var(--ex-sider-transition-duration) var(--ex-motion-ease-out),
+    flex-basis var(--ex-sider-transition-duration) var(--ex-motion-ease-out),
+    transform var(--ex-sider-transition-duration) var(--ex-motion-ease-out);
 
-  // 左侧边栏
   &--left {
+    order: 0;
     border-right: 1px solid var(--ex-color-border-primary);
   }
 
-  // 右侧边栏
   &--right {
+    order: 1;
     border-left: 1px solid var(--ex-color-border-primary);
   }
 
-  // 内容区
   &__content {
+    box-sizing: border-box;
     height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: auto;
     @include custom-scrollbar(6px);
   }
 
-  // 触发器
+  &--trigger-top &__content {
+    padding-top: 48px;
+  }
+
+  &--trigger-bottom &__content {
+    padding-bottom: 48px;
+  }
+
   &__trigger {
     position: absolute;
-    left: 0;
     right: 0;
-    height: 48px;
+    left: 0;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 48px;
+    padding: 0;
+    color: var(--ex-color-text-secondary);
     background: var(--ex-color-bg-tertiary);
+    border: 0;
     border-top: 1px solid var(--ex-color-border-primary);
     cursor: pointer;
-    @include transition(all);
+    transition:
+      color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
     &:hover {
-      background: var(--ex-color-bg-hover);
       color: var(--ex-color-primary);
+      background: var(--ex-color-bg-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ex-color-primary);
+      outline-offset: -3px;
     }
 
     &--top {
       top: 0;
-      border-top: none;
+      border-top: 0;
       border-bottom: 1px solid var(--ex-color-border-primary);
     }
 
     &--bottom {
       bottom: 0;
     }
+  }
 
-    &-icon {
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+  &__trigger-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
 
-      svg {
-        width: 100%;
-        height: 100%;
-        @include transition(transform);
-      }
+    svg {
+      width: 100%;
+      height: 100%;
     }
   }
 
-  // 收起状态
-  &--collapsed {
-    .ex-sider__content {
-      overflow: hidden;
-    }
+  &--collapsed &__content {
+    overflow: hidden;
   }
 
-  // 霓虹边框
-  &--neon-border {
-    &.ex-sider--left {
-      border-right-color: var(--ex-color-primary);
-      box-shadow: 2px 0 8px var(--ex-color-primary-alpha-20);
-    }
-
-    &.ex-sider--right {
-      border-left-color: var(--ex-color-primary);
-      box-shadow: -2px 0 8px var(--ex-color-primary-alpha-20);
-    }
+  &--zero-width &__trigger {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--ex-color-border-primary);
+    border-radius: 0 var(--ex-radius-base) var(--ex-radius-base) 0;
   }
 
-  // 背景模糊
+  &--zero-width.ex-sider--left &__trigger {
+    right: -40px;
+    left: auto;
+  }
+
+  &--zero-width.ex-sider--right &__trigger {
+    right: auto;
+    left: -40px;
+    border-radius: var(--ex-radius-base) 0 0 var(--ex-radius-base);
+  }
+
+  &--neon-border.ex-sider--left {
+    border-right-color: var(--ex-color-primary);
+    box-shadow: 2px 0 8px var(--ex-color-primary-alpha-20);
+  }
+
+  &--neon-border.ex-sider--right {
+    border-left-color: var(--ex-color-primary);
+    box-shadow: -2px 0 8px var(--ex-color-primary-alpha-20);
+  }
+
   &--blur {
     background: var(--ex-color-bg-secondary-alpha-80);
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
-  // 响应式断点触发
   &--broken {
     position: fixed;
     top: 0;
     bottom: 0;
     z-index: var(--ex-z-overlay);
     box-shadow: var(--ex-shadow-lg);
-    @include transition(transform);
-
-    &.ex-sider--left {
-      left: 0;
-    }
-
-    &.ex-sider--right {
-      right: 0;
-    }
   }
 
-  // 遮罩层
-  &__mask {
-    position: fixed;
-    top: 0;
+  &--broken.ex-sider--left {
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: calc(var(--ex-z-overlay) - 1);
-    animation: ex-fade-in 0.3s ease;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
   }
 
-  // 禁用动画
-  &--no-animation,
-  &--no-animation * {
-    transition: none !important;
-    animation: none !important;
+  &--broken.ex-sider--right {
+    right: 0;
+  }
+
+  &--no-animation {
+    transition: none;
   }
 }
 
-// 淡入动画
-@keyframes ex-fade-in {
+.ex-sider__mask {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--ex-z-overlay) - 1);
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: var(--ex-color-black-alpha-50);
+  border: 0;
+  cursor: default;
+  animation: ex-sider-mask-in var(--ex-motion-duration-base) var(--ex-motion-ease-out);
+  backdrop-filter: blur(4px);
+
+  &.is-no-animation {
+    animation: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ex-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+@keyframes ex-sider-mask-in {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-sider,
+  .ex-sider__mask {
+    transition: none;
+    animation: none;
   }
 }
 </style>

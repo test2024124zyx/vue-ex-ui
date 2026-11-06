@@ -74,7 +74,7 @@ describe('ExCheckbox with ConfigProvider', () => {
 
       const checkboxes = wrapper.findAllComponents(ExCheckbox);
       expect(checkboxes).toHaveLength(3);
-      checkboxes.forEach((checkbox) => {
+      checkboxes.forEach(checkbox => {
         expect(checkbox.classes()).toContain('ex-checkbox--small');
       });
     });
@@ -129,7 +129,7 @@ describe('ExCheckboxGroup with ConfigProvider', () => {
 
       // 子复选框也应该继承尺寸
       const checkboxes = wrapper.findAllComponents(ExCheckbox);
-      checkboxes.forEach((checkbox) => {
+      checkboxes.forEach(checkbox => {
         expect(checkbox.classes()).toContain('ex-checkbox--large');
       });
     });
@@ -156,7 +156,7 @@ describe('ExCheckboxGroup with ConfigProvider', () => {
 
       // 子复选框应该继承 group 的尺寸
       const checkboxes = wrapper.findAllComponents(ExCheckbox);
-      checkboxes.forEach((checkbox) => {
+      checkboxes.forEach(checkbox => {
         expect(checkbox.classes()).toContain('ex-checkbox--small');
       });
     });

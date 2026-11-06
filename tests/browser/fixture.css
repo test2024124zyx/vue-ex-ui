@@ -1,0 +1,39 @@
+body {
+  margin: 0;
+  background: var(--ex-color-bg-primary);
+  color: var(--ex-color-text-primary);
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 1080px;
+  min-height: 360px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+#example {
+  min-width: 0;
+  max-width: 100%;
+  margin-block: 24px;
+}
+
+main > h1 {
+  overflow-wrap: anywhere;
+}
+
+.loading-target {
+  position: relative;
+  min-height: 160px;
+}
+
+#fixture-errors:empty,
+#media-result:empty {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 12px;
+  }
+}

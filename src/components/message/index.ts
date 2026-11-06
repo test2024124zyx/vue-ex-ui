@@ -3,9 +3,9 @@
  * 用于全局展示操作反馈信息
  */
 
-import type { App } from 'vue';
-import ExMessage from './ExMessage.vue';
-import { message } from './message';
+import ExMessageComponent from './ExMessage.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
+import { createMessageService, message, MESSAGE_SERVICE_KEY } from './message';
 import type {
   ExMessageProps,
   ExMessageEmits,
@@ -13,12 +13,27 @@ import type {
   MessageInstance,
   MessageService,
   MessageGlobalConfig,
+  MessageInput,
+  MessageTypedInput,
+  MessageTypedOptions,
   MessageType,
-  MessagePosition,
+  ExMessageExposed,
+  ExMessageSlots,
 } from './types';
 
-// 导出组件
-export { ExMessage, message };
+export const ExMessage: InstallableComponent<typeof ExMessageComponent> =
+  withInstall(ExMessageComponent);
+export { message };
+export { createMessageService, MESSAGE_SERVICE_KEY, useMessageService } from './message';
+
+const installComponent = ExMessage.install;
+ExMessage.install = app => {
+  installComponent(app);
+  const service = createMessageService(app._context);
+  app.config.globalProperties.$message = service;
+  app.provide(MESSAGE_SERVICE_KEY, service);
+  app.onUnmount(() => service.closeAll());
+};
 
 // 导出类型
 export type {
@@ -28,18 +43,12 @@ export type {
   MessageInstance,
   MessageService,
   MessageGlobalConfig,
+  MessageInput,
+  MessageTypedInput,
+  MessageTypedOptions,
   MessageType,
-  MessagePosition,
+  ExMessageExposed,
+  ExMessageSlots,
 };
 
-// 组件安装插件
-export const ExMessagePlugin = {
-  install(app: App) {
-    // 注册组件
-    app.component('ExMessage', ExMessage);
-    // 挂载全局方法
-    app.config.globalProperties.$message = message;
-  },
-};
-
-export default ExMessagePlugin;
+export default ExMessage;

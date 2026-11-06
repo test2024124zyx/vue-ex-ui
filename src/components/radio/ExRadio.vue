@@ -19,14 +19,19 @@
         :checked="isChecked"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
-        :required="required"
+        :required="currentRequired"
+        v-bind="fieldAriaAttrs"
+        :aria-label="getAriaLabel()"
+        :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
+        :aria-disabled="currentDisabled"
+        :aria-readonly="currentReadonly"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
       <input
         v-else
         :id="radioId"
@@ -38,21 +43,26 @@
         :value="value"
         :disabled="currentDisabled"
         :readonly="currentReadonly"
-        :required="required"
+        :required="currentRequired"
+        v-bind="fieldAriaAttrs"
+        :aria-label="getAriaLabel()"
+        :aria-labelledby="hasLabel ? undefined : fieldAriaAttrs['aria-labelledby']"
+        :aria-disabled="currentDisabled"
+        :aria-readonly="currentReadonly"
         :aria-describedby="ariaDescribedBy"
         :aria-invalid="showErrorMessage"
         @click="handleReadonlyGuard"
         @change="handleChange"
         @focus="handleFocus"
         @blur="handleBlur"
-      >
+      />
 
       <!-- 自定义单选框外观 -->
       <span :class="radioBoxClasses">
         <span
           v-if="isChecked"
           class="ex-radio__dot"
-        />
+        ></span>
       </span>
 
       <!-- 标签文本 -->
@@ -104,13 +114,23 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, useSlots, inject } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+  useSlots,
+  inject,
+  useAttrs,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import type { ExRadioProps, ExRadioEmits, ExRadioSlots, ExRadioInstance } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
-import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
-import { useFormItem } from '../form/use-form-item';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
+import { registerNativeRadio, restoreNativeRadioGroup } from './native-radio-state';
 
 defineOptions({
   name: 'ExRadio',
@@ -129,13 +149,18 @@ const emit = defineEmits<ExRadioEmits>();
 defineSlots<ExRadioSlots>();
 
 const slots = useSlots();
+const attrs = useAttrs();
+const getAriaLabel = () =>
+  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : undefined;
 const { t } = useI18n();
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 // 注入 RadioGroup 上下文
 const radioGroupContext = inject<{
@@ -145,13 +170,23 @@ const radioGroupContext = inject<{
   status?: string;
   disabled?: boolean;
   readonly?: boolean;
+  required?: boolean;
   updateValue: (value: string | number | boolean) => void;
+  registerRadio?: (restore: () => void) => () => void;
 } | null>('radioGroup', null);
 
 const radioId = generateId('ex-radio');
 const radioRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
 const currentErrorMessage = ref('');
+watch(
+  () => formItem?.resetRevision?.value,
+  () => {
+    // 外部明确提供的错误仍由业务控制，只撤销本地校验反馈。
+    currentErrorMessage.value = props.errorMessage || '';
+  },
+  { flush: 'post' }
+);
 
 // 计算属性
 const radioValue = computed({
@@ -159,6 +194,7 @@ const radioValue = computed({
     return radioGroupContext ? radioGroupContext.modelValue.value : props.modelValue;
   },
   set: value => {
+    if (currentDisabled.value || currentReadonly.value) return;
     if (value !== undefined) {
       if (radioGroupContext) {
         radioGroupContext.updateValue(value);
@@ -171,6 +207,21 @@ const radioValue = computed({
 
 const isChecked = computed(() => {
   return radioValue.value === props.value;
+});
+
+const restoreNativeState = () => {
+  if (radioRef.value) radioRef.value.checked = isChecked.value;
+};
+let unregisterRadio: (() => void) | undefined;
+let unregisterNativeRadio: (() => void) | undefined;
+onMounted(() => {
+  unregisterRadio = radioGroupContext?.registerRadio?.(restoreNativeState);
+  if (radioRef.value)
+    unregisterNativeRadio = registerNativeRadio(radioRef.value, restoreNativeState);
+});
+onBeforeUnmount(() => {
+  unregisterRadio?.();
+  unregisterNativeRadio?.();
 });
 
 const hasLabel = computed(() => {
@@ -190,15 +241,24 @@ const currentSize = computed(() => {
 });
 
 const currentStatus = computed(() => {
-  return radioGroupContext?.status || props.status;
+  return (
+    radioGroupContext?.status ||
+    (props.status !== 'default' ? props.status : undefined) ||
+    formItem?.status?.value ||
+    props.status
+  );
 });
 
 const currentDisabled = computed(() => {
-  return radioGroupContext?.disabled || props.disabled;
+  return Boolean(radioGroupContext?.disabled || disabled.value);
 });
 
 const currentReadonly = computed(() => {
-  return radioGroupContext?.readonly || props.readonly;
+  return Boolean(radioGroupContext?.readonly || readonly.value);
+});
+
+const currentRequired = computed(() => {
+  return radioGroupContext?.required || props.required;
 });
 
 // Icon size is handled by the icon component itself based on the radio size
@@ -263,7 +323,7 @@ const ariaDescribedBy = computed(() => {
     ids.push(`${radioId}-error`);
   }
 
-  return ids.length > 0 ? ids.join(' ') : undefined;
+  return mergeAriaIds(...ids, fieldAriaAttrs.value['aria-describedby']);
 });
 
 // 只读/禁用时拦截点击的默认选中行为（独立模式用 v-model 时 change 守卫为时已晚）
@@ -285,7 +345,10 @@ const handleChange = (event: Event) => {
   } else if (props.value !== undefined) {
     validateRadio(props.value);
     emit('change', props.value, event);
+    formItem?.onFieldChange();
   }
+  if (radioGroupContext) void nextTick(restoreNativeState);
+  else if (radioRef.value) restoreNativeRadioGroup(radioRef.value);
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -325,6 +388,17 @@ watch(
     currentErrorMessage.value = newError || '';
   },
   { immediate: true }
+);
+
+watch(
+  [radioValue, () => props.rules],
+  () => {
+    // 外部错误仍由父级控制，不能被本地模型同步清除。
+    if (!currentErrorMessage.value || props.errorMessage) return;
+    if (radioValue.value === undefined) currentErrorMessage.value = '';
+    else validateRadio(radioValue.value);
+  },
+  { deep: true }
 );
 
 // 暴露方法

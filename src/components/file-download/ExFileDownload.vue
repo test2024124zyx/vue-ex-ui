@@ -1,334 +1,546 @@
-<template>
-  <div
-    ref="downloadRef"
-    class="ex-file-download"
-  >
-    <slot
-      :download="handleDownload"
-      :status="status"
-      :percent="percent"
-    >
-      <ExButton
-        :type="buttonType"
-        :size="buttonSize"
-        :disabled="disabled || status === 'downloading'"
-        :loading="status === 'downloading'"
-        @click="handleDownload"
-      >
-        <template #prefix>
-          <ExIcon
-            v-if="status === 'idle' || status === 'paused'"
-            icon="download-2-line"
-            :size="16"
-            aria-hidden="true"
-          />
-          <ExIcon
-            v-else-if="status === 'success'"
-            icon="check-line"
-            :size="16"
-            aria-hidden="true"
-          />
-          <ExIcon
-            v-else-if="status === 'error'"
-            icon="close-line"
-            :size="16"
-            aria-hidden="true"
-          />
-        </template>
-        {{ getButtonText() }}
-      </ExButton>
-    </slot>
-
-    <!-- 进度条 -->
-    <div
-      v-if="showProgress && status === 'downloading'"
-      class="ex-file-download__progress"
-    >
-      <div class="ex-file-download__progress-bar">
-        <div
-          class="ex-file-download__progress-bar-inner"
-          :style="{ width: `${percent}%` }"
-        />
-      </div>
-      <div class="ex-file-download__progress-text">
-        {{ percent }}% ({{ formatBytes(loaded) }} / {{ formatBytes(total) }})
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref } from 'vue';
+import type { CSSProperties } from 'vue';
+import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useLocale } from '../../locale';
+import { hasRenderableContent } from '../../utils/vnode';
+import {
+  calculateDownloadProgress,
+  formatDownloadBytes,
+  normalizeDownloadUrl,
+  parseContentLength,
+  resolveDownloadFilename,
+} from './download-utils';
+import { ExFileDownloadError } from './errors';
 import type {
-  ExFileDownloadProps,
   ExFileDownloadEmits,
   ExFileDownloadExposed,
-  DownloadStatus,
+  ExFileDownloadProgress,
+  ExFileDownloadProps,
+  ExFileDownloadRequestTransport,
+  ExFileDownloadResult,
+  ExFileDownloadSlotProps,
+  ExFileDownloadSlots,
+  ExFileDownloadStatus,
+  ExFileDownloadTransport,
 } from './types';
-import { useLocale } from '../../locale';
-import ExButton from '../button/ExButton.vue';
 
-defineOptions({
-  name: 'ExFileDownload',
-});
+defineOptions({ name: 'ExFileDownload' });
+
+const DEFAULT_MAX_DOWNLOAD_BYTES = 512 * 1024 * 1024;
 
 const props = withDefaults(defineProps<ExFileDownloadProps>(), {
-  method: 'link',
+  filename: undefined,
+  transport: 'link',
   showProgress: true,
-  autoDownload: false,
+  headers: undefined,
+  maxBytes: DEFAULT_MAX_DOWNLOAD_BYTES,
   withCredentials: false,
+  buttonText: undefined,
   buttonType: 'primary',
   buttonSize: 'medium',
   disabled: false,
 });
-
 const emit = defineEmits<ExFileDownloadEmits>();
-
+const slots = defineSlots<ExFileDownloadSlots>();
 const { t } = useLocale('fileDownload');
+
+interface ActiveOperation {
+  transport: ExFileDownloadRequestTransport;
+  cancelled: boolean;
+  controller?: AbortController;
+  xhr?: XMLHttpRequest;
+}
+
+interface DownloadResponse {
+  blob: Blob;
+  contentDisposition: string | null;
+}
+
+const TRANSPORTS = new Set<ExFileDownloadTransport>(['link', 'fetch', 'xhr']);
+const EMPTY_PROGRESS: ExFileDownloadProgress = { loaded: 0, total: null, percent: null };
+
 const downloadRef = ref<HTMLDivElement>();
-const status = ref<DownloadStatus>('idle');
-const percent = ref(0);
-const loaded = ref(0);
-const total = ref(0);
-const xhr = ref<XMLHttpRequest>();
-const fetchController = ref<AbortController>();
+const status = ref<ExFileDownloadStatus>('idle');
+const progress = ref<ExFileDownloadProgress>({ ...EMPTY_PROGRESS });
+const pendingObjectUrls = new Map<string, ReturnType<typeof setTimeout>>();
+let activeOperation: ActiveOperation | null = null;
+let isHandlingLink = false;
+let isUnmounted = false;
 
-// 自动下载
-onMounted(() => {
-  if (props.autoDownload) {
-    handleDownload();
+const isDownloading = computed(() => status.value === 'downloading');
+const isTriggerDisabled = computed(() => props.disabled || isDownloading.value);
+const progressStyle = computed<CSSProperties>(() => ({
+  '--ex-file-download-progress': `${progress.value.percent ?? 35}%`,
+}));
+const progressText = computed(() => {
+  if (progress.value.total === null || progress.value.percent === null) {
+    return `${t('downloading')} (${formatDownloadBytes(progress.value.loaded)})`;
   }
+  return `${progress.value.percent}% (${formatDownloadBytes(progress.value.loaded)} / ${formatDownloadBytes(progress.value.total)})`;
 });
-
-// 清理：卸载时中止进行中的 XHR / fetch，避免回调落在已销毁实例上
-onBeforeUnmount(() => {
-  xhr.value?.abort();
-  fetchController.value?.abort();
-});
-
-// 获取按钮文本
-const getButtonText = () => {
-  if (props.buttonText) return props.buttonText;
+const buttonText = computed(() => {
+  if (props.buttonText !== undefined) return props.buttonText;
 
   switch (status.value) {
     case 'downloading':
       return t('downloading');
+    case 'triggered':
+      return t('downloadRequested');
     case 'success':
-      return t('downloadSuccess');
+      return t('downloadReady');
     case 'error':
       return t('downloadError');
-    case 'paused':
-      return t('resume');
     default:
       return t('download');
   }
+});
+
+const resetProgress = () => {
+  progress.value = { ...EMPTY_PROGRESS };
 };
 
-// 格式化字节
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-};
-
-// 下载文件
-const handleDownload = () => {
-  if (props.disabled || status.value === 'downloading') return;
-
-  if (props.method === 'link') {
-    downloadByLink();
-  } else if (props.method === 'fetch') {
-    downloadByFetch();
-  } else {
-    downloadByXHR();
+const normalizeTransport = (): ExFileDownloadTransport => {
+  if (!TRANSPORTS.has(props.transport)) {
+    throw new ExFileDownloadError('invalid-transport', `不支持下载传输方式：${props.transport}`);
   }
+  return props.transport;
 };
 
-// 通过链接下载
-const downloadByLink = () => {
-  const link = document.createElement('a');
-  link.href = props.url;
-  if (props.filename) {
-    link.download = props.filename;
-  }
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  status.value = 'success';
-  emit('start');
-  emit('success', new Blob());
+const normalizeError = (
+  error: unknown,
+  fallbackCode: 'network-error' | 'unsupported' = 'network-error'
+): ExFileDownloadError => {
+  if (error instanceof ExFileDownloadError) return error;
+  const message = error instanceof Error && error.message ? error.message : '下载失败';
+  return new ExFileDownloadError(fallbackCode, message, { cause: error });
 };
 
-// 通过Fetch下载
-const downloadByFetch = async () => {
-  const controller = new AbortController();
-  fetchController.value = controller;
-  try {
-    status.value = 'downloading';
-    percent.value = 0;
-    emit('start');
+const isAbortError = (error: unknown): boolean =>
+  error instanceof DOMException
+    ? error.name === 'AbortError'
+    : error instanceof Error && error.name === 'AbortError';
 
-    const response = await fetch(props.url, {
-      headers: props.headers,
-      credentials: props.withCredentials ? 'include' : 'same-origin',
-      signal: controller.signal,
-    });
+const isActive = (operation: ActiveOperation): boolean =>
+  !isUnmounted && !operation.cancelled && activeOperation === operation;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const contentLength = response.headers.get('content-length');
-    total.value = contentLength ? parseInt(contentLength, 10) : 0;
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is null');
-    }
-
-    const chunks: Uint8Array[] = [];
-    loaded.value = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      chunks.push(value);
-      loaded.value += value.length;
-
-      if (total.value > 0) {
-        percent.value = Math.round((loaded.value / total.value) * 100);
-        emit('progress', percent.value, loaded.value, total.value);
-      }
-    }
-
-    // 创建 Blob 对象（使用类型断言解决 ArrayBufferLike 兼容性问题）
-    // eslint-disable-next-line no-undef
-    const blob = new Blob(chunks as unknown as BlobPart[]);
-    downloadBlob(blob);
-
-    status.value = 'success';
-    emit('success', blob);
-  } catch (error) {
-    // 主动中止（暂停 / 取消）不视为下载错误
-    if ((error as Error)?.name === 'AbortError') return;
-    status.value = 'error';
-    emit('error', error as Error);
-  } finally {
-    if (fetchController.value === controller) fetchController.value = undefined;
-  }
+const reportProgress = (operation: ActiveOperation, next: ExFileDownloadProgress) => {
+  if (!isActive(operation)) return;
+  progress.value = next;
+  emit('progress', next);
 };
 
-// 通过XHR下载
-const downloadByXHR = () => {
-  status.value = 'downloading';
-  percent.value = 0;
-  emit('start');
+const normalizedMaxBytes = computed(() =>
+  Number.isFinite(props.maxBytes) && props.maxBytes > 0
+    ? Math.floor(props.maxBytes)
+    : DEFAULT_MAX_DOWNLOAD_BYTES
+);
 
-  xhr.value = new XMLHttpRequest();
-  xhr.value.open('GET', props.url, true);
-  xhr.value.responseType = 'blob';
+const createSizeExceededError = () =>
+  new ExFileDownloadError(
+    'size-exceeded',
+    `下载内容超过允许的最大大小 ${formatDownloadBytes(normalizedMaxBytes.value)}`
+  );
 
-  if (props.headers) {
-    Object.entries(props.headers).forEach(([key, value]) => {
-      xhr.value!.setRequestHeader(key, value);
-    });
+/** 创建临时链接并保证节点始终从文档中移除。 */
+const triggerBrowserDownload = (url: string, filename: string) => {
+  if (typeof document === 'undefined') {
+    throw new ExFileDownloadError('unsupported', '当前运行环境不支持浏览器下载');
   }
 
-  if (props.withCredentials) {
-    xhr.value.withCredentials = true;
-  }
-
-  xhr.value.addEventListener('progress', e => {
-    if (e.lengthComputable) {
-      loaded.value = e.loaded;
-      total.value = e.total;
-      percent.value = Math.round((e.loaded / e.total) * 100);
-      emit('progress', percent.value, e.loaded, e.total);
-    }
-  });
-
-  xhr.value.addEventListener('load', () => {
-    if (xhr.value!.status >= 200 && xhr.value!.status < 300) {
-      const blob = xhr.value!.response as Blob;
-      downloadBlob(blob);
-      status.value = 'success';
-      emit('success', blob);
-    } else {
-      status.value = 'error';
-      emit('error', new Error(`HTTP error! status: ${xhr.value!.status}`));
-    }
-  });
-
-  xhr.value.addEventListener('error', () => {
-    status.value = 'error';
-    emit('error', new Error('Download failed'));
-  });
-
-  xhr.value.send();
-};
-
-// 下载Blob
-const downloadBlob = (blob: Blob) => {
-  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = props.filename || 'download';
-  link.style.display = 'none';
+  link.download = filename;
+  link.rel = 'noopener';
+  link.hidden = true;
   document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    link.click();
+  } finally {
+    link.remove();
+  }
+};
+
+const releaseObjectUrl = (url: string) => {
+  const timer = pendingObjectUrls.get(url);
+  if (timer !== undefined) clearTimeout(timer);
+  pendingObjectUrls.delete(url);
   URL.revokeObjectURL(url);
 };
 
-// 暂停下载（xhr / fetch 均支持中止；注意 resume 为重新下载，非断点续传）
-const pause = () => {
-  if (status.value !== 'downloading') return;
-  if (xhr.value) {
-    xhr.value.abort();
-  } else if (fetchController.value) {
-    fetchController.value.abort();
-  } else {
-    // link 方式无中止能力
-    return;
-  }
-  status.value = 'paused';
-  emit('pause');
+/** 延迟到下一任务释放对象 URL，避免浏览器尚未接管链接就失去数据源。 */
+const scheduleObjectUrlRelease = (url: string) => {
+  const timer = setTimeout(() => releaseObjectUrl(url), 0);
+  pendingObjectUrls.set(url, timer);
 };
 
-// 恢复下载（从头重新下载，非断点续传）
-const resume = () => {
-  if (status.value === 'paused') {
-    handleDownload();
-    emit('resume');
+const downloadBlob = (blob: Blob, filename: string) => {
+  if (
+    typeof URL === 'undefined' ||
+    typeof URL.createObjectURL !== 'function' ||
+    typeof URL.revokeObjectURL !== 'function'
+  ) {
+    throw new ExFileDownloadError('unsupported', '当前运行环境不支持 Blob 下载');
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    triggerBrowserDownload(objectUrl, filename);
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl);
+    throw error;
+  }
+  scheduleObjectUrlRelease(objectUrl);
+};
+
+const downloadByFetch = async (
+  operation: ActiveOperation,
+  url: string
+): Promise<DownloadResponse> => {
+  if (typeof fetch !== 'function' || typeof AbortController !== 'function') {
+    throw new ExFileDownloadError('unsupported', '当前运行环境不支持 Fetch 下载');
+  }
+
+  const controller = new AbortController();
+  operation.controller = controller;
+  const response = await fetch(url, {
+    headers: props.headers,
+    credentials: props.withCredentials ? 'include' : 'same-origin',
+    signal: controller.signal,
+  });
+
+  if (!response.ok) {
+    throw new ExFileDownloadError(
+      'http-error',
+      `下载请求失败：${response.status} ${response.statusText}`.trim(),
+      { status: response.status }
+    );
+  }
+
+  const contentDisposition = response.headers.get('content-disposition');
+  const declaredTotal = parseContentLength(response.headers.get('content-length'));
+  if (declaredTotal !== null && declaredTotal > normalizedMaxBytes.value) {
+    controller.abort();
+    throw createSizeExceededError();
+  }
+  if (!response.body) {
+    const blob = await response.blob();
+    if (blob.size > normalizedMaxBytes.value) {
+      controller.abort();
+      throw createSizeExceededError();
+    }
+    reportProgress(operation, calculateDownloadProgress(blob.size, blob.size, true));
+    return { blob, contentDisposition };
+  }
+
+  const total = declaredTotal;
+  const contentType = response.headers.get('content-type') ?? '';
+  const reader = response.body.getReader();
+  const chunks: ArrayBuffer[] = [];
+  let loaded = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+
+    const buffer = new ArrayBuffer(value.byteLength);
+    const chunk = new Uint8Array(buffer);
+    chunk.set(value);
+    chunks.push(buffer);
+    loaded += chunk.byteLength;
+    if (loaded > normalizedMaxBytes.value) {
+      if (typeof reader.cancel === 'function') {
+        void reader.cancel().catch(() => undefined);
+      }
+      controller.abort();
+      throw createSizeExceededError();
+    }
+    reportProgress(operation, calculateDownloadProgress(loaded, total));
+  }
+
+  return {
+    blob: new Blob(chunks, { type: contentType }),
+    contentDisposition,
+  };
+};
+
+const downloadByXhr = (operation: ActiveOperation, url: string): Promise<DownloadResponse> => {
+  if (typeof XMLHttpRequest !== 'function') {
+    return Promise.reject(new ExFileDownloadError('unsupported', '当前运行环境不支持 XHR 下载'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    operation.xhr = request;
+    let settled = false;
+
+    const resolveOnce = (value: DownloadResponse) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    const rejectOnce = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+
+    request.addEventListener('progress', event => {
+      const total = event.lengthComputable ? event.total : null;
+      if (
+        event.loaded > normalizedMaxBytes.value ||
+        (total !== null && total > normalizedMaxBytes.value)
+      ) {
+        rejectOnce(createSizeExceededError());
+        request.abort();
+        return;
+      }
+      reportProgress(operation, calculateDownloadProgress(event.loaded, total));
+    });
+    request.addEventListener('load', () => {
+      const successfulStatus =
+        (request.status >= 200 && request.status < 300) ||
+        (request.status === 0 && url.startsWith('blob:'));
+      if (!successfulStatus) {
+        rejectOnce(
+          new ExFileDownloadError(
+            'http-error',
+            `下载请求失败：${request.status} ${request.statusText}`.trim(),
+            { status: request.status }
+          )
+        );
+        return;
+      }
+
+      const blob =
+        request.response instanceof Blob ? request.response : new Blob([request.response]);
+      if (blob.size > normalizedMaxBytes.value) {
+        rejectOnce(createSizeExceededError());
+        return;
+      }
+      const knownTotal = progress.value.total ?? blob.size;
+      reportProgress(operation, calculateDownloadProgress(blob.size, knownTotal, true));
+      resolveOnce({
+        blob,
+        contentDisposition: request.getResponseHeader('content-disposition'),
+      });
+    });
+    request.addEventListener('error', () => {
+      rejectOnce(new ExFileDownloadError('network-error', 'XHR 下载请求失败'));
+    });
+    request.addEventListener('abort', () => {
+      rejectOnce(new DOMException('下载已取消', 'AbortError'));
+    });
+
+    try {
+      request.open('GET', url, true);
+      request.responseType = 'blob';
+      for (const [name, value] of Object.entries(props.headers ?? {})) {
+        request.setRequestHeader(name, value);
+      }
+      request.withCredentials = props.withCredentials;
+      request.send();
+    } catch (error) {
+      rejectOnce(normalizeError(error));
+    }
+  });
+};
+
+const handleDownload = async (): Promise<ExFileDownloadResult> => {
+  if (props.disabled) return { outcome: 'ignored', reason: 'disabled' };
+  if (activeOperation || isHandlingLink) return { outcome: 'ignored', reason: 'busy' };
+
+  let transport: ExFileDownloadTransport;
+  let url: string;
+  try {
+    transport = normalizeTransport();
+    url = normalizeDownloadUrl(props.url);
+  } catch (error) {
+    const downloadError = normalizeError(error);
+    status.value = 'error';
+    emit('error', downloadError);
+    return { outcome: 'error', error: downloadError };
+  }
+
+  // 地址与文件名属于同一次下载快照，后续属性切换只影响下一次请求。
+  const requestedFilename = props.filename;
+  resetProgress();
+
+  if (transport === 'link') {
+    isHandlingLink = true;
+    try {
+      emit('start', transport);
+      const filename = resolveDownloadFilename(requestedFilename, null, url);
+      triggerBrowserDownload(url, filename);
+      status.value = 'triggered';
+      emit('trigger', url, filename);
+      return { outcome: 'triggered', transport, url, filename };
+    } catch (error) {
+      const downloadError = normalizeError(error, 'unsupported');
+      status.value = 'error';
+      emit('error', downloadError);
+      return { outcome: 'error', error: downloadError };
+    } finally {
+      isHandlingLink = false;
+    }
+  }
+
+  const operation: ActiveOperation = { transport, cancelled: false };
+  activeOperation = operation;
+  status.value = 'downloading';
+  emit('start', transport);
+  if (!isActive(operation)) return { outcome: 'cancelled', transport };
+
+  try {
+    const response =
+      transport === 'fetch'
+        ? await downloadByFetch(operation, url)
+        : await downloadByXhr(operation, url);
+
+    if (!isActive(operation)) return { outcome: 'cancelled', transport };
+
+    const filename = resolveDownloadFilename(requestedFilename, response.contentDisposition, url);
+    downloadBlob(response.blob, filename);
+    status.value = 'success';
+    emit('success', response.blob, filename);
+    return { outcome: 'success', transport, blob: response.blob, filename };
+  } catch (error) {
+    if (operation.cancelled || isAbortError(error) || !isActive(operation)) {
+      return { outcome: 'cancelled', transport };
+    }
+
+    const downloadError = normalizeError(error);
+    status.value = 'error';
+    emit('error', downloadError);
+    return { outcome: 'error', error: downloadError };
+  } finally {
+    if (activeOperation === operation) activeOperation = null;
   }
 };
 
-// 取消下载
-const cancel = () => {
-  xhr.value?.abort();
-  fetchController.value?.abort();
+const cancel = (): boolean => {
+  const operation = activeOperation;
+  if (!operation) return false;
+
+  operation.cancelled = true;
+  activeOperation = null;
+  operation.controller?.abort();
+  operation.xhr?.abort();
   status.value = 'idle';
-  percent.value = 0;
-  loaded.value = 0;
-  total.value = 0;
-  emit('cancel');
+  resetProgress();
+  if (!isUnmounted) emit('cancel');
+  return true;
 };
 
-const getElement = () => downloadRef.value || null;
+const getElement = () => downloadRef.value ?? null;
+const slotProps = computed<ExFileDownloadSlotProps>(() => ({
+  download: handleDownload,
+  cancel,
+  status: status.value,
+  progress: progress.value,
+  disabled: isTriggerDisabled.value,
+}));
+const hasTriggerSlot = computed(() => hasRenderableContent(slots.default?.(slotProps.value)));
+const hasProgressSlot = computed(() =>
+  hasRenderableContent(slots.progress?.({ progress: progress.value }))
+);
+
+onBeforeUnmount(() => {
+  isUnmounted = true;
+  const operation = activeOperation;
+  if (operation) {
+    operation.cancelled = true;
+    activeOperation = null;
+    operation.controller?.abort();
+    operation.xhr?.abort();
+  }
+
+  for (const url of [...pendingObjectUrls.keys()]) releaseObjectUrl(url);
+});
 
 defineExpose<ExFileDownloadExposed>({
   download: handleDownload,
-  pause,
-  resume,
   cancel,
   getElement,
 });
 </script>
+
+<template>
+  <div
+    ref="downloadRef"
+    class="ex-file-download"
+    :aria-busy="isDownloading ? 'true' : 'false'"
+  >
+    <slot
+      v-if="hasTriggerSlot"
+      :download="handleDownload"
+      :cancel="cancel"
+      :status="status"
+      :progress="progress"
+      :disabled="isTriggerDisabled"
+    />
+    <ExButton
+      v-else
+      :type="buttonType"
+      :size="buttonSize"
+      :disabled="isTriggerDisabled"
+      :loading="isDownloading"
+      @click="handleDownload"
+    >
+      <template #prefix>
+        <ExIcon
+          v-if="status === 'success'"
+          icon="check-line"
+          :size="16"
+          aria-hidden="true"
+        />
+        <ExIcon
+          v-else-if="status === 'error'"
+          icon="close-line"
+          :size="16"
+          aria-hidden="true"
+        />
+        <ExIcon
+          v-else
+          icon="download-2-line"
+          :size="16"
+          aria-hidden="true"
+        />
+      </template>
+      {{ buttonText }}
+    </ExButton>
+
+    <slot
+      v-if="showProgress && isDownloading && hasProgressSlot"
+      name="progress"
+      :progress="progress"
+    />
+    <div
+      v-else-if="showProgress && isDownloading"
+      class="ex-file-download__progress"
+    >
+      <div
+        class="ex-file-download__progress-bar"
+        role="progressbar"
+        :aria-label="t('progressLabel')"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="progress.percent ?? undefined"
+        :aria-valuetext="progressText"
+      >
+        <div
+          class="ex-file-download__progress-bar-inner"
+          :class="{ 'is-indeterminate': progress.percent === null }"
+          :style="progressStyle"
+        />
+      </div>
+      <div class="ex-file-download__progress-text">
+        {{ progressText }}
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss" src="./ExFileDownload.scss"></style>

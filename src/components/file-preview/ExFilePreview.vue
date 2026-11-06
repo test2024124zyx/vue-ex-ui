@@ -2,244 +2,372 @@
   <Teleport to="body">
     <Transition name="ex-preview-fade">
       <div
-        v-if="visible"
+        v-if="overlayActive"
         ref="previewRef"
-        class="ex-file-preview"
+        :class="previewClasses"
+        :data-theme="configTheme"
         role="dialog"
         aria-modal="true"
-        :aria-label="currentFile.name || t('filePreview.preview')"
+        :aria-label="dialogLabel"
+        :style="previewStyle"
         tabindex="-1"
-        @click="handleMaskClick"
+        @keydown="handleShortcut"
       >
-        <!-- 遮罩层 -->
         <div
           class="ex-file-preview__mask"
           :style="{ background: maskBackground }"
-        />
+          aria-hidden="true"
+          @click="handleMaskClick"
+        ></div>
 
-        <!-- 工具栏 -->
         <div
           v-if="showToolbar"
           class="ex-file-preview__toolbar"
-          @click.stop
         >
           <div class="ex-file-preview__toolbar-left">
             <span class="ex-file-preview__filename">
-              {{ currentFile.name || t('filePreview.preview') }}
+              {{ currentFile?.name || t('preview') }}
             </span>
           </div>
+
           <div class="ex-file-preview__toolbar-actions">
             <template v-if="currentType === 'image' && zoomable">
-              <button
+              <ExButton
+                type="text"
+                shape="circle"
                 class="ex-file-preview__toolbar-btn"
-                @click.stop="zoomOut"
+                :disabled="cannotZoomOut"
+                :aria-label="t('zoomOut')"
+                @click="requestZoomOut"
               >
                 <ExIcon
                   icon="zoom-out-line"
                   :size="20"
                   aria-hidden="true"
                 />
-              </button>
-              <span class="ex-file-preview__toolbar-scale">
+              </ExButton>
+              <span
+                class="ex-file-preview__toolbar-scale"
+                aria-live="polite"
+              >
                 {{ Math.round(currentScale * 100) }}%
               </span>
-              <button
+              <ExButton
+                type="text"
+                shape="circle"
                 class="ex-file-preview__toolbar-btn"
-                @click.stop="zoomIn"
+                :disabled="cannotZoomIn"
+                :aria-label="t('zoomIn')"
+                @click="requestZoomIn"
               >
                 <ExIcon
                   icon="zoom-in-line"
                   :size="20"
                   aria-hidden="true"
                 />
-              </button>
-              <button
+              </ExButton>
+              <ExButton
+                type="text"
+                shape="circle"
                 class="ex-file-preview__toolbar-btn"
-                @click.stop="resetZoom"
+                :aria-label="t('resetZoom')"
+                @click="requestResetZoom"
               >
                 <ExIcon
                   icon="aspect-ratio-line"
                   :size="20"
                   aria-hidden="true"
                 />
-              </button>
+              </ExButton>
             </template>
+
             <template v-if="currentType === 'image' && rotatable">
-              <button
+              <ExButton
+                type="text"
+                shape="circle"
                 class="ex-file-preview__toolbar-btn"
-                @click.stop="rotateLeft"
+                :aria-label="t('rotateCounterclockwise')"
+                @click="requestRotateCounterclockwise"
               >
                 <ExIcon
                   icon="anticlockwise-line"
                   :size="20"
                   aria-hidden="true"
                 />
-              </button>
-              <button
+              </ExButton>
+              <ExButton
+                type="text"
+                shape="circle"
                 class="ex-file-preview__toolbar-btn"
-                @click.stop="rotateRight"
+                :aria-label="t('rotateClockwise')"
+                @click="requestRotateClockwise"
               >
                 <ExIcon
                   icon="clockwise-line"
                   :size="20"
                   aria-hidden="true"
                 />
-              </button>
+              </ExButton>
             </template>
-            <!-- 追加自定义工具栏操作（内置缩放/旋转/下载/关闭仍保留） -->
+
             <slot
+              v-if="currentFile"
               name="toolbar"
               :file="currentFile"
               :index="currentIndex"
-            />
-            <button
-              v-if="showDownload"
+            ></slot>
+
+            <ExButton
+              v-if="canDownload"
+              type="text"
+              shape="circle"
               class="ex-file-preview__toolbar-btn"
-              @click.stop="handleDownload"
+              :aria-label="t('downloadFile')"
+              @click="requestDownload"
             >
               <ExIcon
                 icon="download-2-line"
                 :size="20"
                 aria-hidden="true"
               />
-            </button>
-            <button
+            </ExButton>
+            <ExButton
               v-if="showClose"
+              type="text"
+              shape="circle"
               class="ex-file-preview__toolbar-btn"
-              @click.stop="handleClose"
+              :aria-label="t('closePreview')"
+              @click="requestClose"
             >
               <ExIcon
                 icon="close-line"
                 :size="20"
                 aria-hidden="true"
               />
-            </button>
+            </ExButton>
           </div>
         </div>
 
-        <!-- 内容区域 -->
-        <div
-          class="ex-file-preview__content"
-          @click.stop
+        <ExButton
+          v-if="!showToolbar && showClose"
+          type="text"
+          shape="circle"
+          class="ex-file-preview__toolbar-btn ex-file-preview__standalone-close"
+          :aria-label="t('closePreview')"
+          @click="requestClose"
         >
-          <!-- 上一个/下一个按钮 -->
-          <button
+          <ExIcon
+            icon="close-line"
+            :size="20"
+            aria-hidden="true"
+          />
+        </ExButton>
+
+        <div class="ex-file-preview__content">
+          <ExButton
             v-if="fileList.length > 1 && currentIndex > 0"
+            type="text"
+            shape="circle"
             class="ex-file-preview__nav ex-file-preview__nav--prev"
-            @click.stop="handlePrev"
+            :aria-label="t('previousFile')"
+            @click="requestPrevious"
           >
             <ExIcon
               icon="arrow-left-s-line"
               :size="32"
               aria-hidden="true"
             />
-          </button>
-          <button
+          </ExButton>
+          <ExButton
             v-if="fileList.length > 1 && currentIndex < fileList.length - 1"
+            type="text"
+            shape="circle"
             class="ex-file-preview__nav ex-file-preview__nav--next"
-            @click.stop="handleNext"
+            :aria-label="t('nextFile')"
+            @click="requestNext"
           >
             <ExIcon
               icon="arrow-right-s-line"
               :size="32"
               aria-hidden="true"
             />
-          </button>
+          </ExButton>
 
-          <!-- 图片预览 -->
           <div
-            v-if="currentType === 'image'"
-            class="ex-file-preview__image-wrapper"
-            @wheel.prevent="handleWheel"
-          >
-            <img
-              :src="currentFile.url"
-              :alt="currentFile.name"
-              class="ex-file-preview__image"
-              :style="imageStyle"
-              @load="handleLoad"
-              @error="handleError"
-            >
-          </div>
-
-          <!-- 视频预览 -->
-          <video
-            v-else-if="currentType === 'video'"
-            :src="currentFile.url"
-            class="ex-file-preview__video"
-            controls
-            @loadeddata="handleLoad"
-            @error="handleError"
-          />
-
-          <!-- 音频预览 -->
-          <audio
-            v-else-if="currentType === 'audio'"
-            :src="currentFile.url"
-            class="ex-file-preview__audio"
-            controls
-            @loadeddata="handleLoad"
-            @error="handleError"
-          />
-
-          <!-- PDF预览 -->
-          <iframe
-            v-else-if="currentType === 'pdf'"
-            :src="currentFile.url"
-            class="ex-file-preview__pdf"
-            @load="handleLoad"
-            @error="handleError"
-          />
-
-          <!-- 文本/代码预览 -->
-          <div
-            v-else-if="currentType === 'text' || currentType === 'code'"
-            class="ex-file-preview__text"
-          >
-            <pre
-              v-if="textContent"
-              :class="{ 'show-line-numbers': showLineNumbers }"
-            ><code>{{ textContent }}</code></pre>
-            <div
-              v-else
-              class="ex-file-preview__loading"
-            >
-              {{ t('filePreview.loading') }}
-            </div>
-          </div>
-
-          <!-- 不支持的类型 -->
-          <div
-            v-else
-            class="ex-file-preview__unsupported"
+            v-if="!currentFile"
+            class="ex-file-preview__empty"
+            role="status"
           >
             <ExIcon
               icon="file-unknow-line"
               :size="64"
               aria-hidden="true"
             />
-            <p>{{ t('filePreview.unsupported') }}</p>
-            <ExButton
-              v-if="showDownload"
-              type="primary"
-              @click="handleDownload"
+            <p>{{ t('empty') }}</p>
+          </div>
+
+          <div
+            v-else-if="!currentUrl"
+            class="ex-file-preview__invalid"
+            role="alert"
+          >
+            <ExIcon
+              icon="error-warning-line"
+              :size="64"
+              aria-hidden="true"
+            />
+            <p>{{ t('invalidSource') }}</p>
+          </div>
+
+          <div
+            v-else-if="currentType === 'image'"
+            class="ex-file-preview__image-wrapper"
+            @wheel="handleWheel"
+          >
+            <img
+              :key="currentUrl"
+              :src="currentUrl"
+              :alt="currentFile.name || ''"
+              class="ex-file-preview__image"
+              :style="imageStyle"
+              draggable="false"
+              @load="handleMediaReady"
+              @error="handleMediaError"
+            />
+            <div
+              v-if="mediaState === 'loading'"
+              class="ex-file-preview__media-status"
+              role="status"
             >
-              {{ t('filePreview.downloadFile') }}
+              {{ t('loading') }}
+            </div>
+            <div
+              v-else-if="mediaState === 'error'"
+              class="ex-file-preview__media-error"
+              role="alert"
+            >
+              {{ t('loadFailed') }}
+            </div>
+          </div>
+
+          <video
+            v-else-if="currentType === 'video'"
+            :key="currentUrl"
+            :src="currentUrl"
+            class="ex-file-preview__video"
+            controls
+            preload="metadata"
+            @loadeddata="handleMediaReady"
+            @error="handleMediaError"
+          ></video>
+
+          <audio
+            v-else-if="currentType === 'audio'"
+            :key="currentUrl"
+            :src="currentUrl"
+            class="ex-file-preview__audio"
+            controls
+            preload="metadata"
+            @loadeddata="handleMediaReady"
+            @error="handleMediaError"
+          ></audio>
+
+          <iframe
+            v-else-if="currentType === 'pdf'"
+            :key="currentUrl"
+            :src="currentUrl"
+            class="ex-file-preview__pdf"
+            :title="`${currentFile.name || t('preview')} - ${t('pdfDocument')}`"
+            sandbox=""
+            referrerpolicy="no-referrer"
+            @load="handleMediaReady"
+            @error="handleMediaError"
+          ></iframe>
+
+          <div
+            v-else-if="currentType === 'text' || currentType === 'code'"
+            class="ex-file-preview__text"
+          >
+            <div
+              v-if="textState === 'loading'"
+              class="ex-file-preview__loading"
+              role="status"
+            >
+              {{ t('loading') }}
+            </div>
+            <div
+              v-else-if="textState === 'error'"
+              class="ex-file-preview__text-error"
+              role="alert"
+            >
+              {{ textErrorMessage }}
+            </div>
+            <ol
+              v-else-if="currentType === 'code' && showLineNumbers"
+              class="ex-file-preview__code-lines"
+            >
+              <li
+                v-for="(line, lineIndex) in textLines"
+                :key="lineIndex"
+              >
+                <code>{{ displayTextLine(line) }}</code>
+              </li>
+            </ol>
+            <pre v-else><code>{{ textContent }}</code></pre>
+          </div>
+
+          <div
+            v-else
+            class="ex-file-preview__unsupported"
+            role="status"
+          >
+            <ExIcon
+              icon="file-unknow-line"
+              :size="64"
+              aria-hidden="true"
+            />
+            <p>{{ t('unsupported') }}</p>
+            <ExButton
+              v-if="canDownload"
+              type="primary"
+              @click="requestDownload"
+            >
+              {{ t('downloadFile') }}
             </ExButton>
+          </div>
+          <div
+            v-if="
+              currentUrl &&
+              ['video', 'audio', 'pdf'].includes(currentType) &&
+              mediaState === 'loading'
+            "
+            class="ex-file-preview__media-status"
+            role="status"
+          >
+            {{ t('loading') }}
+          </div>
+          <div
+            v-else-if="
+              currentUrl &&
+              ['video', 'audio', 'pdf'].includes(currentType) &&
+              mediaState === 'error'
+            "
+            class="ex-file-preview__media-error"
+            role="alert"
+          >
+            {{ t('loadFailed') }}
           </div>
         </div>
 
-        <!-- 自定义底部内容 -->
         <div
-          v-if="$slots.footer"
+          v-if="$slots.footer && currentFile"
           class="ex-file-preview__footer"
-          @click.stop
         >
           <slot
             name="footer"
             :file="currentFile"
             :index="currentIndex"
-          />
+          ></slot>
         </div>
       </div>
     </Transition>
@@ -247,18 +375,36 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+  useZIndexLayer,
+} from '../config-provider/composables';
+import { useControllableState } from '../../composables/useControllableState';
+import { useOverlay } from '../../composables/useOverlay';
+import { useLocale } from '../../locale';
+import { ExFilePreviewError } from './errors';
+import {
+  clampPreviewIndex,
+  clampPreviewScale,
+  detectPreviewType,
+  normalizePreviewRotation,
+  resolvePreviewScaleConfig,
+  validatePreviewUrl,
+} from './preview-utils';
+import { usePreviewSources } from './usePreviewSources';
 import type {
-  ExFilePreviewProps,
   ExFilePreviewEmits,
   ExFilePreviewExposed,
+  ExFilePreviewProps,
+  ExFilePreviewSlots,
   PreviewFile,
-  PreviewType,
 } from './types';
-import ExButton from '../button/ExButton.vue';
-import { useI18n } from '../../locale';
-import { useOverlay } from '../../composables/useOverlay';
 
 defineOptions({
   name: 'ExFilePreview',
@@ -266,290 +412,444 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExFilePreviewProps>(), {
   visible: false,
-  initialIndex: 0,
+  defaultCurrentIndex: 0,
   showToolbar: true,
   showDownload: true,
   showClose: true,
-  scale: 1,
-  rotate: 0,
+  defaultScale: 1,
+  defaultRotate: 0,
   zoomable: true,
   rotatable: true,
   minScale: 0.1,
   maxScale: 5,
   scaleStep: 0.1,
   rotateStep: 90,
+  maxTextBytes: 1_048_576,
   maskBackground: 'rgba(0, 0, 0, 0.9)',
   maskClosable: true,
+  closeOnEscape: true,
+  lockScroll: true,
   showLineNumbers: true,
+  zIndex: undefined,
 });
 
 const emit = defineEmits<ExFilePreviewEmits>();
+defineSlots<ExFilePreviewSlots>();
 
-const { t } = useI18n();
-
+const { t } = useLocale('filePreview');
+const baseZIndex = useZIndexLayer('modal');
+const themeOverrides = useThemeOverrides();
+const configTheme = useConfigTheme();
+const animation = useAnimation();
+const neonEffect = useNeonEffect();
 const previewRef = ref<HTMLDivElement>();
-const currentScale = ref(props.scale);
-const currentRotate = ref(props.rotate);
-const textContent = ref('');
-const currentIndex = ref(props.initialIndex);
-
-// 文件列表
-const fileList = computed<PreviewFile[]>(() => {
-  if (props.files && props.files.length > 0) {
-    return props.files.map(f => (typeof f === 'string' ? { url: f } : f));
-  }
-  if (props.file) {
-    const file = typeof props.file === 'string' ? { url: props.file } : props.file;
-    return [file];
-  }
-  return [];
-});
-
-// 当前文件对象
-const currentFile = computed<PreviewFile>(() => {
-  if (fileList.value.length === 0) {
-    return { url: '' };
-  }
-  // 确保返回值不为 undefined
-  return fileList.value[currentIndex.value] || fileList.value[0] || { url: '' };
-});
-
-// 检测文件类型
-const currentType = computed<PreviewType>(() => {
-  if (props.type) return props.type;
-
-  const url = currentFile.value.url;
-  const mimeType = currentFile.value.mimeType;
-
-  if (mimeType) {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType.startsWith('audio/')) return 'audio';
-    if (mimeType === 'application/pdf') return 'pdf';
-    if (mimeType.startsWith('text/')) return 'text';
-  }
-
-  const ext = url.split('.').pop()?.toLowerCase();
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext || '')) return 'image';
-  if (['mp4', 'webm', 'ogg', 'mov'].includes(ext || '')) return 'video';
-  if (['mp3', 'wav', 'ogg', 'flac'].includes(ext || '')) return 'audio';
-  if (ext === 'pdf') return 'pdf';
-  if (['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'ts', 'vue'].includes(ext || ''))
-    return 'code';
-
-  return 'unknown';
-});
-
-// 图片样式
-const imageStyle = computed(() => ({
-  transform: `scale(${currentScale.value}) rotate(${currentRotate.value}deg)`,
-  transition: 'transform 0.3s ease',
-}));
-
-// 将索引夹在有效范围内
-const clampIndex = (index: number): number => {
-  if (fileList.value.length === 0) return 0;
-  return Math.min(Math.max(index, 0), fileList.value.length - 1);
-};
-
-// 加载文本内容
-const loadTextContent = async () => {
-  textContent.value = '';
-  if (typeof window === 'undefined') return;
-  try {
-    const response = await fetch(currentFile.value.url);
-    textContent.value = await response.text();
-  } catch (error) {
-    handleError(error as Error);
-  }
-};
-
-// 重置缩放与旋转（翻页 / 重新打开时调用）
-const resetTransform = () => {
-  resetZoom();
-  resetRotate();
-};
-
-// 滚动锁定 + 焦点陷阱 + Esc 关闭 + 关闭后归还焦点（多实例安全，引用计数）
-useOverlay({
-  active: () => props.visible,
-  container: previewRef,
-  closeOnEscape: () => props.maskClosable,
-  onEscape: () => handleClose(),
-  restoreFocus: true,
-});
-
-// 打开时按 initialIndex 定位并重置缩放/旋转
-watch(
-  () => props.visible,
-  newVal => {
-    if (newVal) {
-      currentIndex.value = clampIndex(props.initialIndex);
-      resetTransform();
-    }
-  }
+const {
+  files: fileList,
+  sourceFailure,
+  ready: sourcesReady,
+} = usePreviewSources(
+  () => props.file,
+  () => props.files
 );
 
-// 同步受控的缩放/旋转
-watch(
-  () => props.scale,
-  v => (currentScale.value = v)
+const indexState = useControllableState<number>({
+  controlledValue: () => props.currentIndex,
+  defaultValue: () => props.defaultCurrentIndex,
+  onChange: index => emit('update:currentIndex', index),
+});
+
+const currentIndex = computed(() =>
+  clampPreviewIndex(indexState.value.value, fileList.value.length)
 );
-watch(
-  () => props.rotate,
-  v => (currentRotate.value = v)
+const currentFile = computed<PreviewFile | undefined>(() => fileList.value[currentIndex.value]);
+const currentType = computed(() =>
+  currentFile.value ? detectPreviewType(currentFile.value, props.type) : 'unknown'
+);
+const currentUrl = computed(() =>
+  currentFile.value ? validatePreviewUrl(currentFile.value.url, currentType.value) : null
+);
+const dialogLabel = computed(() =>
+  props.ariaLabel ? props.ariaLabel : currentFile.value?.name || t('preview')
+);
+const previewStyle = computed(() => ({ ...themeOverrides.value, zIndex: overlayZIndex.value }));
+const previewClasses = computed(() => [
+  'ex-file-preview',
+  {
+    'ex-no-animation': !animation.value,
+    'ex-no-neon': !neonEffect.value,
+  },
+]);
+const canDownload = computed(() =>
+  Boolean(props.showDownload && currentFile.value && currentUrl.value)
 );
 
-// 文本/代码内容：打开或切换文件时按当前 url + 类型重新加载，避免翻页后内容滞留
 watch(
-  () => (props.visible ? `${currentType.value}::${currentFile.value.url}` : ''),
-  () => {
-    if (props.visible && (currentType.value === 'text' || currentType.value === 'code')) {
-      loadTextContent();
-    }
+  [() => indexState.value.value, () => fileList.value.length],
+  ([requestedIndex, length]) => {
+    const normalizedIndex = clampPreviewIndex(requestedIndex, length);
+    if (!Object.is(requestedIndex, normalizedIndex)) indexState.request(normalizedIndex);
   },
   { immediate: true }
 );
 
-// 缩放
-const zoomIn = () => {
-  if (currentScale.value < props.maxScale) {
-    currentScale.value = Math.min(currentScale.value + props.scaleStep, props.maxScale);
-    emit('update:scale', currentScale.value);
-  }
+const scaleConfig = computed(() =>
+  resolvePreviewScaleConfig(props.minScale, props.maxScale, props.scaleStep)
+);
+const scaleState = useControllableState<number>({
+  controlledValue: () =>
+    props.scale === undefined ? undefined : clampPreviewScale(props.scale, scaleConfig.value),
+  defaultValue: () => clampPreviewScale(props.defaultScale, scaleConfig.value),
+  onChange: scale => emit('update:scale', scale),
+});
+const currentScale = computed(() => clampPreviewScale(scaleState.value.value, scaleConfig.value));
+const cannotZoomOut = computed(() => currentScale.value <= scaleConfig.value.min);
+const cannotZoomIn = computed(() => currentScale.value >= scaleConfig.value.max);
+
+watch(scaleConfig, config => {
+  const normalizedScale = clampPreviewScale(scaleState.value.value, config);
+  if (!Object.is(scaleState.value.value, normalizedScale)) scaleState.request(normalizedScale);
+});
+
+const rotateState = useControllableState<number>({
+  controlledValue: () =>
+    props.rotate === undefined ? undefined : normalizePreviewRotation(props.rotate),
+  defaultValue: () => normalizePreviewRotation(props.defaultRotate),
+  onChange: rotate => emit('update:rotate', rotate),
+});
+const currentRotate = computed(() => normalizePreviewRotation(rotateState.value.value));
+const rotationStep = computed(() =>
+  Number.isFinite(props.rotateStep) && props.rotateStep > 0 ? props.rotateStep : 90
+);
+const imageStyle = computed(() => ({
+  transform: `scale(${currentScale.value}) rotate(${currentRotate.value}deg)`,
+}));
+
+const requestNavigation = (nextIndex: number): void => {
+  const normalizedIndex = clampPreviewIndex(nextIndex, fileList.value.length);
+  if (normalizedIndex === currentIndex.value) return;
+  const nextFile = fileList.value[normalizedIndex];
+  if (!nextFile) return;
+  indexState.request(normalizedIndex);
+  emit('navigation-request', normalizedIndex, nextFile);
 };
 
-const zoomOut = () => {
-  if (currentScale.value > props.minScale) {
-    currentScale.value = Math.max(currentScale.value - props.scaleStep, props.minScale);
-    emit('update:scale', currentScale.value);
-  }
+const requestPrevious = (): void => requestNavigation(currentIndex.value - 1);
+const requestNext = (): void => requestNavigation(currentIndex.value + 1);
+
+const requestScale = (scale: number, force = false): void => {
+  if (!props.zoomable || currentType.value !== 'image') return;
+  const normalizedScale = clampPreviewScale(scale, scaleConfig.value);
+  if (!force && Object.is(normalizedScale, currentScale.value)) return;
+  scaleState.request(normalizedScale);
 };
 
-const resetZoom = () => {
-  currentScale.value = 1;
-  emit('update:scale', currentScale.value);
+const requestZoomIn = (): void => requestScale(currentScale.value + scaleConfig.value.step);
+const requestZoomOut = (): void => requestScale(currentScale.value - scaleConfig.value.step);
+const requestResetZoom = (): void => requestScale(1, true);
+
+const requestRotation = (rotation: number, force = false): void => {
+  if (!props.rotatable || currentType.value !== 'image') return;
+  const normalizedRotation = normalizePreviewRotation(rotation);
+  if (!force && Object.is(normalizedRotation, currentRotate.value)) return;
+  rotateState.request(normalizedRotation);
 };
 
-// 旋转
-const rotateRight = () => {
-  currentRotate.value = (currentRotate.value + props.rotateStep) % 360;
-  emit('update:rotate', currentRotate.value);
+const requestRotateClockwise = (): void =>
+  requestRotation(currentRotate.value + rotationStep.value);
+const requestRotateCounterclockwise = (): void =>
+  requestRotation(currentRotate.value - rotationStep.value);
+const requestResetRotation = (): void => requestRotation(0, true);
+
+const requestDownload = (): void => {
+  if (currentFile.value && currentUrl.value) emit('download-request', currentFile.value);
 };
 
-const rotateLeft = () => {
-  currentRotate.value = (currentRotate.value - props.rotateStep + 360) % 360;
-  emit('update:rotate', currentRotate.value);
-};
-
-// 切换文件
-const handlePrev = () => {
-  if (currentIndex.value > 0) {
-    currentIndex.value--;
-    resetTransform();
-  }
-};
-
-const handleNext = () => {
-  if (currentIndex.value < fileList.value.length - 1) {
-    currentIndex.value++;
-    resetTransform();
-  }
-};
-
-const resetRotate = () => {
-  currentRotate.value = 0;
-  emit('update:rotate', currentRotate.value);
-};
-
-// 鼠标滚轮缩放
-const handleWheel = (e: WheelEvent) => {
-  if (!props.zoomable) return;
-  if (e.deltaY < 0) {
-    zoomIn();
-  } else {
-    zoomOut();
-  }
-};
-
-// 遮罩点击
-const handleMaskClick = () => {
-  if (props.maskClosable) {
-    handleClose();
-  }
-};
-
-// 关闭
-const handleClose = () => {
-  emit('update:visible', false);
-  emit('close');
-};
-
-// 下载
-const handleDownload = () => {
-  emit('download', currentFile.value);
-  const link = document.createElement('a');
-  link.href = currentFile.value.url;
-  link.download = currentFile.value.name || 'download';
-  link.click();
-};
-
-// 加载完成
-const handleLoad = () => {
-  emit('load');
-};
-
-// 加载失败
-const handleError = (error: Event | Error) => {
-  const err = error instanceof Error ? error : new Error('Load failed');
-  emit('error', err);
-};
-
-// 键盘事件（Esc 由 useOverlay 统一处理：仅关闭最顶层浮层）
-const handleKeydown = (e: KeyboardEvent) => {
+const requestClose = (): void => {
   if (!props.visible) return;
+  emit('update:visible', false);
+  emit('close-request');
+};
 
-  switch (e.key) {
-    case 'ArrowLeft':
-      handlePrev();
-      break;
-    case 'ArrowRight':
-      handleNext();
-      break;
-    case '+':
-    case '=':
-      if (props.zoomable) zoomIn();
-      break;
-    case '-':
-      if (props.zoomable) zoomOut();
-      break;
-    case '0':
-      if (props.zoomable) resetZoom();
-      break;
+const { active: overlayActive, zIndex: overlayZIndex } = useOverlay({
+  active: () => props.visible,
+  container: previewRef,
+  zIndex: () => props.zIndex ?? baseZIndex.value,
+  lockScroll: () => props.lockScroll,
+  closeOnEscape: () => props.closeOnEscape,
+  onEscape: () => requestClose(),
+  onParentClose: requestClose,
+  restoreFocus: true,
+});
+
+const handleMaskClick = (): void => {
+  if (props.maskClosable) requestClose();
+};
+
+const handleWheel = (event: WheelEvent): void => {
+  if (!props.zoomable || currentType.value !== 'image') return;
+  if (event.deltaY < 0 && !cannotZoomIn.value) {
+    event.preventDefault();
+    requestZoomIn();
+  } else if (event.deltaY > 0 && !cannotZoomOut.value) {
+    event.preventDefault();
+    requestZoomOut();
   }
 };
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown);
-});
+const isShortcutInput = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      'input, textarea, select, video, audio, iframe, [contenteditable]:not([contenteditable="false"])'
+    )
+  );
+};
 
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeydown);
-});
+const handleShortcut = (event: KeyboardEvent): void => {
+  if (isShortcutInput(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
 
-const getElement = () => previewRef.value || null;
+  if (event.key === 'ArrowLeft' && currentIndex.value > 0) {
+    event.preventDefault();
+    requestPrevious();
+  } else if (event.key === 'ArrowRight' && currentIndex.value < fileList.value.length - 1) {
+    event.preventDefault();
+    requestNext();
+  } else if (
+    currentType.value === 'image' &&
+    props.zoomable &&
+    (event.key === '+' || event.key === '=') &&
+    !cannotZoomIn.value
+  ) {
+    event.preventDefault();
+    requestZoomIn();
+  } else if (
+    currentType.value === 'image' &&
+    props.zoomable &&
+    event.key === '-' &&
+    !cannotZoomOut.value
+  ) {
+    event.preventDefault();
+    requestZoomOut();
+  } else if (event.key === '0' && props.zoomable && currentType.value === 'image') {
+    event.preventDefault();
+    requestResetZoom();
+  }
+};
+
+type MediaState = 'idle' | 'loading' | 'ready' | 'error';
+const mediaState = ref<MediaState>('idle');
+
+watch(
+  [overlayActive, currentType, currentUrl],
+  ([visible, type, url]) => {
+    mediaState.value =
+      visible && url && (type === 'image' || type === 'video' || type === 'audio' || type === 'pdf')
+        ? 'loading'
+        : 'idle';
+  },
+  { immediate: true }
+);
+
+const isCurrentMediaEvent = (event: Event): boolean => {
+  const target = event.currentTarget;
+  return target instanceof Node && Boolean(previewRef.value?.contains(target));
+};
+
+const handleMediaReady = (event: Event): void => {
+  if (!isCurrentMediaEvent(event)) return;
+  if (!currentFile.value) return;
+  mediaState.value = 'ready';
+  emit('ready', currentFile.value, currentIndex.value);
+};
+
+const handleMediaError = (cause: Event): void => {
+  if (!isCurrentMediaEvent(cause)) return;
+  if (!currentFile.value) return;
+  mediaState.value = 'error';
+  emit(
+    'error',
+    new ExFilePreviewError('文件预览加载失败', { code: 'load-failed', cause }),
+    currentFile.value,
+    currentIndex.value
+  );
+};
+
+let reportedInvalidSource = '';
+watch(
+  [() => props.visible, currentFile, currentUrl, currentIndex, sourceFailure, sourcesReady],
+  ([visible, file, url, index, failure, ready]) => {
+    if (!ready || !visible || !file || url) {
+      reportedInvalidSource = '';
+      return;
+    }
+
+    const reportKey = `${index}:${file.url}:${failure?.file === file ? 'blob' : 'url'}`;
+    if (reportKey === reportedInvalidSource) return;
+    reportedInvalidSource = reportKey;
+    const error =
+      failure?.file === file
+        ? failure.error
+        : new ExFilePreviewError('文件预览地址无效或协议不受支持', {
+            code: 'invalid-source',
+          });
+    emit('error', error, file, index);
+  },
+  { immediate: true }
+);
+
+type TextState = 'idle' | 'loading' | 'ready' | 'error';
+const textState = ref<TextState>('idle');
+const textContent = ref('');
+const textError = ref<ExFilePreviewError | null>(null);
+const textLines = computed(() => textContent.value.split('\n'));
+const textErrorMessage = computed(() =>
+  textError.value?.code === 'text-too-large' ? t('textTooLarge') : t('loadFailed')
+);
+const normalizedMaxTextBytes = computed(() =>
+  Number.isFinite(props.maxTextBytes) && props.maxTextBytes > 0
+    ? Math.floor(props.maxTextBytes)
+    : 1_048_576
+);
+
+const displayTextLine = (line: string): string => line || '\u200b';
+const createTextTooLargeError = (): ExFilePreviewError =>
+  new ExFilePreviewError('文本内容超过允许的最大字节数', { code: 'text-too-large' });
+
+const readBoundedText = async (response: Response, byteLimit: number): Promise<string> => {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw createTextTooLargeError();
+  }
+
+  const decoder = new TextDecoder();
+  const chunks: string[] = [];
+  let receivedBytes = 0;
+
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) break;
+      receivedBytes += result.value.byteLength;
+      if (receivedBytes > byteLimit) {
+        try {
+          await reader.cancel();
+        } catch {
+          // 超限错误是稳定业务结果，流取消异常只作为底层清理失败处理。
+        }
+        throw createTextTooLargeError();
+      }
+      chunks.push(decoder.decode(result.value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    return chunks.join('');
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+let textRequestRevision = 0;
+let textRequestController: AbortController | null = null;
+
+const cancelTextRequest = (): void => {
+  textRequestRevision += 1;
+  textRequestController?.abort();
+  textRequestController = null;
+};
+
+const loadTextContent = async (
+  url: string,
+  file: PreviewFile,
+  index: number,
+  byteLimit: number
+): Promise<void> => {
+  cancelTextRequest();
+  const revision = ++textRequestRevision;
+  const controller = new AbortController();
+  textRequestController = controller;
+  textState.value = 'loading';
+  textContent.value = '';
+  textError.value = null;
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (revision !== textRequestRevision || controller.signal.aborted) return;
+    if (!response.ok) {
+      throw new ExFilePreviewError(`文本加载失败（HTTP ${response.status}）`, {
+        code: 'http-error',
+        status: response.status,
+      });
+    }
+
+    const rawContentLength = response.headers.get('content-length');
+    const contentLength =
+      rawContentLength !== null && /^\d+$/.test(rawContentLength) ? Number(rawContentLength) : null;
+    if (contentLength !== null && Number.isFinite(contentLength) && contentLength > byteLimit) {
+      controller.abort();
+      throw createTextTooLargeError();
+    }
+
+    const content = await readBoundedText(response, byteLimit);
+    if (revision !== textRequestRevision || controller.signal.aborted) return;
+    textContent.value = content;
+    textState.value = 'ready';
+    emit('ready', file, index);
+  } catch (cause) {
+    if (
+      revision !== textRequestRevision ||
+      (controller.signal.aborted && !(cause instanceof ExFilePreviewError))
+    ) {
+      return;
+    }
+    const error =
+      cause instanceof ExFilePreviewError
+        ? cause
+        : new ExFilePreviewError('文本内容加载失败', { code: 'load-failed', cause });
+    textError.value = error;
+    textState.value = 'error';
+    emit('error', error, file, index);
+  } finally {
+    if (revision === textRequestRevision) textRequestController = null;
+  }
+};
+
+watch(
+  [
+    overlayActive,
+    currentFile,
+    currentType,
+    currentUrl,
+    currentIndex,
+    normalizedMaxTextBytes,
+    sourcesReady,
+  ],
+  ([visible, file, type, url, index, byteLimit, ready]) => {
+    if (ready && visible && file && url && (type === 'text' || type === 'code')) {
+      void loadTextContent(url, file, index, byteLimit);
+      return;
+    }
+    cancelTextRequest();
+    textState.value = 'idle';
+    textContent.value = '';
+    textError.value = null;
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(cancelTextRequest);
+
+const getElement = (): HTMLDivElement | null => previewRef.value ?? null;
 
 defineExpose<ExFilePreviewExposed>({
-  prev: handlePrev,
-  next: handleNext,
-  zoomIn,
-  zoomOut,
-  resetZoom,
-  rotateRight,
-  rotateLeft,
-  resetRotate,
-  download: handleDownload,
-  close: handleClose,
+  requestPrevious,
+  requestNext,
+  requestZoomIn,
+  requestZoomOut,
+  requestResetZoom,
+  requestRotateClockwise,
+  requestRotateCounterclockwise,
+  requestResetRotation,
+  requestDownload,
+  requestClose,
   getElement,
 });
 </script>

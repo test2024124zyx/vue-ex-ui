@@ -23,15 +23,17 @@ pnpm add vue-ex-ui
 在 `main.ts` 中引入所有组件：
 
 ```typescript
-import { createApp } from 'vue'
-import ExUI from 'vue-ex-ui'
-import 'vue-ex-ui/style.css'
-import App from './App.vue'
+import { createApp } from 'vue';
+import ExUI from 'vue-ex-ui';
+import 'vue-ex-ui/style.css';
+import App from './App.vue';
 
-const app = createApp(App)
-app.use(ExUI)
-app.mount('#app')
+const app = createApp(App);
+app.use(ExUI);
+app.mount('#app');
 ```
+
+完整入口的 `vue-ex-ui/style.css` 会默认包含本地品牌字体资源和简体中文 Noto Sans SC 字体切片。若使用按需入口 `vue-ex-ui/base.css`，再额外引入 `vue-ex-ui/font.css` 即可启用同一套赛博朋克字体和中文字体。
 
 ## 按需引入（推荐）
 
@@ -40,37 +42,40 @@ app.mount('#app')
 ### 方式一：全局注册
 
 ```typescript
-import { createApp } from 'vue'
-import { ExButton, ExInput, ExTable } from 'vue-ex-ui'
-import 'vue-ex-ui/style.css'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { ExButton, ExInput, ExTable } from 'vue-ex-ui';
+import 'vue-ex-ui/style.css';
+import App from './App.vue';
 
-const app = createApp(App)
+const app = createApp(App);
 
 // 全局注册组件
-app.component('ExButton', ExButton)
-app.component('ExInput', ExInput)
-app.component('ExTable', ExTable)
+app.component('ExButton', ExButton);
+app.component('ExInput', ExInput);
+app.component('ExTable', ExTable);
 
-app.mount('#app')
+app.mount('#app');
 ```
 
 ### 方式二：局部注册（推荐）
 
 ```vue
 <script setup lang="ts">
-import { ExButton, ExInput } from 'vue-ex-ui'
-import 'vue-ex-ui/style.css'
+import { ExButton, ExInput } from 'vue-ex-ui';
+import 'vue-ex-ui/style.css';
 
 const handleClick = () => {
-  console.log('Button clicked')
-}
+  console.log('Button clicked');
+};
 </script>
 
 <template>
   <div>
     <ExInput placeholder="请输入内容" />
-    <ExButton type="primary" @click="handleClick">
+    <ExButton
+      type="primary"
+      @click="handleClick"
+    >
       提交
     </ExButton>
   </div>
@@ -88,15 +93,24 @@ const handleClick = () => {
 ```vue
 <template>
   <div class="app">
-    <ex-typography variant="h1" class="title">
+    <ex-typography
+      variant="display"
+      class="title"
+    >
       🎮 欢迎使用 ExUI
     </ex-typography>
-    
-    <ex-typography variant="body1" class="description">
+
+    <ex-typography
+      variant="body"
+      class="description"
+    >
       专为赛博朋克风格应用打造的Vue3组件库
     </ex-typography>
-    
-    <ex-button type="primary" size="large">
+
+    <ex-button
+      type="primary"
+      size="large"
+    >
       开始游戏
     </ex-button>
   </div>
@@ -125,15 +139,14 @@ const handleClick = () => {
 
 ```vue
 <script setup lang="ts">
-import { ExConfigProvider } from 'vue-ex-ui'
-import zhCN from 'vue-ex-ui/locale/zh-CN'
-import 'vue-ex-ui/style.css'
+import { ExConfigProvider } from 'vue-ex-ui';
+import 'vue-ex-ui/style.css';
 </script>
 
 <template>
-  <ExConfigProvider 
-    theme="neon-blue" 
-    :locale="zhCN"
+  <ExConfigProvider
+    theme="neon-blue"
+    locale="zh-CN"
     size="medium"
     :neon-effect="true"
     :animation="true"
@@ -145,12 +158,11 @@ import 'vue-ex-ui/style.css'
 
 ### 配置选项
 
-- `theme`: 主题 (`'neon-blue'` | `'neon-pink'` | `'dark'` | `'high-contrast'`)
+- `theme`: 主题 (`'neon-blue'` | `'light'`)
 - `locale`: 语言 (`'zh-CN'` | `'en-US'`)
 - `size`: 全局组件尺寸 (`'small'` | `'medium'` | `'large'`)
 - `neon-effect`: 是否启用霓虹效果 (默认 `true`)
 - `animation`: 是否启用动画 (默认 `true`)
-- `namespace`: CSS 类名前缀 (默认 `'ex'`)
 - `z-index`: z-index 基础值 (默认 `1000`)
 
 查看 [ConfigProvider 文档](/components/config-provider) 了解更多配置选项。

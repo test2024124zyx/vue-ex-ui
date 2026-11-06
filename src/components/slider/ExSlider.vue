@@ -16,13 +16,13 @@
       @touchstart="handleTrackClick"
     >
       <!-- 背景轨道 -->
-      <div class="ex-slider__track" />
+      <div class="ex-slider__track"></div>
 
       <!-- 激活轨道 -->
       <div
         class="ex-slider__bar"
         :style="barStyle"
-      />
+      ></div>
 
       <!-- 步进点 -->
       <div
@@ -34,7 +34,7 @@
           :key="stop"
           class="ex-slider__stop"
           :style="getStopStyle(stop)"
-        />
+        ></div>
       </div>
 
       <!-- 标记 -->
@@ -46,7 +46,7 @@
           v-for="(mark, key) in normalizedMarks"
           :key="key"
           class="ex-slider__mark"
-          :style="getMarkStyle(Number(key))"
+          :style="[getMarkStyle(Number(key)), mark.style]"
         >
           <div class="ex-slider__mark-label">
             {{ mark.label }}
@@ -63,15 +63,19 @@
         :style="getThumbStyle(currentValue as number)"
         :tabindex="disabled ? -1 : 0"
         role="slider"
+        :aria-orientation="direction"
         :aria-valuemin="min"
         :aria-valuemax="max"
         :aria-valuenow="currentValue as number"
         :aria-label="ariaLabel || t('slider.button')"
-        :aria-disabled="disabled"
+        :aria-description="ariaDescription"
+        v-bind="fieldAriaAttrs"
         @mousedown="handleThumbMouseDown($event, 0)"
         @touchstart="handleThumbMouseDown($event, 0)"
         @keydown="handleKeyDown($event, 0)"
         @blur="handleThumbBlur"
+        @mouseenter="isHovering = true"
+        @mouseleave="isHovering = false"
       >
         <!-- 提示信息 -->
         <div
@@ -93,15 +97,19 @@
           :style="getThumbStyle((currentValue as [number, number])[0])"
           :tabindex="disabled ? -1 : 0"
           role="slider"
+          :aria-orientation="direction"
           :aria-valuemin="min"
           :aria-valuemax="(currentValue as [number, number])[1]"
           :aria-valuenow="(currentValue as [number, number])[0]"
-          :aria-label="ariaLabel || t('slider.startValue')"
-          :aria-disabled="disabled"
+          :aria-label="getRangeThumbAriaLabel(0)"
+          :aria-description="ariaDescription"
+          v-bind="fieldAriaAttrs"
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
           @blur="handleThumbBlur"
+          @mouseenter="isHoveringStart = true"
+          @mouseleave="isHoveringStart = false"
         >
           <div
             v-if="showTooltip && (isDraggingStart || isHoveringStart)"
@@ -114,21 +122,24 @@
 
         <!-- 结束手柄 -->
         <div
-          ref="thumbEndRef"
           class="ex-slider__thumb ex-slider__thumb--end"
           :class="{ 'is-dragging': isDraggingEnd }"
           :style="getThumbStyle((currentValue as [number, number])[1])"
           :tabindex="disabled ? -1 : 0"
           role="slider"
+          :aria-orientation="direction"
           :aria-valuemin="(currentValue as [number, number])[0]"
           :aria-valuemax="max"
           :aria-valuenow="(currentValue as [number, number])[1]"
-          :aria-label="ariaLabel || t('slider.endValue')"
-          :aria-disabled="disabled"
+          :aria-label="getRangeThumbAriaLabel(1)"
+          :aria-description="ariaDescription"
+          v-bind="fieldAriaAttrs"
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
           @blur="handleThumbBlur"
+          @mouseenter="isHoveringEnd = true"
+          @mouseleave="isHoveringEnd = false"
         >
           <div
             v-if="showTooltip && (isDraggingEnd || isHoveringEnd)"
@@ -153,11 +164,13 @@
           class="ex-slider__input"
           :min="min"
           :max="max"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.input')"
           @change="handleInputChange"
-        >
+        />
       </template>
       <template v-else>
         <input
@@ -166,11 +179,13 @@
           class="ex-slider__input"
           :min="min"
           :max="(currentValue as [number, number])[1]"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.startInput')"
           @change="handleInputChange"
-        >
+        />
         <span class="ex-slider__input-separator">-</span>
         <input
           v-model.number="inputEndValue"
@@ -178,28 +193,31 @@
           class="ex-slider__input"
           :min="(currentValue as [number, number])[0]"
           :max="max"
-          :step="step"
+          :step="effectiveStep"
           :disabled="disabled"
+          :readonly="readonly"
+          v-bind="fieldAriaAttrs"
           :aria-label="t('slider.endInput')"
           @change="handleInputChange"
-        >
+        />
       </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { normalizeCustomClass } from '../../composables/useCustomClass';
 
 defineOptions({
   name: 'ExSlider',
 });
 
 const props = withDefaults(defineProps<ExSliderProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   min: 0,
   max: 100,
   step: 1,
@@ -209,7 +227,7 @@ const props = withDefaults(defineProps<ExSliderProps>(), {
   showStops: false,
   showTooltip: true,
   tooltipPlacement: 'top',
-  size: 'medium',
+  size: undefined,
   direction: 'horizontal',
   height: '200px',
   reverse: false,
@@ -219,7 +237,14 @@ const emit = defineEmits<ExSliderEmits>();
 const { t } = useI18n();
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  readonly,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 // 失焦：触发 FormItem 的 blur 校验
 const handleThumbBlur = () => {
@@ -231,10 +256,10 @@ const sliderRef = ref<HTMLDivElement>();
 const trackRef = ref<HTMLDivElement>();
 const thumbRef = ref<HTMLDivElement>();
 const thumbStartRef = ref<HTMLDivElement>();
-const thumbEndRef = ref<HTMLDivElement>();
 
 // State
-const currentValue = ref<number | [number, number]>(props.modelValue);
+const currentValue = ref<number | [number, number]>(props.modelValue ?? 0);
+let dragRequestedValue: number | [number, number] | undefined;
 const isDragging = ref(false);
 const isDraggingStart = ref(false);
 const isDraggingEnd = ref(false);
@@ -242,6 +267,7 @@ const isHovering = ref(false);
 const isHoveringStart = ref(false);
 const isHoveringEnd = ref(false);
 const activeThumbIndex = ref(0);
+const MAX_RENDERED_STOPS = 1000;
 
 // Input values
 const inputValue = ref(0);
@@ -250,23 +276,24 @@ const inputEndValue = ref(0);
 
 // 计算属性
 const sliderClasses = computed(() => {
-  const classes = ['ex-slider', `ex-slider--${props.size}`, `ex-slider--${props.direction}`];
+  const classes = [
+    'ex-slider',
+    `ex-slider--${componentSize.value}`,
+    `ex-slider--${props.direction}`,
+  ];
 
-  if (props.disabled) classes.push('ex-slider--disabled');
+  if (disabled.value) classes.push('ex-slider--disabled');
   if (props.range) classes.push('ex-slider--range');
   if (props.reverse) classes.push('ex-slider--reverse');
   if (isDragging.value || isDraggingStart.value || isDraggingEnd.value) {
     classes.push('is-dragging');
   }
 
-  return classes;
+  return [...classes, ...normalizeCustomClass(props.class)];
 });
 
 const sliderStyles = computed(() => {
-  if (props.direction === 'vertical') {
-    return { height: props.height };
-  }
-  return undefined;
+  return [props.direction === 'vertical' ? { height: props.height } : {}, props.style];
 });
 
 const trackWrapperStyle = computed(() => {
@@ -274,6 +301,10 @@ const trackWrapperStyle = computed(() => {
     return { height: '100%' };
   }
   return undefined;
+});
+
+const effectiveStep = computed(() => {
+  return Number.isFinite(props.step) && props.step > 0 ? props.step : 1;
 });
 
 const barStyle = computed(() => {
@@ -295,19 +326,21 @@ const barStyle = computed(() => {
 
     if (isVertical) {
       return isReverse
-        ? { top: `${100 - endPercent}%`, height: `${endPercent - startPercent}%` }
+        ? { top: `${startPercent}%`, height: `${endPercent - startPercent}%` }
         : { bottom: `${startPercent}%`, height: `${endPercent - startPercent}%` };
     }
     return isReverse
-      ? { right: `${100 - endPercent}%`, width: `${endPercent - startPercent}%` }
+      ? { right: `${startPercent}%`, width: `${endPercent - startPercent}%` }
       : { left: `${startPercent}%`, width: `${endPercent - startPercent}%` };
   }
 });
 
 const stopsData = computed(() => {
   if (!props.showStops) return [];
+  if (!Number.isFinite(props.step) || props.step <= 0 || props.max <= props.min) return [];
   const stops: number[] = [];
   const stepCount = (props.max - props.min) / props.step;
+  if (!Number.isFinite(stepCount) || stepCount > MAX_RENDERED_STOPS) return [];
 
   for (let i = 1; i < stepCount; i++) {
     stops.push(props.min + i * props.step);
@@ -341,7 +374,9 @@ const normalizedMarks = computed(() => {
 
 // 工具函数
 const getPercent = (value: number): number => {
-  return ((value - props.min) / (props.max - props.min)) * 100;
+  const span = props.max - props.min;
+  if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, ((value - props.min) / span) * 100));
 };
 
 const getValueFromPercent = (percent: number): number => {
@@ -350,14 +385,22 @@ const getValueFromPercent = (percent: number): number => {
 };
 
 const roundToStep = (value: number): number => {
-  const remainder = (value - props.min) % props.step;
-  let rounded = value - remainder;
+  const normalizedValue = Number.isFinite(value) ? value : props.min;
+  const step = effectiveStep.value;
+  const remainder = (normalizedValue - props.min) % step;
+  let rounded = normalizedValue - remainder;
 
-  if (Math.abs(remainder) >= props.step / 2) {
-    rounded += remainder > 0 ? props.step : -props.step;
+  if (Math.abs(remainder) >= step / 2) {
+    rounded += remainder > 0 ? step : -step;
   }
 
+  if (props.max <= props.min) return props.min;
   return Math.max(props.min, Math.min(props.max, rounded));
+};
+
+const getRangeThumbAriaLabel = (thumbIndex: number) => {
+  const thumbLabel = thumbIndex === 0 ? t('slider.startValue') : t('slider.endValue');
+  return props.ariaLabel ? `${props.ariaLabel} ${thumbLabel}` : thumbLabel;
 };
 
 const getThumbStyle = (value: number) => {
@@ -420,12 +463,14 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
   let percent: number;
 
   if (isVertical) {
+    if (rect.height <= 0) return props.min;
     const position = clientY - rect.top;
     percent = (position / rect.height) * 100;
     if (!isReverse) {
       percent = 100 - percent;
     }
   } else {
+    if (rect.width <= 0) return props.min;
     const position = clientX - rect.left;
     percent = (position / rect.width) * 100;
     if (isReverse) {
@@ -442,16 +487,24 @@ const getValueFromPosition = (clientX: number, clientY: number): number => {
  * @param commit 是否提交（emit change）：拖拽过程中为 false，仅在松手/键盘/点击时为 true
  */
 const updateValue = (newValue: number | [number, number], commit = true) => {
-  currentValue.value = newValue;
+  if (!interactive.value) return;
+  if (props.modelValue === undefined) {
+    currentValue.value = newValue;
+    synchronizeValue();
+  }
+  if (isDragging.value || isDraggingStart.value || isDraggingEnd.value)
+    dragRequestedValue = newValue;
   emit('update:modelValue', newValue);
   emit('input', newValue);
   if (commit) {
     emit('change', newValue);
+    formItem?.onFieldChange();
   }
+  void nextTick(synchronizeValue);
 };
 
 const handleTrackClick = (event: MouseEvent | TouchEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
 
   event.preventDefault();
   const { x, y } = getPositionFromEvent(event);
@@ -473,7 +526,7 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
 };
 
 const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -492,12 +545,17 @@ const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number
 
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
-  document.addEventListener('touchmove', handleMouseMove);
+  document.addEventListener('touchmove', handleMouseMove, { passive: false });
   document.addEventListener('touchend', handleMouseUp);
+  document.addEventListener('touchcancel', handleMouseUp);
 };
 
 const handleMouseMove = (event: MouseEvent | TouchEvent) => {
-  if (props.disabled) return;
+  if (!interactive.value) return;
+
+  if ('touches' in event && event.cancelable) {
+    event.preventDefault();
+  }
 
   const { x, y } = getPositionFromEvent(event);
   const value = getValueFromPosition(x, y);
@@ -516,9 +574,7 @@ const handleMouseMove = (event: MouseEvent | TouchEvent) => {
   }
 };
 
-const handleMouseUp = () => {
-  const wasDragging = isDragging.value || isDraggingStart.value || isDraggingEnd.value;
-
+function stopDragging() {
   isDragging.value = false;
   isDraggingStart.value = false;
   isDraggingEnd.value = false;
@@ -527,15 +583,24 @@ const handleMouseUp = () => {
   document.removeEventListener('mouseup', handleMouseUp);
   document.removeEventListener('touchmove', handleMouseMove);
   document.removeEventListener('touchend', handleMouseUp);
+  document.removeEventListener('touchcancel', handleMouseUp);
+  dragRequestedValue = undefined;
+}
+
+const handleMouseUp = () => {
+  const wasDragging = isDragging.value || isDraggingStart.value || isDraggingEnd.value;
+  const requested = dragRequestedValue ?? currentValue.value;
+  stopDragging();
 
   // 拖拽结束时提交一次 change
-  if (wasDragging) {
-    emit('change', currentValue.value);
+  if (wasDragging && interactive.value) {
+    emit('change', requested);
+    formItem?.onFieldChange();
   }
 };
 
 const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
-  if (props.disabled) return;
+  if (!interactive.value || event.isComposing) return;
 
   const { key } = event;
 
@@ -595,46 +660,50 @@ const handleInputChange = () => {
 };
 
 // 监听
+watch(interactive, canInteract => {
+  if (!canInteract) stopDragging();
+});
+// 显式重置撤销拖动会话，即使父级值未变也不能让旧移动事件继续写入。
 watch(
-  () => props.modelValue,
-  newValue => {
-    currentValue.value = newValue;
-
-    if (!props.range) {
-      inputValue.value = newValue as number;
-    } else {
-      const [start, end] = newValue as [number, number];
-      inputStartValue.value = start;
-      inputEndValue.value = end;
-    }
+  () => formItem?.resetRevision?.value,
+  () => {
+    stopDragging();
+    synchronizeValue();
   },
-  { immediate: true }
+  { flush: 'post' }
 );
 
-// 悬停事件
-onMounted(() => {
-  if (thumbRef.value) {
-    thumbRef.value.addEventListener('mouseenter', () => (isHovering.value = true));
-    thumbRef.value.addEventListener('mouseleave', () => (isHovering.value = false));
+function synchronizeValue() {
+  const newValue = props.modelValue ?? currentValue.value;
+  const isRange = props.range;
+  const scalarValue = Array.isArray(newValue) ? newValue[0] : newValue;
+  const normalizedScalar = roundToStep(scalarValue ?? props.min);
+
+  if (!isRange) {
+    currentValue.value = normalizedScalar;
+    inputValue.value = normalizedScalar;
+    return;
   }
 
-  if (thumbStartRef.value) {
-    thumbStartRef.value.addEventListener('mouseenter', () => (isHoveringStart.value = true));
-    thumbStartRef.value.addEventListener('mouseleave', () => (isHoveringStart.value = false));
-  }
+  const source = Array.isArray(newValue)
+    ? newValue
+    : ([normalizedScalar, normalizedScalar] as [number, number]);
+  const start = roundToStep(source[0] ?? props.min);
+  const end = roundToStep(source[1] ?? start);
+  const normalizedStart = Math.min(start, end);
+  const normalizedEnd = Math.max(start, end);
+  currentValue.value = [normalizedStart, normalizedEnd];
+  inputStartValue.value = normalizedStart;
+  inputEndValue.value = normalizedEnd;
+}
 
-  if (thumbEndRef.value) {
-    thumbEndRef.value.addEventListener('mouseenter', () => (isHoveringEnd.value = true));
-    thumbEndRef.value.addEventListener('mouseleave', () => (isHoveringEnd.value = false));
-  }
-});
+watch(
+  [() => props.modelValue, () => props.range, () => props.min, () => props.max, effectiveStep],
+  synchronizeValue,
+  { immediate: true, flush: 'sync' }
+);
 
-onBeforeUnmount(() => {
-  document.removeEventListener('mousemove', handleMouseMove);
-  document.removeEventListener('mouseup', handleMouseUp);
-  document.removeEventListener('touchmove', handleMouseMove);
-  document.removeEventListener('touchend', handleMouseUp);
-});
+onBeforeUnmount(stopDragging);
 
 // 暴露的方法
 const getElement = () => sliderRef.value || null;

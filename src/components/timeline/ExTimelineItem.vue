@@ -4,8 +4,16 @@
     :class="itemClasses"
     :style="itemStyles"
     role="listitem"
-    @click="handleClick"
+    @click.self="handleClick"
   >
+    <button
+      v-if="clickable"
+      class="ex-timeline-item__primary-action"
+      type="button"
+      :aria-label="ariaLabel || timestamp || t('common.more')"
+      @click="handleClick"
+    ></button>
+
     <!-- 垂直布局 -->
     <template v-if="direction === 'vertical'">
       <!-- 左侧内容区（alternate 模式） -->
@@ -22,7 +30,7 @@
           </slot>
         </div>
         <div class="ex-timeline-item__card">
-          <slot />
+          <slot></slot>
         </div>
         <div
           v-if="timestamp && timestampPosition === 'bottom'"
@@ -40,7 +48,7 @@
         <div
           v-if="showLine && !hideLine"
           class="ex-timeline-item__tail"
-        />
+        ></div>
 
         <!-- 节点 -->
         <div
@@ -48,13 +56,16 @@
           :style="nodeStyle"
         >
           <slot name="dot">
-            <div class="ex-timeline-item__dot" />
+            <div class="ex-timeline-item__dot"></div>
           </slot>
         </div>
       </div>
 
       <!-- 右侧内容区 -->
-      <div class="ex-timeline-item__content ex-timeline-item__content--right">
+      <div
+        v-if="mode !== 'alternate' || !isRightSide"
+        class="ex-timeline-item__content ex-timeline-item__content--right"
+      >
         <div
           v-if="timestamp && timestampPosition === 'top' && (mode !== 'alternate' || !isRightSide)"
           class="ex-timeline-item__timestamp ex-timeline-item__timestamp--top"
@@ -67,7 +78,7 @@
           v-if="mode !== 'alternate' || !isRightSide"
           class="ex-timeline-item__card"
         >
-          <slot />
+          <slot></slot>
         </div>
         <div
           v-if="
@@ -92,7 +103,7 @@
             :style="nodeStyle"
           >
             <slot name="dot">
-              <div class="ex-timeline-item__dot" />
+              <div class="ex-timeline-item__dot"></div>
             </slot>
           </div>
 
@@ -100,7 +111,7 @@
           <div
             v-if="showLine && !hideLine"
             class="ex-timeline-item__tail-horizontal"
-          />
+          ></div>
         </div>
 
         <!-- 内容区 -->
@@ -114,7 +125,7 @@
             </slot>
           </div>
           <div class="ex-timeline-item__card">
-            <slot />
+            <slot></slot>
           </div>
         </div>
       </div>
@@ -124,7 +135,9 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
+import { useI18n } from '../../locale';
 import { computed, inject, ref, onMounted, onUpdated } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
 import type { ComputedRef } from 'vue';
 import type {
   ExTimelineItemProps,
@@ -140,13 +153,15 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExTimelineItemProps>(), {
   type: 'default',
-  size: 'medium',
   timestampPosition: 'bottom',
   hollow: false,
   hideLine: false,
+  clickable: false,
 });
 
 const emit = defineEmits<ExTimelineItemEmits>();
+const { t } = useI18n();
+const componentSize = useComponentSize(computed(() => props.size));
 
 const itemRef = ref<HTMLDivElement>();
 const itemIndex = ref(0);
@@ -176,7 +191,7 @@ const itemClasses = computed(() => {
     'ex-timeline-item',
     `ex-timeline-item--${direction.value}`,
     `ex-timeline-item--${props.type}`,
-    `ex-timeline-item--${props.size}`,
+    `ex-timeline-item--${componentSize.value}`,
   ];
 
   if (direction.value === 'vertical') {
@@ -194,6 +209,10 @@ const itemClasses = computed(() => {
 
   if (props.hollow) {
     classes.push('ex-timeline-item--hollow');
+  }
+
+  if (props.clickable) {
+    classes.push('is-clickable');
   }
 
   classes.push(...normalizeCustomClass(props.class));

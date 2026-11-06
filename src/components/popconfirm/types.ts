@@ -3,7 +3,8 @@ import type { PopoverPlacement, PopoverTrigger } from '../popover/types';
 /**
  * 气泡确认框类型
  */
-export type PopconfirmType = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'error';
+export type PopconfirmType =
+  'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'error';
 
 /**
  * 气泡确认框按钮类型
@@ -151,6 +152,8 @@ export interface ExPopconfirmProps {
 export interface ExPopconfirmEmits {
   /** 确认事件 */
   confirm: [];
+  /** 确认前异步回调失败 */
+  'confirm-error': [error: unknown];
   /** 取消事件 */
   cancel: [];
   /** 显示状态变化 */

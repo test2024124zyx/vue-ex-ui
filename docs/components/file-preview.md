@@ -1,343 +1,435 @@
 # FilePreview 文件预览
 
-支持图片、视频、音频、PDF、文本等多种文件类型的预览组件。
+`ExFilePreview` 可预览图片、视频、音频、PDF、文本和代码文件。组件接受 URL 描述、`Blob` 或 `File`，并提供受控导航与图片变换状态。
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 
-const imageVisible = ref(false)
-const videoVisible = ref(false)
-const pdfVisible = ref(false)
+const visible = ref(false)
+const currentIndex = ref(0)
+const scale = ref(1)
+const rotate = ref(0)
+const files = ['#0f4c81', '#287c6f'].map((color, index) => ({
+  url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="${color}"/><circle cx="320" cy="180" r="100" fill="#f7d060"/><text x="320" y="340" text-anchor="middle" fill="white" font-size="32">Preview ${index + 1}</text></svg>`)}`,
+  name: `preview-${index + 1}.svg`,
+  type: 'image',
+}))
+
+const blobVisible = ref(false)
+const selectedFile = shallowRef()
+const openBlobPreview = () => {
+  selectedFile.value = new Blob(['这是在浏览器中创建的 Blob。\n替换为本地文件时，组件会释放旧的对象地址。'], { type: 'text/plain' })
+  blobVisible.value = true
+}
+const handleFileChange = event => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  selectedFile.value = file
+  blobVisible.value = true
+  event.target.value = ''
+}
+
+const textVisible = ref(false)
+const textIndex = ref(0)
+const textFiles = shallowRef([])
+const maxTextBytes = 512 * 1024
+const openTextPreview = () => {
+  textFiles.value = [
+    new File(['文件预览演示\n\n这是一份在浏览器内生成的文本。\n使用左右按钮切换到 TypeScript 代码。'], 'readme.txt', { type: 'text/plain' }),
+    new File(['interface User {\n  name: string;\n}\n\nconst greet = (user: User) => `你好，${user.name}`;\n'], 'greeting.ts', { type: 'text/typescript' }),
+  ]
+  textIndex.value = 0
+  textVisible.value = true
+}
+
+const downloadVisible = ref(false)
+const downloadSource = shallowRef()
+const downloadFile = shallowRef()
+const downloadRef = ref()
+const downloadStatus = ref('打开预览后，点击工具栏下载按钮。')
+const openDownloadPreview = () => {
+  downloadSource.value = new File(['这是可下载的本地演示文件。\n文件在浏览器内创建，无需外部下载服务。'], 'preview-download.txt', { type: 'text/plain' })
+  downloadVisible.value = true
+}
+const handleDownloadRequest = async file => {
+  downloadFile.value = file
+  await nextTick()
+  const result = await downloadRef.value.download()
+  downloadStatus.value = result.outcome === 'triggered'
+    ? `已将 ${file.name} 的下载交给浏览器，请查看浏览器下载记录。`
+    : result.outcome === 'error'
+      ? `下载失败：${result.error.message}`
+      : `下载状态：${result.outcome}`
+}
 </script>
 
 ## 基础用法
 
-预览图片文件。
-
+::: raw
 <div class="demo-container">
-  <ExButton @click="imageVisible = true">预览图片</ExButton>
-  <ExFilePreview
-    v-model:visible="imageVisible"
-    file="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
-    type="image"
-    :zoomable="true"
-    :rotatable="true"
+  <ex-button @click="visible = true">打开预览</ex-button>
+  <ex-file-preview
+    v-model:visible="visible"
+    v-model:current-index="currentIndex"
+    v-model:scale="scale"
+    v-model:rotate="rotate"
+    :files="files"
+    :show-download="false"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExButton @click="visible = true">预览图片</ExButton>
-  <ExFilePreview
-    v-model:visible="visible"
-    file="https://example.com/image.jpg"
-    type="image"
-    :zoomable="true"
-    :rotatable="true"
-  />
-</template>
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { PreviewFile } from 'vue-ex-ui';
 
-<script setup>
-import { ref } from 'vue'
-
-const visible = ref(false)
+const visible = ref(false);
+const currentIndex = ref(0);
+const scale = ref(1);
+const rotate = ref(0);
+const files: PreviewFile[] = ['#0f4c81', '#287c6f'].map((color, index) => ({
+  url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="${color}"/><circle cx="320" cy="180" r="100" fill="#f7d060"/><text x="320" y="340" text-anchor="middle" fill="white" font-size="32">Preview ${index + 1}</text></svg>`)}`,
+  name: `preview-${index + 1}.svg`,
+  type: 'image',
+}));
 </script>
-```
 
-## 预览视频
-
-支持视频文件预览。
-
-<div class="demo-container">
-  <ExButton type="success" @click="videoVisible = true">预览视频</ExButton>
-  <ExFilePreview
-    v-model:visible="videoVisible"
-    file="https://www.w3schools.com/html/mov_bbb.mp4"
-    type="video"
-  />
-</div>
-
-```vue
 <template>
-  <ExButton @click="visible = true">预览视频</ExButton>
-  <ExFilePreview
-    v-model:visible="visible"
-    file="https://example.com/video.mp4"
-    type="video"
-  />
+  <div class="demo-container">
+    <ex-button @click="visible = true">打开预览</ex-button>
+    <ex-file-preview
+      v-model:visible="visible"
+      v-model:current-index="currentIndex"
+      v-model:scale="scale"
+      v-model:rotate="rotate"
+      :files="files"
+      :show-download="false"
+    />
+  </div>
 </template>
 ```
 
-## 预览 PDF
+:::
 
-支持 PDF 文件预览。
+`visible`、`currentIndex`、`scale` 和 `rotate` 传入后均为受控状态。用户操作只发出对应更新事件，父级同步前，组件不会提前改变可见状态。只需要内部状态时，可使用 `default-current-index`、`default-scale` 和 `default-rotate`。
 
+## Blob 与 File
+
+直接预览浏览器生成的 `Blob`，或选择自己的本地文件。文件仅在当前浏览器读取。
+
+::: raw
 <div class="demo-container">
-  <ExButton type="warning" @click="pdfVisible = true">预览 PDF</ExButton>
-  <ExFilePreview
-    v-model:visible="pdfVisible"
-    file="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-    type="pdf"
-  />
+  <ex-button @click="openBlobPreview">预览 Blob 文本</ex-button>
+  <label class="file-input-label">
+    选择本地文件
+    <input type="file" accept="image/*,video/*,audio/*,application/pdf,text/*,.json,.ts,.js" @change="handleFileChange" />
+  </label>
+  <ex-file-preview v-model:visible="blobVisible" :file="selectedFile" :show-download="false" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExButton @click="visible = true">预览 PDF</ExButton>
-  <ExFilePreview
-    v-model:visible="visible"
-    file="https://example.com/document.pdf"
-    type="pdf"
-  />
-</template>
-```
+<script setup lang="ts">
+import { ref, shallowRef } from 'vue';
 
-## 图片操作
+const blobVisible = ref(false);
+const selectedFile = shallowRef<Blob>();
 
-图片预览支持缩放、旋转等操作。
-
-<div class="demo-container">
-  <ExSpace>
-    <ExButton @click="imageVisible = true">
-      <template #prefix>
-        <img src="https://api.iconify.design/ri/zoom-in-line.svg" alt="缩放" width="16" height="16" />
-      </template>
-      可缩放
-    </ExButton>
-    <ExButton type="success" @click="imageVisible = true">
-      <template #prefix>
-        <img src="https://api.iconify.design/ri/rotate-lock-line.svg" alt="旋转" width="16" height="16" />
-      </template>
-      可旋转
-    </ExButton>
-  </ExSpace>
-  <ExFilePreview
-    v-model:visible="imageVisible"
-    file="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-    type="image"
-    :zoomable="true"
-    :rotatable="true"
-    :show-toolbar="true"
-  />
-</div>
-
-```vue
-<template>
-  <ExFilePreview
-    v-model:visible="visible"
-    file="https://example.com/image.jpg"
-    type="image"
-    :zoomable="true"
-    :rotatable="true"
-    :show-toolbar="true"
-  />
-</template>
-```
-
-## 多文件预览
-
-支持预览多个文件，可以切换查看。
-
-<div class="demo-container">
-  <ExButton @click="imageVisible = true">预览图片集</ExButton>
-  <ExFilePreview
-    v-model:visible="imageVisible"
-    :files="[
-      'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800',
-      'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800',
-      'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800',
-    ]"
-    type="image"
-    :initial-index="0"
-  />
-</div>
-
-```vue
-<template>
-  <ExFilePreview
-    v-model:visible="visible"
-    :files="imageList"
-    type="image"
-    :initial-index="0"
-  />
-</template>
-
-<script setup>
-import { ref } from 'vue'
-
-const visible = ref(false)
-const imageList = ref([
-  'https://example.com/image1.jpg',
-  'https://example.com/image2.jpg',
-  'https://example.com/image3.jpg',
-])
+const openBlobPreview = () => {
+  selectedFile.value = new Blob(
+    ['这是在浏览器中创建的 Blob。\n替换为本地文件时，组件会释放旧的对象地址。'],
+    { type: 'text/plain' }
+  );
+  blobVisible.value = true;
+};
+const handleFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  selectedFile.value = file;
+  blobVisible.value = true;
+  input.value = '';
+};
 </script>
-```
 
-## 自定义工具栏
-
-通过 `#toolbar` 插槽可在工具栏中追加自定义操作（内置的缩放、旋转、下载、关闭按钮仍会保留）。插槽提供 `file` 和 `index` 作用域参数。
-
-<div class="demo-container">
-  <ExButton @click="imageVisible = true">自定义工具栏</ExButton>
-  <ExFilePreview
-    v-model:visible="imageVisible"
-    file="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200"
-    type="image"
-    :show-toolbar="true"
-  >
-    <template #toolbar>
-      <ExSpace>
-        <ExButton size="small" type="text">
-          <img src="https://api.iconify.design/ri/download-line.svg" alt="下载" width="18" height="18" />
-        </ExButton>
-        <ExButton size="small" type="text">
-          <img src="https://api.iconify.design/ri/share-line.svg" alt="分享" width="18" height="18" />
-        </ExButton>
-      </ExSpace>
-    </template>
-  </ExFilePreview>
-</div>
-
-```vue
 <template>
-  <ExFilePreview
-    v-model:visible="visible"
-    file="https://example.com/image.jpg"
-    type="image"
-  >
-    <template #toolbar>
-      <ExButton size="small" @click="handleDownload">下载</ExButton>
-      <ExButton size="small" @click="handleShare">分享</ExButton>
-    </template>
-  </ExFilePreview>
+  <ex-button @click="openBlobPreview">预览 Blob 文本</ex-button>
+  <label class="file-input-label">
+    选择本地文件
+    <input
+      type="file"
+      accept="image/*,video/*,audio/*,application/pdf,text/*,.json,.ts,.js"
+      @change="handleFileChange"
+    />
+  </label>
+  <ex-file-preview
+    v-model:visible="blobVisible"
+    :file="selectedFile"
+    :show-download="false"
+  />
 </template>
 ```
 
-## 键盘快捷键
+:::
 
-预览打开后支持以下快捷键（焦点会自动锁定在预览层内）：
+组件会为 `Blob`/`File` 创建对象地址，并在来源替换或组件卸载时释放。文件的 `type` 会作为 MIME 类型参与预览类型识别。
 
-| 按键 | 功能 |
-| --- | --- |
-| `Esc` | 关闭预览（需 `mask-closable` 为 `true`） |
-| `←` / `→` | 多文件预览时切换上一个 / 下一个 |
-| `+` / `=` | 放大（需 `zoomable`） |
-| `-` | 缩小（需 `zoomable`） |
-| `0` | 重置缩放 |
+## 文本与代码
+
+文本和代码通过 `fetch` 读取，并受 `max-text-bytes` 限制。非 2xx 响应、读取失败或内容超限都会触发结构化 `error` 事件；切换文件会中止旧请求。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="openTextPreview">预览文本与代码</ex-button>
+  <ex-file-preview
+    v-model:visible="textVisible"
+    v-model:current-index="textIndex"
+    :files="textFiles"
+    :max-text-bytes="maxTextBytes"
+    :show-download="false"
+  />
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { ref, shallowRef } from 'vue';
+
+const textVisible = ref(false);
+const textIndex = ref(0);
+const textFiles = shallowRef<File[]>([]);
+const maxTextBytes = 512 * 1024;
+const openTextPreview = () => {
+  textFiles.value = [
+    new File(
+      ['文件预览演示\n\n这是一份在浏览器内生成的文本。\n使用左右按钮切换到 TypeScript 代码。'],
+      'readme.txt',
+      { type: 'text/plain' }
+    ),
+    new File(
+      [
+        'interface User {\n  name: string;\n}\n\nconst greet = (user: User) => `你好，${user.name}`;\n',
+      ],
+      'greeting.ts',
+      { type: 'text/typescript' }
+    ),
+  ];
+  textIndex.value = 0;
+  textVisible.value = true;
+};
+</script>
+
+<template>
+  <ex-button @click="openTextPreview">预览文本与代码</ex-button>
+  <ex-file-preview
+    v-model:visible="textVisible"
+    v-model:current-index="textIndex"
+    :files="textFiles"
+    :max-text-bytes="maxTextBytes"
+    :show-download="false"
+  />
+</template>
+```
+
+:::
+
+代码预览提供逐行行号，不声明语法高亮能力。需要语法高亮时，请使用 `ExCode` 组件。
+
+## 下载请求
+
+内置下载按钮只触发 `download-request`。鉴权、文件名、错误提示和下载结果均由业务下载服务处理。
+
+下面把请求接入 `ExFileDownload`。文本文件在浏览器中生成，点击预览工具栏的下载按钮后会创建真实下载，并在页面显示交接结果。
+
+::: raw
+<div class="demo-container">
+  <ex-button @click="openDownloadPreview">打开可下载预览</ex-button>
+  <ex-file-preview
+    v-model:visible="downloadVisible"
+    :file="downloadSource"
+    @download-request="handleDownloadRequest"
+  />
+  <ex-file-download
+    v-show="false"
+    ref="downloadRef"
+    :url="downloadFile?.url || ''"
+    :filename="downloadFile?.name"
+    transport="link"
+  />
+  <output aria-live="polite">{{ downloadStatus }}</output>
+</div>
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { nextTick, ref, shallowRef } from 'vue';
+import type { ExFileDownloadExposed, PreviewFile } from 'vue-ex-ui';
+
+const downloadVisible = ref(false);
+const downloadSource = shallowRef<File>();
+const downloadFile = shallowRef<PreviewFile>();
+const downloadRef = ref<ExFileDownloadExposed>();
+const downloadStatus = ref('打开预览后，点击工具栏下载按钮。');
+const openDownloadPreview = () => {
+  downloadSource.value = new File(
+    ['这是可下载的本地演示文件。\n文件在浏览器内创建，无需外部下载服务。'],
+    'preview-download.txt',
+    { type: 'text/plain' }
+  );
+  downloadVisible.value = true;
+};
+const handleDownloadRequest = async (file: PreviewFile) => {
+  downloadFile.value = file;
+  await nextTick();
+  const result = await downloadRef.value!.download();
+  downloadStatus.value =
+    result.outcome === 'triggered'
+      ? `已将 ${file.name} 的下载交给浏览器，请查看浏览器下载记录。`
+      : result.outcome === 'error'
+        ? `下载失败：${result.error.message}`
+        : `下载状态：${result.outcome}`;
+};
+</script>
+
+<template>
+  <ex-button @click="openDownloadPreview">打开可下载预览</ex-button>
+  <ex-file-preview
+    v-model:visible="downloadVisible"
+    :file="downloadSource"
+    @download-request="handleDownloadRequest"
+  />
+  <ex-file-download
+    v-show="false"
+    ref="downloadRef"
+    :url="downloadFile?.url || ''"
+    :filename="downloadFile?.name"
+    transport="link"
+  />
+  <output aria-live="polite">{{ downloadStatus }}</output>
+</template>
+```
+
+:::
+
+`triggered` 表示浏览器已经接管链接，不表示文件已保存成功。`Blob` 对象地址由预览组件持有，在更换来源或卸载时释放。
+
+## 键盘操作
+
+| 按键      | 条件与行为                        |
+| --------- | --------------------------------- |
+| `Escape`  | `close-on-escape` 开启时请求关闭  |
+| `←` / `→` | 焦点位于预览层时请求切换文件      |
+| `+` / `=` | 图片可缩放且未到上限时请求放大    |
+| `-`       | 图片可缩放且未到下限时请求缩小    |
+| `0`       | 图片可缩放时请求重置到有效的 100% |
+
+媒体控件、表单控件和可编辑内容不会被图片快捷键接管。多个浮层同时存在时，`Escape` 只作用于最上层浮层。
+
+`show-close` 独立于 `show-toolbar`：隐藏工具栏后仍可保留关闭按钮。远程文本必须提供可流式读取的响应体，组件会在读取过程中执行 `max-text-bytes` 上限；无法流式读取时会拒绝加载，避免先把未知大小内容完整缓冲到内存。
 
 ## API
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| visible / v-model:visible | 是否显示预览 | `boolean` | `false` |
-| file | 单个文件 URL 或对象 | `string \| PreviewFile` | - |
-| files | 多个文件列表 | `(string \| PreviewFile)[]` | - |
-| initial-index | 初始显示的文件索引（多文件时） | `number` | `0` |
-| type | 强制指定文件类型（不传则自动检测） | `PreviewType` | - |
-| show-toolbar | 是否显示工具栏 | `boolean` | `true` |
-| show-download | 是否显示下载按钮 | `boolean` | `true` |
-| show-close | 是否显示关闭按钮 | `boolean` | `true` |
-| zoomable | 是否可缩放（图片） | `boolean` | `true` |
-| rotatable | 是否可旋转（图片） | `boolean` | `true` |
-| scale / v-model:scale | 图片缩放比例 | `number` | `1` |
-| rotate / v-model:rotate | 图片旋转角度 | `number` | `0` |
-| min-scale | 最小缩放比例 | `number` | `0.1` |
-| max-scale | 最大缩放比例 | `number` | `5` |
-| scale-step | 缩放步长 | `number` | `0.1` |
-| rotate-step | 旋转步长（度） | `number` | `90` |
-| mask-background | 遮罩层背景色 | `string` | `'rgba(0, 0, 0, 0.9)'` |
-| mask-closable | 点击遮罩 / 按 Esc 是否关闭 | `boolean` | `true` |
-| language | 代码语言（用于代码预览） | `string` | - |
-| show-line-numbers | 是否显示行号（文本/代码预览） | `boolean` | `true` |
+| 属性                          | 类型              | 默认值               |
+| ----------------------------- | ----------------- | -------------------- |
+| `visible` / `v-model:visible` | `boolean`         | `false`              |
+| `file`                        | `PreviewSource`   | —                    |
+| `files`                       | `PreviewSource[]` | —                    |
+| `current-index`               | `number`          | —                    |
+| `default-current-index`       | `number`          | `0`                  |
+| `type`                        | `PreviewType`     | 自动识别             |
+| `show-toolbar`                | `boolean`         | `true`               |
+| `show-download`               | `boolean`         | `true`               |
+| `show-close`                  | `boolean`         | `true`               |
+| `scale` / `v-model:scale`     | `number`          | —                    |
+| `default-scale`               | `number`          | `1`                  |
+| `rotate` / `v-model:rotate`   | `number`          | —                    |
+| `default-rotate`              | `number`          | `0`                  |
+| `zoomable`                    | `boolean`         | `true`               |
+| `rotatable`                   | `boolean`         | `true`               |
+| `min-scale`                   | `number`          | `0.1`                |
+| `max-scale`                   | `number`          | `5`                  |
+| `scale-step`                  | `number`          | `0.1`                |
+| `rotate-step`                 | `number`          | `90`                 |
+| `max-text-bytes`              | `number`          | `1048576`            |
+| `mask-background`             | `string`          | `rgba(0, 0, 0, 0.9)` |
+| `mask-closable`               | `boolean`         | `true`               |
+| `close-on-escape`             | `boolean`         | `true`               |
+| `lock-scroll`                 | `boolean`         | `true`               |
+| `show-line-numbers`           | `boolean`         | `true`               |
+| `z-index`                     | `number`          | 全局层级 + 50        |
+| `aria-label`                  | `string`          | 当前文件名或“预览”   |
+
+`files` 非空时优先于 `file`。文件自身的 `type` 优先于组件级 `type`；之后依次按 MIME 类型和扩展名识别。没有 MIME 信息时，含义不明确的 `.ogg` 不会被猜测为音频或视频。
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| update:visible | 显示状态改变时触发 | `(visible: boolean) => void` |
-| update:scale | 缩放比例改变时触发 | `(scale: number) => void` |
-| update:rotate | 旋转角度改变时触发 | `(rotate: number) => void` |
-| close | 关闭预览时触发 | `() => void` |
-| download | 点击下载时触发 | `(file: PreviewFile) => void` |
-| load | 当前文件加载完成时触发 | `() => void` |
-| error | 当前文件加载失败时触发 | `(error: Error) => void` |
+| 事件                  | 参数                                                            |
+| --------------------- | --------------------------------------------------------------- |
+| `update:visible`      | `(visible: boolean)`                                            |
+| `close-request`       | `()`                                                            |
+| `download-request`    | `(file: PreviewFile)`                                           |
+| `update:currentIndex` | `(index: number)`                                               |
+| `navigation-request`  | `(index: number, file: PreviewFile)`                            |
+| `update:scale`        | `(scale: number)`                                               |
+| `update:rotate`       | `(rotate: number)`                                              |
+| `ready`               | `(file: PreviewFile, index: number)`                            |
+| `error`               | `(error: ExFilePreviewError, file: PreviewFile, index: number)` |
+
+`ExFilePreviewError.code` 为 `invalid-source`、`http-error`、`text-too-large` 或 `load-failed`。HTTP 错误还提供 `status`。
 
 ### Slots
 
-| 插槽名 | 说明 | 作用域参数 |
-| --- | --- | --- |
-| toolbar | 在工具栏内追加自定义操作（内置缩放/旋转/下载/关闭按钮仍保留） | `{ file: PreviewFile, index: number }` |
-| footer | 自定义底部内容区域 | `{ file: PreviewFile, index: number }` |
+| 插槽      | 作用域参数                             |
+| --------- | -------------------------------------- |
+| `toolbar` | `{ file: PreviewFile, index: number }` |
+| `footer`  | `{ file: PreviewFile, index: number }` |
 
-### Methods
+### Exposed
 
-通过模板 ref 调用：
+| 方法                            | 类型                           |
+| ------------------------------- | ------------------------------ |
+| `requestPrevious`               | `() => void`                   |
+| `requestNext`                   | `() => void`                   |
+| `requestZoomIn`                 | `() => void`                   |
+| `requestZoomOut`                | `() => void`                   |
+| `requestResetZoom`              | `() => void`                   |
+| `requestRotateClockwise`        | `() => void`                   |
+| `requestRotateCounterclockwise` | `() => void`                   |
+| `requestResetRotation`          | `() => void`                   |
+| `requestDownload`               | `() => void`                   |
+| `requestClose`                  | `() => void`                   |
+| `getElement`                    | `() => HTMLDivElement \| null` |
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| prev | 上一个文件 | `() => void` |
-| next | 下一个文件 | `() => void` |
-| zoomIn | 放大 | `() => void` |
-| zoomOut | 缩小 | `() => void` |
-| resetZoom | 重置缩放 | `() => void` |
-| rotateLeft | 逆时针旋转 | `() => void` |
-| rotateRight | 顺时针旋转 | `() => void` |
-| resetRotate | 重置旋转 | `() => void` |
-| download | 下载当前文件 | `() => void` |
-| close | 关闭预览 | `() => void` |
-| getElement | 获取组件根 DOM 元素 | `() => HTMLDivElement \| null` |
+这些方法与界面操作使用同一请求语义。受控属性只有在父级同步后才会真正生效。
 
-## 类型定义
+## 地址限制
 
-```typescript
-type PreviewType = 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'code' | 'unknown'
-
-interface PreviewFile {
-  /** 文件 URL */
-  url: string
-  /** 文件名 */
-  name?: string
-  /** 文件类型（不传则按 mimeType / 扩展名自动检测） */
-  type?: PreviewType
-  /** MIME 类型 */
-  mimeType?: string
-}
-```
-
-## 无障碍支持
-
-- 预览层为 `role="dialog"` + `aria-modal="true"`，打开后自动聚焦并锁定 Tab 焦点陷阱，关闭后焦点归还触发元素。
-- 支持键盘操作：`Esc` 关闭、`←/→` 切换、`+/-/0` 缩放（详见上方[键盘快捷键](#键盘快捷键)）。
-- 多个预览层叠加时，`Esc` 只关闭最顶层（基于浮层栈），页面滚动锁定使用引用计数，互不干扰。
-
-## 常见问题
-
-**Q：文本 / 代码文件无法预览？**
-组件通过 `fetch(file.url)` 拉取文本内容，请确保该 URL 允许跨域（CORS）访问，且与页面同源或服务端已配置 `Access-Control-Allow-Origin`。
-
-**Q：切换多文件时文本内容没更新？**
-已修复——切换文件时会按当前 URL + 类型重新加载文本内容，无需额外处理。
-
-**Q：PDF 预览空白？**
-PDF 通过 `<iframe>` 加载，部分站点会通过 `X-Frame-Options` 禁止被内嵌；此时建议改为下载或使用专门的 PDF 渲染库。
-
-## 主题定制
-
-文件预览跟随 ExUI 全局主题（`ConfigProvider` / 全局 `--ex-color-*` 变量）自动适配。遮罩背景可通过 `mask-background` 属性单独覆盖：
-
-```vue
-<ExFilePreview v-model:visible="visible" file="..." mask-background="rgba(0,0,0,0.95)" />
-```
+组件接受相对地址、HTTP(S)、Blob，以及与当前预览类型匹配的安全 data 地址。`javascript:`、`file:`、控制字符地址和类型不匹配的 data 地址会被拒绝并触发 `invalid-source`。PDF 使用受限 iframe；目标服务仍需允许被嵌入。
 
 <style scoped>
 .demo-container {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
   padding: 24px;
   background: var(--ex-color-bg-primary);
   border: 1px solid var(--ex-color-border-primary);
   border-radius: var(--ex-radius-lg);
-  margin: 16px 0;
+}
+
+.file-input-label {
+  display: grid;
+  gap: 8px;
 }
 </style>

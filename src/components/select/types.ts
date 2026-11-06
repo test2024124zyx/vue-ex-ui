@@ -19,6 +19,8 @@ export interface SelectOption {
 }
 
 export interface SelectOptionGroup {
+  /** 分组稳定标识，动态调整组内数据时可保持插槽实例。 */
+  key?: string | number;
   /** 分组标签 */
   label: string;
   /** 分组选项 */
@@ -26,6 +28,17 @@ export interface SelectOptionGroup {
 }
 
 export type SelectOptions = Array<SelectOption | SelectOptionGroup>;
+
+/** 单次托管远程查询的取消信号；请求实现应将其传给 fetch 等底层客户端。 */
+export interface SelectRemoteContext {
+  signal: AbortSignal;
+}
+
+/** 返回本次查询完整的选项集合，组件负责取消、乱序保护和错误状态。 */
+export type SelectRemoteLoader = (
+  query: string,
+  context: SelectRemoteContext
+) => Promise<SelectOptions>;
 
 /** 选择器绑定值：单选为标量，多选为数组 */
 export type SelectValue = string | number | null | Array<string | number>;
@@ -37,19 +50,25 @@ export interface ExSelectProps {
   options?: SelectOptions;
   /** 占位符 */
   placeholder?: string;
+  /** 原生控件标识；会绑定到实际可交互的触发器或搜索输入框 */
+  id?: string;
   /** 尺寸 */
   size?: SelectSize;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否只读；只读状态仍可获得焦点，但不会打开或改变选项 */
+  readonly?: boolean;
   /** 是否可清空 */
   clearable?: boolean;
   /** 是否可搜索 */
   searchable?: boolean;
-  /** 是否为远程搜索（由 remoteMethod 拉取选项；关闭本地过滤） */
+  /** 是否为远程搜索；关闭本地过滤 */
   remote?: boolean;
   /** 远程搜索方法：输入变化时调用，父级据此更新 options */
   remoteMethod?: (query: string) => void;
-  /** 加载中（远程搜索时由父级控制） */
+  /** 托管异步查询；与 remoteMethod 同时提供时优先使用，options 用于初始值回显 */
+  remoteLoader?: SelectRemoteLoader;
+  /** 外部加载状态；与托管请求的加载状态合并 */
   loading?: boolean;
   /** 远程搜索防抖（毫秒），默认 300 */
   remoteDebounce?: number;
@@ -64,18 +83,35 @@ export interface ExSelectProps {
   /** 自定义样式 */
   style?: string | Record<string, string | number>;
   /**
-   * 是否对选项启用虚拟滚动（仅在「非分组」的扁平选项场景生效）。
+   * 是否对选项启用虚拟滚动，支持普通选项和分组选项。
    * 适用于上千选项的大列表，避免一次性渲染全部 DOM 导致卡顿。默认 false。
    */
   virtual?: boolean;
-  /** 虚拟滚动时单个选项的固定高度（像素），默认 34 */
+  /** 虚拟滚动时单个选项的固定高度（像素），默认 44；自定义值必须与实际行高一致 */
   optionHeight?: number;
+}
+
+export interface ExSelectSlots {
+  /** 选项展示内容，不放置独立交互控件；选择语义由外层选项节点维护。 */
+  option?: (scope: { option: SelectOption; index: number; selected: boolean }) => unknown;
+  /** 单选值的展示内容，搜索输入仍使用字符串标签。 */
+  label?: (scope: { option: SelectOption }) => unknown;
+  /** 多选标签内容，删除按钮仍由组件维护。 */
+  tag?: (scope: { option: SelectOption }) => unknown;
+  /** 分组标题内容，虚拟滚动时与普通选项采用同一固定行高。 */
+  group?: (scope: { group: SelectOptionGroup }) => unknown;
+  /** 空列表内容。 */
+  empty?: () => unknown;
+  /** 加载中的内容。 */
+  loading?: () => unknown;
+  /** 远程查询失败时的内容；默认只展示通用提示，不输出原始错误。 */
+  error?: (scope: { error: unknown; retry: () => void }) => unknown;
 }
 
 export interface ExSelectEmits {
   /** 值变化事件 */
   (e: 'update:modelValue', value: SelectValue): void;
-  /** 选择变化事件（多选时 value 为数组，option 为本次切换的选项） */
+  /** 选择变化事件（多选时 value 为数组，option 为当前已选选项数组） */
   (e: 'change', value: SelectValue, option: SelectOption | SelectOption[] | null): void;
   /** 多选时移除标签 */
   (e: 'remove-tag', value: string | number): void;
@@ -87,6 +123,8 @@ export interface ExSelectEmits {
   (e: 'blur', event: FocusEvent): void;
   /** 下拉显示状态变化 */
   (e: 'visible-change', visible: boolean): void;
+  /** 当前远程查询失败；主动取消或过期请求不会触发。 */
+  (e: 'remote-error', error: unknown, query: string): void;
 }
 
 export interface ExSelectExposed {
@@ -98,4 +136,6 @@ export interface ExSelectExposed {
   showDropdown: () => void;
   /** 隐藏下拉菜单 */
   hideDropdown: () => void;
+  /** 下拉打开且查询失败时立即重试最近失败的查询。 */
+  retryRemote: () => void;
 }

@@ -9,7 +9,7 @@
   // 固定颜色
   --ex-color-white: #ffffff;
   --ex-color-black: #000000;
-  
+
   // 白色透明度
   --ex-color-white-alpha-05: rgba(255, 255, 255, 0.05);
   --ex-color-white-alpha-10: rgba(255, 255, 255, 0.1);
@@ -22,7 +22,7 @@
   --ex-color-white-alpha-70: rgba(255, 255, 255, 0.7);
   --ex-color-white-alpha-80: rgba(255, 255, 255, 0.8);
   --ex-color-white-alpha-90: rgba(255, 255, 255, 0.9);
-  
+
   // 黑色透明度
   --ex-color-black-alpha-10: rgba(0, 0, 0, 0.1);
   --ex-color-black-alpha-15: rgba(0, 0, 0, 0.15);
@@ -30,10 +30,27 @@
   --ex-color-black-alpha-30: rgba(0, 0, 0, 0.3);
   --ex-color-black-alpha-40: rgba(0, 0, 0, 0.4);
   --ex-color-black-alpha-50: rgba(0, 0, 0, 0.5);
+  --ex-color-black-alpha-60: rgba(0, 0, 0, 0.6);
   --ex-color-black-alpha-70: rgba(0, 0, 0, 0.7);
   --ex-color-black-alpha-80: rgba(0, 0, 0, 0.8);
   --ex-color-black-alpha-90: rgba(0, 0, 0, 0.9);
-  
+
+  // 赛博朋克视觉辅助色：所有暗色主题共享，保证组件纹理和色差效果一致
+  --ex-color-cyber-green: #00ff88;
+  --ex-color-cyber-magenta: #ff00ff;
+  --ex-color-cyber-cyan: #00d4ff;
+  --ex-color-cyber-green-rgb: 0, 255, 136;
+  --ex-color-cyber-magenta-rgb: 255, 0, 255;
+  --ex-color-cyber-cyan-rgb: 0, 212, 255;
+  // 終端文字效果使用獨立的墨綠背景與青綠文字，避免改變一般語義色。
+  --ex-color-terminal-text: #14fdce;
+  --ex-color-terminal-text-rgb: 20, 253, 206;
+  --ex-color-terminal-bg: #031e11;
+  --ex-cyber-grid-size: 48px;
+  --ex-cyber-grid-opacity: 0.06;
+  --ex-cyber-scanline-opacity: 0.045;
+  --ex-cyber-scanline-duration: 12s;
+
   // 灰色透明度
   --ex-color-gray-alpha-30: rgba(128, 128, 128, 0.3);
   --ex-color-gray-alpha-50: rgba(128, 128, 128, 0.5);
@@ -42,11 +59,11 @@
   // RGB 通道（供 rgba(var(--…-rgb), <alpha>) 使用，任意 alpha 均可且随主题自适应）
   --ex-color-white-rgb: 255, 255, 255;
   --ex-color-gray-rgb: 156, 163, 175;
-  
+
   // 紫色透明度
   --ex-color-purple-alpha-80: rgba(44, 0, 62, 0.8);
   --ex-color-purple-alpha-95: rgba(44, 0, 62, 0.95);
-  
+
   // Code 组件颜色
   --ex-code-dark-bg: #1e1e1e;
   --ex-code-dark-border: #333333;
@@ -75,7 +92,7 @@
   --ex-color-success-alpha-50: rgba(16, 185, 129, 0.5);
   --ex-color-success-alpha-60: rgba(16, 185, 129, 0.6);
   --ex-color-success-alpha-80: rgba(16, 185, 129, 0.8);
-  
+
   // Warning
   --ex-color-warning-alpha-05: rgba(245, 158, 11, 0.05);
   --ex-color-warning-alpha-08: rgba(245, 158, 11, 0.08);
@@ -86,7 +103,7 @@
   --ex-color-warning-alpha-40: rgba(245, 158, 11, 0.4);
   --ex-color-warning-alpha-50: rgba(245, 158, 11, 0.5);
   --ex-color-warning-alpha-60: rgba(245, 158, 11, 0.6);
-  
+
   // Error/Danger
   --ex-color-error-alpha-05: rgba(239, 68, 68, 0.05);
   --ex-color-error-alpha-08: rgba(239, 68, 68, 0.08);
@@ -98,7 +115,7 @@
   --ex-color-error-alpha-50: rgba(239, 68, 68, 0.5);
   --ex-color-error-alpha-60: rgba(239, 68, 68, 0.6);
   --ex-color-error-alpha-80: rgba(239, 68, 68, 0.8);
-  
+
   --ex-color-error-light: #f56c6c;
   --ex-color-error-light-alpha-90: rgba(245, 108, 108, 0.9);
 
@@ -106,7 +123,7 @@
   --ex-color-success-rgb: 16, 185, 129;
   --ex-color-warning-rgb: 245, 158, 11;
   --ex-color-error-rgb: 239, 68, 68;
-  
+
   // 渐变中间色
   --ex-color-success-mid: #059669;
   --ex-color-success-dark: #047857;
@@ -123,19 +140,19 @@
 // ============================================================================
 
 @mixin theme-transition {
-  * {
+  :where([class^='ex-'], [class*=' ex-'], .ex-app, .ex-config-provider) {
     transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      color 0.3s ease,
-      box-shadow 0.3s ease;
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-out);
   }
 
   // 禁用动画的元素
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    :where([class^='ex-'], [class*=' ex-'], .ex-app, .ex-config-provider),
+    :where([class^='ex-'], [class*=' ex-'], .ex-app, .ex-config-provider)::before,
+    :where([class^='ex-'], [class*=' ex-'], .ex-app, .ex-config-provider)::after {
       transition: none;
     }
   }

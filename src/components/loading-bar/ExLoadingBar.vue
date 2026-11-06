@@ -1,88 +1,127 @@
 <template>
-  <Teleport to="body">
-    <Transition name="ex-loading-bar-fade">
+  <Transition name="ex-loading-bar-fade">
+    <div
+      v-if="props.visible"
+      ref="loadingBarRef"
+      v-bind="rootAttrs"
+      :class="loadingBarClasses"
+      :style="rootStyles"
+      role="progressbar"
+      :aria-label="resolvedAriaLabel"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-valuenow="normalizedPercentage"
+      :data-status="normalizedStatus"
+      :data-theme="configTheme"
+    >
       <div
-        v-if="visible"
-        class="ex-loading-bar"
-        :style="loadingBarStyles"
+        class="ex-loading-bar__bar"
+        :class="`ex-loading-bar__bar--${normalizedStatus}`"
+        aria-hidden="true"
       >
-        <!-- 进度条 -->
-        <div
-          class="ex-loading-bar__bar"
-          :class="barClasses"
-          :style="barStyles"
-        >
-          <!-- 霓虹发光效果 -->
-          <div class="ex-loading-bar__glow" />
-
-          <!-- 流动动画 -->
-          <div class="ex-loading-bar__flow" />
-        </div>
+        <div class="ex-loading-bar__glow"></div>
+        <div class="ex-loading-bar__flow"></div>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import type { ExLoadingBarProps } from './types';
+import { computed, ref, useAttrs } from 'vue';
+import { useLocale } from '../../locale';
+import {
+  useAnimation,
+  useConfigTheme,
+  useNeonEffect,
+  useThemeOverrides,
+} from '../config-provider/composables';
+import {
+  normalizeLoadingBarHeight,
+  normalizeLoadingBarPercentage,
+  normalizeLoadingBarStatus,
+  normalizeLoadingBarZIndex,
+  resolveLoadingBarColor,
+} from './loading-bar-utils';
+import type { ExLoadingBarExposed, ExLoadingBarProps } from './types';
 
 defineOptions({
   name: 'ExLoadingBar',
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<ExLoadingBarProps>(), {
+  visible: true,
   percentage: 0,
   status: 'loading',
   height: 3,
   color: undefined,
-  duration: 3000,
+  zIndex: undefined,
 });
 
-const visible = ref(true);
+const attrs = useAttrs();
+const { t } = useLocale('loading');
+const configTheme = useConfigTheme();
+const themeOverrides = useThemeOverrides();
+const animationEnabled = useAnimation();
+const neonEnabled = useNeonEffect();
+const loadingBarRef = ref<HTMLDivElement | null>(null);
+const normalizedPercentage = computed(() => normalizeLoadingBarPercentage(props.percentage));
+const normalizedStatus = computed(() => normalizeLoadingBarStatus(props.status));
+const normalizedHeight = computed(() => normalizeLoadingBarHeight(props.height));
+const normalizedZIndex = computed(() => normalizeLoadingBarZIndex(props.zIndex));
+const normalizedColor = computed(() =>
+  resolveLoadingBarColor(props.color, normalizedPercentage.value)
+);
+const loadingBarClasses = computed(() => [
+  'ex-loading-bar',
+  {
+    'ex-loading-bar--no-animation': !animationEnabled.value,
+    'ex-loading-bar--no-neon': !neonEnabled.value,
+  },
+]);
 
-// 计算属性
-const loadingBarStyles = computed(() => {
+const OBSOLETE_ATTRS = new Set(['duration', 'animated', 'rounded']);
+const PROTECTED_ATTRS = new Set(['role', 'ariavaluemin', 'ariavaluemax', 'ariavaluenow']);
+
+const normalizeAttrName = (name: string): string => name.replace(/-/g, '').toLowerCase();
+
+const rootAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => {
+      const normalizedKey = normalizeAttrName(key);
+      return (
+        key !== 'aria-label' &&
+        !OBSOLETE_ATTRS.has(normalizedKey) &&
+        !PROTECTED_ATTRS.has(normalizedKey)
+      );
+    })
+  )
+);
+
+const resolvedAriaLabel = computed(() => {
+  const label = attrs['aria-label'];
+  return typeof label === 'string' && label.trim() ? label.trim() : t('loading');
+});
+
+const rootStyles = computed<Record<string, string>>(() => {
   const styles: Record<string, string> = {
-    zIndex: 'calc(var(--ex-z-loading) - 1000 + var(--ex-z-index-base, 1000))',
+    ...themeOverrides.value,
+    '--ex-loading-bar-height': `${normalizedHeight.value}px`,
+    '--ex-loading-bar-progress': String(normalizedPercentage.value / 100),
   };
-  if (props.zIndex !== undefined) {
-    styles['--ex-z-loading'] = String(props.zIndex);
+
+  if (normalizedColor.value) styles['--ex-loading-bar-color'] = normalizedColor.value;
+  if (normalizedZIndex.value !== undefined) {
+    styles['--ex-loading-bar-z-index'] = String(normalizedZIndex.value);
   }
   return styles;
 });
 
-const barClasses = computed(() => {
-  const classes: string[] = [];
+const exposed: ExLoadingBarExposed = {
+  getElement: () => loadingBarRef.value,
+};
 
-  if (props.status) {
-    classes.push(`ex-loading-bar__bar--${props.status}`);
-  }
-
-  return classes;
-});
-
-const barStyles = computed(() => {
-  const styles: Record<string, string> = {
-    width: `${props.percentage}%`,
-    height: `${props.height}px`,
-  };
-
-  if (props.color) {
-    if (typeof props.color === 'string') {
-      styles.background = props.color;
-    } else if (typeof props.color === 'function') {
-      styles.background = props.color(props.percentage);
-    }
-  }
-
-  return styles;
-});
-
-// 暴露的方法和属性
-defineExpose({
-  visible,
-});
+defineExpose(exposed);
 </script>
 
 <style scoped lang="scss" src="./ExLoadingBar.scss"></style>

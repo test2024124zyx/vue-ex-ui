@@ -1,503 +1,512 @@
-# Form 表单示例集
+# Form 表单示例
 
-这里展示了各种实用的表单场景和最佳实践。
+## 登录
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-
-// 登录表单
-const loginForm = reactive({
-  username: '',
-  password: '',
-  remember: false
-})
-
-const loginRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
-  ]
-}
+import { reactive, ref } from 'vue'
 
 const loginFormRef = ref(null)
+const loginForm = reactive({ account: '', password: '', remember: true })
+const loginStatus = ref('')
+const loginRules = {
+  account: [{ required: true, message: '请输入企业账号', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 8, message: '密码至少需要 8 个字符', trigger: 'blur' }
+  ]
+}
 
 const handleLogin = async () => {
   const result = await loginFormRef.value?.validate()
-  if (result.valid) {
-    console.log('登录', loginForm)
-  }
+  loginStatus.value = result?.valid ? '登录信息校验通过' : '请先处理表单中的错误'
 }
 
-// 注册表单
-const registerForm = reactive({
-  username: '',
+const companyFormRef = ref(null)
+const companyForm = reactive({
+  companyName: '',
+  contact: '',
   email: '',
-  password: '',
-  confirmPassword: '',
-  phone: '',
-  agree: false
+  scale: null,
+  industry: null,
+  requirement: '',
+  agreement: false
 })
-
-const validateConfirmPassword = (rule, value, callback) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== registerForm.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
-    callback()
-  }
-}
-
-const registerRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
-  ],
+const companyStatus = ref('')
+const scaleOptions = [
+  { value: '1-50', label: '1–50 人' },
+  { value: '51-200', label: '51–200 人' },
+  { value: '201-1000', label: '201–1000 人' },
+  { value: '1000+', label: '1000 人以上' }
+]
+const industryOptions = [
+  { value: 'manufacturing', label: '先进制造' },
+  { value: 'retail', label: '零售消费' },
+  { value: 'service', label: '专业服务' },
+  { value: 'technology', label: '科技互联网' }
+]
+const companyRules = {
+  companyName: [{ required: true, message: '请输入企业名称', trigger: 'blur' }],
+  contact: [{ required: true, message: '请输入联系人', trigger: 'blur' }],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { required: true, message: '请输入工作邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
   ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' }
-  ],
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ],
-  agree: [
-    { required: true, message: '请阅读并同意用户协议', trigger: 'change' }
-  ]
+  scale: [{ required: true, message: '请选择企业规模', trigger: 'change' }],
+  industry: [{ required: true, message: '请选择所属行业', trigger: 'change' }],
+  agreement: [{ required: true, message: '请确认服务条款', trigger: 'change' }]
 }
 
-const registerFormRef = ref(null)
-
-const handleRegister = async () => {
-  const result = await registerFormRef.value?.validate()
-  if (result.valid) {
-    console.log('注册', registerForm)
-  }
+const handleCompanySubmit = async () => {
+  const result = await companyFormRef.value?.validate()
+  companyStatus.value = result?.valid ? '申请已准备就绪' : `仍有 ${result?.errors.length ?? 0} 项需要填写`
 }
 
-// 搜索表单
-const searchForm = reactive({
-  keyword: '',
-  category: '',
-  status: '',
-  dateRange: []
-})
-
-const handleSearch = () => {
-  console.log('搜索', searchForm)
+const filterForm = reactive({ keyword: '', department: null, status: null, owner: null })
+const departmentOptions = [
+  { value: 'product', label: '产品中心' },
+  { value: 'engineering', label: '研发中心' },
+  { value: 'sales', label: '销售中心' }
+]
+const statusOptions = [
+  { value: 'active', label: '进行中' },
+  { value: 'pending', label: '待审批' },
+  { value: 'closed', label: '已结束' }
+]
+const ownerOptions = [
+  { value: 'lin', label: '林知远' },
+  { value: 'zhou', label: '周予安' },
+  { value: 'chen', label: '陈嘉树' }
+]
+const filterStatus = ref('尚未查询')
+const handleFilter = () => {
+  const activeFilters = Object.values(filterForm).filter(value => value !== null && value !== '').length
+  filterStatus.value = `已应用 ${activeFilters} 个筛选条件`
+}
+const resetFilter = () => {
+  Object.assign(filterForm, { keyword: '', department: null, status: null, owner: null })
+  filterStatus.value = '筛选条件已重置'
 }
 
-const handleReset = () => {
-  Object.assign(searchForm, {
-    keyword: '',
-    category: '',
-    status: '',
-    dateRange: []
-  })
-}
-
-// 设置表单
 const settingsForm = reactive({
-  notifications: {
-    email: true,
-    sms: false,
-    push: true
-  },
-  privacy: {
-    profileVisible: true,
-    showEmail: false,
-    showPhone: false
-  },
-  theme: 'dark',
+  emailNotice: true,
+  mobileNotice: false,
+  weeklyReport: true,
+  visibility: 'team',
   language: 'zh-CN'
 })
-
-const handleSaveSettings = () => {
-  console.log('保存设置', settingsForm)
-}
+const languageOptions = [
+  { value: 'zh-CN', label: '简体中文' },
+  { value: 'en-US', label: 'English' },
+  { value: 'ja-JP', label: '日本語' }
+]
+const settingsStatus = ref('')
 </script>
 
-## 登录表单
+::: raw
 
-经典的登录表单示例。
-
-<div class="demo-container">
-  <div style="max-width: 400px; margin: 0 auto;">
-    <h3 style="text-align: center; color: #00f0ff; margin-bottom: 24px;">用户登录</h3>
-    <ExForm ref="loginFormRef" :model="loginForm" :rules="loginRules" label-width="0">
-      <ExFormItem prop="username">
-        <input 
-          v-model="loginForm.username" 
-          placeholder="用户名" 
-          style="width: 100%; padding: 12px; background: rgba(44, 0, 62, 0.6); border: 2px solid #00f0ff; color: #fff; font-size: 14px;"
-        />
-      </ExFormItem>
-      <ExFormItem prop="password">
-        <input 
-          v-model="loginForm.password" 
-          type="password" 
-          placeholder="密码" 
-          style="width: 100%; padding: 12px; background: rgba(44, 0, 62, 0.6); border: 2px solid #00f0ff; color: #fff; font-size: 14px;"
-        />
-      </ExFormItem>
-      <ExFormItem>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <ExCheckbox v-model="loginForm.remember">记住我</ExCheckbox>
-          <a href="#" style="color: #00f0ff; text-decoration: none;">忘记密码？</a>
-        </div>
-      </ExFormItem>
-      <ExFormItem>
-        <button 
-          @click="handleLogin" 
-          style="width: 100%; padding: 12px; background: linear-gradient(135deg, #00f0ff, #00d4e6); border: none; color: #0a0a0a; font-weight: 600; cursor: pointer; font-size: 16px;"
-        >
-          登录
-        </button>
-      </ExFormItem>
-      <div style="text-align: center; margin-top: 16px;">
-        <span style="color: #8a8c94;">还没有账号？</span>
-        <a href="#" style="color: #00f0ff; text-decoration: none; margin-left: 8px;">立即注册</a>
+<div class="vp-raw form-example-shell form-example-shell--login">
+  <ex-card shadow="md" aria-label="企业账号登录">
+    <template #header>
+      <div class="form-example-heading">
+        <ex-icon icon="dashboard-line" :size="28" color="var(--ex-color-primary)" />
+        <div><strong>企业工作台</strong><span>使用组织账号继续</span></div>
       </div>
-    </ExForm>
-  </div>
+    </template>
+    <ex-form
+      ref="loginFormRef"
+      :model="loginForm"
+      :rules="loginRules"
+      label-placement="top"
+      @submit="handleLogin"
+    >
+      <ex-form-item label="企业账号" prop="account">
+        <ex-input v-model="loginForm.account" placeholder="name@company.com" autocomplete="username">
+          <template #prefix><ex-icon icon="user-line" /></template>
+        </ex-input>
+      </ex-form-item>
+      <ex-form-item label="密码" prop="password">
+        <ex-input
+          v-model="loginForm.password"
+          type="password"
+          show-password
+          autocomplete="current-password"
+          placeholder="请输入密码"
+        />
+      </ex-form-item>
+      <ex-form-item>
+        <div class="login-options">
+          <ex-checkbox v-model="loginForm.remember">保持登录</ex-checkbox>
+          <ex-link @click="loginStatus = '请联系组织管理员重置密码'">忘记密码</ex-link>
+        </div>
+      </ex-form-item>
+      <ex-form-item>
+        <ex-button type="primary" native-type="submit" block>登录工作台</ex-button>
+      </ex-form-item>
+    </ex-form>
+    <ex-typography v-if="loginStatus" variant="caption" color="text-secondary">
+      {{ loginStatus }}
+    </ex-typography>
+  </ex-card>
 </div>
+:::
 
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExForm ref="loginFormRef" :model="loginForm" :rules="loginRules">
-    <ExFormItem prop="username">
-      <input v-model="loginForm.username" placeholder="用户名" />
-    </ExFormItem>
-    
-    <ExFormItem prop="password">
-      <input v-model="loginForm.password" type="password" placeholder="密码" />
-    </ExFormItem>
-    
-    <ExFormItem>
-      <ExCheckbox v-model="loginForm.remember">记住我</ExCheckbox>
-    </ExFormItem>
-    
-    <ExFormItem>
-      <button @click="handleLogin">登录</button>
-    </ExFormItem>
-  </ExForm>
-</template>
-
-<script setup>
-import { ref, reactive } from 'vue'
-
-const loginFormRef = ref(null)
-const loginForm = reactive({
-  username: '',
-  password: '',
-  remember: false
-})
-
-const loginRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
-  ]
-}
-
-const handleLogin = async () => {
-  const result = await loginFormRef.value?.validate()
-  if (result.valid) {
-    console.log('登录', loginForm)
-  }
-}
-</script>
+<ex-card shadow="md" aria-label="企业账号登录">
+  <template #header>
+    <div class="form-example-heading">
+      <ex-icon icon="dashboard-line" :size="28" color="var(--ex-color-primary)" />
+      <div><strong>企业工作台</strong><span>使用组织账号继续</span></div>
+    </div>
+  </template>
+  <ex-form
+    ref="loginFormRef"
+    :model="loginForm"
+    :rules="loginRules"
+    label-placement="top"
+    @submit="handleLogin"
+  >
+    <ex-form-item label="企业账号" prop="account">
+      <ex-input v-model="loginForm.account" placeholder="name@company.com" autocomplete="username">
+        <template #prefix><ex-icon icon="user-line" /></template>
+      </ex-input>
+    </ex-form-item>
+    <ex-form-item label="密码" prop="password">
+      <ex-input
+        v-model="loginForm.password"
+        type="password"
+        show-password
+        autocomplete="current-password"
+        placeholder="请输入密码"
+      />
+    </ex-form-item>
+    <ex-form-item>
+      <div class="login-options">
+        <ex-checkbox v-model="loginForm.remember">保持登录</ex-checkbox>
+        <ex-link @click="loginStatus = '请联系组织管理员重置密码'">忘记密码</ex-link>
+      </div>
+    </ex-form-item>
+    <ex-form-item>
+      <ex-button type="primary" native-type="submit" block>登录工作台</ex-button>
+    </ex-form-item>
+  </ex-form>
+  <ex-typography v-if="loginStatus" variant="caption" color="text-secondary">
+    {{ loginStatus }}
+  </ex-typography>
+</ex-card>
 ```
 
-## 注册表单
+:::
 
-包含多种验证规则的注册表单。
+## 企业试用申请
 
+::: raw
 
-<div class="demo-container">
-  <div style="max-width: 500px; margin: 0 auto;">
-    <h3 style="text-align: center; color: #00f0ff; margin-bottom: 24px;">用户注册</h3>
-    <ExForm ref="registerFormRef" :model="registerForm" :rules="registerRules" label-width="100px">
-      <ExFormItem label="用户名" prop="username">
-        <input v-model="registerForm.username" placeholder="请输入用户名" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-      </ExFormItem>
-      <ExFormItem label="邮箱" prop="email">
-        <input v-model="registerForm.email" type="email" placeholder="请输入邮箱" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-      </ExFormItem> 
-      <ExFormItem label="手机号" prop="phone">
-        <input v-model="registerForm.phone" placeholder="请输入手机号" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-      </ExFormItem>
-      <ExFormItem label="密码" prop="password">
-        <input v-model="registerForm.password" type="password" placeholder="请输入密码" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-      </ExFormItem>  
-      <ExFormItem label="确认密码" prop="confirmPassword">
-        <input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-      </ExFormItem>
-      <ExFormItem prop="agree">
-        <ExCheckbox v-model="registerForm.agree">
-          我已阅读并同意<a href="#" style="color: #00f0ff;">《用户协议》</a>和<a href="#" style="color: #00f0ff;">《隐私政策》</a>
-        </ExCheckbox>
-      </ExFormItem>
-      <ExFormItem>
-        <button @click="handleRegister" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #00f0ff, #00d4e6); border: none; color: #0a0a0a; font-weight: 600; cursor: pointer;">
-          注册
-        </button>
-      </ExFormItem>
-    </ExForm>
-  </div>
+<div class="vp-raw form-example-shell">
+  <ex-card shadow="md">
+    <template #header>
+      <div class="form-example-heading">
+        <ex-icon icon="user-add-line" :size="26" color="var(--ex-color-primary)" />
+        <div><strong>申请企业试用</strong><span>顾问将在一个工作日内联系</span></div>
+      </div>
+    </template>
+    <ex-form
+      ref="companyFormRef"
+      :model="companyForm"
+      :rules="companyRules"
+      label-width="104px"
+      has-feedback
+      @submit="handleCompanySubmit"
+    >
+      <div class="company-form-grid">
+        <ex-form-item label="企业名称" prop="companyName">
+          <ex-input v-model="companyForm.companyName" placeholder="请输入企业全称" clearable />
+        </ex-form-item>
+        <ex-form-item label="联系人" prop="contact">
+          <ex-input v-model="companyForm.contact" placeholder="请输入联系人姓名" clearable />
+        </ex-form-item>
+        <ex-form-item label="工作邮箱" prop="email">
+          <ex-input v-model="companyForm.email" type="email" placeholder="name@company.com" clearable />
+        </ex-form-item>
+        <ex-form-item label="企业规模" prop="scale">
+          <ex-select v-model="companyForm.scale" :options="scaleOptions" placeholder="请选择规模" />
+        </ex-form-item>
+        <ex-form-item label="所属行业" prop="industry">
+          <ex-select v-model="companyForm.industry" :options="industryOptions" placeholder="请选择行业" />
+        </ex-form-item>
+      </div>
+      <ex-form-item label="核心需求" prop="requirement">
+        <ex-input
+          v-model="companyForm.requirement"
+          type="textarea"
+          :rows="3"
+          :maxlength="200"
+          show-word-limit
+          placeholder="简要描述希望解决的业务问题"
+        />
+      </ex-form-item>
+      <ex-form-item prop="agreement">
+        <ex-checkbox v-model="companyForm.agreement">我已确认企业服务条款与隐私说明</ex-checkbox>
+      </ex-form-item>
+      <ex-form-item>
+        <ex-space wrap>
+          <ex-button type="primary" native-type="submit">提交申请</ex-button>
+          <ex-button type="default" native-type="reset">清空内容</ex-button>
+        </ex-space>
+      </ex-form-item>
+    </ex-form>
+    <ex-typography v-if="companyStatus" variant="caption" color="text-secondary">
+      {{ companyStatus }}
+    </ex-typography>
+  </ex-card>
 </div>
+:::
 
-
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExForm ref="registerFormRef" :model="registerForm" :rules="registerRules" label-width="100px">
-    <ExFormItem label="用户名" prop="username">
-      <input v-model="registerForm.username" placeholder="请输入用户名" />
-    </ExFormItem>
-    
-    <ExFormItem label="邮箱" prop="email">
-      <input v-model="registerForm.email" type="email" placeholder="请输入邮箱" />
-    </ExFormItem>
-    
-    <ExFormItem label="手机号" prop="phone">
-      <input v-model="registerForm.phone" placeholder="请输入手机号" />
-    </ExFormItem>
-    
-    <ExFormItem label="密码" prop="password">
-      <input v-model="registerForm.password" type="password" placeholder="请输入密码" />
-    </ExFormItem>
-    
-    <ExFormItem label="确认密码" prop="confirmPassword">
-      <input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" />
-    </ExFormItem>
-    
-    <ExFormItem prop="agree">
-      <ExCheckbox v-model="registerForm.agree">
-        我已阅读并同意用户协议
-      </ExCheckbox>
-    </ExFormItem>
-    
-    <ExFormItem>
-      <button @click="handleRegister">注册</button>
-    </ExFormItem>
-  </ExForm>
-</template>
+<ex-card shadow="md">
+  <template #header>
+    <div class="form-example-heading">
+      <ex-icon icon="user-add-line" :size="26" color="var(--ex-color-primary)" />
+      <div><strong>申请企业试用</strong><span>顾问将在一个工作日内联系</span></div>
+    </div>
+  </template>
+  <ex-form
+    ref="companyFormRef"
+    :model="companyForm"
+    :rules="companyRules"
+    label-width="104px"
+    has-feedback
+    @submit="handleCompanySubmit"
+  >
+    <div class="company-form-grid">
+      <ex-form-item label="企业名称" prop="companyName">
+        <ex-input v-model="companyForm.companyName" placeholder="请输入企业全称" clearable />
+      </ex-form-item>
+      <ex-form-item label="联系人" prop="contact">
+        <ex-input v-model="companyForm.contact" placeholder="请输入联系人姓名" clearable />
+      </ex-form-item>
+      <ex-form-item label="工作邮箱" prop="email">
+        <ex-input v-model="companyForm.email" type="email" placeholder="name@company.com" clearable />
+      </ex-form-item>
+      <ex-form-item label="企业规模" prop="scale">
+        <ex-select v-model="companyForm.scale" :options="scaleOptions" placeholder="请选择规模" />
+      </ex-form-item>
+      <ex-form-item label="所属行业" prop="industry">
+        <ex-select v-model="companyForm.industry" :options="industryOptions" placeholder="请选择行业" />
+      </ex-form-item>
+    </div>
+    <ex-form-item label="核心需求" prop="requirement">
+      <ex-input
+        v-model="companyForm.requirement"
+        type="textarea"
+        :rows="3"
+        :maxlength="200"
+        show-word-limit
+        placeholder="简要描述希望解决的业务问题"
+      />
+    </ex-form-item>
+    <ex-form-item prop="agreement">
+      <ex-checkbox v-model="companyForm.agreement">我已确认企业服务条款与隐私说明</ex-checkbox>
+    </ex-form-item>
+    <ex-form-item>
+      <ex-space wrap>
+        <ex-button type="primary" native-type="submit">提交申请</ex-button>
+        <ex-button type="default" native-type="reset">清空内容</ex-button>
+      </ex-space>
+    </ex-form-item>
+  </ex-form>
+  <ex-typography v-if="companyStatus" variant="caption" color="text-secondary">
+    {{ companyStatus }}
+  </ex-typography>
+</ex-card>
 ```
 
-## 搜索表单
+:::
 
-内联布局的搜索表单。
+## 业务筛选
 
+::: raw
 
-<div class="demo-container">
-  <ExForm :model="searchForm" layout="inline">
-    <ExFormItem label="关键词">
-      <input v-model="searchForm.keyword" placeholder="搜索..." style="width: 200px; padding: 8px; background: transparent; border: 2px solid #00f0ff; color: #fff;" />
-    </ExFormItem>
-    <ExFormItem label="分类">
-      <ExSelect v-model="searchForm.category" placeholder="选择分类" style="width: 150px;">
-        <option value="">全部</option>
-        <option value="tech">技术</option>
-        <option value="design">设计</option>
-        <option value="product">产品</option>
-      </ExSelect>
-    </ExFormItem>
-    <ExFormItem label="状态">
-      <ExSelect v-model="searchForm.status" placeholder="选择状态" style="width: 150px;">
-        <option value="">全部</option>
-        <option value="active">活跃</option>
-        <option value="inactive">未活跃</option>
-      </ExSelect>
-    </ExFormItem>
-    <ExFormItem>
-      <button @click="handleSearch" style="padding: 8px 24px; background: linear-gradient(135deg, #00f0ff, #00d4e6); border: none; color: #0a0a0a; font-weight: 600; cursor: pointer; margin-right: 8px;">
-        搜索
-      </button>
-      <button @click="handleReset" style="padding: 8px 24px; background: transparent; border: 2px solid #00f0ff; color: #00f0ff; cursor: pointer;">
-        重置
-      </button>
-    </ExFormItem>
-  </ExForm>
+<div class="vp-raw form-example-shell">
+  <ex-form :model="filterForm" layout="inline" class="filter-form">
+    <ex-form-item label="关键词">
+      <ex-input v-model="filterForm.keyword" type="search" placeholder="客户或项目名称" clearable />
+    </ex-form-item>
+    <ex-form-item label="部门">
+      <ex-select v-model="filterForm.department" :options="departmentOptions" placeholder="全部部门" clearable />
+    </ex-form-item>
+    <ex-form-item label="状态">
+      <ex-select v-model="filterForm.status" :options="statusOptions" placeholder="全部状态" clearable />
+    </ex-form-item>
+    <ex-form-item label="负责人">
+      <ex-select v-model="filterForm.owner" :options="ownerOptions" placeholder="全部负责人" clearable searchable />
+    </ex-form-item>
+    <ex-form-item>
+      <ex-space>
+        <ex-button type="primary" @click="handleFilter">查询</ex-button>
+        <ex-button type="default" :glow="false" @click="resetFilter">重置</ex-button>
+      </ex-space>
+    </ex-form-item>
+  </ex-form>
+  <ex-typography variant="caption" color="text-secondary">{{ filterStatus }}</ex-typography>
 </div>
+:::
 
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExForm :model="searchForm" layout="inline">
-    <ExFormItem label="关键词">
-      <input v-model="searchForm.keyword" placeholder="搜索..." />
-    </ExFormItem>
-    
-    <ExFormItem label="分类">
-      <ExSelect v-model="searchForm.category" placeholder="选择分类">
-        <option value="">全部</option>
-        <option value="tech">技术</option>
-        <option value="design">设计</option>
-      </ExSelect>
-    </ExFormItem>
-    
-    <ExFormItem>
-      <button @click="handleSearch">搜索</button>
-      <button @click="handleReset">重置</button>
-    </ExFormItem>
-  </ExForm>
-</template>
+<ex-form :model="filterForm" layout="inline" class="filter-form">
+  <ex-form-item label="关键词">
+    <ex-input v-model="filterForm.keyword" type="search" placeholder="客户或项目名称" clearable />
+  </ex-form-item>
+  <ex-form-item label="部门">
+    <ex-select v-model="filterForm.department" :options="departmentOptions" placeholder="全部部门" clearable />
+  </ex-form-item>
+  <ex-form-item label="状态">
+    <ex-select v-model="filterForm.status" :options="statusOptions" placeholder="全部状态" clearable />
+  </ex-form-item>
+  <ex-form-item label="负责人">
+    <ex-select
+      v-model="filterForm.owner"
+      :options="ownerOptions"
+      placeholder="全部负责人"
+      clearable
+      searchable
+    />
+  </ex-form-item>
+  <ex-form-item>
+    <ex-space>
+      <ex-button type="primary" @click="handleFilter">查询</ex-button>
+      <ex-button type="default" :glow="false" @click="resetFilter">重置</ex-button>
+    </ex-space>
+  </ex-form-item>
+</ex-form>
+<ex-typography variant="caption" color="text-secondary">{{ filterStatus }}</ex-typography>
 ```
 
-## 设置表单
+:::
 
-分组的设置表单。
+## 通知与隐私设置
 
+::: raw
 
-<div class="demo-container">
-  <div style="max-width: 600px;">
-    <ExForm :model="settingsForm" label-width="120px">
-      <h4 style="color: #00f0ff; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid rgba(0, 240, 255, 0.3);">通知设置</h4>
-      <ExFormItem label="邮件通知">
-        <ExSwitch v-model="settingsForm.notifications.email" />
-      </ExFormItem>
-      <ExFormItem label="短信通知">
-        <ExSwitch v-model="settingsForm.notifications.sms" />
-      </ExFormItem>
-      <ExFormItem label="推送通知">
-        <ExSwitch v-model="settingsForm.notifications.push" />
-      </ExFormItem>
-      <h4 style="color: #00f0ff; margin: 24px 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid rgba(0, 240, 255, 0.3);">隐私设置</h4>
-      <ExFormItem label="公开资料">
-        <ExSwitch v-model="settingsForm.privacy.profileVisible" />
-      </ExFormItem>
-      <ExFormItem label="显示邮箱">
-        <ExSwitch v-model="settingsForm.privacy.showEmail" />
-      </ExFormItem>
-      <ExFormItem label="显示手机">
-        <ExSwitch v-model="settingsForm.privacy.showPhone" />
-      </ExFormItem>
-      <h4 style="color: #00f0ff; margin: 24px 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid rgba(0, 240, 255, 0.3);">偏好设置</h4>
-      <ExFormItem label="主题">
-        <ExRadioGroup v-model="settingsForm.theme">
-          <ExRadio value="light">浅色</ExRadio>
-          <ExRadio value="dark">深色</ExRadio>
-          <ExRadio value="auto">自动</ExRadio>
-        </ExRadioGroup>
-      </ExFormItem>
-      <ExFormItem label="语言">
-        <ExSelect v-model="settingsForm.language" style="width: 200px;">
-          <option value="zh-CN">简体中文</option>
-          <option value="en-US">English</option>
-          <option value="ja-JP">日本語</option>
-        </ExSelect>
-      </ExFormItem>
-      <ExFormItem>
-        <button @click="handleSaveSettings" style="padding: 10px 32px; background: linear-gradient(135deg, #00f0ff, #00d4e6); border: none; color: #0a0a0a; font-weight: 600; cursor: pointer;">
-          保存设置
-        </button>
-      </ExFormItem>
-    </ExForm>
-  </div>
+<div class="vp-raw form-example-shell form-example-shell--settings">
+  <ex-card shadow="sm">
+    <ex-form :model="settingsForm" label-width="132px">
+      <ex-form-item label="邮件通知"><ex-switch v-model="settingsForm.emailNotice" /></ex-form-item>
+      <ex-form-item label="移动端通知"><ex-switch v-model="settingsForm.mobileNotice" /></ex-form-item>
+      <ex-form-item label="每周经营报告"><ex-switch v-model="settingsForm.weeklyReport" /></ex-form-item>
+      <ex-form-item label="资料可见范围">
+        <ex-radio-group v-model="settingsForm.visibility">
+          <ex-radio value="private">仅自己</ex-radio>
+          <ex-radio value="team">团队成员</ex-radio>
+          <ex-radio value="company">全公司</ex-radio>
+        </ex-radio-group>
+      </ex-form-item>
+      <ex-form-item label="界面语言">
+        <ex-select v-model="settingsForm.language" :options="languageOptions" />
+      </ex-form-item>
+      <ex-form-item>
+        <ex-button type="primary" @click="settingsStatus = '设置已保存'">保存设置</ex-button>
+      </ex-form-item>
+    </ex-form>
+    <ex-typography v-if="settingsStatus" variant="caption" color="success">
+      {{ settingsStatus }}
+    </ex-typography>
+  </ex-card>
 </div>
+:::
 
+::: details 查看示例代码
 
 ```vue
-<template>
-  <ExForm :model="settingsForm" label-width="120px">
-    <h4>通知设置</h4>
-    <ExFormItem label="邮件通知">
-      <ExSwitch v-model="settingsForm.notifications.email" />
-    </ExFormItem>
-    
-    <h4>隐私设置</h4>
-    <ExFormItem label="公开资料">
-      <ExSwitch v-model="settingsForm.privacy.profileVisible" />
-    </ExFormItem>
-    
-    <h4>偏好设置</h4>
-    <ExFormItem label="主题">
-      <ExRadioGroup v-model="settingsForm.theme">
-        <ExRadio value="light">浅色</ExRadio>
-        <ExRadio value="dark">深色</ExRadio>
-      </ExRadioGroup>
-    </ExFormItem>
-    
-    <ExFormItem>
-      <button @click="handleSaveSettings">保存设置</button>
-    </ExFormItem>
-  </ExForm>
-</template>
+<ex-card shadow="sm">
+  <ex-form :model="settingsForm" label-width="132px">
+    <ex-form-item label="邮件通知"><ex-switch v-model="settingsForm.emailNotice" /></ex-form-item>
+    <ex-form-item label="移动端通知"><ex-switch v-model="settingsForm.mobileNotice" /></ex-form-item>
+    <ex-form-item label="每周经营报告"><ex-switch v-model="settingsForm.weeklyReport" /></ex-form-item>
+    <ex-form-item label="资料可见范围">
+      <ex-radio-group v-model="settingsForm.visibility">
+        <ex-radio value="private">仅自己</ex-radio>
+        <ex-radio value="team">团队成员</ex-radio>
+        <ex-radio value="company">全公司</ex-radio>
+      </ex-radio-group>
+    </ex-form-item>
+    <ex-form-item label="界面语言">
+      <ex-select v-model="settingsForm.language" :options="languageOptions" />
+    </ex-form-item>
+    <ex-form-item>
+      <ex-button type="primary" @click="settingsStatus = '设置已保存'">保存设置</ex-button>
+    </ex-form-item>
+  </ex-form>
+  <ex-typography v-if="settingsStatus" variant="caption" color="success">
+    {{ settingsStatus }}
+  </ex-typography>
+</ex-card>
 ```
+
+:::
 
 <style scoped>
-.demo-container {
-  padding: 32px;
-  border: 2px solid #00f0ff;
-  border-radius: 0;
-  background: rgba(44, 0, 62, 0.3);
-  margin: 24px 0;
-  transition: all 0.9s ease-in-out;
+.form-example-shell {
+  margin: 20px 0;
 }
 
-.demo-container:hover {
-  border-color: #ff007f;
-  box-shadow: 
-    0 0 20px rgba(255, 0, 127, 0.3),
-    0 0 30px rgba(255, 0, 127, 0.2);
+.form-example-shell--login {
+  max-width: 430px;
+  margin-inline: auto;
 }
 
-.demo-container h3 {
-  font-size: 24px;
-  font-weight: 600;
+.form-example-shell--settings {
+  max-width: 720px;
 }
 
-.demo-container h4 {
-  font-size: 18px;
-  font-weight: 600;
+.form-example-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.demo-container input,
-.demo-container select,
-.demo-container textarea {
-  font-family: var(--ex-font-secondary);
-  outline: none;
-  transition: all 0.3s;
+.form-example-heading div {
+  display: grid;
+  gap: 4px;
 }
 
-.demo-container input:focus,
-.demo-container select:focus,
-.demo-container textarea:focus {
-  border-color: #ff007f;
-  box-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
+.form-example-heading span {
+  color: var(--ex-color-text-secondary);
+  font-size: var(--ex-text-sm);
+  font-weight: var(--ex-font-normal);
 }
 
-.demo-container button {
-  font-family: var(--ex-font-secondary);
-  transition: all 0.3s;
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
 }
 
-.demo-container button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+.company-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
 }
 
-.demo-container a {
-  transition: all 0.3s;
+.company-form-grid :deep(.ex-select),
+.form-example-shell--settings :deep(.ex-select) {
+  width: 100%;
 }
 
-.demo-container a:hover {
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
+.filter-form {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 720px) {
+  .company-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

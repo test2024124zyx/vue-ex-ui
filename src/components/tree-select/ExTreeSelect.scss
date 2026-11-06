@@ -1,4 +1,5 @@
 @use '../../styles/tokens' as *;
+@use '../../styles/effect-boundary' as *;
 
 // ============================================================================
 // TreeSelect 树选择
@@ -12,7 +13,7 @@
     display: flex;
     align-items: center;
     gap: var(--ex-spacing-1);
-    min-height: 36px;
+    min-height: 44px;
     padding: 2px var(--ex-spacing-2) 2px var(--ex-spacing-3);
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
@@ -68,19 +69,46 @@
     }
   }
   &__tag-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
     cursor: pointer;
     color: var(--ex-color-text-tertiary);
     &:hover {
       color: var(--ex-color-text-primary);
     }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
+    }
   }
 
   &__clear {
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
     color: var(--ex-color-text-tertiary);
     cursor: pointer;
     &:hover {
       color: var(--ex-color-text-secondary);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--ex-color-primary-alpha-20);
     }
   }
 
@@ -91,11 +119,11 @@
   }
 
   &--small &__trigger {
-    min-height: 30px;
+    min-height: 44px;
     font-size: var(--ex-text-sm);
   }
   &--large &__trigger {
-    min-height: 42px;
+    min-height: 48px;
     font-size: var(--ex-text-base);
   }
 
@@ -134,7 +162,7 @@
   }
   .ex-tree-select__search-input {
     width: 100%;
-    height: 30px;
+    height: 40px;
     padding: 0 var(--ex-spacing-2);
     background: var(--ex-color-bg-secondary);
     border: 1px solid var(--ex-color-border-primary);
@@ -158,7 +186,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    height: 32px;
+    height: 44px;
     padding-right: var(--ex-spacing-3);
     color: var(--ex-color-text-primary);
     cursor: pointer;
@@ -166,6 +194,11 @@
 
     &:hover {
       background: var(--ex-color-bg-hover);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--ex-color-primary-alpha-50);
     }
     &.is-selected {
       background: var(--ex-color-primary-alpha-20);
@@ -271,4 +304,20 @@
 .ex-tree-select-dropdown-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+// Teleport 面板脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-tree-select__panel.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-tree-select__panel.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
 }

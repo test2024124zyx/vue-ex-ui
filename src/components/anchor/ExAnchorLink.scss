@@ -1,84 +1,49 @@
-@use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
 .ex-anchor-link {
   position: relative;
-  
+  padding: var(--ex-spacing-2) 0 var(--ex-spacing-2) var(--ex-spacing-4);
+
   &__title {
     display: block;
-    padding: var(--ex-spacing-1) var(--ex-spacing-2);
+    overflow: hidden;
     color: var(--ex-color-text-secondary);
-    text-decoration: none;
     font-size: var(--ex-text-sm);
     line-height: 1.5;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
     border-radius: var(--ex-radius-sm);
-    transition: var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
-    word-break: break-all;
-    
+    @include transition((color, background-color));
+
     &:hover {
       color: var(--ex-color-primary);
       background-color: var(--ex-color-bg-tertiary);
     }
-    
+
     &:focus-visible {
       outline: 2px solid var(--ex-color-primary);
       outline-offset: 2px;
     }
   }
-  
-  &__children {
-    margin-left: var(--ex-spacing-4);
-    border-left: 1px solid var(--ex-color-border-secondary);
+
+  &.is-active > &__title,
+  &__title.is-active {
+    color: var(--ex-color-primary);
+    font-weight: var(--ex-font-medium);
   }
-  
-  // 激活状�?
-  &--active {
-    > .ex-anchor-link__title {
-      color: var(--ex-color-primary);
-      background-color: var(--ex-color-primary-alpha-10);
-      font-weight: var(--ex-font-medium);
-    }
+
+  // 嵌套链接通过缩进体现层级，不依赖未公开的伪层级类名。
+  .ex-anchor-link {
+    padding-left: var(--ex-spacing-6);
+    font-size: var(--ex-text-xs);
   }
-  
-  // 层级样式
-  &--level-1 {
-    .ex-anchor-link__title {
-      font-size: var(--ex-text-base);
-      font-weight: var(--ex-font-medium);
-    }
-  }
-  
-  &--level-2 {
-    .ex-anchor-link__title {
-      font-size: var(--ex-text-sm);
-      padding-left: var(--ex-spacing-4);
-    }
-  }
-  
-  &--level-3 {
-    .ex-anchor-link__title {
-      font-size: var(--ex-text-xs);
-      padding-left: var(--ex-spacing-6);
-      color: var(--ex-color-text-tertiary);
-    }
-  }
-  
-  // 响应式设�?
-  @media (max-width: 575px) {
-    .ex-anchor-link__title {
-      padding: var(--ex-spacing-1);
-      font-size: var(--ex-text-sm);
-    }
-    
-    .ex-anchor-link__children {
-      margin-left: var(--ex-spacing-2);
-    }
-    
-    &--level-2 .ex-anchor-link__title {
-      padding-left: var(--ex-spacing-2);
-    }
-    
-    &--level-3 .ex-anchor-link__title {
+
+  @include mobile {
+    padding-left: var(--ex-spacing-2);
+
+    .ex-anchor-link {
       padding-left: var(--ex-spacing-4);
     }
   }

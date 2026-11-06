@@ -10,27 +10,28 @@
   display: inline-flex;
   align-items: center;
   font-family: var(--ex-font-secondary);
-  
+
   // 强制重置列表样式
-  ol, ul {
+  ol,
+  ul {
     list-style: none !important;
     list-style-type: none !important;
     margin: 0 !important;
     padding: 0 !important;
     padding-left: 0 !important;
   }
-  
+
   li {
     list-style: none !important;
     list-style-type: none !important;
   }
-  
+
   li::before,
   li::marker {
     display: none !important;
     content: none !important;
   }
-  
+
   &__list {
     display: flex;
     align-items: center;
@@ -53,7 +54,7 @@
     user-select: none;
     list-style: none;
     list-style-type: none;
-    
+
     &::before,
     &::marker {
       display: none !important;

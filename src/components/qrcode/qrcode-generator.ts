@@ -13,6 +13,9 @@ interface QRCodeOptions {
   };
 }
 
+const normalizeWidth = (width: number | undefined): number =>
+  Number.isFinite(width) ? Math.min(2048, Math.max(32, width as number)) : 200;
+
 // 错误纠正级别
 // const _ErrorCorrectionLevel = {
 //   L: 1,
@@ -32,7 +35,7 @@ class QRCodeGenerator {
     const QRCode = await import('qrcode');
 
     const opts = {
-      width: options.width || 200,
+      width: normalizeWidth(options.width),
       margin: options.margin !== undefined ? options.margin : 2,
       errorCorrectionLevel: options.errorCorrectionLevel || 'M',
       color: {
@@ -44,14 +47,11 @@ class QRCodeGenerator {
     await QRCode.toCanvas(canvas, text, opts);
   }
 
-  static async toDataURL(
-    text: string,
-    options: QRCodeOptions = {}
-  ): Promise<string> {
+  static async toDataURL(text: string, options: QRCodeOptions = {}): Promise<string> {
     const QRCode = await import('qrcode');
 
     const opts = {
-      width: options.width || 200,
+      width: normalizeWidth(options.width),
       margin: options.margin !== undefined ? options.margin : 2,
       errorCorrectionLevel: options.errorCorrectionLevel || 'M',
       color: {

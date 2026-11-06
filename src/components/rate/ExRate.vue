@@ -1,14 +1,17 @@
 <template>
   <div
+    :id="id"
     :class="rateClasses"
     :style="rateStyles"
     role="slider"
-    :tabindex="disabled || readonly ? undefined : 0"
+    :tabindex="effectiveDisabled ? undefined : 0"
     :aria-valuemin="0"
-    :aria-valuemax="max"
+    :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
-    :aria-disabled="disabled"
-    :aria-readonly="readonly"
+    :aria-label="ariaLabel || (fieldAriaAttrs['aria-labelledby'] ? undefined : t('label'))"
+    v-bind="fieldAriaAttrs"
+    :aria-disabled="effectiveDisabled"
+    :aria-readonly="effectiveReadonly"
     @mouseleave="handleMouseLeave"
     @keydown="handleKeydown"
     @blur="handleBlur"
@@ -16,7 +19,7 @@
     <!-- 评分星星 -->
     <div class="ex-rate__stars">
       <span
-        v-for="item in max"
+        v-for="item in normalizedMax"
         :key="item"
         :class="getStarClasses(item)"
         @mouseenter="handleMouseEnter(item)"
@@ -34,23 +37,35 @@
               icon="star-line"
               :size="iconSize"
               :color="voidColor"
-            />
+            >
+              <i
+                v-if="effectiveVoidIconClass"
+                :class="effectiveVoidIconClass"
+              ></i>
+            </ex-icon>
           </slot>
         </span>
 
         <!-- 选中的图标 -->
-        <span class="ex-rate__icon ex-rate__icon--active">
+        <span
+          class="ex-rate__icon ex-rate__icon--active"
+          :style="getActiveStyle(item)"
+        >
           <slot
             name="icon-active"
             :index="item"
-            :color="disabled ? disabledVoidColor : color"
+            :color="effectiveDisabled ? disabledVoidColor : color"
           >
             <ex-icon
               icon="star-fill"
               :size="iconSize"
-              :color="disabled ? disabledVoidColor : color"
-              :style="getActiveStyle(item)"
-            />
+              :color="effectiveDisabled ? disabledVoidColor : color"
+            >
+              <i
+                v-if="iconClasses?.[item - 1]?.trim()"
+                :class="iconClasses?.[item - 1]?.trim()"
+              ></i>
+            </ex-icon>
           </slot>
         </span>
       </span>
@@ -60,6 +75,7 @@
     <span
       v-if="showScore || showText"
       class="ex-rate__text"
+      :style="{ color: textColor }"
     >
       {{ displayText }}
     </span>
@@ -70,14 +86,16 @@
 import { ref, computed, watch } from 'vue';
 import type { ExRateProps, ExRateEmits } from './types';
 import ExIcon from '../icon/ExIcon.vue';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
+import { useLocale } from '../../locale';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExRate',
 });
 
 const props = withDefaults(defineProps<ExRateProps>(), {
-  modelValue: 0,
+  modelValue: undefined,
   max: 5,
   disabled: false,
   readonly: false,
@@ -85,28 +103,49 @@ const props = withDefaults(defineProps<ExRateProps>(), {
   showScore: false,
   showText: false,
   scoreTemplate: '{value}',
-  size: 'medium',
+  size: undefined,
   color: 'var(--ex-color-primary, #00f0ff)',
-  voidColor: 'var(--ex-color-text-disabled, #4a5568)',
+  voidColor: 'var(--ex-color-text-tertiary, #7b8da3)',
   disabledVoidColor: 'var(--ex-color-text-disabled, #6b7280)',
 });
 
 const emit = defineEmits<ExRateEmits>();
+const { t } = useLocale('rate');
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled: effectiveDisabled,
+  readonly: effectiveReadonly,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
+const normalizedMax = computed(() =>
+  Number.isFinite(props.max) && props.max > 0 ? Math.floor(props.max) : 5
+);
+
+const normalizeValue = (value: number) => {
+  const finiteValue = Number.isFinite(value) ? value : 0;
+  const step = props.allowHalf ? 0.5 : 1;
+  return Math.min(normalizedMax.value, Math.max(0, Math.round(finiteValue / step) * step));
+};
 
 // 响应式状态
-const currentValue = ref(props.modelValue);
+const ratingState = useControllableState<number>({
+  controlledValue: () => props.modelValue,
+  defaultValue: 0,
+});
+const currentValue = computed(() => normalizeValue(ratingState.value.value));
 const hoverValue = ref(-1);
 const isHovering = ref(false);
 
 // 计算属性
 const rateClasses = computed(() => {
-  const classes = ['ex-rate', `ex-rate--${props.size}`];
+  const classes = ['ex-rate', `ex-rate--${componentSize.value}`];
 
-  if (props.disabled) classes.push('is-disabled');
-  if (props.readonly) classes.push('is-readonly');
+  if (effectiveDisabled.value) classes.push('is-disabled');
+  if (effectiveReadonly.value) classes.push('is-readonly');
+  if (props.customClass) classes.push(props.customClass);
 
   return classes;
 });
@@ -124,8 +163,13 @@ const iconSize = computed(() => {
     medium: 20,
     large: 24,
   };
-  return sizeMap[props.size];
+  return sizeMap[componentSize.value];
 });
+
+// 类名只替换当前状态的未选中图形，外部插槽优先，空类名保留内置图标。
+const effectiveVoidIconClass = computed(() =>
+  (effectiveDisabled.value ? props.disabledVoidIconClass : props.voidIconClass)?.trim()
+);
 
 const displayValue = computed(() => {
   return isHovering.value ? hoverValue.value : currentValue.value;
@@ -156,7 +200,7 @@ function getStarClasses(item: number) {
     classes.push('is-half');
   }
 
-  if (!props.disabled && !props.readonly) {
+  if (!effectiveDisabled.value && !effectiveReadonly.value) {
     classes.push('is-interactive');
   }
 
@@ -188,22 +232,20 @@ function getValueFromEvent(item: number, event: MouseEvent): number {
 }
 
 function handleMouseEnter(item: number) {
-  if (props.disabled || props.readonly) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   isHovering.value = true;
   hoverValue.value = item;
 }
 
 function handleMouseMove(item: number, event: MouseEvent) {
-  if (props.disabled || props.readonly || !props.allowHalf) return;
+  if (effectiveDisabled.value || effectiveReadonly.value || !props.allowHalf) return;
 
   const value = getValueFromEvent(item, event);
   hoverValue.value = value;
 }
 
 function handleMouseLeave() {
-  if (props.disabled || props.readonly) return;
-
   isHovering.value = false;
   hoverValue.value = -1;
 }
@@ -214,61 +256,58 @@ function handleBlur() {
 }
 
 function handleClick(item: number, event: MouseEvent) {
-  if (props.disabled || props.readonly) return;
-
-  const newValue = getValueFromEvent(item, event);
-
-  currentValue.value = newValue;
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
+  commitValue(getValueFromEvent(item, event));
 }
 
 function setCurrentValue(value: number) {
-  currentValue.value = value;
-  emit('update:modelValue', value);
-  emit('change', value);
+  commitValue(value);
 }
 
 function resetCurrentValue() {
-  currentValue.value = 0;
-  emit('update:modelValue', 0);
-  emit('change', 0);
+  commitValue(0);
+}
+
+function commitValue(value: number) {
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
+  const normalizedValue = normalizeValue(value);
+  ratingState.request(normalizedValue);
+  emit('update:modelValue', normalizedValue);
+  emit('change', normalizedValue);
+  formItem?.onFieldChange();
 }
 
 // 键盘操作：左右方向键增减评分
 function handleKeydown(event: KeyboardEvent) {
-  if (props.disabled || props.readonly) return;
+  if (effectiveDisabled.value || effectiveReadonly.value) return;
 
   const step = props.allowHalf ? 0.5 : 1;
-  let newValue = currentValue.value;
+  let newValue: number;
 
   if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-    newValue = Math.min(props.max, currentValue.value + step);
+    newValue = Math.min(normalizedMax.value, currentValue.value + step);
   } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
     newValue = Math.max(0, currentValue.value - step);
   } else if (event.key === 'Home') {
     newValue = 0;
   } else if (event.key === 'End') {
-    newValue = props.max;
+    newValue = normalizedMax.value;
   } else {
     return;
   }
 
   event.preventDefault();
   if (newValue !== currentValue.value) {
-    currentValue.value = newValue;
-    emit('update:modelValue', newValue);
-    emit('change', newValue);
+    commitValue(newValue);
   }
 }
 
-// 监听 modelValue 变化
-watch(
-  () => props.modelValue,
-  newValue => {
-    currentValue.value = newValue;
-  }
-);
+watch([normalizedMax, () => props.allowHalf], () => {
+  if (!ratingState.isControlled.value) ratingState.request(currentValue.value);
+});
+
+watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
+  if (disabled || readonly) handleMouseLeave();
+});
 
 // 暴露方法
 defineExpose({

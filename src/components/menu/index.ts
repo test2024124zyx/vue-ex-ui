@@ -1,30 +1,18 @@
-import type { App, Plugin } from 'vue';
-import ExMenu from './ExMenu.vue';
-import ExMenuItem from './ExMenuItem.vue';
-import ExSubMenu from './ExSubMenu.vue';
+import ExMenuComponent from './ExMenu.vue';
+import ExMenuItemComponent from './ExMenuItem.vue';
+import ExSubMenuComponent from './ExSubMenu.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件
-export { ExMenu, ExMenuItem, ExSubMenu };
+export const ExMenuItem: InstallableComponent<typeof ExMenuItemComponent> =
+  withInstall(ExMenuItemComponent);
+export const ExSubMenu: InstallableComponent<typeof ExSubMenuComponent> =
+  withInstall(ExSubMenuComponent);
+export const ExMenu: InstallableComponent<typeof ExMenuComponent> = withInstall(ExMenuComponent, {
+  ExMenuItem,
+  ExSubMenu,
+});
 
 // 导出类型
 export type * from './types';
 
-// 创建插件
-const MenuPlugin: Plugin = {
-  install(app: App) {
-    app.component('ExMenu', ExMenu);
-    app.component('ExMenuItem', ExMenuItem);
-    app.component('ExSubMenu', ExSubMenu);
-  },
-};
-
-// 为每个组件添加 install 方法
-ExMenu.install = MenuPlugin.install;
-ExMenuItem.install = (app: App) => {
-  app.component('ExMenuItem', ExMenuItem);
-};
-ExSubMenu.install = (app: App) => {
-  app.component('ExSubMenu', ExSubMenu);
-};
-
-export default MenuPlugin;
+export default ExMenu;

@@ -9,7 +9,8 @@
 
 @use './base' as *;
 
-[data-theme='light'] {
+[data-theme='light'],
+.ex-theme-light {
   color-scheme: light;
 
   @include theme-transition;
@@ -28,24 +29,36 @@
 
   // ========== 强调色（品红）==========
   --ex-color-accent: #c2298a;
+  --ex-color-accent-alpha-10: rgba(194, 41, 138, 0.1);
+  --ex-color-accent-alpha-20: rgba(194, 41, 138, 0.2);
 
   // ========== 背景色系（白 → 浅灰）==========
   --ex-color-bg-primary: #ffffff;
   --ex-color-bg-secondary: #f5f7fa;
   --ex-color-bg-tertiary: #eef1f5;
+  --ex-color-bg-surface: #f5f7fa;
   --ex-color-bg-elevated: #ffffff;
   --ex-color-bg-hover: #f0f3f7;
   --ex-color-bg-active: #e6ebf2;
 
+  // 赛博朋克纹理只服务于暗色主题，浅色主题保持清晰的文档阅读体验
+  --ex-cyber-grid-opacity: 0.035;
+  --ex-cyber-scanline-opacity: 0.012;
+
   // ========== 文本色系（深色）==========
   --ex-color-text-primary: #1a2332;
   --ex-color-text-secondary: #5a6b7d;
-  --ex-color-text-tertiary: #8a98a8;
+  // 说明文字也需要适配三级浅灰底，不能只按白底校验。
+  --ex-color-text-tertiary: #5f6f84;
   --ex-color-text-disabled: #b3bdc9;
+  --ex-color-text-inverse: #ffffff;
 
   // ========== 边框色系（浅灰）==========
   --ex-color-border-primary: #d9e0e8;
   --ex-color-border-secondary: #c4cdd8;
+  --ex-color-border-focus: #1668dc;
+  --ex-color-border-hover: #c2298a;
+  --ex-color-border: var(--ex-color-border-primary);
 
   // ========== 状态色系（深饱和，白字达标）==========
   --ex-color-success: #18794e;
@@ -68,6 +81,14 @@
   // ========== 填充按钮墨色：本主题用白字 ==========
   --ex-button-ink-on-bright: #ffffff;
 
+  // 浅色主题状态透明色与语义色保持一致
+  --ex-color-success-alpha-15: rgba(24, 121, 78, 0.15);
+  --ex-color-success-alpha-40: rgba(24, 121, 78, 0.4);
+  --ex-color-warning-alpha-15: rgba(173, 87, 0, 0.15);
+  --ex-color-warning-alpha-40: rgba(173, 87, 0, 0.4);
+  --ex-color-error-alpha-15: rgba(203, 42, 42, 0.15);
+  --ex-color-error-alpha-40: rgba(203, 42, 42, 0.4);
+
   // ========== 渐变定义 ==========
   --ex-gradient-primary: linear-gradient(135deg, #1668dc 0%, #6645c9 100%);
   --ex-gradient-secondary: linear-gradient(135deg, #6645c9 0%, #c2298a 100%);
@@ -82,9 +103,13 @@
   --ex-shadow-neon-lg: 0 12px 28px rgba(16, 24, 40, 0.12), 0 4px 8px rgba(16, 24, 40, 0.06);
 
   // ========== 特殊颜色（组件使用）==========
+  --ex-color-neon-blue-300: #5a9be7;
   --ex-color-neon-blue-500: #1668dc;
+  --ex-color-neon-blue-400: #347fdf;
   --ex-color-neon-blue-600: #0e57c2;
+  --ex-color-neon-pink-400: #d14aa0;
   --ex-color-neon-pink-500: #c2298a;
+  --ex-color-neon-pink-600: #a71f75;
 
   // ========== 主色透明度 ==========
   --ex-color-primary-alpha-05: rgba(22, 104, 220, 0.05);
@@ -96,6 +121,7 @@
   --ex-color-primary-alpha-40: rgba(22, 104, 220, 0.4);
   --ex-color-primary-alpha-50: rgba(22, 104, 220, 0.5);
   --ex-color-primary-alpha-60: rgba(22, 104, 220, 0.6);
+  --ex-color-primary-alpha-80: rgba(22, 104, 220, 0.8);
 
   // ========== 次要色透明度 ==========
   --ex-color-secondary-alpha-05: rgba(102, 69, 201, 0.05);
@@ -105,11 +131,13 @@
   --ex-color-secondary-alpha-20: rgba(102, 69, 201, 0.2);
   --ex-color-secondary-alpha-30: rgba(102, 69, 201, 0.3);
   --ex-color-secondary-alpha-40: rgba(102, 69, 201, 0.4);
+  --ex-color-secondary-alpha-50: rgba(102, 69, 201, 0.5);
   --ex-color-secondary-alpha-60: rgba(102, 69, 201, 0.6);
   --ex-color-secondary-alpha-80: rgba(102, 69, 201, 0.8);
 
   // ========== 霓虹蓝透明度（= 主色）==========
   --ex-color-neon-blue-alpha-05: rgba(22, 104, 220, 0.05);
+  --ex-color-neon-blue-alpha-08: rgba(22, 104, 220, 0.08);
   --ex-color-neon-blue-alpha-10: rgba(22, 104, 220, 0.1);
   --ex-color-neon-blue-alpha-15: rgba(22, 104, 220, 0.15);
   --ex-color-neon-blue-alpha-20: rgba(22, 104, 220, 0.2);

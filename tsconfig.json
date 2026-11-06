@@ -45,6 +45,6 @@
     "types": ["vite/client", "vitest/globals", "node"],
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "tests", "src/vue-shim.d.ts"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "include": ["src", "src/vue-shim.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }

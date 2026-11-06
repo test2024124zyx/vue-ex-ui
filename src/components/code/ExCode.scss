@@ -9,6 +9,15 @@
   border-radius: var(--ex-radius-lg);
   overflow: hidden;
 
+  &__editor-instructions {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   // 统一字体度量令牌：行号 / 高亮层 / 编辑层共用，保证三层像素级对齐。
   --ex-code-font-size: var(--ex-text-sm);
   --ex-code-line-height: 1.6;
@@ -16,10 +25,9 @@
   --ex-code-padding-x: var(--ex-spacing-4);
   --ex-code-gutter-chars: 2;
   --ex-code-gutter-pad-x: var(--ex-spacing-3);
+  --ex-code-tab-size: 2;
   // 行号栏宽度：位数 × 1ch（等宽字体精确）+ 两侧内边距。
-  --ex-code-gutter-width: calc(
-    var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x)
-  );
+  --ex-code-gutter-width: calc(var(--ex-code-gutter-chars) * 1ch + 2 * var(--ex-code-gutter-pad-x));
 
   font-family: var(--ex-font-mono);
   font-size: var(--ex-code-font-size);
@@ -159,7 +167,12 @@
     font-size: var(--ex-text-xs);
     font-family: var(--ex-font-secondary);
     cursor: pointer;
-    transition: all var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
+    transition:
+      color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      background-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      border-color var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      box-shadow var(--ex-motion-duration-base) var(--ex-motion-ease-in-out),
+      transform var(--ex-motion-duration-base) var(--ex-motion-ease-in-out);
 
     &:hover {
       background: var(--ex-color-bg-hover);
@@ -195,7 +208,7 @@
   }
 
   &__copy-text {
-    @media (max-width: 576px) {
+    @include desktop-first(sm) {
       display: none;
     }
   }
@@ -277,7 +290,7 @@
     white-space: pre;
     color: var(--ex-color-text-primary);
     letter-spacing: 0;
-    tab-size: 4;
+    tab-size: var(--ex-code-tab-size);
     // 关闭连字，保证字符宽度稳定（编辑层叠加时尤为关键）。
     font-variant-ligatures: none;
     font-feature-settings:
@@ -341,7 +354,7 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
-    tab-size: 4;
+    tab-size: var(--ex-code-tab-size);
     overflow: hidden;
     font-variant-ligatures: none;
     font-feature-settings:
@@ -355,6 +368,11 @@
     &:focus-visible {
       outline: none;
     }
+  }
+
+  &__content:focus-within {
+    outline: 2px solid var(--ex-color-neon-blue-500);
+    outline-offset: -2px;
   }
 
   // ── 语法高亮 token 配色 ───────────────────────────────────────────
@@ -417,7 +435,7 @@
   }
 
   // ── 响应式 ────────────────────────────────────────────────────────
-  @media (max-width: 768px) {
+  @include desktop-first(md) {
     --ex-code-font-size: var(--ex-text-xs);
     --ex-code-padding-y: var(--ex-spacing-2);
     --ex-code-padding-x: var(--ex-spacing-3);
@@ -437,7 +455,7 @@
     }
   }
 
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     border-width: 2px;
 
     .ex-code__copy-btn {

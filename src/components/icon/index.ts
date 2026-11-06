@@ -1,18 +1,10 @@
-import type { App } from 'vue';
-import ExIcon from './ExIcon.vue';
-import type { ExIconProps } from './types';
+import ExIconComponent from './ExIcon.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 导出组件类型
-export type { ExIconProps };
+export type { ExIconProps, ExIconEmits, IconSize } from './types';
+export type { BuiltinIconName } from './icons';
+export { ICONS, getBuiltinIcon, isBuiltinIcon } from './icons';
 
-// 导出组件
-export { ExIcon };
+export const ExIcon: InstallableComponent<typeof ExIconComponent> = withInstall(ExIconComponent);
 
-// 组件安装插件
-export const ExIconPlugin = {
-  install(app: App) {
-    app.component('ExIcon', ExIcon);
-  },
-};
-
-export default ExIconPlugin;
+export default ExIcon;

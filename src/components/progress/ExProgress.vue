@@ -66,7 +66,7 @@
     </template>
 
     <!-- 环形进度条 -->
-    <template v-else-if="props.type === 'circle'">
+    <template v-else-if="props.type === 'circle' || props.type === 'dashboard'">
       <div
         class="ex-progress__circle"
         :style="circleContainerStyle"
@@ -83,8 +83,11 @@
             :r="circleRadius"
             :stroke="trackColor"
             :stroke-width="strokeWidth"
+            :stroke-dasharray="circleTrackDasharray"
+            :stroke-linecap="strokeLinecap"
             fill="none"
             class="ex-progress__circle-track"
+            :style="circlePathStyle"
           />
 
           <!-- 进度圆环 -->
@@ -94,7 +97,7 @@
             :r="circleRadius"
             :stroke="circleColor"
             :stroke-width="strokeWidth"
-            :stroke-dasharray="circumference"
+            :stroke-dasharray="circleProgressDasharray"
             :stroke-dashoffset="circleOffset"
             :stroke-linecap="strokeLinecap"
             fill="none"
@@ -151,7 +154,6 @@
         :style="waveContainerStyle"
       >
         <svg
-          ref="waveSvgRef"
           class="ex-progress__wave-svg"
           :viewBox="`0 0 ${waveWidth} ${waveHeight}`"
           preserveAspectRatio="none"
@@ -177,14 +179,11 @@
               y2="100%"
             >
               <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
+                v-for="(stop, index) in waveGradientStops"
+                :key="index"
+                :offset="stop.offset"
+                :stop-color="stop.color"
+                :stop-opacity="stop.opacity"
               />
             </linearGradient>
           </defs>
@@ -204,12 +203,16 @@
               ref="wavePath1Ref"
               class="ex-progress__wave-path"
               :fill="`url(#ex-wave-gradient-${componentId})`"
+              :d="rectWavePaths.primary"
             />
             <path
               ref="wavePath2Ref"
               class="ex-progress__wave-path ex-progress__wave-path--secondary"
-              :fill="waveColor"
+              :fill="
+                Array.isArray(props.color) ? `url(#ex-wave-gradient-${componentId})` : waveColor
+              "
               :opacity="0.4"
+              :d="rectWavePaths.secondary"
             />
           </g>
         </svg>
@@ -230,7 +233,6 @@
         :style="circleContainerStyle"
       >
         <svg
-          ref="waveCircleSvgRef"
           :width="circleWidth"
           :height="circleWidth"
           :viewBox="viewBox"
@@ -254,14 +256,11 @@
               y2="100%"
             >
               <stop
-                offset="0%"
-                :stop-color="waveColor"
-                :stop-opacity="0.64"
-              />
-              <stop
-                offset="100%"
-                :stop-color="waveColor"
-                :stop-opacity="0.8"
+                v-for="(stop, index) in waveGradientStops"
+                :key="index"
+                :offset="stop.offset"
+                :stop-color="stop.color"
+                :stop-opacity="stop.opacity"
               />
             </linearGradient>
           </defs>
@@ -280,12 +279,18 @@
               ref="waveCirclePath1Ref"
               class="ex-progress__wave-circle-path"
               :fill="`url(#ex-wave-circle-gradient-${componentId})`"
+              :d="circleWavePaths.primary"
             />
             <path
               ref="waveCirclePath2Ref"
               class="ex-progress__wave-circle-path ex-progress__wave-circle-path--secondary"
-              :fill="waveColor"
+              :fill="
+                Array.isArray(props.color)
+                  ? `url(#ex-wave-circle-gradient-${componentId})`
+                  : waveColor
+              "
               :opacity="0.4"
+              :d="circleWavePaths.secondary"
             />
           </g>
 
@@ -295,7 +300,11 @@
             :cy="circleWidth / 2"
             :r="circleRadius"
             fill="none"
-            :stroke="circleColor"
+            :stroke="
+              Array.isArray(props.color)
+                ? `url(#ex-wave-circle-gradient-${componentId})`
+                : circleColor
+            "
             :stroke-width="2"
             class="ex-progress__wave-circle-border"
           />
@@ -319,10 +328,17 @@ import type { ExProgressProps, ExProgressEmits, ExProgressExposed } from './type
 import { useLocale } from '../../locale';
 import { generateId } from '../../utils/id';
 import ExIcon from '../icon/ExIcon.vue';
+import { useAnimation } from '../config-provider/composables';
 
 defineOptions({
   name: 'ExProgress',
 });
+
+const WAVE_PATH_POINT_COUNT = 100;
+const WAVE_BASE_FREQUENCY = 2;
+const WAVE_SECONDARY_FREQUENCY = 2.4;
+const WAVE_SECONDARY_AMPLITUDE_RATIO = 0.8;
+const WAVE_PHASE_OFFSET = Math.PI;
 
 const props = withDefaults(defineProps<ExProgressProps>(), {
   percentage: 0,
@@ -348,18 +364,20 @@ defineEmits<ExProgressEmits>();
 // 国际化
 const { t: _t } = useLocale('progress');
 const progressRef = ref<HTMLDivElement>();
+const animationEnabled = useAnimation();
 
 // 波浪进度条相关 refs
-const waveSvgRef = ref<SVGSVGElement>();
 const wavePath1Ref = ref<SVGPathElement>();
 const wavePath2Ref = ref<SVGPathElement>();
-const waveCircleSvgRef = ref<SVGSVGElement>();
 const waveCirclePath1Ref = ref<SVGPathElement>();
 const waveCirclePath2Ref = ref<SVGPathElement>();
 
-// 波浪动画状态
-const waveOffset = ref(0);
-const waveAnimationFrame = ref<number | null>(null);
+// 波浪偏移量不参与 Vue 渲染依赖，动画帧只更新 SVG 路径。
+let waveOffset = 0;
+let waveAnimationFrame: number | null = null;
+let prefersReducedMotion = false;
+let reducedMotionQuery: MediaQueryList | null = null;
+let disposed = false;
 const componentId = generateId();
 
 // 计算属性
@@ -386,7 +404,7 @@ const progressStyles = computed(() => {
 });
 
 const percentage = computed(() => {
-  const val = Math.max(0, Math.min(100, props.percentage));
+  const val = Number.isFinite(props.percentage) ? Math.max(0, Math.min(100, props.percentage)) : 0;
   return val;
 });
 
@@ -446,12 +464,24 @@ const circleRadius = computed(() => {
 const circumference = computed(() => {
   return 2 * Math.PI * circleRadius.value;
 });
+const dashboardArcLength = computed(() => circumference.value * 0.75);
+const circleTrackDasharray = computed(() =>
+  props.type === 'dashboard'
+    ? `${dashboardArcLength.value} ${circumference.value}`
+    : circumference.value
+);
+const circleProgressDasharray = computed(() =>
+  props.type === 'dashboard'
+    ? `${dashboardArcLength.value * (percentage.value / 100)} ${circumference.value}`
+    : circumference.value
+);
 
 const viewBox = computed(() => {
   return `0 0 ${circleWidth.value} ${circleWidth.value}`;
 });
 
 const circleOffset = computed(() => {
+  if (props.type === 'dashboard') return 0;
   const percent = percentage.value / 100;
   return circumference.value * (1 - percent);
 });
@@ -514,8 +544,7 @@ const gradientStops = computed<{ offset: string; color: string }[]>(() => {
 
 const circlePathStyle = computed(() => {
   return {
-    transition: 'stroke-dashoffset 0.6s ease',
-    transform: 'rotate(-90deg)',
+    transform: props.type === 'dashboard' ? 'rotate(135deg)' : 'rotate(-90deg)',
     transformOrigin: 'center',
   };
 });
@@ -533,6 +562,7 @@ const waveContainerStyle = computed(() => {
 });
 
 const waveColor = computed(() => {
+  if (typeof props.color === 'function') return props.color(percentage.value);
   if (props.color && typeof props.color === 'string') {
     return props.color;
   }
@@ -543,6 +573,15 @@ const waveColor = computed(() => {
 
   return 'var(--ex-color-primary)';
 });
+
+const waveGradientStops = computed(() =>
+  Array.isArray(props.color)
+    ? gradientStops.value.map(stop => ({ ...stop, opacity: 0.8 }))
+    : [
+        { offset: '0%', color: waveColor.value, opacity: 0.64 },
+        { offset: '100%', color: waveColor.value, opacity: 0.8 },
+      ]
+);
 
 // 波浪效果相关计算属性已移除（预留功能暂不实现）
 
@@ -555,12 +594,12 @@ function generateWavePath(
   width: number,
   height: number
 ): string {
-  const points = 100; // 与 demo 一致
   let path = `M 0 ${baseY}`;
 
-  for (let i = 0; i <= points; i++) {
-    const x = (width / points) * i;
-    const y = baseY + Math.sin((i / points) * Math.PI * frequency + offset) * amplitude;
+  for (let i = 0; i <= WAVE_PATH_POINT_COUNT; i++) {
+    const x = (width / WAVE_PATH_POINT_COUNT) * i;
+    const y =
+      baseY + Math.sin((i / WAVE_PATH_POINT_COUNT) * Math.PI * frequency + offset) * amplitude;
     path += ` L ${x} ${y}`;
   }
 
@@ -568,96 +607,112 @@ function generateWavePath(
   return path;
 }
 
-function updateWaveAnimation() {
-  if (!props.waveAnimated) return;
-
-  // 矩形波浪进度条
-  if (props.type === 'wave' && wavePath1Ref.value && wavePath2Ref.value) {
-    const amplitude = props.waveAmplitude;
-    const frequency = 2; // 固定频率
-    const width = waveWidth.value;
-    const height = waveHeight.value;
-    const waveY = height * (1 - percentage.value / 100);
-
-    // 第一层波浪 - 与 demo 一致
-    const path1 = generateWavePath(waveY, waveOffset.value, amplitude, frequency, width, height);
-    // 第二层波浪 - 相位差 Math.PI，振幅 0.8，频率 1.2
-    const path2 = generateWavePath(
+const createRectWavePaths = (offset: number) => {
+  const amplitude = props.waveAmplitude;
+  const width = waveWidth.value;
+  const height = waveHeight.value;
+  const waveY = height * (1 - percentage.value / 100);
+  return {
+    primary: generateWavePath(waveY, offset, amplitude, WAVE_BASE_FREQUENCY, width, height),
+    secondary: generateWavePath(
       waveY,
-      waveOffset.value + Math.PI,
-      amplitude * 0.8,
-      frequency * 1.2,
+      offset + WAVE_PHASE_OFFSET,
+      amplitude * WAVE_SECONDARY_AMPLITUDE_RATIO,
+      WAVE_SECONDARY_FREQUENCY,
       width,
       height
-    );
+    ),
+  };
+};
 
-    wavePath1Ref.value.setAttribute('d', path1);
-    wavePath2Ref.value.setAttribute('d', path2);
+const rectWavePaths = computed(() => createRectWavePaths(waveOffset));
+
+const createCircleWavePaths = (offset: number) => {
+  const amplitude = props.waveAmplitude;
+  const width = circleWidth.value;
+  const height = circleWidth.value;
+  const waveY = height * (1 - percentage.value / 100);
+  return {
+    primary: generateWavePath(waveY, offset, amplitude, WAVE_BASE_FREQUENCY, width, height * 2),
+    secondary: generateWavePath(
+      waveY,
+      offset + WAVE_PHASE_OFFSET,
+      amplitude * WAVE_SECONDARY_AMPLITUDE_RATIO,
+      WAVE_SECONDARY_FREQUENCY,
+      width,
+      height * 2
+    ),
+  };
+};
+
+const circleWavePaths = computed(() => createCircleWavePaths(waveOffset));
+
+function updateWaveAnimation() {
+  if (props.type === 'wave' && wavePath1Ref.value && wavePath2Ref.value) {
+    const paths = createRectWavePaths(waveOffset);
+    wavePath1Ref.value.setAttribute('d', paths.primary);
+    wavePath2Ref.value.setAttribute('d', paths.secondary);
   }
 
-  // 圆形波浪进度条
   if (props.type === 'wave-circle' && waveCirclePath1Ref.value && waveCirclePath2Ref.value) {
-    const amplitude = props.waveAmplitude;
-    const frequency = 2; // 固定频率
-    const width = circleWidth.value;
-    const height = circleWidth.value;
-    const waveY = height * (1 - percentage.value / 100);
-
-    // 第一层波浪 - 与 demo 一致
-    const path1 = generateWavePath(
-      waveY,
-      waveOffset.value,
-      amplitude,
-      frequency,
-      width,
-      height * 2
-    );
-    // 第二层波浪 - 相位差 Math.PI，振幅 0.8，频率 1.2
-    const path2 = generateWavePath(
-      waveY,
-      waveOffset.value + Math.PI,
-      amplitude * 0.8,
-      frequency * 1.2,
-      width,
-      height * 2
-    );
-
-    waveCirclePath1Ref.value.setAttribute('d', path1);
-    waveCirclePath2Ref.value.setAttribute('d', path2);
+    const paths = createCircleWavePaths(waveOffset);
+    waveCirclePath1Ref.value.setAttribute('d', paths.primary);
+    waveCirclePath2Ref.value.setAttribute('d', paths.secondary);
   }
 }
 
 function startWaveAnimation() {
-  if (!props.waveAnimated) return;
+  if (
+    disposed ||
+    !animationEnabled.value ||
+    !props.waveAnimated ||
+    prefersReducedMotion ||
+    !['wave', 'wave-circle'].includes(props.type)
+  )
+    return;
   // 防止重复启动导致多个 RAF 循环叠加
-  if (waveAnimationFrame.value !== null) return;
+  if (waveAnimationFrame !== null) return;
 
   const animate = () => {
-    // 使用 demo 中的速度参数
-    waveOffset.value += props.waveSpeed;
+    waveOffset += props.waveSpeed;
     updateWaveAnimation();
-    waveAnimationFrame.value = requestAnimationFrame(animate);
+    waveAnimationFrame = requestAnimationFrame(animate);
   };
 
-  waveAnimationFrame.value = requestAnimationFrame(animate);
+  waveAnimationFrame = requestAnimationFrame(animate);
 }
 
 function stopWaveAnimation() {
-  if (waveAnimationFrame.value !== null) {
-    cancelAnimationFrame(waveAnimationFrame.value);
-    waveAnimationFrame.value = null;
+  if (waveAnimationFrame !== null) {
+    cancelAnimationFrame(waveAnimationFrame);
+    waveAnimationFrame = null;
   }
 }
 
+const handleReducedMotionChange = (event: MediaQueryListEvent): void => {
+  prefersReducedMotion = event.matches;
+  if (event.matches) stopWaveAnimation();
+  else if (props.type === 'wave' || props.type === 'wave-circle') startWaveAnimation();
+};
+
 // 生命周期
 onMounted(() => {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    prefersReducedMotion = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener?.('change', handleReducedMotionChange);
+  }
   if (props.type === 'wave' || props.type === 'wave-circle') {
+    updateWaveAnimation();
     startWaveAnimation();
   }
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   stopWaveAnimation();
+  reducedMotionQuery?.removeEventListener?.('change', handleReducedMotionChange);
+  reducedMotionQuery = null;
 });
 
 // 监听类型变化
@@ -668,6 +723,7 @@ watch(
       stopWaveAnimation();
     }
     if (newType === 'wave' || newType === 'wave-circle') {
+      updateWaveAnimation();
       startWaveAnimation();
     }
   }
@@ -684,16 +740,15 @@ watch(
 );
 
 // 监听动画开关
-watch(
-  () => props.waveAnimated,
-  newValue => {
-    if (newValue) {
-      startWaveAnimation();
-    } else {
-      stopWaveAnimation();
-    }
+watch([() => props.waveAnimated, animationEnabled], ([waveAnimated, animation]) => {
+  const newValue = waveAnimated && animation;
+  if (newValue) {
+    startWaveAnimation();
+  } else {
+    stopWaveAnimation();
+    updateWaveAnimation();
   }
-);
+});
 
 // 方法
 const getElement = () => progressRef.value || null;

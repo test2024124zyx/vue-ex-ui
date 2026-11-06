@@ -22,6 +22,8 @@ export interface ExAnchorProps {
   targetOffset?: number;
   /** 指定滚动的容器 */
   container?: () => HTMLElement | Window;
+  /** 导航地标的显式无障碍名称。 */
+  ariaLabel?: string;
 }
 
 /**
@@ -41,7 +43,7 @@ export interface ExAnchorExposed {
   /** 滚动到指定锚点 */
   scrollToAnchor: (href: string) => void;
   /** 获取组件DOM元素 */
-  getElement: () => HTMLDivElement | null;
+  getElement: () => HTMLElement | null;
 }
 
 /**

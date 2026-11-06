@@ -1,13 +1,8 @@
-import type { App } from 'vue';
-import ExWatermark from './ExWatermark.vue';
-export { ExWatermark };
-export type { ExWatermarkProps } from './types';
+import ExWatermarkComponent from './ExWatermark.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-// 插件安装函数
-export const ExWatermarkPlugin = {
-  install(app: App) {
-    app.component('ExWatermark', ExWatermark);
-  },
-};
+export const ExWatermark: InstallableComponent<typeof ExWatermarkComponent> =
+  withInstall(ExWatermarkComponent);
+export type * from './types';
 
-export default ExWatermarkPlugin;
+export default ExWatermark;

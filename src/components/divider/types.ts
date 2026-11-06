@@ -1,18 +1,25 @@
+export type DividerType = 'horizontal' | 'vertical';
+export type DividerOrientation = 'left' | 'center' | 'right';
+export type DividerPresetSize = 'small' | 'default' | 'large';
+
+/** 分割线属性。 */
 export interface ExDividerProps {
-  /** 分割线类型：水平/垂直 */
-  type?: 'horizontal' | 'vertical';
-  /** 文字位置：左/中/右（仅水平分割线有效） */
-  orientation?: 'left' | 'center' | 'right';
-  /** 标题和最近 left/right 边框之间的距离 */
+  /** 分割线方向。 */
+  type?: DividerType;
+  /** 水平标题的位置。 */
+  orientation?: DividerOrientation;
+  /** 标题与最近一侧线段之间的长度或占比，仅 left/right 标题有效。 */
   orientationMargin?: string | number;
-  /** 是否虚线 */
+  /** 是否使用虚线。 */
   dashed?: boolean;
-  /** 分割线粗细 */
-  size?: 'small' | 'default' | 'large' | number;
-  /** 分割线上下间距 */
+  /** 预设粗细或正数像素值。 */
+  size?: DividerPresetSize | number;
+  /** 水平线的上下间距或垂直线的左右间距。 */
   margin?: string | number;
-  /** 文字是否显示为普通正文样式 */
+  /** 标题是否使用普通正文权重。 */
   plain?: boolean;
-  /** 分割线颜色 */
+  /** 分割线颜色。 */
   color?: string;
+  /** 可选的无障碍名称；普通装饰性分隔线无需设置。 */
+  ariaLabel?: string;
 }

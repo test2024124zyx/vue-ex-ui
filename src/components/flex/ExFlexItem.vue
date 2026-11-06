@@ -1,56 +1,39 @@
 <template>
   <div
-    :class="flexItemClasses"
+    class="ex-flex-item"
     :style="flexItemStyles"
   >
-    <slot />
+    <slot></slot>
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { computed } from 'vue';
-import { flexItemProps } from './types';
-import { useI18n } from '../../locale';
+import type { CSSProperties } from 'vue';
+import { normalizeFlexOrder, resolveFlexShorthand } from './flex-utils';
+import type { ExFlexItemProps } from './types';
 
 defineOptions({
   name: 'ExFlexItem',
 });
 
-const props = defineProps(flexItemProps);
-const { t: _t } = useI18n();
+const props = withDefaults(defineProps<ExFlexItemProps>(), {
+  grow: 0,
+  shrink: 1,
+  basis: 'auto',
+  alignSelf: 'auto',
+  order: 0,
+});
 
-// 计算 flex 项目类名
-const flexItemClasses = computed(() => ['ex-flex-item']);
-
-// 计算 flex 项目样式
-const flexItemStyles = computed(() => {
-  const styles: Record<string, string> = {};
-
-  // 设置 flex 简写属性
-  if (props.flex !== undefined) {
-    styles.flex = typeof props.flex === 'number' ? String(props.flex) : props.flex;
-  } else {
-    // 只有在非默认值时才设置，避免生成不必要的样式
-    const hasCustomFlex = props.grow !== 0 || props.shrink !== 1 || props.basis !== 'auto';
-    if (hasCustomFlex) {
-      const basisValue = typeof props.basis === 'number' ? `${props.basis}px` : props.basis;
-      // 使用 flex 简写属性，避免浏览器合并导致的测试问题
-      styles.flex = `${props.grow} ${props.shrink} ${basisValue}`;
-    }
-  }
-
-  // 设置 align-self
-  if (props.alignSelf !== 'auto') {
-    styles.alignSelf = props.alignSelf;
-  }
-
-  // 设置 order
-  if (props.order !== 0) {
-    styles.order = String(props.order);
-  }
-
+const flexItemStyles = computed<CSSProperties>(() => {
+  const styles: CSSProperties = {};
+  const flex = resolveFlexShorthand(props.flex, props.grow, props.shrink, props.basis);
+  const order = normalizeFlexOrder(props.order);
+  if (flex !== undefined) styles.flex = flex;
+  if (props.alignSelf !== 'auto') styles.alignSelf = props.alignSelf;
+  if (order !== 0) styles.order = order;
   return styles;
 });
 </script>
 
-<style lang="scss" scoped src="./ExFlexItem.scss"></style>
+<style scoped lang="scss" src="./ExFlexItem.scss"></style>

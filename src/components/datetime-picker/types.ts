@@ -1,89 +1,101 @@
-/**
- * 日期时间选择器类型
- */
-export type DateTimePickerType = 'date' | 'datetime' | 'daterange' | 'datetimerange' | 'month' | 'year';
+import type { CSSProperties } from 'vue';
 
-/**
- * 日期时间选择器尺寸
- */
+/** 已实现并保持完整语义的选择模式。 */
+export type DateTimePickerType =
+  | 'date'
+  | 'datetime'
+  | 'daterange'
+  | 'datetimerange'
+  | 'year'
+  | 'yearrange'
+  | 'month'
+  | 'monthrange'
+  | 'week'
+  | 'weekrange';
+
 export type DateTimePickerSize = 'small' | 'medium' | 'large';
-
-/**
- * 日期格式化类型
- */
-export type DateFormat = string;
-
-/**
- * 禁用日期函数
- */
+export type DateTimePickerRange = [Date, Date];
+export type DateTimePickerValue = Date | DateTimePickerRange | null;
 export type DisabledDateFn = (date: Date) => boolean;
+export type DateTimePickerEndpoint = 'start' | 'end';
 
-/**
- * 日期时间选择器组件属性接口
- */
+/** 时分秒按当前端点分别禁用，未提供的维度不受限制。 */
+export interface DateTimeConstraints {
+  disabledHours?: () => number[];
+  disabledMinutes?: (hour: number) => number[];
+  disabledSeconds?: (hour: number, minute: number) => number[];
+}
+export type DisabledTimeFn = (
+  date: Date,
+  endpoint: DateTimePickerEndpoint
+) => DateTimeConstraints | undefined;
+
+/** 日期时间选择器属性。 */
 export interface ExDateTimePickerProps {
-  /** 绑定值 */
-  modelValue?: Date | [Date, Date] | null;
-  /** 选择器类型 */
+  /** 当前日期或日期范围。 */
+  modelValue?: DateTimePickerValue;
+  /** 原生输入框 ID，支持外部 label 的 for 关联。 */
+  id?: string;
+  /** 日期与时间选择模式。 */
   type?: DateTimePickerType;
-  /** 尺寸 */
+  /** 组件尺寸。 */
   size?: DateTimePickerSize;
-  /** 占位符 */
+  /** 输入框占位文本。 */
   placeholder?: string;
-  /** 范围选择时的开始占位符 */
+  /** 范围起点占位文本。 */
   startPlaceholder?: string;
-  /** 范围选择时的结束占位符 */
+  /** 范围终点占位文本。 */
   endPlaceholder?: string;
-  /** 日期格式 */
-  format?: DateFormat;
-  /** 是否禁用 */
+  /** 使用 YYYY、MM、DD、HH、mm、ss 标记的显示格式。 */
+  format?: string;
+  /** 是否禁用全部交互。 */
   disabled?: boolean;
-  /** 是否只读 */
+  /** 是否只读并禁止打开面板。 */
   readonly?: boolean;
-  /** 是否可清空 */
+  /** 是否允许清空。 */
   clearable?: boolean;
-  /** 禁用日期函数 */
+  /** 判断某个本地日历日期是否不可选择。 */
   disabledDate?: DisabledDateFn;
-  /** 是否显示时间 */
+  /** 独立时间限制；单值使用 start，纯日期及年月周模式不调用。 */
+  disabledTime?: DisabledTimeFn;
+  /** 在 date 或 daterange 模式中额外启用时间选择。 */
   showTime?: boolean;
-  /** 时间步长（分钟） */
+  /** 分钟输入步长，规范范围为 1～60。 */
   timeStep?: number;
-  /** 是否显示今天按钮 */
+  /** 是否显示“今天”按钮。 */
   showToday?: boolean;
-  /** 是否显示清除按钮 */
-  showClear?: boolean;
-  /** 无障碍标签 */
+  /** 下拉面板是否传送到 body，避免被祖先 overflow 裁剪。 */
+  teleported?: boolean;
+  /** 输入框无障碍名称。 */
   ariaLabel?: string;
-  /** 自定义CSS类名 */
+  /** 根元素自定义类名。 */
   class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: string | Record<string, string | number>;
+  /** 根元素自定义样式。 */
+  style?: string | CSSProperties;
 }
 
-/**
- * 日期时间选择器组件事件接口
- */
+/** 日期时间选择器事件。 */
 export interface ExDateTimePickerEmits {
-  /** 值改变事件 */
-  'update:modelValue': [value: Date | [Date, Date] | null];
-  /** 值改变事件 */
-  change: [value: Date | [Date, Date] | null];
-  /** 聚焦事件 */
+  /** 已确认值发生变化。 */
+  'update:modelValue': [value: DateTimePickerValue];
+  /** 一次日期或时间选择正式提交。 */
+  change: [value: DateTimePickerValue];
+  /** 输入框获得焦点。 */
   focus: [event: FocusEvent];
-  /** 失焦事件 */
+  /** 输入框失去焦点。 */
   blur: [event: FocusEvent];
-  /** 清空事件 */
+  /** 当前值被清空。 */
   clear: [];
+  /** 面板可见状态发生变化。 */
+  'visible-change': [visible: boolean];
 }
 
-/**
- * 日期时间选择器组件暴露的方法接口
- */
+/** 日期时间选择器公开方法。 */
 export interface ExDateTimePickerExposed {
-  /** 聚焦输入框 */
+  /** 聚焦输入框。 */
   focus: () => void;
-  /** 失焦输入框 */
+  /** 移除输入框焦点。 */
   blur: () => void;
-  /** 获取输入框DOM元素 */
+  /** 获取组件根元素。 */
   getElement: () => HTMLDivElement | null;
 }

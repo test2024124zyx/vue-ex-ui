@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount, VueWrapper } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ExSlider from '../../../src/components/slider/ExSlider.vue';
 import type { ExSliderProps } from '../../../src/components/slider/types';
@@ -11,8 +11,6 @@ vi.mock('../../../src/locale', async () => {
 });
 
 describe('ExSlider', () => {
-  let wrapper: VueWrapper<any>;
-
   const createWrapper = (props: Partial<ExSliderProps> = {}) => {
     return mount(ExSlider, {
       props: {
@@ -29,6 +27,7 @@ describe('ExSlider', () => {
       },
     });
   };
+  let wrapper: ReturnType<typeof createWrapper>;
 
   beforeEach(() => {
     // Mock DOM methods（用 spyOn 而不是 defineProperty，jsdom 27 下该属性不可重定义）
@@ -142,6 +141,36 @@ describe('ExSlider', () => {
       const thumbs = wrapper.findAll('.ex-slider__thumb');
       expect(thumbs).toHaveLength(2);
     });
+
+    it('运行时切换范围模式时应该规范化当前值', async () => {
+      wrapper = createWrapper({ modelValue: 40, range: false });
+
+      await expect(wrapper.setProps({ range: true })).resolves.toBeUndefined();
+
+      const thumbs = wrapper.findAll('[role="slider"]');
+      expect(thumbs).toHaveLength(2);
+      expect(thumbs[0].attributes('aria-valuenow')).toBe('40');
+      expect(thumbs[1].attributes('aria-valuenow')).toBe('40');
+    });
+
+    it('范围模式的两个手柄应该具有可区分的自定义标签', () => {
+      wrapper = createWrapper({ modelValue: [20, 80], range: true, ariaLabel: '价格' });
+
+      const labels = wrapper
+        .findAll('[role="slider"]')
+        .map(thumb => thumb.attributes('aria-label'));
+      expect(labels[0]).not.toBe(labels[1]);
+      expect(labels).toEqual(['价格 slider.startValue', '价格 slider.endValue']);
+    });
+
+    it('倒序范围值会同步规范化手柄和输入框', () => {
+      wrapper = createWrapper({ modelValue: [80, 20], range: true, showInput: true });
+
+      const thumbs = wrapper.findAll('[role="slider"]');
+      const inputs = wrapper.findAll<HTMLInputElement>('.ex-slider__input');
+      expect(thumbs.map(thumb => thumb.attributes('aria-valuenow'))).toEqual(['20', '80']);
+      expect(inputs.map(input => input.element.value)).toEqual(['20', '80']);
+    });
   });
 
   describe('垂直方向', () => {
@@ -167,6 +196,13 @@ describe('ExSlider', () => {
 
     it('不显示步长标记时不应该渲染stops容器', () => {
       wrapper = createWrapper({ showStops: false });
+      expect(wrapper.find('.ex-slider__stops').exists()).toBe(false);
+    });
+
+    it('无效步长不应该生成步进点或阻塞渲染', () => {
+      wrapper = createWrapper({ showStops: true, step: 0 });
+
+      expect(wrapper.find('.ex-slider').exists()).toBe(true);
       expect(wrapper.find('.ex-slider__stops').exists()).toBe(false);
     });
   });
@@ -266,6 +302,23 @@ describe('ExSlider', () => {
       await nextTick();
       expect(wrapper.find('.ex-slider__thumb.is-dragging').exists()).toBe(false);
     });
+
+    it('触摸取消时应该结束拖拽并阻止页面滚动', async () => {
+      wrapper = createWrapper({ modelValue: 50 });
+      const thumb = wrapper.find('.ex-slider__thumb');
+
+      await thumb.trigger('mousedown', { clientX: 100, clientY: 16 });
+      const moveEvent = new Event('touchmove', { bubbles: true, cancelable: true });
+      Object.defineProperty(moveEvent, 'touches', {
+        value: [{ clientX: 150, clientY: 16 }],
+      });
+      document.dispatchEvent(moveEvent);
+      document.dispatchEvent(new Event('touchcancel'));
+      await nextTick();
+
+      expect(moveEvent.defaultPrevented).toBe(true);
+      expect(wrapper.find('.ex-slider__thumb.is-dragging').exists()).toBe(false);
+    });
   });
 
   describe('键盘交互', () => {
@@ -314,7 +367,6 @@ describe('ExSlider', () => {
   describe('可访问性', () => {
     it('应该设置正确的ARIA属性', () => {
       wrapper = createWrapper();
-      const button = wrapper.find('.slider-button-mock');
 
       // 验证子组件接收到正确的props
       expect(wrapper.vm).toBeDefined();
@@ -326,11 +378,21 @@ describe('ExSlider', () => {
       });
       expect(wrapper.props('ariaLabel')).toBe('Volume control');
     });
+
+    it('应该把无障碍描述传递给可操作手柄', () => {
+      wrapper = createWrapper({ ariaDescription: '使用方向键调整音量' });
+
+      expect(wrapper.find('[role="slider"]').attributes('aria-description')).toBe(
+        '使用方向键调整音量'
+      );
+    });
   });
 
   describe('边界情况', () => {
     it('应该处理无效的modelValue', () => {
-      wrapper = createWrapper({ modelValue: undefined as any });
+      wrapper = createWrapper({
+        modelValue: undefined as unknown as ExSliderProps['modelValue'],
+      });
       expect(wrapper.vm).toBeDefined();
     });
 
@@ -363,6 +425,13 @@ describe('ExSlider', () => {
       });
       expect(wrapper.props('step')).toBe(0.1);
     });
+
+    it('最小值等于最大值时不应该生成 NaN 样式', () => {
+      wrapper = createWrapper({ modelValue: 10, min: 10, max: 10 });
+
+      expect(wrapper.find('.ex-slider__bar').attributes('style')).not.toContain('NaN');
+      expect(wrapper.find('.ex-slider__thumb').attributes('style')).not.toContain('NaN');
+    });
   });
 
   describe('性能优化', () => {
@@ -391,6 +460,180 @@ describe('ExSlider', () => {
     it('应该暴露blur方法', () => {
       wrapper = createWrapper();
       expect(typeof wrapper.vm.blur).toBe('function');
+    });
+  });
+
+  describe('交互分支回归', () => {
+    it('轨道点击应该按方向和反向模式换算值', async () => {
+      wrapper = createWrapper();
+      await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
+        clientX: 150,
+        clientY: 16,
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(75);
+
+      await wrapper.setProps({ direction: 'vertical', reverse: false });
+      await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
+        clientX: 10,
+        clientY: 25,
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(22);
+
+      await wrapper.setProps({ reverse: true });
+      await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
+        clientX: 10,
+        clientY: 25,
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(78);
+    });
+
+    it('范围轨道点击应该更新距离更近的手柄并保持顺序', async () => {
+      wrapper = createWrapper({ range: true, modelValue: [20, 80] });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
+      await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
+        clientX: 50,
+        clientY: 16,
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([25, 80]);
+
+      await wrapper.find('.ex-slider__track-wrapper').trigger('mousedown', {
+        clientX: 170,
+        clientY: 16,
+      });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([25, 85]);
+    });
+
+    it('范围拖拽应该限制手柄越过另一端并支持触摸事件', async () => {
+      wrapper = createWrapper({ range: true, modelValue: [20, 80] });
+      const start = wrapper.findAll('.ex-slider__thumb')[0]!;
+      await start.trigger('mousedown', { clientX: 40, clientY: 16 });
+
+      const move = new Event('touchmove', { bubbles: true, cancelable: true });
+      Object.defineProperty(move, 'touches', { value: [{ clientX: 190, clientY: 16 }] });
+      document.dispatchEvent(move);
+      await nextTick();
+      expect(move.defaultPrevented).toBe(true);
+      expect(wrapper.emitted('input')?.at(-1)?.[0]).toEqual([80, 80]);
+
+      document.dispatchEvent(new Event('touchend'));
+      await nextTick();
+      expect(wrapper.emitted('change')?.at(-1)?.[0]).toEqual([80, 80]);
+    });
+
+    it('键盘应该覆盖步进、分页和范围两端边界', async () => {
+      wrapper = createWrapper({ modelValue: 50, step: 5 });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
+      const thumb = wrapper.find('[role="slider"]');
+      for (const key of ['ArrowDown', 'ArrowLeft']) {
+        await thumb.trigger('keydown', { key });
+      }
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(40);
+      await thumb.trigger('keydown', { key: 'PageDown' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(0);
+      await thumb.trigger('keydown', { key: 'ArrowUp' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(5);
+      await thumb.trigger('keydown', { key: 'PageUp' });
+      await thumb.trigger('keydown', { key: 'Home' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(0);
+      await thumb.trigger('keydown', { key: 'End' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(100);
+      await thumb.trigger('keydown', { key: 'Tab' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(100);
+
+      wrapper.unmount();
+      wrapper = createWrapper({ range: true, modelValue: [20, 80], step: 10 });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
+      const thumbs = wrapper.findAll('[role="slider"]');
+      await thumbs[0]!.trigger('keydown', { key: 'End' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([80, 80]);
+      await thumbs[1]!.trigger('keydown', { key: 'Home' });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([80, 80]);
+    });
+
+    it('输入框应该规范化标量和范围值', async () => {
+      wrapper = createWrapper({ modelValue: 10, step: 5, showInput: true });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
+      const input = wrapper.find<HTMLInputElement>('.ex-slider__input');
+      await input.setValue('13');
+      await input.trigger('change');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(15);
+
+      wrapper.unmount();
+      wrapper = createWrapper({ range: true, modelValue: [20, 80], step: 5, showInput: true });
+      await wrapper.setProps({
+        'onUpdate:modelValue': value => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      });
+      const inputs = wrapper.findAll<HTMLInputElement>('.ex-slider__input');
+      await inputs[0]!.setValue('90');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([80, 90]);
+      expect(inputs.map(input => input.element.value)).toEqual(['80', '90']);
+      await inputs[1]!.setValue('10');
+      await inputs[1]!.trigger('change');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([10, 80]);
+    });
+
+    it('标记、步进点、悬停提示和暴露方法应该保持可用', async () => {
+      wrapper = createWrapper({
+        modelValue: 25,
+        showStops: true,
+        showTooltip: true,
+        formatTooltip: value => `${value}%`,
+        marks: {
+          '-10': 'outside',
+          25: { value: 25, label: 'quarter', style: { color: 'red' } },
+          100: 'max',
+        },
+      });
+      expect(wrapper.findAll('.ex-slider__stop')).toHaveLength(99);
+      expect(wrapper.findAll('.ex-slider__mark')).toHaveLength(2);
+      const thumb = wrapper.find('.ex-slider__thumb');
+      await thumb.trigger('mouseenter');
+      expect(wrapper.find('.ex-slider__tooltip').text()).toBe('25%');
+      await thumb.trigger('mouseleave');
+      expect(wrapper.find('.ex-slider__tooltip').exists()).toBe(false);
+
+      expect(wrapper.vm.getElement()?.classList.contains('ex-slider')).toBe(true);
+      wrapper.vm.reset();
+      await nextTick();
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(0);
+      wrapper.vm.focus();
+      wrapper.vm.blur();
+      expect(wrapper.vm.getElement()).toBeTruthy();
+    });
+
+    it('无效范围和超大步进不应该生成无界步进点', () => {
+      wrapper = createWrapper({ showStops: true, min: 0, max: 1001, step: 1 });
+      expect(wrapper.find('.ex-slider__stops').exists()).toBe(false);
+      wrapper.unmount();
+      wrapper = createWrapper({ showStops: true, min: 10, max: 5, step: 1 });
+      expect(wrapper.find('.ex-slider__stops').exists()).toBe(false);
+    });
+
+    it('禁用状态应该阻断触摸轨道和键盘操作', async () => {
+      wrapper = createWrapper({ disabled: true });
+      await wrapper.find('.ex-slider__track-wrapper').trigger('touchstart', {
+        touches: [{ clientX: 100, clientY: 16 }],
+      });
+      await wrapper.find('[role="slider"]').trigger('keydown', { key: 'ArrowRight' });
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
   });
 });

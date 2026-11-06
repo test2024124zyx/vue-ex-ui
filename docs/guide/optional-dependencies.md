@@ -32,10 +32,18 @@ ExUI 将体积较大的第三方库声明为**可选 peer 依赖**（`peerDepend
 
 - **未安装 / 未启用**时，组件库使用内置的轻量翻译实现（支持 `setLocale` 切换
   中英文、`{param}` 插值）。此时代码中不存在对 `vue-i18n` 的任何运行时引用。
-- **已安装**并通过 `createLocaleProvider()` 初始化后，该函数会动态加载 `vue-i18n`，
-  组件库内部的翻译随即自动代理到 vue-i18n，与你应用的其余文案统一管理。
+- **已安装**并通过 `createLocaleProvider()` 初始化后，该函数会为**每个 Vue App**动态创建
+  ExUI 私有的独立 vue-i18n composer，组件库内部翻译只代理到当前 App 的 composer。一个页面中的
+  多个 App 不会覆盖彼此，也不会改写 `setLocale()` 使用的模块级轻量翻译状态。
 - 也就是说：只有「主动调用 `createLocaleProvider()`」这一条路径会触碰 `vue-i18n`，
   其余所有用法都走内置实现。
+
+`createLocaleProvider()` 会先同步提供轻量 composer，再异步增强为 vue-i18n composer；它
+**不会异步调用 `app.use()`**，因此不会在 App 已挂载后修改插件图。应用自行安装的 vue-i18n
+实例也不会被组件库隐式接管；如需覆盖组件库文案，请通过 `createLocaleProvider({ messages })`
+传入覆盖内容。这个私有 composer 不能让宿主直接调用 `vue-i18n` 的 `useI18n()`；宿主业务需要
+vue-i18n 时，仍须自行 `createI18n()`、`app.use(i18n)`，并让其 `locale` 与
+`ExConfigProvider.locale` 读取同一个响应式状态。
 
 ## 图标说明
 

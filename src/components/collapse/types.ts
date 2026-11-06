@@ -1,81 +1,71 @@
-/**
- * 折叠面板项的名称类型
- */
+import type { CSSProperties } from 'vue';
+
+/** 折叠项的稳定标识类型。 */
 export type CollapseItemName = string | number;
 
 /**
- * 折叠面板激活项类型
+ * 激活值：普通模式使用数组，手风琴模式使用单值，null 表示手风琴模式下全部关闭。
  */
-export type CollapseActiveName = CollapseItemName | CollapseItemName[];
+export type CollapseActiveName = CollapseItemName | CollapseItemName[] | null;
 
-/**
- * 折叠面板组件属性
- */
+/** 折叠面板属性。 */
 export interface ExCollapseProps {
-  /** 当前激活的面板（手风琴模式下为单个值，否则为数组） */
+  /** 当前激活项；显式值（含 null、空数组）等待父级回写，undefined 使用内部状态。 */
   modelValue?: CollapseActiveName;
-  /** 是否开启手风琴模式（一次只能展开一个面板） */
+  /** 是否限制为同时展开一个面板。 */
   accordion?: boolean;
-  /** 是否显示边框 */
+  /** 是否显示容器边框。 */
   bordered?: boolean;
-  /** 是否禁用所有面板 */
+  /** 是否禁用全部折叠项。 */
   disabled?: boolean;
-  /** 展开图标位置 */
+  /** 展开图标的位置。 */
   expandIconPosition?: 'left' | 'right';
-  /** 自定义CSS类名 */
+  /** 根元素自定义类名。 */
   class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: string | Record<string, string | number>;
-  /** 无障碍标签 */
+  /** 根元素自定义样式。 */
+  style?: string | CSSProperties;
+  /** 折叠面板分组的无障碍名称。 */
   ariaLabel?: string;
 }
 
-/**
- * 折叠面板组件事件
- */
+/** 折叠面板事件。 */
 export interface ExCollapseEmits {
-  /** 值改变事件 */
+  /** 激活项发生变化。 */
   'update:modelValue': [value: CollapseActiveName];
-  /** 面板切换事件 */
+  /** 一次面板切换完成。 */
   change: [activeNames: CollapseActiveName];
 }
 
-/**
- * 折叠面板组件暴露的方法
- */
+/** 折叠面板公开方法。 */
 export interface ExCollapseExposed {
-  /** 获取折叠面板DOM元素 */
+  /** 获取根元素。 */
   getElement: () => HTMLDivElement | null;
-  /** 设置激活的面板 */
+  /** 规范化并设置激活项，同时发出对应事件。 */
   setActiveNames: (names: CollapseActiveName) => void;
 }
 
-/**
- * 折叠面板项组件属性
- */
+/** 折叠项属性。 */
 export interface ExCollapseItemProps {
-  /** 唯一标识符 */
+  /** 同一折叠面板内唯一的标识。 */
   name: CollapseItemName;
-  /** 面板标题 */
+  /** 面板标题。 */
   title?: string;
-  /** 是否禁用 */
+  /** 是否禁用当前项。 */
   disabled?: boolean;
-  /** 是否显示箭头 */
+  /** 是否显示展开图标。 */
   showArrow?: boolean;
-  /** 自定义CSS类名 */
+  /** 根元素自定义类名。 */
   class?: string | string[] | Record<string, boolean>;
-  /** 自定义样式 */
-  style?: string | Record<string, string | number>;
-  /** 无障碍标签 */
+  /** 根元素自定义样式。 */
+  style?: string | CSSProperties;
+  /** 切换按钮的无障碍名称。 */
   ariaLabel?: string;
 }
 
-/**
- * 折叠面板项组件暴露的方法
- */
+/** 折叠项公开方法。 */
 export interface ExCollapseItemExposed {
-  /** 获取面板项DOM元素 */
+  /** 获取折叠项根元素。 */
   getElement: () => HTMLDivElement | null;
-  /** 切换面板展开/收起状态 */
+  /** 在未禁用时切换展开状态。 */
   toggle: () => void;
 }

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "noImplicitOverride": false,
+    "noUncheckedIndexedAccess": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/shims-vue.d.ts", "src/types/**/*.d.ts", "vitest.setup.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

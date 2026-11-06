@@ -17,7 +17,7 @@ export type TabsSize = 'small' | 'medium' | 'large';
  * 标签页组件属性接口
  */
 export interface ExTabsProps {
-  /** 当前激活的标签页名称 */
+  /** 当前激活项；显式传入后只请求更新，父级回写才切换，undefined 使用内部状态。 */
   modelValue?: string | number;
   /** 标签页类型 */
   type?: TabsType;

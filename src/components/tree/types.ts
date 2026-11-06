@@ -1,3 +1,5 @@
+import type { VNode } from 'vue';
+
 /**
  * 树节点数据
  */
@@ -22,12 +24,29 @@ export interface TreeNode {
   data?: unknown;
 }
 
+/** 异步子节点请求的取消上下文。 */
+export interface TreeLoadContext {
+  /** 收起、重载、数据替换或卸载时取消；加载函数也应将信号传给请求。 */
+  signal: AbortSignal;
+}
+
+/** 返回当前节点的完整子节点列表，空数组表示已确认没有子节点。 */
+export type TreeLoadData = (node: TreeNode, context: TreeLoadContext) => Promise<TreeNode[]>;
+
+/** 节点加载状态快照；取消恢复 idle，失败保留 error 供调用方展示。 */
+export interface TreeNodeLoadState {
+  status: 'idle' | 'loading' | 'loaded' | 'error';
+  error?: unknown;
+}
+
 /**
  * 树组件属性
  */
 export interface ExTreeProps {
   /** 树节点数据 */
   data: TreeNode[];
+  /** 异步加载子节点；isLeaf:false 的未知分支在展开后首次加载。 */
+  loadData?: TreeLoadData;
   /** 默认展开的节点 key 数组 */
   defaultExpandedKeys?: string[];
   /** 展开的节点 key 数组（受控） */
@@ -58,6 +77,8 @@ export interface ExTreeProps {
   draggable?: boolean;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 树容器的无障碍名称。 */
+  ariaLabel?: string;
   /** 是否虚拟滚动（大数据量时仅渲染可视窗口内的节点） */
   virtual?: boolean;
   /** 节点行高（虚拟滚动时使用，像素） */
@@ -78,6 +99,10 @@ export interface ExTreeProps {
  * 树组件事件
  */
 export interface ExTreeEmits {
+  /** 子节点成功加载并纳入当前树后触发。 */
+  load: [node: TreeNode, children: TreeNode[]];
+  /** 请求或返回数据校验失败时触发；取消不会触发。 */
+  'load-error': [error: unknown, node: TreeNode];
   /** 展开/收起节点时触发 */
   'update:expandedKeys': [keys: string[]];
   /** 选中节点时触发 */
@@ -111,28 +136,39 @@ export interface ExTreeEmits {
   ];
 }
 
+/** 树节点内容插槽。 */
+export interface ExTreeSlots {
+  default?: (props: { node: TreeNode }) => VNode[];
+}
+
 /**
  * 树组件暴露的方法
  */
 export interface ExTreeExposed {
+  /** 重新加载节点，保留旧子树直到成功；取消、失败或节点不可加载时返回 false。 */
+  reloadNode: (key: string) => Promise<boolean>;
+  /** 取消节点正在进行的请求，不清除已成功加载的数据。 */
+  cancelNodeLoad: (key: string) => boolean;
+  /** 获取节点加载状态的隔离快照。 */
+  getNodeLoadState: (key: string) => TreeNodeLoadState;
   /** 获取当前选中的节点 */
   getSelectedNodes: () => TreeNode[];
   /** 获取当前勾选的节点 */
   getCheckedNodes: () => TreeNode[];
   /** 获取半选中的节点 */
   getHalfCheckedNodes: () => TreeNode[];
-  /** 设置某个节点的选中状态 */
-  setSelected: (key: string, selected: boolean) => void;
-  /** 设置某个节点的勾选状态 */
-  setChecked: (key: string, checked: boolean) => void;
-  /** 设置某个节点的展开状态 */
-  setExpanded: (key: string, expanded: boolean) => void;
+  /** 请求父级或内部状态更新某个节点的选择状态；返回是否接受请求。 */
+  requestNodeSelection: (key: string, selected: boolean) => boolean;
+  /** 请求父级或内部状态更新某个节点的勾选状态；返回是否接受请求。 */
+  requestNodeCheck: (key: string, checked: boolean) => boolean;
+  /** 请求父级或内部状态更新某个节点的展开状态；返回是否接受请求。 */
+  requestNodeExpansion: (key: string, expanded: boolean) => boolean;
   /** 获取节点 */
   getNode: (key: string) => TreeNode | null;
-  /** 展开所有节点 */
-  expandAll: () => void;
-  /** 收起所有节点 */
-  collapseAll: () => void;
+  /** 请求展开所有可展开节点。 */
+  requestExpandAll: () => void;
+  /** 请求收起所有节点。 */
+  requestCollapseAll: () => void;
   /** 过滤节点 */
   filter: (value: string) => void;
   /** 获取组件DOM元素 */

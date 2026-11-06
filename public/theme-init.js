@@ -1,13 +1,13 @@
 /**
  * ExUI Theme Initialization Script
  * 主题初始化脚本 - JavaScript 版本
- * 
+ *
  * 防止 FOUC (Flash of Unstyled Content)
- * 
+ *
  * 使用方式：
  * 1. 在 HTML <head> 中引入：<script src="/theme-init.js"></script>
  * 2. 或者内联到 HTML 中以获得最佳性能
- * 
+ *
  * @version 1.0.0
  * @license MIT
  */
@@ -16,7 +16,7 @@
   'use strict';
 
   // 配置
-  var VALID_THEMES = ['neon-blue', 'neon-pink', 'dark', 'high-contrast'];
+  var VALID_THEMES = ['neon-blue', 'light'];
   var DEFAULT_THEME = 'neon-blue';
   var STORAGE_KEY = 'ex-ui-theme';
 
@@ -48,19 +48,13 @@
     }
 
     try {
-      // 检测高对比度偏好
-      var highContrast = window.matchMedia('(prefers-contrast: high)');
-      if (highContrast.matches) {
-        return 'high-contrast';
-      }
-
-      // 检测暗色模式偏好
+      // 系统偏好只负责在两个赛博朋克主题之间选择，不创建第三套主题。
       var darkMode = window.matchMedia('(prefers-color-scheme: dark)');
       if (darkMode.matches) {
-        return 'dark';
+        return 'neon-blue';
       }
 
-      return DEFAULT_THEME;
+      return 'light';
     } catch (error) {
       console.warn('[ExUI] Failed to detect system theme:', error);
       return DEFAULT_THEME;
@@ -94,8 +88,8 @@
       // 设置 data-theme 属性
       document.documentElement.setAttribute('data-theme', theme);
 
-      // 设置 color-scheme（所有主题都是暗色）
-      document.documentElement.style.colorScheme = 'dark';
+      // 同步浏览器原生控件的明暗配色，避免亮色主题仍使用暗色控件。
+      document.documentElement.style.colorScheme = theme === 'neon-blue' ? 'dark' : 'light';
 
       // 添加已加载标记
       document.documentElement.classList.add('ex-theme-loaded');

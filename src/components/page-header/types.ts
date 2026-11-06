@@ -1,44 +1,46 @@
 export interface PageHeaderProps {
   /** 页面标题 */
-  title?: string
+  title?: string;
   /** 页面副标题 */
-  subtitle?: string
+  subtitle?: string;
   /** 返回按钮文本 */
-  backText?: string
+  backText?: string;
   /** 返回按钮图标 */
-  backIcon?: string
+  backIcon?: string;
   /** 是否显示返回按钮 */
-  showBack?: boolean
+  showBack?: boolean;
   /** 面包屑数据 */
   breadcrumb?: Array<{
-    title: string
-    path?: string
-  }>
+    id?: string;
+    title: string;
+    path?: string;
+  }>;
   /** 标签列表 */
   tags?: Array<{
-    text: string
-    type?: 'default' | 'primary' | 'success' | 'warning' | 'error'
-    color?: string
-  }>
+    id?: string;
+    text: string;
+    type?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'error' | 'info';
+    color?: string;
+  }>;
   /** 头像信息 */
   avatar?: {
-    src?: string
-    alt?: string
-    size?: 'small' | 'medium' | 'large'
-  }
+    src?: string;
+    alt?: string;
+    size?: 'small' | 'medium' | 'large';
+  };
   /** 是否显示分割线 */
-  showDivider?: boolean
+  showDivider?: boolean;
   /** 页头高度 */
-  height?: string | number
+  height?: string | number;
   /** 是否固定 */
-  fixed?: boolean
-  /** 固定时的z-index */
-  zIndex?: number
+  fixed?: boolean;
+  /** 固定时的 z-index；省略时继承 ConfigProvider 的 sticky 层级 */
+  zIndex?: number;
 }
 
 export interface PageHeaderEmits {
   /** 点击返回按钮时触发 */
-  (e: 'back'): void
+  (e: 'back'): void;
   /** 点击面包屑时触发 */
-  (e: 'breadcrumb-click', path: string, index: number): void
+  (e: 'breadcrumb-click', path: string, index: number): void;
 }

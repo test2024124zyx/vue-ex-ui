@@ -1,6 +1,6 @@
-import type { App } from 'vue';
-import ExSteps from './ExSteps.vue';
-import ExStep from './ExStep.vue';
+import ExStepsComponent from './ExSteps.vue';
+import ExStepComponent from './ExStep.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type { ExStepsProps, ExStepsEmits, ExStepsExposed } from './types';
 import type { ExStepProps, ExStepExposed } from './types';
 
@@ -10,14 +10,10 @@ export type { ExStepProps, ExStepExposed };
 export type { StepStatus, StepsDirection, StepsSize, StepsContext } from './types';
 
 // 导出组件
-export { ExSteps, ExStep };
+export const ExStep: InstallableComponent<typeof ExStepComponent> = withInstall(ExStepComponent);
+export const ExSteps: InstallableComponent<typeof ExStepsComponent> = withInstall(
+  ExStepsComponent,
+  { ExStep }
+);
 
-// 组件安装插件
-export const StepsPlugin = {
-  install(app: App) {
-    app.component('ExSteps', ExSteps);
-    app.component('ExStep', ExStep);
-  },
-};
-
-export default StepsPlugin;
+export default ExSteps;

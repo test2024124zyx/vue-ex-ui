@@ -1,14 +1,10 @@
-import type { App } from 'vue';
-import ExCard from './ExCard.vue';
+import ExCardComponent from './ExCard.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
 export type { ExCardProps, ExCardEmits, ExCardExposed } from './types';
 export type { CardType, CardSize, CardShadow } from './types';
 
-// 为组件添加 install 方法
-ExCard.install = (app: App) => {
-  app.component(ExCard.name as string, ExCard);
-};
+export const ExCard: InstallableComponent<typeof ExCardComponent> = withInstall(ExCardComponent);
 
-export { ExCard };
 export default ExCard;

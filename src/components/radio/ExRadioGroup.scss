@@ -150,7 +150,7 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-radio-group {
     &__label {
       font-weight: var(--ex-font-semibold);

@@ -1,208 +1,658 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { h, nextTick } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExWatermark from '@/components/watermark/ExWatermark.vue';
-import { nextTick } from 'vue';
+import { ExWatermark as InstallableWatermark } from '@/components/watermark';
+import ExConfigProvider from '@/components/config-provider/ExConfigProvider.vue';
+import {
+  getRotatedSize,
+  normalizeNumber,
+  renderWatermarkTile,
+} from '@/components/watermark/watermark-utils';
+import { MAX_BROWSER_IMAGE_SOURCE_BYTES } from '@/utils/image-resource';
 
-// Mock canvas context for jsdom
-beforeAll(() => {
-  // Mock Canvas API
-  HTMLCanvasElement.prototype.getContext = function () {
-    return {
-      scale: vi.fn(),
-      clearRect: vi.fn(),
-      save: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      fillText: vi.fn(),
-      drawImage: vi.fn(),
-      restore: vi.fn(),
-    } as any;
-  };
-  HTMLCanvasElement.prototype.toDataURL = () => 'data:image/png;base64,EX';
+interface CanvasContextMock {
+  scale: ReturnType<typeof vi.fn>;
+  clearRect: ReturnType<typeof vi.fn>;
+  save: ReturnType<typeof vi.fn>;
+  translate: ReturnType<typeof vi.fn>;
+  rotate: ReturnType<typeof vi.fn>;
+  fillText: ReturnType<typeof vi.fn>;
+  drawImage: ReturnType<typeof vi.fn>;
+  restore: ReturnType<typeof vi.fn>;
+  measureText: ReturnType<typeof vi.fn>;
+  font: string;
+  fillStyle: string;
+  textAlign: CanvasTextAlign;
+  textBaseline: CanvasTextBaseline;
+  globalAlpha: number;
+}
 
-  // Mock devicePixelRatio
+class ControllableImage {
+  static instances: ControllableImage[] = [];
+
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  crossOrigin: string | null = null;
+  decoding: HTMLImageElement['decoding'] = 'auto';
+  naturalWidth = 160;
+  naturalHeight = 56;
+  referrerPolicy = '';
+  private currentSrc = '';
+
+  constructor() {
+    ControllableImage.instances.push(this);
+  }
+
+  get src(): string {
+    return this.currentSrc;
+  }
+
+  set src(value: string) {
+    this.currentSrc = value;
+  }
+
+  load(): void {
+    this.onload?.();
+  }
+
+  fail(): void {
+    this.onerror?.();
+  }
+}
+
+const contexts: CanvasContextMock[] = [];
+const canvasIds = new WeakMap<HTMLCanvasElement, number>();
+
+const waitAsync = async (): Promise<void> => {
+  await nextTick();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  await nextTick();
+};
+
+const createContext = (): CanvasContextMock => ({
+  scale: vi.fn(),
+  clearRect: vi.fn(),
+  save: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  fillText: vi.fn(),
+  drawImage: vi.fn(),
+  restore: vi.fn(),
+  measureText: vi.fn((text: string) => ({
+    width: text.length * 10,
+    actualBoundingBoxAscent: 12,
+    actualBoundingBoxDescent: 4,
+    fontBoundingBoxAscent: 12,
+    fontBoundingBoxDescent: 4,
+  })),
+  font: '',
+  fillStyle: '',
+  textAlign: 'center',
+  textBaseline: 'middle',
+  globalAlpha: 1,
+});
+
+beforeEach(() => {
+  contexts.length = 0;
+  ControllableImage.instances.length = 0;
+
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+    this: HTMLCanvasElement
+  ) {
+    const context = createContext();
+    contexts.push(context);
+    canvasIds.set(this, contexts.length);
+    return context as unknown as CanvasRenderingContext2D;
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(function (
+    this: HTMLCanvasElement
+  ) {
+    return `data:image/png;base64,CANVAS_${canvasIds.get(this) ?? 0}`;
+  });
+  vi.stubGlobal('Image', ControllableImage);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      Promise.resolve(
+        new Response(new Uint8Array([1, 2, 3]), {
+          headers: { 'content-type': 'image/png' },
+        })
+      )
+    )
+  );
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:watermark-image');
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   Object.defineProperty(window, 'devicePixelRatio', {
-    writable: true,
     configurable: true,
     value: 2,
   });
 });
 
-// 等待异步操作完成的辅助函数
-const waitAsync = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  document.documentElement.removeAttribute('data-theme');
+});
 
 describe('ExWatermark', () => {
-  it('渲染文本水印并生成 dataURL', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: { type: 'text', text: 'TEST', gapX: 100, gapY: 80, fullPage: false },
-    });
-
-    await waitAsync(); // 等待 onMounted 中的异步操作
-
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
-    const style = overlay.attributes('style');
-    expect(style).toContain('background-image: url("data:image/png;base64,EX")');
-  });
-
-  it('全屏模式使用 fixed 定位', async () => {
-    const wrapper = mount(ExWatermark, { props: { fullPage: true } });
-    await nextTick();
-    const overlay = wrapper.get('.ex-watermark__overlay');
-    expect(overlay.classes()).toContain('is-fixed');
-  });
-
-  it('容器模式在根元素使用 relative 定位', async () => {
-    const wrapper = mount(ExWatermark, { props: { fullPage: false } });
-    await nextTick();
-    const root = wrapper.get('.ex-watermark');
-    expect(root.attributes('style')).toContain('position: relative');
-  });
-
-  it('暴露 refresh 和 toDataURL 方法', async () => {
-    const wrapper = mount(ExWatermark);
-
-    await waitAsync(); // 等待 onMounted 中的异步操作
-
-    const vm = wrapper.vm as any;
-
-    expect(vm.refresh).toBeInstanceOf(Function);
-    expect(vm.toDataURL).toBeInstanceOf(Function);
-    expect(vm.toDataURL()).toContain('data:image/png;base64,EX');
-  });
-
-  it('支持自定义样式属性', async () => {
+  it('保留有符号偏移，动态移动不重绘瓦片且不放开负间距', async () => {
     const wrapper = mount(ExWatermark, {
       props: {
+        text: 'a',
+        offsetX: -24.5,
+        offsetY: -12,
+        gapX: -8,
+        gapY: -16,
+        angle: 0,
+        staggered: false,
+      },
+    });
+    try {
+      await waitAsync();
+      const overlay = wrapper.get('.ex-watermark__overlay').element as HTMLElement;
+      expect(overlay.style.backgroundPosition).toBe('-24.5px -12px');
+      expect(overlay.style.backgroundSize).toBe('10px 16px');
+      const drawCount = contexts.length;
+      await wrapper.setProps({ offsetX: 8, offsetY: -3.25 });
+      await waitAsync();
+      expect(overlay.style.backgroundPosition).toBe('8px -3.25px');
+      expect(contexts).toHaveLength(drawCount);
+      await wrapper.setProps({ offsetX: Number.NaN, offsetY: Number.NEGATIVE_INFINITY });
+      expect(overlay.style.backgroundPosition).toBe('0px 0px');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it('默认文字随语言变化重新绘制，显式文字保持调用者内容', async () => {
+    const { setLocale } = await import('../../../src/locale');
+    setLocale('en-US');
+    const wrapper = mount(ExWatermark, { props: { fullPage: false } });
+    try {
+      await waitAsync();
+      setLocale('zh-CN');
+      await waitAsync();
+      expect(contexts.flatMap(context => context.fillText.mock.calls).at(-1)?.[0]).toBe('示例水印');
+      await wrapper.setProps({ text: 'custom' });
+      await waitAsync();
+      setLocale('en-US');
+      await waitAsync();
+      expect(contexts.flatMap(context => context.fillText.mock.calls).at(-1)?.[0]).toBe('custom');
+    } finally {
+      wrapper.unmount();
+      setLocale('en-US');
+    }
+  });
+
+  it('防修改模式完整恢复容器的 hidden 与 aria-hidden 属性', async () => {
+    const wrapper = mount(ExWatermark, {
+      attachTo: document.body,
+      props: { antiTamper: true, fullPage: false, text: 'a' },
+    });
+    try {
+      await waitAsync();
+      const element = wrapper.element as HTMLElement;
+      element.hidden = true;
+      element.setAttribute('aria-hidden', 'true');
+      await waitAsync();
+      expect(element.hidden).toBe(false);
+      expect(element.getAttribute('aria-hidden')).toBeNull();
+    } finally {
+      wrapper.unmount();
+    }
+  });
+  it('导出可安装组件', () => {
+    expect(InstallableWatermark.name).toBe('ExWatermark');
+    expect(InstallableWatermark.install).toBeInstanceOf(Function);
+  });
+
+  it('数字归一化和旋转几何在非法值与边界值下保持稳定', () => {
+    expect(normalizeNumber(Number.NaN, 12, 1, 20)).toBe(12);
+    expect(normalizeNumber(-5, 12, 1, 20)).toBe(1);
+    expect(normalizeNumber(99, 12, 1, 20)).toBe(20);
+    expect(getRotatedSize(80, 20, 90)).toEqual({ width: 20, height: 80 });
+    expect(getRotatedSize(80, 20, 450)).toEqual({ width: 20, height: 80 });
+  });
+
+  it('Canvas 上下文不可用时返回空瓦片并报告错误', async () => {
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValueOnce(null);
+    const onError = vi.fn();
+
+    const tile = await renderWatermarkTile({
+      props: { type: 'text' },
+      text: 'NO CANVAS',
+      color: '',
+      fontFamily: '',
+      onError,
+    });
+
+    expect(tile).toEqual({ dataUrl: '', width: 0, height: 0 });
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Canvas') })
+    );
+  });
+
+  it('空文本不生成透明占位图片', async () => {
+    const tile = await renderWatermarkTile({
+      props: { type: 'text' },
+      text: [],
+      color: '',
+      fontFamily: '',
+      onError: vi.fn(),
+    });
+
+    expect(tile).toEqual({ dataUrl: '', width: 0, height: 0 });
+  });
+
+  it('图片缺少地址时报告错误并使用文本回退', async () => {
+    const onError = vi.fn();
+    const tile = await renderWatermarkTile({
+      props: { type: 'image', repeat: false, dprAware: false },
+      text: 'FALLBACK',
+      color: '',
+      fontFamily: '',
+      onError,
+    });
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('imageSrc') })
+    );
+    expect(tile.dataUrl).toContain('data:image/png;base64,CANVAS_');
+  });
+
+  it('Canvas 导出失败时保留瓦片尺寸并报告错误', async () => {
+    vi.mocked(HTMLCanvasElement.prototype.toDataURL).mockImplementationOnce(() => {
+      throw new Error('tainted canvas');
+    });
+    const onError = vi.fn();
+    const tile = await renderWatermarkTile({
+      props: { type: 'text', staggered: false },
+      text: 'EXPORT',
+      color: '#fff',
+      fontFamily: 'sans-serif',
+      onError,
+    });
+
+    expect(tile.dataUrl).toBe('');
+    expect(tile.width).toBeGreaterThan(0);
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'tainted canvas' }));
+  });
+
+  it('瓦片尺寸超过像素预算时拒绝分配巨大 Canvas', async () => {
+    const onError = vi.fn();
+    const tile = await renderWatermarkTile({
+      props: {
+        type: 'text',
+        width: 100_000,
+        height: 100_000,
+        gapX: 0,
+        gapY: 0,
+        dprAware: false,
+      },
+      text: 'TOO LARGE',
+      color: '#fff',
+      fontFamily: 'sans-serif',
+      onError,
+    });
+
+    expect(tile).toEqual({ dataUrl: '', width: 0, height: 0 });
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('安全') })
+    );
+  });
+
+  it('按文字尺寸、旋转包围盒和间距生成不会裁切的瓦片', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        text: 'LONG WATERMARK',
+        angle: 0,
+        gapX: 20,
+        gapY: 10,
+        staggered: false,
+        fullPage: false,
+      },
+    });
+
+    await waitAsync();
+
+    const overlayStyle = wrapper.get('.ex-watermark__overlay').attributes('style');
+    expect(overlayStyle).toContain('background-size: 160px 26px');
+    expect(contexts[1]?.fillText).toHaveBeenCalledWith('LONG WATERMARK', 0, 0);
+  });
+
+  it('默认使用错位平铺并绘制无缝边界副本', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: { text: 'EX', angle: 0, gapX: 20, gapY: 10, fullPage: false },
+    });
+
+    await waitAsync();
+
+    expect(wrapper.get('.ex-watermark__overlay').attributes('style')).toContain(
+      'background-size: 80px 26px'
+    );
+    expect(contexts[1]?.fillText).toHaveBeenCalledTimes(3);
+  });
+
+  it('支持多行文本、字体样式和对齐方式', async () => {
+    mount(ExWatermark, {
+      props: {
+        text: ['第一行', 'SECOND'],
+        fontSize: 18,
+        lineHeight: 24,
+        fontWeight: 700,
+        fontStyle: 'italic',
+        textAlign: 'right',
+        staggered: false,
+      },
+    });
+
+    await waitAsync();
+
+    const drawContext = contexts[1];
+    expect(drawContext?.font).toContain('italic 700 18px');
+    expect(drawContext?.textAlign).toBe('right');
+    expect(drawContext?.fillText).toHaveBeenNthCalledWith(1, '第一行', 30, -12);
+    expect(drawContext?.fillText).toHaveBeenNthCalledWith(2, 'SECOND', 30, 12);
+  });
+
+  it('未指定颜色和字体时跟随组件主题的计算样式', async () => {
+    const originalGetComputedStyle = window.getComputedStyle.bind(window);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(element => {
+      const style = originalGetComputedStyle(element);
+      if ((element as HTMLElement).classList?.contains('ex-watermark__overlay')) {
+        Object.defineProperties(style, {
+          color: { configurable: true, value: 'rgb(230, 240, 255)' },
+          fontFamily: { configurable: true, value: '"JetBrains Mono", monospace' },
+        });
+      }
+      return style;
+    });
+
+    mount(ExWatermark, { props: { text: 'THEME', fullPage: false } });
+    await waitAsync();
+
+    expect(contexts[1]?.fillStyle).toBe('rgb(230, 240, 255)');
+    expect(contexts[1]?.font).toContain('"JetBrains Mono", monospace');
+  });
+
+  it('成功加载图片时使用高清安全设置和指定尺寸', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        type: 'image',
+        imageSrc: '/logo.png',
+        imageWidth: 80,
+        imageHeight: 32,
+        angle: 0,
+        gapX: 20,
+        gapY: 10,
+        staggered: false,
+        fullPage: false,
+      },
+    });
+
+    await waitAsync();
+    const image = ControllableImage.instances[0];
+    expect(fetch).toHaveBeenCalledWith(
+      '/logo.png',
+      expect.objectContaining({
+        credentials: 'same-origin',
+        referrerPolicy: 'no-referrer',
+        signal: expect.any(AbortSignal),
+      })
+    );
+    image?.load();
+    await waitAsync();
+
+    expect(contexts[1]?.drawImage).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:watermark-image');
+    expect(image?.src).toBe('');
+    expect(wrapper.get('.ex-watermark__overlay').attributes('style')).toContain(
+      'background-size: 100px 42px'
+    );
+  });
+
+  it('远程图片超过字节上限时拒绝解码并回退到文本水印', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(new Uint8Array([1]), {
+        headers: {
+          'content-type': 'image/png',
+          'content-length': String(MAX_BROWSER_IMAGE_SOURCE_BYTES + 1),
+        },
+      })
+    );
+    const onError = vi.fn();
+
+    const tile = await renderWatermarkTile({
+      props: { type: 'image', imageSrc: 'https://cdn.example/oversized.png' },
+      text: 'FALLBACK',
+      color: '',
+      fontFamily: '',
+      onError,
+    });
+
+    expect(ControllableImage.instances).toHaveLength(0);
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('大小上限') })
+    );
+    expect(tile.dataUrl).toContain('data:image/png;base64,CANVAS_');
+  });
+
+  it('图片加载失败时发出错误事件并回退到文本水印', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        type: 'image',
+        imageSrc: '/missing.png',
+        text: '图片回退',
+        fullPage: false,
+      },
+    });
+
+    await waitAsync();
+    ControllableImage.instances[0]?.fail();
+    await waitAsync();
+
+    expect(wrapper.emitted('error')).toHaveLength(1);
+    expect(contexts[1]?.fillText).toHaveBeenCalledWith('图片回退', 0, 0);
+    expect(wrapper.vm.toDataURL()).toContain('data:image/png;base64,CANVAS_');
+  });
+
+  it('图片加载错误不会在消息中泄露签名查询参数', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        type: 'image',
+        imageSrc: 'https://cdn.example/logo.png?token=top-secret',
+        text: 'FALLBACK',
+        fullPage: false,
+      },
+    });
+    await waitAsync();
+    ControllableImage.instances[0]?.fail();
+    await waitAsync();
+
+    const error = wrapper.emitted('error')?.[0]?.[0] as Error;
+    expect(error.message).not.toContain('top-secret');
+  });
+
+  it('忽略较早完成的异步图片绘制结果', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: { type: 'image', imageSrc: '/first.png', fullPage: false },
+    });
+    await waitAsync();
+    const firstImage = ControllableImage.instances[0];
+
+    await wrapper.setProps({ imageSrc: '/second.png' });
+    await waitAsync();
+    const secondImage = ControllableImage.instances[1];
+    expect(firstImage?.src).toBe('');
+    secondImage?.load();
+    await waitAsync();
+    const latestDataUrl = wrapper.vm.toDataURL();
+
+    firstImage?.load();
+    await waitAsync();
+    expect(wrapper.vm.toDataURL()).toBe(latestDataUrl);
+  });
+
+  it('无效的尺寸和透明度会回退到安全范围', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        text: 'SAFE',
+        gapX: -1,
+        gapY: Number.NaN,
+        fontSize: 0,
+        opacity: 9,
+        fullPage: false,
+      },
+    });
+
+    await waitAsync();
+
+    const style = wrapper.get('.ex-watermark__overlay').attributes('style');
+    expect(style).not.toContain('NaN');
+    expect(style).not.toContain('-1px');
+    expect(style).toContain('opacity: 1');
+  });
+
+  it('运行时切换响应式配置会正确重绑和清理监听器', async () => {
+    const addEventListener = vi.spyOn(window, 'addEventListener');
+    const removeEventListener = vi.spyOn(window, 'removeEventListener');
+    const wrapper = mount(ExWatermark, {
+      props: { responsive: false, fullPage: false },
+    });
+    await waitAsync();
+    expect(addEventListener).not.toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function),
+      expect.anything()
+    );
+
+    await wrapper.setProps({ responsive: true });
+    await waitAsync();
+    expect(addEventListener).toHaveBeenCalledWith('resize', expect.any(Function), {
+      passive: true,
+    });
+
+    await wrapper.setProps({ throttleMs: 250 });
+    await waitAsync();
+    expect(removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function), {
+      passive: true,
+    });
+
+    wrapper.unmount();
+    expect(removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function), {
+      passive: true,
+    });
+  });
+
+  it('防篡改会恢复被删除或改写的覆盖层并通知调用方', async () => {
+    const wrapper = mount(ExWatermark, {
+      attachTo: document.body,
+      props: { antiTamper: true, text: 'PROTECTED', fullPage: false },
+    });
+    await waitAsync();
+
+    const root = wrapper.get('.ex-watermark').element;
+    const overlay = wrapper.get('.ex-watermark__overlay').element as HTMLElement;
+    const expectedStyle = overlay.getAttribute('style');
+    overlay.className = 'tampered';
+    overlay.style.display = 'none';
+    overlay.hidden = true;
+    overlay.remove();
+    await waitAsync();
+
+    expect(root.contains(overlay)).toBe(true);
+    expect(overlay.className).toBe('ex-watermark__overlay');
+    expect(overlay.hidden).toBe(false);
+    expect(overlay.getAttribute('style')).toBe(expectedStyle);
+    expect(wrapper.emitted('remove')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('防篡改观察器只监听受保护节点而不遍历业务插槽子树', async () => {
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'MutationObserver',
+      class {
+        observe = observe;
+        disconnect = disconnect;
+      }
+    );
+    const wrapper = mount(ExWatermark, {
+      props: { antiTamper: true, text: 'PROTECTED', fullPage: false },
+      slots: { default: '<section><div><span>业务内容</span></div></section>' },
+    });
+    await waitAsync();
+
+    expect(observe).toHaveBeenCalledTimes(2);
+    expect(observe.mock.calls.every(([, options]) => options.subtree !== true)).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('关闭防篡改时不会恢复覆盖层', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: { antiTamper: false, text: 'NORMAL', fullPage: false },
+    });
+    await waitAsync();
+    const root = wrapper.get('.ex-watermark').element;
+    const overlay = wrapper.get('.ex-watermark__overlay').element;
+
+    overlay.remove();
+    await waitAsync();
+    expect(root.contains(overlay)).toBe(false);
+  });
+
+  it('只将覆盖层标记为装饰元素，不污染插槽内容语义', async () => {
+    const wrapper = mount(ExWatermark, {
+      slots: { default: '<article aria-label="业务内容">正文</article>' },
+      props: { fullPage: false },
+    });
+    await waitAsync();
+
+    expect(wrapper.get('.ex-watermark').attributes('role')).toBeUndefined();
+    expect(wrapper.get('.ex-watermark__overlay').attributes('aria-hidden')).toBe('true');
+    expect(wrapper.get('article').attributes('aria-label')).toBe('业务内容');
+  });
+
+  it('支持全屏、布局、交互和程序化控制属性', async () => {
+    const wrapper = mount(ExWatermark, {
+      props: {
+        fullPage: true,
+        repeat: false,
+        offsetX: 18,
+        offsetY: 12,
         opacity: 0.5,
-        zIndex: 1000,
+        zIndex: 1200,
         pointerEvents: 'auto',
         selectable: true,
       },
     });
-
     await waitAsync();
 
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    const style = overlay.attributes('style');
-    expect(style).toContain('opacity: 0.5');
-    expect(style).toContain('--wm-z-index: 1000');
-    expect(style).toContain('--wm-pointer-events: auto');
-    expect(style).toContain('--wm-user-select: text');
+    const overlay = wrapper.get('.ex-watermark__overlay');
+    const rootStyle = wrapper.get('.ex-watermark').attributes('style');
+    expect(overlay.classes()).toContain('is-fixed');
+    expect(overlay.attributes('style')).toContain('background-repeat: no-repeat');
+    expect(overlay.attributes('style')).toContain('background-position: 18px 12px');
+    expect(overlay.attributes('style')).toContain('opacity: 0.5');
+    expect(rootStyle).toContain('--ex-watermark-z-index: 1200');
+    expect(rootStyle).toContain('--ex-watermark-pointer-events: auto');
+    expect(rootStyle).toContain('--ex-watermark-user-select: text');
+    expect(wrapper.vm.refresh).toBeInstanceOf(Function);
+    expect(wrapper.vm.toDataURL()).toContain('data:image/png;base64,CANVAS_');
   });
 
-  it('支持布局控制属性', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        gapX: 150,
-        gapY: 100,
-        offsetX: 20,
-        offsetY: 10,
-        repeat: false,
+  it('默认层级使用 ConfigProvider 的 watermark 语义且不会产生负数', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      props: { zIndex: 0 },
+      slots: {
+        default: () => h(ExWatermark, { fullPage: false }),
       },
     });
-
     await waitAsync();
 
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    const style = overlay.attributes('style');
-    expect(style).toContain('background-size: 150px 100px');
-    expect(style).toContain('background-position: 20px 10px');
-    expect(style).toContain('background-repeat: no-repeat');
-  });
-
-  it('包含无障碍属性', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: { text: '测试水印' },
-    });
-
-    await waitAsync();
-
-    const root = wrapper.get('.ex-watermark');
-    expect(root.attributes('role')).toBe('presentation');
-    // 水印为纯装饰元素：覆盖层 aria-hidden，容器不再携带 aria-label
-    expect(root.attributes('aria-label')).toBeUndefined();
-    expect(wrapper.get('.ex-watermark__overlay').attributes('aria-hidden')).toBe('true');
-  });
-
-  it('支持防篡改保护配置', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        antiTamper: true,
-        text: '受保护的水印',
-      },
-    });
-
-    await waitAsync();
-
-    // 验证组件正常渲染
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
-
-    // 注意：在测试环境中 MutationObserver 的行为可能有限
-    // 这里主要验证配置不会导致错误
-    expect(wrapper.vm).toBeDefined();
-  });
-
-  it('防篡改功能不影响正常渲染', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        antiTamper: false,
-        text: '普通水印',
-      },
-    });
-
-    await waitAsync();
-
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
-  });
-
-  it('支持单行文本', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        text: '单行水印',
-        fullPage: false,
-      },
-    });
-
-    await waitAsync();
-
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
-    const style = overlay.attributes('style');
-    expect(style).toContain('background-image: url("data:image/png;base64,EX")');
-  });
-
-  it('支持多行文本（数组）', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        text: ['第一行', '第二行', '第三行'],
-        lineHeight: 22,
-        fullPage: false,
-      },
-    });
-
-    await waitAsync();
-
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
-    const style = overlay.attributes('style');
-    expect(style).toContain('background-image: url("data:image/png;base64,EX")');
-  });
-
-  it('多行文本支持自定义行间距', async () => {
-    const wrapper = mount(ExWatermark, {
-      props: {
-        text: ['行1', '行2'],
-        lineHeight: 30,
-        fontSize: 16,
-      },
-    });
-
-    await waitAsync();
-
-    const overlay = wrapper.find('.ex-watermark__overlay');
-    expect(overlay.exists()).toBe(true);
+    expect(wrapper.get('.ex-watermark').attributes('style')).toContain('--ex-watermark-z-index: 0');
   });
 });

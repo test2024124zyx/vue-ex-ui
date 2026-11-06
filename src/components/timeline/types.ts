@@ -66,6 +66,10 @@ export interface ExTimelineItemProps {
   hollow?: boolean;
   /** 是否隐藏连接线 */
   hideLine?: boolean;
+  /** 是否将时间轴项作为可键盘操作的交互控件。 */
+  clickable?: boolean;
+  /** 可点击时间轴项主操作的无障碍名称。 */
+  ariaLabel?: string;
   /** 自定义类名 */
   class?: string | string[] | Record<string, boolean>;
   /** 自定义样式 */
@@ -77,7 +81,7 @@ export interface ExTimelineItemProps {
  */
 export interface ExTimelineItemEmits {
   /** 点击事件 */
-  (e: 'click', event: MouseEvent): void;
+  (e: 'click', event: MouseEvent | KeyboardEvent): void;
 }
 
 /**

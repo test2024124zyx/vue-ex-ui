@@ -1,11 +1,11 @@
-import ExTag from './ExTag.vue';
-import ExTagInput from './ExTagInput.vue';
-import type { App } from 'vue';
+import ExTagComponent from './ExTag.vue';
+import ExTagInputComponent from './ExTagInput.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-const install = (app: App) => {
-  app.component('ExTag', ExTag);
-  app.component('ExTagInput', ExTagInput);
-};
+export const ExTagInput: InstallableComponent<typeof ExTagInputComponent> =
+  withInstall(ExTagInputComponent);
+export const ExTag: InstallableComponent<typeof ExTagComponent> = withInstall(ExTagComponent, {
+  ExTagInput,
+});
 
-export { ExTag, ExTagInput };
-export default Object.assign(ExTag, { install, ExTagInput });
+export default ExTag;

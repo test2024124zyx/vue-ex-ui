@@ -7,13 +7,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 // 折线图配置
 const lineOption = ref({
-  xAxis: {
-    type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  },
-  yAxis: {
-    type: 'value'
-  },
+  xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+  yAxis: { type: 'value' },
   series: [{
     data: [120, 200, 150, 80, 70, 110, 130],
     type: 'line',
@@ -23,13 +18,8 @@ const lineOption = ref({
 
 // 柱状图配置
 const barOption = ref({
-  xAxis: {
-    type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  },
-  yAxis: {
-    type: 'value'
-  },
+  xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+  yAxis: { type: 'value' },
   series: [{
     data: [120, 200, 150, 80, 70, 110, 130],
     type: 'bar'
@@ -75,13 +65,8 @@ const scatterOption = ref({
 
 // 雷达图配置
 const radarOption = ref({
-  tooltip: {
-    trigger: 'item'
-  },
-  legend: {
-    data: ['预算分配', '实际支出'],
-    bottom: 0
-  },
+  tooltip: { trigger: 'item' },
+  legend: { data: ['预算分配', '实际支出'], bottom: 0 },
   radar: {
     indicator: [
       { name: '销售', max: 100 },
@@ -91,35 +76,15 @@ const radarOption = ref({
       { name: '研发', max: 100 },
       { name: '市场', max: 100 }
     ],
-    axisName: {
-      color: 'var(--ex-color-text-secondary)'
-    },
-    splitLine: {
-      lineStyle: {
-        color: 'var(--ex-color-border-primary)'
-      }
-    },
-    splitArea: {
-      show: true
-    }
+    axisName: { color: 'var(--ex-color-text-secondary)' },
+    splitLine: { lineStyle: { color: 'var(--ex-color-border-primary)' } },
+    splitArea: { show: true }
   },
   series: [{
     type: 'radar',
     data: [
-      {
-        value: [42, 30, 20, 35, 50, 98],
-        name: '预算分配',
-        areaStyle: {
-          opacity: 0.3
-        }
-      },
-      {
-        value: [50, 14, 28, 26, 42, 21],
-        name: '实际支出',
-        areaStyle: {
-          opacity: 0.3
-        }
-      }
+      { value: [42, 30, 20, 35, 50, 98], name: '预算分配', areaStyle: { opacity: 0.3 } },
+      { value: [50, 14, 28, 26, 42, 21], name: '实际支出', areaStyle: { opacity: 0.3 } }
     ]
   }]
 })
@@ -146,113 +111,61 @@ const fullOption = ref({
     subtext: '2024年度',
     left: 'center',
     top: 10,
-    textStyle: {
-      fontSize: 18,
-      fontWeight: 'bold'
-    },
-    subtextStyle: {
-      fontSize: 14
-    }
+    textStyle: { fontSize: 18, fontWeight: 'bold' },
+    subtextStyle: { fontSize: 14 }
   },
   tooltip: {
     trigger: 'axis',
-    axisPointer: {
-      type: 'cross',
-      crossStyle: {
-        color: '#999'
-      }
-    }
+    axisPointer: { type: 'cross', crossStyle: { color: '#999' } }
   },
-  legend: {
-    data: ['销售额', '利润'],
-    bottom: 5,
-    left: 'center'
-  },
+  legend: { data: ['销售额', '利润'], bottom: 5, left: 'center' },
   toolbox: {
     show: true,
     right: 20,
     top: 10,
     feature: {
-      saveAsImage: { 
-        title: '保存为图片',
-        pixelRatio: 2
-      },
-      dataView: { 
-        title: '数据视图', 
-        readOnly: false,
-        lang: ['数据视图', '关闭', '刷新']
-      },
+      saveAsImage: { title: '保存为图片', pixelRatio: 2 },
+      dataView: { title: '数据视图', readOnly: false, lang: ['数据视图', '关闭', '刷新'] },
       restore: { title: '还原' },
-      dataZoom: { 
-        title: { 
-          zoom: '区域缩放', 
-          back: '还原缩放' 
-        }
-      },
+      dataZoom: { title: { zoom: '区域缩放', back: '还原缩放' } },
       magicType: {
-        title: {
-          line: '切换为折线图',
-          bar: '切换为柱状图'
-        },
+        title: { line: '切换为折线图', bar: '切换为柱状图' },
         type: ['line', 'bar']
       }
     }
   },
-  grid: {
-    left: 80,
-    right: 40,
-    bottom: 80,
-    top: 80,
-    containLabel: false
-  },
+  grid: { left: 80, right: 40, bottom: 80, top: 80, containLabel: false },
   xAxis: {
     type: 'category',
     data: ['1月', '2月', '3月', '4月', '5月', '6月'],
     name: '月份',
     nameLocation: 'center',
     nameGap: 35,
-    nameTextStyle: {
-      fontSize: 14,
-      fontWeight: 'bold'
-    },
-    axisLabel: {
-      fontSize: 12
-    }
+    nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+    axisLabel: { fontSize: 12 }
   },
   yAxis: {
     type: 'value',
     name: '金额（万元）',
     nameLocation: 'center',
     nameGap: 60,
-    nameTextStyle: {
-      fontSize: 14,
-      fontWeight: 'bold'
-    },
-    axisLabel: {
-      fontSize: 12,
-      formatter: '{value}'
-    }
+    nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+    axisLabel: { fontSize: 12, formatter: '{value}' }
   },
   series: [
     {
       name: '销售额',
       type: 'bar',
       data: [120, 200, 150, 80, 70, 110],
-      itemStyle: {
-        borderRadius: [4, 4, 0, 0]
-      },
-      emphasis: {
-        focus: 'series'
-      }
+      itemStyle: { borderRadius: [4, 4, 0, 0] },
+      emphasis: { focus: 'series' }
     },
     {
       name: '利润',
       type: 'line',
       data: [60, 100, 75, 40, 35, 55],
       smooth: true,
-      emphasis: {
-        focus: 'series'
-      }
+      emphasis: { focus: 'series' }
     }
   ]
 })
@@ -344,13 +257,20 @@ const handleFinished = () => {
 
 最简单的图表用法。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="lineOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="lineOption" height="300px" />
+  <ex-chart
+    :option="lineOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -375,17 +295,26 @@ const lineOption = ref({
 </script>
 ```
 
+:::
+
 ## 柱状图
 
 使用柱状图展示数据。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="barOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="barOption" height="300px" />
+  <ex-chart
+    :option="barOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -409,17 +338,26 @@ const barOption = ref({
 </script>
 ```
 
+:::
+
 ## 饼图
 
 使用饼图展示占比数据。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="pieOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="pieOption" height="300px" />
+  <ex-chart
+    :option="pieOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -443,17 +381,26 @@ const pieOption = ref({
 </script>
 ```
 
+:::
+
 ## 散点图
 
 使用散点图展示分布数据。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="scatterOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="scatterOption" height="300px" />
+  <ex-chart
+    :option="scatterOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -484,17 +431,26 @@ const scatterOption = ref({
 </script>
 ```
 
+:::
+
 ## 雷达图
 
 使用雷达图展示多维数据。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="radarOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="radarOption" height="300px" />
+  <ex-chart
+    :option="radarOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -542,17 +498,26 @@ const radarOption = ref({
 </script>
 ```
 
+:::
+
 ## 平滑面积图
 
 弧形折线配合渐变填充，常用于趋势展示。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="areaLineOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="areaLineOption" height="300px" />
+  <ex-chart
+    :option="areaLineOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -591,17 +556,26 @@ const areaLineOption = ref({
 </script>
 ```
 
+:::
+
 ## 动态实时折线
 
 通过定时替换 `option` 实现实时数据流动效果（每秒推入一个新数据点）。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="dynamicLineOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="dynamicLineOption" height="300px" />
+  <ex-chart
+    :option="dynamicLineOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -642,17 +616,26 @@ onUnmounted(() => clearInterval(timer));
 </script>
 ```
 
+:::
+
 ## 仪表盘
 
 使用仪表盘展示进度数据。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="gaugeOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="gaugeOption" height="300px" />
+  <ex-chart
+    :option="gaugeOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -676,17 +659,26 @@ const gaugeOption = ref({
 </script>
 ```
 
+:::
+
 ## 完整配置
 
 展示包含标题、图例、工具栏、提示框的完整图表。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="fullOption" height="400px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="fullOption" height="400px" />
+  <ex-chart
+    :option="fullOption"
+    height="400px"
+  />
 </template>
 
 <script setup>
@@ -758,10 +750,13 @@ const fullOption = ref({
 </script>
 ```
 
+:::
+
 ## 加载状态
 
 显示图表加载动画。
 
+::: raw
 <div class="demo-container">
   <ex-space direction="vertical" style="width: 100%">
     <ex-button @click="loading = !loading">
@@ -770,14 +765,25 @@ const fullOption = ref({
     <ex-chart :option="lineOption" :loading="loading" loading-text="数据加载中..." height="300px" />
   </ex-space>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-space direction="vertical" style="width: 100%">
+  <ex-space
+    direction="vertical"
+    style="width: 100%"
+  >
     <ex-button @click="loading = !loading">
       {{ loading ? '隐藏加载' : '显示加载' }}
     </ex-button>
-    <ex-chart :option="lineOption" :loading="loading" loading-text="数据加载中..." height="300px" />
+    <ex-chart
+      :option="lineOption"
+      :loading="loading"
+      loading-text="数据加载中..."
+      height="300px"
+    />
   </ex-space>
 </template>
 
@@ -805,17 +811,26 @@ const lineOption = ref({
 </script>
 ```
 
+:::
+
 ## 空状态
 
 当没有数据时显示空状态。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="emptyOption" height="300px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="emptyOption" height="300px" />
+  <ex-chart
+    :option="emptyOption"
+    height="300px"
+  />
 </template>
 
 <script setup>
@@ -827,28 +842,49 @@ const emptyOption = ref({
 </script>
 ```
 
+:::
+
 ## 不同尺寸
 
 提供三种尺寸的图表。
 
+::: raw
 <div class="demo-container">
   <ex-chart :option="lineOption" size="small" height="200px" />
   <ex-chart :option="lineOption" size="medium" height="300px" />
   <ex-chart :option="lineOption" size="large" height="400px" />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="lineOption" size="small" height="200px" />
-  <ex-chart :option="lineOption" size="medium" height="300px" />
-  <ex-chart :option="lineOption" size="large" height="400px" />
+  <ex-chart
+    :option="lineOption"
+    size="small"
+    height="200px"
+  />
+  <ex-chart
+    :option="lineOption"
+    size="medium"
+    height="300px"
+  />
+  <ex-chart
+    :option="lineOption"
+    size="large"
+    height="400px"
+  />
 </template>
 ```
+
+:::
 
 ## 事件处理
 
 监听图表事件。
 
+::: raw
 <div class="demo-container">
   <ex-chart 
     :option="lineOption" 
@@ -857,10 +893,18 @@ const emptyOption = ref({
     @finished="handleFinished"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ex-chart :option="lineOption" height="300px" @click="handleClick" @finished="handleFinished" />
+  <ex-chart
+    :option="lineOption"
+    height="300px"
+    @click="handleClick"
+    @finished="handleFinished"
+  />
 </template>
 
 <script setup>
@@ -874,30 +918,32 @@ const handleFinished = () => {
 </script>
 ```
 
+:::
+
 ## API
 
 ### Props
 
-| 参数               | 说明                     | 类型            | 可选值                                                                                                                                                 | 默认值 |
-| ------------------ | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| option             | ECharts 配置选项         | EChartsOption   | —                                                                                                                                                      | —      |
-| type               | 图表类型（用于预设配置） | string          | line / bar / pie / scatter / radar / gauge / funnel / candlestick / heatmap / tree / treemap / sunburst / graph / sankey / boxplot / parallel / custom | —      |
-| size               | 图表尺寸                 | string          | small / medium / large                                                                                                                                 | medium |
-| width              | 图表宽度                 | string / number | —                                                                                                                                                      | 100%   |
-| height             | 图表高度                 | string / number | —                                                                                                                                                      | 400px  |
-| loading            | 是否显示加载动画         | boolean         | —                                                                                                                                                      | false  |
-| loading-text       | 加载文本                 | string          | —                                                                                                                                                      | —      |
-| auto-resize        | 是否自动调整大小         | boolean         | —                                                                                                                                                      | true   |
-| resize-delay       | 调整大小防抖延迟（毫秒） | number          | —                                                                                                                                                      | 300    |
-| show-toolbox       | 是否显示工具栏           | boolean         | —                                                                                                                                                      | false  |
-| show-data-zoom     | 是否显示数据缩放         | boolean         | —                                                                                                                                                      | false  |
-| show-legend        | 是否显示图例             | boolean         | —                                                                                                                                                      | true   |
-| show-tooltip       | 是否显示提示框           | boolean         | —                                                                                                                                                      | true   |
-| show-grid          | 是否显示网格             | boolean         | —                                                                                                                                                      | true   |
-| animation-duration | 动画时长（毫秒）         | number          | —                                                                                                                                                      | 1000   |
-| renderer           | 图表渲染器               | string          | canvas / svg                                                                                                                                           | canvas |
-| init-options       | 初始化配置               | EChartsInitOpts | —                                                                                                                                                      | —      |
-| aria-label         | 无障碍标签               | string          | —                                                                                                                                                      | —      |
+| 参数               | 说明                     | 类型            | 可选值                 | 默认值 |
+| ------------------ | ------------------------ | --------------- | ---------------------- | ------ |
+| option             | ECharts 配置选项         | EChartsOption   | —                      | —      |
+| size               | 图表尺寸                 | string          | small / medium / large | medium |
+| width              | 图表宽度                 | string / number | —                      | 100%   |
+| height             | 图表高度                 | string / number | —                      | 400px  |
+| loading            | 是否显示加载动画         | boolean         | —                      | false  |
+| loading-text       | 加载文本                 | string          | —                      | —      |
+| auto-resize        | 是否自动调整大小         | boolean         | —                      | true   |
+| resize-delay       | 调整大小防抖延迟（毫秒） | number          | —                      | 300    |
+| show-toolbox       | 是否显示工具栏           | boolean         | —                      | false  |
+| show-data-zoom     | 是否显示数据缩放         | boolean         | —                      | false  |
+| show-legend        | 是否显示图例             | boolean         | —                      | true   |
+| show-tooltip       | 是否显示提示框           | boolean         | —                      | true   |
+| animation-duration | 动画时长（毫秒）         | number          | —                      | 1000   |
+| renderer           | 图表渲染器               | string          | canvas / svg           | canvas |
+| init-options       | 初始化配置               | EChartsInitOpts | —                      | —      |
+| aria-label         | 无障碍标签               | string          | —                      | —      |
+
+`show-tooltip` 控制提示框总开关；`option.tooltip` 中显式提供的 `appendToBody` 与 `confine` 会被保留。系统启用“减少动态效果”时，组件会关闭 ECharts 动画并监听偏好变化。
 
 ### Events
 
@@ -917,26 +963,32 @@ const handleFinished = () => {
 
 ### Methods
 
-| 方法名           | 说明                | 参数                                          |
-| ---------------- | ------------------- | --------------------------------------------- |
-| getInstance      | 获取 ECharts 实例   | —                                             |
-| getElement       | 获取图表 DOM 元素   | —                                             |
-| resize           | 手动调整图表大小    | (opts?: ResizeOpts)                           |
-| clear            | 清空图表            | —                                             |
-| dispose          | 销毁图表实例        | —                                             |
-| setOption        | 设置图表配置        | (option: EChartsOption, opts?: SetOptionOpts) |
-| showLoading      | 显示加载动画        | (type?: string, opts?: object)                |
-| hideLoading      | 隐藏加载动画        | —                                             |
-| getDataURL       | 获取图表数据 URL    | (opts?: object)                               |
-| getSvgDataURL    | 获取图表 SVG 字符串 | —                                             |
-| convertToPixel   | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
-| convertFromPixel | 转换坐标            | (finder: ConvertFinder, value: unknown)       |
+| 方法名           | 说明                                           | 参数                                          |
+| ---------------- | ---------------------------------------------- | --------------------------------------------- |
+| getInstance      | 获取 ECharts 实例                              | —                                             |
+| getElement       | 获取图表 DOM 元素                              | —                                             |
+| resize           | 手动调整图表大小                               | (opts?: ResizeOpts)                           |
+| clear            | 清空图表                                       | —                                             |
+| dispose          | 销毁图表实例                                   | —                                             |
+| setOption        | 设置图表配置                                   | (option: EChartsOption, opts?: SetOptionOpts) |
+| showLoading      | 显示加载动画                                   | (type?: string, opts?: object)                |
+| hideLoading      | 隐藏加载动画                                   | —                                             |
+| getDataURL       | 获取图表数据 URL                               | (opts?: object)                               |
+| getSvgDataURL    | 获取当前图表 SVG 数据 URL（Canvas/SVG 均支持） | —                                             |
+| convertToPixel   | 转换坐标                                       | (finder: ConvertFinder, value: unknown)       |
+| convertFromPixel | 转换坐标                                       | (finder: ConvertFinder, value: unknown)       |
 
 ### Slots
 
 | 插槽名 | 说明             |
 | ------ | ---------------- |
 | empty  | 自定义空状态内容 |
+
+### 键盘导航
+
+普通折线、柱状、饼图、散点等可从 `series.data` 或直接 `dataset.source` 解析的数据，会提供单一 Tab 入口。方向键移动数据点，Home/End 跳到首尾，Enter/Space 触发当前数据点的 `click`，Escape 清除高亮和提示，Tab/Shift+Tab 离开图表。
+
+解析会保留系列与数据的真实索引、当前图例隐藏状态、分类轴绑定、`encode` 和按行组织的数据集。自定义、层级及其他特殊系列，以及依赖 `dataset.transform` 的数据，目前不提供自动键盘导航；渲染和原有鼠标交互不受影响。
 
 <style scoped>
 .demo-container {

@@ -1,5 +1,6 @@
 @use '../../styles/tokens' as *;
 @use '../../styles/mixins' as *;
+@use '../../styles/effect-boundary' as *;
 
 .ex-tooltip {
   display: inline-block;
@@ -14,7 +15,7 @@
   border-radius: var(--ex-radius-base);
   word-wrap: break-word;
   z-index: var(--ex-z-tooltip, 1090);
-  pointer-events: none;
+  pointer-events: auto;
 
   // 霓虹边框效果
   &__border {
@@ -177,7 +178,7 @@
 // 过渡动画
 .ex-tooltip-fade-enter-active,
 .ex-tooltip-fade-leave-active {
-  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  transition: opacity var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 }
 
 .ex-tooltip-fade-enter-from,
@@ -186,7 +187,7 @@
 }
 
 // 响应式设�?
-@media (max-width: 768px) {
+@include desktop-first(md) {
   .ex-tooltip__popper {
     max-width: calc(100vw - 32px);
     font-size: var(--ex-text-xs);
@@ -202,7 +203,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-tooltip__popper {
     border-width: 2px;
 
@@ -218,3 +219,18 @@
   }
 }
 
+// Teleport 浮层脱离 ConfigProvider DOM 子树后，仍需显式执行效果开关。
+.ex-tooltip__popper.ex-no-neon {
+  @include effect-boundary {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+.ex-tooltip__popper.ex-no-animation {
+  @include effect-boundary {
+    transition: none !important;
+    animation: none !important;
+  }
+}

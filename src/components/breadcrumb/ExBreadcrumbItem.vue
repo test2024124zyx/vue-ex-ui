@@ -1,17 +1,21 @@
 <template>
-  <li class="ex-breadcrumb-item">
+  <li
+    class="ex-breadcrumb-item"
+    :class="[
+      `ex-breadcrumb-item--${componentSize}`,
+      {
+        'ex-breadcrumb-item--clickable': isClickable,
+        'ex-breadcrumb-item--last': isLast,
+        'ex-breadcrumb-item--disabled': isEffectivelyDisabled,
+      },
+    ]"
+    :aria-disabled="isEffectivelyDisabled || undefined"
+  >
     <a
       v-if="isClickable"
-      href="javascript:void(0)"
+      :href="normalizedPath"
       class="ex-breadcrumb-item__link"
-      :class="[
-        `ex-breadcrumb-item--${size}`,
-        {
-          'ex-breadcrumb-item--clickable': true,
-          'ex-breadcrumb-item--disabled': item.disabled,
-        },
-      ]"
-      @click.prevent="handleClick"
+      @click="handleClick"
     >
       <span
         v-if="$slots.icon"
@@ -21,7 +25,7 @@
           name="icon"
           :item="item"
           :index="index"
-        />
+        ></slot>
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </a>
@@ -29,13 +33,6 @@
     <span
       v-else
       class="ex-breadcrumb-item__text-wrapper"
-      :class="[
-        `ex-breadcrumb-item--${size}`,
-        {
-          'ex-breadcrumb-item--last': isLast,
-          'ex-breadcrumb-item--disabled': item.disabled,
-        },
-      ]"
       :aria-current="isLast ? 'page' : undefined"
     >
       <span
@@ -46,7 +43,7 @@
           name="icon"
           :item="item"
           :index="index"
-        />
+        ></slot>
       </span>
       <span class="ex-breadcrumb-item__text">{{ item.label }}</span>
     </span>
@@ -60,7 +57,7 @@
       <slot
         v-if="$slots.separator"
         name="separator"
-      />
+      ></slot>
       <span v-else>{{ separator || '/' }}</span>
     </span>
   </li>
@@ -68,6 +65,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useComponentSize } from '../config-provider/composables';
+import { normalizeLinkHref } from '../link/link-utils';
 import type { BreadcrumbItemProps, BreadcrumbItemEmits } from './types';
 
 defineOptions({
@@ -78,15 +77,22 @@ const props = withDefaults(defineProps<BreadcrumbItemProps>(), {
   index: 0,
   isLast: false,
   separator: '/',
-  size: 'medium',
+  size: undefined,
   clickable: true,
 });
 
 const emit = defineEmits<BreadcrumbItemEmits>();
+const componentSize = useComponentSize(computed(() => props.size));
+const normalizedPath = computed(() => normalizeLinkHref(props.item.path));
+const isEffectivelyDisabled = computed(() =>
+  Boolean(props.item.disabled || (props.item.path && !normalizedPath.value))
+);
 
 // 是否可点击
 const isClickable = computed(() => {
-  return props.clickable && !props.isLast && !props.item.disabled && props.item.path;
+  return Boolean(
+    props.clickable && !props.isLast && !isEffectivelyDisabled.value && normalizedPath.value
+  );
 });
 
 // 处理点击

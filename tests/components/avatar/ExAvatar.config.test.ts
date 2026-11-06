@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { h } from 'vue';
 import ExAvatar from '../../../src/components/avatar/ExAvatar.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
@@ -64,7 +65,7 @@ describe('ExAvatar with ConfigProvider', () => {
 
       const avatars = wrapper.findAllComponents(ExAvatar);
       expect(avatars).toHaveLength(3);
-      avatars.forEach((avatar) => {
+      avatars.forEach(avatar => {
         expect(avatar.classes()).toContain('ex-avatar--small');
       });
     });
@@ -129,6 +130,25 @@ describe('ExAvatar with ConfigProvider', () => {
       expect(avatar.classes()).toContain('ex-avatar--large');
       expect(avatar.classes()).not.toContain('ex-avatar--custom');
     });
+
+    it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+      'invalid numeric size %s falls back to inherited size',
+      size => {
+        const wrapper = mount(ExConfigProvider, {
+          props: { size: 'large' },
+          slots: {
+            default: () => h(ExAvatar, { text: 'U', size }),
+          },
+          global: {
+            components: { ExAvatar },
+          },
+        });
+
+        const avatar = wrapper.findComponent(ExAvatar);
+        expect(avatar.classes()).toContain('ex-avatar--large');
+        expect(avatar.classes()).not.toContain('ex-avatar--custom');
+      }
+    );
   });
 
   describe('Size with other props', () => {
@@ -184,7 +204,7 @@ describe('ExAvatar with ConfigProvider', () => {
   describe('All sizes', () => {
     const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large'];
 
-    sizes.forEach((size) => {
+    sizes.forEach(size => {
       it(`correctly applies ${size} size from ConfigProvider`, () => {
         const wrapper = mount(ExConfigProvider, {
           props: { size },

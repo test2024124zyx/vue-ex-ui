@@ -1,18 +1,10 @@
-import type { App } from 'vue';
-import ExTree from './ExTree.vue';
-import type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode } from './types';
+import ExTreeComponent from './ExTree.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件类型
-export type { ExTreeProps, ExTreeEmits, ExTreeExposed, TreeNode };
+export type * from './types';
 
 // 导出组件
-export { ExTree };
+export const ExTree: InstallableComponent<typeof ExTreeComponent> = withInstall(ExTreeComponent);
 
-// 组件安装插件
-export const ExTreePlugin = {
-  install(app: App) {
-    app.component('ExTree', ExTree);
-  },
-};
-
-export default ExTreePlugin;
+export default ExTree;

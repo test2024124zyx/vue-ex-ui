@@ -1,6 +1,6 @@
 # TimePicker 时间选择器
 
-用于选择或输入时间（时 / 分 / 秒）。
+用于选择单个时间或同一天内的时间范围（时 / 分 / 秒）。
 
 <script setup>
 import { ref } from 'vue'
@@ -10,31 +10,46 @@ const time2 = ref('09:30:00')
 const time3 = ref('')
 const time4 = ref('')
 const time5 = ref('14:00:00')
+const timeRange = ref(null)
+const rangeDisabledHours = (endpoint) => endpoint === 'start' ? [0, 1, 2, 3, 4, 5, 6, 7] : []
 </script>
 
 ## 基础用法
 
 绑定 `v-model`，默认格式为 `HH:mm:ss`。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time1" />
   <span style="color: var(--ex-color-text-secondary);">当前值：{{ time1 || '（空）' }}</span>
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" />
+  <div class="demo-container">
+    <ExTimePicker v-model="time1" />
+    <span style="color: var(--ex-color-text-secondary);">当前值：{{ time1 || '（空）' }}</span>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const time = ref('')
+import { ref } from 'vue';
+const time1 = ref('');
 </script>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 设置 `small` / `medium`（默认）/ `large`。
+
+::: raw
 
 <div class="demo-container">
   <ExTimePicker v-model="time2" size="small" />
@@ -42,55 +57,138 @@ const time = ref('')
   <ExTimePicker v-model="time2" size="large" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" size="small" />
-  <ExTimePicker v-model="time" size="medium" />
-  <ExTimePicker v-model="time" size="large" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time2"
+      size="small"
+    />
+    <ExTimePicker
+      v-model="time2"
+      size="medium"
+    />
+    <ExTimePicker
+      v-model="time2"
+      size="large"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time2 = ref('09:30:00');
+</script>
 ```
+
+:::
 
 ## 时分格式
 
 通过 `format` 控制显示的时间单位，例如只选时分。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time3" format="HH:mm" placeholder="选择时分" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" format="HH:mm" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time3"
+      format="HH:mm"
+      placeholder="选择时分"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time3 = ref('');
+</script>
 ```
+
+:::
 
 ## 步进间隔
 
 通过 `hour-step` / `minute-step` / `second-step` 设置步进。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time4" :minute-step="15" :second-step="15" placeholder="每 15 分钟" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" :minute-step="15" :second-step="15" />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time4"
+      :minute-step="15"
+      :second-step="15"
+      placeholder="每 15 分钟"
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time4 = ref('');
+</script>
 ```
+
+:::
 
 ## 禁用状态
 
 设置 `disabled` 禁用整个选择器。
 
+::: raw
+
 <div class="demo-container">
   <ExTimePicker v-model="time5" disabled />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExTimePicker v-model="time" disabled />
+  <div class="demo-container">
+    <ExTimePicker
+      v-model="time5"
+      disabled
+    />
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const time5 = ref('14:00:00');
+</script>
 ```
+
+:::
 
 ## 受控 / 非受控
 
@@ -98,49 +196,111 @@ TimePicker 通过 `v-model` 受控。每次点选时分秒都会实时更新绑�
 
 ```vue
 <template>
-  <ExTimePicker v-model="time" @change="onChange" />
+  <ExTimePicker
+    v-model="time"
+    @change="onChange"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const time = ref('')
-const onChange = (val) => console.log('changed:', val)
+import { ref } from 'vue';
+const time = ref('');
+const onChange = val => console.log('changed:', val);
 </script>
 ```
+
+## 时间范围
+
+设置 `range`，通过 `v-model:range-value` 绑定 `[开始时间, 结束时间]`，空值为 `null`。
+范围使用独立模型与 `range-change` 事件，原有单值 `v-model` 和 `change` 的字符串类型保持兼容。
+两个端点均选择后才可确认；结束时间不能早于开始时间，可以等于开始时间。范围不隐式跨到次日。
+
+::: raw
+
+<div class="demo-container">
+  <ExTimePicker v-model:range-value="timeRange" range format="HH:mm" :minute-step="15" :disabled-hours="rangeDisabledHours" aria-label="预约时间范围" />
+  <span role="status">{{ timeRange ? timeRange.join(' 至 ') : '请选择完整范围' }}</span>
+</div>
+
+:::
+
+::: details 查看示例代码
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { TimePickerRange } from 'vue-ex-ui';
+
+const timeRange = ref<TimePickerRange | null>(null);
+const rangeDisabledHours = (endpoint?: 'start' | 'end') =>
+  endpoint === 'start' ? [0, 1, 2, 3, 4, 5, 6, 7] : [];
+</script>
+
+<template>
+  <div class="demo-container">
+    <ExTimePicker
+      v-model:range-value="timeRange"
+      range
+      format="HH:mm"
+      :minute-step="15"
+      :disabled-hours="rangeDisabledHours"
+      aria-label="预约时间范围"
+    />
+    <span role="status">{{ timeRange ? timeRange.join(' 至 ') : '请选择完整范围' }}</span>
+  </div>
+</template>
+```
+
+:::
+
+禁用回调最后一个参数为可选的 `endpoint`（`start` / `end`），单值模式为 `undefined`。
+小时切换后会重新检查依赖该小时的分钟和秒；任何端点不合法都会阻止范围提交。
+端点标签支持左右方向键、Home / End；ArrowDown 进入当前端点的时间列。Escape 丢弃范围草稿并归还焦点。
+
+单值与范围都支持非受控状态：省略对应模型属性时内部保存确认值；显式提供模型后只请求更新并等待父级回写。
+范围选择期间不会发出部分值，父级拒绝或转换回写时输入框始终跟随真实确认值。
 
 ## API
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| model-value / v-model | 绑定值，格式与 `format` 一致 | `string` | `''` |
-| format | 时间格式（支持 `HH` / `mm` / `ss`，冒号分隔） | `string` | `'HH:mm:ss'` |
-| placeholder | 占位文本 | `string` | 内置「选择时间」 |
-| disabled | 是否禁用 | `boolean` | `false` |
-| clearable | 是否可清空 | `boolean` | `true` |
-| size | 尺寸 | `'small' \| 'medium' \| 'large'` | 跟随全局配置 |
-| hour-step / minute-step / second-step | 步进间隔 | `number` | `1` |
-| disabled-hours | 返回禁用的小时数组 | `() => number[]` | — |
-| disabled-minutes | 返回禁用的分钟数组 | `(hour: number) => number[]` | — |
-| disabled-seconds | 返回禁用的秒数组 | `(hour, minute) => number[]` | — |
-| teleported | 面板是否传送到 body | `boolean` | `true` |
-| popper-class | 弹层自定义类名 | `string` | — |
+| 属性                                  | 说明                                          | 类型                                    | 默认值           |
+| ------------------------------------- | --------------------------------------------- | --------------------------------------- | ---------------- |
+| model-value / v-model                 | 绑定值，格式与 `format` 一致                  | `string`                                | `''`             |
+| range                                 | 开启独立范围模式                              | `boolean`                               | `false`          |
+| range-value / v-model:range-value     | 范围值，省略为非受控，null 为受控空值         | `[string, string] \| null`              | 内部空值         |
+| format                                | 时间格式（支持 `HH` / `mm` / `ss`，冒号分隔） | `string`                                | `'HH:mm:ss'`     |
+| placeholder                           | 占位文本                                      | `string`                                | 内置「选择时间」 |
+| disabled                              | 是否禁用                                      | `boolean`                               | `false`          |
+| readonly                              | 只读并阻止打开及修改                          | `boolean`                               | `false`          |
+| clearable                             | 是否可清空                                    | `boolean`                               | `true`           |
+| size                                  | 尺寸                                          | `'small' \| 'medium' \| 'large'`        | 跟随全局配置     |
+| hour-step / minute-step / second-step | 步进间隔                                      | `number`                                | `1`              |
+| disabled-hours                        | 返回禁用的小时数组                            | `(endpoint?) => number[]`               | —                |
+| disabled-minutes                      | 返回禁用的分钟数组                            | `(hour, endpoint?) => number[]`         | —                |
+| disabled-seconds                      | 返回禁用的秒数组                              | `(hour, minute, endpoint?) => number[]` | —                |
+| teleported                            | 面板是否传送到 body                           | `boolean`                               | `true`           |
+| popper-class                          | 弹层自定义类名                                | `string`                                | —                |
+| id                                    | 输入框 ID                                     | `string`                                | —                |
+| aria-label                            | 输入框无障碍名称                              | `string`                                | 使用占位文本     |
+| aria-describedby                      | 关联描述元素 ID                               | `string`                                | —                |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| update:model-value | 值更新 | `(value: string) => void` |
-| change | 值变化 | `(value: string) => void` |
-| focus / blur | 焦点事件 | `(e: FocusEvent) => void` |
-| clear | 清空 | `() => void` |
-| visible-change | 面板显隐变化 | `(visible: boolean) => void` |
+| 事件名             | 说明                   | 类型                                        |
+| ------------------ | ---------------------- | ------------------------------------------- |
+| update:model-value | 值更新                 | `(value: string) => void`                   |
+| change             | 值变化                 | `(value: string) => void`                   |
+| update:range-value | 请求更新完整范围或清空 | `(value: [string, string] \| null) => void` |
+| range-change       | 范围确认提交或清空     | `(value: [string, string] \| null) => void` |
+| focus / blur       | 焦点事件               | `(e: FocusEvent) => void`                   |
+| clear              | 清空                   | `() => void`                                |
+| visible-change     | 面板显隐变化           | `(visible: boolean) => void`                |
 
 ### Methods
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
+| 方法名       | 说明        | 类型         |
+| ------------ | ----------- | ------------ |
 | focus / blur | 聚焦 / 失焦 | `() => void` |
 
 ## 主题定制
@@ -149,10 +309,10 @@ TimePicker 消费 ExUI 全局设计令牌：
 
 ```css
 :root {
-  --ex-color-bg-secondary: #11151c;   /* 触发器背景 */
-  --ex-color-bg-elevated: #0d1117;    /* 面板背景 */
+  --ex-color-bg-secondary: #11151c; /* 触发器背景 */
+  --ex-color-bg-elevated: #0d1117; /* 面板背景 */
   --ex-color-border-primary: #1f2a37; /* 边框 */
-  --ex-color-primary: #29abe2;        /* 选中态高亮 */
+  --ex-color-primary: #29abe2; /* 选中态高亮 */
 }
 ```
 
@@ -160,6 +320,10 @@ TimePicker 消费 ExUI 全局设计令牌：
 
 **Q：绑定值是什么类型？**
 字符串，格式与 `format` 完全一致（如 `'09:30:00'`）。空字符串表示未选择。
+范围模式使用独立的 `range-value`，类型为 `[string, string] | null`。
+
+**Q：格式有哪些限制？**
+格式由不重复的 `HH` / `mm` / `ss` 通过冒号连接，解析与输出遵循单位顺序；非法格式回退为 `HH:mm:ss`。
 
 **Q：如何只选小时和分钟？**
 设置 `format="HH:mm"`，面板会只显示时、分两列。

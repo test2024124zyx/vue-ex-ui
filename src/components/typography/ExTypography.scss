@@ -1,60 +1,137 @@
-// ExTypography 组件样式
-// Typography Component Styles
-
-@use '../../styles/tokens' as *;
-@use '../../styles/mixins' as *;
 @use 'sass:map';
+@use '../../styles/_tokens' as tokens;
+
+$breakpoint-micro-max: map.get(tokens.$breakpoints, micro) - 1px;
+$breakpoint-mobile-max: map.get(tokens.$breakpoints, sm) - 1px;
+$breakpoint-tablet-min: map.get(tokens.$breakpoints, sm);
+$breakpoint-tablet-max: map.get(tokens.$breakpoints, lg) - 1px;
+$breakpoint-desktop-min: map.get(tokens.$breakpoints, lg);
+$breakpoint-wide-min: map.get(tokens.$breakpoints, wide);
 
 .ex-typography {
+  --ex-typography-variant-size: var(--ex-text-base);
+  --ex-typography-chromatic-left: rgba(var(--ex-color-cyber-magenta-rgb), 0.52);
+  --ex-typography-chromatic-right: rgba(var(--ex-color-cyber-cyan-rgb), 0.52);
+  --ex-typography-chromatic-opacity: 0.18;
+  // 终端效果必须在只引入组件样式时仍然可见，因此保留独立的本地回退值。
+  --ex-typography-terminal-color: var(
+    --ex-color-terminal-text,
+    var(--ex-color-cyber-green, #14fdce)
+  );
+  --ex-typography-terminal-color-rgb: var(
+    --ex-color-terminal-text-rgb,
+    var(--ex-color-cyber-green-rgb, 20, 253, 206)
+  );
+  --ex-typography-terminal-background: var(
+    --ex-color-terminal-bg,
+    var(--ex-color-bg-primary, #031e11)
+  );
+  --ex-typography-terminal-font-family: var(
+    --ex-font-label,
+    'Share Tech Mono',
+    'JetBrains Mono',
+    monospace
+  );
+  --ex-typography-terminal-glow-rgb: 27, 212, 89;
+  --ex-typography-terminal-scanline-opacity: 0.2;
+  --ex-typography-terminal-scanline-shadow-opacity: 0.6;
+  --ex-typography-terminal-glow-opacity: 0.15;
+  --ex-typography-terminal-scanline-size: 0.3rem;
+  --ex-typography-terminal-scanline-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, var(--ex-typography-terminal-scanline-opacity)) 70%,
+    rgba(0, 0, 0, var(--ex-typography-terminal-scanline-shadow-opacity))
+  );
+
   margin: 0;
   padding: 0;
   border: none;
   font-family: var(--ex-font-secondary);
+  font-size: var(--ex-typography-size, var(--ex-typography-variant-size));
   line-height: var(--ex-leading-normal);
   color: var(--ex-color-text-primary);
-  transition: color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out) var(--ex-motion-ease-in-out);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  letter-spacing: var(--ex-tracking-wide);
+  font-variant-ligatures: contextual;
+  text-rendering: optimizeLegibility;
+  // 所有文本层级共享低强度静态色差，保证正文也属于同一套赛博朋克视觉语言。
+  text-shadow:
+    -1px 0 rgba(var(--ex-color-cyber-magenta-rgb), var(--ex-typography-chromatic-opacity)),
+    1px 0 rgba(var(--ex-color-cyber-cyan-rgb), var(--ex-typography-chromatic-opacity));
+  transition:
+    color var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out),
+    text-shadow var(--ex-motion-duration-fast) var(--ex-motion-ease-in-out);
 
   // ============================================================================
-  // 变体样式 (Variant Styles)
+  // 变体样式
   // ============================================================================
 
   &--display {
-    font-size: var(--ex-text-4xl);
+    --ex-typography-variant-size: var(--ex-text-4xl);
+
+    font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-bold);
     line-height: var(--ex-leading-tight);
-    letter-spacing: var(--ex-tracking-tight);
+    letter-spacing: var(--ex-tracking-widest);
+    text-transform: uppercase;
+    text-wrap: balance;
+    text-shadow:
+      -2px 0 var(--ex-typography-chromatic-left),
+      2px 0 var(--ex-typography-chromatic-right),
+      0 0 18px var(--ex-color-primary-alpha-30);
+    animation: ex-cyber-glitch 4s steps(1, end) infinite;
   }
 
   &--heading {
-    font-size: var(--ex-text-3xl);
+    --ex-typography-variant-size: var(--ex-text-3xl);
+
+    font-family: var(--ex-font-primary);
     font-weight: var(--ex-font-semibold);
     line-height: var(--ex-leading-tight);
-    letter-spacing: var(--ex-tracking-tight);
+    letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
+    text-wrap: balance;
+    text-shadow:
+      -1px 0 var(--ex-typography-chromatic-left),
+      1px 0 var(--ex-typography-chromatic-right),
+      0 0 12px var(--ex-color-primary-alpha-30);
   }
 
   &--title {
-    font-size: var(--ex-text-xl);
+    --ex-typography-variant-size: var(--ex-text-xl);
+
+    font-family: var(--ex-font-secondary);
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-snug);
     letter-spacing: var(--ex-tracking-normal);
+    text-wrap: balance;
   }
 
   &--body {
-    font-size: var(--ex-text-base);
+    --ex-typography-variant-size: var(--ex-text-base);
+
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-relaxed);
-    letter-spacing: var(--ex-tracking-normal);
-  }
-
-  &--caption {
-    font-size: var(--ex-text-sm);
-    font-weight: var(--ex-font-normal);
-    line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wide);
   }
 
+  &--caption {
+    --ex-typography-variant-size: var(--ex-text-sm);
+
+    font-family: var(--ex-font-label);
+    font-weight: var(--ex-font-normal);
+    line-height: var(--ex-leading-normal);
+    letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
+  }
+
   &--overline {
-    font-size: var(--ex-text-xs);
+    --ex-typography-variant-size: var(--ex-text-xs);
+
+    font-family: var(--ex-font-label);
     font-weight: var(--ex-font-medium);
     line-height: var(--ex-leading-normal);
     letter-spacing: var(--ex-tracking-wider);
@@ -62,43 +139,317 @@
   }
 
   // ============================================================================
-  // 尺寸样式 (Size Styles)
+  // 尺寸样式：显式 size 通过独立变量覆盖变体默认字号。
   // ============================================================================
 
-  &--xs { font-size: var(--ex-text-xs); }
-  &--sm { font-size: var(--ex-text-sm); }
-  &--md { font-size: var(--ex-text-base); }
-  &--lg { font-size: var(--ex-text-lg); }
-  &--xl { font-size: var(--ex-text-xl); }
-  &--2xl { font-size: var(--ex-text-2xl); }
-  &--3xl { font-size: var(--ex-text-3xl); }
-  &--4xl { font-size: var(--ex-text-4xl); }
+  &--xs {
+    --ex-typography-size: var(--ex-text-xs);
+  }
+
+  &--sm {
+    --ex-typography-size: var(--ex-text-sm);
+  }
+
+  &--md {
+    --ex-typography-size: var(--ex-text-base);
+  }
+
+  &--lg {
+    --ex-typography-size: var(--ex-text-lg);
+  }
+
+  &--xl {
+    --ex-typography-size: var(--ex-text-xl);
+  }
+
+  &--2xl {
+    --ex-typography-size: var(--ex-text-2xl);
+  }
+
+  &--3xl {
+    --ex-typography-size: var(--ex-text-3xl);
+  }
+
+  &--4xl {
+    --ex-typography-size: var(--ex-text-4xl);
+  }
 
   // ============================================================================
-  // 修饰符样�?(Modifier Styles)
+  // 文本效果与排版变体相互独立，可应用于任意标签和文本层级。
   // ============================================================================
 
   &--truncate {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &--truncate-single-line {
     white-space: nowrap;
   }
 
+  &--truncate-multiline {
+    white-space: normal;
+  }
+
   &--gradient {
-    background: var(--ex-gradient-primary);
+    // 渐变按文本内容宽度绘制，避免块级元素把色带拉满容器后看起来像单色。
+    display: inline-block;
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    vertical-align: baseline;
+    color: transparent;
+    background-color: transparent;
+    background-image: var(
+      --ex-typography-gradient,
+      linear-gradient(
+        90deg,
+        var(--ex-color-primary) 0%,
+        var(--ex-color-cyber-cyan) 30%,
+        var(--ex-color-secondary) 68%,
+        var(--ex-color-accent) 100%
+      )
+    );
+    background-repeat: no-repeat;
+    background-position: 0% 50%;
+    background-size: 100% 100%;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-size: 200% 200%;
-    animation: gradient-shift 3s ease-in-out infinite;
+  }
+
+  // 居中渐变文本需要恢复块级布局，避免 inline-block 只在父容器左侧显示。
+  &--gradient.ex-typography--center {
+    display: block;
+    margin-inline: auto;
+  }
+
+  // 渐变与截断组合时保留截断布局，避免内容宽度收缩后无法触发省略号。
+  &--gradient.ex-typography--truncate-single-line {
+    display: block;
+    inline-size: auto;
+  }
+
+  &--gradient.ex-typography--truncate-multiline {
+    display: -webkit-box;
+    inline-size: auto;
+  }
+
+  // 静态渐变是默认行为，只有显式开启动画时才扩大背景并移动渐变位置。
+  &--gradient-animated {
+    background-size: 220% 100%;
+    will-change: background-position;
+    animation: ex-typography-gradient-shift 3s ease-in-out infinite;
+  }
+
+  // 赛博朋克修饰符提供品牌字体、青紫色差和轻量霓虹，不默认引入持续闪烁。
+  &--cyberpunk {
+    font-family: var(--ex-font-primary);
+    font-weight: var(--ex-font-bold);
+    letter-spacing: var(--ex-tracking-wide);
+    text-transform: uppercase;
+    text-shadow:
+      -2px 0 var(--ex-color-cyber-magenta),
+      2px 0 var(--ex-color-cyber-cyan),
+      0 0 18px var(--ex-color-primary-alpha-30);
+    animation: ex-cyber-glitch 4s steps(1, end) infinite;
+  }
+
+  // CRT 终端屏幕由输出内容和三层装饰层组成，保持插槽文本的语义不变。
+  &--terminal {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-block-size: 12rem;
+    box-sizing: border-box;
+    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+    overflow: auto;
+    border: none;
+    border-radius: 2rem;
+    background-color: var(--ex-typography-terminal-background);
+    box-shadow:
+      inset 0 0 18rem #000,
+      inset 0 0 3rem #000,
+      0 0 10rem #000;
+    color: var(--ex-typography-terminal-color);
+    font-family: var(--ex-typography-terminal-font-family);
+    font-size: var(--ex-typography-size, var(--ex-text-base, 1rem));
+    font-weight: var(--ex-font-normal, 400);
+    line-height: var(--ex-leading-normal, 1.2);
+    letter-spacing: var(--ex-tracking-wide, 0.04em);
+    font-variant-ligatures: none;
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+    text-shadow:
+      0 0.2em 1em rgba(var(--ex-typography-terminal-color-rgb), 0.6),
+      0 0 0.3em var(--ex-typography-terminal-color);
+  }
+
+  &--terminal .ex-typography__terminal-output {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-inline-size: 100%;
+    // 扫描线由独立覆盖层绘制，普通文本保持真实颜色，避免插槽嵌套内容被背景裁剪吞掉。
+    color: inherit;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &--terminal.ex-typography--gradient {
+    color: var(--ex-typography-terminal-color);
+    background-image: none;
+    background-clip: border-box;
+    -webkit-background-clip: border-box;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  &--terminal.ex-typography--gradient .ex-typography__terminal-output {
+    color: transparent;
+    background-color: transparent;
+    background-image: var(
+      --ex-typography-gradient,
+      linear-gradient(
+        90deg,
+        var(--ex-color-primary),
+        var(--ex-color-cyber-cyan),
+        var(--ex-color-secondary),
+        var(--ex-color-accent)
+      )
+    );
+    background-repeat: no-repeat;
+    background-position: 0 50%;
+    background-size: 100% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  &--terminal .ex-typography__terminal-scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    // 参考 CRT 屏幕：透明带与深色带重复铺满整个输出区域，文字和背景都会被覆盖。
+    background: var(--ex-typography-terminal-scanline-image);
+    background-position: 0 0;
+    background-repeat: repeat;
+    background-size: 100% var(--ex-typography-terminal-scanline-size);
+    pointer-events: none;
+  }
+
+  &--terminal:not(.ex-typography--cyberpunk):not(.ex-typography--display):not(
+      .ex-typography--gradient-animated
+    ) {
+    animation: ex-typography-terminal-flicker 10ms steps(1, end) infinite;
+  }
+
+  &--terminal .ex-typography__terminal-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      circle at center,
+      rgba(var(--ex-typography-terminal-glow-rgb), 1) 0%,
+      rgba(var(--ex-typography-terminal-glow-rgb), 0.88) 58%,
+      rgba(var(--ex-typography-terminal-glow-rgb), 0.57) 80%,
+      rgba(19, 94, 29, 0.27) 93%,
+      rgba(10, 23, 12, 0) 100%
+    );
+    opacity: var(--ex-typography-terminal-glow-opacity);
+    pointer-events: none;
+    animation: ex-typography-terminal-glow 60s ease-in-out infinite;
+  }
+
+  &--terminal .ex-typography__terminal-frame {
+    position: absolute;
+    inset: 2%;
+    z-index: 3;
+    border: 1rem solid;
+    border-top-color: #020202;
+    border-right-color: #080808;
+    border-bottom-color: #121212;
+    border-left-color: #080808;
+    border-radius: 2rem;
+    box-shadow:
+      inset 0 0 18rem #000,
+      inset 0 0 3rem #000,
+      0 0 10rem #000;
+    pointer-events: none;
+  }
+
+  &--terminal::selection {
+    background-color: var(--ex-typography-terminal-color);
+    color: var(--ex-typography-terminal-background);
+    -webkit-text-fill-color: var(--ex-typography-terminal-background);
+  }
+
+  // 撕裂层只复制纯文本，不复制插槽节点，避免重复交互内容和无障碍语义。
+  &--glitch {
+    position: relative;
+    isolation: isolate;
+  }
+
+  &--glitch::before,
+  &--glitch::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    content: attr(data-ex-typography-text);
+    pointer-events: none;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    text-transform: inherit;
+    white-space: inherit;
+    color: transparent;
+    opacity: 0.72;
+    -webkit-text-fill-color: transparent;
+  }
+
+  &--glitch::before {
+    text-shadow: -2px 0 var(--ex-color-cyber-magenta);
+    transform: translate3d(-1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: ex-typography-glitch-before 4s steps(1, end) infinite;
+  }
+
+  &--glitch::after {
+    text-shadow: 2px 0 var(--ex-color-cyber-cyan);
+    transform: translate3d(1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: ex-typography-glitch-after 4s steps(1, end) infinite;
+  }
+
+  // 不支持文字切片的浏览器保留原始文本，避免伪元素整段叠加造成重影。
+  @supports not (clip-path: inset(0)) {
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
+    }
   }
 
   &--glow {
-    @include neon-glow(var(--ex-color-primary), 0.8);
-    text-shadow: 
-      0 0 5px currentColor,
-      0 0 10px currentColor,
-      0 0 15px currentColor;
+    text-shadow:
+      0 0 5px var(--ex-typography-glow-color, currentColor),
+      0 0 10px var(--ex-typography-glow-color, currentColor),
+      0 0 15px var(--ex-typography-glow-color, currentColor);
+  }
+
+  // 不支持文字裁剪渐变的浏览器仍需保持正文可读，同时兼容仅支持前缀属性的浏览器。
+  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+    &--gradient {
+      background-image: none;
+      color: var(--ex-typography-gradient-fallback, var(--ex-color-text-primary));
+      -webkit-text-fill-color: currentColor;
+    }
   }
 
   &--center {
@@ -121,58 +472,299 @@
   }
 
   // ============================================================================
-  // 响应式设�?(Responsive Design)
+  // 组件级响应式排版。响应式规则只调整变体默认值，不覆盖显式 size。
   // ============================================================================
 
-  @include respond-to(xs) {
+  @media (max-width: $breakpoint-mobile-max) {
     &--display {
-      font-size: var(--ex-text-3xl);
+      --ex-typography-variant-size: clamp(2rem, 8vw, 3rem);
     }
-    
+
     &--heading {
-      font-size: var(--ex-text-2xl);
+      --ex-typography-variant-size: clamp(1.75rem, 6vw, 2.5rem);
     }
-    
+
     &--title {
-      font-size: var(--ex-text-lg);
+      --ex-typography-variant-size: clamp(1.25rem, 4vw, 1.75rem);
+    }
+  }
+
+  @media (max-width: $breakpoint-micro-max) {
+    &--display {
+      --ex-typography-variant-size: clamp(1.5rem, 10vw, 2.5rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(1.125rem, 7vw, 1.75rem);
+    }
+  }
+
+  @media (min-width: $breakpoint-tablet-min) and (max-width: $breakpoint-tablet-max) {
+    &--display {
+      --ex-typography-variant-size: clamp(3rem, 6vw, 4rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(2rem, 3.5vw, 2.5rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(1.75rem, 3vw, 2rem);
+    }
+
+    @media (orientation: landscape) {
+      &--display,
+      &--heading {
+        line-height: var(--ex-leading-snug);
+      }
+    }
+  }
+
+  @media (min-width: $breakpoint-desktop-min) {
+    &--display {
+      --ex-typography-variant-size: clamp(4rem, 5vw, 6rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(2.5rem, 3vw, 3rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(2rem, 2.5vw, 2.5rem);
+    }
+  }
+
+  @media (min-width: $breakpoint-wide-min) {
+    &--display {
+      --ex-typography-variant-size: clamp(5rem, 4vw, 7rem);
+    }
+
+    &--heading {
+      --ex-typography-variant-size: clamp(3rem, 2.5vw, 4rem);
+    }
+
+    &--title {
+      --ex-typography-variant-size: clamp(2.5rem, 2vw, 3rem);
     }
   }
 
   // ============================================================================
-  // 无障碍支�?(Accessibility)
+  // 减少动态效果与高对比度回退。
   // ============================================================================
 
   @media (prefers-reduced-motion: reduce) {
-    &--gradient {
+    transition: none !important;
+
+    &--display,
+    &--cyberpunk {
+      animation: none;
+    }
+
+    &--gradient-animated {
+      animation: none;
+    }
+
+    &--terminal,
+    &--terminal .ex-typography__terminal-overlay {
+      animation: none;
+    }
+
+    &--glitch::before,
+    &--glitch::after {
       animation: none;
     }
   }
 
-  // 高对比度模式
-  @media (prefers-contrast: high) {
-    &--gradient {
-      background: none;
-      -webkit-text-fill-color: unset;
-      color: var(--ex-color-text-primary);
+  @media (prefers-contrast: more) {
+    // 高对比度偏好只移除装饰性霓虹色差，保留静态渐变本身。
+    &,
+    &--cyberpunk,
+    &--display,
+    &--heading {
+      text-shadow: none;
     }
-    
+
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
+    }
+
+    &--terminal {
+      box-shadow: none;
+      text-shadow: none;
+    }
+
+    &--terminal .ex-typography__terminal-output {
+      background-color: transparent;
+      background-image: none;
+      background-clip: border-box;
+      -webkit-background-clip: border-box;
+      color: inherit;
+      -webkit-text-fill-color: currentColor;
+    }
+
+    &--terminal .ex-typography__terminal-scanlines,
+    &--terminal .ex-typography__terminal-overlay,
+    &--terminal .ex-typography__terminal-frame {
+      display: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    // 强制颜色模式由系统接管颜色，必须关闭文字裁剪以保证可读性。
+    &--gradient {
+      background-image: none;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+
+    &,
     &--glow {
       text-shadow: none;
+    }
+
+    &--cyberpunk,
+    &--display,
+    &--heading {
+      text-shadow: none;
+    }
+
+    &--glitch::before,
+    &--glitch::after {
+      content: none;
+    }
+
+    &--terminal {
+      border: 1px solid CanvasText;
+      background-color: Canvas;
+      background-image: none;
       box-shadow: none;
+      color: CanvasText;
+      text-shadow: none;
+      -webkit-text-fill-color: CanvasText;
+    }
+
+    &--terminal .ex-typography__terminal-output {
+      background-color: transparent;
+      background-image: none;
+      background-clip: border-box;
+      -webkit-background-clip: border-box;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+
+    &--terminal .ex-typography__terminal-scanlines,
+    &--terminal .ex-typography__terminal-overlay,
+    &--terminal .ex-typography__terminal-frame {
+      display: none;
+    }
+  }
+
+  @media (min-resolution: 192dpi), (min-resolution: 2dppx) {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    &--display,
+    &--heading,
+    &--title {
+      text-rendering: optimizeLegibility;
+    }
+
+    &--terminal {
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: grayscale;
     }
   }
 }
 
-// ============================================================================
-// 动画定义 (Animation Definitions)
-// ============================================================================
-
-// 渐变动画
-@keyframes gradient-shift {
-  0%, 100% {
+@keyframes ex-typography-gradient-shift {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
+  }
+}
+
+// 撕裂动画保持绝大多数时间静止，只在短暂窗口内切出不同高度的信号片段。
+// 終端輸出只做極低幅度的不透明度變化，模擬 CRT 輸出但不改變文字位置。
+@keyframes ex-typography-terminal-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.94;
+  }
+}
+
+// 終端螢幕輝光以長週期緩慢變化，避免持續快速閃爍干擾閱讀。
+@keyframes ex-typography-terminal-glow {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes ex-typography-glitch-before {
+  0%,
+  90%,
+  100% {
+    transform: translate3d(-1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+  }
+
+  92% {
+    transform: translate3d(-3px, 1px, 0) skewX(-2deg);
+    clip-path: inset(12% 0 62% 0);
+  }
+
+  93% {
+    transform: translate3d(2px, -1px, 0) skewX(1deg);
+    clip-path: inset(58% 0 24% 0);
+  }
+
+  94% {
+    transform: translate3d(-2px, 0, 0) skewX(-1deg);
+    clip-path: inset(28% 0 46% 0);
+  }
+
+  95% {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+@keyframes ex-typography-glitch-after {
+  0%,
+  90%,
+  100% {
+    transform: translate3d(1px, 0, 0);
+    clip-path: inset(100% 0 0 0);
+  }
+
+  92% {
+    transform: translate3d(3px, -1px, 0) skewX(2deg);
+    clip-path: inset(36% 0 42% 0);
+  }
+
+  93% {
+    transform: translate3d(-2px, 1px, 0) skewX(-1deg);
+    clip-path: inset(72% 0 10% 0);
+  }
+
+  94% {
+    transform: translate3d(2px, 0, 0) skewX(1deg);
+    clip-path: inset(18% 0 68% 0);
+  }
+
+  95% {
+    clip-path: inset(100% 0 0 0);
   }
 }

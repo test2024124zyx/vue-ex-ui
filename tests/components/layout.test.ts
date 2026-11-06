@@ -1,400 +1,613 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { h, nextTick, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import ExLayout from '../../src/components/layout/ExLayout.vue';
 import ExHeader from '../../src/components/layout/ExHeader.vue';
 import ExSider from '../../src/components/layout/ExSider.vue';
 import ExContent from '../../src/components/layout/ExContent.vue';
 import ExFooter from '../../src/components/layout/ExFooter.vue';
+import ExContainer from '../../src/components/layout/ExContainer.vue';
+import ExConfigProvider from '../../src/components/config-provider/ExConfigProvider.vue';
+import {
+  ExContainer as InstallableContainer,
+  ExContent as InstallableContent,
+  ExFooter as InstallableFooter,
+  ExHeader as InstallableHeader,
+  ExLayout as InstallableLayout,
+  ExSider as InstallableSider,
+} from '../../src/components/layout';
+import { setLocale } from '../../src/locale';
 
-describe('ExLayout', () => {
-  describe('基础功能', () => {
-    it('应该正确渲染', () => {
-      const wrapper = mount(ExLayout, {
-        slots: {
-          default: '<div>Content</div>',
-        },
-      });
+class MediaQueryListMock {
+  matches: boolean;
+  readonly media: string;
+  readonly listeners = new Set<(event: MediaQueryListEvent) => void>();
+  onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => unknown) | null = null;
 
-      expect(wrapper.find('.ex-layout').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Content');
-    });
+  constructor(media: string, matches: boolean) {
+    this.media = media;
+    this.matches = matches;
+  }
 
-    it('应该应用正确的方向类名', () => {
-      const wrapper = mount(ExLayout, {
-        props: {
-          direction: 'horizontal',
-        },
-      });
+  addEventListener(_type: 'change', listener: (event: MediaQueryListEvent) => void): void {
+    this.listeners.add(listener);
+  }
 
-      expect(wrapper.find('.ex-layout--horizontal').exists()).toBe(true);
-    });
+  removeEventListener(_type: 'change', listener: (event: MediaQueryListEvent) => void): void {
+    this.listeners.delete(listener);
+  }
 
-    it('应该在有侧边栏时应用正确的类名', () => {
-      const wrapper = mount(ExLayout, {
-        props: {
-          hasSider: true,
-        },
-      });
+  addListener(listener: (event: MediaQueryListEvent) => void): void {
+    this.listeners.add(listener);
+  }
 
-      expect(wrapper.find('.ex-layout--has-sider').exists()).toBe(true);
-    });
+  removeListener(listener: (event: MediaQueryListEvent) => void): void {
+    this.listeners.delete(listener);
+  }
 
-    it('应该支持自定义类名', () => {
-      const wrapper = mount(ExLayout, {
-        props: {
-          class: 'custom-class',
-        },
-      });
+  dispatch(matches: boolean): void {
+    this.matches = matches;
+    const event = { matches, media: this.media } as MediaQueryListEvent;
+    for (const listener of this.listeners) listener(event);
+  }
 
-      expect(wrapper.find('.custom-class').exists()).toBe(true);
-    });
+  dispatchEvent(): boolean {
+    return true;
+  }
+}
 
-    it('应该支持自定义样式', () => {
-      const wrapper = mount(ExLayout, {
-        props: {
-          style: { backgroundColor: 'red' },
-        },
-      });
+describe('Layout v2', () => {
+  let initialMediaMatches = true;
+  let mediaQueries: MediaQueryListMock[];
 
-      expect(wrapper.attributes('style')).toContain('background-color: red');
-    });
+  beforeEach(() => {
+    setLocale('en-US');
+    initialMediaMatches = true;
+    mediaQueries = [];
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => {
+        const mediaQuery = new MediaQueryListMock(query, initialMediaMatches);
+        mediaQueries.push(mediaQuery);
+        return mediaQuery;
+      })
+    );
   });
 
-  describe('暴露的方法', () => {
-    it('应该暴露 getElement 方法', () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+    setLocale('en-US');
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  describe('ExLayout', () => {
+    it('使用无额外地标语义的根容器并透传原生属性', () => {
+      const wrapper = mount(ExLayout, {
+        attrs: {
+          id: 'application-layout',
+          class: 'custom-layout',
+          style: 'min-height: 20rem',
+          'aria-label': 'Application shell',
+        },
+        slots: { default: 'Content' },
+      });
+
+      expect(wrapper.element.tagName).toBe('DIV');
+      expect(wrapper.classes()).toContain('custom-layout');
+      expect(wrapper.attributes('style')).toContain('min-height: 20rem');
+      expect(wrapper.attributes('aria-label')).toBe('Application shell');
+      expect(wrapper.text()).toBe('Content');
+    });
+
+    it('无 Sider 时自动使用垂直方向', () => {
       const wrapper = mount(ExLayout);
-      const vm = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
 
-      expect(typeof vm.getElement).toBe('function');
-      expect(vm.getElement()).toBeTruthy();
+      expect(wrapper.classes()).toEqual(
+        expect.arrayContaining(['ex-layout', 'ex-layout--auto', 'ex-layout--vertical'])
+      );
+      expect(wrapper.classes()).not.toContain('ex-layout--has-sider');
+    });
+
+    it('直系 Sider 注册后自动切换水平方向并在卸载后恢复', async () => {
+      const showSider = ref(true);
+      const wrapper = mount(ExLayout, {
+        slots: {
+          default: () => [showSider.value ? h(ExSider) : null, h('div', { class: 'page' })],
+        },
+      });
+      await nextTick();
+
+      expect(wrapper.classes()).toEqual(
+        expect.arrayContaining(['ex-layout--horizontal', 'ex-layout--has-sider'])
+      );
+
+      showSider.value = false;
+      await nextTick();
+      expect(wrapper.classes()).toContain('ex-layout--vertical');
+      expect(wrapper.classes()).not.toContain('ex-layout--has-sider');
+
+      wrapper.unmount();
+    });
+
+    it('显式方向优先于自动 Sider 推断', async () => {
+      const wrapper = mount(ExLayout, {
+        props: { direction: 'vertical' },
+        slots: { default: () => h(ExSider) },
+      });
+      await nextTick();
+
+      expect(wrapper.classes()).toContain('ex-layout--vertical');
+      expect(wrapper.classes()).not.toContain('ex-layout--auto');
+      expect(wrapper.classes()).toContain('ex-layout--has-sider');
+    });
+
+    it('删除冲突的 hasSider 与重复 class/style 运行时 props', () => {
+      const runtimeProps = (ExLayout as unknown as { props: Record<string, unknown> }).props;
+
+      expect(runtimeProps).not.toHaveProperty('hasSider');
+      expect(runtimeProps).not.toHaveProperty('class');
+      expect(runtimeProps).not.toHaveProperty('style');
+    });
+
+    it('暴露根元素快照', () => {
+      const wrapper = mount(ExLayout);
+      const exposed = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
+
+      expect(exposed.getElement()).toBe(wrapper.element);
+    });
+
+    it('复合组件使用无重复前缀的稳定成员名', () => {
+      expect(InstallableLayout.Header).toBe(InstallableHeader);
+      expect(InstallableLayout.Sider).toBe(InstallableSider);
+      expect(InstallableLayout.Content).toBe(InstallableContent);
+      expect(InstallableLayout.Footer).toBe(InstallableFooter);
+      expect(InstallableLayout.Container).toBe(InstallableContainer);
+      expect(InstallableLayout).not.toHaveProperty('ExHeader');
     });
   });
-});
 
-describe('ExHeader', () => {
-  describe('基础功能', () => {
-    it('应该正确渲染', () => {
-      const wrapper = mount(ExHeader, {
+  describe('ExHeader 与 ExFooter', () => {
+    it.each([
+      [ExHeader, 'HEADER', 'ex-header'],
+      [ExFooter, 'FOOTER', 'ex-footer'],
+    ] as const)('%s 使用原生语义且不重复声明 role', (component, tag, className) => {
+      const wrapper = mount(component, { slots: { default: 'Content' } });
+
+      expect(wrapper.element.tagName).toBe(tag);
+      expect(wrapper.classes()).toContain(className);
+      expect(wrapper.attributes('role')).toBeUndefined();
+      expect(wrapper.text()).toBe('Content');
+    });
+
+    it.each([
+      [ExHeader, '--ex-header-height'],
+      [ExFooter, '--ex-footer-height'],
+    ] as const)('数字和字符串高度生成稳定 CSS 变量', async (component, variable) => {
+      const wrapper = mount(component, { props: { height: 80 } });
+      expect(wrapper.element.style.getPropertyValue(variable)).toBe('80px');
+
+      await wrapper.setProps({ height: '5rem' });
+      expect(wrapper.element.style.getPropertyValue(variable)).toBe('5rem');
+
+      await wrapper.setProps({ height: Number.NaN });
+      expect(wrapper.element.style.getPropertyValue(variable)).toBe('64px');
+    });
+
+    it.each([
+      [ExHeader, 'ex-header'],
+      [ExFooter, 'ex-footer'],
+    ] as const)('具名插槽存在时默认插槽作为中间内容保留', (component, className) => {
+      const wrapper = mount(component, {
         slots: {
-          default: '<div>Header Content</div>',
+          left: 'Left',
+          default: 'Default center',
+          right: 'Right',
         },
       });
 
-      expect(wrapper.find('.ex-header').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Header Content');
+      expect(wrapper.get(`.${className}__left`).text()).toBe('Left');
+      expect(wrapper.get(`.${className}__center`).text()).toBe('Default center');
+      expect(wrapper.get(`.${className}__right`).text()).toBe('Right');
     });
 
-    it('应该支持左中右插槽', () => {
-      const wrapper = mount(ExHeader, {
+    it.each([
+      [ExHeader, 'ex-header'],
+      [ExFooter, 'ex-footer'],
+    ] as const)('center 插槽优先于默认插槽且不会重复渲染', (component, className) => {
+      const wrapper = mount(component, {
         slots: {
-          left: '<div>Left</div>',
-          center: '<div>Center</div>',
-          right: '<div>Right</div>',
+          left: 'Left',
+          center: 'Named center',
+          default: 'Fallback center',
         },
       });
 
-      expect(wrapper.find('.ex-header__left').exists()).toBe(true);
-      expect(wrapper.find('.ex-header__center').exists()).toBe(true);
-      expect(wrapper.find('.ex-header__right').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Left');
-      expect(wrapper.html()).toContain('Center');
-      expect(wrapper.html()).toContain('Right');
+      expect(wrapper.get(`.${className}__center`).text()).toBe('Named center');
+      expect(wrapper.text()).not.toContain('Fallback center');
     });
 
-    it('应该支持固定定位', () => {
+    it('Header 的固定、模糊和显式霓虹状态真实映射到样式类', () => {
       const wrapper = mount(ExHeader, {
-        props: {
-          fixed: true,
+        props: { fixed: true, blur: true, neonBorder: true },
+      });
+
+      expect(wrapper.classes()).toEqual(
+        expect.arrayContaining(['ex-header--fixed', 'ex-header--blur', 'ex-header--neon-border'])
+      );
+    });
+
+    it('固定 Header/Footer 继承 ConfigProvider 的 sticky 语义层', () => {
+      const wrapper = mount(ExConfigProvider, {
+        props: { zIndex: 2400 },
+        slots: {
+          default: () => [h(ExHeader, { fixed: true }), h(ExFooter, { fixed: true })],
         },
       });
 
-      expect(wrapper.find('.ex-header--fixed').exists()).toBe(true);
+      expect(wrapper.find('header').attributes('style')).toContain('z-index: 2420');
+      expect(wrapper.find('footer').attributes('style')).toContain('z-index: 2420');
     });
 
-    it('应该支持霓虹边框', () => {
-      const wrapper = mount(ExHeader, {
+    it('显式关闭霓虹效果会覆盖全局默认值', () => {
+      const header = mount(ExHeader, { props: { neonBorder: false } });
+      const footer = mount(ExFooter, { props: { neonBorder: false } });
+
+      expect(header.classes()).not.toContain('ex-header--neon-border');
+      expect(footer.classes()).not.toContain('ex-footer--neon-border');
+    });
+
+    it('Footer 透传原生 class/style 并暴露元素', () => {
+      const wrapper = mount(ExFooter, {
+        attrs: { class: 'custom-footer', style: 'color: red' },
+      });
+      const exposed = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
+
+      expect(wrapper.classes()).toContain('custom-footer');
+      expect(wrapper.attributes('style')).toContain('color: red');
+      expect(exposed.getElement()).toBe(wrapper.element);
+    });
+  });
+
+  describe('ExSider', () => {
+    it('渲染带名称的 aside，并将 attrs 绑定到真实侧栏而非 Teleport', () => {
+      const wrapper = mount(ExSider, {
+        attrs: { id: 'navigation', class: 'custom-sider', style: 'color: red' },
+        props: { ariaLabel: 'Primary navigation' },
+        slots: { default: 'Navigation' },
+      });
+
+      expect(wrapper.get('aside').attributes('id')).toBe('navigation');
+      expect(wrapper.get('aside').classes()).toContain('custom-sider');
+      expect(wrapper.get('aside').attributes('style')).toContain('color: red');
+      expect(wrapper.get('aside').attributes('aria-label')).toBe('Primary navigation');
+    });
+
+    it('非受控模式提交可见状态并发出带来源的事件', async () => {
+      const wrapper = mount(ExSider, { props: { collapsible: true } });
+      const trigger = wrapper.get('.ex-sider__trigger');
+
+      expect(trigger.element.tagName).toBe('BUTTON');
+      expect(trigger.attributes('type')).toBe('button');
+      expect(trigger.attributes('aria-expanded')).toBe('true');
+      await trigger.trigger('click');
+
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--collapsed');
+      expect(wrapper.emitted('update:collapsed')).toEqual([[true]]);
+      expect(wrapper.emitted('collapse')).toEqual([[true, 'trigger']]);
+      expect(trigger.attributes('aria-expanded')).toBe('false');
+    });
+
+    it('受控模式只请求变更，外部确认前不提前改写可见状态', async () => {
+      const wrapper = mount(ExSider, {
+        props: { collapsible: true, collapsed: false },
+      });
+
+      await wrapper.get('.ex-sider__trigger').trigger('click');
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--collapsed');
+      expect(wrapper.emitted('update:collapsed')).toEqual([[true]]);
+
+      await wrapper.setProps({ collapsed: true });
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--collapsed');
+    });
+
+    it('defaultCollapsed 初始化非受控状态且支持暴露 toggle', async () => {
+      const wrapper = mount(ExSider, {
+        props: { defaultCollapsed: true, collapsible: true },
+      });
+      const exposed = wrapper.vm as unknown as {
+        toggle: () => void;
+        getElement: () => HTMLElement | null;
+      };
+
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--collapsed');
+      exposed.toggle();
+      await nextTick();
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--collapsed');
+      expect(exposed.getElement()).toBe(wrapper.get('aside').element);
+    });
+
+    it('宽度、收起宽度和动画时长通过 CSS 变量更新', async () => {
+      const wrapper = mount(ExSider, {
         props: {
+          width: 300,
+          collapsedWidth: '4rem',
+          transitionDuration: 0,
+          collapsible: true,
+        },
+      });
+      const aside = wrapper.get('aside').element as HTMLElement;
+
+      expect(aside.style.getPropertyValue('--ex-sider-width')).toBe('300px');
+      expect(aside.style.getPropertyValue('--ex-sider-transition-duration')).toBe('0ms');
+      await wrapper.get('.ex-sider__trigger').trigger('click');
+      expect(aside.style.getPropertyValue('--ex-sider-width')).toBe('4rem');
+    });
+
+    it('非法尺寸和动画值回退到各自默认契约', () => {
+      const wrapper = mount(ExSider, {
+        props: {
+          width: -1,
+          collapsedWidth: '-2rem',
+          defaultCollapsed: true,
+          transitionDuration: Number.NaN,
+        },
+      });
+      const aside = wrapper.get('aside').element as HTMLElement;
+
+      expect(aside.style.getPropertyValue('--ex-sider-width')).toBe('80px');
+      expect(aside.style.getPropertyValue('--ex-sider-transition-duration')).toBe('300ms');
+    });
+
+    it('零收起宽度保留可访问的展开触发器', () => {
+      const wrapper = mount(ExSider, {
+        props: { collapsedWidth: 0, defaultCollapsed: true, collapsible: true },
+      });
+
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--zero-width');
+      expect(wrapper.get('.ex-sider__trigger').attributes('aria-label')).toBe('Expand sidebar');
+    });
+
+    it('右侧位置、顶部触发器和表面效果映射为互不冲突的状态类', () => {
+      const wrapper = mount(ExSider, {
+        props: {
+          position: 'right',
+          trigger: 'top',
+          collapsible: true,
           neonBorder: true,
-        },
-      });
-
-      expect(wrapper.find('.ex-header--neon-border').exists()).toBe(true);
-    });
-
-    it('应该支持背景模糊', () => {
-      const wrapper = mount(ExHeader, {
-        props: {
           blur: true,
         },
       });
 
-      expect(wrapper.find('.ex-header--blur').exists()).toBe(true);
+      expect(wrapper.get('aside').classes()).toEqual(
+        expect.arrayContaining([
+          'ex-sider--right',
+          'ex-sider--trigger-top',
+          'ex-sider--neon-border',
+          'ex-sider--blur',
+        ])
+      );
+      expect(wrapper.get('.ex-sider__trigger').classes()).toContain('ex-sider__trigger--top');
     });
 
-    it('应该支持自定义高度', () => {
-      const wrapper = mount(ExHeader, {
-        props: {
-          height: 80,
-        },
+    it('trigger=null 不渲染内置触发器，自定义触发器接收完整状态', () => {
+      const hidden = mount(ExSider, {
+        props: { collapsible: true, trigger: null },
       });
+      expect(hidden.find('.ex-sider__trigger').exists()).toBe(false);
 
-      expect(wrapper.attributes('style')).toContain('height: 80px');
-    });
-  });
-
-  describe('无障碍', () => {
-    it('应该有正确的 role 属性', () => {
-      const wrapper = mount(ExHeader);
-      expect(wrapper.attributes('role')).toBe('banner');
-    });
-  });
-});
-
-describe('ExSider', () => {
-  describe('基础功能', () => {
-    it('应该正确渲染', () => {
-      const wrapper = mount(ExSider, {
+      const custom = mount(ExSider, {
+        props: { collapsible: true, defaultCollapsed: true },
         slots: {
-          default: '<div>Sider Content</div>',
+          trigger: ({ collapsed, broken }) => `${String(collapsed)}:${String(broken)}`,
         },
       });
-
-      expect(wrapper.find('.ex-sider').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Sider Content');
+      expect(custom.get('.ex-sider__trigger').text()).toBe('true:false');
     });
 
-    it('应该支持左右位置', () => {
-      const wrapperLeft = mount(ExSider, {
-        props: {
-          position: 'left',
-        },
-      });
+    it('键盘原生按钮触发一次切换', async () => {
+      const wrapper = mount(ExSider, { props: { collapsible: true } });
+      await wrapper.get('.ex-sider__trigger').trigger('keydown', { key: 'Enter' });
+      await wrapper.get('.ex-sider__trigger').trigger('click');
 
-      const wrapperRight = mount(ExSider, {
-        props: {
-          position: 'right',
-        },
-      });
-
-      expect(wrapperLeft.find('.ex-sider--left').exists()).toBe(true);
-      expect(wrapperRight.find('.ex-sider--right').exists()).toBe(true);
+      expect(wrapper.emitted('update:collapsed')).toEqual([[true]]);
     });
 
-    it('应该支持收起状态', () => {
+    it('使用设计令牌阈值建立 min-width 查询，小于断点时自动收起', async () => {
+      initialMediaMatches = false;
       const wrapper = mount(ExSider, {
-        props: {
-          collapsed: true,
-        },
+        props: { breakpoint: 'md', collapsible: true },
       });
+      await nextTick();
 
-      expect(wrapper.find('.ex-sider--collapsed').exists()).toBe(true);
+      expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 768px)');
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--broken');
+      expect(wrapper.get('aside').classes()).toContain('ex-sider--collapsed');
+      expect(wrapper.emitted('breakpoint')).toEqual([[true]]);
+      expect(wrapper.emitted('collapse')).toEqual([[true, 'responsive']]);
+
+      mediaQueries[0]?.dispatch(true);
+      await nextTick();
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--broken');
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--collapsed');
+      expect(wrapper.emitted('breakpoint')).toEqual([[true], [false]]);
+      expect(wrapper.emitted('collapse')).toEqual([
+        [true, 'responsive'],
+        [false, 'responsive'],
+      ]);
+      mediaQueries[0]?.dispatch(true);
+      await nextTick();
+      expect(wrapper.emitted('breakpoint')).toEqual([[true], [false]]);
+      wrapper.unmount();
+      expect(mediaQueries[0]?.listeners.size).toBe(0);
     });
 
-    it('应该支持自定义宽度', () => {
+    it('窄屏展开态支持 Escape 关闭、焦点恢复与滚动锁', async () => {
+      initialMediaMatches = false;
+      const opener = document.createElement('button');
+      document.body.appendChild(opener);
+      opener.focus();
       const wrapper = mount(ExSider, {
-        props: {
-          width: 300,
-        },
+        attachTo: document.body,
+        props: { breakpoint: 'md', collapsed: false, collapsible: true },
       });
+      await nextTick();
 
-      const aside = wrapper.find('aside');
-      const style = aside.attributes('style');
-      expect(style).toBeDefined();
-      expect(style).toMatch(/width:\s*300px/);
+      expect(wrapper.get('aside').attributes('role')).toBe('dialog');
+      expect(wrapper.get('aside').attributes('aria-modal')).toBe('true');
+      expect(document.body.style.overflow).toBe('hidden');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await nextTick();
+      expect(wrapper.emitted('collapse')).toContainEqual([true, 'mask']);
+
+      await wrapper.setProps({ collapsed: true });
+      await nextTick();
+      expect(document.body.style.overflow).toBe('');
+      expect(document.activeElement).toBe(opener);
+      wrapper.unmount();
+      opener.remove();
     });
 
-    it('应该在收起时使用收起宽度', async () => {
+    it('受控展开侧栏在窄屏显示遮罩，遮罩请求关闭但不篡改状态', async () => {
+      initialMediaMatches = false;
       const wrapper = mount(ExSider, {
-        props: {
-          collapsed: true,
-          collapsedWidth: 60,
+        attachTo: document.body,
+        props: { breakpoint: 'lg', collapsed: false, collapsible: true },
+      });
+      await nextTick();
+
+      const mask = document.body.querySelector<HTMLButtonElement>('.ex-sider__mask');
+      expect(mask).not.toBeNull();
+      expect(mask?.type).toBe('button');
+      mask?.click();
+      await nextTick();
+
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--collapsed');
+      expect(wrapper.emitted('collapse')).toContainEqual([true, 'mask']);
+      wrapper.unmount();
+      expect(document.body.querySelector('.ex-sider__mask')).toBeNull();
+    });
+
+    it('窄屏 Teleport 遮罩与侧栏继承最近 ConfigProvider 层级', async () => {
+      initialMediaMatches = false;
+      const wrapper = mount(ExConfigProvider, {
+        attachTo: document.body,
+        props: { zIndex: 3000 },
+        slots: {
+          default: () =>
+            h(ExSider, {
+              breakpoint: 'lg',
+              collapsed: false,
+              collapsible: true,
+            }),
         },
       });
+      await nextTick();
 
-      await wrapper.vm.$nextTick();
-      const aside = wrapper.find('aside');
-      const style = aside.attributes('style');
-      expect(style).toBeDefined();
-      expect(style).toMatch(/width:\s*60px/);
+      expect(document.body.querySelector<HTMLElement>('.ex-sider__mask')?.style.zIndex).toBe(
+        '3039'
+      );
+      expect(wrapper.get('aside').element.style.zIndex).toBe('3040');
+
+      await wrapper.setProps({ zIndex: 3200 });
+      await nextTick();
+      expect(document.body.querySelector<HTMLElement>('.ex-sider__mask')?.style.zIndex).toBe(
+        '3239'
+      );
+      expect(wrapper.get('aside').element.style.zIndex).toBe('3240');
+      wrapper.unmount();
+    });
+
+    it('运行时切换 breakpoint 会释放旧监听并应用新查询', async () => {
+      const wrapper = mount(ExSider, { props: { breakpoint: 'sm' } });
+      await nextTick();
+      const first = mediaQueries[0];
+      expect(first?.media).toBe('(min-width: 480px)');
+
+      await wrapper.setProps({ breakpoint: 'xl' });
+      expect(first?.listeners.size).toBe(0);
+      expect(mediaQueries[1]?.media).toBe('(min-width: 1280px)');
+      wrapper.unmount();
+    });
+
+    it('breakpoint API 不再包含无意义的 xs 阈值', () => {
+      const runtimeProps = (ExSider as unknown as { props: Record<string, unknown> }).props;
+      expect(runtimeProps).not.toHaveProperty('class');
+      expect(runtimeProps).not.toHaveProperty('style');
+      expect(runtimeProps).toHaveProperty('defaultCollapsed');
+
+      const wrapper = mount(ExSider, {
+        props: { breakpoint: 'xs' as never },
+      });
+      expect(window.matchMedia).not.toHaveBeenCalled();
+      expect(wrapper.get('aside').classes()).not.toContain('ex-sider--broken');
     });
   });
 
-  describe('可收起功能', () => {
-    it('应该显示触发器', () => {
-      const wrapper = mount(ExSider, {
-        props: {
-          collapsible: true,
-        },
-      });
+  describe('ExContent', () => {
+    it('默认使用 main 且不重复声明 role', () => {
+      const wrapper = mount(ExContent, { slots: { default: 'Main content' } });
 
-      expect(wrapper.find('.ex-sider__trigger').exists()).toBe(true);
+      expect(wrapper.element.tagName).toBe('MAIN');
+      expect(wrapper.attributes('role')).toBeUndefined();
+      expect(wrapper.text()).toBe('Main content');
     });
 
-    it('应该在点击触发器时切换状态', async () => {
-      const wrapper = mount(ExSider, {
-        props: {
-          collapsible: true,
-          collapsed: false,
-        },
-      });
-
-      await wrapper.find('.ex-sider__trigger').trigger('click');
-
-      expect(wrapper.emitted('update:collapsed')).toBeTruthy();
-      expect(wrapper.emitted('update:collapsed')?.[0]).toEqual([true]);
-      expect(wrapper.emitted('collapse')).toBeTruthy();
+    it.each(['div', 'section'] as const)('允许切换为 %s 避免重复 main 地标', tag => {
+      const wrapper = mount(ExContent, { props: { tag } });
+      expect(wrapper.element.tagName).toBe(tag.toUpperCase());
     });
 
-    it('应该支持键盘操作', async () => {
-      const wrapper = mount(ExSider, {
-        props: {
-          collapsible: true,
-        },
-      });
-
-      const trigger = wrapper.find('.ex-sider__trigger');
-      await trigger.trigger('keydown.enter');
-
-      expect(wrapper.emitted('update:collapsed')).toBeTruthy();
-    });
-
-    it('应该有正确的 ARIA 属性', () => {
-      const wrapper = mount(ExSider, {
-        props: {
-          collapsible: true,
-        },
-      });
-
-      const trigger = wrapper.find('.ex-sider__trigger');
-      expect(trigger.attributes('role')).toBe('button');
-      expect(trigger.attributes('tabindex')).toBe('0');
-      expect(trigger.attributes('aria-label')).toBeTruthy();
-    });
-  });
-
-  describe('暴露的方法', () => {
-    it('应该暴露 toggle 方法', () => {
-      const wrapper = mount(ExSider, {
-        props: {
-          collapsible: true,
-        },
-      });
-      const vm = wrapper.vm as unknown as { toggle: () => void };
-
-      expect(typeof vm.toggle).toBe('function');
-      vm.toggle();
-
-      expect(wrapper.emitted('update:collapsed')).toBeTruthy();
-    });
-  });
-});
-
-describe('ExContent', () => {
-  describe('基础功能', () => {
-    it('应该正确渲染', () => {
+    it('网格和扫描线仅添加状态类，不创建装饰 DOM', () => {
       const wrapper = mount(ExContent, {
-        slots: {
-          default: '<div>Content</div>',
-        },
+        props: { grid: true, scanline: true },
+        slots: { default: h('p', 'Content') },
       });
 
-      expect(wrapper.find('.ex-content').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Content');
+      expect(wrapper.classes()).toEqual(
+        expect.arrayContaining(['ex-content--grid', 'ex-content--scanline'])
+      );
+      expect(wrapper.find('.ex-content__grid').exists()).toBe(false);
+      expect(wrapper.find('.ex-content__scanline').exists()).toBe(false);
+      expect(wrapper.get('.ex-content__inner').text()).toBe('Content');
     });
 
-    it('应该支持网格背景', () => {
+    it('透传属性并暴露真实元素', () => {
       const wrapper = mount(ExContent, {
-        props: {
-          grid: true,
-        },
+        attrs: { class: 'custom-content', 'aria-label': 'Workspace' },
       });
+      const exposed = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
 
-      expect(wrapper.find('.ex-content--grid').exists()).toBe(true);
-      expect(wrapper.find('.ex-content__grid').exists()).toBe(true);
-    });
-
-    it('应该支持扫描线效果', () => {
-      const wrapper = mount(ExContent, {
-        props: {
-          scanline: true,
-        },
-      });
-
-      expect(wrapper.find('.ex-content--scanline').exists()).toBe(true);
-      expect(wrapper.find('.ex-content__scanline').exists()).toBe(true);
+      expect(wrapper.classes()).toContain('custom-content');
+      expect(wrapper.attributes('aria-label')).toBe('Workspace');
+      expect(exposed.getElement()).toBe(wrapper.element);
     });
   });
 
-  describe('无障碍', () => {
-    it('应该有正确的 role 属性', () => {
-      const wrapper = mount(ExContent);
-      expect(wrapper.attributes('role')).toBe('main');
-    });
-  });
-});
+  describe('ExContainer', () => {
+    it('默认、流式和固定尺寸类互斥', async () => {
+      const wrapper = mount(ExContainer);
+      expect(wrapper.classes()).toEqual(['ex-container']);
 
-describe('ExFooter', () => {
-  describe('基础功能', () => {
-    it('应该正确渲染', () => {
-      const wrapper = mount(ExFooter, {
-        slots: {
-          default: '<div>Footer Content</div>',
-        },
+      await wrapper.setProps({ size: 'lg' });
+      expect(wrapper.classes()).toContain('ex-container--lg');
+
+      await wrapper.setProps({ fluid: true });
+      expect(wrapper.classes()).toContain('ex-container--fluid');
+      expect(wrapper.classes()).not.toContain('ex-container--lg');
+    });
+
+    it('透传原生属性且暴露元素', () => {
+      const wrapper = mount(ExContainer, {
+        attrs: { class: 'custom-container', style: 'background: red' },
+        slots: { default: 'Container' },
       });
+      const exposed = wrapper.vm as unknown as { getElement: () => HTMLElement | null };
 
-      expect(wrapper.find('.ex-footer').exists()).toBe(true);
-      expect(wrapper.html()).toContain('Footer Content');
-    });
-
-    it('应该支持左中右插槽', () => {
-      const wrapper = mount(ExFooter, {
-        slots: {
-          left: '<div>Left</div>',
-          center: '<div>Center</div>',
-          right: '<div>Right</div>',
-        },
-      });
-
-      expect(wrapper.find('.ex-footer__left').exists()).toBe(true);
-      expect(wrapper.find('.ex-footer__center').exists()).toBe(true);
-      expect(wrapper.find('.ex-footer__right').exists()).toBe(true);
-    });
-
-    it('应该支持固定定位', () => {
-      const wrapper = mount(ExFooter, {
-        props: {
-          fixed: true,
-        },
-      });
-
-      expect(wrapper.find('.ex-footer--fixed').exists()).toBe(true);
-    });
-
-    it('应该支持霓虹边框', () => {
-      const wrapper = mount(ExFooter, {
-        props: {
-          neonBorder: true,
-        },
-      });
-
-      expect(wrapper.find('.ex-footer--neon-border').exists()).toBe(true);
-    });
-
-    it('应该支持自定义高度', () => {
-      const wrapper = mount(ExFooter, {
-        props: {
-          height: 80,
-        },
-      });
-
-      expect(wrapper.attributes('style')).toContain('height: 80px');
-    });
-  });
-
-  describe('无障碍', () => {
-    it('应该有正确的 role 属性', () => {
-      const wrapper = mount(ExFooter);
-      expect(wrapper.attributes('role')).toBe('contentinfo');
+      expect(wrapper.classes()).toContain('custom-container');
+      expect(wrapper.attributes('style')).toContain('background: red');
+      expect(exposed.getElement()).toBe(wrapper.element);
     });
   });
 });

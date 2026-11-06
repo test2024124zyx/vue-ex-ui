@@ -7,9 +7,17 @@
     <!-- 标签 -->
     <div
       v-if="showLabel"
+      :id="formItemLabelId"
       :class="labelClasses"
       :style="labelStyles"
     >
+      <span
+        v-if="showRequiredMark"
+        class="ex-form-item__required-mark"
+        aria-hidden="true"
+      >
+        *
+      </span>
       <span
         v-if="label"
         :class="labelTextClasses"
@@ -18,16 +26,18 @@
         <span
           v-if="showColonMark"
           class="ex-form-item__colon"
-        >:</span>
+        >
+          :
+        </span>
       </span>
-      <slot name="label" />
+      <slot name="label"></slot>
     </div>
 
     <!-- 内容区域 -->
     <div class="ex-form-item__content">
       <!-- 表单控件 -->
       <div class="ex-form-item__control">
-        <slot />
+        <slot></slot>
 
         <!-- 反馈图标 -->
         <div
@@ -44,6 +54,7 @@
       <!-- 帮助文本 -->
       <div
         v-if="help && !displayError"
+        :id="formItemMessageId"
         class="ex-form-item__help"
       >
         {{ help }}
@@ -53,9 +64,10 @@
       <transition name="ex-form-item-error">
         <div
           v-if="displayError"
+          :id="formItemMessageId"
           class="ex-form-item__error"
           role="alert"
-          :aria-live="validateStatus === 'validating' ? 'polite' : 'assertive'"
+          :aria-live="actualValidateStatus === 'validating' ? 'polite' : 'assertive'"
         >
           <ex-icon
             icon="error-warning-line"
@@ -74,16 +86,19 @@ import { ref, computed, inject, nextTick, onMounted, onUnmounted, watch, useSlot
 import type {
   ExFormItemProps,
   ExFormItemEmits,
-  FormContext,
   FormItemContext,
+  FormItemValidateResult,
   FormValidateStatus,
   FormRule,
 } from './types';
 import { validateField, getFieldValue, setFieldValue } from './utils';
-import { provideFormItem } from './use-form-item';
+import { FORM_CONTEXT_INJECTION_KEY, provideFormItem } from './use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { deepClone } from '../../utils/clone';
+import { equalValueSnapshot } from '../../utils/value-snapshot';
+import { generateId } from '../../utils/id';
+import { useComponentSize } from '../config-provider';
 
 defineOptions({
   name: 'ExFormItem',
@@ -107,52 +122,61 @@ const slots = useSlots();
 const { t } = useI18n();
 
 // 注入表单上下文
-const formContext = inject<FormContext | undefined>('exFormContext', undefined);
+const formContext = inject(FORM_CONTEXT_INJECTION_KEY, undefined);
 
 // 响应式状态
 const validateStatus = ref<FormValidateStatus>('');
 const validateMessage = ref('');
 const isValidating = ref(false);
 const initialValue = ref<unknown>(undefined);
+let latestValidationId = 0;
+let isMounted = false;
+let validationScheduled = false;
+let resettingField = false;
+type FieldValidationTrigger = 'blur' | 'change' | 'input';
+const pendingValidationTriggers = new Set<FieldValidationTrigger>();
+let pendingInputSnapshot: { value: unknown } | undefined;
+let validationSnapshot: { value: unknown } | undefined;
+let scheduledValidationRevision = 0;
+const resetRevision = ref(0);
 
-// 向子表单控件提供字段上下文：控件 blur/change 时按规则 trigger 自动校验
-provideFormItem({
-  onFieldBlur: () => {
-    if (props.prop && formContext) {
-      void validateFieldMethod('blur');
-    }
-  },
-  onFieldChange: () => {
-    if (props.prop && formContext) {
-      // 等待 v-model 写回 model 后再校验
-      void nextTick(() => validateFieldMethod('change'));
-    }
-  },
-});
+// 使用实例级 ID 建立标签、控件与反馈消息之间的稳定关联。
+const generatedId = generateId('ex-form-item');
 
 // 兜底：直接监听 model 中字段值的变化触发 change 校验，
 // 覆盖未显式接入字段上下文的控件（含程序化赋值）
 watch(
   () => (formContext && props.prop ? getFieldValue(formContext.model, props.prop) : undefined),
-  (newValue, oldValue) => {
-    if (!formContext || !props.prop) return;
-    if (newValue === oldValue) return;
-    void validateFieldMethod('change');
+  () => {
+    if (!formContext || !props.prop || resettingField) return;
+    scheduleFieldValidation('change');
   },
-  { deep: true }
+  { deep: true, flush: 'sync' }
 );
 
 // 计算属性
-const actualSize = computed(() => {
-  return props.size || formContext?.props?.size || 'medium';
-});
+const actualSize = useComponentSize(computed(() => props.size ?? formContext?.props?.size));
 
 const actualLabelAlign = computed(() => {
-  return props.labelAlign || formContext?.props?.labelAlign || 'left';
+  return props.labelAlign ?? formContext?.props?.labelAlign ?? 'left';
 });
 
 const actualLabelPlacement = computed(() => {
-  return props.labelPlacement || formContext?.props?.labelPlacement || 'left';
+  if (props.labelPlacement !== undefined) {
+    return props.labelPlacement;
+  }
+
+  if (formContext?.props?.labelPlacement !== undefined) {
+    return formContext.props.labelPlacement;
+  }
+
+  if (!formContext) {
+    return 'left';
+  }
+
+  return formContext.props.layout === 'horizontal' || formContext.props.layout === 'inline'
+    ? 'left'
+    : 'top';
 });
 
 const actualShowColon = computed(() => {
@@ -176,15 +200,7 @@ const isRequired = computed(() => {
     return props.required;
   }
 
-  if (props.prop && formContext?.rules?.[props.prop]) {
-    const rules = Array.isArray(formContext.rules[props.prop])
-      ? (formContext.rules[props.prop] as FormRule[])
-      : [formContext.rules[props.prop] as FormRule];
-
-    return rules.some(rule => rule.required);
-  }
-
-  return false;
+  return getRules().some(rule => rule.required);
 });
 
 const showLabel = computed(() => {
@@ -192,7 +208,7 @@ const showLabel = computed(() => {
 });
 
 const showRequiredMark = computed(() => {
-  return isRequired.value && actualLabelPlacement.value !== 'top';
+  return isRequired.value;
 });
 
 const showColonMark = computed(() => {
@@ -200,12 +216,32 @@ const showColonMark = computed(() => {
 });
 
 const actualValidateStatus = computed(() => {
-  return props.validateStatus || validateStatus.value;
+  if (props.validateStatus !== undefined) {
+    return props.validateStatus;
+  }
+
+  return props.error ? 'error' : validateStatus.value;
 });
 
 const displayError = computed(() => {
-  return props.error || (actualValidateStatus.value === 'error' ? validateMessage.value : '');
+  return props.error !== undefined
+    ? props.error
+    : actualValidateStatus.value === 'error'
+      ? validateMessage.value
+      : '';
 });
+
+const formItemLabelId = computed(() => {
+  return showLabel.value ? `${generatedId}-label` : undefined;
+});
+
+const formItemMessageId = computed(() => {
+  return props.help || displayError.value ? `${generatedId}-message` : undefined;
+});
+
+const formItemDisabled = computed(() => Boolean(formContext?.props?.disabled));
+
+const formItemReadonly = computed(() => Boolean(formContext?.props?.readonly));
 
 const feedbackIcon = computed(() => {
   if (!actualHasFeedback.value) return '';
@@ -260,38 +296,107 @@ const labelStyles = computed(() => {
 });
 
 const labelTextClasses = computed(() => {
-  const classes = ['ex-form-item__label-text'];
-
-  if (isRequired.value && showRequiredMark.value) {
-    classes.push('is-required');
-  }
-
-  return classes;
+  return ['ex-form-item__label-text'];
 });
 
 const feedbackClasses = computed(() => {
   return ['ex-form-item__feedback', `ex-form-item__feedback--${actualValidateStatus.value}`];
 });
 
+// 向子表单控件提供字段上下文：同步传递校验状态、尺寸及可访问性信息。
+provideFormItem({
+  onFieldBlur: () => {
+    if (props.prop && formContext) {
+      scheduleFieldValidation('blur');
+    }
+  },
+  onFieldChange: () => {
+    if (props.prop && formContext) {
+      scheduleFieldValidation('change');
+    }
+  },
+  onFieldInput: snapshot => {
+    if (props.prop && formContext) {
+      scheduleFieldValidation('input', snapshot);
+    }
+  },
+  onFieldDraftDiscard: () => {
+    if (props.prop && formContext) {
+      reconcileValidationValue(getFieldValue(formContext.model, props.prop));
+    }
+  },
+  resetRevision: computed(() => resetRevision.value),
+  labelId: formItemLabelId,
+  describedBy: formItemMessageId,
+  status: actualValidateStatus,
+  errorMessage: displayError,
+  size: actualSize,
+  disabled: formItemDisabled,
+  readonly: formItemReadonly,
+});
+
 // 表单项上下文
 const formItemContext: FormItemContext = {
-  prop: props.prop || '',
+  get prop() {
+    return props.prop || '';
+  },
   props,
-  validateStatus: validateStatus.value,
-  validateMessage: validateMessage.value,
+  get validateStatus() {
+    return validateStatus.value;
+  },
+  get validateMessage() {
+    return validateMessage.value;
+  },
+  get validationRevision() {
+    return latestValidationId;
+  },
   validate: validateFieldMethod,
   resetField: resetFieldMethod,
   clearValidate: clearValidateMethod,
 };
 
 // 方法
-async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; error?: string }> {
+function scheduleFieldValidation(trigger: FieldValidationTrigger, snapshot?: { value: unknown }) {
+  const value = snapshot ? snapshot.value : getFieldValue(formContext!.model, props.prop!);
+  reconcileValidationValue(value);
+  if (trigger === 'input') {
+    pendingInputSnapshot = snapshot ? { value: deepClone(snapshot.value) } : undefined;
+  }
+  pendingValidationTriggers.add(trigger);
+  if (validationScheduled) return;
+
+  validationScheduled = true;
+  const scheduledRevision = ++scheduledValidationRevision;
+  void nextTick(async () => {
+    if (scheduledRevision !== scheduledValidationRevision) return;
+    validationScheduled = false;
+    const triggers = Array.from(pendingValidationTriggers);
+    pendingValidationTriggers.clear();
+    // 同一轮发生确认或失焦时改用最终模型，只有纯输入阶段才验证独立草稿。
+    const snapshot = triggers.every(item => item === 'input') ? pendingInputSnapshot : undefined;
+    pendingInputSnapshot = undefined;
+    if (!isMounted || !props.prop || !formContext || triggers.length === 0) return;
+    await validateFieldMethod(triggers, snapshot);
+  });
+}
+
+async function validateFieldMethod(
+  trigger?: string | string[],
+  snapshot?: { value: unknown }
+): Promise<FormItemValidateResult> {
   if (!props.prop || !formContext) {
     return { valid: true };
   }
 
+  if (!isMounted) return { valid: false, outOfDate: true };
+  const field = props.prop;
+  const value = deepClone(snapshot ? snapshot.value : getFieldValue(formContext.model, field));
+  reconcileValidationValue(value);
+
   const rules = getRules();
   if (!rules || rules.length === 0) {
+    invalidateFieldValidation();
+    clearValidationState();
     return { valid: true };
   }
 
@@ -299,8 +404,11 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
   const filteredRules = trigger
     ? rules.filter(rule => {
         if (!rule.trigger) return true;
-        const triggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
-        return triggers.includes(trigger as 'blur' | 'change' | 'input');
+        const ruleTriggers = Array.isArray(rule.trigger) ? rule.trigger : [rule.trigger];
+        const requestedTriggers = Array.isArray(trigger) ? trigger : [trigger];
+        return requestedTriggers.some(item =>
+          ruleTriggers.includes(item as FieldValidationTrigger)
+        );
       })
     : rules;
 
@@ -308,13 +416,18 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
     return { valid: true };
   }
 
-  const value = getFieldValue(formContext.model, props.prop);
+  const validationId = ++latestValidationId;
+  validationSnapshot = { value: deepClone(value) };
 
   validateStatus.value = 'validating';
   isValidating.value = true;
 
   try {
-    const result = await validateField(filteredRules, value, props.prop);
+    const result = await validateField(filteredRules, value, field, t);
+
+    if (validationId !== latestValidationId || field !== props.prop || !isMounted) {
+      return { valid: false, outOfDate: true };
+    }
 
     if (result.valid) {
       validateStatus.value = 'success';
@@ -326,28 +439,73 @@ async function validateFieldMethod(trigger?: string): Promise<{ valid: boolean; 
 
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
-    return { valid: result.valid, error: result.error };
+    const validationResult = { valid: result.valid, error: result.error };
+    formContext.notifyFieldValidate(field, validationResult, { value });
+
+    return validationResult;
   } catch (error) {
+    if (validationId !== latestValidationId || field !== props.prop || !isMounted) {
+      return { valid: false, outOfDate: true };
+    }
+
     validateStatus.value = 'error';
     validateMessage.value = error instanceof Error ? error.message : String(error);
 
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
-    return { valid: false, error: validateMessage.value };
+    const validationResult = { valid: false, error: validateMessage.value };
+    formContext.notifyFieldValidate(field, validationResult, { value });
+
+    return validationResult;
   } finally {
-    isValidating.value = false;
+    if (validationId === latestValidationId) {
+      isValidating.value = false;
+    }
   }
 }
 
 function resetFieldMethod() {
   if (!props.prop || !formContext) return;
 
-  setFieldValue(formContext.model, props.prop, initialValue.value);
-
-  clearValidateMethod();
+  invalidateFieldValidation();
+  // 重置时复制快照，且仅屏蔽本次写入，后续同步修改仍然可以触发校验。
+  resettingField = true;
+  try {
+    setFieldValue(formContext.model, props.prop, deepClone(initialValue.value));
+  } finally {
+    resettingField = false;
+  }
+  resetRevision.value += 1;
+  clearValidationState();
 }
 
 function clearValidateMethod() {
+  invalidateFieldValidation();
+  clearValidationState();
+}
+
+function invalidateFieldValidation() {
+  latestValidationId += 1;
+  scheduledValidationRevision += 1;
+  isValidating.value = false;
+  validationScheduled = false;
+  pendingValidationTriggers.clear();
+  pendingInputSnapshot = undefined;
+  validationSnapshot = undefined;
+}
+
+/** 无关触发器保留同值校验；值已改变时同步作废在途任务和已完成的旧反馈。 */
+function reconcileValidationValue(value: unknown) {
+  const changed = [validationSnapshot, pendingInputSnapshot].some(
+    snapshot => snapshot !== undefined && !equalValueSnapshot(snapshot.value, value)
+  );
+  if (!changed) return;
+  invalidateFieldValidation();
+  clearValidationState();
+}
+
+function clearValidationState() {
+  isValidating.value = false;
   validateStatus.value = '';
   validateMessage.value = '';
   emit('validate-status-change', validateStatus.value, validateMessage.value);
@@ -373,6 +531,21 @@ function getRules(): FormRule[] {
   return rules;
 }
 
+let ruleSnapshot = deepClone(getRules());
+watch(
+  getRules,
+  rules => {
+    // 父级重渲染可能重建等价规则对象，只有实际规则变化才撤销校验。
+    if (equalValueSnapshot(ruleSnapshot, rules)) return;
+    ruleSnapshot = deepClone(rules);
+    // 规则本身也是校验身份的一部分；关闭自动重验仍不能接受旧规则的回调。
+    invalidateFieldValidation();
+    clearValidationState();
+    if (isMounted && formContext?.props.validateOnRuleChange) void validateFieldMethod();
+  },
+  { deep: true, flush: 'sync' }
+);
+
 // 暴露实例方法
 defineExpose({
   validate: validateFieldMethod,
@@ -382,6 +555,7 @@ defineExpose({
 
 // 生命周期
 onMounted(() => {
+  isMounted = true;
   if (formContext && props.prop) {
     formContext.addField(formItemContext);
     // 存储初始值
@@ -390,30 +564,58 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (formContext && props.prop) {
+  isMounted = false;
+  invalidateFieldValidation();
+  if (formContext) {
     formContext.removeField(formItemContext);
   }
 });
 
+watch(
+  () => props.prop,
+  newProp => {
+    if (!isMounted || !formContext) return;
+
+    formContext.removeField(formItemContext);
+    invalidateFieldValidation();
+    clearValidationState();
+    initialValue.value = newProp ? deepClone(getFieldValue(formContext.model, newProp)) : undefined;
+    if (newProp) {
+      formContext.addField(formItemContext);
+    }
+  }
+);
+
 // 监听验证状态变化
 watch(
   () => props.validateStatus,
-  newStatus => {
-    if (newStatus) {
+  (newStatus, oldStatus) => {
+    if (newStatus !== undefined) {
       validateStatus.value = newStatus;
+    } else if (oldStatus !== undefined && props.error === undefined) {
+      validateStatus.value = '';
+      validateMessage.value = '';
     }
-  }
+  },
+  { immediate: true }
 );
 
 // 监听错误消息变化
 watch(
   () => props.error,
-  newError => {
-    if (newError) {
+  (newError, oldError) => {
+    if (newError !== undefined && newError) {
       validateStatus.value = 'error';
       validateMessage.value = newError;
+    } else if (
+      (newError === '' || (newError === undefined && oldError !== undefined)) &&
+      props.validateStatus === undefined
+    ) {
+      validateStatus.value = '';
+      validateMessage.value = '';
     }
-  }
+  },
+  { immediate: true }
 );
 </script>
 

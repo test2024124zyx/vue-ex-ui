@@ -1,32 +1,36 @@
+export type IconSize = number | string;
+
+/** 图标组件属性。 */
 export interface ExIconProps {
-  /** 内置 SVG 图标名称（见 icons.ts 注册表，无网络依赖、可随主题着色） */
+  /** 内置 SVG 注册名；未知名称不会伪造替代图形。 */
   icon?: string;
-  /** 图标名称 (用于字体图标) */
+  /** 字体图标类名。 */
   name?: string;
-  /** 图标前缀 (如 'fas', 'far', 'fab') */
+  /** 字体图标前缀，例如 fas。 */
   prefix?: string;
-  /** 图片路径 (用于图片图标) */
+  /** 图片地址。 */
   src?: string;
-  /** 图片alt文本 */
+  /** 图标的可访问文本；图片和交互图标可将其作为名称。 */
   alt?: string;
-  /** 图标大小 */
-  size?: number | string;
-  /** 图标颜色 */
+  /** 根元素的显式无障碍名称。 */
+  ariaLabel?: string;
+  /** 图形尺寸；非负数字按像素处理，也可传 CSS 长度。 */
+  size?: IconSize;
+  /** 图标颜色；图片来源设置后会使用单色 mask。 */
   color?: string;
-  /** 旋转角度 */
+  /** 静态旋转角度。 */
   rotate?: number;
-  /** 是否旋转动画 */
+  /** 是否持续旋转。 */
   spin?: boolean;
-  /** 是否可点击 */
+  /** 是否渲染为原生 button。 */
   clickable?: boolean;
-  /** 是否禁用 */
+  /** 是否禁用交互按钮。 */
   disabled?: boolean;
-  /** 自定义类名 */
+  /** 兼容性附加类名；新代码可直接使用 class。 */
   customClass?: string;
-  /** HTML标签 */
-  tag?: string;
 }
 
 export interface ExIconEmits {
+  /** 仅交互图标被原生按钮激活时发出。 */
   click: [event: MouseEvent];
 }

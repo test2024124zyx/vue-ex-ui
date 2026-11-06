@@ -1,385 +1,322 @@
-import { createApp, h, reactive } from 'vue'
-import type { App } from 'vue'
-import ExLoading from './ExLoading.vue'
-import type {
-  LoadingService,
-  LoadingServiceInstance,
-  LoadingServiceConfig,
-  LoadingGlobalConfig,
-  LoadingPerformanceMonitor
-} from './types'
+import { createApp, h, inject, shallowReactive } from 'vue';
+import type { App, AppContext, DirectiveBinding, InjectionKey, Plugin } from 'vue';
+import { createSharedInjectionKey } from '../../utils/shared-runtime';
+import { generateId } from '../../utils/id';
 import {
-  generateLoadingId,
-  createLoadingConfig,
-  createPerformanceMonitor,
-  defaultGlobalConfig,
-  deepMerge,
-  lockScroll
-} from './utils'
+  COMPONENT_SERVICE_SCOPE_KEY,
+  findElementServiceScope,
+  useComponentServiceScope,
+} from '../config-provider/service-scope';
+import type { ComponentServiceScope } from '../config-provider/service-scope';
+import { CONFIG_PROVIDER_INJECTION_KEY } from '../config-provider/types';
+import type { ConfigContext } from '../config-provider/types';
+import { resolveZIndexLayer } from '../config-provider/z-index';
+import ExLoading from './ExLoading.vue';
+import { resolveLoadingTarget } from './loading-utils';
+import type {
+  ExLoadingProps,
+  LoadingDirectiveValue,
+  LoadingPluginOptions,
+  LoadingService,
+  LoadingServiceConfig,
+  LoadingServiceDefaults,
+  LoadingServiceInstance,
+} from './types';
 
-/**
- * Loading 服务实例管理器
- */
-class LoadingInstanceManager {
-  private instances: Map<string, LoadingServiceInstance> = new Map()
-  private config: LoadingGlobalConfig = { ...defaultGlobalConfig }
-  private performanceMonitor: LoadingPerformanceMonitor = createPerformanceMonitor()
+interface LoadingRenderState extends ExLoadingProps {
+  visible: boolean;
+}
 
-  /**
-   * 创建 Loading 实例
-   */
-  createInstance(config: LoadingServiceConfig = {}): LoadingServiceInstance {
-    const instanceId = generateLoadingId()
-    const loadingConfig = createLoadingConfig(config, this.config)
+interface LoadingRecord {
+  app: App<Element>;
+  config: LoadingServiceConfig;
+  destroyed: boolean;
+  instance: LoadingServiceInstance;
+  state: LoadingRenderState;
+}
 
-    // 无 target 时默认全屏；指定 target 时定位到目标容器内
-    // 注意：以原始 config 判断，loadingConfig 经过 createLoadingConfig 已把 fullscreen 默认为 false
-    const hasTarget = !!config.target
-    const fullscreen = hasTarget ? false : config.fullscreen !== false
+/** 当前应用 Loading 服务的注入键。 */
+export const LOADING_SERVICE_KEY: InjectionKey<LoadingService> =
+  createSharedInjectionKey('loading-service');
+const DIRECTIVE_SERVICE_KEY = createSharedInjectionKey<LoadingService>('loading-directive-service');
 
-    // 挂载点脱离文档流，ExLoading 通过自身的 Teleport 就位（target / body）
-    const mountEl = document.createElement('div')
+class LoadingServiceController implements LoadingService {
+  private readonly records = new Map<string, LoadingRecord>();
+  private readonly defaults: LoadingServiceDefaults;
+  private readonly appContext: AppContext | undefined;
 
-    // 响应式配置：show/hide/updateConfig 直接驱动 ExLoading 的 visible 与其它属性
-    const state = reactive<Record<string, unknown>>({
-      ...loadingConfig,
-      fullscreen,
-      target: config.target,
+  constructor(defaults: LoadingServiceDefaults = {}, appContext?: AppContext) {
+    this.defaults = { ...defaults };
+    this.appContext = appContext;
+  }
+
+  private resolveScopedZIndex(): number | undefined {
+    const config = this.appContext?.provides[CONFIG_PROVIDER_INJECTION_KEY as symbol] as
+      ConfigContext | undefined;
+    return config ? resolveZIndexLayer(config.zIndex.value, 'loading') : undefined;
+  }
+
+  private normalizeConfig(config: LoadingServiceConfig): LoadingServiceConfig {
+    const merged: LoadingServiceConfig = { ...this.defaults, ...config };
+    const hasTarget = merged.target !== undefined;
+    const target = hasTarget ? resolveLoadingTarget(merged.target) : null;
+
+    if (hasTarget && !target) {
+      throw new TypeError('Loading target 必须是当前文档中的 HTMLElement 或有效选择器');
+    }
+    if (!target && merged.fullscreen === false) {
+      throw new TypeError('LoadingService 的非全屏实例必须提供 target');
+    }
+
+    // 只传递组件真实实现的字段，阻断旧版伪配置继续落到 DOM。
+    return {
+      type: merged.type,
+      size: merged.size,
+      text: merged.text,
+      color: merged.color,
+      fullscreen: target ? false : true,
+      mask: merged.mask ?? true,
+      maskClosable: merged.maskClosable ?? false,
+      target: target ?? undefined,
+      zIndex: merged.zIndex,
+      lockScroll: merged.lockScroll ?? true,
+    };
+  }
+
+  show(config: LoadingServiceConfig = {}): LoadingServiceInstance {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      throw new Error('Loading 服务只能在浏览器环境中创建实例');
+    }
+    const normalized = this.normalizeConfig(config);
+    const id = generateId('loading');
+    const state = shallowReactive<LoadingRenderState>({
+      ...normalized,
       visible: false,
-    })
-    // 避免把 service 专属字段当作未知属性透传到 DOM
-    delete state.singleton
+    });
+    const mountElement = document.createElement('div');
+    const record = {} as LoadingRecord;
 
-    // 全屏遮罩时锁定页面滚动（带滚动条补偿），隐藏/销毁时解锁
-    let releaseScroll: (() => void) | null = null
-    const lock = (): void => {
-      if (fullscreen && loadingConfig.lockScroll !== false && !releaseScroll) {
-        releaseScroll = lockScroll()
-      }
-    }
-    const unlock = (): void => {
-      releaseScroll?.()
-      releaseScroll = null
-    }
+    const destroyRecord = (): void => {
+      if (record.destroyed) return;
+      record.destroyed = true;
+      record.state.visible = false;
+      record.app.unmount();
+      this.records.delete(id);
+    };
 
-    // 创建 Vue 应用实例
-    const loadingApp = createApp({
+    const instance: LoadingServiceInstance = {
+      show: () => {
+        if (!record.destroyed) record.state.visible = true;
+      },
+      hide: () => {
+        if (!record.destroyed) record.state.visible = false;
+      },
+      close: destroyRecord,
+      destroy: destroyRecord,
+      updateConfig: nextConfig => {
+        if (record.destroyed) return;
+        const candidate = { ...record.config, ...nextConfig };
+        const next = this.normalizeConfig(candidate);
+        record.config = candidate;
+        Object.assign(record.state, next);
+      },
+    };
+
+    const app = createApp({
+      name: 'ExLoadingServiceHost',
       render: () =>
         h(ExLoading, {
           ...state,
-          'onUpdate:visible': (v: boolean) => {
-            ;(state as { visible: boolean }).visible = v
-            if (!v) unlock()
+          zIndex: state.zIndex ?? this.resolveScopedZIndex(),
+          'onUpdate:visible': (visible: boolean) => {
+            state.visible = visible;
           },
+          // 动态读取公开方法，使单例包装后的销毁生命周期同样得到通知。
+          onClose: () => instance.close(),
         }),
-    })
+    });
 
-    loadingApp.mount(mountEl)
-
-    // 性能监控：显示/隐藏计时
-    const monitor = this.performanceMonitor
-
-    const serviceInstance: LoadingServiceInstance = {
-      show: () => {
-        if (!(state as { visible: boolean }).visible) monitor.start(instanceId)
-        ;(state as { visible: boolean }).visible = true
-        lock()
-      },
-
-      hide: () => {
-        if ((state as { visible: boolean }).visible) monitor.end(instanceId)
-        ;(state as { visible: boolean }).visible = false
-        unlock()
-      },
-
-      close: () => {
-        this.destroyInstance(instanceId)
-      },
-
-      destroy: () => {
-        this.destroyInstance(instanceId)
-      },
-
-      updateConfig: (newConfig: Partial<LoadingServiceConfig>) => {
-        const merged = createLoadingConfig({ ...config, ...newConfig }, this.config)
-        // fullscreen / target 在创建后固定，避免 updateConfig 误改定位方式
-        Object.assign(state, merged, { fullscreen, target: config.target })
-        delete state.singleton
-      },
+    if (this.appContext) {
+      app._context.provides = Object.create(this.appContext.provides) as AppContext['provides'];
     }
 
-    // 存储实例信息
-    this.instances.set(instanceId, serviceInstance)
-
-    // 存储内部信息用于清理
-    ;(serviceInstance as LoadingServiceInstance & { _internal?: unknown })._internal = {
-      id: instanceId,
-      app: loadingApp,
-      mountEl,
-      unlock,
-    }
-
-    return serviceInstance
+    Object.assign(record, {
+      app,
+      config: { ...config },
+      destroyed: false,
+      instance,
+      state,
+    });
+    this.records.set(id, record);
+    app.mount(mountElement);
+    instance.show();
+    return instance;
   }
 
-  /**
-   * 销毁指定实例
-   */
-  destroyInstance(instanceId: string): void {
-    const serviceInstance = this.instances.get(instanceId)
-
-    if (serviceInstance) {
-      const internal = (
-        serviceInstance as LoadingServiceInstance & {
-          _internal?: { app?: { unmount: () => void }; unlock?: () => void }
-        }
-      )._internal
-
-      if (internal) {
-        // 解锁滚动并卸载 Vue 应用（挂载点脱离文档，无需手动移除）
-        internal.unlock?.()
-        if (internal.app) {
-          internal.app.unmount()
-        }
-      }
-
-      this.instances.delete(instanceId)
-    }
+  hideAll(): void {
+    this.records.forEach(record => record.instance.hide());
   }
 
-  /**
-   * 销毁所有实例
-   */
-  destroyAllInstances(): void {
-    this.instances.forEach((_, instanceId) => {
-      this.destroyInstance(instanceId)
-    })
-    this.instances.clear()
+  destroyAll(): void {
+    Array.from(this.records.values()).forEach(record => record.instance.destroy());
   }
 
-  /**
-   * 隐藏所有实例
-   */
-  hideAllInstances(): void {
-    this.instances.forEach((instance) => {
-      instance.hide?.()
-    })
-  }
-
-  /**
-   * 获取实例数量
-   */
   getInstanceCount(): number {
-    return this.instances.size
-  }
-
-  /**
-   * 更新全局配置
-   */
-  updateGlobalConfig(newConfig: Partial<LoadingGlobalConfig>): void {
-    this.config = deepMerge(this.config as Record<string, unknown>, newConfig as Record<string, unknown>) as LoadingGlobalConfig
-  }
-
-  /**
-   * 获取性能统计
-   */
-  getPerformanceStats() {
-    return this.performanceMonitor.getStats()
-  }
-
-  /**
-   * 重置性能统计
-   */
-  resetPerformanceStats(): void {
-    this.performanceMonitor.reset?.()
+    return this.records.size;
   }
 }
 
-/**
- * 全局 Loading 实例管理器
- */
-let globalManager: LoadingInstanceManager | null = null
-
-/**
- * 获取全局管理器
- */
-function getGlobalManager(): LoadingInstanceManager {
-  if (!globalManager) {
-    globalManager = new LoadingInstanceManager()
-  }
-  return globalManager
-}
-
-/**
- * 创建 Loading 服务
- */
+/** 创建拥有独立实例集合的 Loading 服务。 */
 export function createLoadingService(
-  globalConfig?: Partial<LoadingGlobalConfig>
+  defaults: LoadingServiceDefaults = {},
+  appContext?: AppContext
 ): LoadingService {
-  const manager = getGlobalManager()
-  
-  if (globalConfig) {
-    manager.updateGlobalConfig(globalConfig)
-  }
-
-  return {
-    show(config?: LoadingServiceConfig): LoadingServiceInstance {
-      const instance = manager.createInstance(config)
-      instance.show?.()
-      return instance
-    },
-
-    hideAll(): void {
-      manager.hideAllInstances()
-    },
-
-    destroyAll(): void {
-      manager.destroyAllInstances()
-    },
-
-    getInstanceCount(): number {
-      return manager.getInstanceCount()
-    }
-  }
+  return new LoadingServiceController(defaults, appContext);
 }
 
-/**
- * 默认 Loading 服务实例
- */
-export const loadingService = createLoadingService()
+export const loadingService = createLoadingService();
 
-/**
- * 单例 Loading 实例
- */
-let singletonInstance: LoadingServiceInstance | null = null
+let singletonInstance: LoadingServiceInstance | null = null;
 
-/**
- * 显示单例 Loading
- */
-export function showLoading(config?: LoadingServiceConfig): LoadingServiceInstance {
+const trackSingletonLifecycle = (instance: LoadingServiceInstance): LoadingServiceInstance => {
+  const originalDestroy = instance.destroy;
+  const destroy = (): void => {
+    originalDestroy();
+    if (singletonInstance === instance) singletonInstance = null;
+  };
+  instance.close = destroy;
+  instance.destroy = destroy;
+  return instance;
+};
+
+/** 显示或更新全局单例 Loading。 */
+export function showLoading(config: LoadingServiceConfig = {}): LoadingServiceInstance {
   if (singletonInstance) {
-    singletonInstance.destroy?.()
+    singletonInstance.updateConfig(config);
+    singletonInstance.show();
+    return singletonInstance;
   }
-  
-  singletonInstance = loadingService.show({
-    singleton: true,
-    ...config
-  })
-  
-  return singletonInstance
+
+  singletonInstance = trackSingletonLifecycle(loadingService.show(config));
+  return singletonInstance;
 }
 
-/**
- * 隐藏单例 Loading
- */
 export function hideLoading(): void {
-  if (singletonInstance) {
-    singletonInstance.hide?.()
-  }
+  singletonInstance?.hide();
 }
 
-/**
- * 销毁单例 Loading
- */
 export function destroyLoading(): void {
-  if (singletonInstance) {
-    singletonInstance.destroy?.()
-    singletonInstance = null
-  }
+  singletonInstance?.destroy();
+  singletonInstance = null;
 }
 
-/**
- * Vue 插件安装函数
- */
-export function install(
-  app: App, 
-  options?: { 
-    config?: Partial<LoadingGlobalConfig>
-    enableDirective?: boolean
+/** 获取当前应用注入的服务；未安装插件时回退为默认服务。 */
+export function useLoadingService(): LoadingService {
+  const scope = useComponentServiceScope();
+  if (scope) {
+    return scope.getOrCreate(
+      LOADING_SERVICE_KEY,
+      appContext => createLoadingService({}, appContext),
+      service => service.destroyAll()
+    );
   }
-) {
-  const service = createLoadingService(options?.config)
+  return inject(LOADING_SERVICE_KEY, loadingService);
+}
 
-  // 注册全局属性
-  app.config.globalProperties.$loading = service
-  app.config.globalProperties.$showLoading = showLoading
-  app.config.globalProperties.$hideLoading = hideLoading
+const normalizeDirectiveValue = (
+  value: LoadingDirectiveValue | undefined
+): { loading: boolean; config: LoadingServiceConfig } => {
+  if (typeof value === 'boolean') return { loading: value, config: {} };
+  return {
+    loading: value?.loading === true,
+    config: value?.config ?? {},
+  };
+};
 
-  // 提供注入
-  app.provide('loadingService', service)
-  app.provide('showLoading', showLoading)
-  app.provide('hideLoading', hideLoading)
+export const install: Plugin<[LoadingPluginOptions?]>['install'] = (app, options = {}) => {
+  const service = createLoadingService(options.defaults, app._context);
+  const directiveInstances = new WeakMap<HTMLElement, LoadingServiceInstance>();
+  const directiveScopes = new WeakMap<HTMLElement, ComponentServiceScope | null>();
+  app.config.globalProperties.$loading = service;
+  app.provide(LOADING_SERVICE_KEY, service);
+  app.onUnmount(() => service.destroyAll());
 
-  // 注册指令
-  if (options?.enableDirective !== false) {
-    app.directive('loading', {
-      mounted(el: HTMLElement, binding) {
-        updateLoadingDirective(el, binding.value)
-      },
-      
-      updated(el: HTMLElement, binding) {
-        updateLoadingDirective(el, binding.value)
-      },
-      
-      unmounted(el: HTMLElement) {
-        const instance = (el as HTMLElement & { _loadingInstance?: LoadingServiceInstance })._loadingInstance
-        if (instance) {
-          instance.destroy?.()
-          delete (el as HTMLElement & { _loadingInstance?: LoadingServiceInstance })._loadingInstance
-        }
+  if (options.enableDirective === false) return;
+
+  const updateDirective = (
+    element: HTMLElement,
+    directive: DirectiveBinding<LoadingDirectiveValue>
+  ) => {
+    const binding = normalizeDirectiveValue(directive.value);
+    const owner = directive.instance?.$ as unknown as
+      { provides?: AppContext['provides'] } | undefined;
+    const scope =
+      findElementServiceScope(element) ??
+      (owner?.provides?.[COMPONENT_SERVICE_SCOPE_KEY as symbol] as
+        ComponentServiceScope | undefined) ??
+      null;
+    const config: LoadingServiceConfig = {
+      ...binding.config,
+      target: element,
+      fullscreen: false,
+    };
+    let current = directiveInstances.get(element);
+    if (current && directiveScopes.get(element) !== scope) {
+      current.destroy();
+      current = undefined;
+    }
+
+    if (!binding.loading) {
+      current?.hide();
+      return;
+    }
+
+    if (current) {
+      current.updateConfig(config);
+      current.show();
+      return;
+    }
+
+    const scopedService = scope
+      ? scope.getOrCreate(
+          DIRECTIVE_SERVICE_KEY,
+          context => createLoadingService(options.defaults, context),
+          scoped => scoped.destroyAll()
+        )
+      : service;
+    const instance = scopedService.show(config);
+    // 遮罩关闭也会销毁服务实例，弱引用表必须同步移除，才能再次创建。
+    const forget = () => {
+      if (directiveInstances.get(element) === instance) {
+        directiveInstances.delete(element);
+        directiveScopes.delete(element);
       }
-    })
-  }
-}
+    };
+    const close = instance.close;
+    const destroy = instance.destroy;
+    instance.close = () => {
+      forget();
+      close();
+    };
+    instance.destroy = () => {
+      forget();
+      destroy();
+    };
+    directiveInstances.set(element, instance);
+    directiveScopes.set(element, scope);
+  };
 
-/**
- * 更新 Loading 指令
- */
-function updateLoadingDirective(el: HTMLElement, value: boolean | { loading?: boolean; config?: Record<string, unknown> }) {
-  const isLoading = typeof value === 'boolean' ? value : value?.loading
-  const config = typeof value === 'object' ? value.config : {}
-  
-  let instance = (el as HTMLElement & { _loadingInstance?: LoadingServiceInstance })._loadingInstance
-  
-  if (isLoading) {
-    if (!instance) {
-      instance = loadingService.show({
-        target: el,
-        fullscreen: false,
-        ...config
-      })
-      ;(el as HTMLElement & { _loadingInstance?: LoadingServiceInstance })._loadingInstance = instance
-    } else {
-      instance.show?.()
-    }
-  } else {
-    if (instance) {
-      instance.hide?.()
-    }
-  }
-}
+  app.directive<HTMLElement, LoadingDirectiveValue>('loading', {
+    mounted: updateDirective,
+    updated: updateDirective,
+    unmounted: element => {
+      directiveInstances.get(element)?.destroy();
+      directiveInstances.delete(element);
+      directiveScopes.delete(element);
+    },
+  });
+};
 
-/**
- * 创建独立的 Loading 管理器
- */
-export function createLoadingManager(
-  config?: Partial<LoadingGlobalConfig>
-): LoadingInstanceManager {
-  const manager = new LoadingInstanceManager()
-  
-  if (config) {
-    manager.updateGlobalConfig(config)
-  }
-  
-  return manager
-}
+const LoadingPlugin: Plugin<[LoadingPluginOptions?]> = { install };
 
-export default {
-  install,
-  loadingService,
-  createLoadingService,
-  createLoadingManager,
-  showLoading,
-  hideLoading,
-  destroyLoading
-}
+export default LoadingPlugin;

@@ -1,10 +1,13 @@
 <template>
   <div
+    ref="itemRef"
     :class="itemClasses"
     :style="itemStyles"
     role="group"
     :aria-roledescription="t('carousel.slide')"
-    :aria-label="`${t('carousel.slide')} ${index + 1}`"
+    :aria-label="`${t('carousel.slide')} ${Math.max(0, index) + 1}`"
+    :aria-hidden="!isActive"
+    :inert="!isActive || undefined"
   >
     <slot />
   </div>
@@ -12,9 +15,10 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, inject, getCurrentInstance, onBeforeUnmount } from 'vue';
+import { computed, inject, getCurrentInstance, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { ExCarouselItemProps } from './types';
 import { useI18n } from '../../locale';
+import { carouselContextKey } from './context';
 
 defineOptions({
   name: 'ExCarouselItem',
@@ -25,39 +29,33 @@ const props = defineProps<ExCarouselItemProps>();
 const { t } = useI18n();
 
 const instance = getCurrentInstance();
-const uid = instance?.uid ?? 0;
+if (!instance) {
+  throw new Error('ExCarouselItem 初始化失败');
+}
+const uid = instance.uid;
+const itemRef = ref<HTMLDivElement>();
 
-// 注入父组件数据
-const carousel = inject<{
-  currentIndex: { value: number };
-  direction: { value: string };
-  effect: { value: string };
-  registerItem: (uid: number) => void;
-  unregisterItem: (uid: number) => void;
-  getItemIndex: (uid: number) => number;
-}>('carousel', {
-  currentIndex: { value: 0 },
-  direction: { value: 'horizontal' },
-  effect: { value: 'slide' },
-  registerItem: () => {},
-  unregisterItem: () => {},
-  getItemIndex: () => 0,
-});
+const carousel = inject(carouselContextKey, null);
+if (!carousel) {
+  throw new Error('ExCarouselItem 必须作为 ExCarousel 的子组件使用');
+}
 
-// 注册到父组件；卸载时注销，避免索引错位与泄漏
+// 元素挂载后注册真实 DOM，父组件据此处理动态重排与删除。
 carousel.registerItem(uid);
+onMounted(() => {
+  if (itemRef.value) carousel.registerItem(uid, itemRef.value);
+});
 onBeforeUnmount(() => carousel.unregisterItem(uid));
 
 // 当前项索引（实时计算，随增删/重排更新）
 const index = computed(() => carousel.getItemIndex(uid));
+const isActive = computed(() => index.value === carousel.currentIndex.value);
 
 // 计算属性
 const itemClasses = computed(() => {
   const classes = ['ex-carousel-item'];
 
-  const isActive = index.value === carousel.currentIndex.value;
-
-  if (isActive) classes.push('ex-carousel-item--active');
+  if (isActive.value) classes.push('ex-carousel-item--active');
 
   classes.push(...normalizeCustomClass(props.class));
 

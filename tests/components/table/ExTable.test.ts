@@ -4,7 +4,12 @@ import { nextTick } from 'vue';
 import ExTable from '../../../src/components/table/ExTable.vue';
 import ExCheckbox from '../../../src/components/checkbox/ExCheckbox.vue';
 import ExRadio from '../../../src/components/radio/ExRadio.vue';
-import type { ExTableProps, TableColumn, TableDataItem } from '../../../src/components/table/types';
+import type {
+  ExTableExposed,
+  ExTableProps,
+  TableColumn,
+  TableDataItem,
+} from '../../../src/components/table/types';
 
 describe('ExTable', () => {
   const columns: TableColumn[] = [
@@ -97,6 +102,9 @@ describe('ExTable', () => {
     expect(wrapper.classes()).toContain('ex-table--loading');
     expect(wrapper.find('.ex-table__loading').exists()).toBe(true);
     expect(wrapper.find('.ex-table__loading-spinner').exists()).toBe(true);
+    expect(wrapper.get('table').attributes('aria-busy')).toBe('true');
+    expect(wrapper.get('.ex-table__loading').attributes('role')).toBe('status');
+    expect(wrapper.get('.ex-table__loading').attributes('aria-live')).toBe('polite');
   });
 
   it('renders empty state when no data', () => {
@@ -127,6 +135,112 @@ describe('ExTable', () => {
     // Click to sort
     await sortableHeaders[0].trigger('click');
     expect(wrapper.emitted('sort-change')).toBeTruthy();
+  });
+
+  it('排序表头保留 columnheader 语义并由内部按钮承载交互', async () => {
+    const wrapper = mount(ExTable, { props: { columns, data } });
+    const sortableHeader = wrapper.findAll('.ex-table__header-cell--sortable')[0];
+    const button = sortableHeader.get('button');
+
+    expect(sortableHeader.attributes('role')).toBeUndefined();
+    expect(sortableHeader.attributes('aria-sort')).toBe('none');
+    expect(button.attributes('type')).toBe('button');
+
+    await button.trigger('click');
+    expect(sortableHeader.attributes('aria-sort')).toBe('ascending');
+  });
+
+  it('加载状态阻止排序与选择交互', async () => {
+    const wrapper = mount(ExTable, {
+      props: { columns, data, loading: true, selectable: true },
+    });
+    const sortButton = wrapper.findAll('.ex-table__header-cell--sortable')[0].get('button');
+    const checkboxes = wrapper.findAllComponents(ExCheckbox);
+
+    expect(sortButton.attributes()).toHaveProperty('disabled');
+    expect(checkboxes.every(checkbox => checkbox.props('disabled') === true)).toBe(true);
+
+    await sortButton.trigger('click');
+    checkboxes[1].vm.$emit('update:modelValue', true);
+    await nextTick();
+    expect(wrapper.emitted('sort-change')).toBeUndefined();
+    expect(wrapper.emitted('selection-change')).toBeUndefined();
+  });
+
+  it('固定列应用 sticky 定位及累积偏移', () => {
+    const fixedColumns: TableColumn[] = [
+      { key: 'name', title: 'Name', width: 120, fixed: 'left' },
+      { key: 'age', title: 'Age', width: 80, fixed: 'left' },
+      { key: 'score', title: 'Score', width: 90, fixed: 'right' },
+    ];
+    const wrapper = mount(ExTable, { props: { columns: fixedColumns, data } });
+    const headers = wrapper.findAll('.ex-table__header-cell');
+
+    expect(headers[0].attributes('style')).toContain('position: sticky');
+    expect(headers[0].attributes('style')).toContain('left: 0px');
+    expect(headers[1].attributes('style')).toContain('left: 120px');
+    expect(headers[2].attributes('style')).toContain('right: 0px');
+    expect(wrapper.findAll('.ex-table__body-cell')[1].attributes('style')).toContain('left: 120px');
+  });
+
+  it('列自定义类名与省略配置会落到对应单元格', () => {
+    const customColumns: TableColumn[] = [
+      {
+        key: 'name',
+        title: 'Name',
+        className: 'name-cell',
+        headerClassName: 'name-header',
+        ellipsis: true,
+      },
+    ];
+    const wrapper = mount(ExTable, { props: { columns: customColumns, data } });
+
+    expect(wrapper.get('th').classes()).toContain('name-header');
+    expect(wrapper.get('td').classes()).toContain('name-cell');
+    expect(wrapper.get('td').classes()).toContain('ex-table__cell--ellipsis');
+    expect(wrapper.get('td').attributes('title')).toBe('Player1');
+  });
+
+  it('嵌套列生成分组表头并仅为叶子列渲染数据单元格', () => {
+    const nestedColumns: TableColumn[] = [
+      { key: 'name', title: 'Name', dataIndex: 'name' },
+      {
+        key: 'metrics',
+        title: 'Metrics',
+        children: [
+          { key: 'age', title: 'Age', dataIndex: 'age' },
+          { key: 'score', title: 'Score', dataIndex: 'score' },
+        ],
+      },
+    ];
+    const wrapper = mount(ExTable, { props: { columns: nestedColumns, data } });
+    const headerRows = wrapper.findAll('thead tr');
+
+    expect(headerRows).toHaveLength(2);
+    expect(headerRows[0].findAll('th')[0].attributes('rowspan')).toBe('2');
+    expect(headerRows[0].findAll('th')[1].attributes('colspan')).toBe('2');
+    expect(headerRows[0].findAll('th')[0].attributes('scope')).toBe('col');
+    expect(headerRows[0].findAll('th')[1].attributes('scope')).toBe('colgroup');
+    expect(headerRows[1].findAll('th')[0].attributes('scope')).toBe('col');
+    expect(wrapper.findAll('.ex-table__row')[0].findAll('td')).toHaveLength(3);
+    expect(wrapper.findAll('.ex-table__row')[0].text()).toContain('100');
+  });
+
+  it('onFilter 与 filteredValue 对本地数据执行列过滤', () => {
+    const filterColumns: TableColumn[] = [
+      { key: 'name', title: 'Name', dataIndex: 'name' },
+      {
+        key: 'age',
+        title: 'Age',
+        dataIndex: 'age',
+        filteredValue: [30],
+        onFilter: (value, record) => (record as TableDataItem).age === value,
+      },
+    ];
+    const wrapper = mount(ExTable, { props: { columns: filterColumns, data } });
+
+    expect(wrapper.findAll('.ex-table__row')).toHaveLength(1);
+    expect(wrapper.get('.ex-table__row').text()).toContain('Player2');
   });
 
   it('handles row click events', async () => {
@@ -183,7 +297,7 @@ describe('ExTable', () => {
       props: { columns, data },
     });
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm as unknown as ExTableExposed;
     expect(typeof vm.getElement).toBe('function');
     expect(typeof vm.clearSort).toBe('function');
   });
@@ -313,6 +427,47 @@ describe('ExTable', () => {
       wrapper.findAllComponents(ExCheckbox)[0].vm.$emit('update:modelValue', true);
       await nextTick();
       expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1, 3]);
+    });
+
+    it('无 key 数据排序后仍选择用户实际点击的记录', async () => {
+      const keylessData: TableDataItem[] = [
+        { name: 'Older', age: 40 },
+        { name: 'Younger', age: 20 },
+      ];
+      const wrapper = mount(ExTable, {
+        props: { columns, data: keylessData, selectable: true },
+      });
+
+      await wrapper.findAll('.ex-table__header-cell--sortable')[0].trigger('click');
+      const firstVisibleRow = wrapper.findAll('.ex-table__row')[0];
+      expect(firstVisibleRow.text()).toContain('Younger');
+
+      findRowCheckboxes(wrapper)[0].vm.$emit('update:modelValue', true);
+      await nextTick();
+
+      expect(wrapper.emitted('selection-change')?.at(-1)?.[1]).toEqual([keylessData[1]]);
+      expect(firstVisibleRow.classes()).toContain('ex-table__row--selected');
+    });
+
+    it('无 key 数据全选时不会选中 isRowSelectable 禁止的记录', async () => {
+      const keylessData: TableDataItem[] = [
+        { name: 'Disabled', age: 40 },
+        { name: 'Allowed', age: 20 },
+      ];
+      const wrapper = mount(ExTable, {
+        props: {
+          columns,
+          data: keylessData,
+          selectable: true,
+          isRowSelectable: record => record.name !== 'Disabled',
+        },
+      });
+
+      wrapper.findAllComponents(ExCheckbox)[0].vm.$emit('update:modelValue', true);
+      await nextTick();
+
+      expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([1]);
+      expect(wrapper.emitted('selection-change')?.at(-1)?.[1]).toEqual([keylessData[1]]);
     });
 
     it('exposes selection methods', async () => {

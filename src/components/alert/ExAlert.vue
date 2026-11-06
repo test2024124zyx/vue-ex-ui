@@ -5,7 +5,6 @@
   >
     <div
       v-show="visible"
-      ref="alertRef"
       :class="alertClasses"
       :style="alertStyles"
       role="alert"
@@ -58,15 +57,12 @@
       </div>
 
       <!-- 关闭按钮 -->
-      <div
+      <button
         v-if="closable"
+        type="button"
         class="ex-alert__close"
-        role="button"
-        tabindex="0"
         :aria-label="t('alert.close')"
         @click="handleClose"
-        @keydown.enter="handleClose"
-        @keydown.space.prevent="handleClose"
       >
         <slot name="close">
           <span
@@ -83,7 +79,7 @@
             aria-hidden="true"
           />
         </slot>
-      </div>
+      </button>
     </div>
   </transition>
 </template>
@@ -116,7 +112,6 @@ const { t } = useI18n();
 // 使用全局尺寸配置
 const componentSize = useComponentSize(computed(() => props.size));
 
-const alertRef = ref<HTMLElement>();
 const visible = ref(true);
 
 // 图标映射（内置 SVG 图标名）
@@ -155,9 +150,9 @@ const alertStyles = computed(() => {
 });
 
 // 事件处理
-const handleClose = (event: MouseEvent | KeyboardEvent) => {
+const handleClose = (event: MouseEvent) => {
   visible.value = false;
-  emit('close', event as MouseEvent);
+  emit('close', event);
 };
 
 const handleAfterLeave = () => {

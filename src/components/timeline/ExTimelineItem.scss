@@ -9,6 +9,31 @@
   position: relative;
   @include transition(all);
 
+  &.is-clickable {
+    cursor: pointer;
+
+    .ex-timeline-item__tail-wrapper,
+    .ex-timeline-item__content,
+    .ex-timeline-item__horizontal-wrapper {
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    :is(
+      a,
+      button,
+      input,
+      select,
+      textarea,
+      summary,
+      [role='button'],
+      [role='link'],
+      [contenteditable]:not([contenteditable='false'])
+    ) {
+      pointer-events: auto;
+    }
+  }
+
   // ============================================================================
   // 垂直布局
   // ============================================================================
@@ -23,22 +48,6 @@
 
       .ex-timeline-item__tail {
         display: none;
-      }
-    }
-
-    // 反转顺序：第一项隐藏连接线
-    .ex-timeline--reverse > &:first-child {
-      padding-bottom: 0;
-
-      .ex-timeline-item__tail {
-        display: none;
-      }
-    }
-
-    // 反转顺序时，最后一项需要显示连接线
-    .ex-timeline--reverse > &:last-child {
-      .ex-timeline-item__tail {
-        display: block;
       }
     }
 
@@ -374,10 +383,7 @@
 
     .ex-timeline-item__tail,
     .ex-timeline-item__tail-horizontal {
-      background: linear-gradient(
-        var(--ex-color-neon-blue-500),
-        var(--ex-color-border-primary)
-      );
+      background: linear-gradient(var(--ex-color-neon-blue-500), var(--ex-color-border-primary));
     }
 
     .ex-timeline-item__card {
@@ -406,10 +412,7 @@
 
     .ex-timeline-item__tail,
     .ex-timeline-item__tail-horizontal {
-      background: linear-gradient(
-        var(--ex-color-success),
-        var(--ex-color-border-primary)
-      );
+      background: linear-gradient(var(--ex-color-success), var(--ex-color-border-primary));
     }
 
     .ex-timeline-item__card {
@@ -438,10 +441,7 @@
 
     .ex-timeline-item__tail,
     .ex-timeline-item__tail-horizontal {
-      background: linear-gradient(
-        var(--ex-color-warning),
-        var(--ex-color-border-primary)
-      );
+      background: linear-gradient(var(--ex-color-warning), var(--ex-color-border-primary));
     }
 
     .ex-timeline-item__card {
@@ -470,10 +470,7 @@
 
     .ex-timeline-item__tail,
     .ex-timeline-item__tail-horizontal {
-      background: linear-gradient(
-        var(--ex-color-danger),
-        var(--ex-color-border-primary)
-      );
+      background: linear-gradient(var(--ex-color-danger), var(--ex-color-border-primary));
     }
 
     .ex-timeline-item__card {
@@ -502,10 +499,7 @@
 
     .ex-timeline-item__tail,
     .ex-timeline-item__tail-horizontal {
-      background: linear-gradient(
-        var(--ex-color-info),
-        var(--ex-color-border-primary)
-      );
+      background: linear-gradient(var(--ex-color-info), var(--ex-color-border-primary));
     }
 
     .ex-timeline-item__card {
@@ -530,10 +524,7 @@
     &--vertical.ex-timeline-item--alternate {
       grid-template-columns: auto 1fr;
 
-      .ex-timeline-item__content--left {
-        display: none !important;
-      }
-
+      .ex-timeline-item__content--left,
       .ex-timeline-item__content--right {
         display: block !important;
         text-align: left !important;
@@ -571,7 +562,7 @@
   }
 
   // 高对比度模式
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     .ex-timeline-item__node {
       border-width: 3px;
     }
@@ -579,5 +570,21 @@
     .ex-timeline-item__card {
       border-width: 2px;
     }
+  }
+}
+
+.ex-timeline-item__primary-action {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    @include focus-ring;
   }
 }

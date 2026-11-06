@@ -10,6 +10,9 @@
 .ex-checkbox {
   position: relative;
   display: inline-flex;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
   font-family: var(--ex-font-secondary);
   line-height: var(--ex-leading-normal);
   user-select: none;
@@ -22,13 +25,16 @@
   &__wrapper {
     position: relative;
     display: inline-flex;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
     align-items: center;
     cursor: pointer;
+    touch-action: manipulation;
     @include safe-transition(all);
 
     &--disabled {
       cursor: not-allowed;
-      opacity: 0.5;
     }
   }
 
@@ -38,14 +44,16 @@
 
   &__input {
     position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    margin: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
     padding: 0;
     border: none;
-    outline: none;
+    overflow: hidden;
     pointer-events: none;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   // ============================================================================
@@ -58,9 +66,9 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--ex-color-border-primary);
+    width: var(--ex-checkbox-box-size-md);
+    height: var(--ex-checkbox-box-size-md);
+    border: var(--ex-checkbox-box-border-width) solid var(--ex-color-text-tertiary);
     border-radius: var(--ex-radius-sm);
     background: transparent;
     @include safe-transition(all);
@@ -80,13 +88,17 @@
     // 选中状态的图标
     .ex-checkbox__check-icon,
     .ex-checkbox__indeterminate-icon {
-      color: var(--ex-color-white);
+      color: var(--ex-color-text-inverse);
       @include safe-transition(all, var(--ex-motion-duration-fast));
     }
 
     // 选中状- 霓虹蓝渐
     &--checked {
-      background: linear-gradient(135deg, var(--ex-color-neon-blue-500), var(--ex-color-neon-blue-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-blue-500),
+        var(--ex-color-neon-blue-600)
+      );
       border-color: var(--ex-color-neon-blue-500);
       @include optimized-neon-glow('blue', 'sm');
 
@@ -98,7 +110,11 @@
 
     // 中间状- 霓虹粉渐
     &--indeterminate {
-      background: linear-gradient(135deg, var(--ex-color-neon-pink-500), var(--ex-color-neon-pink-600));
+      background: linear-gradient(
+        135deg,
+        var(--ex-color-neon-pink-500),
+        var(--ex-color-neon-pink-600)
+      );
       border-color: var(--ex-color-neon-pink-500);
       @include optimized-neon-glow('pink', 'sm');
 
@@ -112,7 +128,6 @@
     &--disabled {
       background: var(--ex-color-bg-tertiary);
       border-color: var(--ex-color-border-primary);
-      opacity: 0.5;
 
       &.ex-checkbox__box--checked,
       &.ex-checkbox__box--indeterminate {
@@ -132,11 +147,13 @@
   // ============================================================================
 
   &__label-text {
-    margin-left: var(--ex-spacing-2);
+    min-width: 0;
+    margin-inline-start: var(--ex-checkbox-label-gap);
     color: var(--ex-color-text-primary);
     font-size: var(--ex-text-base);
     font-weight: var(--ex-font-normal);
     line-height: var(--ex-leading-normal);
+    overflow-wrap: anywhere;
     @include safe-transition(color);
     @include optimized-text-rendering;
   }
@@ -181,9 +198,11 @@
   // ============================================================================
 
   &--small {
+    --ex-checkbox-box-size: var(--ex-checkbox-box-size-sm);
+
     .ex-checkbox__box {
-      width: 16px;
-      height: 16px;
+      width: var(--ex-checkbox-box-size);
+      height: var(--ex-checkbox-box-size);
     }
 
     .ex-checkbox__label-text {
@@ -193,9 +212,11 @@
   }
 
   &--medium {
+    --ex-checkbox-box-size: var(--ex-checkbox-box-size-md);
+
     .ex-checkbox__box {
-      width: 18px;
-      height: 18px;
+      width: var(--ex-checkbox-box-size);
+      height: var(--ex-checkbox-box-size);
     }
 
     .ex-checkbox__label-text {
@@ -205,14 +226,24 @@
   }
 
   &--large {
+    --ex-checkbox-box-size: var(--ex-checkbox-box-size-lg);
+
     .ex-checkbox__box {
-      width: 20px;
-      height: 20px;
+      width: var(--ex-checkbox-box-size);
+      height: var(--ex-checkbox-box-size);
     }
 
     .ex-checkbox__label-text {
       font-size: var(--ex-text-lg);
       line-height: var(--ex-leading-relaxed);
+    }
+  }
+
+  // 圆形变体只改变视觉边界，不改变原生复选框语义和交互行为。
+  &--circle {
+    .ex-checkbox__box,
+    .ex-checkbox__box::before {
+      border-radius: 50%;
     }
   }
 
@@ -225,7 +256,7 @@
       border-color: var(--ex-color-error);
 
       &:not(.ex-checkbox__box--checked):not(.ex-checkbox__box--indeterminate) {
-        background: rgba(var(--ex-color-error-rgb), 0.1);
+        background: var(--ex-color-error-alpha-10);
         @include optimized-shadow('sm');
       }
     }
@@ -257,34 +288,16 @@
     }
   }
 
-  // ============================================================================
-  // 交互状- 游戏主题增强
-  // ============================================================================
-
-  &--focused {
-    .ex-checkbox__box {
-      border-color: var(--ex-color-neon-blue-500);
-      @include optimized-neon-glow('blue', 'md');
-
-      &::after {
-        content: '';
-        position: absolute;
-        inset: -4px;
-        border: 2px solid var(--ex-color-neon-blue-500);
-        border-radius: var(--ex-radius-base);
-        opacity: 0.3;
-        @include safe-transition(opacity);
-      }
-    }
-
-    .ex-checkbox__label-text {
-      color: var(--ex-color-neon-blue-400);
-      text-shadow: 0 0 8px rgba(var(--ex-color-neon-blue-500-rgb), 0.2);
-    }
+  // 原生 input 保留键盘焦点语义，鼠标点击不额外改变文字颜色或布局。
+  &__input:focus-visible + &__box {
+    border-color: var(--ex-color-border-focus);
+    outline: var(--ex-checkbox-focus-ring-width) solid var(--ex-color-border-focus);
+    outline-offset: var(--ex-checkbox-focus-ring-offset);
+    box-shadow: 0 0 0 var(--ex-checkbox-focus-ring-offset) var(--ex-color-primary-alpha-40);
   }
 
   // 悬停效果（仅在非禁用状态）
-  &:not(&--disabled) {
+  &:not(&--disabled):not(&--readonly) {
     @include hover-capable {
       .ex-checkbox__wrapper:hover {
         .ex-checkbox__box {
@@ -313,7 +326,7 @@
   }
 
   // 激活状
-  &:not(&--disabled) {
+  &:not(&--disabled):not(&--readonly) {
     .ex-checkbox__wrapper:active {
       .ex-checkbox__box {
         transform: scale(0.95);
@@ -348,22 +361,10 @@
 
 @include mobile {
   .ex-checkbox {
-    // 在移动端增加触摸区域
+    // 移动端保留统一触摸尺寸，不改变小尺寸复选框的视觉规格。
     &__wrapper {
-      min-height: 44px;
+      min-height: var(--ex-checkbox-touch-target);
       align-items: center;
-      padding: var(--ex-spacing-2) 0;
-    }
-
-    &__box {
-      // 移动端稍大的复选框
-      width: 20px !important;
-      height: 20px !important;
-    }
-
-    &__label-text {
-      // 移动端更大的字体
-      font-size: var(--ex-text-base) !important;
     }
   }
 }
@@ -375,13 +376,12 @@
 @include touch-device {
   .ex-checkbox {
     &__wrapper {
-      // 触摸设备上增加点击区
-      padding: var(--ex-spacing-2);
-      margin: calc(var(--ex-spacing-2) * -1);
+      // 触摸设备沿用公共 token，避免嵌套 padding 造成实际高度超过设计值。
+      min-height: var(--ex-checkbox-touch-target);
     }
 
     // 禁用悬停效果
-    &:not(&--disabled) {
+    &:not(&--disabled):not(&--readonly) {
       .ex-checkbox__wrapper:hover {
         .ex-checkbox__box {
           transform: none;
@@ -395,7 +395,7 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-checkbox {
     &__box {
       border-width: 3px;
@@ -409,6 +409,30 @@
 
     &__label-text {
       font-weight: var(--ex-font-medium);
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .ex-checkbox {
+    &__box {
+      forced-color-adjust: none;
+      border-color: ButtonText;
+      background: Canvas;
+
+      &--checked,
+      &--indeterminate {
+        border-color: Highlight;
+        background: Highlight;
+      }
+    }
+
+    &--disabled {
+      .ex-checkbox__box,
+      .ex-checkbox__label-text {
+        color: GrayText;
+        border-color: GrayText;
+      }
     }
   }
 }
@@ -435,7 +459,7 @@
       }
     }
 
-    &:not(&--disabled) {
+    &:not(&--disabled):not(&--readonly) {
       .ex-checkbox__wrapper:hover,
       .ex-checkbox__wrapper:active {
         .ex-checkbox__box {
@@ -459,15 +483,7 @@
   // 使用 CSS containment 优化性能
   contain: layout style;
 
-  &__box {
-    // GPU 加
-    @include gpu-accelerate;
-
-    // 动画结束后移GPU 加
-    &:not(:hover):not(:focus) {
-      @include remove-gpu-accelerate;
-    }
-  }
+  // 浏览器会按实际 transform 动画进行合成，静止复选框不预先提升图层。
 
   // 低端设备优化
   @include low-end-device {
@@ -480,4 +496,3 @@
     }
   }
 }
-

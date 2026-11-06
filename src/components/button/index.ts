@@ -1,19 +1,12 @@
-import type { App } from 'vue';
-import ExButton from './ExButton.vue';
+import ExButtonComponent from './ExButton.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 import type { ExButtonProps, ExButtonEmits, ExButtonExposed } from './types';
 
 // 导出组件类型
 export type { ExButtonProps, ExButtonEmits, ExButtonExposed };
 export type { ButtonType, ButtonSize, ButtonShape, NativeButtonType } from './types';
 
-// 导出组件
-export { ExButton };
+export const ExButton: InstallableComponent<typeof ExButtonComponent> =
+  withInstall(ExButtonComponent);
 
-// 组件安装插件
-export const ExButtonPlugin = {
-  install(app: App) {
-    app.component('ExButton', ExButton);
-  },
-};
-
-export default ExButtonPlugin;
+export default ExButton;

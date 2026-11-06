@@ -100,6 +100,8 @@ export interface ExTooltipProps {
  * Tooltip 组件事件
  */
 export interface ExTooltipEmits {
+  /** 请求更新受控显示状态 */
+  'update:modelValue': [visible: boolean];
   /** 显示时触发 */
   show: [];
   /** 隐藏时触发 */

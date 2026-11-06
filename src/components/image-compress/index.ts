@@ -1,10 +1,11 @@
-import type { App } from 'vue';
-import ExImageCompress from './ExImageCompress.vue';
+import ExImageCompressComponent from './ExImageCompress.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
-ExImageCompress.install = (app: App) => {
-  app.component('ExImageCompress', ExImageCompress);
-};
+export const ExImageCompress: InstallableComponent<typeof ExImageCompressComponent> =
+  withInstall(ExImageCompressComponent);
 
 export default ExImageCompress;
 export * from './types';
-export * from './utils';
+export { ExImageCompressError } from './errors';
+export type { ImageCompressErrorCode } from './errors';
+export { compressImage, compressImages, downloadCompressedImage, formatBytes } from './utils';

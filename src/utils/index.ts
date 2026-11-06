@@ -6,39 +6,44 @@
 export { logger, createLogger } from './logger';
 export type { LogLevel, LoggerOptions } from './logger';
 
-/**
- * 深度合并对象
- */
-export function deepMerge<T>(target: T, ...sources: Partial<T>[]): T {
-  if (!sources.length) return target;
+const UNSAFE_MERGE_KEYS = new Set<PropertyKey>(['__proto__', 'prototype', 'constructor']);
 
-  const result = { ...target };
+const isPlainRecord = (value: unknown): value is Record<PropertyKey, unknown> => {
+  if (value === null || typeof value !== 'object') return false;
+  const prototype = Object.getPrototypeOf(value) as object | null;
+  return prototype === Object.prototype || prototype === null;
+};
+
+/** 深度合并普通对象；特殊对象按值替换，并阻止原型污染键。 */
+export function deepMerge<T>(target: T, ...sources: Partial<T>[]): T {
+  if (!isPlainRecord(target)) return (sources[sources.length - 1] ?? target) as T;
+  const result = Object.create(Object.getPrototypeOf(target) as object | null) as Record<
+    PropertyKey,
+    unknown
+  >;
+  // 目标也属于输入边界；先过滤再复制，避免 Object.assign 触发 __proto__ setter。
+  for (const key of Reflect.ownKeys(target)) {
+    if (UNSAFE_MERGE_KEYS.has(key) || !Object.prototype.propertyIsEnumerable.call(target, key))
+      continue;
+    result[key] = target[key];
+  }
 
   for (const source of sources) {
-    if (!source) continue;
+    if (!isPlainRecord(source)) continue;
+    const sourceRecord = source as unknown as Record<PropertyKey, unknown>;
 
-    for (const key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        const sourceValue = source[key];
-        const targetValue = (result as Record<string, unknown>)[key as string];
-
-        if (
-          sourceValue &&
-          typeof sourceValue === 'object' &&
-          !Array.isArray(sourceValue) &&
-          targetValue &&
-          typeof targetValue === 'object' &&
-          !Array.isArray(targetValue)
-        ) {
-          (result as Record<string, unknown>)[key as string] = deepMerge(targetValue, sourceValue);
-        } else {
-          (result as Record<string, unknown>)[key as string] = sourceValue;
-        }
-      }
+    for (const key of Reflect.ownKeys(sourceRecord)) {
+      if (UNSAFE_MERGE_KEYS.has(key)) continue;
+      const sourceValue = sourceRecord[key];
+      const targetValue = result[key];
+      result[key] =
+        isPlainRecord(sourceValue) && isPlainRecord(targetValue)
+          ? deepMerge(targetValue, sourceValue)
+          : sourceValue;
     }
   }
 
-  return result;
+  return result as T;
 }
 
 /**
@@ -66,7 +71,7 @@ export function isString(value: unknown): value is string {
  * 检查是否为数字
  */
 export function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && !isNaN(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 /**
@@ -91,10 +96,17 @@ export function isVNode(value: unknown): boolean {
  * 检查是否为组件
  */
 export function isComponent(value: unknown): boolean {
-  return !!(
-    value &&
-    (typeof value === 'function' ||
-      (typeof value === 'object' && (value as { render?: unknown }).render))
+  if (typeof value === 'function') return true;
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as {
+    render?: unknown;
+    setup?: unknown;
+    template?: unknown;
+  };
+  return (
+    typeof candidate.render === 'function' ||
+    typeof candidate.setup === 'function' ||
+    (typeof candidate.template === 'string' && candidate.template.trim().length > 0)
   );
 }
 
@@ -108,27 +120,11 @@ export function hasOwnProperty<T extends Record<string, unknown>>(
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-/**
- * 防抖函数
- */
-export function debounce<T extends (...args: never[]) => unknown>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-
-  return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-/**
- * 节流函数
- */
+/** 防抖与节流函数共享可取消、可刷新语义。 */
+export { debounce } from './debounce';
+export type { DebouncedFunction } from './debounce';
 export { throttle } from './throttle';
+export type { ThrottledFunction } from './throttle';
 
 /**
  * 生成唯一 ID
@@ -167,8 +163,6 @@ export function classNames(...classes: (string | undefined | null | false)[]): s
  */
 export function styleToString(style: Record<string, string | number>): string {
   return Object.entries(style)
-    .map(
-      ([key, value]) => `${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}: ${value}`
-    )
+    .map(([key, value]) => `${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}: ${value}`)
     .join('; ');
 }

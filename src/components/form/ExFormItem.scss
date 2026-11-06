@@ -10,6 +10,9 @@
 .ex-form-item {
   position: relative;
   display: flex;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-bottom: var(--ex-spacing-5);
   @include safe-transition(all);
 
@@ -49,14 +52,13 @@
     align-items: center;
     color: var(--ex-color-text-primary);
     @include safe-transition(color);
+  }
 
-    // 必填标记
-    &.is-required::before {
-      content: '*';
-      margin-right: var(--ex-spacing-1);
-      color: var(--ex-color-error);
-      font-weight: var(--ex-font-bold);
-    }
+  &__required-mark {
+    flex: 0 0 auto;
+    margin-inline-end: var(--ex-spacing-1);
+    color: var(--ex-color-error);
+    font-weight: var(--ex-font-bold);
   }
 
   &__colon {
@@ -88,7 +90,7 @@
   &__feedback {
     position: absolute;
     top: 50%;
-    right: var(--ex-spacing-3);
+    inset-inline-end: var(--ex-spacing-3);
     transform: translateY(-50%);
     pointer-events: none;
     @include safe-transition(all);
@@ -139,7 +141,7 @@
     @include error-text;
     margin-top: var(--ex-spacing-2);
     padding: var(--ex-spacing-2) var(--ex-spacing-3);
-    border-left: 3px solid var(--ex-color-error);
+    border-inline-start: 2px solid var(--ex-color-error);
     background: var(--ex-color-error-alpha-10);
     border-radius: var(--ex-radius-base);
     @include optimized-neon-glow('pink', 'sm');
@@ -233,7 +235,9 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-success);
         @include optimized-neon-glow('blue', 'sm');
       }
@@ -248,7 +252,9 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-warning);
       }
     }
@@ -262,7 +268,9 @@
     .ex-form-item__control {
       input,
       textarea,
-      select {
+      select,
+      :deep(.ex-select__trigger),
+      :deep(.ex-cascader__input) {
         border-color: var(--ex-color-error);
         @include optimized-neon-glow('pink', 'sm');
       }
@@ -280,11 +288,8 @@
   // ============================================================================
 
   &.is-required {
-    .ex-form-item__label-text::before {
-      content: '*';
-      margin-right: var(--ex-spacing-1);
+    .ex-form-item__required-mark {
       color: var(--ex-color-error);
-      font-weight: var(--ex-font-bold);
     }
   }
 
@@ -294,7 +299,7 @@
 
   &.has-feedback {
     .ex-form-item__control {
-      padding-right: var(--ex-spacing-8);
+      padding-inline-end: var(--ex-spacing-8);
     }
   }
 }
@@ -320,14 +325,14 @@
 // 高对比度模式支持
 // ============================================================================
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-form-item {
     &__label-text {
       font-weight: var(--ex-font-semibold);
     }
 
     &__error {
-      border-left-width: 4px;
+      border-inline-start-width: 4px;
       font-weight: var(--ex-font-medium);
     }
   }
@@ -368,4 +373,3 @@
     }
   }
 }
-

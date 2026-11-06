@@ -10,7 +10,7 @@
   align-items: center;
   list-style: none !important;
   list-style-type: none !important;
-  
+
   &::before,
   &::marker {
     display: none !important;
@@ -100,7 +100,7 @@
     justify-content: center;
     flex-shrink: 0;
     @include transition(transform);
-    
+
     img {
       display: block;
       width: 16px;
@@ -125,7 +125,7 @@
     opacity: 0.6;
     margin: 0 var(--ex-spacing-2);
     @include transition(opacity);
-    
+
     img {
       display: block;
       width: 12px;
@@ -167,12 +167,12 @@
       font-size: var(--ex-text-xs);
       margin: 0 var(--ex-spacing-1);
     }
-    
+
     .ex-breadcrumb-item__icon img {
       width: 14px;
       height: 14px;
     }
-    
+
     .ex-breadcrumb-item__separator img {
       width: 10px;
       height: 10px;
@@ -190,12 +190,12 @@
       font-size: var(--ex-text-sm);
       margin: 0 var(--ex-spacing-2);
     }
-    
+
     .ex-breadcrumb-item__icon img {
       width: 16px;
       height: 16px;
     }
-    
+
     .ex-breadcrumb-item__separator img {
       width: 12px;
       height: 12px;
@@ -213,12 +213,12 @@
       font-size: var(--ex-text-base);
       margin: 0 var(--ex-spacing-2);
     }
-    
+
     .ex-breadcrumb-item__icon img {
       width: 18px;
       height: 18px;
     }
-    
+
     .ex-breadcrumb-item__separator img {
       width: 14px;
       height: 14px;
@@ -263,7 +263,7 @@
 }
 
 // 高对比度模式
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .ex-breadcrumb-item__link,
   .ex-breadcrumb-item__text-wrapper {
     border-width: 2px;

@@ -16,6 +16,7 @@
     <!-- 开关主体 -->
     <div
       class="ex-switch__core"
+      :class="{ 'is-checked': isChecked }"
       :style="coreStyle"
     >
       <!-- 内联文本 -->
@@ -27,11 +28,15 @@
           <slot
             v-if="isChecked"
             name="active"
-          >{{ activeText }}</slot>
+          >
+            {{ activeText }}
+          </slot>
           <slot
             v-else
             name="inactive"
-          >{{ inactiveText }}</slot>
+          >
+            {{ inactiveText }}
+          </slot>
         </span>
       </span>
 
@@ -41,7 +46,7 @@
           v-if="loading"
           class="ex-switch__loading"
         >
-          <div class="ex-switch__spinner" />
+          <div class="ex-switch__spinner"></div>
         </div>
       </div>
 
@@ -53,17 +58,19 @@
         class="ex-switch__input"
         role="switch"
         :name="name"
-        :disabled="disabled"
+        :disabled="isInteractionDisabled"
+        :required="required"
         :checked="isChecked"
         :aria-checked="isChecked"
+        v-bind="fieldAriaAttrs"
+        :aria-disabled="isInteractionDisabled"
         :aria-label="ariaLabel"
-        :aria-describedby="ariaDescribedby"
         @change="handleChange"
-        @click.stop
+        @click.stop="handleNativeClick"
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown"
-      >
+      />
     </div>
 
     <!-- 开关后文本 -->
@@ -78,10 +85,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useSlots } from 'vue';
+import { ref, computed, useSlots, nextTick } from 'vue';
 import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance } from './types';
-import { useComponentSize } from '../config-provider/composables';
-import { useFormItem } from '../form/use-form-item';
+import { useFormFieldState } from '../form/use-form-item';
 
 defineOptions({
   name: 'ExSwitch',
@@ -103,16 +109,21 @@ const emit = defineEmits<ExSwitchEmits>();
 const inputRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
 
-// 使用全局尺寸配置
-const componentSize = useComponentSize(computed(() => props.size));
-
-// 所在 FormItem 的字段上下文（用于 change 自动校验）
-const formItem = useFormItem();
+const {
+  formItem,
+  disabled,
+  interactive,
+  size: componentSize,
+  ariaAttrs: fieldAriaAttrs,
+} = useFormFieldState(props);
 
 // 计算属性
 const isChecked = computed(() => {
   return props.modelValue === props.activeValue;
 });
+
+const isInteractionDisabled = computed(() => disabled.value || props.loading);
+const canChange = computed(() => interactive.value && !props.loading);
 
 const slots = useSlots();
 
@@ -124,7 +135,7 @@ const switchClasses = computed(() => {
   const classes = ['ex-switch', `ex-switch--${componentSize.value}`];
 
   if (isChecked.value) classes.push('is-checked');
-  if (props.disabled) classes.push('is-disabled');
+  if (disabled.value) classes.push('is-disabled');
   if (props.loading) classes.push('is-loading');
   if (isFocused.value) classes.push('is-focused');
   if (hasText.value) classes.push('has-text');
@@ -165,7 +176,7 @@ const coreStyle = computed(() => {
 
 // 事件处理
 const handleClick = (event: MouseEvent) => {
-  if (props.disabled || props.loading) {
+  if (!canChange.value) {
     event.preventDefault();
     return;
   }
@@ -173,9 +184,15 @@ const handleClick = (event: MouseEvent) => {
   toggle();
 };
 
+// 原生 checkbox 不支持 readonly，必须在默认切换动作前阻止修改。
+const handleNativeClick = (event: MouseEvent) => {
+  if (!canChange.value) event.preventDefault();
+};
+
 const handleChange = (event: Event) => {
-  if (props.disabled || props.loading) {
+  if (!canChange.value) {
     event.preventDefault();
+    (event.target as HTMLInputElement).checked = isChecked.value;
     return;
   }
 
@@ -185,6 +202,10 @@ const handleChange = (event: Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue);
   formItem?.onFieldChange();
+  // 使用本轮渲染后的模型恢复原生 checked，父组件拒绝更新时也保持一致。
+  void nextTick(() => {
+    target.checked = isChecked.value;
+  });
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -195,16 +216,17 @@ const handleFocus = (event: FocusEvent) => {
 const handleBlur = (event: FocusEvent) => {
   isFocused.value = false;
   emit('blur', event);
+  formItem?.onFieldBlur();
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (props.disabled || props.loading) return;
-
-  if (event.code === 'Space' || event.code === 'Enter') {
-    event.preventDefault();
-    toggle();
-    emit('keydown', event);
-  }
+  const togglesValue =
+    event.code === 'Space' || event.code === 'Enter' || event.key === ' ' || event.key === 'Enter';
+  if (!togglesValue || event.isComposing) return;
+  event.preventDefault();
+  if (!canChange.value) return;
+  toggle();
+  emit('keydown', event);
 };
 
 // 暴露方法
@@ -217,7 +239,7 @@ const blur = () => {
 };
 
 const toggle = () => {
-  if (props.disabled || props.loading) return;
+  if (!canChange.value) return;
 
   const newValue = isChecked.value ? props.inactiveValue : props.activeValue;
   emit('update:modelValue', newValue);

@@ -1,20 +1,11 @@
-import type { App } from 'vue'
-import ExPageHeader from './ExPageHeader.vue'
+import ExPageHeaderComponent from './ExPageHeader.vue';
+import { withInstall, type InstallableComponent } from '../../utils/install';
 
 // 导出组件
-export { ExPageHeader }
+export const ExPageHeader: InstallableComponent<typeof ExPageHeaderComponent> =
+  withInstall(ExPageHeaderComponent);
 
 // 导出类型
-export type {
-  PageHeaderProps,
-  PageHeaderEmits
-} from './types'
+export type { PageHeaderProps, PageHeaderEmits } from './types';
 
-// Vue插件
-export const PageHeaderPlugin = {
-  install(app: App) {
-    app.component('ExPageHeader', ExPageHeader)
-  }
-}
-
-export default PageHeaderPlugin
+export default ExPageHeader;

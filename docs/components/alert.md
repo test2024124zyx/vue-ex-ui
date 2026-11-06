@@ -13,26 +13,57 @@ const visible2 = ref(true)
 
 Alert 组件提供四种类型，由 `type` 属性指定。
 
+::: raw
 <div class="demo-container">
-  <ExAlert type="info" title="信息提示" />
-  <ExAlert type="success" title="成功提示" />
-  <ExAlert type="warning" title="警告提示" />
-  <ExAlert type="error" title="错误提示" />
+  <ExAlert
+    type="info"
+    title="信息提示"
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+  />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="info" title="信息提示" />
-  <ExAlert type="success" title="成功提示" />
-  <ExAlert type="warning" title="警告提示" />
-  <ExAlert type="error" title="错误提示" />
+  <ExAlert
+    type="info"
+    title="信息提示"
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+  />
 </template>
 ```
+
+:::
 
 ## 带描述信息
 
 包含标题和详细描述的警告提示。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="info"
@@ -45,6 +76,9 @@ Alert 组件提供四种类型，由 `type` 属性指定。
     description="恭喜你，操作已经成功完成！所有数据已经保存。"
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -56,10 +90,13 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 </template>
 ```
 
+:::
+
 ## 可关闭
 
 可以添加关闭按钮。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     v-if="visible1"
@@ -71,6 +108,9 @@ Alert 组件提供四种类型，由 `type` 属性指定。
   />
   <ExButton v-if="!visible1" @click="visible1 = true">重新显示</ExButton>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -84,36 +124,77 @@ Alert 组件提供四种类型，由 `type` 属性指定。
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(true)
+const visible = ref(true);
 </script>
 ```
+
+:::
 
 ## 带图标
 
 通过设置 `show-icon` 属性来显示图标。
 
+::: raw
 <div class="demo-container">
-  <ExAlert type="info" title="信息提示" show-icon />
-  <ExAlert type="success" title="成功提示" show-icon />
-  <ExAlert type="warning" title="警告提示" show-icon />
-  <ExAlert type="error" title="错误提示" show-icon />
+  <ExAlert
+    type="info"
+    title="信息提示"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+    show-icon
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+    show-icon
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+    show-icon
+  />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="info" title="信息提示" show-icon />
-  <ExAlert type="success" title="成功提示" show-icon />
-  <ExAlert type="warning" title="警告提示" show-icon />
-  <ExAlert type="error" title="错误提示" show-icon />
+  <ExAlert
+    type="info"
+    title="信息提示"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    title="成功提示"
+    show-icon
+  />
+  <ExAlert
+    type="warning"
+    title="警告提示"
+    show-icon
+  />
+  <ExAlert
+    type="error"
+    title="错误提示"
+    show-icon
+  />
 </template>
 ```
+
+:::
 
 ## 居中显示
 
 使用 `center` 属性让文字水平居中。
 
+::: raw
 <div class="demo-container">
   <ExAlert
     type="success"
@@ -123,6 +204,9 @@ const visible = ref(true)
     show-icon
   />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
@@ -135,12 +219,18 @@ const visible = ref(true)
 </template>
 ```
 
+:::
+
 ## 自定义图标
 
 通过插槽自定义图标。
 
+::: raw
 <div class="demo-container">
-  <ExAlert type="info" title="自定义图标">
+  <ExAlert
+    type="info"
+    title="自定义图标"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/rocket-line.svg"
@@ -151,10 +241,16 @@ const visible = ref(true)
     </template>
   </ExAlert>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="info" title="自定义图标">
+  <ExAlert
+    type="info"
+    title="自定义图标"
+  >
     <template #icon>
       <img
         src="https://api.iconify.design/ri/rocket-line.svg"
@@ -166,47 +262,122 @@ const visible = ref(true)
   </ExAlert>
 </template>
 ```
+
+:::
 
 ## 不同变体
 
 通过 `variant` 设置 `standard`（默认）、`filled`、`outlined` 三种视觉风格。
 
+::: raw
 <div class="demo-container">
-  <ExAlert type="success" variant="standard" title="standard 标准样式" show-icon />
-  <ExAlert type="success" variant="filled" title="filled 实心样式" show-icon />
-  <ExAlert type="success" variant="outlined" title="outlined 描边样式" show-icon />
+  <ExAlert
+    type="success"
+    variant="standard"
+    title="standard 标准样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="filled"
+    title="filled 实心样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="outlined"
+    title="outlined 描边样式"
+    show-icon
+  />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="success" variant="standard" title="standard 标准样式" show-icon />
-  <ExAlert type="success" variant="filled" title="filled 实心样式" show-icon />
-  <ExAlert type="success" variant="outlined" title="outlined 描边样式" show-icon />
+  <ExAlert
+    type="success"
+    variant="standard"
+    title="standard 标准样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="filled"
+    title="filled 实心样式"
+    show-icon
+  />
+  <ExAlert
+    type="success"
+    variant="outlined"
+    title="outlined 描边样式"
+    show-icon
+  />
 </template>
 ```
+
+:::
 
 ## 不同尺寸
 
 通过 `size` 设置 `small` / `medium`（默认）/ `large`，未设置时跟随 `ExConfigProvider` 全局尺寸。
 
+::: raw
 <div class="demo-container">
-  <ExAlert type="info" size="small" title="小尺寸提示" show-icon />
-  <ExAlert type="info" size="medium" title="中等尺寸提示" show-icon />
-  <ExAlert type="info" size="large" title="大尺寸提示" show-icon />
+  <ExAlert
+    type="info"
+    size="small"
+    title="小尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="medium"
+    title="中等尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="large"
+    title="大尺寸提示"
+    show-icon
+  />
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="info" size="small" title="小尺寸提示" show-icon />
-  <ExAlert type="info" size="medium" title="中等尺寸提示" show-icon />
-  <ExAlert type="info" size="large" title="大尺寸提示" show-icon />
+  <ExAlert
+    type="info"
+    size="small"
+    title="小尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="medium"
+    title="中等尺寸提示"
+    show-icon
+  />
+  <ExAlert
+    type="info"
+    size="large"
+    title="大尺寸提示"
+    show-icon
+  />
 </template>
 ```
+
+:::
 
 ## 操作区域
 
 通过 `action` 插槽在右侧放置操作按钮。
 
+::: raw
 <div class="demo-container">
   <ExAlert type="warning" title="检测到新版本" description="建议立即更新以获取最新功能。" show-icon>
     <template #action>
@@ -214,16 +385,31 @@ const visible = ref(true)
     </template>
   </ExAlert>
 </div>
+:::
+
+::: details 查看示例代码
 
 ```vue
 <template>
-  <ExAlert type="warning" title="检测到新版本" description="建议立即更新。" show-icon>
+  <ExAlert
+    type="warning"
+    title="检测到新版本"
+    description="建议立即更新。"
+    show-icon
+  >
     <template #action>
-      <ExButton size="small" type="primary">立即更新</ExButton>
+      <ExButton
+        size="small"
+        type="primary"
+      >
+        立即更新
+      </ExButton>
     </template>
   </ExAlert>
 </template>
 ```
+
+:::
 
 ## 受控 / 非受控
 
@@ -231,13 +417,24 @@ const visible = ref(true)
 
 ```vue
 <template>
-  <ExAlert v-if="visible" type="warning" title="可关闭" closable @close="visible = false" />
-  <ExButton v-if="!visible" @click="visible = true">重新显示</ExButton>
+  <ExAlert
+    v-if="visible"
+    type="warning"
+    title="可关闭"
+    closable
+    @close="visible = false"
+  />
+  <ExButton
+    v-if="!visible"
+    @click="visible = true"
+  >
+    重新显示
+  </ExButton>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const visible = ref(true)
+import { ref } from 'vue';
+const visible = ref(true);
 </script>
 ```
 
@@ -247,47 +444,47 @@ const visible = ref(true)
 
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| type | 类型 | `'info' \| 'success' \| 'warning' \| 'error'` | `'info'` |
-| size | 尺寸 | `'small' \| 'medium' \| 'large'` | 跟随全局配置 |
-| variant | 视觉变体 | `'standard' \| 'filled' \| 'outlined'` | `'standard'` |
-| title | 标题 | `string` | — |
-| description | 描述文本 | `string` | — |
-| show-icon | 是否显示图标 | `boolean` | `true` |
-| closable | 是否可关闭 | `boolean` | `false` |
-| close-text | 关闭按钮文本（替代关闭图标） | `string` | — |
-| center | 文字是否居中 | `boolean` | `false` |
-| bordered | 是否显示边框 | `boolean` | `true` |
-| icon | 自定义图标图片 URL | `string` | — |
-| close-icon | 自定义关闭图标图片 URL | `string` | — |
-| custom-class | 自定义类名 | `string` | — |
-| custom-style | 自定义内联样式 | `Record<string, string>` | — |
+| 属性         | 说明                         | 类型                                          | 默认值       |
+| ------------ | ---------------------------- | --------------------------------------------- | ------------ |
+| type         | 类型                         | `'info' \| 'success' \| 'warning' \| 'error'` | `'info'`     |
+| size         | 尺寸                         | `'small' \| 'medium' \| 'large'`              | 跟随全局配置 |
+| variant      | 视觉变体                     | `'standard' \| 'filled' \| 'outlined'`        | `'standard'` |
+| title        | 标题                         | `string`                                      | —            |
+| description  | 描述文本                     | `string`                                      | —            |
+| show-icon    | 是否显示图标                 | `boolean`                                     | `true`       |
+| closable     | 是否可关闭                   | `boolean`                                     | `false`      |
+| close-text   | 关闭按钮文本（替代关闭图标） | `string`                                      | —            |
+| center       | 文字是否居中                 | `boolean`                                     | `false`      |
+| bordered     | 是否显示边框                 | `boolean`                                     | `true`       |
+| icon         | 自定义图标图片 URL           | `string`                                      | —            |
+| close-icon   | 自定义关闭图标图片 URL       | `string`                                      | —            |
+| custom-class | 自定义类名                   | `string`                                      | —            |
+| custom-style | 自定义内联样式               | `Record<string, string>`                      | —            |
 
 ### Events
 
-| 事件名 | 说明 | 类型 |
-| --- | --- | --- |
-| close | 点击关闭按钮时触发 | `(event: MouseEvent) => void` |
-| afterClose | 关闭动画结束后触发 | `() => void` |
+| 事件名     | 说明               | 类型                          |
+| ---------- | ------------------ | ----------------------------- |
+| close      | 点击关闭按钮时触发 | `(event: MouseEvent) => void` |
+| afterClose | 关闭动画结束后触发 | `() => void`                  |
 
 ### Slots
 
-| 插槽名 | 说明 |
-| --- | --- |
+| 插槽名  | 说明                             |
+| ------- | -------------------------------- |
 | default | 自定义内容（覆盖 `description`） |
-| title | 自定义标题 |
-| icon | 自定义图标 |
-| close | 自定义关闭按钮内容 |
-| action | 右侧操作区域 |
+| title   | 自定义标题                       |
+| icon    | 自定义图标                       |
+| close   | 自定义关闭按钮内容               |
+| action  | 右侧操作区域                     |
 
 ### 方法
 
 通过模板引用（`ref`）调用：
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| close | 关闭警告 | `() => void` |
+| 方法名 | 说明     | 类型         |
+| ------ | -------- | ------------ |
+| close  | 关闭警告 | `() => void` |
 
 ## 主题定制
 
@@ -297,8 +494,8 @@ Alert 不定义独立的组件级 CSS 变量，而是直接消费 ExUI 全局设
 
 ```css
 :root {
-  --ex-color-success: #00d68f;       /* success 类型主色 */
-  --ex-color-warning: #ffaa00;       /* warning 类型主色 */
+  --ex-color-success: #00d68f; /* success 类型主色 */
+  --ex-color-warning: #ffaa00; /* warning 类型主色 */
   --ex-color-neon-blue-500: #29abe2; /* info 类型主色 */
   --ex-color-neon-pink-500: #ff2d78; /* error 类型主色 */
 }
@@ -307,7 +504,12 @@ Alert 不定义独立的组件级 CSS 变量，而是直接消费 ExUI 全局设
 2. **局部定制**（只影响单个实例）：使用 `custom-class` / `custom-style`：
 
 ```vue
-<ExAlert type="info" title="自定义" :custom-style="{ borderRadius: '12px' }" custom-class="my-alert" />
+<ExAlert
+  type="info"
+  title="自定义"
+  :custom-style="{ borderRadius: '12px' }"
+  custom-class="my-alert"
+/>
 ```
 
 ## 常见问题

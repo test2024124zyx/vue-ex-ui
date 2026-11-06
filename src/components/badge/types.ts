@@ -2,13 +2,7 @@
  * 徽章类型
  */
 export type BadgeType =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info';
+  'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 /**
  * 徽章尺寸
@@ -26,6 +20,11 @@ export type BadgeStatus = 'success' | 'processing' | 'default' | 'error' | 'warn
 export type BadgePosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 
 /**
+ * 徽章形状
+ */
+export type BadgeShape = 'default' | 'round' | 'circle';
+
+/**
  * 徽章组件属性接口
  */
 export interface ExBadgeProps {
@@ -33,6 +32,8 @@ export interface ExBadgeProps {
   count?: number | string;
   /** 是否显示为小红点 */
   dot?: boolean;
+  /** 是否启用徽章的按钮语义与键盘交互 */
+  clickable?: boolean;
   /** 徽章类型 */
   type?: BadgeType;
   /** 徽章尺寸 */
@@ -51,8 +52,12 @@ export interface ExBadgeProps {
   color?: string;
   /** 徽章位置 */
   position?: BadgePosition;
+  /** 徽章形状，仅对数字/文本徽章生效 */
+  shape?: BadgeShape;
   /** 鼠标悬停时显示的文字 */
   title?: string;
+  /** 徽章的无障碍名称 */
+  ariaLabel?: string;
   /** 自定义徽章样式 */
   badgeStyle?: string | Record<string, string | number>;
   /** 自定义CSS类名 */

@@ -8,11 +8,14 @@ const box1 = () => (typeof document !== 'undefined' ? document.getElementById('b
 const box2 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-2') : null)
 const box3 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-3') : null)
 const box4 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-4') : null)
+const shapeBox = () => (typeof document !== 'undefined' ? document.getElementById('bt-shapes') : null)
 </script>
 
 ## 基础用法
 
 默认监听整个页面，滚动超过 `visibility-height`（默认 200px）后在右下角出现。下面在一个独立滚动容器内演示，按钮固定在视口角落。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-1" class="bt-scroll">
@@ -21,19 +24,49 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box1" :visibility-height="120" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <!-- 监听整个页面：滚动超过 200px 后显示 -->
-  <ExBackTop />
-
-  <!-- 监听指定滚动容器 -->
-  <ExBackTop :target="() => containerEl" :visibility-height="120" />
+  <div class="demo-container">
+    <div
+      id="bt-box-1"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 向下滚动这个区域，超过 120px 后视口右下角会出现「回到顶部」按钮</div>
+    </div>
+    <ExBackTop
+      :target="box1"
+      :visibility-height="120"
+    />
+  </div>
 </template>
+
+<script setup>
+const box1 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-1') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 显示滚动进度
 
 `show-progress` 显示滚动进度，`progress-type` 支持环形（`circle`）与线形（`line`），`show-percent` 额外显示百分比文字。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-2" class="bt-scroll">
@@ -49,16 +82,53 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBackTop show-progress progress-type="circle" show-percent />
-  <ExBackTop show-progress progress-type="line" />
+  <div class="demo-container">
+    <div
+      id="bt-box-2"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，左下角出现带环形进度 + 百分比的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box2"
+      :visibility-height="80"
+      show-progress
+      progress-type="circle"
+      show-percent
+      position="bottom-left"
+    />
+  </div>
 </template>
+
+<script setup>
+const box2 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-2') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 文字按钮
 
 设置 `text` 后按钮变为图标 + 文字的纵向布局。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-3" class="bt-scroll">
@@ -67,27 +137,113 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box3" :visibility-height="80" text="顶部" position="top-right" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <ExBackTop text="顶部" />
+  <div class="demo-container">
+    <div
+      id="bt-box-3"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，右上角出现带「顶部」文字的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box3"
+      :visibility-height="80"
+      text="顶部"
+      position="top-right"
+    />
+  </div>
 </template>
+
+<script setup>
+const box3 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-3') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## 形状与尺寸
 
 `shape` 支持 `circle` / `square` / `rounded`，`size` 支持 `small` / `medium` / `large`。
 
+向下滚动后，三种按钮分别出现在视口左下、中下、右下位置。点击任一个可回到此容器顶部，其他演示区域的滚动位置不会改变。
+
+::: raw
+<div class="demo-container">
+  <div id="bt-shapes" style="height: 240px; overflow: auto;">
+    <div style="height: 900px; padding: 16px;">向下滚动，比较圆形小号、圆角中号和方形大号按钮。</div>
+  </div>
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="circle" size="small" position="bottom-left" />
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="rounded" size="medium" position="bottom-center" />
+  <ex-back-top :target="shapeBox" :visibility-height="80" shape="square" size="large" position="bottom-right" />
+</div>
+:::
+
+::: details 查看示例代码
+
 ```vue
+<script setup>
+const shapeBox = () =>
+  typeof document !== 'undefined' ? document.getElementById('bt-shapes') : null;
+</script>
+
 <template>
-  <ExBackTop shape="circle" size="small" />
-  <ExBackTop shape="rounded" size="medium" />
-  <ExBackTop shape="square" size="large" />
+  <div class="demo-container">
+    <div
+      id="bt-shapes"
+      style="height: 240px; overflow: auto;"
+    >
+      <div style="height: 900px; padding: 16px;">
+        向下滚动，比较圆形小号、圆角中号和方形大号按钮。
+      </div>
+    </div>
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="circle"
+      size="small"
+      position="bottom-left"
+    />
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="rounded"
+      size="medium"
+      position="bottom-center"
+    />
+    <ex-back-top
+      :target="shapeBox"
+      :visibility-height="80"
+      shape="square"
+      size="large"
+      position="bottom-right"
+    />
+  </div>
 </template>
 ```
+
+:::
 
 ## 自定义图标 / 内容
 
 通过 `icon` 传入内置图标名（推荐）、组件或 VNode；也可以用默认插槽完全自定义内容。
+
+::: raw
 
 <div class="demo-container">
   <div id="bt-box-4" class="bt-scroll">
@@ -96,69 +252,98 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
   <ExBackTop :target="box4" :visibility-height="80" icon="arrow-up-s-line" />
 </div>
 
+:::
+
+::: details 查看示例代码
+
 ```vue
 <template>
-  <!-- 内置图标名 -->
-  <ExBackTop icon="arrow-up-s-line" />
-
-  <!-- 完全自定义内容 -->
-  <ExBackTop #default="{ percent }">
-    <span>{{ Math.round(percent) }}%</span>
-  </ExBackTop>
+  <div class="demo-container">
+    <div
+      id="bt-box-4"
+      class="bt-scroll"
+    >
+      <div class="bt-filler">↓ 滚动此区域，右下角出现使用自定义图标的按钮</div>
+    </div>
+    <ExBackTop
+      :target="box4"
+      :visibility-height="80"
+      icon="arrow-up-s-line"
+    />
+  </div>
 </template>
+
+<script setup>
+const box4 = () => (typeof document !== 'undefined' ? document.getElementById('bt-box-4') : null);
+</script>
+
+<style scoped>
+.bt-scroll {
+  height: 260px;
+  overflow-y: auto;
+}
+.bt-filler {
+  height: 1000px;
+  padding: 16px;
+}
+</style>
 ```
+
+:::
 
 ## API
 
+省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
+
 ### Props
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `position` | 显示位置 | `'bottom-right' \| 'bottom-left' \| 'top-right' \| 'top-left' \| 'bottom-center' \| 'top-center'` | `'bottom-right'` |
-| `shape` | 形状 | `'circle' \| 'square' \| 'rounded'` | `'circle'` |
-| `size` | 尺寸 | `'small' \| 'medium' \| 'large'` | `'medium'` |
-| `visibility-height` | 滚动超过该距离（px）后显示 | `number` | `200` |
-| `visibility-percent` | 滚动超过该百分比（0-100）后显示，设置后优先于 `visibility-height` | `number` | - |
-| `target` | 滚动监听目标，默认监听 `window` | `HTMLElement \| Window \| string \| (() => HTMLElement \| Window \| string)` | `window` |
-| `scroll-behavior` | 点击后的滚动行为 | `'smooth' \| 'auto' \| 'instant'` | `'smooth'` |
-| `scroll-duration` | 平滑滚动时长（ms），`scroll-behavior='smooth'` 时生效 | `number` | `400` |
-| `scroll-to` | 点击后滚动到的位置（px） | `number` | `0` |
-| `offset` | 位置偏移（默认四周 24px） | `{ top?, right?, bottom?, left?: number \| string }` | - |
-| `animation` | 出现/消失动画 | `'fade' \| 'slide' \| 'zoom' \| 'none'` | `'fade'` |
-| `text` | 按钮文字 | `string` | - |
-| `icon` | 自定义图标（内置图标名 / 组件 / VNode / 字体类名） | `string \| Component \| VNode` | `'arrow-up-line'` |
-| `show-progress` | 是否显示滚动进度 | `boolean` | `false` |
-| `progress-type` | 进度类型 | `'circle' \| 'line'` | `'circle'` |
-| `show-percent` | 是否显示百分比文字 | `boolean` | `false` |
-| `z-index` | 层级 | `number` | `var(--ex-z-sticky)` |
-| `show-on-mobile` | 是否在移动端显示 | `boolean` | `true` |
-| `mobile-breakpoint` | 移动端断点（px） | `number` | `768` |
-| `aria-label` | 无障碍标签 | `string` | `text` 或 `'Back to top'` |
-| `class` / `style` | 自定义类名 / 样式 | `string \| string[] \| object` / `CSSProperties \| string` | - |
+| 属性                 | 说明                                                              | 类型                                                                                              | 默认值                    |
+| -------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
+| `position`           | 显示位置                                                          | `'bottom-right' \| 'bottom-left' \| 'top-right' \| 'top-left' \| 'bottom-center' \| 'top-center'` | `'bottom-right'`          |
+| `shape`              | 形状                                                              | `'circle' \| 'square' \| 'rounded'`                                                               | `'circle'`                |
+| `size`               | 尺寸                                                              | `'small' \| 'medium' \| 'large'`                                                                  | `'medium'`                |
+| `visibility-height`  | 滚动超过该距离（px）后显示                                        | `number`                                                                                          | `200`                     |
+| `visibility-percent` | 滚动超过该百分比（0-100）后显示，设置后优先于 `visibility-height` | `number`                                                                                          | -                         |
+| `target`             | 滚动监听目标，默认监听 `window`                                   | `HTMLElement \| Window \| string \| (() => HTMLElement \| Window \| string)`                      | `window`                  |
+| `scroll-behavior`    | 点击后的滚动行为                                                  | `'smooth' \| 'auto' \| 'instant'`                                                                 | `'smooth'`                |
+| `scroll-duration`    | 平滑滚动时长（ms），`scroll-behavior='smooth'` 时生效             | `number`                                                                                          | `400`                     |
+| `scroll-to`          | 点击后滚动到的位置（px）                                          | `number`                                                                                          | `0`                       |
+| `offset`             | 位置偏移（默认四周 24px）                                         | `{ top?, right?, bottom?, left?: number \| string }`                                              | -                         |
+| `animation`          | 出现/消失动画                                                     | `'fade' \| 'slide' \| 'zoom' \| 'none'`                                                           | `'fade'`                  |
+| `text`               | 按钮文字                                                          | `string`                                                                                          | -                         |
+| `icon`               | 自定义图标（内置图标名 / 组件 / VNode / 字体类名）                | `string \| Component \| VNode`                                                                    | `'arrow-up-line'`         |
+| `show-progress`      | 是否显示滚动进度                                                  | `boolean`                                                                                         | `false`                   |
+| `progress-type`      | 进度类型                                                          | `'circle' \| 'line'`                                                                              | `'circle'`                |
+| `show-percent`       | 是否显示百分比文字                                                | `boolean`                                                                                         | `false`                   |
+| `z-index`            | 层级                                                              | `number`                                                                                          | `var(--ex-z-sticky)`      |
+| `show-on-mobile`     | 是否在移动端显示                                                  | `boolean`                                                                                         | `true`                    |
+| `mobile-breakpoint`  | 移动端断点（px）                                                  | `number`                                                                                          | `768`                     |
+| `aria-label`         | 无障碍标签                                                        | `string`                                                                                          | `text` 或 `'Back to top'` |
+| `class` / `style`    | 自定义类名 / 样式                                                 | `string \| string[] \| object` / `CSSProperties \| string`                                        | -                         |
 
 ### Events
 
-| 事件名 | 说明 | 回调参数 |
-| --- | --- | --- |
-| `click` | 点击按钮时触发 | `(event: MouseEvent)` |
-| `scroll-start` | 回到顶部滚动开始 | - |
-| `scroll-end` | 回到顶部滚动结束 | - |
-| `visibility-change` | 显示状态变化 | `(visible: boolean)` |
+| 事件名              | 说明             | 回调参数              |
+| ------------------- | ---------------- | --------------------- |
+| `click`             | 点击按钮时触发   | `(event: MouseEvent)` |
+| `scroll-start`      | 回到顶部滚动开始 | -                     |
+| `scroll-end`        | 回到顶部滚动结束 | -                     |
+| `visibility-change` | 显示状态变化     | `(visible: boolean)`  |
 
 ### Slots
 
-| 插槽名 | 说明 | 参数 |
-| --- | --- | --- |
+| 插槽名    | 说明               | 参数                  |
+| --------- | ------------------ | --------------------- |
 | `default` | 完全自定义按钮内容 | `{ percent: number }` |
-| `icon` | 自定义图标 | - |
+| `icon`    | 自定义图标         | -                     |
 
 ### 方法（通过 ref 调用）
 
-| 方法名 | 说明 | 类型 |
-| --- | --- | --- |
-| `scrollToTop` | 滚动到目标位置 | `() => Promise<void>` |
-| `show` / `hide` | 强制显示 / 隐藏 | `() => void` |
-| `getElement` | 获取按钮 DOM | `() => HTMLElement \| null` |
+| 方法名          | 说明            | 类型                        |
+| --------------- | --------------- | --------------------------- |
+| `scrollToTop`   | 滚动到目标位置  | `() => Promise<void>`       |
+| `show` / `hide` | 强制显示 / 隐藏 | `() => void`                |
+| `getElement`    | 获取按钮 DOM    | `() => HTMLElement \| null` |
 
 ## 无障碍
 
@@ -172,6 +357,7 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
 为提升质量与可维护性，本组件做了精简。**已移除**以下非标准能力：`draggable` / `drag-bounds` / `remember-position` / `storage-key`（拖拽与位置记忆）、内置性能监控、`theme` 主题对象、`enabled`、`show-text`、`throttle-delay`、`bounce` 动画，以及 `onClick`/`onScrollStart` 等 prop 形式回调（请改用事件）。
 
 迁移要点：
+
 - `show-text` + `text` → 直接用 `text`（设置即显示）。
 - `:enabled="false"` → 用 `v-if` 控制是否渲染。
 - `@click` 等请用事件监听（`onClick` prop 已移除）。
@@ -183,9 +369,9 @@ const box4 = () => (typeof document !== 'undefined' ? document.getElementById('b
 
 ```css
 :root {
-  --ex-color-bg-secondary: #0f1720;   /* 按钮背景 */
-  --ex-color-border-primary: #243447;  /* 按钮边框 */
-  --ex-color-primary: #29abe2;         /* 悬停 / 进度色 */
+  --ex-color-bg-secondary: #0f1720; /* 按钮背景 */
+  --ex-color-border-primary: #243447; /* 按钮边框 */
+  --ex-color-primary: #29abe2; /* 悬停 / 进度色 */
 }
 ```
 
