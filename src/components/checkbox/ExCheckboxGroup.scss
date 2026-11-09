@@ -193,11 +193,6 @@
 // ============================================================================
 
 .ex-checkbox-group {
-  // 使用 CSS containment 优化性能
+  // 表单选项必须参与首次布局；延迟渲染的预估高度会在内容显现时推动后续区域。
   contain: layout style;
-
-  &__content {
-    // 优化大量复选框的渲染
-    @include content-visibility(auto);
-  }
 }
