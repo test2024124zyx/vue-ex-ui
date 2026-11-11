@@ -65,6 +65,7 @@
     "verify:tree-shaking": "node scripts/verify-tree-shaking.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:release": "node --test --experimental-test-coverage --test-coverage-include=scripts/release-context.mjs --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=80 scripts/release-context.node-test.mjs",
     "test:watch": "vitest",
     "test:browser": "playwright test",
     "lint": "eslint . --max-warnings=0",
@@ -76,7 +77,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vite preview --config docs/.vitepress/preview.config.ts",
     "audit:production": "npm audit --omit=dev --audit-level=high",
-    "verify:release": "npm run verify:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run verify:tree-shaking && npm run build && npm run verify:package && npm run docs:build && npm run test:browser && npm run audit:production",
+    "verify:release": "npm run test:release && npm run verify:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run verify:tree-shaking && npm run build && npm run verify:package && npm run docs:build && npm run test:browser && npm run audit:production",
     "prepublishOnly": "npm run verify:release",
     "prepare": "husky"
   },

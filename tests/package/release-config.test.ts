@@ -158,7 +158,7 @@ describe('发布配置契约', () => {
     expect(workflow).toContain('permissions:\n  contents: read');
     expect(workflow).toMatch(/actions\/checkout@[0-9a-f]{40}/u);
     expect(workflow).toMatch(/actions\/setup-node@[0-9a-f]{40}/u);
-    expect(workflow).toContain('node-version: 22.13.0');
+    expect(workflow).toContain("node-version: '24'");
     expect(workflow).toContain('npm run format:check');
     expect(workflow).toContain('npm run test:coverage');
     expect(workflow).toContain('npm run verify:tree-shaking');

@@ -1,0 +1,73 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+# 同一版本串行发布，避免重跑或重复事件并发上传。
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      HUSKY: '0'
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+    steps:
+      - name: 检出 Release 对应代码
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 固定 v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 配置 Node.js 与 npm 官方源
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 固定 v7.1.0
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          # 发布环境从锁文件重新安装，避免复用缓存中的构建依赖。
+          package-manager-cache: false
+
+      - name: 确认版本来自默认分支
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: git merge-base --is-ancestor HEAD "origin/$DEFAULT_BRANCH"
+
+      - name: 校验 Release、版本与发布目标
+        id: release
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { validateReleaseContext } from './scripts/release-context.mjs';
+
+          const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
+          const distTag = validateReleaseContext({
+            event: readJson(process.env.GITHUB_EVENT_PATH),
+            manifest: readJson('package.json'),
+            lockfile: readJson('package-lock.json'),
+          });
+          appendFileSync(process.env.GITHUB_OUTPUT, `dist-tag=${distTag}\n`);
+          NODE
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装浏览器验收环境
+        run: npx --no-install playwright install --with-deps chromium firefox webkit
+
+      # prepublishOnly 会执行完整的 verify:release，包括覆盖率、构建及三引擎验收。
+      # npm 通过 GitHub OIDC 获取短期发布身份，无需 NPM_TOKEN。
+      - name: 执行全部发布检查并发布到 npm
+        env:
+          DIST_TAG: ${{ steps.release.outputs.dist-tag }}
+        run: npm publish --access public --tag "$DIST_TAG"
