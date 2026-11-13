@@ -338,6 +338,8 @@ describe('ExButton', () => {
     });
 
     expect(glowing.attributes('data-ex-button-glitch-text')).toBe('AVAILABLE NOW');
+    expect(glowing.get('.ex-button__glitch').attributes('aria-hidden')).toBe('true');
+    expect(glowing.get('.ex-button__glitch').text()).toBe('AVAILABLE NOW');
     expect(restrained.attributes('data-ex-button-glitch-text')).toBeUndefined();
   });
 

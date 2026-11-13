@@ -93,7 +93,12 @@
   }
 
   // 撕裂层复制可见文字，再用 inset 分片和离散位移制造真实的色差断层。
-  &--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(.ex-button--link)::after {
+  &__glitch {
+    display: none;
+  }
+
+  &--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(.ex-button--link)
+    > .ex-button__glitch {
     position: absolute;
     inset: 0;
     z-index: 3;
@@ -102,7 +107,6 @@
     align-items: center;
     justify-content: center;
     padding: inherit;
-    content: attr(data-ex-button-glitch-text);
     color: var(--ex-button-fg);
     background: linear-gradient(
       45deg,
@@ -132,7 +136,7 @@
 
   &--no-neon {
     &::before,
-    &::after {
+    > .ex-button__glitch {
       opacity: 0;
     }
 
@@ -158,7 +162,7 @@
     transform: none;
 
     &::before,
-    &::after {
+    > .ex-button__glitch {
       display: none;
     }
   }
@@ -167,7 +171,7 @@
     cursor: wait;
 
     &::before,
-    &::after {
+    > .ex-button__glitch {
       display: none;
     }
 
@@ -192,7 +196,7 @@
       transition: none !important;
     }
 
-    &::after {
+    > .ex-button__glitch {
       transition: none !important;
     }
 
@@ -209,7 +213,7 @@
       transform: translateX(-140%) !important;
     }
 
-    &.ex-button--glow:hover::after {
+    &.ex-button--glow:hover > .ex-button__glitch {
       opacity: 0 !important;
       transform: translate(0, 0) !important;
       animation: none !important;
@@ -538,7 +542,8 @@
 
   .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
       .ex-button--link
-    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)
+    > .ex-button__glitch {
     animation: ex-button-glitch-slices 1s steps(2, end) forwards;
   }
 
@@ -551,7 +556,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ex-button,
   .ex-button::before,
-  .ex-button::after {
+  .ex-button__glitch {
     transition: none;
   }
 
@@ -566,7 +571,8 @@
 
   .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
       .ex-button--link
-    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)::after {
+    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)
+    > .ex-button__glitch {
     opacity: 0;
     transform: translate(0, 0);
     animation: none;
@@ -579,7 +585,7 @@
     filter: none;
   }
 
-  .ex-button::after {
+  .ex-button__glitch {
     display: none;
   }
 

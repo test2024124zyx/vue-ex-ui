@@ -13,6 +13,14 @@
     @focus="handleFocus"
     @blur="handleBlur"
   >
+    <!-- 装饰副本必须从可访问树隐藏，不能由按钮自身的伪元素生成朗读文字。 -->
+    <span
+      v-if="glitchText"
+      class="ex-button__glitch"
+      aria-hidden="true"
+    >
+      {{ glitchText }}
+    </span>
     <span
       v-if="loading"
       class="ex-button__loading-icon"
