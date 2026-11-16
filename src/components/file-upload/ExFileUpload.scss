@@ -236,7 +236,6 @@
     &:not(:disabled):hover,
     &:not(:disabled):focus-visible {
       color: var(--ex-color-primary);
-      outline: none;
     }
 
     &:disabled {
@@ -428,12 +427,17 @@
     &:not(:disabled):hover,
     &:not(:disabled):focus-visible {
       color: var(--ex-color-primary);
-      outline: none;
     }
 
     &:disabled {
       cursor: not-allowed;
     }
+  }
+
+  &__list-item-name:focus-visible,
+  &__upload-trigger-content:focus-visible {
+    outline: 2px solid var(--ex-color-border-focus);
+    outline-offset: 2px;
   }
 
   &__upload-trigger-icon {

@@ -1,19 +1,32 @@
 import type { UploadFile, UploadHttpMethod } from './types';
+import { getMediaTypeByExtension } from '../../utils/media-file-extension';
 
-/** 按原生 accept 语义匹配扩展名、精确 MIME 和 MIME 通配符。 */
-export function matchesUploadAccept(file: File, accept?: string): boolean {
-  if (!accept?.trim()) return true;
-  const fileName = file.name.toLowerCase();
-  const mimeType = file.type.toLowerCase();
-  const rules = accept
+const ANY_MIME_TYPE = '*/*';
+const getAcceptRules = (accept?: string) =>
+  (accept ?? '')
     .split(',')
     .map(rule => rule.trim().toLowerCase())
     .filter(Boolean);
 
-  if (rules.length === 0) return true;
+/** 全通配符是组件支持的写法，原生选择器通过移除 accept 开放所有文件。 */
+export function getNativeUploadAccept(accept?: string): string | undefined {
+  return getAcceptRules(accept).includes(ANY_MIME_TYPE) ? undefined : accept;
+}
+
+/** 按原生 accept 语义匹配扩展名、精确 MIME 和 MIME 通配符。 */
+export function matchesUploadAccept(file: File, accept?: string): boolean {
+  const rules = getAcceptRules(accept);
+  if (rules.length === 0 || rules.includes(ANY_MIME_TYPE)) return true;
+  const fileName = file.name.toLowerCase();
+  const mimeType = file.type.toLowerCase();
+  const extension = /\.([^.]+)$/.exec(fileName)?.[1] ?? '';
+  const mediaType = mimeType ? undefined : getMediaTypeByExtension(extension);
+
   return rules.some(rule => {
     if (rule.startsWith('.')) return fileName.endsWith(rule);
-    if (rule.endsWith('/*')) return mimeType.startsWith(rule.slice(0, -1));
+    if (rule.endsWith('/*')) {
+      return mimeType ? mimeType.startsWith(rule.slice(0, -1)) : rule.slice(0, -2) === mediaType;
+    }
     return Boolean(mimeType && mimeType === rule);
   });
 }
