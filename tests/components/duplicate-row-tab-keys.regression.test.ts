@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { createSSRApp, h, nextTick, ref } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import ExTable from '../../src/components/table/ExTable.vue';
@@ -99,5 +99,27 @@ describe('表格与标签页的唯一键', () => {
     expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
     expect(wrapper.get('[role="tab"]').text()).toBe('直接标签');
     expect(wrapper.get('[role="tabpanel"]').text()).toBe('直接面板');
+  });
+
+  it('同一个包装组件内部 keyed 重排后切换首项', async () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const order = ref(['甲', '乙']);
+    const Wrapped = {
+      render: () =>
+        h(
+          'section',
+          order.value.map(label =>
+            h(ExTabPane, { key: label, name: 'same', label }, () => `${label}面板`)
+          )
+        ),
+    };
+    const wrapper = mount(ExTabs, { slots: { default: () => h(Wrapped) } });
+    await flushPromises();
+    expect(wrapper.get('[role="tab"]').text()).toBe('甲');
+    order.value = ['乙', '甲'];
+    await flushPromises();
+    expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
+    expect(wrapper.get('[role="tab"]').text()).toBe('乙');
+    expect(wrapper.get('[role="tabpanel"]').text()).toBe('乙面板');
   });
 });

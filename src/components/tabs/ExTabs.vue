@@ -93,7 +93,10 @@
     </div>
 
     <!-- 标签页内容 -->
-    <div class="ex-tabs__content">
+    <div
+      ref="panelsRef"
+      class="ex-tabs__content"
+    >
       <SlotContent />
     </div>
   </div>
@@ -145,11 +148,13 @@ const { t } = useLocale('tabs');
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
+const panelsRef = ref<HTMLDivElement>();
 const tabsInstance = getCurrentInstance();
 const registeredPanes = shallowRef<Array<{ pane: PaneInfo; instance: ComponentInternalInstance }>>(
   []
 );
 const { items: slotItems, nodes, SlotContent } = useSlotItems('ExTabPane');
+const wrappedPositions = shallowRef(new Map<number, number>());
 const ownsVNode = (node: VNode, instance: ComponentInternalInstance) =>
   node === instance.vnode ||
   node.component === instance ||
@@ -207,7 +212,12 @@ const paneOwners = computed(() => {
   for (const entry of registeredPanes.value) {
     ordered.push({ ...entry, order: getWrappedOrder(entry.instance) });
   }
-  ordered.sort((left, right) => left.order - right.order);
+  ordered.sort((left, right) => {
+    if (left.order !== right.order) return left.order - right.order;
+    if ('node' in left || 'node' in right) return 0;
+    const positions = wrappedPositions.value;
+    return (positions.get(left.instance.uid) ?? 0) - (positions.get(right.instance.uid) ?? 0);
+  });
   const owners = new Map<PaneInfo['name'], PaneCandidate>();
   for (const candidate of ordered) {
     if (owners.has(candidate.pane.name)) {
@@ -499,6 +509,27 @@ onMounted(() =>
 
 // 生命周期
 let resizeObserver: ResizeObserver | null = null;
+let paneOrderObserver: MutationObserver | undefined;
+
+function readWrappedPositions(): void {
+  if (registeredPanes.value.length < 2) return;
+  const rendered = registeredPanes.value.flatMap(({ instance }) => {
+    const element = instance.vnode.el;
+    return element instanceof Node && panelsRef.value?.contains(element)
+      ? [{ uid: instance.uid, element }]
+      : [];
+  });
+  // 非首项可能只渲染 Vue 占位节点，也依照它当前在包装组件中的位置排序。
+  rendered.sort((left, right) =>
+    left.element.compareDocumentPosition(right.element) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1
+  );
+  if (
+    rendered.length === wrappedPositions.value.size &&
+    rendered.every(({ uid }, index) => wrappedPositions.value.get(uid) === index)
+  )
+    return;
+  wrappedPositions.value = new Map(rendered.map(({ uid }, index) => [uid, index]));
+}
 
 onMounted(() => {
   updateIndicator();
@@ -507,12 +538,18 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(() => updateIndicator());
     resizeObserver.observe(navRef.value);
   }
+  if (typeof MutationObserver !== 'undefined' && panelsRef.value) {
+    paneOrderObserver = new MutationObserver(readWrappedPositions);
+    paneOrderObserver.observe(panelsRef.value, { childList: true, subtree: true });
+    readWrappedPositions();
+  }
 });
 
 onBeforeUnmount(() => {
   isTabsUnmounting = true;
   resizeObserver?.disconnect();
   resizeObserver = null;
+  paneOrderObserver?.disconnect();
 });
 
 // 暴露的方法
