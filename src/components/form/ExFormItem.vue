@@ -390,8 +390,9 @@ async function validateFieldMethod(
 
   if (!isMounted) return { valid: false, outOfDate: true };
   const field = props.prop;
-  const value = deepClone(snapshot ? snapshot.value : getFieldValue(formContext.model, field));
-  reconcileValidationValue(value);
+  const sourceValue = snapshot ? snapshot.value : getFieldValue(formContext.model, field);
+  // 输入草稿在调度时已完成对比并取得私有快照，确认和手动校验仍从模型检查。
+  if (!snapshot) reconcileValidationValue(sourceValue);
 
   const rules = getRules();
   if (!rules || rules.length === 0) {
@@ -417,7 +418,24 @@ async function validateFieldMethod(
   }
 
   const validationId = ++latestValidationId;
-  validationSnapshot = { value: deepClone(value) };
+  validationSnapshot = snapshot ?? { value: deepClone(sourceValue) };
+  const hasCustomRule = filteredRules.some(
+    rule => rule.transform || rule.validator || rule.asyncValidator
+  );
+  const snapshotValue = validationSnapshot.value;
+  // 对象规则可能调用实例方法；数组的长度检查可复用快照，字符串转换仍需隔离。
+  const needsWorkingCopy =
+    hasCustomRule ||
+    (snapshotValue !== null &&
+      typeof snapshotValue === 'object' &&
+      (!Array.isArray(snapshotValue) ||
+        filteredRules.some(rule => rule.pattern || rule.type === 'email')));
+  const value = needsWorkingCopy ? deepClone(snapshotValue) : snapshotValue;
+  const notifyResult = (result: FormItemValidateResult) => {
+    // 失败事件的值对调用方可见，不能暴露内部对比快照。
+    const eventValue = result.valid || needsWorkingCopy ? value : deepClone(value);
+    formContext.notifyFieldValidate(field, result, { value: eventValue });
+  };
 
   validateStatus.value = 'validating';
   isValidating.value = true;
@@ -440,7 +458,7 @@ async function validateFieldMethod(
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
     const validationResult = { valid: result.valid, error: result.error };
-    formContext.notifyFieldValidate(field, validationResult, { value });
+    notifyResult(validationResult);
 
     return validationResult;
   } catch (error) {
@@ -454,7 +472,7 @@ async function validateFieldMethod(
     emit('validate-status-change', validateStatus.value, validateMessage.value);
 
     const validationResult = { valid: false, error: validateMessage.value };
-    formContext.notifyFieldValidate(field, validationResult, { value });
+    notifyResult(validationResult);
 
     return validationResult;
   } finally {
