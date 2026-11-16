@@ -46,8 +46,8 @@
       <input
         :id="controlId"
         ref="inputRef"
+        :value="searchInput.displayValue.value"
         v-bind="triggerAttrs"
-        :value="inputDisplayValue"
         :placeholder="currentPlaceholder"
         :disabled="effectiveDisabled"
         :readonly="effectiveReadonly || !filterable"
@@ -65,7 +65,12 @@
         :aria-disabled="effectiveDisabled || undefined"
         :aria-readonly="effectiveReadonly || !filterable ? 'true' : undefined"
         :aria-autocomplete="filterable ? 'list' : undefined"
-        @input="handleInput"
+        @beforeinput="searchInput.handleBeforeInput"
+        @input="searchInput.handleInput"
+        @paste="searchInput.startEdit"
+        @compositionstart="searchInput.startComposition"
+        @compositionend="searchInput.endComposition"
+        @change="searchInput.endComposition"
         @keydown="handleKeydown"
         @focus="handleInputFocus"
         @blur="handleInputBlur"
@@ -172,6 +177,7 @@
                 :aria-selected="isSearchResultSelected(result)"
                 :aria-label="result.labels.join(separator)"
                 @mouseenter="!result.disabled && (searchActiveIndex = resultIndex)"
+                @mousedown.prevent
                 @click="handleSearchResultClick(result)"
               >
                 <span
@@ -279,6 +285,7 @@
                     'ex-cascader__option--keyboard':
                       activeCol === index && activeIndex === optIndex,
                   }"
+                  @mousedown.prevent
                   @click="handleOptionClick(option, index)"
                   @mouseenter="trigger === 'hover' && handleOptionHover(option, index, optIndex)"
                 >
@@ -373,6 +380,7 @@ import { collectCascaderLeafPaths } from './search';
 import type { CascaderSearchResult } from './search';
 import { useCascaderPaths } from './use-cascader-paths';
 import { useCascaderKeyboard } from './use-cascader-keyboard';
+import { useCascaderSearchInput } from './use-cascader-search-input';
 import { useCascaderMultiple, cascaderPathKey } from './use-cascader-multiple';
 import { useAsyncOptions } from '../tree-select/use-async-options';
 import { captureReactiveValue } from '../../utils/reactive-snapshot';
@@ -520,14 +528,11 @@ const activeDescendant = computed(() => {
   return getOptionId(activeCol.value, activeIndex.value);
 });
 
-// 输入框展示值：搜索时显示搜索词，否则显示选中路径
 const inputDisplayValue = computed(() => {
-  if (hasSearchQuery.value && visible.value) {
-    return searchQuery.value;
-  }
-  if (props.multiple) return '';
-  return displayValue.value;
+  if (hasSearchQuery.value && visible.value) return searchQuery.value;
+  return props.multiple ? '' : displayValue.value;
 });
+const searchInput = useCascaderSearchInput(inputRef, inputDisplayValue, setSearchQuery);
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
 const allLeafPaths = computed(() => collectCascaderLeafPaths(asyncOptions.data.value));
 // 搜索结果是一条完整叶子路径，路径中任意一级标签命中即可显示。
@@ -681,15 +686,13 @@ const show = () => {
 };
 
 const hide = (options: { restoreFocus?: boolean } = {}) => {
-  if (!visible.value) {
-    searchQuery.value = '';
-    searchActiveIndex.value = -1;
-    return;
-  }
-
+  const wasVisible = visible.value;
   visible.value = false;
   searchQuery.value = '';
   searchActiveIndex.value = -1;
+  // 关闭时结束本轮搜索，防止旧输入法事件覆盖已选值或重新打开面板。
+  searchInput.discard();
+  if (!wasVisible) return;
   activeIndex.value = -1;
   emit('visible-change', false);
 
@@ -708,7 +711,7 @@ const nextEnabledIndex = (col: number, from: number, step: 1 | -1): number => {
 };
 
 const handleKeydown = useCascaderKeyboard({
-  blocked: () => effectiveDisabled.value || effectiveReadonly.value,
+  blocked: () => effectiveDisabled.value || effectiveReadonly.value || searchInput.isComposing(),
   filterable: () => props.filterable,
   visible,
   searching: hasSearchQuery,
@@ -737,15 +740,15 @@ const handleTriggerClick = () => {
   }
 };
 
-const handleInput = (event: Event) => {
+function setSearchQuery(value: string) {
   if (!props.filterable || effectiveDisabled.value || effectiveReadonly.value) return;
-  const target = event.target as HTMLInputElement;
-  searchQuery.value = target.value;
+  if (visible.value && searchQuery.value === value) return;
+  searchQuery.value = value;
   searchActiveIndex.value = -1;
   if (!visible.value) {
     show();
   }
-};
+}
 
 const handleInputFocus = (event: FocusEvent) => {
   emit('focus', event);

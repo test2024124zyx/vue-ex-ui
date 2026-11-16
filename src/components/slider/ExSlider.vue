@@ -210,6 +210,7 @@ import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
 import { addDecimal, snapToDecimalStep } from '../../utils/decimal';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useFormFieldState } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 
@@ -595,7 +596,7 @@ const handleMouseUp = () => {
 };
 
 const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
 
   const { key } = event;
 

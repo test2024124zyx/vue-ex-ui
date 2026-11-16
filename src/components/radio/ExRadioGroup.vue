@@ -83,12 +83,14 @@ import { useI18n } from '../../locale';
 import { generateId } from '../../utils/id';
 import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 import { radioGroupContextKey } from './context';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExRadioGroup',
 });
 
 const props = withDefaults(defineProps<ExRadioGroupProps>(), {
+  modelValue: undefined,
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
   status: 'default',
   disabled: false,
@@ -98,7 +100,6 @@ const props = withDefaults(defineProps<ExRadioGroupProps>(), {
 });
 
 const emit = defineEmits<ExRadioGroupEmits>();
-
 defineSlots<ExRadioGroupSlots>();
 
 const slots = useSlots();
@@ -111,6 +112,11 @@ const {
   size: componentSize,
   ariaAttrs: fieldAriaAttrs,
 } = useFormFieldState(props);
+const { value: confirmedValue, request } = useControllableState<RadioValue | undefined>({
+  controlledValue: () => props.modelValue,
+  defaultValue: undefined,
+  resetRevision: () => formItem?.resetRevision?.value,
+});
 
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;
@@ -182,6 +188,7 @@ const updateValue = (value: RadioValue) => {
   // 验证
   validateGroup(value);
 
+  request(value);
   emit('update:modelValue', value);
   emit('change', value);
   formItem?.onFieldChange();
@@ -212,8 +219,8 @@ watch(
   [() => props.modelValue, () => props.rules],
   () => {
     if (!currentErrorMessage.value || props.errorMessage) return;
-    if (props.modelValue === undefined) currentErrorMessage.value = '';
-    else validateGroup(props.modelValue);
+    if (confirmedValue.value === undefined) currentErrorMessage.value = '';
+    else validateGroup(confirmedValue.value);
   },
   { deep: true }
 );
@@ -232,7 +239,7 @@ watch(
 // status/disabled/readonly 用 getter 暴露，确保子组件读取时建立响应式依赖，
 // Group 运行时改变这些属性能正确传播到所有子项。
 provide(radioGroupContextKey, {
-  modelValue: computed(() => props.modelValue),
+  modelValue: confirmedValue,
   get name() {
     return radioName.value;
   },
@@ -262,7 +269,7 @@ provide(radioGroupContextKey, {
 
 // 暴露方法
 const getValue = (): string | number | boolean => {
-  return props.modelValue ?? '';
+  return confirmedValue.value ?? '';
 };
 
 const setValue = (value: RadioValue) => {

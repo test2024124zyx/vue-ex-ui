@@ -586,11 +586,13 @@ const agreed = ref(false);
 
 ## API
 
+省略 `modelValue` 时，独立 Checkbox 以 `falseValue` 为初始值，CheckboxGroup 以空数组为初始值，由组件维护勾选状态。传入 `modelValue` 时由父组件确认更新，组内 Checkbox 继续跟随组的值。
+
 ### ExCheckbox Props
 
 | 属性                 | 说明                                  | 类型                                             | 默认值      |
 | -------------------- | ------------------------------------- | ------------------------------------------------ | ----------- |
-| modelValue / v-model | 绑定值                                | `boolean \| string \| number`                    | `false`     |
+| modelValue / v-model | 绑定值                                | `boolean \| string \| number`                    | `undefined` |
 | trueValue            | 选中状态的值                          | `boolean \| string \| number`                    | `true`      |
 | falseValue           | 未选中状态的值                        | `boolean \| string \| number`                    | `false`     |
 | value                | 复选框的值（在 CheckboxGroup 中使用） | `string \| number`                               | -           |
@@ -646,7 +648,7 @@ const agreed = ref(false);
 
 | 属性                 | 说明                     | 类型                                             | 默认值      |
 | -------------------- | ------------------------ | ------------------------------------------------ | ----------- |
-| modelValue / v-model | 绑定值                   | `Array<string \| number>`                        | `[]`        |
+| modelValue / v-model | 绑定值                   | `Array<string \| number>`                        | `undefined` |
 | id                   | 复选框组根节点的 `id`    | `string`                                         | 自动生成    |
 | options              | 选项列表                 | `CheckboxOption[]`                               | -           |
 | name                 | 表单域 name 属性         | `string`                                         | -           |

@@ -278,6 +278,24 @@ describe('ExFileUpload', () => {
   });
 
   describe('选择、校验与异步钩子', () => {
+    it('全通配符解除原生选择限制，有明确的大小限制时仍拦截超限文件', async () => {
+      const wrapper = mountUpload({
+        props: { accept: 'image/*, */*', maxFileSize: 8, autoUpload: false, multiple: true },
+      });
+      expect(wrapper.get('input[type="file"]').attributes('accept')).toBeUndefined();
+      await selectFiles(wrapper, [
+        makeFile('README', '', 4),
+        makeFile('large.txt', 'text/plain', 9),
+      ]);
+      expect(wrapper.emitted('added')?.[0]?.[0]).toMatchObject({ name: 'README' });
+      expect(wrapper.emitted('rejected')?.[0]?.[0]).toMatchObject({ code: 'size' });
+
+      await wrapper.setProps({ accept: 'image/*' });
+      expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('image/*');
+      await selectFiles(wrapper, [makeFile('picture.PNG', '', 4)]);
+      expect(wrapper.emitted('added')?.at(-1)?.[0]).toMatchObject({ name: 'picture.PNG' });
+    });
+
     it('按 accept 和字节上限拒绝文件，并返回统一可判别原因', async () => {
       const wrapper = mountUpload({
         props: { accept: 'image/*', maxFileSize: 8, autoUpload: false, multiple: true },

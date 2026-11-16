@@ -116,6 +116,7 @@ import { useI18n } from '../../locale';
 import { debounce } from '../../utils/debounce';
 import { addDecimal, formatFixedDecimal, snapToDecimalStep } from '../../utils/decimal';
 import type { DebouncedFunction } from '../../utils/debounce';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -425,7 +426,7 @@ const commitSteppedValue = (newValue: number, direction?: 1 | -1) => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
 
   // 上下箭头键
   if (event.key === 'ArrowUp') {

@@ -6,6 +6,8 @@ export interface UseControllableStateOptions<T> {
   controlledValue: () => T | undefined;
   /** 非受控模式的初始值。 */
   defaultValue: T | (() => T);
+  /** 显式重置版本。重置到 undefined 时使用非受控初始值。 */
+  resetRevision?: () => number | undefined;
   /** 对数组或对象状态创建隔离副本，防止外部引用污染内部状态。 */
   clone?: (value: T) => T;
   /** 每次用户请求变更时调用，无论当前是否受控。 */
@@ -56,6 +58,20 @@ export function useControllableState<T>(
     },
     { flush: 'sync' }
   );
+
+  if (options.resetRevision) {
+    watch(
+      options.resetRevision,
+      () => {
+        // 等待表单重置后的 modelValue 下发，再区分清空与普通解除控制。
+        const controlledValue = options.controlledValue();
+        internalValue.value = clone(
+          controlledValue === undefined ? resolveDefaultValue() : controlledValue
+        );
+      },
+      { flush: 'post' }
+    );
+  }
 
   const request = (nextValue: T): void => {
     const snapshot = clone(nextValue);

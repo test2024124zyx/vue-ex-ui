@@ -412,6 +412,8 @@ const selected7 = ref('option1');
 
 ## API
 
+省略 RadioGroup 的 `modelValue` 时，初始没有选项被选中，由组维护选择。传入 `modelValue` 时由父组件确认更新。
+
 ### ExRadio Props
 
 | 属性                 | 说明         | 类型                                             | 默认值      |

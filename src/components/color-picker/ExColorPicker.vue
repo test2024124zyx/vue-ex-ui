@@ -195,6 +195,7 @@
 import { computed, nextTick, onUnmounted, reactive, ref, useId, useAttrs, watch } from 'vue';
 import type { ExColorPickerEmits, ExColorPickerExposed, ExColorPickerProps } from './types';
 import { clamp, formatColor, hsvToRgb, opaqueRgb, parseColor, rgbToHsv } from './utils';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import type { RGBA } from './utils';
 import { useLocale } from '../../locale';
 import {
@@ -614,7 +615,7 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleTriggerKeydown = (event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
   if (event.key === 'ArrowDown') {
     event.preventDefault();
     open();

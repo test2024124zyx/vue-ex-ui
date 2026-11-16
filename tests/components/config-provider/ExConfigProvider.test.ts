@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { h, nextTick } from 'vue';
+import { renderToString } from '@vue/server-renderer';
+import { createSSRApp, h, nextTick, ref } from 'vue';
 import type { Component } from 'vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import ExLoading from '../../../src/components/loading/ExLoading.vue';
@@ -37,6 +38,47 @@ describe('ExConfigProvider', () => {
 
     expect(wrapper.find('.ex-config-provider').exists()).toBe(true);
     expect(wrapper.find('.test-content').exists()).toBe(true);
+  });
+
+  it('真实 SSR 水合后，嵌套 Provider 的 ID 和动态效果规则仍对应自己的根节点', async () => {
+    const animation = ref(false);
+    const App = {
+      render: () =>
+        h(ExConfigProvider, { theme: 'light', animation: animation.value }, () =>
+          h(ExConfigProvider, { neonEffect: false }, () =>
+            h('p', { class: 'ex-content' }, '水合内容')
+          )
+        ),
+    };
+    const host = document.createElement('div');
+    host.innerHTML = await renderToString(createSSRApp(App));
+    document.body.appendChild(host);
+    const roots = Array.from(host.querySelectorAll('[data-ex-provider]'));
+    const ids = roots.map(root => root.getAttribute('data-ex-provider'));
+    expect(roots).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const client = createSSRApp(App);
+    try {
+      client.mount(host);
+      expect(Array.from(host.querySelectorAll('[data-ex-provider]'))).toEqual(roots);
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+
+      animation.value = true;
+      await nextTick();
+      expect(roots.map(root => root.getAttribute('data-ex-provider'))).toEqual(ids);
+      const nestedStyle = roots[1]?.querySelector('style')?.textContent;
+      expect(nestedStyle).toContain(`[data-ex-provider="${ids[1]}"]`);
+      expect(nestedStyle).toContain('box-shadow:none');
+      expect(nestedStyle).not.toContain('animation:none');
+    } finally {
+      client.unmount();
+      host.remove();
+      warn.mockRestore();
+      error.mockRestore();
+    }
   });
 
   it('默认包装器不创建占满父容器的布局盒', () => {

@@ -316,7 +316,7 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 :::
 
-托管模式每次打开都会查询当前搜索词，空字符串也是合法查询。输入新词时立即移除旧结果，等待当前结果返回后再允许选择；已选标签会保留。多选完成一次选择后清空查询词并重新加载，单选完成或清空则关闭并取消请求。`options` 可提供初始已选项的标签；首次请求以后列表由 `remoteLoader` 的结果管理，`modelValue` 始终受控。
+托管模式每次打开都会查询当前搜索词，空字符串也是合法查询。输入新词时立即移除旧结果，等待当前结果返回后再允许选择；已选标签会保留。多选完成一次选择后清空查询词并重新加载，单选完成或清空则关闭并取消请求。`options` 可提供初始已选项的标签，首次请求以后列表由 `remoteLoader` 的结果管理。
 
 同时传入 `remoteLoader` 和 `remoteMethod` 时只调用前者。组件不会展示原始错误内容；业务可以监听 `remote-error`，或通过 `error` 插槽获得 `{ error, retry }` 定制恢复入口。按 `Enter` 可重试，`Tab` 可进入默认重试按钮，`Shift+Tab` 返回输入框。
 
@@ -361,9 +361,11 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 ### Props
 
+省略 `modelValue` 时选择状态由组件维护，单选初始为 `null`，多选初始为空数组。传入 `modelValue` 时由父组件确认更新，`null` 表示明确传入的空值。
+
 | 参数             | 说明                                                           | 类型                                               | 默认值       |
 | ---------------- | -------------------------------------------------------------- | -------------------------------------------------- | ------------ |
-| `modelValue`     | 单选值或多选值数组                                             | `string \| number \| null \| (string \| number)[]` | `null`       |
+| `modelValue`     | 单选值或多选值数组                                             | `string \| number \| null \| (string \| number)[]` | `undefined`  |
 | `options`        | 选项或选项分组                                                 | `SelectOptions`                                    | `[]`         |
 | `placeholder`    | 占位文本                                                       | `string`                                           | `''`         |
 | `id`             | 交互节点的 HTML 标识                                           | `string`                                           | 自动生成     |

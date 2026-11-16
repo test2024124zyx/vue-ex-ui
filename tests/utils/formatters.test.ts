@@ -54,15 +54,22 @@ describe('输入格式化工具', () => {
     expect(formatCurrency('')).toBe('');
     expect(formatCurrency('abc1234567.891')).toBe('1,234,567.89');
     expect(formatCurrency('1234')).toBe('1,234');
+    expect(formatCurrency('1234.5')).toBe('1,234.5');
     expect(parseCurrency('1,234,567.89')).toBe('1234567.89');
   });
 
   it('格式化和解析百分比并限制范围', () => {
     expect(formatPercent('')).toBe('');
     expect(formatPercent('abc')).toBe('');
-    expect(formatPercent('-20')).toBe('20%');
+    expect(formatPercent('-20')).toBe('0%');
     expect(formatPercent('120')).toBe('100%');
     expect(formatPercent('50.5')).toBe('50.5%');
+    expect(formatPercent(' +.5% ')).toBe('0.5%');
+    expect(formatPercent('1e3')).toBe('');
+    expect(formatPercent('50.5.5')).toBe('');
+    expect(formatPercent('12..3')).toBe('');
+    expect(formatPercent('12%%')).toBe('');
+    expect(formatPercent('9'.repeat(400))).toBe('');
     expect(parsePercent('50.5%')).toBe('50.5');
   });
 

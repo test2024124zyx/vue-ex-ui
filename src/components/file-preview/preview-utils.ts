@@ -1,4 +1,5 @@
 import type { PreviewFile, PreviewType } from './types';
+import { getMediaTypeByExtension } from '../../utils/media-file-extension';
 
 export interface PreviewScaleConfig {
   min: number;
@@ -6,19 +7,6 @@ export interface PreviewScaleConfig {
   step: number;
 }
 
-const IMAGE_EXTENSIONS = new Set([
-  'avif',
-  'bmp',
-  'gif',
-  'ico',
-  'jpeg',
-  'jpg',
-  'png',
-  'svg',
-  'webp',
-]);
-const VIDEO_EXTENSIONS = new Set(['m4v', 'mp4', 'ogv', 'webm']);
-const AUDIO_EXTENSIONS = new Set(['aac', 'flac', 'm4a', 'mp3', 'oga', 'opus', 'wav']);
 const TEXT_EXTENSIONS = new Set(['csv', 'log', 'md', 'markdown', 'text', 'txt']);
 const CODE_EXTENSIONS = new Set([
   'c',
@@ -125,9 +113,8 @@ export function detectPreviewType(file: PreviewFile, fallback?: PreviewType): Pr
   if (mimeTypeResult) return mimeTypeResult;
 
   const extension = getExtension(file.url);
-  if (IMAGE_EXTENSIONS.has(extension)) return 'image';
-  if (VIDEO_EXTENSIONS.has(extension)) return 'video';
-  if (AUDIO_EXTENSIONS.has(extension)) return 'audio';
+  const mediaType = getMediaTypeByExtension(extension);
+  if (mediaType) return mediaType;
   if (extension === 'pdf') return 'pdf';
   if (TEXT_EXTENSIONS.has(extension)) return 'text';
   if (CODE_EXTENSIONS.has(extension)) return 'code';
