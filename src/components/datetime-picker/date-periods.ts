@@ -1,10 +1,9 @@
-import { addDays, formatDate, isValidDate, startOfDay } from '../../utils/date';
+import { addDays, calendarDayNumber, formatDate, isValidDate, startOfDay } from '../../utils/date';
 
 export type DatePeriod = 'date' | 'week' | 'month' | 'year';
 export const DAYS_PER_WEEK = 7;
 export const MONTHS_PER_YEAR = 12;
 export const YEARS_PER_PAGE = 12;
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const ISO_FIRST_WEEK_DAY = 4;
 
 /** 周一作为周期起点；其余模式保持本地日历，避免 UTC 偏移改变日期。 */
@@ -33,10 +32,8 @@ export function getIsoWeek(date: Date): { year: number; week: number } {
   const january = new Date(monday);
   january.setFullYear(year, 0, ISO_FIRST_WEEK_DAY);
   const firstMonday = getPeriodStart(january, 'week');
-  // 用 UTC 日序差计算日历天数，避免夏令时的一天不等于二十四小时。
-  const ordinal = (value: Date) =>
-    Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / MILLISECONDS_PER_DAY;
-  return { year, week: Math.round((ordinal(monday) - ordinal(firstMonday)) / DAYS_PER_WEEK) + 1 };
+  const days = calendarDayNumber(monday) - calendarDayNumber(firstMonday);
+  return { year, week: Math.round(days / DAYS_PER_WEEK) + 1 };
 }
 
 /** GGGG/WW 表示 ISO 周年与周数，方括号中的内容按字面展示。 */

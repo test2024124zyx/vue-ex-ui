@@ -426,7 +426,12 @@ import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
-import { parseLocalDate, setMonthClamped, setYearClamped } from '../../utils/date';
+import {
+  calendarDayNumber,
+  parseLocalDate,
+  setMonthClamped,
+  setYearClamped,
+} from '../../utils/date';
 import { CALENDAR_WEEK_LENGTH, useCalendarKeyboard } from './use-calendar-keyboard';
 import type {
   ExCalendarProps,
@@ -568,12 +573,13 @@ const currentMonth = computed(() => currentDate.value.getMonth() + 1);
 const currentDay = computed(() => currentDate.value.getDate());
 const currentWeekday = computed(() => weekdays.value[currentDate.value.getDay()]);
 
-// 计算当前周数
+// 周视图按本地日期和周日起点计数，不使用两个本地时刻的毫秒差。
 const currentWeek = computed(() => {
-  const date = new Date(currentDate.value);
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  const date = currentDate.value;
+  const firstDayOfYear = new Date(date);
+  firstDayOfYear.setMonth(0, 1);
+  const pastDaysOfYear = calendarDayNumber(date) - calendarDayNumber(firstDayOfYear);
+  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / CALENDAR_WEEK_LENGTH);
 });
 
 // 当前日期的农历
