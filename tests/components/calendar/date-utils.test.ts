@@ -23,6 +23,12 @@ describe('calendar date utilities', () => {
     expect(parseLocalDate('not-a-date')).toBeNull();
   });
 
+  it.each(['0000-02-29', '0050-06-15', '0099-12-31', '0100-01-01'])('按完整年份解析 %s', value => {
+    const date = parseLocalDate(value);
+    expect(date).not.toBeNull();
+    expect(formatDate(date!, 'YYYY-MM-DD HH:mm:ss')).toBe(`${value} 00:00:00`);
+  });
+
   it('切换月份时把月末日期夹到目标月最后一天', () => {
     expect(setMonthClamped(new Date(2024, 0, 31), 1)).toEqual(new Date(2024, 1, 29));
     expect(setMonthClamped(new Date(2023, 2, 31), 1)).toEqual(new Date(2023, 1, 28));
@@ -31,6 +37,14 @@ describe('calendar date utilities', () => {
 
   it('切换年份时正确处理闰日', () => {
     expect(setYearClamped(new Date(2024, 1, 29), 2025)).toEqual(new Date(2025, 1, 28));
+  });
+
+  it('公元 0 年的闰日可用于切换年、月并保留本地时刻', () => {
+    const source = new Date(2024, 1, 29, 18, 30);
+    const early = setYearClamped(source, 0);
+    expect(formatDate(early, 'YYYY-MM-DD HH:mm')).toBe('0000-02-29 18:30');
+    early.setMonth(0, 31);
+    expect(formatDate(setMonthClamped(early, 1), 'YYYY-MM-DD HH:mm')).toBe('0000-02-29 18:30');
   });
 
   it('格式化全部日期时间占位符并拒绝无效日期', () => {

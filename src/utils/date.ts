@@ -13,6 +13,14 @@ export function cloneDate(value: unknown): Date | null {
   return isValidDate(value) ? new Date(value.getTime()) : null;
 }
 
+/** 构造本地日历日，保留 0–99 年，并支持月末计算所需的日期进位。 */
+export function createLocalDate(year: number, month: number, day: number): Date {
+  const date = new Date(0);
+  date.setHours(0, 0, 0, 0);
+  date.setFullYear(year, month, day);
+  return date;
+}
+
 /**
  * 解析 Date 或日期字符串。YYYY-MM-DD 按本地日历解析，避免被当作 UTC 日期后发生偏移。
  */
@@ -24,7 +32,7 @@ export function parseLocalDate(value: Date | string): Date | null {
     const year = Number(dateOnly[1]);
     const month = Number(dateOnly[2]) - 1;
     const day = Number(dateOnly[3]);
-    const parsed = new Date(year, month, day);
+    const parsed = createLocalDate(year, month, day);
     return parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day
       ? parsed
       : null;
@@ -40,7 +48,7 @@ export function setMonthClamped(date: Date, targetMonth: number): Date {
   const day = result.getDate();
   result.setDate(1);
   result.setMonth(targetMonth);
-  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  const lastDay = createLocalDate(result.getFullYear(), result.getMonth() + 1, 0).getDate();
   result.setDate(Math.min(day, lastDay));
   return result;
 }
@@ -53,7 +61,7 @@ export function setYearClamped(date: Date, targetYear: number): Date {
   result.setDate(1);
   result.setFullYear(targetYear);
   result.setMonth(month);
-  const lastDay = new Date(targetYear, month + 1, 0).getDate();
+  const lastDay = createLocalDate(targetYear, month + 1, 0).getDate();
   result.setDate(Math.min(day, lastDay));
   return result;
 }
