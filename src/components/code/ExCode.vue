@@ -70,6 +70,7 @@
         <div
           v-for="(line, index) in renderLines"
           :key="index"
+          v-memo="[line, isLineHighlighted(index), editable, lineNumbers, normalizedStartLine]"
           class="ex-code__line"
           :class="{ 'ex-code__line--highlighted': isLineHighlighted(index) }"
           :aria-hidden="editable ? 'true' : undefined"
@@ -140,7 +141,7 @@ import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
-import { tokenizeToLines } from './highlighter';
+import { useCodeHighlight } from './use-code-highlight';
 import { normalizeLineNumber, normalizeTabSize, parseHighlightedLines } from './line-utils';
 import { registerOverlayEscapeBoundary } from '../../composables/overlay-manager';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
@@ -184,9 +185,10 @@ const codeState = useControllableState<string>({
 });
 const currentCode = codeState.value;
 
-// 同步高亮：纯函数、零依赖、无异步加载，逐字符即时高亮，编辑不卡顿。
-const renderLines = computed(() =>
-  tokenizeToLines(compositionDraft.value ?? currentCode.value, props.language)
+const renderLines = useCodeHighlight(
+  computed(() => compositionDraft.value ?? currentCode.value),
+  () => props.language,
+  () => props.editable
 );
 const normalizedStartLine = computed(() => normalizeLineNumber(props.startLine));
 const normalizedTabSize = computed(() => normalizeTabSize(props.tabSize));

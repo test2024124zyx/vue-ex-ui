@@ -87,6 +87,36 @@ describe('ExCode', () => {
     expect(wrapper.find('.ex-token-number').text()).toBe('42');
   });
 
+  it('长代码快速编辑时立即回显文本，停笔后补上最新语法高亮', async () => {
+    const untouched = '\nconst retained = 8;\n' + '// 一段普通注释\n'.repeat(2100);
+    vi.useFakeTimers();
+    const wrapper = mount(ExCode, {
+      props: { code: 'const value = 1;' + untouched, language: 'javascript', editable: true },
+    });
+    const firstLine = () => wrapper.findAll('.ex-code__line-content')[0]!;
+    try {
+      expect(firstLine().get('.ex-token-number').text()).toBe('1');
+      await wrapper.setProps({ code: 'let value = 2;' + untouched });
+      await wrapper.setProps({ code: 'let value = 3;' + untouched });
+      expect(firstLine().text()).toBe('let value = 3;');
+      expect(firstLine().find('.ex-token-number').exists()).toBe(false);
+      expect(wrapper.findAll('.ex-code__line-content')[1]!.get('.ex-token-number').text()).toBe(
+        '8'
+      );
+      await vi.runOnlyPendingTimersAsync();
+      await nextTick();
+      expect(firstLine().get('.ex-token-number').text()).toBe('3');
+
+      await wrapper.setProps({ code: 'const value = 4;' + untouched });
+      await wrapper.setProps({ language: 'plaintext' });
+      await vi.runOnlyPendingTimersAsync();
+      expect(firstLine().find('.ex-token-keyword').exists()).toBe(false);
+    } finally {
+      wrapper.unmount();
+      vi.useRealTimers();
+    }
+  });
+
   it('用户代码中的 HTML 不会被当作真实标签渲染（XSS 防护）', () => {
     const wrapper = mount(ExCode, {
       props: { code: '<img src=x onerror=alert(1)>', language: 'plaintext', copyable: false },
