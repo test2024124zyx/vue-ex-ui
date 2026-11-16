@@ -289,19 +289,38 @@ const pageState = useControllableState<number>({
 });
 const currentPage = computed(() => normalizePage(pageState.value.value));
 const jumpValue = ref(currentPage.value);
-let pendingSizePosition: number | undefined;
+let pendingSizeChange:
+  { size: number; previousPage: number; firstItemIndex: number; total: number } | undefined;
 
-watch(
-  currentPageSize,
-  size => {
-    if (pendingSizePosition === undefined) return;
-    const position = pendingSizePosition;
-    pendingSizePosition = undefined;
-    if (!pageState.isControlled.value)
-      pageState.request(normalizePage(Math.floor(position / size) + 1));
-  },
-  { flush: 'sync' }
-);
+const publishSizeChange = (size: number, previousPage: number, firstItemIndex: number) => {
+  const count = Math.ceil(normalizedTotal.value / size);
+  const page = normalizePage(Math.floor(firstItemIndex / size) + 1, count);
+  if (page !== previousPage) {
+    pageState.request(page);
+    jumpValue.value = currentPage.value;
+    emit('update:current', page);
+  }
+  emit('change', page, size);
+};
+
+watch(currentPageSize, size => {
+  const pending = pendingSizeChange;
+  pendingSizeChange = undefined;
+  // 其他外部容量写入和本次请求是两件事，不能复用旧数据位置。
+  if (
+    pending?.size !== size ||
+    pending.total !== normalizedTotal.value ||
+    pageState.isControlled.value ||
+    props.disabled
+  ) {
+    return;
+  }
+  publishSizeChange(size, pending.previousPage, pending.firstItemIndex);
+});
+
+watch([normalizedTotal, pageState.isControlled, () => props.disabled], () => {
+  pendingSizeChange = undefined;
+});
 
 // 计算当前页的数据范围
 const dataRange = computed<[number, number]>(() => {
@@ -364,7 +383,7 @@ const handlePageChange = (page: number) => {
   }
 
   const normalizedPage = normalizePage(page);
-  pendingSizePosition = undefined;
+  pendingSizeChange = undefined;
   pageState.request(normalizedPage);
   jumpValue.value = currentPage.value;
   emit('update:current', normalizedPage);
@@ -404,30 +423,20 @@ const handleSizeChange = (event: Event) => {
   const firstItemIndex = Math.max(0, (currentPage.value - 1) * currentPageSize.value);
   const previousPage = currentPage.value;
   const newPageSize = normalizePageSize(Number((event.target as HTMLSelectElement).value));
-  // 部分受控时，页码与容量必须在父级确认后一起生效；变更事件仍报告请求值。
-  pendingSizePosition =
+  // 只有容量受控时，先请求容量，等回写确认后再发布页码和组合变更。
+  const waitForSize =
     sizeState.isControlled.value &&
     !pageState.isControlled.value &&
-    newPageSize !== currentPageSize.value
-      ? firstItemIndex
-      : undefined;
+    newPageSize !== currentPageSize.value;
+  pendingSizeChange = waitForSize
+    ? { size: newPageSize, previousPage, firstItemIndex, total: normalizedTotal.value }
+    : undefined;
   sizeState.request(newPageSize);
   emit('update:pageSize', newPageSize);
   // 原生 select 会先改变 DOM，受控请求未获接受时恢复外部已确认容量。
   (event.target as HTMLSelectElement).value = String(currentPageSize.value);
 
-  // 重新计算当前页，保持数据位置
-  const nextPageCount = Math.ceil(normalizedTotal.value / newPageSize);
-  const newPage =
-    nextPageCount === 0 ? 0 : Math.min(Math.floor(firstItemIndex / newPageSize) + 1, nextPageCount);
-
-  if (newPage !== previousPage) {
-    if (pendingSizePosition === undefined) pageState.request(newPage);
-    jumpValue.value = currentPage.value;
-    emit('update:current', newPage);
-  }
-
-  emit('change', newPage, newPageSize);
+  if (!waitForSize) publishSizeChange(newPageSize, previousPage, firstItemIndex);
 };
 
 // 快速跳转
