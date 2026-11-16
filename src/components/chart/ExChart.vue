@@ -64,6 +64,8 @@ import {
   resolveChartPalette,
 } from './chart-runtime';
 import { getChartNavigationItems, type ChartNavigationItem } from './chart-accessibility';
+import { createChartThemePatch, type ChartThemeStyle } from './chart-theme-update';
+import { equalValueSnapshot } from '../../utils/value-snapshot';
 import ExChartDataNavigation from './ExChartDataNavigation.vue';
 import { useOverlayParentActive } from '../../composables/useOverlay';
 import {
@@ -125,6 +127,35 @@ let initSeq = 0;
 let isUnmounted = false;
 let reducedMotionQuery: MediaQueryList | null = null;
 let echartsModule: typeof import('echarts') | null = null;
+let initialThemeStyle: ChartThemeStyle | undefined;
+let appliedThemeStyle: ChartThemeStyle | undefined;
+
+const readThemeStyle = (): ChartThemeStyle => {
+  const theme = globalConfig.theme.value;
+  const palette = controlPalette();
+  return {
+    base: resolveChartTheme(theme, chartRef.value, themeOverrides.value),
+    controls: {
+      toolbox: props.showToolbox ? createDefaultToolbox(theme, t, palette) : {},
+      legend: props.showLegend ? createDefaultLegend(theme, palette) : {},
+      tooltip: props.showTooltip ? createDefaultTooltip(theme, palette) : {},
+      dataZoom: props.showDataZoom ? createDefaultDataZoom(theme, palette) : [],
+    },
+  };
+};
+
+const updateThemeStyle = (
+  previous: ChartThemeStyle,
+  next: ChartThemeStyle,
+  explicit: ChartOption
+) => {
+  const instance = chartInstance.value;
+  if (!instance || equalValueSnapshot(previous, next)) return;
+  const current = instance.getOption?.();
+  if (!current) return;
+  const patch = createChartThemePatch(current, previous, next, explicit);
+  if (Object.keys(patch).length) instance.setOption(patch, { silent: true });
+};
 
 // 计算属性
 const chartClasses = computed(() => {
@@ -192,20 +223,17 @@ const initChart = async () => {
 
     // 获取主题配置（使用全局主题）
     echartsModule = echartsLib;
-    const themeConfig = resolveChartTheme(
-      globalConfig.theme.value,
-      chartRef.value,
-      themeOverrides.value
-    );
+    const theme = readThemeStyle();
+    initialThemeStyle = theme;
 
     // 初始化 ECharts 实例
-    chartInstance.value = echartsLib.init(chartRef.value, themeConfig, {
+    chartInstance.value = echartsLib.init(chartRef.value, theme.base, {
       renderer: props.renderer,
       ...props.initOptions,
     }) as unknown as ChartInstance;
 
     // 设置配置选项
-    updateChart();
+    updateChart(theme);
 
     // 绑定事件
     bindEvents();
@@ -297,12 +325,12 @@ watch(parentOverlayActive, active => {
 });
 
 // 更新图表
-const updateChart = () => {
+const updateChart = (theme = readThemeStyle()) => {
   if (!chartInstance.value || !props.option) return;
 
   try {
     // 合并配置
-    const palette = controlPalette();
+    const controls = theme.controls;
     let mergedOption: ChartOption = {
       ...props.option,
       series: cloneSeries(props.option.series),
@@ -316,18 +344,18 @@ const updateChart = () => {
 
     mergedOption.toolbox = mergeChartComponent(
       props.option.toolbox,
-      props.showToolbox ? createDefaultToolbox(globalConfig.theme.value, t, palette) : {},
+      asComponentOption(controls.toolbox),
       props.showToolbox
     );
     mergedOption.legend = mergeChartComponent(
       props.option.legend,
-      props.showLegend ? createDefaultLegend(globalConfig.theme.value, palette) : {},
+      asComponentOption(controls.legend),
       props.showLegend
     );
     mergedOption.tooltip = mergeChartComponent(
       props.option.tooltip,
       {
-        ...(props.showTooltip ? createDefaultTooltip(globalConfig.theme.value, palette) : {}),
+        ...asComponentOption(controls.tooltip),
         appendToBody: true,
         confine: false,
       },
@@ -340,7 +368,7 @@ const updateChart = () => {
             typeof props.option.dataZoom === 'object' &&
             !Array.isArray(props.option.dataZoom)
           ? { ...asComponentOption(props.option.dataZoom) }
-          : createDefaultDataZoom(globalConfig.theme.value, palette)
+          : controls.dataZoom
       : [];
 
     // 应用霓虹发光效果（使用全局配置）
@@ -353,6 +381,9 @@ const updateChart = () => {
       notMerge: true,
       lazyUpdate: true,
     });
+    if (initialThemeStyle)
+      updateThemeStyle({ base: initialThemeStyle.base, controls }, theme, props.option);
+    appliedThemeStyle = theme;
     syncNavigationItems(mergedOption);
   } catch (error) {
     emit('error', error as Error);
@@ -486,6 +517,13 @@ const setOption = (
 ) => {
   if (!chartInstance.value) return;
   chartInstance.value.setOption(option, opts);
+  if (opts?.notMerge && initialThemeStyle && appliedThemeStyle) {
+    updateThemeStyle(
+      { base: initialThemeStyle.base, controls: {} },
+      { base: appliedThemeStyle.base, controls: {} },
+      option
+    );
+  }
   syncNavigationItems(option);
 };
 
@@ -611,16 +649,21 @@ watch(locale, () => {
   });
 });
 
-// 监听全局主题变化
+// 主题更新只提交样式字段，避免 ECharts 重建运行时配置与交互状态。
 watch(
   [() => globalConfig.theme.value, themeOverrides],
   () => {
-    // 重新初始化图表以应用新主题
-    nextTick(() => {
-      initChart();
-    });
+    if (!chartInstance.value || !appliedThemeStyle) return;
+    try {
+      const next = readThemeStyle();
+      updateThemeStyle(appliedThemeStyle, next, props.option);
+      appliedThemeStyle = next;
+      syncNavigationItems();
+    } catch (error) {
+      emit('error', error as Error);
+    }
   },
-  { deep: true }
+  { deep: true, flush: 'post' }
 );
 
 watch(
