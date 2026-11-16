@@ -209,6 +209,7 @@
 import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
+import { addDecimal, snapToDecimalStep } from '../../utils/decimal';
 import { useFormFieldState } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 
@@ -386,15 +387,8 @@ const getValueFromPercent = (percent: number): number => {
 
 const roundToStep = (value: number): number => {
   const normalizedValue = Number.isFinite(value) ? value : props.min;
-  const step = effectiveStep.value;
-  const remainder = (normalizedValue - props.min) % step;
-  let rounded = normalizedValue - remainder;
-
-  if (Math.abs(remainder) >= step / 2) {
-    rounded += remainder > 0 ? step : -step;
-  }
-
   if (props.max <= props.min) return props.min;
+  const rounded = snapToDecimalStep(normalizedValue, props.min, effectiveStep.value);
   return Math.max(props.min, Math.min(props.max, rounded));
 };
 
@@ -517,10 +511,10 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
     const distToStart = Math.abs(value - start);
     const distToEnd = Math.abs(value - end);
 
-    if (distToStart < distToEnd) {
-      updateValue([value, end]);
+    if (value < start || distToStart < distToEnd) {
+      updateValue([Math.min(value, end), end]);
     } else {
-      updateValue([start, value]);
+      updateValue([start, Math.max(start, value)]);
     }
   }
 };
@@ -609,9 +603,9 @@ const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
   // 遵循 WAI-ARIA slider 规范：Up/Right 始终增大值，Down/Left 始终减小值，
   // 与视觉方向（vertical/reverse）无关
   if (key === 'ArrowUp' || key === 'ArrowRight') {
-    increment = props.step;
+    increment = effectiveStep.value;
   } else if (key === 'ArrowDown' || key === 'ArrowLeft') {
-    increment = -props.step;
+    increment = -effectiveStep.value;
   } else if (key === 'Home') {
     const currentVal = props.range
       ? (currentValue.value as [number, number])[thumbIndex]
@@ -623,25 +617,25 @@ const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
       : (currentValue.value as number);
     increment = props.max - (currentVal ?? props.max);
   } else if (key === 'PageUp') {
-    increment = props.step * 10;
+    increment = effectiveStep.value * 10;
   } else if (key === 'PageDown') {
-    increment = -props.step * 10;
+    increment = -effectiveStep.value * 10;
   }
 
   if (increment !== 0) {
     event.preventDefault();
 
     if (!props.range) {
-      const newValue = roundToStep((currentValue.value as number) + increment);
+      const newValue = roundToStep(addDecimal(currentValue.value as number, increment));
       updateValue(newValue);
     } else {
       const [start, end] = currentValue.value as [number, number];
 
       if (thumbIndex === 0) {
-        const newStart = roundToStep(start + increment);
+        const newStart = roundToStep(addDecimal(start, increment));
         updateValue([Math.min(newStart, end), end]);
       } else {
-        const newEnd = roundToStep(end + increment);
+        const newEnd = roundToStep(addDecimal(end, increment));
         updateValue([start, Math.max(newEnd, start)]);
       }
     }

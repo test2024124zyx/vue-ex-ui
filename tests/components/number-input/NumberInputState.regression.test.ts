@@ -10,6 +10,69 @@ const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('数值边界与表单输入事件', () => {
+  it.each([
+    { initial: 0.1, step: 0.2, expected: 0.3 },
+    { initial: 1e-7, step: 2e-7, expected: 3e-7 },
+  ])('普通模式精确提交 $initial 加 $step', async ({ initial, step, expected }) => {
+    const wrapper = mount(ExNumberInput, { props: { modelValue: initial, step } });
+    wrappers.push(wrapper);
+    await wrapper.get('.ex-number-input__button--increase').trigger('click');
+    expect(wrapper.emitted('update:modelValue')).toEqual([[expected]]);
+    expect(wrapper.emitted('change')).toEqual([[expected, initial]]);
+    await wrapper.setProps({ modelValue: expected });
+    await wrapper.get('.ex-number-input__button--decrease').trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([initial]);
+  });
+
+  it('严格步长模式也按当前值加减，写回和失焦时保留步进结果', async () => {
+    const wrapper = mount(ExNumberInput, {
+      props: { modelValue: 0.1, min: 0, step: 0.2, strictStep: true },
+    });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    expect(input.element.value).toBe('0.1');
+    await wrapper.get('.ex-number-input__button--increase').trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.3]);
+    await wrapper.setProps({ modelValue: 0.3 });
+    expect(input.element.value).toBe('0.3');
+    await input.trigger('focus');
+    await input.trigger('keydown', { key: 'ArrowUp' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.5]);
+    await wrapper.setProps({ modelValue: 0.5 });
+    await input.trigger('blur');
+    expect(input.element.value).toBe('0.5');
+    await wrapper.get('.ex-number-input__button--decrease').trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.3]);
+  });
+
+  it('方向键和大步长基于焦点内的有效草稿，即使模型已到达上限', async () => {
+    const wrapper = mount(ExNumberInput, {
+      props: { modelValue: 5, min: 0, max: 5, step: 0.2, strictStep: true },
+    });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    await input.trigger('focus');
+    input.element.value = '0.1';
+    await input.trigger('input');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    await input.trigger('keydown', { key: 'ArrowUp', shiftKey: true });
+    expect(wrapper.emitted('update:modelValue')).toEqual([[2.1]]);
+    await wrapper.setProps({ modelValue: 2.1 });
+    await input.trigger('keydown', { key: 'PageDown' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.1]);
+  });
+
+  it('显示补齐指定精度，模型为数字，边界值超出显示精度时保持准确', async () => {
+    const wrapper = mount(ExNumberInput, { props: { modelValue: 1.5, precision: 2 } });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    expect(input.element.value).toBe('1.50');
+    await input.setValue('1.005');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1.01]);
+    await wrapper.setProps({ modelValue: 0.125, max: 0.125 });
+    expect(input.element.value).toBe('0.125');
+  });
+
   it.each([1e308, -1e308, Number.MAX_VALUE])(
     '精度舍入保留可表示的大数 %s，不生成 Infinity',
     async value => {

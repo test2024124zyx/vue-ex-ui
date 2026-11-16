@@ -114,6 +114,7 @@ import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
 import { debounce } from '../../utils/debounce';
+import { addDecimal, snapToDecimalStep } from '../../utils/decimal';
 import type { DebouncedFunction } from '../../utils/debounce';
 import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
@@ -180,18 +181,6 @@ const numberInputStyles = computed(() => {
   return props.style;
 });
 
-const isIncreaseDisabled = computed(() => {
-  if (!interactive.value) return true;
-  if (props.modelValue === null) return false;
-  return props.modelValue >= props.max;
-});
-
-const isDecreaseDisabled = computed(() => {
-  if (!interactive.value) return true;
-  if (props.modelValue === null) return false;
-  return props.modelValue <= props.min;
-});
-
 const ariaValueMin = computed(() => (Number.isFinite(props.min) ? props.min : undefined));
 const ariaValueMax = computed(() => (Number.isFinite(props.max) ? props.max : undefined));
 
@@ -222,25 +211,37 @@ const getIconColor = (isDisabled: boolean) => {
   return 'var(--ex-color-text-secondary)';
 };
 
-// 格式化数字（处理浮点数精度问题）
+const precision = computed(() => {
+  const digits = props.precision;
+  return digits !== undefined && Number.isInteger(digits) && digits >= 0 ? digits : undefined;
+});
+const effectiveStep = computed(() =>
+  Number.isFinite(props.step) && props.step !== 0 ? Math.abs(props.step) : 1
+);
+const stepBase = computed(() => (Number.isFinite(props.min) ? props.min : 0));
+const MAXIMUM_FIXED_DIGITS = 100;
+const LARGE_STEP_MULTIPLIER = 10;
+const largeStep = computed(() =>
+  snapToDecimalStep(effectiveStep.value * LARGE_STEP_MULTIPLIER, 0, effectiveStep.value)
+);
+
+// 保留数字模型，在可表示的范围内按指定小数位舍入。
 const formatNumber = (value: number): number => {
-  if (
-    props.precision !== undefined &&
-    Number.isInteger(props.precision) &&
-    props.precision >= 0 &&
-    !Number.isInteger(value)
-  ) {
-    // IEEE 754 大数已无小数位；超出可表示范围的十进制放大不能用于舍入。
-    const multiplier = Math.pow(10, props.precision);
-    const scaled = value * multiplier;
-    if (Number.isFinite(scaled) && Number.isFinite(multiplier))
-      return Math.round(scaled) / multiplier;
-  }
-  return value;
+  const digits = precision.value;
+  if (digits === undefined || Number.isInteger(value)) return value;
+  return snapToDecimalStep(value, 0, Number(`1e-${digits}`));
+};
+
+const formatDisplayNumber = (value: number): string => {
+  const digits = precision.value;
+  if (digits === undefined || digits > MAXIMUM_FIXED_DIGITS) return String(value);
+  const fixed = value.toFixed(digits);
+  // 边界值优先，避免用舍入后的文本表示另一个数值。
+  return Number(fixed) === value ? fixed : String(value);
 };
 
 // 验证并限制数值范围
-const validateValue = (value: number): number => {
+const validateValue = (value: number, snap = false): number => {
   let result = value;
 
   // 限制范围
@@ -248,10 +249,8 @@ const validateValue = (value: number): number => {
   if (result > props.max) result = props.max;
 
   // 严格步长模式：以有限的基准对齐步长（min 为 ±Infinity 时退化为 0，避免 NaN）
-  if (props.strictStep && props.step !== 0) {
-    const base = Number.isFinite(props.min) ? props.min : 0;
-    const steps = Math.round((result - base) / props.step);
-    result = base + steps * props.step;
+  if (snap) {
+    result = snapToDecimalStep(result, stepBase.value, effectiveStep.value);
 
     // 对齐后再次夹取范围，避免步长对齐导致越界
     if (result < props.min) result = props.min;
@@ -279,6 +278,14 @@ const parseValue = (input: string): number | null => {
   return num;
 };
 
+const stepValue = computed(() => parseValue(displayValue.value) ?? props.modelValue);
+const isIncreaseDisabled = computed(
+  () => !interactive.value || (stepValue.value !== null && stepValue.value >= props.max)
+);
+const isDecreaseDisabled = computed(
+  () => !interactive.value || (stepValue.value !== null && stepValue.value <= props.min)
+);
+
 // 更新显示值
 const updateDisplayValue = (force = false) => {
   if (isFocused.value && !force) return;
@@ -288,7 +295,7 @@ const updateDisplayValue = (force = false) => {
   } else {
     // 应用精度格式化
     const formattedValue = validateValue(props.modelValue);
-    displayValue.value = String(formattedValue);
+    displayValue.value = formatDisplayNumber(formattedValue);
   }
   if (force && inputRef.value) inputRef.value.value = displayValue.value;
 };
@@ -375,7 +382,7 @@ const handleChange = (event: Event) => {
     return;
   }
 
-  const validatedValue = validateValue(parsedValue);
+  const validatedValue = validateValue(parsedValue, props.strictStep);
   const oldValue = props.modelValue;
 
   emit('update:modelValue', validatedValue);
@@ -383,7 +390,7 @@ const handleChange = (event: Event) => {
   formItem?.onFieldChange();
 
   // 更新显示值
-  displayValue.value = String(validatedValue);
+  displayValue.value = formatDisplayNumber(validatedValue);
 };
 
 const handleFocus = (event: FocusEvent) => {
@@ -406,14 +413,14 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowUp') {
     event.preventDefault();
     if (event.shiftKey) {
-      handleIncrease(props.step * 10); // Shift + 上箭头：大步长
+      handleIncrease(largeStep.value); // Shift + 上箭头：大步长
     } else {
       handleIncrease();
     }
   } else if (event.key === 'ArrowDown') {
     event.preventDefault();
     if (event.shiftKey) {
-      handleDecrease(props.step * 10); // Shift + 下箭头：大步长
+      handleDecrease(largeStep.value); // Shift + 下箭头：大步长
     } else {
       handleDecrease();
     }
@@ -421,10 +428,10 @@ const handleKeydown = (event: KeyboardEvent) => {
   // PageUp/PageDown 快速增减
   else if (event.key === 'PageUp') {
     event.preventDefault();
-    handleIncrease(props.step * 10);
+    handleIncrease(largeStep.value);
   } else if (event.key === 'PageDown') {
     event.preventDefault();
-    handleDecrease(props.step * 10);
+    handleDecrease(largeStep.value);
   }
   // Home/End 跳转到最小/最大值
   else if (event.key === 'Home') {
@@ -446,15 +453,16 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
+const getSteppedValue = (stepOrEvent: number | Event | undefined, direction: 1 | -1) => {
+  const step = typeof stepOrEvent === 'number' ? stepOrEvent : effectiveStep.value;
+  return validateValue(addDecimal(stepValue.value ?? 0, direction * step));
+};
+
 const handleIncrease = (customStepOrEvent?: number | Event) => {
   if (!interactive.value || isIncreaseDisabled.value) return;
 
-  // 如果是事件对象，忽略它
-  const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
-
-  const currentValue = props.modelValue ?? 0;
-  const stepValue = customStep ?? props.step;
-  const newValue = validateValue(currentValue + stepValue);
+  const newValue = getSteppedValue(customStepOrEvent, 1);
+  if (!Number.isFinite(newValue)) return;
   const oldValue = props.modelValue;
 
   emit('update:modelValue', newValue);
@@ -466,12 +474,8 @@ const handleIncrease = (customStepOrEvent?: number | Event) => {
 const handleDecrease = (customStepOrEvent?: number | Event) => {
   if (!interactive.value || isDecreaseDisabled.value) return;
 
-  // 如果是事件对象，忽略它
-  const customStep = typeof customStepOrEvent === 'number' ? customStepOrEvent : undefined;
-
-  const currentValue = props.modelValue ?? 0;
-  const stepValue = customStep ?? props.step;
-  const newValue = validateValue(currentValue - stepValue);
+  const newValue = getSteppedValue(customStepOrEvent, -1);
+  if (!Number.isFinite(newValue)) return;
   const oldValue = props.modelValue;
 
   emit('update:modelValue', newValue);
