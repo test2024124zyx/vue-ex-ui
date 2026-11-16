@@ -504,21 +504,21 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
   event.preventDefault();
   const { x, y } = getPositionFromEvent(event);
   const value = getValueFromPosition(x, y);
+  // 受控模式可以显示吸附值，但只有父级回写后该刻度才算确认。
+  const confirmed = props.modelValue ?? currentValue.value;
 
   if (!props.range) {
-    if (value !== currentValue.value) updateValue(value);
-  } else {
-    const [start, end] = currentValue.value as [number, number];
-    if (value === start || value === end) return;
-    const distToStart = Math.abs(value - start);
-    const distToEnd = Math.abs(value - end);
-
-    if (value < start || distToStart < distToEnd) {
-      updateValue([Math.min(value, end), end]);
-    } else {
-      updateValue([start, Math.max(start, value)]);
-    }
+    if (value !== confirmed) updateValue(value);
+    return;
   }
+
+  const [start, end] = currentValue.value as [number, number];
+  const closerToStart = value < start || Math.abs(value - start) < Math.abs(value - end);
+  const next: [number, number] = closerToStart
+    ? [Math.min(value, end), end]
+    : [start, Math.max(start, value)];
+  if (!Array.isArray(confirmed) || next[0] !== confirmed[0] || next[1] !== confirmed[1])
+    updateValue(next);
 };
 
 const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number) => {
