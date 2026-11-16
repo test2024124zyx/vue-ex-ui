@@ -562,12 +562,32 @@ describe('无序集合快照', () => {
     { name: '对象键关联数字', create: (value: number) => new Map([[{}, value]]) },
     { name: '对象键关联对象', create: (value: number) => new Map([[{}, { value }]]) },
     { name: 'Set 对象成员', create: (value: number) => new Set([{ value }]) },
+    { name: 'Set 日期成员', create: (value: number) => new Set([new Date(value)]) },
+    {
+      name: '对象键关联二进制',
+      create: (value: number) => new Map([[{}, new DataView(Uint8Array.of(value).buffer)]]),
+    },
+    { name: 'Set 嵌套原始成员', create: (value: number) => new Set([new Set([value])]) },
   ])('外层候选保留无序集合条目的内容，$name', ({ create }) => {
     const values = (changed: number) =>
       Array.from({ length: 9 }, (_, index) => create(index === 8 ? changed : 0));
     const source = new Set(values(1));
     expect(compareWithLinearWork(source, new Set(values(0)), source.size)).toBe(false);
     expect(compareWithLinearWork(source, new Set(values(1).reverse()), source.size)).toBe(true);
+  });
+
+  it('嵌套成员的访问器与其快照中的数据属性仍可配对', () => {
+    let current = 1;
+    const value = {
+      get amount() {
+        return current;
+      },
+    };
+    const source = new Set([new Map([[{}, value]])]);
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    current = 2;
+    expect(equalValueSnapshot(source, snapshot)).toBe(false);
   });
 
   it('按另一个集合的成员关系跳过尚未建立映射的候选', () => {
