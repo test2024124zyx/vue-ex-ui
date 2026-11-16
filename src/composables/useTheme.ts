@@ -44,13 +44,12 @@ const applyThemeToDocument = (theme: Theme): void => {
   root.classList.add('ex-theme-loaded');
 };
 
-/** 设置全局主题，并同步 DOM、颜色模式和变更通知。 */
-export function setTheme(theme: Theme): void {
+const updateTheme = (runtime: ReturnType<typeof getThemeRuntime>, theme: Theme): void => {
   if (!isTheme(theme)) {
     throw new TypeError(`[ExUI] 未知主题：${String(theme)}`);
   }
 
-  const { currentTheme, themeChangeCallbacks, persistence } = getThemeRuntime();
+  const { currentTheme, themeChangeCallbacks, persistence } = runtime;
   const oldTheme = currentTheme.value;
   const changed = oldTheme !== theme;
   currentTheme.value = theme;
@@ -74,13 +73,21 @@ export function setTheme(theme: Theme): void {
   for (const callback of [...themeChangeCallbacks]) {
     callback(theme);
   }
+};
+
+/** 设置全局主题，并同步 DOM、颜色模式和变更通知。 */
+export function setTheme(theme: Theme): void {
+  updateTheme(getThemeRuntime(), theme);
 }
 
 export function getTheme(): Theme {
   return getThemeRuntime().currentTheme.value;
 }
 
-export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
+const cycleTheme = (
+  runtime: ReturnType<typeof getThemeRuntime>,
+  themes: readonly Theme[]
+): void => {
   if (themes.length === 0) return;
 
   for (const theme of themes) {
@@ -89,9 +96,13 @@ export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
     }
   }
 
-  const currentIndex = themes.indexOf(getTheme());
+  const currentIndex = themes.indexOf(runtime.currentTheme.value);
   const nextTheme = themes[(currentIndex + 1) % themes.length] ?? themes[0];
-  if (nextTheme) setTheme(nextTheme);
+  if (nextTheme) updateTheme(runtime, nextTheme);
+};
+
+export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
+  cycleTheme(getThemeRuntime(), themes);
 }
 
 export function onThemeChange(callback: ThemeChangeCallback): () => void {
@@ -111,7 +122,16 @@ export function useTheme(): {
   setTheme: typeof setTheme;
   toggleTheme: typeof toggleTheme;
 } {
-  return { theme: getThemeRuntime().readonlyTheme, setTheme, toggleTheme };
+  const runtime = getThemeRuntime();
+  if (typeof document !== 'undefined')
+    return { theme: runtime.readonlyTheme, setTheme, toggleTheme };
+
+  // SSR 的异步预取跨过 await 后不再有注入上下文，保持操作绑定当前请求。
+  return {
+    theme: runtime.readonlyTheme,
+    setTheme: theme => updateTheme(runtime, theme),
+    toggleTheme: (themes = VALID_THEMES) => cycleTheme(runtime, themes),
+  };
 }
 
 /** 将系统暗色偏好映射到赛博暗色主题，亮色偏好映射到赛博亮色主题。 */

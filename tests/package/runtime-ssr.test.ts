@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createSSRApp, h } from 'vue';
+import { createSSRApp, h, onServerPrefetch } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { describe, expect, it } from 'vitest';
 import { getTheme, setTheme, useTheme } from '../../src/composables/useTheme';
@@ -45,5 +45,27 @@ describe('服务端运行时隔离', () => {
     setLocale('zh-CN');
     expect(getTheme()).toBe('neon-blue');
     expect(getCurrentLocale()).toBe('en-US');
+  });
+
+  it('服务端异步预取在 await 后仍能切换捕获的请求主题', async () => {
+    const observed: string[] = [];
+    const app = createSSRApp({
+      setup() {
+        const { theme, setTheme: changeTheme, toggleTheme } = useTheme();
+        onServerPrefetch(async () => {
+          await Promise.resolve();
+          changeTheme('light');
+          observed.push(theme.value);
+          toggleTheme();
+          observed.push(theme.value);
+          toggleTheme();
+        });
+        return () => h({ setup: () => () => h('span', getTheme()) });
+      },
+    });
+
+    expect(await renderToString(app)).toBe('<span>light</span>');
+    expect(observed).toEqual(['light', 'neon-blue']);
+    expect(getTheme()).toBe('neon-blue');
   });
 });
