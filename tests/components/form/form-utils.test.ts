@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FormRule } from '../../../src/components/form/types';
 import {
   builtinValidators,
@@ -170,7 +170,6 @@ describe('Form 校验工具', () => {
     expect(validateUtils.isNumber('1.2')).toBe(true);
     expect(validateUtils.isInteger('2')).toBe(true);
     expect(validateUtils.isPhone('13812345678')).toBe(true);
-    expect(validateUtils.isIdCard('110101199001011234')).toBe(true);
 
     expect(commonRules.required('必填').message).toBe('必填');
     expect(commonRules.email().type).toBe('email');
@@ -180,5 +179,78 @@ describe('Form 校验工具', () => {
     expect(commonRules.maxLength(4).max).toBe(4);
     expect(commonRules.range(1, 4).minValue).toBe(1);
     expect(commonRules.pattern(/^ok$/).pattern).toEqual(/^ok$/);
+  });
+
+  it('一条规则先校验内置条件，再执行同步和异步函数，首次失败后停止', async () => {
+    const order: string[] = [];
+    const validator = vi.fn<NonNullable<FormRule['validator']>>((_rule, value, done) => {
+      order.push(`自定义:${value}`);
+      done(value === 'blocked@example.com' ? '自定义失败' : undefined);
+    });
+    const asyncValidator = vi.fn<NonNullable<FormRule['asyncValidator']>>(async (_rule, value) => {
+      order.push(`异步:${value}`);
+      if (value === 'duplicate@example.com') throw new Error('邮箱重复');
+    });
+    const rule: FormRule = { required: true, type: 'email', validator, asyncValidator };
+    const transform = vi.fn((value: unknown) => String(value).trim());
+    rule.transform = transform;
+
+    expect((await validateField([rule], '  ', 'email')).valid).toBe(false);
+    expect((await validateField([rule], 'bad-email', 'email')).valid).toBe(false);
+    expect(validator).not.toHaveBeenCalled();
+    expect(asyncValidator).not.toHaveBeenCalled();
+
+    expect(await validateField([rule], 'blocked@example.com', 'email')).toEqual({
+      valid: false,
+      error: '自定义失败',
+    });
+    expect(asyncValidator).not.toHaveBeenCalled();
+    expect(await validateField([rule], 'duplicate@example.com', 'email')).toEqual({
+      valid: false,
+      error: '邮箱重复',
+    });
+    expect(await validateField([rule], ' new@example.com ', 'email')).toEqual({ valid: true });
+    expect(order).toEqual([
+      '自定义:blocked@example.com',
+      '自定义:duplicate@example.com',
+      '异步:duplicate@example.com',
+      '自定义:new@example.com',
+      '异步:new@example.com',
+    ]);
+    expect(transform).toHaveBeenCalledTimes(5);
+  });
+
+  it.each([true, [1], '0x10', '0b10', '1e3', ' ', Number.NaN, Infinity].map(value => ({ value })))(
+    '数值上下界拒绝非十进制输入 $value',
+    async ({ value }) => {
+      expect(await runValidator('minValue', { minValue: 0, message: '下界' }, value)).toBe('下界');
+      expect(await runValidator('maxValue', { maxValue: 2000, message: '上界' }, value)).toBe(
+        '上界'
+      );
+    }
+  );
+
+  it.each([0, '.5', ' +10.25 ', '10.', undefined, null, ''])(
+    '范围规则接受数字、普通十进制和可选空值 %j',
+    async value => {
+      expect(await validateField([commonRules.range(0, 11)], value, 'number')).toEqual({
+        valid: true,
+      });
+    }
+  );
+
+  it.each([
+    ['11010519491231002X', true],
+    ['11010519491231002x', true],
+    ['440524188001010014', true],
+    ['110105200002290021', true],
+    ['110105194912310020', false],
+    ['110105190002290025', false],
+    ['110105199000070003', false],
+    ['110105199004310027', false],
+    ['110101900101123', true],
+    ['11010190010112X', false],
+  ] as const)('公民身份号码校验有效日期、校验位和旧版格式：%s', (value, valid) => {
+    expect(validateUtils.isIdCard(value)).toBe(valid);
   });
 });

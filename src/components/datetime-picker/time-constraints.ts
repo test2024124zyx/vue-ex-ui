@@ -1,6 +1,9 @@
 import { normalizeMinuteStep, normalizeTimeUnit } from '../../utils/date';
 import type { DateTimePickerEndpoint, DisabledTimeFn } from './types';
 
+const includesTime = (values: unknown, value: number): boolean =>
+  Array.isArray(values) && values.includes(value);
+
 /** 编辑中未提交的原生输入也要参与确认校验，不能只检查上一次 change 的日期。 */
 export function createTimeDraft(date: Date, values: number[], minuteStep: number): Date {
   const result = new Date(date);
@@ -24,9 +27,9 @@ export function isDateTimeDisabled(
   const hour = date.getHours();
   const minute = date.getMinutes();
   const second = date.getSeconds();
-  return Boolean(
-    constraints.disabledHours?.().includes(hour) ||
-    constraints.disabledMinutes?.(hour).includes(minute) ||
-    constraints.disabledSeconds?.(hour, minute).includes(second)
+  return (
+    includesTime(constraints.disabledHours?.(), hour) ||
+    includesTime(constraints.disabledMinutes?.(hour), minute) ||
+    includesTime(constraints.disabledSeconds?.(hour, minute), second)
   );
 }

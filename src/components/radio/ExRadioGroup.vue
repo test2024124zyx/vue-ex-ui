@@ -82,6 +82,7 @@ import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { generateId } from '../../utils/id';
 import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
+import { radioGroupContextKey } from './context';
 
 defineOptions({
   name: 'ExRadioGroup',
@@ -230,7 +231,7 @@ watch(
 // 提供上下文给子 Radio 组件。
 // status/disabled/readonly 用 getter 暴露，确保子组件读取时建立响应式依赖，
 // Group 运行时改变这些属性能正确传播到所有子项。
-provide('radioGroup', {
+provide(radioGroupContextKey, {
   modelValue: computed(() => props.modelValue),
   get name() {
     return radioName.value;

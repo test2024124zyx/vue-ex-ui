@@ -17,6 +17,7 @@ import type { ExStepsProps, ExStepsEmits, ExStepsExposed, StepsContext } from '.
 import { useSlotItems } from '../../composables/useSlotItems';
 import { useComponentSize } from '../config-provider/composables';
 import { useLocale } from '../../locale';
+import { stepsContextKey } from './context';
 
 defineOptions({
   name: 'ExSteps',
@@ -134,7 +135,7 @@ const stepsContext: StepsContext = {
   onStepClick,
 };
 
-provide('exSteps', stepsContext);
+provide(stepsContextKey, stepsContext);
 
 // 暴露的方法
 const getElement = () => stepsRef.value || null;

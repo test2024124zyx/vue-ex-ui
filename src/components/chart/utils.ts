@@ -248,24 +248,22 @@ export function createGradientColor(
   };
 }
 
-/**
- * 使用统一单位格式化数值。
- */
-export function formatNumber(value: number, decimals = 2): string {
+const COMPACT_BASE = 1000;
+const COMPACT_UNITS = ['', 'K', 'M', 'B'] as const;
+
+/** 紧凑格式化数值，四舍五入达到下一量级时进位，缺失及非有限值返回空文本。 */
+export function formatNumber(value: number | null | undefined, decimals = 2): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
   const safeDecimals = Number.isFinite(decimals)
     ? Math.min(100, Math.max(0, Math.trunc(decimals)))
     : 2;
-  const magnitude = Math.abs(value);
-  if (magnitude >= 1e9) {
-    return `${(value / 1e9).toFixed(safeDecimals)}B`;
+  let unit = 0;
+  let formatted = value.toFixed(safeDecimals);
+  while (unit < COMPACT_UNITS.length - 1 && Math.abs(Number(formatted)) >= COMPACT_BASE) {
+    unit += 1;
+    formatted = (value / COMPACT_BASE ** unit).toFixed(safeDecimals);
   }
-  if (magnitude >= 1e6) {
-    return `${(value / 1e6).toFixed(safeDecimals)}M`;
-  }
-  if (magnitude >= 1e3) {
-    return `${(value / 1e3).toFixed(safeDecimals)}K`;
-  }
-  return value.toFixed(safeDecimals);
+  return `${formatted}${COMPACT_UNITS[unit]!}`;
 }
 
 /**

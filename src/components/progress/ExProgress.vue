@@ -82,7 +82,7 @@
             :cy="circleWidth / 2"
             :r="circleRadius"
             :stroke="trackColor"
-            :stroke-width="strokeWidth"
+            :stroke-width="circleStrokeWidth"
             :stroke-dasharray="circleTrackDasharray"
             :stroke-linecap="strokeLinecap"
             fill="none"
@@ -96,7 +96,7 @@
             :cy="circleWidth / 2"
             :r="circleRadius"
             :stroke="circleColor"
-            :stroke-width="strokeWidth"
+            :stroke-width="circleStrokeWidth"
             :stroke-dasharray="circleProgressDasharray"
             :stroke-dashoffset="circleOffset"
             :stroke-linecap="strokeLinecap"
@@ -339,11 +339,13 @@ const WAVE_BASE_FREQUENCY = 2;
 const WAVE_SECONDARY_FREQUENCY = 2.4;
 const WAVE_SECONDARY_AMPLITUDE_RATIO = 0.8;
 const WAVE_PHASE_OFFSET = Math.PI;
+const DEFAULT_STROKE_WIDTH = 8;
+const DEFAULT_CIRCLE_WIDTH = 120;
 
 const props = withDefaults(defineProps<ExProgressProps>(), {
   percentage: 0,
   type: 'line',
-  strokeWidth: 8,
+  strokeWidth: DEFAULT_STROKE_WIDTH,
   showText: true,
   textInside: false,
   color: undefined,
@@ -352,7 +354,7 @@ const props = withDefaults(defineProps<ExProgressProps>(), {
   stripedFlow: false,
   showIcon: true,
   format: undefined,
-  width: 120,
+  width: DEFAULT_CIRCLE_WIDTH,
   waveSpeed: 0.02,
   waveAmplitude: 10,
   waveAnimated: true,
@@ -408,13 +410,17 @@ const percentage = computed(() => {
   return val;
 });
 
+const normalizedStrokeWidth = computed(() =>
+  Number.isFinite(props.strokeWidth) ? Math.max(0, props.strokeWidth) : DEFAULT_STROKE_WIDTH
+);
+
 const barStyle = computed(() => {
   const styles: Record<string, string> = {
     width: `${percentage.value}%`,
   };
 
   if (props.type === 'line') {
-    styles.height = `${props.strokeWidth}px`;
+    styles.height = `${normalizedStrokeWidth.value}px`;
   }
 
   // 自定义颜色
@@ -454,11 +460,17 @@ const statusIcon = computed(() => {
 });
 
 // 环形进度条计算属性
-const circleWidth = computed(() => props.width || 120);
+const circleWidth = computed(() =>
+  Number.isFinite(props.width) && props.width > 0 ? props.width : DEFAULT_CIRCLE_WIDTH
+);
+// 描边最多到直径的一半，保证半径和弧长始终为正。
+const circleStrokeWidth = computed(() =>
+  Math.min(normalizedStrokeWidth.value, circleWidth.value / 2)
+);
 // 线条端点样式
 const strokeLinecap = computed<'butt' | 'round' | 'square' | 'inherit'>(() => 'round');
 const circleRadius = computed(() => {
-  return (circleWidth.value - props.strokeWidth) / 2;
+  return (circleWidth.value - circleStrokeWidth.value) / 2;
 });
 
 const circumference = computed(() => {
