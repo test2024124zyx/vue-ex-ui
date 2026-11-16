@@ -1,6 +1,6 @@
 # ColorPicker 颜色选择器
 
-用于选择十六进制或 RGB 颜色，支持透明度、预设颜色和键盘操作。
+用于选择颜色，支持透明度、预设颜色和键盘操作。输入支持十六进制、现代 `rgb()`、`hsl()`、`oklch()` 和 `color(display-p3 …)` 等 CSS 常量色值。广色域颜色会映射到 sRGB，输出由 `format` 和 `show-alpha` 决定。
 
 <script setup>
 import { ref } from 'vue'
@@ -164,17 +164,17 @@ const color = ref('#29abe2');
 
 ### Props
 
-| 属性                      | 说明                          | 类型                             | 默认值       |
-| ------------------------- | ----------------------------- | -------------------------------- | ------------ |
-| `model-value` / `v-model` | 当前颜色，支持 hex、rgb、rgba | `string`                         | `''`         |
-| `disabled`                | 是否禁用全部交互              | `boolean`                        | `false`      |
-| `size`                    | 组件尺寸                      | `'small' \| 'medium' \| 'large'` | 跟随全局配置 |
-| `show-alpha`              | 是否展示并输出透明度          | `boolean`                        | `false`      |
-| `format`                  | 输出格式                      | `'hex' \| 'rgb'`                 | `'hex'`      |
-| `predefine`               | 预设颜色列表                  | `readonly string[]`              | —            |
-| `clearable`               | 是否显示清空按钮              | `boolean`                        | `true`       |
-| `teleported`              | 面板是否传送到 `body`         | `boolean`                        | `true`       |
-| `popper-class`            | 面板自定义类名                | `string`                         | —            |
+| 属性                      | 说明                        | 类型                             | 默认值       |
+| ------------------------- | --------------------------- | -------------------------------- | ------------ |
+| `model-value` / `v-model` | 当前颜色，接受 CSS 常量色值 | `string`                         | `''`         |
+| `disabled`                | 是否禁用全部交互            | `boolean`                        | `false`      |
+| `size`                    | 组件尺寸                    | `'small' \| 'medium' \| 'large'` | 跟随全局配置 |
+| `show-alpha`              | 是否展示并输出透明度        | `boolean`                        | `false`      |
+| `format`                  | 输出格式                    | `'hex' \| 'rgb'`                 | `'hex'`      |
+| `predefine`               | 预设颜色列表                | `readonly string[]`              | —            |
+| `clearable`               | 是否显示清空按钮            | `boolean`                        | `true`       |
+| `teleported`              | 面板是否传送到 `body`       | `boolean`                        | `true`       |
+| `popper-class`            | 面板自定义类名              | `string`                         | —            |
 
 ### Events
 
