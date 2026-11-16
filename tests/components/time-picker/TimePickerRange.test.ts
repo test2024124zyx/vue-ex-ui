@@ -8,6 +8,16 @@ const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('TimePicker 独立时间范围', () => {
+  it('范围的两个端点都必须匹配格式，修正后才显示', async () => {
+    const wrapper = mount(ExTimePicker, {
+      props: { range: true, format: 'HH:mm', rangeValue: ['09:30', '18:00:00'] },
+    });
+    wrappers.push(wrapper);
+    expect(wrapper.find('.ex-time-picker__placeholder').exists()).toBe(true);
+    await wrapper.setProps({ rangeValue: ['09:30', '18:00'] });
+    expect(wrapper.get('.ex-time-picker__text').text()).toMatch(/09:30.*18:00/);
+  });
+
   it('两个端点均选择后才可确认，仅提交完整范围而不发出单值事件', async () => {
     const wrapper = mount(ExTimePicker, {
       props: { range: true, teleported: false, format: 'HH:mm' },

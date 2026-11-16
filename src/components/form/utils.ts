@@ -1,10 +1,28 @@
 import type { FormRule, BuiltinValidators } from './types';
 import { t } from '../../locale';
+import { isSafeUrl } from '../../utils/sanitize';
 
 // 判断值是否为"空"（用于可选字段短路）。注意：0 / false 不算空，
 // 以免 minValue/maxValue/enum 在边界值 0 处被误判跳过。
 function isEmptyValue(value: unknown): boolean {
   return value === undefined || value === null || value === '';
+}
+
+/** 表单数字支持有限数值和非空数字字符串，避免隐式转换其他类型。 */
+function parseFiniteNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function isHttpUrl(value: unknown): boolean {
+  if (typeof value !== 'string' || !isSafeUrl(value)) return false;
+  try {
+    const { protocol } = new URL(value.trim());
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 type BuiltinValidatorFn = (
@@ -16,6 +34,7 @@ type BuiltinValidatorFn = (
 
 const UNSAFE_FIELD_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
 const MAX_ARRAY_INDEX = 2 ** 32 - 2;
+const PHONE_NUMBER_PATTERN = /^1[3-9]\d{9}$/;
 type FieldContainer = Record<string, unknown> | unknown[];
 
 /**
@@ -333,12 +352,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    try {
-      new URL(String(value));
-      callback();
-    } catch {
-      callback(rule.message || translate('validators.url'));
-    }
+    callback(isHttpUrl(value) ? undefined : rule.message || translate('validators.url'));
   },
 
   number(rule: FormRule, value: unknown, callback: (error?: string) => void, translate = t) {
@@ -347,7 +361,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    if (!Number.isFinite(Number(value))) {
+    if (parseFiniteNumber(value) === undefined) {
       callback(rule.message || translate('validators.number'));
       return;
     }
@@ -361,7 +375,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    if (!Number.isInteger(Number(value))) {
+    if (!Number.isInteger(parseFiniteNumber(value))) {
       callback(rule.message || translate('validators.integer'));
       return;
     }
@@ -375,9 +389,9 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    const num = Number(value);
-    if (!Number.isFinite(num)) {
-      callback(rule.message || translate('validators.number'));
+    const num = parseFiniteNumber(value);
+    if (num === undefined || Number.isInteger(num)) {
+      callback(rule.message || translate('validators.float'));
       return;
     }
 
@@ -420,8 +434,8 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    const num = Number(value);
-    if (isNaN(num) || num < rule.minValue!) {
+    const num = parseFiniteNumber(value);
+    if (num === undefined || num < rule.minValue!) {
       callback(rule.message || translate('validators.minValue', { min: rule.minValue! }));
       return;
     }
@@ -435,8 +449,8 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    const num = Number(value);
-    if (isNaN(num) || num > rule.maxValue!) {
+    const num = parseFiniteNumber(value);
+    if (num === undefined || num > rule.maxValue!) {
       callback(rule.message || translate('validators.maxValue', { max: rule.maxValue! }));
       return;
     }
@@ -465,11 +479,16 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    rule.pattern!.lastIndex = 0;
-    const matches = rule.pattern!.test(String(value));
-    rule.pattern!.lastIndex = 0;
+    const pattern = rule.pattern!;
+    pattern.lastIndex = 0;
+    const matches = pattern.test(String(value));
+    pattern.lastIndex = 0;
     if (!matches) {
-      callback(rule.message || translate('validators.pattern'));
+      const phoneRule =
+        pattern.source === PHONE_NUMBER_PATTERN.source &&
+        pattern.flags === PHONE_NUMBER_PATTERN.flags;
+      const key = phoneRule ? 'validators.phone' : 'validators.pattern';
+      callback(rule.message || translate(key));
       return;
     }
 
@@ -504,30 +523,24 @@ export const validateUtils = {
     return emailRegex.test(value);
   },
 
-  // 是否为有效URL
+  // 是否为有效的绝对 HTTP(S) 地址
   isUrl(value: string): boolean {
-    try {
-      new URL(value);
-      return true;
-    } catch {
-      return false;
-    }
+    return isHttpUrl(value);
   },
 
   // 是否为数字
   isNumber(value: unknown): boolean {
-    return !isNaN(Number(value));
+    return parseFiniteNumber(value) !== undefined;
   },
 
   // 是否为整数
   isInteger(value: unknown): boolean {
-    return Number.isInteger(Number(value));
+    return Number.isInteger(parseFiniteNumber(value));
   },
 
   // 是否为手机号
   isPhone(value: string): boolean {
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    return phoneRegex.test(value);
+    return PHONE_NUMBER_PATTERN.test(value);
   },
 
   // 是否为身份证号
@@ -542,50 +555,50 @@ export const commonRules = {
   // 必填
   required: (message?: string): FormRule => ({
     required: true,
-    message: message || '此字段为必填项',
+    message,
   }),
 
   // 邮箱
   email: (message?: string): FormRule => ({
     type: 'email',
-    message: message || '请输入有效的邮箱地址',
+    message,
   }),
 
   // 手机号
   phone: (message?: string): FormRule => ({
-    pattern: /^1[3-9]\d{9}$/,
-    message: message || '请输入有效的手机号',
+    pattern: PHONE_NUMBER_PATTERN,
+    message,
   }),
 
   // 长度范围
   length: (min: number, max: number, message?: string): FormRule => ({
     min,
     max,
-    message: message || `长度应在 ${min} 到 ${max} 个字符之间`,
+    message,
   }),
 
   // 最小长度
   minLength: (min: number, message?: string): FormRule => ({
     min,
-    message: message || `最少需要 ${min} 个字符`,
+    message,
   }),
 
   // 最大长度
   maxLength: (max: number, message?: string): FormRule => ({
     max,
-    message: message || `最多允许 ${max} 个字符`,
+    message,
   }),
 
   // 数值范围
   range: (min: number, max: number, message?: string): FormRule => ({
     minValue: min,
     maxValue: max,
-    message: message || `值应在 ${min} 到 ${max} 之间`,
+    message,
   }),
 
   // 正则表达式
   pattern: (pattern: RegExp, message?: string): FormRule => ({
     pattern,
-    message: message || '格式不正确',
+    message,
   }),
 };

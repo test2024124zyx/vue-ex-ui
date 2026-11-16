@@ -5,6 +5,8 @@ import ExConfigProvider from '../../../src/components/config-provider/ExConfigPr
 import ExForm from '../../../src/components/form/ExForm.vue';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import type { FormInstance, FormRule } from '../../../src/components/form/types';
+import { commonRules } from '../../../src/components/form/utils';
+import { deepClone } from '../../../src/utils/clone';
 import { createLocaleProvider, enUS, getCurrentLocale, setLocale, zhCN } from '../../../src/locale';
 import type { LocaleMessages } from '../../../src/locale';
 
@@ -45,18 +47,20 @@ function mountField(
 }
 
 const cases: Array<{ name: keyof typeof zhCN.validators; value: unknown; rule: FormRule }> = [
-  { name: 'required', value: '', rule: { required: true } },
+  { name: 'required', value: '', rule: commonRules.required() },
   { name: 'type', value: '错误布尔值', rule: { type: 'boolean' } },
-  { name: 'email', value: '无效邮箱', rule: { type: 'email' } },
+  { name: 'email', value: '无效邮箱', rule: commonRules.email() },
+  { name: 'phone', value: '无效手机号', rule: commonRules.phone() },
   { name: 'url', value: '无效地址', rule: { type: 'url' } },
   { name: 'number', value: '非数字', rule: { type: 'number' } },
   { name: 'integer', value: 1.5, rule: { type: 'integer' } },
-  { name: 'min', value: '甲', rule: { min: 2 } },
-  { name: 'max', value: '甲乙丙', rule: { max: 2 } },
-  { name: 'minValue', value: 1, rule: { minValue: 2 } },
-  { name: 'maxValue', value: 3, rule: { maxValue: 2 } },
+  { name: 'float', value: 2, rule: { type: 'float' } },
+  { name: 'min', value: '甲', rule: commonRules.length(2, 2) },
+  { name: 'max', value: '甲乙丙', rule: commonRules.maxLength(2) },
+  { name: 'minValue', value: 1, rule: commonRules.range(2, 2) },
+  { name: 'maxValue', value: 3, rule: commonRules.range(2, 2) },
   { name: 'len', value: '甲', rule: { len: 2 } },
-  { name: 'pattern', value: '乙', rule: { pattern: /^甲$/ } },
+  { name: 'pattern', value: '乙', rule: commonRules.pattern(/^甲$/) },
   { name: 'enum', value: '乙', rule: { enum: ['甲'] } },
 ];
 
@@ -74,13 +78,13 @@ describe('内置表单校验使用实例翻译上下文', () => {
   });
 
   it('切换语言后的下一次校验使用新语言，显式 message 仍优先', async () => {
-    const { wrapper, form } = mountField('zh-CN', '', { required: true });
+    const { wrapper, form } = mountField('zh-CN', '', commonRules.required());
     await form.validate();
     expect(wrapper.get('.ex-form-item__error').text()).toBe(zhCN.validators.required);
     await wrapper.setProps({ locale: 'en-US' });
     await form.validate();
     expect(wrapper.get('.ex-form-item__error').text()).toBe(enUS.validators.required);
-    const explicit = mountField('en-US', '', { required: true, message: '业务指定消息' });
+    const explicit = mountField('en-US', '', commonRules.required('业务指定消息'));
     await explicit.form.validate();
     expect(explicit.wrapper.get('.ex-form-item__error').text()).toBe('业务指定消息');
   });
@@ -96,6 +100,16 @@ describe('内置表单校验使用实例翻译上下文', () => {
     );
     await form.validate();
     expect(wrapper.get('.ex-form-item__error').text()).toBe('当前应用的必填提示');
+  });
+
+  it.each([deepClone, structuredClone])('克隆后的手机号预设仍使用 App 的专属提示', async clone => {
+    const rule = clone(commonRules.phone());
+    const { wrapper, form } = mountField('en-US', '无效手机号', rule, {
+      validators: { phone: 'App phone validation message' },
+    });
+    await flushPromises();
+    await form.validate();
+    expect(wrapper.get('.ex-form-item__error').text()).toBe('App phone validation message');
   });
 
   it('无消息异步拒绝使用实例语言，且完成前语言切换不修改全局状态', async () => {

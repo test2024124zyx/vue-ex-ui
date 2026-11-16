@@ -148,6 +148,9 @@ const statusOptions = [
 
 ## 表单校验
 
+`min`、`max` 和 `len` 校验长度。数值的上下界使用 `minValue` 和 `maxValue`，需要精确匹配某个数值时可使用单元素的 `enum`。
+`number` 接受有限数字，`integer` 要求整数，`float` 要求有非零小数部分。`url` 接受绝对 HTTP(S) 地址。
+
 ::: raw
 
 <div class="vp-raw demo-container form-demo-narrow">
