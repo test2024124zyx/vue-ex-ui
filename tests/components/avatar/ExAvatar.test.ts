@@ -147,6 +147,20 @@ describe('ExAvatar', () => {
     expect(style).toContain('color: rgb(255, 255, 255)');
   });
 
+  it('字符串样式保留生成的字号和背景色，并允许显式覆盖', async () => {
+    const wrapper = mount(ExAvatar, {
+      props: { size: 60, backgroundColor: 'red', style: 'opacity: 0.5' },
+    });
+    const { style } = wrapper.element as HTMLElement;
+    expect(style.fontSize).toBe('24px');
+    expect(style.backgroundColor).toBe('red');
+    expect(style.opacity).toBe('0.5');
+
+    await wrapper.setProps({ style: 'background-color: blue; font-size: 20px' });
+    expect(style.fontSize).toBe('20px');
+    expect(style.backgroundColor).toBe('blue');
+  });
+
   it('handles image load event', async () => {
     const wrapper = mount(ExAvatar, {
       props: {

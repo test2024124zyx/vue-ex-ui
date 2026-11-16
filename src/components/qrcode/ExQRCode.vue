@@ -82,6 +82,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ExQRCodeProps, ExQRCodeExposed, ExQRCodeEmits } from './types';
 import { useI18n } from '../../locale';
+import { mergeInlineStyles } from '../../utils/style';
 import QRCodeGenerator from './qrcode-generator';
 import { composeQRCodeLogo, getQRCodeLogoPixels } from './qrcode-logo';
 import { useGlobalConfig, useThemeOverrides } from '../config-provider/composables';
@@ -169,16 +170,7 @@ const qrcodeStyles = computed(() => {
     styles.borderRadius = `${normalizedBorderRadius.value}px`;
   }
 
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    }
-    return { ...styles, ...props.style };
-  }
-
-  return styles;
+  return mergeInlineStyles(styles, props.style);
 });
 
 const iconStyle = computed(() => {

@@ -20,6 +20,25 @@ describe('ExBarcode', () => {
     vi.restoreAllMocks();
   });
 
+  it('字符串样式保留圆角，使用自定义圆角时以调用方为准', async () => {
+    const wrapper = mount(ExBarcode, {
+      props: { value: '12345', borderRadius: 8, style: 'opacity: 0.5' },
+    });
+    const { style } = wrapper.element as HTMLElement;
+    expect(style.borderRadius).toBe('8px');
+    expect(style.opacity).toBe('0.5');
+
+    await wrapper.setProps({ style: 'border-radius: 12px' });
+    expect(style.borderRadius).toBe('12px');
+
+    await wrapper.setProps({ borderRadius: 0, style: 'opacity: 0.75' });
+    expect(style.borderRadius).toBe('');
+    expect(style.opacity).toBe('0.75');
+
+    await wrapper.setProps({ borderRadius: 8, style: { borderRadius: '4px' } });
+    expect(style.borderRadius).toBe('4px');
+  });
+
   it('生成尚未完成时不导出空 SVG，并提供加载状态', async () => {
     mockedGenerate.mockImplementation(() => new Promise(() => undefined));
     const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:pending');

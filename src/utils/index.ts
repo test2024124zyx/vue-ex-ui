@@ -158,11 +158,4 @@ export function classNames(...classes: (string | undefined | null | false)[]): s
   return classes.filter(Boolean).join(' ');
 }
 
-/**
- * 样式对象转换为字符串
- */
-export function styleToString(style: Record<string, string | number>): string {
-  return Object.entries(style)
-    .map(([key, value]) => `${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}: ${value}`)
-    .join('; ');
-}
+export { styleToString } from './style';

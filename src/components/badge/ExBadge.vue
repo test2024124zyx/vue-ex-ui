@@ -51,6 +51,7 @@ import type { ExBadgeProps, ExBadgeEmits, ExBadgeExposed } from './types';
 import { hasRenderableContent } from '../../utils/vnode';
 import { useRenderComputed } from '../../composables/useRenderComputed';
 import { getFirstGrapheme } from '../../utils/text';
+import { mergeInlineStyles } from '../../utils/style';
 import { useLocale } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
 
@@ -204,19 +205,7 @@ const badgeSupStyles = computed(() => {
     styles['--ex-badge-offset-y'] = typeof y === 'number' ? `${y}px` : y;
   }
 
-  // 自定义徽章样式
-  if (props.badgeStyle) {
-    if (typeof props.badgeStyle === 'string') {
-      const inlineStyles = Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ');
-      return inlineStyles ? `${inlineStyles}; ${props.badgeStyle}` : props.badgeStyle;
-    } else {
-      Object.assign(styles, props.badgeStyle);
-    }
-  }
-
-  return styles;
+  return mergeInlineStyles(styles, props.badgeStyle);
 });
 
 // 事件处理

@@ -292,14 +292,24 @@ describe('ExBadge', () => {
     expect(element.getAttribute('style')).toContain('font-size: 16px');
   });
 
-  it('handles string badgeStyle correctly', () => {
+  it('字符串徽章样式保留边框色和定位变量，并允许显式覆盖', async () => {
     const wrapper = mount(ExBadge, {
-      props: { count: 1, badgeStyle: 'font-weight: bold;' },
+      props: {
+        count: 1,
+        color: 'var(--ex-color-warning)',
+        offset: [4, 6],
+        badgeStyle: 'font-weight: bold;',
+      },
+      slots: { default: '<span>通知</span>' },
     });
 
-    const badge = wrapper.find('.ex-badge__sup');
-    const element = badge.element as HTMLElement;
-    expect(element.getAttribute('style')).toContain('font-weight: bold');
+    const { style } = wrapper.get('.ex-badge__sup').element as HTMLElement;
+    expect(style.fontWeight).toBe('bold');
+    expect(style.borderColor).toBe('var(--ex-color-warning)');
+    expect(style.getPropertyValue('--ex-badge-offset-x')).toBe('4px');
+
+    await wrapper.setProps({ badgeStyle: 'border-color: blue' });
+    expect(style.borderColor).toBe('blue');
   });
 
   it('does not render badge when count is undefined and not dot', () => {
