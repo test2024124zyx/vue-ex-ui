@@ -633,6 +633,28 @@ describe('无序集合快照', () => {
     }
   });
 
+  it('匹配期间登记内层共享关系不会重建无关的外层索引', () => {
+    const source = new Set(
+      Array.from({ length: 1000 }, () => {
+        const local = {};
+        return { a: new Set([local]), b: new Set([local]) };
+      })
+    );
+    const snapshot = deepClone(source);
+    const get = WeakMap.prototype.get;
+    const maxReads = source.size * 220;
+    let reads = 0;
+    WeakMap.prototype.get = function <K extends WeakKey, V>(this: WeakMap<K, V>, key: K) {
+      if (++reads > maxReads) throw new Error('外层索引被无关的内层关系变化反复重建');
+      return get.call(this, key) as V | undefined;
+    };
+    try {
+      expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    } finally {
+      WeakMap.prototype.get = get;
+    }
+  });
+
   it('重新分配相交的静态组名额，并让不同候选域共用位置', () => {
     const lane = (a: number, b: number, c: number) =>
       new Map([

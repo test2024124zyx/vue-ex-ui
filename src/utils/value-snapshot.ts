@@ -25,6 +25,11 @@ interface ReadableGroup {
   plan: ReadableCandidates;
 }
 
+interface MembershipPlan {
+  valid: boolean;
+  positions?: Map<string, AvailablePositions> | null;
+}
+
 interface CollectionMatch {
   id: number;
   left: ObjectEntry[];
@@ -33,8 +38,7 @@ interface CollectionMatch {
   leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
   available: CandidateCursor;
-  membershipVersion?: number;
-  membershipPositions?: Map<string, AvailablePositions> | null;
+  membershipPlan?: MembershipPlan;
   readable?: ReadableCandidates;
 }
 
@@ -55,6 +59,7 @@ interface MatchChoice {
 interface Membership {
   groups: Map<CollectionMatch, number>;
   signature?: string;
+  observers?: Set<MembershipPlan>;
 }
 
 type MembershipIndex = WeakMap<object, Membership>;
@@ -83,11 +88,21 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const rightMemberships: MembershipIndex = new WeakMap();
   const groups: CollectionMatch[] = [];
   let nextGroupId = 0;
-  let membershipVersion = 0;
   let readShape: ReturnType<typeof createSnapshotMemberShape> | undefined;
 
   function enqueue(leftValue: unknown, rightValue: unknown): void {
     pending = { left: leftValue, right: rightValue, next: pending };
+  }
+
+  function invalidateMembership(membership: Membership): void {
+    membership.signature = undefined;
+    if (!membership.observers) return;
+    // 仅使已读取此成员关系的索引失效，新登记的分组尚未建立索引。
+    for (const plan of membership.observers) {
+      plan.valid = false;
+      plan.positions = undefined;
+    }
+    membership.observers = undefined;
   }
 
   function indexMembership(
@@ -101,16 +116,15 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       membership = { groups: new Map() };
       index.set(key, membership);
     }
-    if (membership.groups.size) membershipVersion++;
     membership.groups.set(group, count);
-    membership.signature = undefined;
+    invalidateMembership(membership);
   }
 
   function removeMembership(index: MembershipIndex, key: object, group: CollectionMatch): void {
     const membership = index.get(key)!;
     membership.groups.delete(group);
-    if (membership.groups.size) membershipVersion++;
-    membership.signature = undefined;
+    if (group.membershipPlan) membership.observers?.delete(group.membershipPlan);
+    invalidateMembership(membership);
   }
 
   function enqueueGroup(
@@ -290,40 +304,42 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   }
 
   function currentMembershipPositions(collection: CollectionMatch) {
-    if (collection.membershipVersion !== membershipVersion) {
-      collection.membershipVersion = membershipVersion;
-      // 成员关系变化时按需更新，无需在登记新分组时遍历旧分组。
-      if (
-        !collection.left.some(([key]) => leftMemberships.get(key)!.groups.size > 1) &&
-        !collection.right.some(([key]) => rightMemberships.get(key)!.groups.size > 1)
-      ) {
-        collection.membershipPositions = undefined;
-        return undefined;
+    const plan = (collection.membershipPlan ??= { valid: false });
+    if (plan.valid) return plan.positions;
+    const observe = (membership: Membership) => {
+      (membership.observers ??= new Set()).add(plan);
+      return membership.groups.size > 1;
+    };
+    let hasOverlap = false;
+    for (const key of collection.leftCounts.keys())
+      hasOverlap = observe(leftMemberships.get(key)!) || hasOverlap;
+    for (const key of collection.rightIndices.keys())
+      hasOverlap = observe(rightMemberships.get(key)!) || hasOverlap;
+    plan.valid = true;
+    if (!hasOverlap) return undefined;
+    const positions = new Map<string, AvailablePositions>();
+    collection.right.forEach(([key], index) => {
+      const membership = membershipKey(rightMemberships, key);
+      let available = positions.get(membership);
+      if (!available) {
+        available = { indices: [], offset: 0 };
+        positions.set(membership, available);
       }
-      const positions = new Map<string, AvailablePositions>();
-      collection.right.forEach(([key], index) => {
-        const membership = membershipKey(rightMemberships, key);
-        let available = positions.get(membership);
-        if (!available) {
-          available = { indices: [], offset: 0 };
-          positions.set(membership, available);
-        }
-        available.indices.push(index);
-      });
-      const counts = new Map<string, number>();
-      for (const [leftKey] of collection.left) {
-        const membership = membershipKey(leftMemberships, leftKey);
-        counts.set(membership, (counts.get(membership) ?? 0) + 1);
-      }
-      for (const [membership, count] of counts) {
-        if (positions.get(membership)?.indices.length !== count) {
-          collection.membershipPositions = null;
-          return null;
-        }
-      }
-      collection.membershipPositions = positions;
+      available.indices.push(index);
+    });
+    const counts = new Map<string, number>();
+    for (const [leftKey] of collection.left) {
+      const membership = membershipKey(leftMemberships, leftKey);
+      counts.set(membership, (counts.get(membership) ?? 0) + 1);
     }
-    return collection.membershipPositions;
+    for (const [membership, count] of counts) {
+      if (positions.get(membership)?.indices.length !== count) {
+        plan.positions = null;
+        return null;
+      }
+    }
+    plan.positions = positions;
+    return positions;
   }
 
   function comparePair(leftValue: unknown, rightValue: unknown): boolean {
