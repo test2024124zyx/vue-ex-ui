@@ -164,23 +164,26 @@ export function createSnapshotMemberShape() {
 
   function readableFields([key, value]: readonly [object, unknown]): Map<string, number> {
     const result = new Map<string, number>();
-    const pending: Array<{ node: unknown; path: string }> = [{ node: key, path: 'key' }];
-    if (value !== key) pending.push({ node: value, path: 'value' });
+    const pending: Array<{ node: unknown; path: string; root?: true }> = [
+      { node: key, path: 'key', root: true },
+    ];
+    if (value !== key) pending.push({ node: value, path: 'value', root: true });
     const visited = new WeakSet<object>();
     let remaining = MEMBER_SHAPE_BUDGET;
     let fieldBudget = READABLE_FIELDS_BUDGET;
-    while (pending.length && remaining-- > 0 && fieldBudget > 0) {
-      const { node: item, path } = pending.pop()!;
+    while (pending.length && remaining-- > 0) {
+      const { node: item, path, root } = pending.shift()!;
+      if (!root && fieldBudget === 0) break;
       if (item === null || typeof item !== 'object') continue;
       const node = toRaw(item);
       if (usesNativeIdentity(node) || visited.has(node)) continue;
       visited.add(node);
       const known = readOwnShape(node);
       if (known) result.set(`${path}.data`, known.signature);
-      // 描述符按原始节点复用，预算同时限制单个候选的字段路径总量。
+      // 成员本身的字段参与筛选，预算只限制递归展开的子图。
       const { fields } = fieldsOf(node);
-      const count = Math.min(fieldBudget, fields.length);
-      fieldBudget -= count;
+      const count = root ? fields.length : Math.min(fieldBudget, fields.length);
+      if (!root) fieldBudget -= count;
       for (let index = 0; index < count; index++) {
         const { id: keyId, value } = fields[index]!;
         const position = `${path}.${keyId}`;

@@ -5,6 +5,7 @@ import {
   planReadableCandidates,
   readableFieldsAgree,
   readablePositions,
+  type AvailablePositions,
   type ReadableCandidates,
 } from './value-snapshot-candidates';
 
@@ -37,6 +38,7 @@ interface MatchChoice {
   candidate: number;
   mappedCount: number;
   groupCount: number;
+  cursorCount: number;
 }
 
 type MembershipIndex = WeakMap<object, Map<CollectionMatch, number>>;
@@ -53,6 +55,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const reverseSeen = new WeakMap<object, object>();
   const mapped: Array<[object, object]> = [];
   const choices: MatchChoice[] = [];
+  const cursors: Array<{ positions: AvailablePositions; offset: number }> = [];
   const leftMemberships: MembershipIndex = new WeakMap();
   const rightMemberships: MembershipIndex = new WeakMap();
   const groups: CollectionMatch[] = [];
@@ -262,13 +265,20 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     const ranked = plan?.ranked[index];
     const [key, value] = collection.left[ranked?.sourceIndex ?? index]!;
     const linkedKey = seen.get(key);
+    const cursorCount = cursors.length;
     const take = (candidate: number): boolean => {
       if (candidate < start || collection.used.has(candidate)) return false;
       const [otherKey, otherValue] = collection.right[candidate]!;
       if (!linkedKey && reverseSeen.has(otherKey)) return false;
       if (ranked && !readableFieldsAgree(ranked.fields, plan!.rightFields[candidate]!))
         return false;
-      choices.push({ match, candidate, mappedCount: mapped.length, groupCount: groups.length });
+      choices.push({
+        match,
+        candidate,
+        mappedCount: mapped.length,
+        groupCount: groups.length,
+        cursorCount,
+      });
       collection.used.add(candidate);
       while (collection.used.has(collection.firstAvailable)) collection.firstAvailable++;
       matches = index + 1 < collection.left.length ? { collection, index: index + 1, next } : next;
@@ -279,6 +289,15 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     if (linkedKey) return collection.rightIndices.get(linkedKey)?.some(take) ?? false;
     const first = Math.max(start, collection.firstAvailable);
     if (ranked?.positions) {
+      for (const positions of ranked.positions) {
+        const { indices, offset } = positions;
+        let available = offset;
+        while (available < indices.length && collection.used.has(indices[available]!)) available++;
+        if (available !== offset) {
+          cursors.push({ positions, offset });
+          positions.offset = available;
+        }
+      }
       for (const candidate of readablePositions(ranked.positions, first))
         if (take(candidate)) return true;
       return false;
@@ -291,7 +310,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   function retryMatch(): boolean {
     pending = undefined;
     while (choices.length) {
-      const { match, candidate, mappedCount, groupCount } = choices.pop()!;
+      const { match, candidate, mappedCount, groupCount, cursorCount } = choices.pop()!;
       // 撤销候选引入的身份映射，保留进入该集合成员前已确认的引用关系。
       while (mapped.length > mappedCount) {
         const [a, b] = mapped.pop()!;
@@ -302,6 +321,11 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
         const group = groups.pop()!;
         for (const key of group.leftCounts.keys()) leftMemberships.get(key)?.delete(group);
         for (const key of group.rightIndices.keys()) rightMemberships.get(key)?.delete(group);
+      }
+      // 候选索引缓存只跳过当前分支已经占用的位置，回退时一起恢复。
+      while (cursors.length > cursorCount) {
+        const { positions, offset } = cursors.pop()!;
+        positions.offset = offset;
       }
       match.collection.used.delete(candidate);
       match.collection.firstAvailable = Math.min(match.collection.firstAvailable, candidate);

@@ -2,20 +2,20 @@ type StaticFields = ReadonlyMap<string, number>;
 
 interface Posting {
   known: number[];
-  byValue: Map<number, number[]>;
-  unknown?: number[];
+  byValue: Map<number, AvailablePositions>;
+  unknown?: AvailablePositions;
 }
 
-interface CandidatePositions {
-  exact: readonly number[];
-  unknown: readonly number[];
+export interface AvailablePositions {
+  indices: number[];
+  offset: number;
 }
 
 interface RankedMember {
   sourceIndex: number;
   fields: StaticFields;
   count: number;
-  positions?: CandidatePositions;
+  positions?: readonly AvailablePositions[];
 }
 
 export interface ReadableCandidates {
@@ -38,27 +38,31 @@ export function planReadableCandidates(
       }
       posting.known.push(index);
       const matches = posting.byValue.get(value);
-      if (matches) matches.push(index);
-      else posting.byValue.set(value, [index]);
+      if (matches) matches.indices.push(index);
+      else posting.byValue.set(value, { indices: [index], offset: 0 });
     }
   });
+  const compatibleProfiles = new Set<string>();
   const ranked: RankedMember[] = [];
-  for (const [sourceIndex, fields] of left.entries()) {
+  for (const [sourceIndex, sourceFields] of left.entries()) {
+    const fields = new Map<string, number>();
     let count = right.length;
     let driver: Posting | undefined;
-    let exact: readonly number[] = [];
-    for (const [field, value] of fields) {
+    let exact: AvailablePositions | undefined;
+    for (const [field, value] of sourceFields) {
       const posting = postings.get(field);
       if (!posting) continue;
-      const matches = posting.byValue.get(value) ?? [];
-      const compatible = right.length - posting.known.length + matches.length;
+      const matches = posting.byValue.get(value);
+      const compatible = right.length - posting.known.length + (matches?.indices.length ?? 0);
+      if (compatible === right.length) continue;
+      fields.set(field, value);
       if (compatible >= count) continue;
       count = compatible;
       driver = posting;
       exact = matches;
     }
     if (!count) return undefined;
-    let positions: CandidatePositions | undefined;
+    let positions: AvailablePositions[] | undefined;
     if (driver) {
       if (!driver.unknown) {
         const unknown: number[] = [];
@@ -67,9 +71,28 @@ export function planReadableCandidates(
           if (driver.known[known] === index) known++;
           else unknown.push(index);
         }
-        driver.unknown = unknown;
+        driver.unknown = { indices: unknown, offset: 0 };
       }
-      positions = { exact, unknown: driver.unknown };
+      positions = [];
+      if (exact) positions.push(exact);
+      if (driver.unknown.indices.length) positions.push(driver.unknown);
+      if (fields.size > 1) {
+        // 各字段分别有候选时，仍可能没有成员同时满足全部可读条件。
+        const profile = [...fields]
+          .map(([field, value]) => `${field}:${value}`)
+          .sort()
+          .join('|');
+        if (!compatibleProfiles.has(profile)) {
+          let found = false;
+          for (const position of readablePositions(positions, 0)) {
+            if (!readableFieldsAgree(fields, right[position]!)) continue;
+            found = true;
+            break;
+          }
+          if (!found) return undefined;
+          compatibleProfiles.add(profile);
+        }
+      }
     }
     ranked.push({ sourceIndex, fields, count, positions });
   }
@@ -85,8 +108,9 @@ export function readableFieldsAgree(left: StaticFields, right: StaticFields): bo
   return true;
 }
 
-function lowerBound(indices: readonly number[], start: number): number {
-  let low = 0;
+function lowerBound({ indices, offset }: AvailablePositions, start: number): number {
+  if (offset === indices.length || indices[offset]! >= start) return offset;
+  let low = offset;
   let high = indices.length;
   while (low < high) {
     const middle = (low + high) >>> 1;
@@ -98,20 +122,22 @@ function lowerBound(indices: readonly number[], start: number): number {
 
 /** 合并两份有序候选索引，同时保留指定位置后的回退次序。 */
 export function* readablePositions(
-  { exact, unknown }: CandidatePositions,
+  positions: readonly AvailablePositions[],
   start: number
 ): Iterable<number> {
-  let first = lowerBound(exact, start);
-  let second = lowerBound(unknown, start);
-  while (first < exact.length || second < unknown.length) {
-    const a = exact[first] ?? Infinity;
-    const b = unknown[second] ?? Infinity;
+  const first = positions[0]!;
+  const second = positions[1];
+  let aIndex = lowerBound(first, start);
+  let bIndex = second ? lowerBound(second, start) : 0;
+  while (aIndex < first.indices.length || (second && bIndex < second.indices.length)) {
+    const a = first.indices[aIndex] ?? Infinity;
+    const b = second?.indices[bIndex] ?? Infinity;
     if (a < b) {
       yield a;
-      first++;
+      aIndex++;
     } else {
       yield b;
-      second++;
+      bIndex++;
     }
   }
 }

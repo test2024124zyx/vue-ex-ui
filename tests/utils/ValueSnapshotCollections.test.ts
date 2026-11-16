@@ -282,6 +282,112 @@ describe('无序集合快照', () => {
     expect(compareWithLinearWork(source, snapshot, source.size)).toBe(true);
   });
 
+  it('宽对象的访问器不会遮住最后一个静态字段的差异', () => {
+    const shared = Object.fromEntries(
+      Array.from({ length: 96 }, (_, index) => [`field_${index}`, 0])
+    );
+    let reads = 0;
+    const entries = (id: number) =>
+      new Set(
+        Array.from({ length: 8 }, (_, index) => ({
+          ...shared,
+          id: index === 7 ? id : 0,
+          get score() {
+            reads++;
+            return 0;
+          },
+        }))
+      );
+    expect(compareWithLinearWork(entries(1), entries(0), 8 * 98)).toBe(false);
+    expect(reads).toBe(0);
+  });
+
+  it('自由配对前淘汰静态条件分别有候选、交集为空的成员', () => {
+    let reads = 0;
+    const unknown = () => {
+      reads++;
+      return 0;
+    };
+    const first = () => ({
+      kind: 0,
+      a: 0,
+      get b() {
+        return unknown();
+      },
+    });
+    const second = () => ({
+      kind: 1,
+      get a() {
+        return unknown();
+      },
+      b: 0,
+    });
+    const partial = (kind: number) => ({
+      kind,
+      get a() {
+        return unknown();
+      },
+      get b() {
+        return unknown();
+      },
+    });
+    const left = new Set([
+      ...Array.from({ length: 6 }, () => partial(0)),
+      ...Array.from({ length: 5 }, () => partial(1)),
+      {
+        get kind() {
+          return unknown();
+        },
+        a: 1,
+        b: 1,
+      },
+    ]);
+    const right = new Set([
+      ...Array.from({ length: 6 }, first),
+      ...Array.from({ length: 6 }, second),
+    ]);
+    expect(compareWithLinearWork(left, right, left.size)).toBe(false);
+    expect(reads).toBe(0);
+  });
+
+  it('未匹配的首项不会使静态候选在换序后反复扫描已用位置', () => {
+    const zeros = () => Array.from({ length: 4000 }, () => ({ id: 0 }));
+    const left = new Set([
+      ...zeros(),
+      {
+        get id() {
+          return 1;
+        },
+      },
+    ]);
+    const right = new Set([{ id: 1 }, ...zeros()]);
+    expect(compareWithLinearWork(left, right, left.size)).toBe(true);
+  });
+
+  it('共享引用使前一配对回退时恢复候选索引的可用位置', () => {
+    const member = (value: object) => ({
+      id: 0,
+      get value() {
+        return value;
+      },
+    });
+    const shared = {};
+    const copied = {};
+    const left = new Set([
+      member(shared),
+      member(shared),
+      member({}),
+      {
+        get id() {
+          return 1;
+        },
+        value: null,
+      },
+    ]);
+    const right = new Set([{ id: 1, value: null }, member({}), member(copied), member(copied)]);
+    expect(equalValueSnapshot(left, right)).toBe(true);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);
