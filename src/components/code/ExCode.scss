@@ -240,7 +240,7 @@
   // ── 逐行栅格（行号 + 代码同处一行，换行/高亮天然对齐）──────────────
   &__lines {
     position: relative;
-    min-width: 100%;
+    min-width: max(100%, var(--ex-code-content-width, 0px));
     width: max-content; // 不换行时撑开到最长行宽度，由 __content 横向滚动
     padding: var(--ex-code-padding-y) 0;
     box-sizing: border-box;
@@ -283,7 +283,8 @@
     white-space: nowrap;
   }
 
-  &__line-content {
+  &__line-content,
+  &__measurement {
     flex: 1 1 auto;
     min-width: 0;
     padding: 0 var(--ex-code-padding-x);
@@ -304,7 +305,8 @@
       width: auto;
     }
 
-    .ex-code__line-content {
+    .ex-code__line-content,
+    .ex-code__measurement {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       word-break: break-word;
@@ -317,7 +319,8 @@
       width: auto;
     }
 
-    .ex-code__line-content {
+    .ex-code__line-content,
+    .ex-code__measurement {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       word-break: break-word;
@@ -368,6 +371,39 @@
     &:focus-visible {
       outline: none;
     }
+  }
+
+  &__measurement {
+    position: absolute;
+    top: var(--ex-code-padding-y);
+    left: var(--ex-code-gutter-width);
+    width: max-content;
+    box-sizing: border-box;
+    visibility: hidden;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  &--wrap &__measurement,
+  &--editable &__measurement {
+    right: 0;
+    width: auto;
+  }
+
+  &--windowed &__line-content [class^='ex-token-'] {
+    font-weight: inherit;
+    font-style: normal;
+  }
+
+  &--windowed &__textarea {
+    width: calc(100% - var(--ex-code-gutter-width));
+    height: 100%;
+  }
+
+  &__textarea--nowrap {
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
   }
 
   &__content:focus-within {

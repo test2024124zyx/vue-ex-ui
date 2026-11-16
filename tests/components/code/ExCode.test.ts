@@ -87,6 +87,36 @@ describe('ExCode', () => {
     expect(wrapper.find('.ex-token-number').text()).toBe('42');
   });
 
+  it('长代码快速编辑时立即回显文本，停笔后补上最新语法高亮', async () => {
+    const untouched = '\nconst retained = 8;\n' + '// 一段普通注释\n'.repeat(2100);
+    vi.useFakeTimers();
+    const wrapper = mount(ExCode, {
+      props: { code: 'const value = 1;' + untouched, language: 'javascript', editable: true },
+    });
+    const firstLine = () => wrapper.findAll('.ex-code__line-content')[0]!;
+    try {
+      expect(firstLine().get('.ex-token-number').text()).toBe('1');
+      await wrapper.setProps({ code: 'let value = 2;' + untouched });
+      await wrapper.setProps({ code: 'let value = 3;' + untouched });
+      expect(firstLine().text()).toBe('let value = 3;');
+      expect(firstLine().find('.ex-token-number').exists()).toBe(false);
+      expect(wrapper.findAll('.ex-code__line-content')[1]!.get('.ex-token-number').text()).toBe(
+        '8'
+      );
+      await vi.runOnlyPendingTimersAsync();
+      await nextTick();
+      expect(firstLine().get('.ex-token-number').text()).toBe('3');
+
+      await wrapper.setProps({ code: 'const value = 4;' + untouched });
+      await wrapper.setProps({ language: 'plaintext' });
+      await vi.runOnlyPendingTimersAsync();
+      expect(firstLine().find('.ex-token-keyword').exists()).toBe(false);
+    } finally {
+      wrapper.unmount();
+      vi.useRealTimers();
+    }
+  });
+
   it('用户代码中的 HTML 不会被当作真实标签渲染（XSS 防护）', () => {
     const wrapper = mount(ExCode, {
       props: { code: '<img src=x onerror=alert(1)>', language: 'plaintext', copyable: false },
@@ -111,6 +141,29 @@ describe('ExCode', () => {
     // start-line 生效。
     expect(gutters[0].text()).toBe('5');
     expect(gutters[2].text()).toBe('7');
+  });
+
+  it('长代码首屏仅渲染一个行窗口，并保留完整的原生文本选择', () => {
+    const code = Array.from({ length: 1000 }, (_, index) => `行 ${index + 1}`).join('\n');
+    const wrapper = mount(ExCode, { props: { code, lineNumbers: true } });
+    const rows = wrapper.findAll('.ex-code__line');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThan(100);
+    expect(rows[0]!.text()).toContain('行 1');
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.value).toBe(code);
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.readOnly).toBe(true);
+    expect(wrapper.get<HTMLElement>('.ex-code__content').element.style.maxHeight).toBe('24rem');
+    wrapper.unmount();
+  });
+
+  it('长文件保留调用方指定的视口高度和编辑能力', () => {
+    const wrapper = mount(ExCode, {
+      props: { code: 'line\n'.repeat(1000), maxHeight: 180, editable: true, wrap: true },
+    });
+    expect(wrapper.get<HTMLElement>('.ex-code__content').element.style.maxHeight).toBe('180px');
+    expect(wrapper.findAll('.ex-code__line').length).toBeLessThan(100);
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.readOnly).toBe(false);
+    wrapper.unmount();
   });
 
   it('非法 startLine 与 tabSize 不会产生 Infinity 行号或编辑异常', async () => {

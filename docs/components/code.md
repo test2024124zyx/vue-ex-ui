@@ -230,22 +230,22 @@ const runExample = () => {
 
 ### Props
 
-| 属性              | 说明                                   | 类型                          | 默认值        |
-| ----------------- | -------------------------------------- | ----------------------------- | ------------- |
-| `code`            | 受控代码内容，支持 `v-model:code`      | `string`                      | `undefined`   |
-| `language`        | 内置语法高亮语言                       | `CodeLanguage`                | `'plaintext'` |
-| `theme`           | 代码块主题                             | `'dark' \| 'light' \| 'neon'` | `'neon'`      |
-| `line-numbers`    | 是否显示行号                           | `boolean`                     | `false`       |
-| `highlight-lines` | 高亮行号                               | `string \| readonly number[]` | —             |
-| `start-line`      | 第一行显示的行号                       | `number`                      | `1`           |
-| `copyable`        | 是否显示复制按钮                       | `boolean`                     | `true`        |
-| `show-language`   | 是否显示语言标签                       | `boolean`                     | `true`        |
-| `filename`        | 文件名                                 | `string`                      | —             |
-| `max-height`      | 内容区最大高度                         | `string \| number`            | —             |
-| `wrap`            | 是否自动换行                           | `boolean`                     | `false`       |
-| `editable`        | 是否启用原位编辑                       | `boolean`                     | `false`       |
-| `readonly`        | 编辑模式是否只读                       | `boolean`                     | `false`       |
-| `tab-size`        | Tab 插入空格数及制表符宽度，范围 1～16 | `number`                      | `2`           |
+| 属性              | 说明                                   | 类型                          | 默认值             |
+| ----------------- | -------------------------------------- | ----------------------------- | ------------------ |
+| `code`            | 受控代码内容，支持 `v-model:code`      | `string`                      | `undefined`        |
+| `language`        | 内置语法高亮语言                       | `CodeLanguage`                | `'plaintext'`      |
+| `theme`           | 代码块主题                             | `'dark' \| 'light' \| 'neon'` | `'neon'`           |
+| `line-numbers`    | 是否显示行号                           | `boolean`                     | `false`            |
+| `highlight-lines` | 高亮行号                               | `string \| readonly number[]` | —                  |
+| `start-line`      | 第一行显示的行号                       | `number`                      | `1`                |
+| `copyable`        | 是否显示复制按钮                       | `boolean`                     | `true`             |
+| `show-language`   | 是否显示语言标签                       | `boolean`                     | `true`             |
+| `filename`        | 文件名                                 | `string`                      | —                  |
+| `max-height`      | 内容区最大高度                         | `string \| number`            | 500 行起为 `24rem` |
+| `wrap`            | 是否自动换行                           | `boolean`                     | `false`            |
+| `editable`        | 是否启用原位编辑                       | `boolean`                     | `false`            |
+| `readonly`        | 编辑模式是否只读                       | `boolean`                     | `false`            |
+| `tab-size`        | Tab 插入空格数及制表符宽度，范围 1～16 | `number`                      | `2`                |
 
 ### Events
 

@@ -23,9 +23,21 @@ export { SUPPORTED_LANGUAGES, isLanguageSupported, normalizeLanguage };
 export const MAX_HIGHLIGHT_LENGTH = 50_000;
 
 /** 把代码分词为「逐行」token 结构。超长时退化为纯文本。 */
-export function tokenizeToLines(code: string, language?: string): Token[][] {
+export function tokenizeToLines(code: string, language?: string, previous?: Token[][]): Token[][] {
   const grammar = code.length > MAX_HIGHLIGHT_LENGTH ? null : getGrammar(language);
-  return tokenizeLines(code, grammar);
+  const lines = tokenizeLines(code, grammar);
+  if (!previous) return lines;
+  // 跨行注释等会改变未编辑行的类别，按词元内容和类别一起确认复用。
+  return lines.map((line, index) => {
+    const existing = previous[index];
+    return existing?.length === line.length &&
+      line.every(
+        (token, position) =>
+          token.type === existing[position]?.type && token.value === existing[position]?.value
+      )
+      ? existing
+      : line;
+  });
 }
 
 /** 把代码高亮为安全的 HTML 字符串（每个 token 包裹 <span class="ex-token-*">，已转义）。 */

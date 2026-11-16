@@ -98,6 +98,23 @@ describe('Code highlighter（零依赖）', () => {
     expect(lines[2].some(t => t.type === 'comment')).toBe(true);
   });
 
+  it('单行编辑只替换实际变化行的着色数据', () => {
+    const code = Array.from({ length: 700 }, (_, index) => `const value${index} = ${index};`);
+    const previous = tokenizeToLines(code.join('\n'), 'typescript');
+    code[350] = 'const value350 = 42;';
+    const edited = tokenizeToLines(code.join('\n'), 'typescript', previous);
+    expect(edited.filter((line, index) => line !== previous[index])).toHaveLength(1);
+    expect(edited[350]).not.toBe(previous[350]);
+    expect(edited[350]).toContainEqual({ type: 'number', value: '42' });
+  });
+
+  it('同一文本的跨行语法状态变化时更新着色', () => {
+    const previous = tokenizeToLines('/* 注释\nconst value = 1;\n*/', 'javascript');
+    const edited = tokenizeToLines('// 注释\nconst value = 1;\n*/', 'javascript', previous);
+    expect(edited[1]).not.toBe(previous[1]);
+    expect(edited[1]).toContainEqual({ type: 'keyword', value: 'const' });
+  });
+
   it('字符串中的关键字不应被误高亮', () => {
     const lines = tokenizeToLines('const s = "if else for";', 'javascript');
     const flat = lines.flat();
