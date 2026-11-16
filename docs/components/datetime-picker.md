@@ -359,13 +359,13 @@ const disabledTime = (date: Date, endpoint: 'start' | 'end') => ({
 
 ### Events
 
-| 事件名               | 说明                       | 类型                                   |
-| -------------------- | -------------------------- | -------------------------------------- |
-| `update:model-value` | 已确认值发生变化           | `(value: DateTimePickerValue) => void` |
-| `change`             | 一次日期或时间选择正式提交 | `(value: DateTimePickerValue) => void` |
-| `visible-change`     | 面板可见状态变化           | `(visible: boolean) => void`           |
-| `focus` / `blur`     | 输入框焦点事件             | `(event: FocusEvent) => void`          |
-| `clear`              | 当前值被清空               | `() => void`                           |
+| 事件名               | 说明                                     | 类型                                   |
+| -------------------- | ---------------------------------------- | -------------------------------------- |
+| `update:model-value` | 已确认值发生变化                         | `(value: DateTimePickerValue) => void` |
+| `change`             | 一次日期或时间选择正式提交，只传已确认值 | `(value: DateTimePickerValue) => void` |
+| `visible-change`     | 面板可见状态变化                         | `(visible: boolean) => void`           |
+| `focus` / `blur`     | 输入框焦点事件                           | `(event: FocusEvent) => void`          |
+| `clear`              | 当前值被清空                             | `() => void`                           |
 
 ### Methods
 
