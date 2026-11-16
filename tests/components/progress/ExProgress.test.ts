@@ -117,7 +117,9 @@ describe('ExProgress', () => {
     });
 
     it('线性进度条的负描边规范为零高度', () => {
-      const wrapper = mount(ExProgress, { props: { type: 'line', strokeWidth: -2 } });
+      const wrapper = mount(ExProgress, {
+        props: { percentage: 25, type: 'line', strokeWidth: -2 },
+      });
       expect(wrapper.get('.ex-progress__bar').attributes('style')).toContain('height: 0px');
     });
 
