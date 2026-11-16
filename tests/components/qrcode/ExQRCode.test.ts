@@ -1,6 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { h } from 'vue';
 import ExQRCode from '../../../src/components/qrcode/ExQRCode.vue';
+import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 
 const generator = vi.hoisted(() => ({
   toCanvas: vi.fn<(...args: unknown[]) => Promise<void>>(),
@@ -139,6 +141,27 @@ describe('ExQRCode', () => {
     expect(wrapper.get('.ex-qrcode__error').attributes('role')).toBe('alert');
   });
 
+  it('默认读屏名称随语言切换，显式名称优先', async () => {
+    const wrapper = mount(ExConfigProvider, {
+      props: { locale: 'zh-CN' },
+      slots: {
+        default: () => [
+          h(ExQRCode, { value: '项目编码' }),
+          h(ExQRCode, { value: '项目编码', ariaLabel: '项目签到' }),
+        ],
+      },
+    });
+    try {
+      const [localized, custom] = wrapper.findAll('.ex-qrcode');
+      expect(localized?.attributes('aria-label')).toBe('二维码：项目编码');
+      await wrapper.setProps({ locale: 'en-US' });
+      expect(localized?.attributes('aria-label')).toBe('QR Code: 项目编码');
+      expect(custom?.attributes('aria-label')).toBe('项目签到');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it('refresh 返回可等待的生成 Promise', async () => {
     const wrapper = mount(ExQRCode, { props: { value: 'refreshable' } });
     await flushPromises();
@@ -150,21 +173,27 @@ describe('ExQRCode', () => {
   });
 
   it('下载使用调用方文件名，编码与下载失败通过 error 反馈', async () => {
-    const names: string[] = [];
+    const links: HTMLAnchorElement[] = [];
+    const connected: boolean[] = [];
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
       this: HTMLAnchorElement
     ) {
-      names.push(this.download);
+      links.push(this);
+      connected.push(this.isConnected);
     });
     const wrapper = mount(ExQRCode, { props: { value: 'downloadable' } });
     await flushPromises();
     wrapper.vm.download('业务二维码.png');
-    expect(names).toEqual(['业务二维码.png']);
+    expect(links.map(link => link.download)).toEqual(['业务二维码.png']);
+    expect(connected).toEqual([true]);
+    expect(links[0]?.isConnected).toBe(false);
     expect(wrapper.vm.getElement()).toBe(wrapper.element);
-    click.mockImplementationOnce(() => {
+    click.mockImplementationOnce(function (this: HTMLAnchorElement) {
+      links.push(this);
       throw new Error('下载被拒绝');
     });
     wrapper.vm.download();
+    expect(links[1]?.isConnected).toBe(false);
     expect(wrapper.emitted('error')?.at(-1)?.[0]).toBeInstanceOf(Error);
     vi.mocked(HTMLCanvasElement.prototype.toDataURL).mockImplementationOnce(() => {
       throw new Error('无法编码');
