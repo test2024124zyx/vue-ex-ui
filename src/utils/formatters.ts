@@ -3,6 +3,7 @@
  */
 
 const CURRENCY_FRACTION_DIGITS = 2;
+const PERCENT_INPUT = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))%?$/;
 
 /** 保留负号与待修正的多小数点输入，避免格式化丢失原始金额。 */
 function formatGroupedNumber(value: string, fractionDigits?: number): string {
@@ -124,7 +125,7 @@ export function parseCurrency(value: string): string {
 }
 
 /**
- * 百分比格式化
+ * 百分比格式化，接受普通十进制及可选的末尾 %，限制在 0 至 100。
  * @param value 输入值
  * @returns 格式化后的值
  * @example formatPercent('50') => '50%'
@@ -132,15 +133,9 @@ export function parseCurrency(value: string): string {
 export function formatPercent(value: string): string {
   if (!value) return '';
 
-  // 移除非数字字符（保留小数点）
-  const cleaned = value.replace(/[^\d.]/g, '');
-
-  // 限制范围 0-100
-  const num = parseFloat(cleaned);
-  if (isNaN(num)) return '';
-
-  const limited = Math.min(100, Math.max(0, num));
-  return `${limited}%`;
+  const numericText = PERCENT_INPUT.exec(value.trim())?.[1];
+  const number = Number(numericText);
+  return Number.isFinite(number) ? `${Math.min(100, Math.max(0, number))}%` : '';
 }
 
 /**
