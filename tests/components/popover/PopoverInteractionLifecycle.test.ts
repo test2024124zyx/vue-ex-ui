@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { h, nextTick } from 'vue';
 import ExPopover from '../../../src/components/popover/ExPopover.vue';
+import ExTooltip from '../../../src/components/tooltip/ExTooltip.vue';
 
 const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => {
@@ -10,6 +11,71 @@ afterEach(() => {
 });
 
 describe('气泡浮层交互生命周期', () => {
+  it.each([
+    { component: ExPopover, selector: '.ex-popover__popper' },
+    { component: ExTooltip, selector: '.ex-tooltip__popper' },
+  ])('$selector 在 Escape 卸载聚焦内容后能重新聚焦打开', async ({ component, selector }) => {
+    const wrapper = mount(component, {
+      props: { trigger: 'focus', openDelay: 0, closeDelay: 0 },
+      slots: { default: () => h('button', '触发器'), content: () => h('button', '内容') },
+      attachTo: document.body,
+    });
+    wrappers.push(wrapper);
+    const trigger = wrapper.get('button').element;
+    trigger.focus();
+    await nextTick();
+    const content = document.querySelector<HTMLButtonElement>(`${selector} button`)!;
+    content.focus();
+    content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nextTick();
+    expect(document.querySelector(selector)).toBeNull();
+    trigger.focus();
+    await nextTick();
+    expect(document.querySelector(selector)).not.toBeNull();
+  });
+
+  it.each([
+    { component: ExPopover, selector: '.ex-popover__popper' },
+    { component: ExTooltip, selector: '.ex-tooltip__popper' },
+  ])('$selector 切换为焦点触发后仍会响应真实失焦', async ({ component, selector }) => {
+    const wrapper = mount(component, {
+      props: { trigger: 'click', openDelay: 0, closeDelay: 0, content: '内容' },
+      slots: { default: () => h('button', '触发器') },
+      attachTo: document.body,
+    });
+    wrappers.push(wrapper);
+    const trigger = wrapper.get('button').element;
+    trigger.focus();
+    trigger.click();
+    await nextTick();
+    expect(document.querySelector(selector)).not.toBeNull();
+    await wrapper.setProps({ trigger: 'focus' });
+    trigger.blur();
+    await nextTick();
+    expect(document.querySelector(selector)).toBeNull();
+  });
+
+  it('在多个触发元素间移动焦点不会发送关闭或重新打开请求', async () => {
+    const wrapper = mount(ExPopover, {
+      props: { trigger: 'focus', openDelay: 0, closeDelay: 0, content: '详情' },
+      slots: { default: () => [h('button', '第一项'), h('button', '第二项')] },
+      attachTo: document.body,
+    });
+    wrappers.push(wrapper);
+    const [first, second] = wrapper.findAll<HTMLButtonElement>('button');
+    first!.element.focus();
+    await nextTick();
+    const popup = document.querySelector('.ex-popover__popper');
+    expect(popup).not.toBeNull();
+    second!.element.focus();
+    await nextTick();
+    expect(document.querySelector('.ex-popover__popper')).toBe(popup);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true]]);
+    second!.element.blur();
+    await nextTick();
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true], [false]]);
+  });
+
   it('悬停跨入浮层会取消关闭，离开后按延迟关闭', async () => {
     vi.useFakeTimers();
     const wrapper = mount(ExPopover, {
