@@ -66,6 +66,9 @@ import {
 import { getChartNavigationItems, type ChartNavigationItem } from './chart-accessibility';
 import ExChartDataNavigation from './ExChartDataNavigation.vue';
 import { useOverlayParentActive } from '../../composables/useOverlay';
+import { deepClone } from '../../utils/clone';
+import { throttle } from '../../utils/throttle';
+import { equalValueSnapshot } from '../../utils/value-snapshot';
 import {
   applyNeonGlow,
   createDefaultDataZoom,
@@ -119,6 +122,9 @@ const resizeTimer = ref<number | null>(null);
 const prefersReducedMotion = ref(false);
 const navigationItems = shallowRef<ChartNavigationItem[]>([]);
 const renderedOption = shallowRef<ChartOption>(props.option ?? {});
+const NAVIGATION_SYNC_INTERVAL = 100;
+let appliedInputs: unknown[] | undefined;
+let navigationInput: unknown[] | undefined;
 let highlightedItem: ChartNavigationItem | null = null;
 // 异步初始化竞态控制：序号 + 卸载标记
 let initSeq = 0;
@@ -177,6 +183,9 @@ const initChart = async () => {
 
   try {
     // 销毁旧实例
+    syncFinishedNavigation.cancel();
+    appliedInputs = undefined;
+    navigationInput = undefined;
     if (chartInstance.value) {
       chartInstance.value.dispose();
       chartInstance.value = null;
@@ -239,9 +248,13 @@ const cloneSeries = (series: ChartOption['series']): ChartOption['series'] => {
 };
 
 const syncNavigationItems = (fallback = props.option) => {
-  const option = chartInstance.value?.getOption?.() ?? fallback;
+  const instanceOption = chartInstance.value?.getOption?.();
+  const option = instanceOption ?? fallback;
   // 空状态与键盘导航共用当前实例快照，兼容声明式及公开 setOption 更新。
-  renderedOption.value = option ?? {};
+  renderedOption.value = option;
+  const input = [option.series, option.dataset, option.xAxis, option.yAxis, option.legend];
+  if (navigationInput && equalValueSnapshot(navigationInput, input)) return;
+  navigationInput = instanceOption ? input : deepClone(input);
   const items = getChartNavigationItems(option);
   // finished 可能由高亮动作触发，相同数据不重复通知导航器，避免动作反馈循环。
   const previous = navigationItems.value;
@@ -249,17 +262,28 @@ const syncNavigationItems = (fallback = props.option) => {
     items.length === previous.length &&
     items.every((item, index) => {
       const old = previous[index]!;
+      const { value } = item;
+      const { value: oldValue } = old;
       return (
         item.seriesIndex === old.seriesIndex &&
         item.dataIndex === old.dataIndex &&
         item.label === old.label &&
-        JSON.stringify(item.value) === JSON.stringify(old.value)
+        item.seriesName === old.seriesName &&
+        item.seriesType === old.seriesType &&
+        item.name === old.name &&
+        (Array.isArray(value) && Array.isArray(oldValue)
+          ? value.length === oldValue.length &&
+            value.every((entry, position) => Object.is(entry, oldValue[position]))
+          : Object.is(value, oldValue))
       );
     })
   )
     return;
   navigationItems.value = items;
 };
+
+// 兼容调用方直接操作公开的实例；连续渲染事件只定期同步辅助数据。
+const syncFinishedNavigation = throttle(() => syncNavigationItems(), NAVIGATION_SYNC_INTERVAL);
 
 const highlightNavigationItem = (item: ChartNavigationItem | null) => {
   const instance = chartInstance.value;
@@ -296,11 +320,26 @@ watch(parentOverlayActive, active => {
   if (!active) highlightNavigationItem(null);
 });
 
+const chartUpdateSources = [
+  () => props.option,
+  () => props.showToolbox,
+  () => props.showDataZoom,
+  () => props.showLegend,
+  () => props.showTooltip,
+  () => props.animationDuration,
+  () => globalConfig.animation.value,
+  () => globalConfig.neonEffect.value,
+  () => prefersReducedMotion.value,
+];
+
 // 更新图表
 const updateChart = () => {
-  if (!chartInstance.value || !props.option) return;
+  if (!chartInstance.value || !props.option) return false;
 
   try {
+    const inputs = chartUpdateSources.map(read => read());
+    if (appliedInputs && equalValueSnapshot(appliedInputs, inputs)) return false;
+    const snapshot = deepClone(inputs);
     // 合并配置
     const palette = controlPalette();
     let mergedOption: ChartOption = {
@@ -353,9 +392,12 @@ const updateChart = () => {
       notMerge: true,
       lazyUpdate: true,
     });
+    appliedInputs = snapshot;
     syncNavigationItems(mergedOption);
+    return true;
   } catch (error) {
     emit('error', error as Error);
+    return false;
   }
 };
 
@@ -390,7 +432,6 @@ const bindEvents = () => {
 
   // 绑定数据缩放事件
   chartInstance.value?.on('datazoom', params => {
-    syncNavigationItems();
     emit('datazoom', params as ChartEventParams);
   });
 
@@ -402,7 +443,7 @@ const bindEvents = () => {
 
   // 渲染完成事件
   chartInstance.value.on('finished', () => {
-    syncNavigationItems();
+    syncFinishedNavigation();
     emit('finished');
   });
 };
@@ -460,12 +501,17 @@ const resize = (opts?: { width?: number | 'auto'; height?: number | 'auto' }) =>
 const clear = () => {
   highlightNavigationItem(null);
   chartInstance.value?.clear();
+  syncFinishedNavigation.cancel();
+  navigationInput = undefined;
   navigationItems.value = [];
   renderedOption.value = {};
 };
 
 const dispose = () => {
   initSeq += 1;
+  syncFinishedNavigation.cancel();
+  appliedInputs = undefined;
+  navigationInput = undefined;
   if (chartInstance.value) {
     chartInstance.value.dispose();
     chartInstance.value = null;
@@ -576,22 +622,9 @@ const convertFromPixel = (finder: unknown, value: unknown) => {
 
 // 监听配置变化
 watch(
-  [
-    () => props.option,
-    () => props.showToolbox,
-    () => props.showDataZoom,
-    () => props.showLegend,
-    () => props.showTooltip,
-    () => props.animationDuration,
-    () => globalConfig.animation.value,
-    () => globalConfig.neonEffect.value,
-    () => prefersReducedMotion.value,
-  ],
+  chartUpdateSources,
   () => {
-    if (chartInstance.value) {
-      updateChart();
-      emit('updated');
-    }
+    if (updateChart()) emit('updated');
   },
   { deep: true }
 );

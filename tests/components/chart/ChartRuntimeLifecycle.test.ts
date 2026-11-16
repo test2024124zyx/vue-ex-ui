@@ -53,6 +53,36 @@ const mountChart = async (props = {}) => {
 };
 
 describe('图表公开能力与运行时生命周期', () => {
+  it('等值的新 option 不会重新设置图表，实际修改仍更新', async () => {
+    const { wrapper, runtime } = await mountChart();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 2] }] } });
+    expect(runtime.setOption).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('updated')).toBeUndefined();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 3] }] } });
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(wrapper.emitted('updated')).toHaveLength(1);
+  });
+
+  it('连续缩放不读取数据快照，连续渲染回调合并但事件仍逐次转发', async () => {
+    const { wrapper, api, runtime } = await mountChart();
+    const zoom = runtime.handlers.get('datazoom')!;
+    const finished = runtime.handlers.get('finished')!;
+    runtime.getOption.mockClear();
+    vi.useFakeTimers();
+    for (let index = 0; index < 15; index++) zoom({ start: index });
+    expect(runtime.getOption).not.toHaveBeenCalled();
+    expect(wrapper.emitted('datazoom')).toHaveLength(15);
+    for (let index = 0; index < 15; index++) finished({});
+    expect(wrapper.emitted('finished')).toHaveLength(15);
+    expect(runtime.getOption).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(runtime.getOption).toHaveBeenCalledTimes(2);
+    runtime.getOption.mockClear();
+    finished({});
+    api.dispose();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(runtime.getOption).not.toHaveBeenCalled();
+  });
   it('转发全部交互事件并支持真实参数的公开命令', async () => {
     const { wrapper, api, runtime } = await mountChart({ style: 'height: 200px' });
     for (const event of [
