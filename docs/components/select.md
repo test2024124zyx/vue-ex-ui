@@ -365,27 +365,27 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 省略 `modelValue` 时选择状态由组件维护，单选初始为 `null`，多选初始为空数组。传入 `modelValue` 时由父组件确认更新，`null` 表示明确传入的空值。
 
-| 参数             | 说明                                                           | 类型                                               | 默认值       |
-| ---------------- | -------------------------------------------------------------- | -------------------------------------------------- | ------------ |
-| `modelValue`     | 单选值或多选值数组                                             | `string \| number \| null \| (string \| number)[]` | `undefined`  |
-| `options`        | 选项或选项分组                                                 | `SelectOptions`                                    | `[]`         |
-| `placeholder`    | 占位文本                                                       | `string`                                           | `''`         |
-| `id`             | 交互节点的 HTML 标识                                           | `string`                                           | 自动生成     |
-| `size`           | 尺寸                                                           | `small \| medium \| large`                         | 继承全局尺寸 |
-| `disabled`       | 是否禁用                                                       | `boolean`                                          | `false`      |
-| `readonly`       | 是否只读；可聚焦但不能打开或修改                               | `boolean`                                          | `false`      |
-| `clearable`      | 是否可清空                                                     | `boolean`                                          | `false`      |
-| `searchable`     | 是否可搜索                                                     | `boolean`                                          | `false`      |
-| `remote`         | 是否关闭本地过滤并启用远程搜索                                 | `boolean`                                          | `false`      |
-| `remoteMethod`   | 远程查询回调                                                   | `(query: string) => void`                          | —            |
-| `remoteLoader`   | 托管异步查询；优先于 `remoteMethod`                            | `SelectRemoteLoader`                               | —            |
-| `loading`        | 外部加载状态，与托管请求状态合并                               | `boolean`                                          | `false`      |
-| `remoteDebounce` | 远程查询防抖时间                                               | `number`                                           | `300`        |
-| `multiple`       | 是否多选                                                       | `boolean`                                          | `false`      |
-| `multipleLimit`  | 多选数量上限，`0` 表示不限                                     | `number`                                           | `0`          |
-| `collapseTags`   | 是否折叠多选标签                                               | `boolean`                                          | `false`      |
-| `virtual`        | 是否启用普通或分组选项虚拟滚动                                 | `boolean`                                          | `false`      |
-| `optionHeight`   | 虚拟选项固定高度；必须与自定义行样式一致，且不小于触摸目标高度 | `number`                                           | `44`         |
+| 参数             | 说明                                                           | 类型                                               | 默认值               |
+| ---------------- | -------------------------------------------------------------- | -------------------------------------------------- | -------------------- |
+| `modelValue`     | 单选值或多选值数组                                             | `string \| number \| null \| (string \| number)[]` | `undefined`          |
+| `options`        | 选项或选项分组                                                 | `SelectOptions`                                    | `[]`                 |
+| `placeholder`    | 占位文本                                                       | `string`                                           | `''`                 |
+| `id`             | 交互节点的 HTML 标识                                           | `string`                                           | 自动生成             |
+| `size`           | 尺寸                                                           | `small \| medium \| large`                         | 继承全局尺寸         |
+| `disabled`       | 是否禁用                                                       | `boolean`                                          | `false`              |
+| `readonly`       | 是否只读；可聚焦但不能打开或修改                               | `boolean`                                          | `false`              |
+| `clearable`      | 是否可清空                                                     | `boolean`                                          | `false`              |
+| `searchable`     | 是否可搜索                                                     | `boolean`                                          | `false`              |
+| `remote`         | 是否关闭本地过滤并启用远程搜索                                 | `boolean`                                          | `false`              |
+| `remoteMethod`   | 远程查询回调                                                   | `(query: string) => void`                          | —                    |
+| `remoteLoader`   | 托管异步查询；优先于 `remoteMethod`                            | `SelectRemoteLoader`                               | —                    |
+| `loading`        | 外部加载状态，与托管请求状态合并                               | `boolean`                                          | `false`              |
+| `remoteDebounce` | 远程查询防抖时间                                               | `number`                                           | `300`                |
+| `multiple`       | 是否多选                                                       | `boolean`                                          | `false`              |
+| `multipleLimit`  | 多选数量上限，`0` 表示不限                                     | `number`                                           | `0`                  |
+| `collapseTags`   | 是否折叠多选标签                                               | `boolean`                                          | `false`              |
+| `virtual`        | 是否启用普通或分组选项虚拟滚动，显式传 `false` 可关闭          | `boolean`                                          | 500 个选项起自动启用 |
+| `optionHeight`   | 虚拟选项固定高度；必须与自定义行样式一致，且不小于触摸目标高度 | `number`                                           | `44`                 |
 
 ### Events
 

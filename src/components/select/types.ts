@@ -84,7 +84,7 @@ export interface ExSelectProps {
   style?: string | Record<string, string | number>;
   /**
    * 是否对选项启用虚拟滚动，支持普通选项和分组选项。
-   * 适用于上千选项的大列表，避免一次性渲染全部 DOM 导致卡顿。默认 false。
+   * 默认在选项达到 500 个时启用，可显式传入 false 关闭。
    */
   virtual?: boolean;
   /** 虚拟滚动时单个选项的固定高度（像素），默认 44；自定义值必须与实际行高一致 */
