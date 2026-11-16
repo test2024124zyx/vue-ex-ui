@@ -1,4 +1,5 @@
 import { computed, ref, watch, toRaw, type ComputedRef } from 'vue';
+import { logger } from '../../utils/logger';
 import type {
   ExTableProps,
   ExTableEmits,
@@ -39,19 +40,31 @@ export function useTableRows(
     return typeof key === 'string' || typeof key === 'number' ? key : sourceIndex;
   };
   const sourceTree = computed(() => {
+    const seenKeys = new Set<IndexedTableRow['key']>();
+    const createRow = (
+      record: TableDataItem,
+      sourceIndex: number,
+      depth: number
+    ): IndexedTableRow | undefined => {
+      const key = getRowKey(record, sourceIndex);
+      if (seenKeys.has(key)) {
+        logger.warn('ExTable 的行键重复，已保留首行。', key);
+        return undefined;
+      }
+      seenKeys.add(key);
+      return { record, sourceIndex, key, depth, children: [] };
+    };
+    const roots: IndexedTableRow[] = [];
     if (!props.tree) {
       // 平面表格沿用线性索引路径，不分配树遍历状态。
-      const roots = props.data.map((record, sourceIndex) => ({
-        record,
-        sourceIndex,
-        key: getRowKey(record, sourceIndex),
-        depth: 0,
-        children: [] as IndexedTableRow[],
-      }));
+      props.data.forEach((record, sourceIndex) => {
+        const row = createRow(record, sourceIndex, 0);
+        if (row) roots.push(row);
+      });
       return { roots, all: roots };
     }
-    const roots: IndexedTableRow[] = [];
     const all: IndexedTableRow[] = [];
+    let sourceIndex = 0;
     const active = new Set<TableDataItem>();
     const stack: Array<{
       record: TableDataItem;
@@ -66,14 +79,8 @@ export function useTableRows(
         continue;
       }
       if (!entry.record || typeof entry.record !== 'object' || active.has(entry.record)) continue;
-      const sourceIndex = all.length;
-      const node: IndexedTableRow = {
-        record: entry.record,
-        sourceIndex,
-        key: getRowKey(entry.record, sourceIndex),
-        depth: entry.depth,
-        children: [],
-      };
+      const node = createRow(entry.record, sourceIndex++, entry.depth);
+      if (!node) continue;
       entry.target.push(node);
       all.push(node);
       const children = entry.record[props.childrenKey ?? 'children'];

@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, ref, inject, onMounted, onUnmounted, watch } from 'vue';
+import { computed, getCurrentInstance, ref, inject, onMounted, onUnmounted, watch } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
 import { tabsContextKey } from './context';
 
@@ -39,14 +39,27 @@ const getTabId = (name: ExTabPaneProps['name']) =>
   tabs ? tabs.getTabId(name) : `ex-tabs-tab-${name}`;
 const getPanelId = (name: ExTabPaneProps['name']) =>
   tabs ? tabs.getPanelId(name) : `ex-tabs-panel-${name}`;
-const registeredName = ref(props.name);
+const instance = getCurrentInstance()!;
+// 异步包装标签也要等自身水合和挂载结束，才能加入导航。
+onMounted(() => {
+  tabs?.registerPane(instance, {
+    name: props.name,
+    label: props.label,
+    disabled: props.disabled,
+    closable: props.closable,
+  });
+});
 
 // 计算属性
-const isActive = computed(() => (tabs ? tabs.activeTab.value : '') === props.name);
+const isVisible = computed(() => !tabs || tabs.isPaneVisible(instance, props.name));
+const isActive = computed(
+  () => isVisible.value && (tabs ? tabs.activeTab.value : '') === props.name
+);
 
 const hasBeenActive = ref(false);
 
 const shouldRender = computed(() => {
+  if (!isVisible.value) return false;
   if (!props.lazy) return true;
   return isActive.value || hasBeenActive.value;
 });
@@ -63,8 +76,7 @@ watch(isActive, checkActive, { immediate: true });
 watch(
   () => [props.name, props.label, props.disabled, props.closable] as const,
   ([name, label, disabled, closable], [previousName]) => {
-    tabs?.updatePane(previousName, { name, label, disabled, closable });
-    registeredName.value = name;
+    tabs?.updatePane(instance, previousName, { name, label, disabled, closable });
   }
 );
 
@@ -84,20 +96,9 @@ const paneStyles = computed(() => {
   return props.style;
 });
 
-// 生命周期
-onMounted(() => {
-  tabs?.registerPane({
-    name: props.name,
-    label: props.label,
-    disabled: props.disabled,
-    closable: props.closable,
-  });
-  checkActive();
-});
-
 // 卸载时注销，否则被删除的标签仍残留在导航里（导致"删除不了"）
 onUnmounted(() => {
-  tabs?.unregisterPane(registeredName.value);
+  tabs?.unregisterPane(instance.uid);
 });
 
 // 暴露的方法

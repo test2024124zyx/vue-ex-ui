@@ -1,4 +1,4 @@
-import type { ComputedRef } from 'vue';
+import type { ComponentInternalInstance, ComputedRef } from 'vue';
 import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface PaneInfo {
@@ -12,9 +12,14 @@ interface TabsContext {
   activeTab: ComputedRef<PaneInfo['name'] | undefined>;
   getTabId: (name: PaneInfo['name']) => string;
   getPanelId: (name: PaneInfo['name']) => string;
-  registerPane: (pane: PaneInfo) => void;
-  updatePane: (registeredName: PaneInfo['name'], pane: PaneInfo) => void;
-  unregisterPane: (name: PaneInfo['name']) => void;
+  isPaneVisible: (instance: ComponentInternalInstance, name: PaneInfo['name']) => boolean;
+  registerPane: (instance: ComponentInternalInstance, pane: PaneInfo) => void;
+  updatePane: (
+    instance: ComponentInternalInstance,
+    previousName: PaneInfo['name'],
+    pane: PaneInfo
+  ) => void;
+  unregisterPane: (uid: number) => void;
 }
 
 export const tabsContextKey = createSharedInjectionKey<TabsContext>('tabs');

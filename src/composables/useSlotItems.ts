@@ -1,11 +1,15 @@
-import { computed, isVNode, useSlots } from 'vue';
+import { computed, inject, isVNode, ssrContextKey, useSlots } from 'vue';
 import type { VNode } from 'vue';
 import { useRenderComputed } from './useRenderComputed';
 
 /** 在渲染前收集已声明子项，服务端无需等待 mounted 注册便可确定导航和总数。 */
 export function useSlotItems(componentName: string) {
   const slots = useSlots();
-  const nodes = useRenderComputed(() => slots.default?.() ?? []);
+  const isServer = inject(ssrContextKey, undefined) !== undefined;
+  let serverNodes: VNode[] | undefined;
+  const readSlot = () => slots.default?.() ?? [];
+  // 服务端同一次渲染中，导航与内容共享一份实例内的插槽节点。
+  const nodes = useRenderComputed(() => (isServer ? (serverNodes ??= readSlot()) : readSlot()));
   const items = computed(() => {
     const result: VNode[] = [];
     const visit = (value: unknown) => {
@@ -23,5 +27,5 @@ export function useSlotItems(componentName: string) {
   });
   // 读取和渲染使用同一组 VNode，避免重复调用插槽产生不同的条件分支。
   const SlotContent = () => nodes.value;
-  return { items, SlotContent };
+  return { items, nodes, SlotContent };
 }

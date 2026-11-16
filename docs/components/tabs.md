@@ -990,13 +990,13 @@ const activeTab4 = ref('settings');
 
 ### TabPane Props
 
-| 属性       | 说明                   | 类型               | 默认值      |
-| ---------- | ---------------------- | ------------------ | ----------- |
-| `name`     | 标签页名称（唯一标识） | `string \| number` | -           |
-| `label`    | 标签页标题             | `string`           | `undefined` |
-| `disabled` | 是否禁用               | `boolean`          | `false`     |
-| `closable` | 是否可关闭             | `boolean`          | `false`     |
-| `lazy`     | 是否懒加载             | `boolean`          | `false`     |
+| 属性       | 说明                                           | 类型               | 默认值      |
+| ---------- | ---------------------------------------------- | ------------------ | ----------- |
+| `name`     | 标签页唯一标识。同名时保留首项，开发环境会提示 | `string \| number` | -           |
+| `label`    | 标签页标题                                     | `string`           | `undefined` |
+| `disabled` | 是否禁用                                       | `boolean`          | `false`     |
+| `closable` | 是否可关闭                                     | `boolean`          | `false`     |
+| `lazy`     | 是否懒加载                                     | `boolean`          | `false`     |
 
 ### TabPane Slots
 

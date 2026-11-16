@@ -879,7 +879,7 @@ const selectionData = [
 | `loading`                   | 是否加载中                                             | `boolean`                        | `false`      |
 | `empty-text`                | 空数据文本                                             | `string`                         | `'暂无数据'` |
 | `show-header`               | 是否显示表头                                           | `boolean`                        | `true`       |
-| `row-key`                   | 行的 key 字段名                                        | `string`                         | `'key'`      |
+| `row-key`                   | 行唯一键的字段名。重复键只保留首行，开发环境会提示     | `string`                         | `'key'`      |
 | `tree`                      | 是否渲染树形行                                         | `boolean`                        | `false`      |
 | `children-key`              | 子行数组的字段名                                       | `string`                         | `'children'` |
 | `expanded-row-keys`         | 受控展开的父行 key                                     | `Array<string \| number>`        | `undefined`  |
