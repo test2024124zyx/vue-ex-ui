@@ -3,11 +3,12 @@ import { usesNativeIdentity } from './native-identity';
 
 // 签名只是预筛选，按成员限制访问量，避免反复遍历大集合中的共享子图。
 const MEMBER_SHAPE_BUDGET = 32;
+type OwnShape = { signature: number; children: object[] };
 
 /** 生成候选的必要条件，访问器和无序成员的实际值仍交由快照比较。 */
 export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
-  const ownKeys = new WeakMap<object, Array<string | symbol>>();
+  const ownShapes = new WeakMap<object, OwnShape | null>();
   const negativeZero = Symbol();
   const id = (value: unknown) => {
     const atom = Object.is(value, -0) ? negativeZero : value;
@@ -17,6 +18,49 @@ export function createSnapshotMemberShape() {
     atoms.set(atom, next);
     return next;
   };
+
+  function readOwnShape(node: object): OwnShape | null {
+    const cached = ownShapes.get(node);
+    if (cached !== undefined) return cached;
+    const shape: Array<string | number> = [];
+    const children: object[] = [];
+    const append = (value: unknown) => {
+      if (value !== null && typeof value === 'object') {
+        shape.push('child');
+        children.push(value);
+      } else {
+        shape.push('value', id(value));
+      }
+    };
+    if (node instanceof Map || node instanceof Set) {
+      shape.push('collection', node.size);
+      const fixed: Array<[number, unknown]> = [];
+      for (const [entryKey, entryValue] of node.entries()) {
+        if (entryKey === null || typeof entryKey !== 'object')
+          fixed.push([id(entryKey), entryValue]);
+      }
+      fixed.sort(([first], [second]) => first - second);
+      for (const [keyId, entryValue] of fixed) {
+        shape.push(keyId);
+        append(entryValue);
+      }
+    }
+    const keys = Reflect.ownKeys(node).map(key => ({ key, id: id(key) }));
+    keys.sort((first, second) => first.id - second.id);
+    shape.push('properties', keys.length);
+    for (const { key, id: keyId } of keys) {
+      const descriptor = Object.getOwnPropertyDescriptor(node, key);
+      if (!descriptor || !('value' in descriptor)) {
+        ownShapes.set(node, null);
+        return null;
+      }
+      shape.push(keyId);
+      append(descriptor.value);
+    }
+    const result = { signature: id(shape.join(',')), children };
+    ownShapes.set(node, result);
+    return result;
+  }
 
   return ([key, value]: readonly [object, unknown]): string | undefined => {
     const pending: unknown[] = [value, key];
@@ -44,44 +88,13 @@ export function createSnapshotMemberShape() {
       shape.push('object', id(Object.getPrototypeOf(node)));
       if (node instanceof Date) shape.push('date', id(node.getTime()));
       else if (node instanceof RegExp) shape.push('regexp', id(node.source), id(node.flags));
-      else if (node instanceof Map || node instanceof Set) {
-        shape.push('collection', node.size);
-        if (node.size > remaining) break;
-        remaining -= node.size;
-        const fixed: Array<[number, unknown]> = [];
-        for (const [entryKey, entryValue] of node.entries()) {
-          if (entryKey === null || typeof entryKey !== 'object') {
-            fixed.push([id(entryKey), entryValue]);
-          }
-        }
-        fixed.sort(([first], [second]) => first - second);
-        shape.push(fixed.length);
-        for (const [keyId, entryValue] of fixed) {
-          shape.push(keyId);
-          pending.push(entryValue);
-        }
-      }
-      let properties = ownKeys.get(node);
-      if (!properties) {
-        properties = Reflect.ownKeys(node);
-        ownKeys.set(node, properties);
-      }
-      shape.push('properties', properties.length);
-      if (properties.length > remaining) break;
-      remaining -= properties.length;
-      const keys = properties.map(key => ({ key, id: id(key) }));
-      keys.sort((first, second) => first.id - second.id);
-      for (const { key, id: keyId } of keys) {
-        const descriptor = Object.getOwnPropertyDescriptor(node, key);
-        if (!descriptor || !('value' in descriptor)) return undefined;
-        shape.push(keyId);
-        const value: unknown = descriptor.value;
-        if (value !== null && typeof value === 'object') {
-          shape.push('child');
-          pending.push(value);
-        } else {
-          shape.push('value', id(value));
-        }
+      // 同一节点的完整浅层内容只读取一次，预算只限制追踪后续对象关系。
+      const own = readOwnShape(node);
+      if (!own) return undefined;
+      shape.push(own.signature);
+      const limit = Math.min(own.children.length, Math.max(0, remaining - pending.length));
+      for (let index = limit - 1; index >= 0; index--) {
+        pending.push(own.children[index]);
       }
     }
     return shape.join(',');

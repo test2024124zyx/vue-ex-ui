@@ -103,6 +103,30 @@ describe('无序集合快照', () => {
     expect(performance.now() - start).toBeLessThan(1000);
   });
 
+  it('宽数组作为集合成员时可从后半部分识别不相容内容', () => {
+    const pool = (distinct: number) =>
+      new Set(
+        Array.from({ length: 10 }, (_, index) => {
+          const values = Array<number>(32).fill(0);
+          if (index === 9) values[values.length - 1] = distinct;
+          return values;
+        })
+      );
+    const start = performance.now();
+    expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('共享数组确定了所有成员身份后按映射直接寻找候选', () => {
+    const entries: Array<{ all?: object[] }> = Array.from({ length: 18_000 }, () => ({}));
+    for (const entry of entries) entry.all = entries;
+    const source = new Set(entries);
+    const clone = deepClone(source);
+    const start = performance.now();
+    expect(equalValueSnapshot(source, clone)).toBe(true);
+    expect(performance.now() - start).toBeLessThan(1800);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);

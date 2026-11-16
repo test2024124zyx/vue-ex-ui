@@ -14,6 +14,7 @@ interface CollectionMatch {
   left: ObjectEntry[];
   right: ObjectEntry[];
   used: Set<number>;
+  rightIndices: Map<object, number[]>;
 }
 
 interface PendingMatch {
@@ -47,8 +48,14 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   }
 
   function enqueueGroup(leftEntries: ObjectEntry[], rightEntries: ObjectEntry[]): void {
+    const rightIndices = new Map<object, number[]>();
+    rightEntries.forEach(([key], index) => {
+      const indices = rightIndices.get(key);
+      if (indices) indices.push(index);
+      else rightIndices.set(key, [index]);
+    });
     matches = {
-      collection: { left: leftEntries, right: rightEntries, used: new Set() },
+      collection: { left: leftEntries, right: rightEntries, used: new Set(), rightIndices },
       index: 0,
       next: matches,
     };
@@ -146,10 +153,13 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     const { collection, index, next } = match;
     const [key, value] = collection.left[index]!;
     const linkedKey = seen.get(key);
-    for (let candidate = start; candidate < collection.right.length; candidate++) {
-      if (collection.used.has(candidate)) continue;
+    const linkedCandidates = linkedKey ? (collection.rightIndices.get(linkedKey) ?? []) : undefined;
+    const length = linkedCandidates?.length ?? collection.right.length;
+    for (let offset = linkedCandidates ? 0 : start; offset < length; offset++) {
+      const candidate = linkedCandidates?.[offset] ?? offset;
+      if (candidate < start || collection.used.has(candidate)) continue;
       const [otherKey, otherValue] = collection.right[candidate]!;
-      if (linkedKey ? otherKey !== linkedKey : reverseSeen.has(otherKey)) continue;
+      if (!linkedKey && reverseSeen.has(otherKey)) continue;
       if (Object.getPrototypeOf(key) !== Object.getPrototypeOf(otherKey)) continue;
       choices.push({ match, candidate, mappedCount: mapped.length });
       collection.used.add(candidate);
