@@ -729,31 +729,31 @@ const visibleGame = ref(false);
 
 ### Drawer Props
 
-| 参数                    | 说明                     | 类型                                                                  | 默认值      |
-| ----------------------- | ------------------------ | --------------------------------------------------------------------- | ----------- |
-| `v-model`               | 是否显示抽屉             | `boolean`                                                             | `false`     |
-| `title`                 | 抽屉标题                 | `string`                                                              | —           |
-| `placement`             | 抽屉位置                 | `'left' \| 'right' \| 'top' \| 'bottom'`                              | `'right'`   |
-| `size`                  | 抽屉尺寸                 | `'small' \| 'medium' \| 'large' \| 'extra-large' \| string \| number` | `'medium'`  |
-| `closable`              | 是否显示关闭按钮         | `boolean`                                                             | `true`      |
-| `mask`                  | 是否显示遮罩层           | `boolean`                                                             | `true`      |
-| `mask-closable`         | 点击遮罩层是否关闭       | `boolean`                                                             | `true`      |
-| `close-on-press-escape` | 按下 Escape 是否请求关闭 | `boolean`                                                             | `true`      |
-| `destroy-on-close`      | 是否在关闭时销毁子元素   | `boolean`                                                             | `false`     |
-| `show-footer`           | 是否显示底部操作栏       | `boolean`                                                             | `false`     |
-| `ok-text`               | 确认按钮文字             | `string`                                                              | `'确定'`    |
-| `cancel-text`           | 取消按钮文字             | `string`                                                              | `'取消'`    |
-| `ok-type`               | 确认按钮类型             | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'`           | `'primary'` |
-| `ok-loading`            | 确认按钮是否加载中       | `boolean`                                                             | `false`     |
-| `ok-disabled`           | 是否禁用确认按钮         | `boolean`                                                             | `false`     |
-| `cancel-disabled`       | 是否禁用取消按钮         | `boolean`                                                             | `false`     |
-| `custom-class`          | 自定义类名               | `string`                                                              | —           |
-| `custom-style`          | 自定义样式               | `string \| Record<string, string \| number>`                          | —           |
-| `z-index`               | 层级                     | `number`                                                              | 全局层级    |
-| `lock-scroll`           | 模态状态下是否锁定滚动   | `boolean`                                                             | `true`      |
-| `before-open`           | 打开前的回调             | `() => boolean \| Promise<boolean>`                                   | —           |
-| `before-close`          | 关闭前的回调             | `() => boolean \| Promise<boolean>`                                   | —           |
-| `aria-label`            | 无障碍标签               | `string`                                                              | —           |
+| 参数                    | 说明                              | 类型                                                                  | 默认值      |
+| ----------------------- | --------------------------------- | --------------------------------------------------------------------- | ----------- |
+| `v-model`               | 是否显示抽屉                      | `boolean`                                                             | `false`     |
+| `title`                 | 抽屉标题                          | `string`                                                              | —           |
+| `placement`             | 抽屉位置                          | `'left' \| 'right' \| 'top' \| 'bottom'`                              | `'right'`   |
+| `size`                  | 抽屉尺寸                          | `'small' \| 'medium' \| 'large' \| 'extra-large' \| string \| number` | `'medium'`  |
+| `show-close`            | 是否显示关闭按钮，兼容 `closable` | `boolean`                                                             | `true`      |
+| `mask`                  | 是否显示遮罩层                    | `boolean`                                                             | `true`      |
+| `mask-closable`         | 点击遮罩层是否关闭                | `boolean`                                                             | `true`      |
+| `close-on-press-escape` | 按下 Escape 是否请求关闭          | `boolean`                                                             | `true`      |
+| `destroy-on-close`      | 是否在关闭时销毁子元素            | `boolean`                                                             | `false`     |
+| `show-footer`           | 是否显示底部操作栏                | `boolean`                                                             | `false`     |
+| `ok-text`               | 确认按钮文字                      | `string`                                                              | `'确定'`    |
+| `cancel-text`           | 取消按钮文字                      | `string`                                                              | `'取消'`    |
+| `ok-type`               | 确认按钮类型                      | `'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'`           | `'primary'` |
+| `ok-loading`            | 确认按钮是否加载中                | `boolean`                                                             | `false`     |
+| `ok-disabled`           | 是否禁用确认按钮                  | `boolean`                                                             | `false`     |
+| `cancel-disabled`       | 是否禁用取消按钮                  | `boolean`                                                             | `false`     |
+| `custom-class`          | 自定义类名                        | `string`                                                              | —           |
+| `custom-style`          | 自定义样式                        | `string \| Record<string, string \| number>`                          | —           |
+| `z-index`               | 层级                              | `number`                                                              | 全局层级    |
+| `lock-scroll`           | 模态状态下是否锁定滚动            | `boolean`                                                             | `true`      |
+| `before-open`           | 打开前的回调                      | `() => boolean \| Promise<boolean>`                                   | —           |
+| `before-close`          | 关闭前的回调                      | `() => boolean \| Promise<boolean>`                                   | —           |
+| `aria-label`            | 无障碍标签                        | `string`                                                              | —           |
 
 ### Drawer Events
 
@@ -765,17 +765,18 @@ const visibleGame = ref(false);
 | `close`              | 关闭时触发                           | `() => void`                                         |
 | `closed`             | 关闭动画结束后触发                   | `() => void`                                         |
 | `guard-error`        | 打开或关闭守卫发生异常               | `(error: unknown, phase: 'open' \| 'close') => void` |
-| `ok`                 | 点击确认按钮时触发                   | `() => void`                                         |
+| `confirm`            | 点击确认按钮时触发，兼容 `ok`        | `() => void`                                         |
 | `cancel`             | 点击取消按钮时触发                   | `() => void`                                         |
 
 ### Drawer Slots
 
-| 插槽名    | 说明       |
-| --------- | ---------- |
-| `default` | 抽屉内容   |
-| `title`   | 自定义标题 |
-| `header`  | 自定义头部 |
-| `footer`  | 自定义底部 |
+| 插槽名      | 说明               |
+| ----------- | ------------------ |
+| `default`   | 抽屉内容           |
+| `title`     | 自定义标题         |
+| `header`    | 自定义头部         |
+| `footer`    | 自定义底部         |
+| `closeIcon` | 自定义关闭按钮图标 |
 
 ### Drawer Methods
 

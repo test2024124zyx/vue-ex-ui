@@ -436,16 +436,20 @@ describe('ExModal', () => {
     expect(wrapper!.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('外部关闭后发出 close 与 afterClose，保留受控单一事实来源', async () => {
+  it('按受控显示变化顺序发出打开和关闭生命周期事件', async () => {
     wrapper = mount(ExModal, {
       attachTo: document.body,
-      props: { modelValue: true, destroyOnClose: true },
+      props: { modelValue: false, destroyOnClose: true },
       global: { stubs: { transition: false } },
     });
-    await flushPromises();
+    await wrapper!.setProps({ modelValue: true });
+    await new Promise(resolve => window.setTimeout(resolve, 350));
+    expect(wrapper!.emitted('open')).toEqual([[]]);
+    expect(wrapper!.emitted('opened')).toEqual([[]]);
     await wrapper!.setProps({ modelValue: false });
     await new Promise(resolve => window.setTimeout(resolve, 350));
     expect(wrapper!.emitted('close')).toEqual([[]]);
     expect(wrapper!.emitted('afterClose')).toEqual([[]]);
+    expect(wrapper!.emitted('closed')).toEqual([[]]);
   });
 });
