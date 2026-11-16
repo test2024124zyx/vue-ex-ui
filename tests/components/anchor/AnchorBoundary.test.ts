@@ -6,6 +6,18 @@ import ExAnchorLink from '../../../src/components/anchor/ExAnchorLink.vue';
 afterEach(() => vi.restoreAllMocks());
 
 describe('锚点边界与独立链接', () => {
+  it.each(['javascript:alert(1)', 'JaVa\tScRiPt:alert(1)', 'vbscript:1', 'data:text/html,content'])(
+    '危险地址不出现在原生链接中，也不发出点击事件：%s',
+    async href => {
+      const wrapper = mount(ExAnchorLink, { props: { href, title: '链接' } });
+      expect(wrapper.get('a').attributes('href')).toBeUndefined();
+      expect(wrapper.get('a').attributes('aria-disabled')).toBe('true');
+      await wrapper.get('a').trigger('click');
+      expect(wrapper.emitted('click')).toBeUndefined();
+      wrapper.unmount();
+    }
+  );
+
   it('公开定位忽略空值、无效编码、无效选择器和不存在的目标', () => {
     const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const wrapper = mount(ExAnchor);

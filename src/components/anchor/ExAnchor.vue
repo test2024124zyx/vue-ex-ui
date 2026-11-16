@@ -170,22 +170,24 @@ const handleLinkClick = (item: AnchorItem): void => {
   void updateInkPosition();
 };
 
-const registerLink = (item: AnchorItem): void => {
-  if (!links.value.some(link => link.element === item.element)) {
-    links.value = [...links.value, item];
-  }
-};
-
 const updateLink = (element: HTMLElement, href: string, title: string): void => {
-  links.value = links.value.map(link =>
-    link.element === element ? { href, title, element } : link
-  );
-  if (activeElement.value === element) activeLink.value = href;
+  const items = [...links.value];
+  const index = items.findIndex(link => link.element === element);
+  items[index === -1 ? items.length : index] = { element, href, title };
+  links.value = items;
+  if (!mounted) return;
+
+  // 平滑滚动期间仍沿用已选条目，但变更地址必须经过同一事件出口。
+  if (animating && activeElement.value === element) setActiveFromScroll(href);
   handleScroll();
 };
 
 const unregisterLink = (element: HTMLElement): void => {
   links.value = links.value.filter(link => link.element !== element);
+  if (mounted && animating && activeElement.value === element) {
+    clearAnimationTimer();
+    handleScroll();
+  }
 };
 
 watch(
@@ -199,7 +201,6 @@ watch(
 
 provide(ANCHOR_INJECTION_KEY, {
   activeLink: readonly(activeLink),
-  registerLink,
   updateLink,
   unregisterLink,
   handleClick: handleLinkClick,

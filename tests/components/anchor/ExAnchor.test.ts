@@ -69,9 +69,12 @@ describe('ExAnchor', () => {
       },
     });
 
+    expect(wrapper.emitted('change')).toEqual([['#first']]);
+
     href.value = '#second';
     title.value = 'Second';
     await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#second']]);
     await wrapper.find('a').trigger('click');
 
     expect(wrapper.emitted('click')?.[0]?.[0]).toBe('#second');
@@ -79,6 +82,34 @@ describe('ExAnchor', () => {
       href: '#second',
       title: 'Second',
     });
+  });
+
+  it('危险地址移出活动列表，恢复有效地址后重新参与滚动定位', async () => {
+    const section = document.createElement('section');
+    section.id = 'active';
+    document.body.append(section);
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const href = ref('#active');
+    const wrapper = mount(ExAnchor, {
+      slots: { default: () => h(ExAnchorLink, { href: href.value, title: '活动锚点' }) },
+    });
+    await wrapper.get('a').trigger('click');
+    expect(scroll).toHaveBeenCalledOnce();
+
+    href.value = 'javascript:alert(1)';
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#active'], ['']]);
+    expect(wrapper.get('a').classes()).not.toContain('is-active');
+    await wrapper.get('a').trigger('click');
+    expect(scroll).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('click')).toHaveLength(1);
+
+    href.value = '#active';
+    await nextTick();
+    await wrapper.get('a').trigger('click');
+    expect(wrapper.emitted('change')).toEqual([['#active'], [''], ['#active']]);
+    expect(scroll).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
   });
 
   it('容器变化时迁移滚动监听器', async () => {
