@@ -426,7 +426,14 @@ import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 // lunar-javascript 为可选依赖，运行时按需动态加载（仅在开启农历/节气时），
 // 未安装时静默降级——不显示农历与节气，组件其余功能不受影响。
 import { useI18n } from '../../locale';
-import { parseLocalDate, setMonthClamped, setYearClamped } from '../../utils/date';
+import {
+  calendarDayNumber,
+  createLocalDate,
+  parseLocalDate,
+  setMonthClamped,
+  setYearClamped,
+  startOfDay,
+} from '../../utils/date';
 import { CALENDAR_WEEK_LENGTH, useCalendarKeyboard } from './use-calendar-keyboard';
 import type {
   ExCalendarProps,
@@ -568,12 +575,13 @@ const currentMonth = computed(() => currentDate.value.getMonth() + 1);
 const currentDay = computed(() => currentDate.value.getDate());
 const currentWeekday = computed(() => weekdays.value[currentDate.value.getDay()]);
 
-// 计算当前周数
+// 周视图按本地日期和周日起点计数，不使用两个本地时刻的毫秒差。
 const currentWeek = computed(() => {
-  const date = new Date(currentDate.value);
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  const date = currentDate.value;
+  const firstDayOfYear = new Date(date);
+  firstDayOfYear.setMonth(0, 1);
+  const pastDaysOfYear = calendarDayNumber(date) - calendarDayNumber(firstDayOfYear);
+  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / CALENDAR_WEEK_LENGTH);
 });
 
 // 当前日期的农历
@@ -640,33 +648,33 @@ const calendarCells = computed(() => {
   const year = currentDate.value.getFullYear();
   const month = currentDate.value.getMonth();
 
-  const firstDay = new Date(year, month, 1);
+  const firstDay = createLocalDate(year, month, 1);
   const firstDayWeek = firstDay.getDay();
 
-  const lastDay = new Date(year, month + 1, 0);
+  const lastDay = createLocalDate(year, month + 1, 0);
   const lastDayDate = lastDay.getDate();
 
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  const prevMonthLastDay = createLocalDate(year, month, 0).getDate();
 
   const cells: CalendarDateCell[] = [];
 
   // 上月日期
   for (let i = firstDayWeek - 1; i >= 0; i--) {
     const day = prevMonthLastDay - i;
-    const date = new Date(year, month - 1, day);
+    const date = createLocalDate(year, month - 1, day);
     cells.push(createCell(date, day, false));
   }
 
   // 当月日期
   for (let day = 1; day <= lastDayDate; day++) {
-    const date = new Date(year, month, day);
+    const date = createLocalDate(year, month, day);
     cells.push(createCell(date, day, true));
   }
 
   // 下月日期
   const remainingDays = 42 - cells.length;
   for (let day = 1; day <= remainingDays; day++) {
-    const date = new Date(year, month + 1, day);
+    const date = createLocalDate(year, month + 1, day);
     cells.push(createCell(date, day, false));
   }
 
@@ -743,8 +751,7 @@ const getHoliday = (date: Date): string => {
 
 // 创建单元格数据
 const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarDateCell => {
-  const cellDate = new Date(date);
-  cellDate.setHours(0, 0, 0, 0);
+  const cellDate = startOfDay(date);
   const dateTime = cellDate.getTime();
 
   const isToday = todayDate.value !== null && dateTime === getDateTimestamp(todayDate.value);
@@ -759,20 +766,20 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
   });
 
   // 获取节假日
-  const holiday = getHoliday(date);
+  const holiday = getHoliday(cellDate);
 
   // 获取节气
-  const solarTerm = props.showSolarTerm ? getSolarTerm(date) : undefined;
+  const solarTerm = props.showSolarTerm ? getSolarTerm(cellDate) : undefined;
 
   // 获取农历日期
-  const lunar = props.showLunar ? getLunarDate(date) : undefined;
+  const lunar = props.showLunar ? getLunarDate(cellDate) : undefined;
 
   return {
-    date,
+    date: cellDate,
     day,
     isCurrentMonth,
     isToday,
-    disabled: props.disabledDate ? props.disabledDate(date) : false,
+    disabled: props.disabledDate ? props.disabledDate(new Date(cellDate)) : false,
     events: dateEvents,
     checkedIn,
     holiday,
@@ -784,8 +791,8 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
 // 获取年视图中某月的日期
 const getMonthDays = (month: number) => {
   const year = currentDate.value.getFullYear();
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
+  const firstDay = createLocalDate(year, month - 1, 1);
+  const lastDay = createLocalDate(year, month, 0);
   const firstDayWeek = firstDay.getDay();
   const lastDayDate = lastDay.getDate();
 
@@ -799,8 +806,7 @@ const getMonthDays = (month: number) => {
 
   // 填充日期
   for (let day = 1; day <= lastDayDate; day++) {
-    const date = new Date(year, month - 1, day);
-    date.setHours(0, 0, 0, 0);
+    const date = createLocalDate(year, month - 1, day);
     days.push({ day, isToday: todayTimestamp !== null && date.getTime() === todayTimestamp });
   }
 

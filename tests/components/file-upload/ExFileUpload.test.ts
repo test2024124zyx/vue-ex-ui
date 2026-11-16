@@ -442,6 +442,20 @@ describe('ExFileUpload', () => {
       });
     });
 
+    it('负数 limit 不限制选中文件，0 则拒绝选中文件', async () => {
+      const wrapper = mountUpload({ props: { limit: -1, multiple: true, autoUpload: false } });
+      const file = makeFile('accepted.txt', 'text/plain');
+      await selectFiles(wrapper, [file]);
+      expect(wrapper.emitted('rejected')).toBeUndefined();
+      expect(wrapper.text()).toContain('accepted.txt');
+
+      await wrapper.setProps({ limit: 0 });
+      expect(wrapper.get('input[type="file"]').attributes('disabled')).toBeDefined();
+      await selectFiles(wrapper, [makeFile('rejected.txt', 'text/plain')]);
+      expect((wrapper.vm as unknown as ExFileUploadExposed).openFileDialog()).toBe(false);
+      expect(wrapper.text()).not.toContain('rejected.txt');
+    });
+
     it('达到 limit 后拒绝新文件且公开打开方法返回 false', async () => {
       const wrapper = mountUpload({ props: { limit: 1, multiple: true, autoUpload: false } });
       await selectFiles(wrapper, [

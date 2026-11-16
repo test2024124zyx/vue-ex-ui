@@ -1,7 +1,13 @@
-import { addDays, isValidDate, parseLocalDate, startOfDay, toDateKey } from '../../utils/date';
+import {
+  addDays,
+  calendarDayNumber,
+  isValidDate,
+  parseLocalDate,
+  startOfDay,
+  toDateKey,
+} from '../../utils/date';
 import type { HeatmapDataItem } from './types';
 
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /** 单个热力图最多展示 366 个日历日，避免一次创建不可用的大量 DOM。 */
@@ -31,9 +37,6 @@ const parseDateKey = (value: string): Date | null => {
   if (!DATE_KEY_PATTERN.test(value)) return null;
   return parseLocalDate(value);
 };
-
-const calendarDayNumber = (date: Date): number =>
-  Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / MILLISECONDS_PER_DAY;
 
 const calendarDayCount = (start: Date, end: Date): number =>
   calendarDayNumber(end) - calendarDayNumber(start) + 1;

@@ -1,3 +1,8 @@
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const DATE_TOKEN_SOURCE = 'YYYY|MM|DD|HH|mm|ss';
+const DATE_TOKENS = new RegExp(DATE_TOKEN_SOURCE, 'g');
+const DATE_TOKEN_SEQUENCE = new RegExp(`^(?:${DATE_TOKEN_SOURCE}|[TZ])+$`);
+
 /** 判断值是否为有效 Date。 */
 export function isValidDate(value: unknown): value is Date {
   return value instanceof Date && Number.isFinite(value.getTime());
@@ -6,6 +11,14 @@ export function isValidDate(value: unknown): value is Date {
 /** 返回独立日期副本，无效输入返回 null。 */
 export function cloneDate(value: unknown): Date | null {
   return isValidDate(value) ? new Date(value.getTime()) : null;
+}
+
+/** 构造本地日历日，保留 0–99 年，并支持月末计算所需的日期进位。 */
+export function createLocalDate(year: number, month: number, day: number): Date {
+  const date = new Date(0);
+  date.setHours(0, 0, 0, 0);
+  date.setFullYear(year, month, day);
+  return date;
 }
 
 /**
@@ -19,7 +32,7 @@ export function parseLocalDate(value: Date | string): Date | null {
     const year = Number(dateOnly[1]);
     const month = Number(dateOnly[2]) - 1;
     const day = Number(dateOnly[3]);
-    const parsed = new Date(year, month, day);
+    const parsed = createLocalDate(year, month, day);
     return parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day
       ? parsed
       : null;
@@ -35,7 +48,7 @@ export function setMonthClamped(date: Date, targetMonth: number): Date {
   const day = result.getDate();
   result.setDate(1);
   result.setMonth(targetMonth);
-  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  const lastDay = createLocalDate(result.getFullYear(), result.getMonth() + 1, 0).getDate();
   result.setDate(Math.min(day, lastDay));
   return result;
 }
@@ -48,7 +61,7 @@ export function setYearClamped(date: Date, targetYear: number): Date {
   result.setDate(1);
   result.setFullYear(targetYear);
   result.setMonth(month);
-  const lastDay = new Date(targetYear, month + 1, 0).getDate();
+  const lastDay = createLocalDate(targetYear, month + 1, 0).getDate();
   result.setDate(Math.min(day, lastDay));
   return result;
 }
@@ -77,12 +90,19 @@ export function addDays(date: Date, amount: number): Date {
   return result;
 }
 
+/** 将本地年月日换算成 UTC 日序，忽略时分秒及夏令时长度变化。 */
+export function calendarDayNumber(date: Date): number {
+  const utc = new Date(0);
+  utc.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+  return utc.getTime() / MILLISECONDS_PER_DAY;
+}
+
 /** 返回稳定的本地 YYYY-MM-DD 标识。 */
 export function toDateKey(date: Date): string {
   return formatDate(date, 'YYYY-MM-DD');
 }
 
-/** 使用固定占位符格式化本地日期时间。 */
+/** 格式化本地日期时间，保留普通单词和方括号中的文本。 */
 export function formatDate(date: Date, format: string): string {
   if (!isValidDate(date)) return '';
   const tokens: Record<string, string> = {
@@ -93,7 +113,12 @@ export function formatDate(date: Date, format: string): string {
     mm: String(date.getMinutes()).padStart(2, '0'),
     ss: String(date.getSeconds()).padStart(2, '0'),
   };
-  return format.replace(/YYYY|MM|DD|HH|mm|ss/g, token => tokens[token]!);
+  return format.replace(/\[([^\]]*)\]|[A-Za-z]+/g, (word, literal: string | undefined) => {
+    if (literal !== undefined) return literal;
+    return DATE_TOKEN_SEQUENCE.test(word)
+      ? word.replace(DATE_TOKENS, token => tokens[token]!)
+      : word;
+  });
 }
 
 /** 将时、分、秒输入规范为有限整数范围。 */

@@ -20,8 +20,8 @@ export function matchesUploadAccept(file: File, accept?: string): boolean {
 
 /** 把数量限制规范为非负安全整数；非法值表示不限制。 */
 export function normalizeUploadLimit(limit?: number): number | undefined {
-  if (!Number.isFinite(limit)) return undefined;
-  const normalized = Math.max(0, Math.floor(limit ?? 0));
+  if (limit === undefined || !Number.isFinite(limit) || limit < 0) return undefined;
+  const normalized = Math.max(0, Math.floor(limit));
   return Number.isSafeInteger(normalized) ? normalized : undefined;
 }
 

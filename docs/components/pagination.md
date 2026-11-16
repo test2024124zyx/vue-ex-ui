@@ -20,7 +20,7 @@ const handleChange = (page, pageSize) => {
 
 ## 基础用法
 
-基础的分页用法。显式传入 `current` 或 `page-size` 后，相应状态只在父级回写时更新；未传入的状态由组件内部管理。仅控制 `page-size` 时，改变容量仍会立即调整内部页码，而容量等待父级接受。
+基础的分页用法。显式传入 `current` 或 `page-size` 后，相应状态只在父级回写时更新；未传入的状态由组件内部管理。仅控制 `page-size` 时，组件先发出 `update:pageSize`，在父级确认该容量后才调整本地页码并发出 `change`。
 
 ::: raw
 

@@ -89,9 +89,9 @@ const avatars = useRenderComputed(() =>
   flattenVNodes(slots.default?.() ?? []).filter(isAvatarVNode)
 );
 const visibleLimit = computed(() => {
-  if (props.maxCount === undefined) return Number.POSITIVE_INFINITY;
-  if (!Number.isFinite(props.maxCount)) return 0;
-  return Math.max(0, Math.trunc(props.maxCount));
+  const limit = props.maxCount;
+  if (limit === undefined || Number.isNaN(limit)) return Number.POSITIVE_INFINITY;
+  return typeof limit === 'number' ? Math.max(0, Math.trunc(limit)) : 0;
 });
 const displayAvatars = computed(() => avatars.value.slice(0, visibleLimit.value));
 const overflowCount = computed(() => Math.max(0, avatars.value.length - visibleLimit.value));

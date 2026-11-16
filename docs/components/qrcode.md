@@ -166,7 +166,7 @@ const url = 'https://github.com/vuejs/vue';
 
 ## 自定义颜色
 
-通过 `fgColor` 和 `bgColor` 属性可以自定义二维码的颜色。
+通过 `fgColor` 和 `bgColor` 设置前景和背景色，支持 3、4、6 或 8 位十六进制颜色（例如 `#00f0ff` 和 `#ffffff80`）。颜色无效时组件会停止生成并触发 `error`，修正颜色后自动重新生成。
 
 ::: raw
 <div class="demo-container" style="display: flex; gap: 24px; flex-wrap: wrap;">

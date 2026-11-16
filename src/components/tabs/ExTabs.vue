@@ -110,6 +110,7 @@ import { useSlotItems } from '../../composables/useSlotItems';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useControllableState } from '../../composables/useControllableState';
 import { useComponentSize } from '../config-provider/composables';
+import { tabsContextKey, type PaneInfo } from './context';
 
 defineOptions({
   name: 'ExTabs',
@@ -128,13 +129,6 @@ const props = withDefaults(defineProps<ExTabsProps>(), {
 const emit = defineEmits<ExTabsEmits>();
 const componentSize = useComponentSize(computed(() => props.size));
 const { t } = useLocale('tabs');
-
-interface PaneInfo {
-  name: string | number;
-  label?: string;
-  disabled?: boolean;
-  closable?: boolean;
-}
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
@@ -172,28 +166,29 @@ const getTabId = (name: string | number) => `${tabsUid}-tab-${encodePaneName(nam
 const getPanelId = (name: string | number) => `${tabsUid}-panel-${encodePaneName(name)}`;
 
 // 提供给子组件
-provide('exTabsUid', tabsUid);
-provide('getTabId', getTabId);
-provide('getPanelId', getPanelId);
-provide('activeTab', activeTab);
-provide('registerPane', (pane: PaneInfo) => {
-  if (!slotPanes.value.some(item => item.name === pane.name)) registeredPanes.value.push(pane);
-});
-provide('updatePane', (registeredName: string | number, pane: PaneInfo) => {
-  const target = registeredPanes.value.find(current => current.name === registeredName);
-  const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
-  if (target) Object.assign(target, pane);
-  if (activeNameChanged) {
-    tabState.request(pane.name);
-    emit('update:modelValue', pane.name);
-    emit('change', pane.name);
-  }
+provide(tabsContextKey, {
+  getTabId,
+  getPanelId,
+  activeTab,
+  registerPane(pane) {
+    if (!slotPanes.value.some(item => item.name === pane.name)) registeredPanes.value.push(pane);
+  },
+  updatePane(registeredName, pane) {
+    const target = registeredPanes.value.find(current => current.name === registeredName);
+    const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
+    if (target) Object.assign(target, pane);
+    if (activeNameChanged) {
+      tabState.request(pane.name);
+      emit('update:modelValue', pane.name);
+      emit('change', pane.name);
+    }
+  },
+  unregisterPane(name) {
+    registeredPanes.value = registeredPanes.value.filter(pane => pane.name !== name);
+  },
 });
 let isTabsUnmounting = false;
 let removalRequest: { name: string | number; nextName: string | number } | undefined;
-provide('unregisterPane', (name: string | number) => {
-  registeredPanes.value = registeredPanes.value.filter(pane => pane.name !== name);
-});
 
 onMounted(() =>
   watch(

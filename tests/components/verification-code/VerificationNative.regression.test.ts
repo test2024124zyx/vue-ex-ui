@@ -10,6 +10,16 @@ afterEach(() => {
 });
 
 describe('验证码原生输入与遮罩契约', () => {
+  it('空验证码在第一位退格不发布更新或变更事件', async () => {
+    const wrapper = mount(ExVerificationCode, { props: { required: true, length: 4 } });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    await input.trigger('keydown', { key: 'Backspace' });
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(wrapper.emitted('change')).toBeUndefined();
+    expect(input.element.value).toBe('');
+  });
+
   it('真实输入保留完整值，逐字输入、完整性校验和删除保持一致', async () => {
     const wrapper = mount(ExVerificationCode, { props: { required: true, length: 4 } });
     wrappers.push(wrapper);

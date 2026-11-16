@@ -236,6 +236,15 @@ describe('ExAvatarGroup', () => {
     expect(wrapper.find('.ex-avatar-group__overflow').text()).toContain('+2');
   });
 
+  it.each([Number.POSITIVE_INFINITY, Number.NaN])('maxCount %s 显示全部头像', maxCount => {
+    const wrapper = mount(ExAvatarGroup, {
+      props: { maxCount },
+      slots: { default: () => [h(ExAvatar, { text: 'A' }), h(ExAvatar, { text: 'B' })] },
+    });
+    expect(wrapper.findAllComponents(ExAvatar)).toHaveLength(2);
+    expect(wrapper.find('.ex-avatar-group__overflow').exists()).toBe(false);
+  });
+
   it('treats maxCount zero as a real limit and exposes overflow as a native button', async () => {
     const wrapper = mount(ExAvatarGroup, {
       props: { maxCount: 0 },

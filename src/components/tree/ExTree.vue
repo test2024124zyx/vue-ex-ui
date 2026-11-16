@@ -782,11 +782,6 @@ provide(TREE_STATE_KEY, {
   getLoadState: getNodeLoadState,
   reload: reloadNode,
 });
-provide('tree', {
-  props,
-  nodeMap,
-});
-
 defineExpose<ExTreeExposed>({
   reloadNode,
   cancelNodeLoad,

@@ -15,11 +15,16 @@ export function normalizeLayoutLength(value: LayoutLength, fallback: LayoutLengt
     if (typeof candidate === 'number') {
       return Number.isFinite(candidate) && candidate >= 0 ? candidate + 'px' : null;
     }
+    if (typeof candidate !== 'string') return null;
     const trimmed = candidate.trim();
     const simpleLength =
-      /^(-?\d*\.?\d+)(?:px|r?em|%|[dls]?v[wh]|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)?$/i.exec(trimmed);
-    if (simpleLength && Number(simpleLength[1]) < 0) return null;
-    if (simpleLength) return trimmed;
+      /^(-?\d*\.?\d+)(px|r?em|%|[dls]?v[wh]|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)?$/i.exec(trimmed);
+    if (simpleLength) {
+      const amount = Number(simpleLength[1]);
+      if (!Number.isFinite(amount) || amount < 0) return null;
+      // 无单位的非零数值与 number 属性采用同一像素单位。
+      return simpleLength[2] || amount === 0 ? trimmed : `${trimmed}px`;
+    }
     if (/^(?:calc|min|max|clamp|var)\(.+\)$/i.test(trimmed)) return trimmed;
     if (/^(?:auto|min-content|max-content|fit-content)$/i.test(trimmed)) return trimmed;
     return null;

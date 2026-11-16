@@ -19,11 +19,11 @@ export type DateTimePickerValue = Date | DateTimePickerRange | null;
 export type DisabledDateFn = (date: Date) => boolean;
 export type DateTimePickerEndpoint = 'start' | 'end';
 
-/** 时分秒按当前端点分别禁用，未提供的维度不受限制。 */
+/** 时分秒按当前端点分别禁用，未提供的维度和空返回值均不添加限制。 */
 export interface DateTimeConstraints {
-  disabledHours?: () => number[];
-  disabledMinutes?: (hour: number) => number[];
-  disabledSeconds?: (hour: number, minute: number) => number[];
+  disabledHours?: () => number[] | null | undefined;
+  disabledMinutes?: (hour: number) => number[] | null | undefined;
+  disabledSeconds?: (hour: number, minute: number) => number[] | null | undefined;
 }
 export type DisabledTimeFn = (
   date: Date,

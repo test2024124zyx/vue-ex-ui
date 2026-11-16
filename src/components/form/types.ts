@@ -57,9 +57,9 @@ export interface FormRule {
   maxValue?: number;
   /** 正则表达式 */
   pattern?: RegExp;
-  /** 自定义验证函数：调用 callback 或返回 Promise；混用时首次完成生效。 */
+  /** 内置条件通过后执行。调用 callback 或返回 Promise，首次完成生效。 */
   validator?: (rule: FormRule, value: unknown, callback: ValidatorCallback) => void | Promise<void>;
-  /** 异步验证函数：Promise resolve 表示成功，reject 表示失败；也兼容 callback。 */
+  /** validator 通过后执行。Promise resolve 表示成功，reject 表示失败，也兼容 callback。 */
   asyncValidator?: (
     rule: FormRule,
     value: unknown,

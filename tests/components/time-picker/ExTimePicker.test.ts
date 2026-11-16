@@ -30,6 +30,17 @@ describe('ExTimePicker', () => {
     expect(wrapper!.find('.ex-time-picker__placeholder').text()).toBe('选择时间');
   });
 
+  it.each(['12:34:56', '12:34:00', '23:59:60', '12'])(
+    '拒绝不匹配 HH:mm 的受控值 %s',
+    async modelValue => {
+      const picker = mountTP({ modelValue, format: 'HH:mm', placeholder: '选择时分' });
+      expect(picker.get('.ex-time-picker__placeholder').text()).toBe('选择时分');
+      expect(picker.emitted('update:modelValue')).toBeUndefined();
+      await picker.setProps({ modelValue: '12:34' });
+      expect(picker.get('.ex-time-picker__text').text()).toBe('12:34');
+    }
+  );
+
   it('点击触发器打开面板', async () => {
     mountTP();
     await wrapper!.find('.ex-time-picker__trigger').trigger('click');
@@ -332,7 +343,7 @@ describe('ExTimePicker', () => {
   });
 
   it('确认、清空、触发器焦点和外部点击应该触发对应事件', async () => {
-    mountTP({ modelValue: '09:30:00', format: 'HH:mm', clearable: true });
+    mountTP({ modelValue: '09:30', format: 'HH:mm', clearable: true });
     const trigger = wrapper!.find('.ex-time-picker__trigger');
     await trigger.trigger('focus');
     await trigger.trigger('blur');

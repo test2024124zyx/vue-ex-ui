@@ -60,6 +60,69 @@ describe('ExPagination', () => {
     expect(wrapper.emitted('change')?.at(-1)).toEqual([1, 20]);
   });
 
+  it('仅容量受控时在外部确认前保留本地页码，确认后一起发布新页码与容量', async () => {
+    const wrapper = mount(ExPagination, {
+      props: {
+        pageSize: 10,
+        total: 100,
+        showSizeChanger: true,
+        totalText: (_total, range) => range.join('-'),
+      },
+    });
+    const fourth = wrapper.findAll('.ex-pagination__item').find(item => item.text() === '4')!;
+    await fourth.trigger('click');
+    const select = wrapper.get<HTMLSelectElement>('.ex-pagination__size-select');
+    await select.setValue('20');
+    expect(wrapper.emitted('update:pageSize')).toEqual([[20]]);
+    expect(wrapper.emitted('update:current')).toEqual([[4]]);
+    expect(wrapper.emitted('change')).toEqual([[4, 10]]);
+    expect(select.element.value).toBe('10');
+    expect(wrapper.get('.ex-pagination__total').text()).toBe('31-40');
+
+    await wrapper.setProps({ pageSize: 20 });
+    expect(wrapper.emitted('update:current')).toEqual([[4], [2]]);
+    expect(wrapper.emitted('change')).toEqual([
+      [4, 10],
+      [2, 20],
+    ]);
+    expect(wrapper.get('.ex-pagination__total').text()).toBe('21-40');
+  });
+
+  it('外部写入其他容量不会误用上一次拒绝请求的数据位置', async () => {
+    const wrapper = mount(ExPagination, {
+      props: {
+        pageSize: 10,
+        total: 100,
+        showSizeChanger: true,
+        totalText: (_total, range) => range.join('-'),
+      },
+    });
+    const fourth = wrapper.findAll('.ex-pagination__item').find(item => item.text() === '4')!;
+    await fourth.trigger('click');
+    await wrapper.get('.ex-pagination__size-select').setValue('20');
+    await wrapper.setProps({ pageSize: 30 });
+    expect(wrapper.get('.ex-pagination__item--active').text()).toBe('4');
+    expect(wrapper.get('.ex-pagination__total').text()).toBe('91-100');
+    expect(wrapper.emitted('update:current')).toEqual([[4]]);
+    expect(wrapper.emitted('change')).toEqual([[4, 10]]);
+  });
+
+  it('等待容量确认时主动翻页，迟到的容量回写不会恢复旧数据位置', async () => {
+    const wrapper = mount(ExPagination, {
+      props: { pageSize: 10, total: 100, showSizeChanger: true },
+    });
+    const fourth = wrapper.findAll('.ex-pagination__item').find(item => item.text() === '4')!;
+    await fourth.trigger('click');
+    await wrapper.get('.ex-pagination__size-select').setValue('20');
+    await wrapper.get('.ex-pagination__next').trigger('click');
+    await wrapper.setProps({ pageSize: 20 });
+    expect(wrapper.get('.ex-pagination__item--active').text()).toBe('5');
+    expect(wrapper.emitted('change')).toEqual([
+      [4, 10],
+      [5, 10],
+    ]);
+  });
+
   it('总数为零时应该使用空范围且不渲染虚假的第一页', () => {
     const wrapper = mount(ExPagination, {
       props: {
@@ -73,6 +136,18 @@ describe('ExPagination', () => {
     expect(wrapper.find('.ex-pagination__total').text()).toBe('0-0');
     expect(wrapper.find('.ex-pagination__item--active').exists()).toBe(false);
     expect(wrapper.find('.ex-pagination__next').attributes('disabled')).toBeDefined();
+  });
+
+  it.each([
+    [-5, 0, [0, 0]],
+    [Number.NaN, 0, [0, 0]],
+    [Number.POSITIVE_INFINITY, 0, [0, 0]],
+    [10.9, 10, [1, 10]],
+  ])('总数 %s 的默认文案和自定义文案使用同一规范值', async (total, expected, range) => {
+    const wrapper = mount(ExPagination, { props: { total, pageSize: 10 } });
+    expect(wrapper.get('.ex-pagination__total').text()).toBe(`Total ${expected} items`);
+    await wrapper.setProps({ totalText: (count, pageRange) => `${count}:${pageRange.join('-')}` });
+    expect(wrapper.get('.ex-pagination__total').text()).toBe(`${expected}:${range.join('-')}`);
   });
 
   it('简洁模式的页码输入应该具有可访问名称', () => {
