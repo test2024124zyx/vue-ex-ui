@@ -5,6 +5,7 @@
 import { formatDate } from './date';
 
 const FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] as const;
+const FILE_SIZE_UNIT_BASE = 1024;
 
 /**
  * 格式化时间戳
@@ -26,10 +27,10 @@ export function formatFileSize(size: number): string {
   if (safeSize === 0) return '0 B';
 
   const unitIndex = Math.min(
-    Math.floor(Math.log(safeSize) / Math.log(1024)),
+    Math.max(0, Math.floor(Math.log(safeSize) / Math.log(FILE_SIZE_UNIT_BASE))),
     FILE_SIZE_UNITS.length - 1
   );
-  const value = safeSize / 1024 ** unitIndex;
+  const value = safeSize / FILE_SIZE_UNIT_BASE ** unitIndex;
 
   // 最多保留两位小数，同时去掉无意义的尾随零。
   return `${Number(value.toFixed(2))} ${FILE_SIZE_UNITS[unitIndex]}`;

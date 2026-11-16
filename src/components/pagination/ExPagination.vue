@@ -314,9 +314,9 @@ const dataRange = computed<[number, number]>(() => {
 // 总数显示文本
 const totalDisplayText = computed(() => {
   if (props.totalText) {
-    return props.totalText(props.total, dataRange.value);
+    return props.totalText(normalizedTotal.value, dataRange.value);
   }
-  return t('total', { total: props.total });
+  return t('total', { total: normalizedTotal.value });
 });
 
 const { itemsStyle, layout } = useResponsivePagination(paginationRef, itemsRef, measureRef, {

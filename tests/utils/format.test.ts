@@ -30,6 +30,8 @@ describe('formatFileSize', () => {
     [Number.POSITIVE_INFINITY, '0 B'],
     [-1, '0 B'],
     [0, '0 B'],
+    [0.5, '0.5 B'],
+    [Number.MIN_VALUE, '0 B'],
     [1, '1 B'],
     [1536, '1.5 KB'],
     [1024 ** 4, '1 TB'],
