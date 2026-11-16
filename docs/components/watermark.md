@@ -462,7 +462,7 @@ DOM 防篡改只能提高删除水印的成本，无法阻止截屏、重新绘�
 | responsive | 窗口变化时自动重绘 | `boolean` | `true` |
 | dprAware | 根据设备像素比生成高清 Canvas | `boolean` | `true` |
 | throttleMs | resize 重绘节流间隔（ms） | `number` | `100` |
-| antiTamper | 保护覆盖层 DOM 和关键容器样式 | `boolean` | `false` |
+| antiTamper | 恢复覆盖层和组件管理的根元素样式，保留调用方的类名、样式和 `v-show` | `boolean` | `false` |
 
 ### Events
 

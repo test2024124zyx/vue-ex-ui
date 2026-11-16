@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { h, nextTick } from 'vue';
+import { h, nextTick, ref, vShow, withDirectives } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExWatermark from '@/components/watermark/ExWatermark.vue';
 import { ExWatermark as InstallableWatermark } from '@/components/watermark';
@@ -186,19 +186,19 @@ describe('ExWatermark', () => {
     }
   });
 
-  it('防修改模式完整恢复容器的 hidden 与 aria-hidden 属性', async () => {
+  it('防篡改恢复覆盖层的 hidden 与 aria-hidden 属性', async () => {
     const wrapper = mount(ExWatermark, {
       attachTo: document.body,
       props: { antiTamper: true, fullPage: false, text: 'a' },
     });
     try {
       await waitAsync();
-      const element = wrapper.element as HTMLElement;
+      const element = wrapper.get<HTMLElement>('.ex-watermark__overlay').element;
       element.hidden = true;
-      element.setAttribute('aria-hidden', 'true');
+      element.setAttribute('aria-hidden', 'false');
       await waitAsync();
       expect(element.hidden).toBe(false);
-      expect(element.getAttribute('aria-hidden')).toBeNull();
+      expect(element.getAttribute('aria-hidden')).toBe('true');
     } finally {
       wrapper.unmount();
     }
@@ -567,6 +567,52 @@ describe('ExWatermark', () => {
     expect(overlay.hidden).toBe(false);
     expect(overlay.getAttribute('style')).toBe(expectedStyle);
     expect(wrapper.emitted('remove')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('防篡改保留业务容器的 v-show、类名、样式和无障碍属性', async () => {
+    const visible = ref(true);
+    const wrapper = mount(
+      {
+        setup: () => () =>
+          withDirectives(
+            h(ExWatermark, {
+              antiTamper: true,
+              fullPage: false,
+              class: visible.value ? 'visible' : 'collapsed',
+              style: { color: visible.value ? 'red' : 'blue', '--ex-watermark-z-index': '42' },
+              hidden: !visible.value,
+              'aria-hidden': String(!visible.value),
+            }),
+            [[vShow, visible.value]]
+          ),
+      },
+      { attachTo: document.body }
+    );
+    await waitAsync();
+
+    visible.value = false;
+    await waitAsync();
+    const root = wrapper.get('.ex-watermark').element as HTMLElement;
+    expect(root.classList.contains('collapsed')).toBe(true);
+    expect(root.style.display).toBe('none');
+    expect(root.style.color).toBe('blue');
+    expect(root.style.getPropertyValue('--ex-watermark-z-index')).toBe('42');
+    expect(root.getAttribute('aria-hidden')).toBe('true');
+    expect(root.hidden).toBe(true);
+
+    root.classList.remove('ex-watermark');
+    root.style.setProperty('--ex-watermark-pointer-events', 'auto');
+    await waitAsync();
+    expect(root.classList.contains('ex-watermark')).toBe(true);
+    expect(root.classList.contains('collapsed')).toBe(true);
+    expect(root.style.getPropertyValue('--ex-watermark-pointer-events')).toBe('none');
+    expect(root.style.display).toBe('none');
+
+    visible.value = true;
+    await waitAsync();
+    expect(root.style.display).toBe('');
+    expect(root.hidden).toBe(false);
     wrapper.unmount();
   });
 
