@@ -90,18 +90,39 @@ export function useTableRows(
     return { roots, all };
   });
   const allSourceRows = computed(() => sourceTree.value.all);
+  const rowsByRecord = computed(() => {
+    const index = new Map<TableDataItem, IndexedTableRow>();
+    for (const row of allSourceRows.value) {
+      const raw = toRaw(row.record);
+      if (!index.has(raw)) index.set(raw, row);
+    }
+    return index;
+  });
   const internalExpanded = ref([...(props.defaultExpandedRowKeys ?? [])]);
   const internalDetails = ref([...(props.defaultDetailExpandedRowKeys ?? [])]);
-  if (props.defaultExpandAllRows)
-    internalExpanded.value = sourceTree.value.all
-      .filter(row => row.children.length)
-      .map(row => row.key);
+  const manuallyCollapsed = new Set<IndexedTableRow['key']>();
   watch(
-    () => props.expandedRowKeys,
-    keys => {
-      if (keys !== undefined) internalExpanded.value = [...keys];
+    [allSourceRows, () => props.expandedRowKeys?.slice()],
+    ([rows, keys], [previousRows, previousKeys]) => {
+      if (keys !== undefined) {
+        internalExpanded.value = keys;
+        return;
+      }
+      if (!props.defaultExpandAllRows) return;
+      if (previousRows && previousKeys) {
+        const confirmed = new Set(previousKeys);
+        for (const row of previousRows) {
+          if (!row.children.length) continue;
+          if (confirmed.has(row.key)) manuallyCollapsed.delete(row.key);
+          else manuallyCollapsed.add(row.key);
+        }
+      }
+      // 新到的数据按默认属性展开，同一键即使暂时消失也保留手动折叠。
+      internalExpanded.value = rows
+        .filter(row => row.children.length && !manuallyCollapsed.has(row.key))
+        .map(row => row.key);
     },
-    { deep: true }
+    { immediate: true }
   );
   watch(
     () => props.detailExpandedRowKeys,
@@ -129,7 +150,11 @@ export function useTableRows(
       emit('update:detailExpandedRowKeys', result);
       emit('detail-expand-change', result, row.record, next);
     } else {
-      if (props.expandedRowKeys === undefined) internalExpanded.value = result;
+      if (props.expandedRowKeys === undefined) {
+        if (next) manuallyCollapsed.delete(row.key);
+        else manuallyCollapsed.add(row.key);
+        internalExpanded.value = result;
+      }
       emit('update:expandedRowKeys', result);
       emit('expand-change', result, row.record, next);
     }
@@ -248,6 +273,11 @@ export function useTableRows(
     emit('update:pagination', result);
     emit('pagination-change', result);
   }
+  const resetPageForSort = () => {
+    if (!props.remoteSort && paginationConfig.value && current.value > 1) {
+      changePage(1, pageSize.value);
+    }
+  };
   const pageRoots = computed(() =>
     !paginationConfig.value || props.remotePagination
       ? filteredRoots.value
@@ -269,11 +299,11 @@ export function useTableRows(
     return rows;
   });
   const toggleRowExpansion = (record: TableDataItem, expanded?: boolean) => {
-    const row = allSourceRows.value.find(item => toRaw(item.record) === toRaw(record));
+    const row = rowsByRecord.value.get(toRaw(record));
     if (row) toggleExpansion(row, expanded);
   };
   const toggleDetailExpansion = (record: TableDataItem, expanded?: boolean) => {
-    const row = allSourceRows.value.find(item => toRaw(item.record) === toRaw(record));
+    const row = rowsByRecord.value.get(toRaw(record));
     if (row) toggleExpansion(row, expanded, true);
   };
   return {
@@ -291,5 +321,6 @@ export function useTableRows(
     pageSize,
     total,
     changePage,
+    resetPageForSort,
   };
 }
