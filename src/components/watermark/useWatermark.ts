@@ -15,6 +15,7 @@ interface ElementSnapshot {
 interface WatermarkCallbacks {
   onError?: (error: Error) => void;
   onRemove?: () => void;
+  restoreContainerStyle?: (element: HTMLElement) => void;
 }
 
 const DEFAULT_THROTTLE_DELAY = 100;
@@ -55,7 +56,6 @@ export function useWatermark(
   let renderRequestId = 0;
   let mutationObserver: MutationObserver | null = null;
   let overlaySnapshot: ElementSnapshot | null = null;
-  let containerSnapshot: ElementSnapshot | null = null;
   let internalDomUpdate = false;
   let resizeListener: (() => void) | null = null;
   let throttledResize: ReturnType<typeof throttle> | null = null;
@@ -83,9 +83,7 @@ export function useWatermark(
   };
 
   const captureProtectionSnapshot = (): void => {
-    if (!containerRef.value || !overlayRef.value) return;
-    containerSnapshot = captureElement(containerRef.value);
-    overlaySnapshot = captureElement(overlayRef.value);
+    if (overlayRef.value) overlaySnapshot = captureElement(overlayRef.value);
   };
 
   const finishInternalDomUpdate = async (): Promise<void> => {
@@ -129,7 +127,7 @@ export function useWatermark(
     mutationObserver.observe(containerRef.value, {
       attributes: true,
       childList: true,
-      attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
+      attributeFilter: ['class', 'style'],
     });
     mutationObserver.observe(overlayRef.value, {
       attributes: true,
@@ -140,15 +138,11 @@ export function useWatermark(
   const restoreProtectedElements = (wasRemoved: boolean): void => {
     const container = containerRef.value;
     const overlay = overlayRef.value;
-    if (!container || !overlay || !containerSnapshot || !overlaySnapshot) return;
+    if (!container || !overlay || !overlaySnapshot) return;
 
     mutationObserver?.disconnect();
-    if (!container.contains(overlay)) container.insertBefore(overlay, container.firstChild);
+    if (overlay.parentElement !== container) container.insertBefore(overlay, container.firstChild);
 
-    container.className = containerSnapshot.className;
-    restoreAttribute(container, 'style', containerSnapshot.style);
-    restoreAttribute(container, 'aria-hidden', containerSnapshot.ariaHidden);
-    restoreAttribute(container, 'hidden', containerSnapshot.hidden);
     overlay.className = overlaySnapshot.className;
     restoreAttribute(overlay, 'style', overlaySnapshot.style);
     restoreAttribute(overlay, 'aria-hidden', overlaySnapshot.ariaHidden);
@@ -172,10 +166,15 @@ export function useWatermark(
         Array.from(mutation.removedNodes).some(node => node === overlay)
       );
       const wasModified = mutations.some(
-        mutation =>
-          mutation.type === 'attributes' &&
-          (mutation.target === overlay || mutation.target === container)
+        mutation => mutation.type === 'attributes' && mutation.target === overlay
       );
+      if (
+        mutations.some(mutation => mutation.type === 'attributes' && mutation.target === container)
+      ) {
+        // 只恢复组件管理的声明，保留透传属性、v-show 和业务样式。
+        if (!container.classList.contains('ex-watermark')) container.classList.add('ex-watermark');
+        callbacks.restoreContainerStyle?.(container);
+      }
       if (wasRemoved || wasModified) restoreProtectedElements(wasRemoved);
     });
     observeProtectedElements();

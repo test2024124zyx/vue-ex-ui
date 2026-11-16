@@ -110,6 +110,8 @@ const submit = async () => {
 
 ## 选择文件
 
+`accept="*/*"` 允许选择或拖入任意类型的文件。指定 `image/*`、`video/*` 或 `audio/*` 时，文件未提供 MIME 类型才根据常见扩展名识别媒体类别。
+
 ::: raw
 <div class="demo-container">
   <ex-file-upload

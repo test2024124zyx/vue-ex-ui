@@ -82,7 +82,7 @@
       ref="inputRef"
       type="file"
       class="ex-file-upload__input"
-      :accept="accept"
+      :accept="nativeAccept"
       :multiple="multiple"
       :disabled="mutationDisabled || isLimitReached"
       @change="handleFileChange"
@@ -389,6 +389,7 @@ import { useUploadTransfers } from './useUploadTransfers';
 import {
   cloneUploadFileList,
   formatUploadFileSize,
+  getNativeUploadAccept,
   matchesUploadAccept,
   normalizeUploadLimit,
   normalizeUploadMaxFileSize,
@@ -475,6 +476,7 @@ const displayedFileList = computed<readonly UploadFile[]>(() =>
 );
 const normalizedLimit = computed(() => normalizeUploadLimit(props.limit));
 const normalizedMaxFileSize = computed(() => normalizeUploadMaxFileSize(props.maxFileSize));
+const nativeAccept = computed(() => getNativeUploadAccept(props.accept));
 const isLimitReached = computed(
   () =>
     normalizedLimit.value !== undefined && displayedFileList.value.length >= normalizedLimit.value

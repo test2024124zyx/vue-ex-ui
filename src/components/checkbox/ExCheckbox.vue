@@ -157,13 +157,14 @@ import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
 import { useFormItem } from '../form/use-form-item';
 import { checkboxGroupContextKey } from './context';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCheckbox',
 });
 
 const props = withDefaults(defineProps<ExCheckboxProps>(), {
-  modelValue: false,
+  modelValue: undefined,
   size: undefined,
   trueValue: true,
   falseValue: false,
@@ -211,22 +212,16 @@ watch(
 const isIndeterminate = ref(props.indeterminate);
 
 // 计算属性
-const checkboxValue = computed({
-  get: () => {
-    if (checkboxGroupContext && props.value !== undefined) {
-      const isIncluded = checkboxGroupContext.modelValue.value.includes(props.value);
-      return isIncluded;
-    }
-    return props.modelValue;
-  },
-  set: checked => {
-    if (checkboxGroupContext && props.value !== undefined) {
-      checkboxGroupContext.updateValue(props.value, checked as boolean);
-    } else if (checked !== undefined) {
-      emit('update:modelValue', checked);
-    }
-  },
+const checkboxState = useControllableState({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => props.falseValue,
+  resetRevision: () => formItem?.resetRevision?.value,
 });
+const checkboxValue = computed(() =>
+  checkboxGroupContext && props.value !== undefined
+    ? checkboxGroupContext.modelValue.value.includes(props.value)
+    : checkboxState.value.value
+);
 
 // 原生 checked 只反映真实值；半选状态单独管理，避免把 mixed 错误地当成选中。
 const nativeChecked = computed(() => {
@@ -441,6 +436,7 @@ const handleChange = (event: Event) => {
     // 独立模式
     const value = target.checked ? props.trueValue : props.falseValue;
 
+    checkboxState.request(value);
     emit('update:modelValue', value);
     clearIndeterminate();
 
@@ -480,6 +476,7 @@ const handleSpaceKey = (event: KeyboardEvent) => {
     }
   } else {
     const value = newChecked ? props.trueValue : props.falseValue;
+    checkboxState.request(value);
     emit('update:modelValue', value);
     clearIndeterminate();
     validateCheckbox(value);
