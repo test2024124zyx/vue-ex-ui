@@ -1,4 +1,5 @@
 import { toRaw } from 'vue';
+import { usesNativeIdentity } from './native-identity';
 
 /** 迭代比较值快照，支持常用结构与循环引用，不依赖 JSON 的丢失类型序列化。 */
 export function equalValueSnapshot(left: unknown, right: unknown): boolean {
@@ -15,12 +16,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     }
     if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
     // 不透明对象无法靠自有属性比较；只允许同一原生对象继续作为确认值。
-    if (
-      a instanceof Promise ||
-      a instanceof WeakMap ||
-      a instanceof WeakSet ||
-      (typeof Blob !== 'undefined' && a instanceof Blob)
-    ) {
+    if (usesNativeIdentity(a)) {
       if (a !== b) return false;
       continue;
     }

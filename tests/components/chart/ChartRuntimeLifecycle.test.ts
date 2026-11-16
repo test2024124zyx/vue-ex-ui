@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { nextTick, reactive } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import type {
   ChartEventParams,
@@ -7,6 +8,7 @@ import type {
   ExChartExposed,
 } from '../../../src/components/chart/types';
 import { resolveChartColor } from '../../../src/components/chart/chart-runtime';
+import { deepClone } from '../../../src/utils/clone';
 
 const engine = vi.hoisted(() => ({ init: vi.fn() }));
 vi.mock('echarts', () => ({ init: engine.init, color: { modifyAlpha: (color: string) => color } }));
@@ -25,7 +27,7 @@ const createRuntime = () => {
     showLoading: vi.fn(),
     hideLoading: vi.fn(),
     dispatchAction: vi.fn(),
-    getOption: vi.fn(() => ({ series: [{ type: 'bar', data: [1, 2] }] })),
+    getOption: vi.fn<() => ChartOption>(() => ({ series: [{ type: 'bar', data: [1, 2] }] })),
     getWidth: () => 320,
     getHeight: () => 200,
     renderToSVGString: vi.fn(() => '<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
@@ -53,6 +55,107 @@ const mountChart = async (props = {}) => {
 };
 
 describe('图表公开能力与运行时生命周期', () => {
+  it('等值的新 option 不会重新设置图表，实际修改仍更新', async () => {
+    const { wrapper, runtime } = await mountChart();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 2] }] } });
+    expect(runtime.setOption).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('updated')).toBeUndefined();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 3] }] } });
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(wrapper.emitted('updated')).toHaveLength(1);
+  });
+
+  it.each(['clear', 'setOption'] as const)('%s 清空后收到同值数据仍能恢复绘制', async method => {
+    const { wrapper, api, runtime } = await mountChart();
+    if (method === 'clear') api.clear();
+    else api.setOption({ series: [] }, { notMerge: true });
+    runtime.setOption.mockClear();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 2] }] } });
+    expect(runtime.setOption).toHaveBeenCalledOnce();
+  });
+
+  it('series 的响应式 getter 返回新数据时重新设置图表', async () => {
+    const state = reactive({ points: [1, 2] });
+    const option: ChartOption = {
+      series: [
+        {
+          type: 'bar',
+          get data() {
+            return state.points;
+          },
+        },
+      ],
+    };
+    const { runtime } = await mountChart({ option });
+    state.points = [3, 4];
+    await nextTick();
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(runtime.setOption.mock.lastCall?.[0].series[0].data).toEqual([3, 4]);
+  });
+
+  it('无显式维度的对象数据集换列时同步绘制和键盘导航', async () => {
+    const withSource = (row: Record<string, unknown>): ChartOption => ({
+      xAxis: { type: 'category' },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar' }],
+      dataset: { source: [row] },
+    });
+    const first = withSource({ product: 'A', sales: 10, cost: 20 });
+    const next = withSource({ product: 'A', cost: 20, sales: 10 });
+    engine.init.mockImplementationOnce(() => {
+      const instance = createRuntime();
+      instance.setOption.mockImplementation((option: ChartOption) =>
+        instance.getOption.mockReturnValue(option)
+      );
+      return instance;
+    });
+    const { wrapper, api, runtime } = await mountChart({ option: first });
+    const readItem = () => wrapper.get('[role="option"]').text();
+    expect(readItem()).toContain('10');
+    await wrapper.setProps({ option: next });
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(readItem()).toContain('20');
+    api.setOption(first);
+    await nextTick();
+    expect(readItem()).toContain('10');
+  });
+
+  it('配置快照保留原生提示容器身份并识别容器替换', async () => {
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    const withTooltip = (appendTo: HTMLElement): ChartOption => ({
+      series: [{ type: 'bar', data: [1] }],
+      tooltip: { appendTo },
+    });
+    const { wrapper, runtime } = await mountChart({ option: withTooltip(first) });
+    expect(deepClone(first)).toBe(first);
+    await wrapper.setProps({ option: withTooltip(first) });
+    expect(runtime.setOption).toHaveBeenCalledOnce();
+    await wrapper.setProps({ option: withTooltip(second) });
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(runtime.setOption.mock.lastCall?.[0].tooltip.appendTo).toBe(second);
+  });
+
+  it('连续缩放不读取数据快照，连续渲染回调合并但事件仍逐次转发', async () => {
+    const { wrapper, api, runtime } = await mountChart();
+    const zoom = runtime.handlers.get('datazoom')!;
+    const finished = runtime.handlers.get('finished')!;
+    runtime.getOption.mockClear();
+    vi.useFakeTimers();
+    for (let index = 0; index < 15; index++) zoom({ start: index });
+    expect(runtime.getOption).not.toHaveBeenCalled();
+    expect(wrapper.emitted('datazoom')).toHaveLength(15);
+    for (let index = 0; index < 15; index++) finished({});
+    expect(wrapper.emitted('finished')).toHaveLength(15);
+    expect(runtime.getOption).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(runtime.getOption).toHaveBeenCalledTimes(2);
+    runtime.getOption.mockClear();
+    finished({});
+    api.dispose();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(runtime.getOption).not.toHaveBeenCalled();
+  });
   it('转发全部交互事件并支持真实参数的公开命令', async () => {
     const { wrapper, api, runtime } = await mountChart({ style: 'height: 200px' });
     for (const event of [
