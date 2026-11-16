@@ -148,7 +148,9 @@ const statusOptions = [
 
 ## 表单校验
 
-`min`、`max` 和 `len` 校验长度。数值的上下界使用 `minValue` 和 `maxValue`，需要精确匹配某个数值时可使用单元素的 `enum`。
+`min`、`max` 和 `len` 校验长度。数值的上下界使用 `minValue` 和 `maxValue`，接受有限数字和普通十进制字符串，例如 `12.5`。需要精确匹配某个数值时可使用单元素的 `enum`。
+
+一条规则同时声明内置条件和自定义校验时，先检查内置条件，再执行 `validator` 和 `asyncValidator`。任一步失败后返回该步的错误。
 `number` 接受有限数字，`integer` 要求整数，`float` 要求有非零小数部分。`url` 接受绝对 HTTP(S) 地址。
 
 ::: raw
