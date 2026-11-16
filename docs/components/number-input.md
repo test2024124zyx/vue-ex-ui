@@ -131,7 +131,7 @@ const value3 = ref(5);
 
 ## 精度
 
-通过 `precision` 属性设置数值精度（小数位数）。
+通过 `precision` 设置小数位数。确认后的输入会补齐末尾零，模型值仍为数字。精度与上下限冲突时，显示保留准确的边界值。
 
 ::: raw
 
@@ -381,7 +381,7 @@ const value6 = ref(100);
 
 ## 严格步长
 
-设置 `strict-step` 为 `true` 时，只能输入步长的倍数。
+设置 `strict-step` 为 `true` 时，手动输入确认后会对齐到最近刻度。刻度从有限的 `min` 开始，省略 `min` 时从 `0` 开始。加减按钮和方向键直接在当前值上加减步长，例如 `0.1` 加一个 `0.2` 的步长会得到 `0.3`。
 
 ::: raw
 
@@ -614,23 +614,23 @@ const value1 = ref(0);
 
 ### NumberInput Props
 
-| 属性                      | 说明                 | 类型                             | 默认值      |
-| ------------------------- | -------------------- | -------------------------------- | ----------- |
-| `model-value` / `v-model` | 绑定值               | `number \| null`                 | `null`      |
-| `min`                     | 最小值               | `number`                         | `-Infinity` |
-| `max`                     | 最大值               | `number`                         | `Infinity`  |
-| `step`                    | 步长                 | `number`                         | `1`         |
-| `precision`               | 精度（小数位数）     | `number`                         | `undefined` |
-| `size`                    | 尺寸                 | `'small' \| 'medium' \| 'large'` | `'medium'`  |
-| `disabled`                | 是否禁用             | `boolean`                        | `false`     |
-| `readonly`                | 是否只读             | `boolean`                        | `false`     |
-| `placeholder`             | 占位符               | `string`                         | `''`        |
-| `controls`                | 是否显示控制按钮     | `boolean`                        | `true`      |
-| `controls-position`       | 控制按钮位置         | `'right' \| 'both'`              | `'right'`   |
-| `strict-step`             | 是否严格步长         | `boolean`                        | `false`     |
-| `name`                    | 输入框名称           | `string`                         | `undefined` |
-| `aria-label`              | 无障碍标签           | `string`                         | `undefined` |
-| `debounce-delay`          | 输入防抖延迟（毫秒） | `number`                         | `0`         |
+| 属性                      | 说明                   | 类型                             | 默认值      |
+| ------------------------- | ---------------------- | -------------------------------- | ----------- |
+| `model-value` / `v-model` | 绑定值                 | `number \| null`                 | `null`      |
+| `min`                     | 最小值                 | `number`                         | `-Infinity` |
+| `max`                     | 最大值                 | `number`                         | `Infinity`  |
+| `step`                    | 步长                   | `number`                         | `1`         |
+| `precision`               | 精度（小数位数）       | `number`                         | `undefined` |
+| `size`                    | 尺寸                   | `'small' \| 'medium' \| 'large'` | `'medium'`  |
+| `disabled`                | 是否禁用               | `boolean`                        | `false`     |
+| `readonly`                | 是否只读               | `boolean`                        | `false`     |
+| `placeholder`             | 占位符                 | `string`                         | `''`        |
+| `controls`                | 是否显示控制按钮       | `boolean`                        | `true`      |
+| `controls-position`       | 控制按钮位置           | `'right' \| 'both'`              | `'right'`   |
+| `strict-step`             | 手动输入确认时对齐刻度 | `boolean`                        | `false`     |
+| `name`                    | 输入框名称             | `string`                         | `undefined` |
+| `aria-label`              | 无障碍标签             | `string`                         | `undefined` |
+| `debounce-delay`          | 输入防抖延迟（毫秒）   | `number`                         | `0`         |
 
 ### NumberInput Events
 

@@ -34,7 +34,7 @@ export interface ExNumberInputProps {
   controls?: boolean;
   /** 控制按钮位置 */
   controlsPosition?: NumberInputControlsPosition;
-  /** 是否严格步长（只能输入步长的倍数） */
+  /** 手动输入确认时是否对齐到最近的步长刻度 */
   strictStep?: boolean;
   /** 输入框名称 */
   name?: string;
