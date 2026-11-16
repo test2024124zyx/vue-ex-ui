@@ -104,19 +104,19 @@ export function useTableRows(
   watch(
     [allSourceRows, () => props.expandedRowKeys?.slice()],
     ([rows, keys], [previousRows, previousKeys]) => {
-      if (keys !== undefined) {
-        internalExpanded.value = keys;
-        return;
-      }
+      if (keys !== undefined) internalExpanded.value = keys;
       if (!props.defaultExpandAllRows) return;
-      if (previousRows && previousKeys) {
-        const confirmed = new Set(previousKeys);
-        for (const row of previousRows) {
+      const controlledKeys = keys ?? previousKeys;
+      if (controlledKeys) {
+        const confirmed = new Set(controlledKeys);
+        // 受控期间就记录确认结果，避免数据在解除控制之前清空。
+        for (const row of keys === undefined ? (previousRows ?? []) : rows) {
           if (!row.children.length) continue;
           if (confirmed.has(row.key)) manuallyCollapsed.delete(row.key);
           else manuallyCollapsed.add(row.key);
         }
       }
+      if (keys !== undefined) return;
       // 新到的数据按默认属性展开，同一键即使暂时消失也保留手动折叠。
       internalExpanded.value = rows
         .filter(row => row.children.length && !manuallyCollapsed.has(row.key))
