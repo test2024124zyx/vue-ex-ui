@@ -22,6 +22,8 @@ export interface ExModalProps {
   /** 点击遮罩或遮罩空白区是否请求关闭。 */
   maskClosable?: boolean;
   /** Escape 是否请求关闭。 */
+  closeOnPressEscape?: boolean;
+  /** @deprecated 使用 closeOnPressEscape。 */
   keyboard?: boolean;
   /** 确认按钮文本。 */
   okText?: string;
@@ -30,6 +32,8 @@ export interface ExModalProps {
   /** 确认按钮类型。 */
   okType?: ModalOkType;
   /** 确认按钮加载状态。 */
+  okLoading?: boolean;
+  /** @deprecated 使用 okLoading。 */
   confirmLoading?: boolean;
   /** 是否在视口中垂直居中。 */
   centered?: boolean;
@@ -44,6 +48,8 @@ export interface ExModalProps {
   /** 是否显示默认底部按钮区。 */
   showFooter?: boolean;
   /** 包装器自定义类名。 */
+  customClass?: string;
+  /** @deprecated 使用 customClass。 */
   wrapClassName?: string;
   /** 正文区域自定义样式。 */
   bodyStyle?: CSSProperties;
@@ -59,9 +65,14 @@ export interface ExModalProps {
 export interface ExModalEmits {
   'update:modelValue': [value: boolean];
   open: [];
+  opened: [];
   close: [];
+  closed: [];
+  confirm: [];
+  /** @deprecated 使用 confirm。 */
   ok: [];
   cancel: [];
+  /** @deprecated 使用 closed。 */
   afterClose: [];
   guardError: [error: unknown, phase: 'open' | 'close'];
 }

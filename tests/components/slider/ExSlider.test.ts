@@ -52,6 +52,18 @@ describe('ExSlider', () => {
   });
 
   describe('基础功能', () => {
+    it.each([false, true])('受控时点击显示刻度将归一值提交给父级，区间=%s', async range => {
+      const modelValue: number | [number, number] = range ? [31, 69] : 31;
+      const expected: number | [number, number] = range ? [30, 70] : 30;
+      wrapper = createWrapper({ range, modelValue });
+      await wrapper.setProps({ step: 5 });
+      const track = wrapper.get('.ex-slider__track');
+      await track.trigger('mousedown', { clientX: 60 });
+      expect(wrapper.emitted('update:modelValue')).toEqual([[expected]]);
+      await wrapper.setProps({ modelValue: expected });
+      await track.trigger('mousedown', { clientX: 60 });
+      expect(wrapper.emitted('change')).toEqual([[expected]]);
+    });
     it('应该正确渲染', () => {
       wrapper = createWrapper();
       expect(wrapper.find('.ex-slider').exists()).toBe(true);

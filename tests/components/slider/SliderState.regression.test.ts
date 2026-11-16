@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExSlider from '../../../src/components/slider/ExSlider.vue';
 
@@ -6,6 +6,61 @@ const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('滑块动态配置与公开样式', () => {
+  it('滑块键盘步进保留精确小数，非法配置使用有效步长', async () => {
+    const wrapper = mount(ExSlider, { props: { modelValue: 0.2, min: 0, max: 1, step: 0.1 } });
+    wrappers.push(wrapper);
+    const thumb = wrapper.get('[role="slider"]');
+    await thumb.trigger('keydown', { key: 'ArrowRight' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.3]);
+    await wrapper.setProps({ modelValue: 4, max: 100, step: Number.NaN });
+    await thumb.trigger('keydown', { key: 'ArrowRight' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([5]);
+    await thumb.trigger('keydown', { key: 'PageUp' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([14]);
+  });
+
+  it('塌缩区间可以沿轨道向任意方向扩张，始终保持端点顺序', async () => {
+    const wrapper = mount(ExSlider, { props: { modelValue: [50, 50], range: true } });
+    wrappers.push(wrapper);
+    const track = wrapper.get('.ex-slider__track-wrapper');
+    const bounds = vi.spyOn(track.element, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 8,
+    } as DOMRect);
+    try {
+      await track.trigger('mousedown', { clientX: 30 });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[30, 50]]);
+      await track.trigger('mousedown', { clientX: 70 });
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[50, 70]]);
+    } finally {
+      bounds.mockRestore();
+    }
+  });
+
+  it.each([
+    { modelValue: 30, range: false, points: [29, 30] },
+    { modelValue: [30, 70] as [number, number], range: true, points: [30, 70] },
+  ])('点击落在当前刻度时不提交重复值：$modelValue', async ({ modelValue, range, points }) => {
+    const wrapper = mount(ExSlider, { props: { modelValue, range, step: 5 } });
+    wrappers.push(wrapper);
+    const track = wrapper.get('.ex-slider__track-wrapper');
+    const bounds = vi.spyOn(track.element, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 8,
+    } as DOMRect);
+    try {
+      for (const clientX of points) await track.trigger('mousedown', { clientX });
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+      expect(wrapper.emitted('change')).toBeUndefined();
+    } finally {
+      bounds.mockRestore();
+    }
+  });
+
   it('动态边界和步长同步滑块、ARIA 与输入框', async () => {
     const wrapper = mount(ExSlider, { props: { modelValue: 80, showInput: true } });
     wrappers.push(wrapper);

@@ -543,6 +543,7 @@ const {
   pageSize,
   total,
   changePage,
+  resetPageForSort,
 } = useTableRows(props, emit, leafColumns, sortInfo, () => hasDetails.value);
 const {
   rowSelectable,
@@ -674,6 +675,7 @@ const handleHeaderClick = (column: TableColumn) => {
     order === 'desc'
       ? { key: '', order: null }
       : { key: column.key, order: order === 'asc' ? 'desc' : 'asc' };
+  resetPageForSort();
   emit('sort-change', { ...sortInfo.value });
 };
 const handleRowClick = (record: TableDataItem, index: number, event: MouseEvent) => {

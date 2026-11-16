@@ -25,6 +25,7 @@ const external = [
   'jsbarcode',
   'lunar-javascript',
   'tus-js-client',
+  'colorjs.io',
 ];
 
 const addVueShimReference = (filePath: string, content: string) => {

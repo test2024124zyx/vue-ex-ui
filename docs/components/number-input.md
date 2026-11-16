@@ -131,7 +131,7 @@ const value3 = ref(5);
 
 ## 精度
 
-通过 `precision` 属性设置数值精度（小数位数）。
+通过 `precision` 设置小数位数。确认后的输入会补齐末尾零，模型值仍为数字。精度与上下限冲突时，显示保留准确的边界值。
 
 ::: raw
 
@@ -381,7 +381,7 @@ const value6 = ref(100);
 
 ## 严格步长
 
-设置 `strict-step` 为 `true` 时，只能输入步长的倍数。
+设置 `strict-step` 为 `true` 时，手动输入确认后会对齐到最近刻度。刻度从有限的 `min` 开始，省略 `min` 时从 `0` 开始。加减按钮和方向键直接在当前值上加减步长，例如 `0.1` 加一个 `0.2` 的步长会得到 `0.3`。
 
 ::: raw
 
@@ -614,37 +614,37 @@ const value1 = ref(0);
 
 ### NumberInput Props
 
-| 属性                      | 说明                 | 类型                             | 默认值      |
-| ------------------------- | -------------------- | -------------------------------- | ----------- |
-| `model-value` / `v-model` | 绑定值               | `number \| null`                 | `null`      |
-| `min`                     | 最小值               | `number`                         | `-Infinity` |
-| `max`                     | 最大值               | `number`                         | `Infinity`  |
-| `step`                    | 步长                 | `number`                         | `1`         |
-| `precision`               | 精度（小数位数）     | `number`                         | `undefined` |
-| `size`                    | 尺寸                 | `'small' \| 'medium' \| 'large'` | `'medium'`  |
-| `disabled`                | 是否禁用             | `boolean`                        | `false`     |
-| `readonly`                | 是否只读             | `boolean`                        | `false`     |
-| `placeholder`             | 占位符               | `string`                         | `''`        |
-| `controls`                | 是否显示控制按钮     | `boolean`                        | `true`      |
-| `controls-position`       | 控制按钮位置         | `'right' \| 'both'`              | `'right'`   |
-| `strict-step`             | 是否严格步长         | `boolean`                        | `false`     |
-| `name`                    | 输入框名称           | `string`                         | `undefined` |
-| `aria-label`              | 无障碍标签           | `string`                         | `undefined` |
-| `debounce-delay`          | 输入防抖延迟（毫秒） | `number`                         | `0`         |
+| 属性                      | 说明                   | 类型                             | 默认值      |
+| ------------------------- | ---------------------- | -------------------------------- | ----------- |
+| `model-value` / `v-model` | 绑定值                 | `number \| null`                 | `null`      |
+| `min`                     | 最小值                 | `number`                         | `-Infinity` |
+| `max`                     | 最大值                 | `number`                         | `Infinity`  |
+| `step`                    | 步长                   | `number`                         | `1`         |
+| `precision`               | 精度（小数位数）       | `number`                         | `undefined` |
+| `size`                    | 尺寸                   | `'small' \| 'medium' \| 'large'` | `'medium'`  |
+| `disabled`                | 是否禁用               | `boolean`                        | `false`     |
+| `readonly`                | 是否只读               | `boolean`                        | `false`     |
+| `placeholder`             | 占位符                 | `string`                         | `''`        |
+| `controls`                | 是否显示控制按钮       | `boolean`                        | `true`      |
+| `controls-position`       | 控制按钮位置           | `'right' \| 'both'`              | `'right'`   |
+| `strict-step`             | 手动输入确认时对齐刻度 | `boolean`                        | `false`     |
+| `name`                    | 输入框名称             | `string`                         | `undefined` |
+| `aria-label`              | 无障碍标签             | `string`                         | `undefined` |
+| `debounce-delay`          | 输入防抖延迟（毫秒）   | `number`                         | `0`         |
 
 ### NumberInput Events
 
 输入中的数值属于编辑草稿，原生 `change` 发生时才提交模型。表单的 `input` 规则校验当前草稿，`change` / `blur` 规则校验模型中的已提交值；`resetFields()` 会清除草稿及尚未执行的防抖通知，即使重置前后的模型值相同。
 
-| 事件名               | 说明                         | 回调参数                                            |
-| -------------------- | ---------------------------- | --------------------------------------------------- |
-| `update:model-value` | 值变化时触发                 | `(value: number \| null)`                           |
-| `change`             | 值变化时触发（在输入完成后） | `(value: number \| null, oldValue: number \| null)` |
-| `input`              | 输入时触发（实时）           | `(value: number \| null)`                           |
-| `focus`              | 聚焦时触发                   | `(event: FocusEvent)`                               |
-| `blur`               | 失焦时触发                   | `(event: FocusEvent)`                               |
-| `increase`           | 增加按钮点击时触发           | `(value: number \| null)`                           |
-| `decrease`           | 减少按钮点击时触发           | `(value: number \| null)`                           |
+| 事件名               | 说明                                       | 回调参数                                            |
+| -------------------- | ------------------------------------------ | --------------------------------------------------- |
+| `update:model-value` | 值变化时触发                               | `(value: number \| null)`                           |
+| `change`             | 提交数值时触发，第二个参数为提交前的绑定值 | `(value: number \| null, oldValue: number \| null)` |
+| `input`              | 编辑过程中发出解析后的数值                 | `(value: number \| null)`                           |
+| `focus`              | 聚焦时触发                                 | `(event: FocusEvent)`                               |
+| `blur`               | 失焦时触发                                 | `(event: FocusEvent)`                               |
+| `increase`           | 增加按钮点击时触发                         | `(value: number \| null)`                           |
+| `decrease`           | 减少按钮点击时触发                         | `(value: number \| null)`                           |
 
 ### NumberInput Slots
 
@@ -655,14 +655,14 @@ const value1 = ref(0);
 
 ### NumberInput Methods
 
-| 方法名       | 说明              | 参数                           |
-| ------------ | ----------------- | ------------------------------ |
-| `focus`      | 聚焦输入框        | `()`                           |
-| `blur`       | 失焦输入框        | `()`                           |
-| `select`     | 选中输入框内容    | `()`                           |
-| `increase`   | 增加值            | `()`                           |
-| `decrease`   | 减少值            | `()`                           |
-| `getElement` | 获取输入框DOM元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明              | 参数                               |
+| ------------ | ----------------- | ---------------------------------- |
+| `focus`      | 聚焦输入框        | `(options?: FocusOptions) => void` |
+| `blur`       | 失焦输入框        | `()`                               |
+| `select`     | 选中输入框内容    | `()`                               |
+| `increase`   | 增加值            | `()`                               |
+| `decrease`   | 减少值            | `()`                               |
+| `getElement` | 获取输入框DOM元素 | `() => HTMLDivElement \| null`     |
 
 ## 无障碍支持
 

@@ -19,6 +19,13 @@ const createPicker = async (props = {}) => {
 };
 
 describe('颜色选择的完整交互路径', () => {
+  it('输入 Display P3 后用现有 RGB 格式提交映射后的颜色', async () => {
+    const wrapper = await createPicker({ modelValue: undefined, format: 'rgb' });
+    const input = wrapper.get<HTMLInputElement>('.ex-color-picker__input');
+    await input.setValue('color(display-p3 0 1 0 / 40%)');
+    await input.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['rgba(0, 251, 41, 0.4)']);
+  });
   it('色板四向键和加速步长生成有效颜色，其他按键不修改值', async () => {
     const wrapper = await createPicker();
     const surface = wrapper.get('.ex-color-picker__sv');

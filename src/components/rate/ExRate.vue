@@ -8,6 +8,7 @@
     :aria-valuemin="0"
     :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
+    :aria-valuetext="accessibleValueText"
     :aria-label="ariaLabel || (fieldAriaAttrs['aria-labelledby'] ? undefined : t('label'))"
     v-bind="fieldAriaAttrs"
     :aria-disabled="effectiveDisabled"
@@ -175,18 +176,27 @@ const displayValue = computed(() => {
   return isHovering.value ? hoverValue.value : currentValue.value;
 });
 
-const displayText = computed(() => {
+const displayText = computed(() => formatRateText(displayValue.value));
+const accessibleValueText = computed(() => {
+  const value = currentValue.value;
+  const text = formatRateText(value);
+  if (!text) return undefined;
+  // 半星与下一整星可能对应同一句评价，读屏仍需保留精确分值。
+  return props.allowHalf && props.showText && props.texts?.length ? `${text} (${value})` : text;
+});
+
+function formatRateText(value: number): string {
   if (props.showText && props.texts && props.texts.length > 0) {
-    const index = Math.ceil(displayValue.value) - 1;
+    const index = Math.ceil(value) - 1;
     return props.texts[index] || '';
   }
 
   if (props.showScore) {
-    return props.scoreTemplate.replace('{value}', displayValue.value.toString());
+    return props.scoreTemplate.replace('{value}', String(value));
   }
 
   return '';
-});
+}
 
 // 方法
 function getStarClasses(item: number) {

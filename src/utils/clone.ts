@@ -10,6 +10,7 @@ interface CloneContext {
   seen: WeakMap<object, unknown>;
   hydrated: WeakSet<object>;
   hydrating: WeakSet<object>;
+  materializeAccessors: boolean;
 }
 
 type CloneableBuffer = ArrayBuffer | SharedArrayBuffer;
@@ -48,6 +49,15 @@ const cloneOwnProperties = (source: object, target: object, context: CloneContex
     const descriptor = Object.getOwnPropertyDescriptor(source, key);
     if (!descriptor) continue;
     if ('value' in descriptor) descriptor.value = cloneValue(descriptor.value, context);
+    else if (context.materializeAccessors) {
+      // 比较快照记录当时的访问结果，避免旧 getter 随同一份响应式数据继续变化。
+      Object.defineProperty(target, key, {
+        configurable: descriptor.configurable,
+        enumerable: descriptor.enumerable,
+        value: cloneValue(Reflect.get(source, key), context),
+      });
+      continue;
+    }
     Object.defineProperty(target, key, descriptor);
   }
 
@@ -120,10 +130,11 @@ const cloneValue = (value: unknown, context: CloneContext): unknown => {
 };
 
 /** 深度克隆常用结构，保留循环引用、属性描述符与类实例原型。 */
-export function deepClone<T>(value: T): T {
+export function deepClone<T>(value: T, options?: { materializeAccessors?: boolean }): T {
   return cloneValue(value, {
     seen: new WeakMap(),
     hydrated: new WeakSet(),
     hydrating: new WeakSet(),
+    materializeAccessors: options?.materializeAccessors === true,
   }) as T;
 }

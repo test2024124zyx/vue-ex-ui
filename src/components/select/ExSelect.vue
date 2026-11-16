@@ -575,12 +575,14 @@ const selectStyles = computed(() => {
 const {
   filteredOptions,
   flatFilteredOptions,
+  filteredValues,
   selectedOption,
   selectedValues,
   selectedOptions,
   getOptionByValue,
   isSelected,
   getOptionIndex,
+  getFilteredValueIndex,
   virtualRows,
   getVirtualRowIndex,
   useVirtual,
@@ -940,17 +942,23 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-// 监听下拉状态：仅在下拉打开时挂载全局监听器
+// 活动值通过索引保留，仅单独监听当前活动项的禁用状态。
 watch(
-  () =>
-    flatFilteredOptions.value.map(option => ({ value: option.value, disabled: option.disabled })),
-  (options, previous) => {
+  [
+    filteredValues,
+    hoverIndex,
+    () => Boolean(flatFilteredOptions.value[hoverIndex.value]?.disabled),
+  ],
+  ([values, index, disabled], [previousValues, previousIndex, previousDisabled]) => {
     if (!dropdownVisible.value) {
       hoverIndex.value = -1;
       return;
     }
-    const activeValue = previous[hoverIndex.value]?.value;
-    const retained = options.findIndex(option => option.value === activeValue && !option.disabled);
+    // 指针进入已有禁用项时只更新悬停，只有当前项被动态禁用才修正活动项。
+    if (values === previousValues && (index !== previousIndex || !disabled || previousDisabled))
+      return;
+    const retainedIndex = getFilteredValueIndex(previousValues[previousIndex]);
+    const retained = flatFilteredOptions.value[retainedIndex]?.disabled ? -1 : retainedIndex;
     hoverIndex.value = retained >= 0 ? retained : findEnabledIndex(-1, 1);
     scrollHoverIntoView();
   }
@@ -978,25 +986,15 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
 });
 
-const focus = () => {
-  if (props.searchable && inputRef.value) {
-    inputRef.value.focus();
-  } else {
-    triggerRef.value?.focus();
-  }
-};
-
-const blur = () => {
-  if (props.searchable && inputRef.value) {
-    inputRef.value.blur();
-  } else {
-    triggerRef.value?.blur();
-  }
-};
+const getFocusTarget = () => (props.searchable ? inputRef.value : undefined) ?? triggerRef.value;
+const focus: ExSelectExposed['focus'] = options => getFocusTarget()?.focus(options);
+const blur = () => getFocusTarget()?.blur();
 
 defineExpose<ExSelectExposed>({
   focus,
   blur,
+  clear: handleClear,
+  getElement: () => selectRef.value ?? null,
   showDropdown,
   hideDropdown,
   retryRemote,

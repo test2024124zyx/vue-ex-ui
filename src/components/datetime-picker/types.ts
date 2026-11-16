@@ -78,7 +78,7 @@ export interface ExDateTimePickerProps {
 export interface ExDateTimePickerEmits {
   /** 已确认值发生变化。 */
   'update:modelValue': [value: DateTimePickerValue];
-  /** 一次日期或时间选择正式提交。 */
+  /** 提交日期或时间后只提供确认值。 */
   change: [value: DateTimePickerValue];
   /** 输入框获得焦点。 */
   focus: [event: FocusEvent];
@@ -93,9 +93,11 @@ export interface ExDateTimePickerEmits {
 /** 日期时间选择器公开方法。 */
 export interface ExDateTimePickerExposed {
   /** 聚焦输入框。 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 移除输入框焦点。 */
   blur: () => void;
+  /** 清空当前选值。 */
+  clear: () => void;
   /** 获取组件根元素。 */
   getElement: () => HTMLDivElement | null;
 }

@@ -1,4 +1,13 @@
-import { computed, inject, nextTick, onBeforeUnmount, provide, ref, watch } from 'vue';
+import {
+  computed,
+  inject,
+  nextTick,
+  onBeforeUnmount,
+  onScopeDispose,
+  provide,
+  ref,
+  watch,
+} from 'vue';
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import {
   createFocusTrap,
@@ -20,6 +29,41 @@ const OVERLAY_PARENT_KEY: InjectionKey<OverlayStackEntry> =
 export function useOverlayParentActive(): ComputedRef<boolean> {
   const parent = inject(OVERLAY_PARENT_KEY, undefined);
   return computed(() => parent?.active?.() ?? true);
+}
+
+/** 按实际展示状态确认过渡，包含父层关闭后保留的子浮层。 */
+export function useOverlayTransition(
+  active: ComputedRef<boolean>,
+  onOpened: () => void,
+  onClosed: () => void
+) {
+  let disposed = false;
+  let entered = false;
+  let left = true;
+  watch(
+    active,
+    opened => {
+      if (!opened) return;
+      entered = false;
+      left = false;
+    },
+    { immediate: true, flush: 'sync' }
+  );
+  onScopeDispose(() => {
+    disposed = true;
+  });
+  // v-if 和 v-show 可能先后完成同一轮过渡，只确认一次。
+  const afterEnter = () => {
+    if (disposed || !active.value || entered) return;
+    entered = true;
+    onOpened();
+  };
+  const afterLeave = () => {
+    if (disposed || active.value || left) return;
+    left = true;
+    onClosed();
+  };
+  return { afterEnter, afterLeave };
 }
 
 export interface UseOverlayOptions {
