@@ -145,6 +145,10 @@ let initialThemeStyle: ChartThemeStyle | undefined;
 let appliedThemeStyle: ChartThemeStyle | undefined;
 let explicitThemeOptions: ChartOption = {};
 let usesDeclaredControls = true;
+let restoreTheme: { source: ChartThemeStyle; explicit: ChartOption; declared: boolean } | undefined;
+
+const styleForMode = (style: ChartThemeStyle) =>
+  usesDeclaredControls ? style : { base: style.base, controls: {} };
 
 const readThemeStyle = (): ChartThemeStyle => {
   const theme = globalConfig.theme.value;
@@ -443,11 +447,13 @@ const updateChart = (theme = readThemeStyle()) => {
     });
     explicitThemeOptions = snapshotChartThemeOptions(
       props.option,
-      chartInstance.value.getOption?.() ?? mergedOption
+      chartInstance.value.getOption?.() ?? mergedOption,
+      theme.neonGlow
     );
     usesDeclaredControls = true;
-    if (initialThemeStyle)
-      updateThemeStyle({ ...theme, base: initialThemeStyle.base }, theme, explicitThemeOptions);
+    const source = { ...theme, base: initialThemeStyle?.base ?? theme.base };
+    restoreTheme = { source, explicit: explicitThemeOptions, declared: true };
+    updateThemeStyle(source, theme, explicitThemeOptions);
     appliedThemeStyle = theme;
     appliedInputs = snapshot;
     syncNavigationItems(mergedOption);
@@ -496,6 +502,22 @@ const bindEvents = () => {
   chartInstance.value?.on('legendselectchanged', params => {
     syncNavigationItems();
     emit('legendselectchanged', params as ChartEventParams);
+  });
+
+  chartInstance.value.on('restore', () => {
+    if (!restoreTheme) return;
+    // ECharts 先还原模型，再发出事件。仅补回现用主题，保留此次还原的数据和交互状态。
+    explicitThemeOptions = restoreTheme.explicit;
+    usesDeclaredControls = restoreTheme.declared;
+    appliedInputs = undefined;
+    try {
+      const next = styleForMode(readThemeStyle());
+      updateThemeStyle(restoreTheme.source, next, explicitThemeOptions);
+      appliedThemeStyle = next;
+      syncNavigationItems();
+    } catch (error) {
+      emit('error', error as Error);
+    }
   });
 
   // 渲染完成事件
@@ -560,6 +582,7 @@ const clear = () => {
   chartInstance.value?.clear();
   explicitThemeOptions = {};
   usesDeclaredControls = false;
+  restoreTheme = undefined;
   syncFinishedNavigation.cancel();
   appliedInputs = undefined;
   navigationInput = undefined;
@@ -569,6 +592,7 @@ const clear = () => {
 
 const dispose = () => {
   initSeq += 1;
+  restoreTheme = undefined;
   syncFinishedNavigation.cancel();
   appliedInputs = undefined;
   navigationInput = undefined;
@@ -600,7 +624,16 @@ const setOption = (
     nextOptions,
     chartInstance.value.getOption?.() ?? nextOptions
   );
-  if (opts?.notMerge) usesDeclaredControls = false;
+  if (opts?.notMerge) {
+    usesDeclaredControls = false;
+    restoreTheme = initialThemeStyle
+      ? {
+          source: styleForMode(initialThemeStyle),
+          explicit: explicitThemeOptions,
+          declared: false,
+        }
+      : undefined;
+  }
   if (initialThemeStyle && appliedThemeStyle) {
     updateThemeStyle(
       { base: initialThemeStyle.base, controls: {} },
@@ -726,11 +759,8 @@ watch(
   () => {
     if (!chartInstance.value || !appliedThemeStyle) return;
     try {
-      const read = readThemeStyle();
-      const current = usesDeclaredControls
-        ? appliedThemeStyle
-        : { base: appliedThemeStyle.base, controls: {} };
-      const next = usesDeclaredControls ? read : { base: read.base, controls: {} };
+      const current = styleForMode(appliedThemeStyle);
+      const next = styleForMode(readThemeStyle());
       updateThemeStyle(current, next, explicitThemeOptions);
       appliedThemeStyle = next;
       syncNavigationItems();

@@ -13,13 +13,13 @@ enableAutoUnmount(afterEach);
 setPlatformAPI({ measureText: text => ({ width: text.length * 8 }) });
 const initOptions = { renderer: 'svg' as const, width: 640, height: 320 };
 
-async function mountThemedChart(option: ChartOption) {
+async function mountThemedChart(option: ChartOption, showToolbox = false) {
   const theme = ref<Theme>('light');
   const chart = ref<ExChartExposed>();
   mount({
     render: () =>
       h(ExConfigProvider, { theme: theme.value, animation: false }, () =>
-        h(ExChart, { ref: chart, option, initOptions })
+        h(ExChart, { ref: chart, option, initOptions, showToolbox })
       ),
   });
   await flushPromises();
@@ -163,6 +163,44 @@ it('主题往返切换更新生成的光晕并保留运行时阴影覆盖', asyn
   await nextTick();
   expect(styles().lineStyle.shadowColor).toBe('red');
   expect(styles().itemStyle.shadowColor).toBe('rgba(22, 104, 220, 0.25)');
+});
+
+it('还原交互配置后保留当前主题颜色和光晕', async () => {
+  const { theme, api, instance } = await mountThemedChart(
+    {
+      title: { text: '原始标题' },
+      xAxis: { type: 'category', data: ['甲', '乙'] },
+      yAxis: {},
+      series: [{ type: 'line', data: [1, 2] }],
+    },
+    true
+  );
+  theme.value = 'neon-blue';
+  await nextTick();
+  const dark = instance.getOption();
+  api.setOption({ title: { text: '临时标题' }, series: [{ data: [9, 8] }] });
+  instance.dispatchAction({ type: 'restore' });
+  expect(instance.getOption()).toMatchObject({
+    color: dark.color,
+    title: dark.title,
+    xAxis: dark.xAxis,
+    series: dark.series,
+  });
+});
+
+it('被生成光晕覆写的声明式阴影也随主题更新', async () => {
+  const { theme, instance } = await mountThemedChart({
+    xAxis: {},
+    yAxis: {},
+    series: [{ type: 'line', data: [1], lineStyle: { shadowColor: 'red' } }],
+  });
+  const color = () =>
+    (instance.getOption().series as Array<{ lineStyle: { shadowColor: string } }>)[0]!.lineStyle
+      .shadowColor;
+  expect(color()).toBe('rgba(22, 104, 220, 0.25)');
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(color()).toBe('rgba(0, 240, 255, 0.3)');
 });
 
 it.each([undefined, 'series'])('系列类型改变时重置旧模型的显式样式：%s', async replaceMerge => {

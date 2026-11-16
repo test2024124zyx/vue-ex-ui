@@ -23,7 +23,11 @@ const themedComponents = ['title', ...axes, 'series', 'legend', 'tooltip', 'tool
 const defaultSubtype: Record<string, string | undefined> = { legend: 'plain', dataZoom: 'slider' };
 
 /** 保留组件布局与身份，组件生成的默认样式由主题继续管理。 */
-export function snapshotChartThemeOptions(explicit: ChartOption, layout: ChartOption): ChartOption {
+export function snapshotChartThemeOptions(
+  explicit: ChartOption,
+  layout: ChartOption,
+  generatedGlow?: Theme
+): ChartOption {
   const snapshot = { ...explicit };
   for (const key of themedComponents) {
     if (layout[key] == null) continue;
@@ -31,7 +35,22 @@ export function snapshotChartThemeOptions(explicit: ChartOption, layout: ChartOp
     snapshot[key] = asComponents(layout[key]).map((item, index) => {
       if (item == null) return null;
       const { id, name, type } = asStyle(item);
-      return { ...asStyle(declared[index]), id, name, type: type ?? defaultSubtype[key] };
+      const active: Style = {
+        ...asStyle(declared[index]),
+        id,
+        name,
+        type: type ?? defaultSubtype[key],
+      };
+      if (key === 'series' && generatedGlow) {
+        // 包装层已生成的光晕覆盖同名输入字段，这些字段不再是实际生效的业务样式。
+        for (const [field, generated] of Object.entries(getNeonGlowStyles(type, generatedGlow))) {
+          if (!active[field]) continue;
+          const declaredStyle = { ...asStyle(active[field]) };
+          for (const property of Object.keys(generated)) delete declaredStyle[property];
+          active[field] = declaredStyle;
+        }
+      }
+      return active;
     });
   }
   return snapshot;
