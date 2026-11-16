@@ -64,6 +64,7 @@ test('霓虹按钮的装饰层不会重复可访问名称，交互和语言切�
   const decoration = page.getByTestId('primary').locator('.ex-button__glitch');
   await expect(decoration).toHaveCSS('animation-name', 'none');
   await expect(page.getByTestId('primary')).toHaveAccessibleName('Save');
-  await page.emulateMedia({ contrast: 'more' });
+  await page.emulateMedia({ forcedColors: 'active' });
+  expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
   await expect(decoration).toHaveCSS('visibility', 'hidden');
 });
