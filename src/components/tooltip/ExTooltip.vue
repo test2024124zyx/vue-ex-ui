@@ -106,7 +106,6 @@ const visible = ref(isModelControlled() && props.modelValue === true && !props.d
 const openTimer = ref<number>();
 const closeTimer = ref<number>();
 const isPointerInside = ref(false);
-const isFocusInside = ref(false);
 const isPopperHovered = ref(false);
 const popperId = `ex-tooltip-${generateId()}`;
 const configTheme = useConfigTheme();
@@ -187,9 +186,13 @@ const schedulePosition = useFloatingAutoUpdate(
 const commitVisible = (nextVisible: boolean) => {
   if (visible.value === nextVisible) return;
   visible.value = nextVisible;
-  if (nextVisible) emit('show');
-  else emit('hide');
-  if (nextVisible) nextTick(updatePosition);
+  if (nextVisible) {
+    emit('show');
+    nextTick(updatePosition);
+  } else {
+    isPopperHovered.value = false;
+    emit('hide');
+  }
 };
 
 const requestVisible = (nextVisible: boolean) => {
@@ -226,28 +229,27 @@ const hide = () => {
   }
 };
 
-const shouldStayVisible = () => {
-  if (props.trigger === 'hover-focus') {
-    return isPointerInside.value || isFocusInside.value || isPopperHovered.value;
-  }
-  if (props.trigger === 'hover') return isPointerInside.value || isPopperHovered.value;
-  if (props.trigger === 'focus') return isFocusInside.value;
-  return visible.value;
-};
-
 watch(
   () => props.trigger,
   () => {
     // 触发方式变化后，旧鼠标或焦点事件的延迟意图不再有效。
     clearTimers();
     isPointerInside.value = false;
-    isFocusInside.value = false;
     isPopperHovered.value = false;
   }
 );
 
-const hideWhenInactive = () => {
-  if (!shouldStayVisible()) hide();
+const containsFocus = (target: EventTarget | null) =>
+  target instanceof Node &&
+  (popperRef.value?.contains(target) || tooltipRef.value?.contains(target));
+
+const hideWhenInactive = (
+  hasFocus = containsFocus(tooltipRef.value?.ownerDocument.activeElement ?? null)
+) => {
+  // 卸载聚焦节点时可能没有 focusout，鼠标离开时读取实际焦点。
+  if (props.trigger !== 'hover' && hasFocus) return;
+  if (props.trigger !== 'focus' && (isPointerInside.value || isPopperHovered.value)) return;
+  hide();
 };
 
 const handleMouseEnter = () => {
@@ -264,13 +266,8 @@ const handleMouseLeave = () => {
   }
 };
 
-const containsFocus = (target: EventTarget | null) =>
-  target instanceof Node &&
-  (popperRef.value?.contains(target) || tooltipRef.value?.contains(target));
-
 const handleFocus = (event: FocusEvent) => {
   if (props.trigger !== 'focus' && props.trigger !== 'hover-focus') return;
-  isFocusInside.value = true;
   if (visible.value) clearTimers();
   else if (!containsFocus(event.relatedTarget)) show();
 };
@@ -283,8 +280,7 @@ const handleBlur = (event: FocusEvent) => {
   ) {
     return;
   }
-  isFocusInside.value = false;
-  hideWhenInactive();
+  hideWhenInactive(false);
 };
 
 const handleClick = () => {
@@ -398,7 +394,6 @@ watch(
     if (isDisabled) {
       clearTimers();
       isPointerInside.value = false;
-      isFocusInside.value = false;
       isPopperHovered.value = false;
       if (isModelControlled() && props.modelValue === true) emit('update:modelValue', false);
       commitVisible(false);

@@ -456,17 +456,49 @@ describe('ExTooltip', () => {
         attachTo: document.body,
       });
 
-      await wrapper.trigger('focusin');
+      const button = wrapper.get('button').element;
+      button.focus();
       await wrapper.trigger('mouseenter');
       await wrapper.trigger('mouseleave');
       await nextTick();
 
       expect(document.querySelector('.ex-tooltip__popper')).toBeTruthy();
 
-      await wrapper.trigger('focusout');
+      button.blur();
       await nextTick();
       expect(document.querySelector('.ex-tooltip__popper')).toBeFalsy();
     });
+
+    it.each([false, true])(
+      'Escape 卸载焦点节点后，纯鼠标悬停可以按延迟关闭（鼠标在浮层：%s）',
+      async hovered => {
+        vi.useFakeTimers();
+        const wrapper = mount(ExTooltip, {
+          props: { trigger: 'hover-focus', openDelay: 0, closeDelay: 50 },
+          slots: { default: '<button>触发按钮</button>', content: '<button>浮层按钮</button>' },
+          attachTo: document.body,
+        });
+        try {
+          wrapper.get('button').element.focus();
+          await nextTick();
+          const popup = document.querySelector('.ex-tooltip__popper')!;
+          const content = popup.querySelector('button')!;
+          content.focus();
+          if (hovered) popup.dispatchEvent(new MouseEvent('mouseenter'));
+          content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          await nextTick();
+          expect(popup.isConnected).toBe(false);
+          await wrapper.trigger('mouseenter');
+          expect(document.querySelector('.ex-tooltip__popper')).not.toBeNull();
+          await wrapper.trigger('mouseleave');
+          await vi.advanceTimersByTimeAsync(50);
+          expect(document.querySelector('.ex-tooltip__popper')).toBeNull();
+        } finally {
+          wrapper.unmount();
+          vi.useRealTimers();
+        }
+      }
+    );
 
     it('aria-describedby 应该落在真实触发按钮上', async () => {
       const wrapper = mount(ExTooltip, {
