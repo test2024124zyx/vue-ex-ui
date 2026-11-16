@@ -479,11 +479,15 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    rule.pattern!.lastIndex = 0;
-    const matches = rule.pattern!.test(String(value));
-    rule.pattern!.lastIndex = 0;
+    const pattern = rule.pattern!;
+    pattern.lastIndex = 0;
+    const matches = pattern.test(String(value));
+    pattern.lastIndex = 0;
     if (!matches) {
-      const key = rule.pattern === PHONE_NUMBER_PATTERN ? 'validators.phone' : 'validators.pattern';
+      const phoneRule =
+        pattern.source === PHONE_NUMBER_PATTERN.source &&
+        pattern.flags === PHONE_NUMBER_PATTERN.flags;
+      const key = phoneRule ? 'validators.phone' : 'validators.pattern';
       callback(rule.message || translate(key));
       return;
     }

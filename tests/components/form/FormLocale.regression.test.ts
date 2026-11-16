@@ -6,6 +6,7 @@ import ExForm from '../../../src/components/form/ExForm.vue';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import type { FormInstance, FormRule } from '../../../src/components/form/types';
 import { commonRules } from '../../../src/components/form/utils';
+import { deepClone } from '../../../src/utils/clone';
 import { createLocaleProvider, enUS, getCurrentLocale, setLocale, zhCN } from '../../../src/locale';
 import type { LocaleMessages } from '../../../src/locale';
 
@@ -99,6 +100,16 @@ describe('内置表单校验使用实例翻译上下文', () => {
     );
     await form.validate();
     expect(wrapper.get('.ex-form-item__error').text()).toBe('当前应用的必填提示');
+  });
+
+  it.each([deepClone, structuredClone])('克隆后的手机号预设仍使用 App 的专属提示', async clone => {
+    const rule = clone(commonRules.phone());
+    const { wrapper, form } = mountField('en-US', '无效手机号', rule, {
+      validators: { phone: 'App phone validation message' },
+    });
+    await flushPromises();
+    await form.validate();
+    expect(wrapper.get('.ex-form-item__error').text()).toBe('App phone validation message');
   });
 
   it('无消息异步拒绝使用实例语言，且完成前语言切换不修改全局状态', async () => {
