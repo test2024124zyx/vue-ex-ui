@@ -1,6 +1,7 @@
 import type { FormRule, BuiltinValidators } from './types';
 import { t } from '../../locale';
 import { isSafeUrl } from '../../utils/sanitize';
+import { isIdCard } from './id-card';
 
 // 判断值是否为"空"（用于可选字段短路）。注意：0 / false 不算空，
 // 以免 minValue/maxValue/enum 在边界值 0 处被误判跳过。
@@ -13,6 +14,13 @@ function parseFiniteNumber(value: unknown): number | undefined {
   if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined;
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
+}
+
+const DECIMAL_RANGE_INPUT = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
+
+function parseRangeValue(value: unknown): number | undefined {
+  if (typeof value === 'string' && !DECIMAL_RANGE_INPUT.test(value.trim())) return undefined;
+  return parseFiniteNumber(value);
 }
 
 function isHttpUrl(value: unknown): boolean {
@@ -150,34 +158,6 @@ async function validateRule(
     value = rule.transform(value);
   }
 
-  const customValidator = rule.asyncValidator || rule.validator;
-  if (customValidator) {
-    return new Promise(resolve => {
-      let completed = false;
-      const finish = (valid: boolean, error?: string) => {
-        if (completed) return;
-        completed = true;
-        resolve(valid ? { valid: true } : { valid: false, error });
-      };
-      const reject = (error: unknown) => {
-        const message = error instanceof Error ? error.message : error == null ? '' : String(error);
-        finish(false, message || rule.message || translate('common.validationError'));
-      };
-      try {
-        const result = customValidator(rule, value, error => {
-          finish(!error, error || rule.message);
-        });
-        // 回调型验证器返回 undefined 时继续等待；Promise 型验证器必须监听两条完成路径。
-        // 即使 callback 已完成，也必须接住晚到的拒绝，防止未处理异常逸出验证链路。
-        if (result && typeof result.then === 'function') {
-          void Promise.resolve(result).then(() => finish(true), reject);
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
   // 内置验证器：依次执行该规则声明的所有维度（required + type + min/max + pattern...）
   const validators = getBuiltinValidators(rule);
   for (const validator of validators) {
@@ -197,7 +177,44 @@ async function validateRule(
     }
   }
 
+  for (const validator of [rule.validator, rule.asyncValidator]) {
+    if (!validator) continue;
+    const result = await runCustomValidator(validator, rule, value, translate);
+    if (!result.valid) return result;
+  }
+
   return { valid: true };
+}
+
+function runCustomValidator(
+  validator: NonNullable<FormRule['validator']>,
+  rule: FormRule,
+  value: unknown,
+  translate: typeof t
+): Promise<{ valid: boolean; error?: string }> {
+  return new Promise(resolve => {
+    let completed = false;
+    const finish = (valid: boolean, error?: string) => {
+      if (completed) return;
+      completed = true;
+      resolve(valid ? { valid: true } : { valid: false, error });
+    };
+    const reject = (error: unknown) => {
+      const message = error instanceof Error ? error.message : error == null ? '' : String(error);
+      finish(false, message || rule.message || translate('common.validationError'));
+    };
+    try {
+      const result = validator(rule, value, error => {
+        finish(!error, error || rule.message);
+      });
+      // 回调已完成时也接住晚到的 Promise 拒绝，防止未处理异常逸出验证链路。
+      if (result && typeof result.then === 'function') {
+        void Promise.resolve(result).then(() => finish(true), reject);
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 // 收集一条规则声明的所有内置校验器
@@ -434,7 +451,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    const num = parseFiniteNumber(value);
+    const num = parseRangeValue(value);
     if (num === undefined || num < rule.minValue!) {
       callback(rule.message || translate('validators.minValue', { min: rule.minValue! }));
       return;
@@ -449,7 +466,7 @@ export const builtinValidators: BuiltinValidators = {
       return;
     }
 
-    const num = parseFiniteNumber(value);
+    const num = parseRangeValue(value);
     if (num === undefined || num > rule.maxValue!) {
       callback(rule.message || translate('validators.maxValue', { max: rule.maxValue! }));
       return;
@@ -544,10 +561,7 @@ export const validateUtils = {
   },
 
   // 是否为身份证号
-  isIdCard(value: string): boolean {
-    const idCardRegex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-    return idCardRegex.test(value);
-  },
+  isIdCard,
 };
 
 // 常用验证规则

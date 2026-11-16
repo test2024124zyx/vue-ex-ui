@@ -113,6 +113,7 @@ const zhCN = {
 
   // 二维码
   qrcode: {
+    ariaLabel: '二维码：{value}',
     loading: '生成中...',
     error: '二维码生成失败',
     download: '下载二维码',

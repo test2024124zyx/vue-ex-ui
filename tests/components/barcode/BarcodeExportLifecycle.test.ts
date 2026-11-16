@@ -25,6 +25,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   wrappers.splice(0).forEach(wrapper => wrapper.unmount());
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -38,6 +39,11 @@ const createBarcode = async () => {
 
 describe('条码导出成功与失败恢复', () => {
   it('成功导出指定格式与文件名，释放图片和下载对象地址', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.mocked(URL.createObjectURL)
+      .mockReturnValueOnce('blob:original-svg')
+      .mockReturnValueOnce('blob:download-svg')
+      .mockReturnValueOnce('blob:download-png');
     const drawImage = vi.fn();
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage,
@@ -48,20 +54,29 @@ describe('条码导出成功与失败恢复', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(callback =>
       callback(new Blob(['png']))
     );
-    const names: string[] = [];
+    const links: HTMLAnchorElement[] = [];
+    const connected: boolean[] = [];
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
       this: HTMLAnchorElement
     ) {
-      names.push(this.download);
+      links.push(this);
+      connected.push(this.isConnected);
     });
     const wrapper = await createBarcode();
     expect(await wrapper.vm.toDataURL('image/jpeg')).toContain('data:image/jpeg');
     expect(data).toHaveBeenCalledWith('image/jpeg');
     wrapper.vm.download('业务条码.png');
     await flushPromises();
-    expect(names).toEqual(['业务条码.png']);
+    expect(links.map(link => link.download)).toEqual(['业务条码.png']);
+    expect(connected).toEqual([true]);
+    expect(links[0]?.isConnected).toBe(false);
     expect(drawImage).toHaveBeenCalledTimes(2);
-    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(URL.revokeObjectURL).mock.calls).toEqual([
+      ['blob:original-svg'],
+      ['blob:download-svg'],
+    ]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(URL.revokeObjectURL).toHaveBeenLastCalledWith('blob:download-png');
     expect(wrapper.vm.getElement()).toBe(wrapper.element);
   });
 

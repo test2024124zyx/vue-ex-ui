@@ -256,6 +256,26 @@ describe('ExChart', () => {
     expect(formatNumber(12.34, -4)).toBe('12');
   });
 
+  it.each([
+    [999.999, 2, '1.00K'],
+    [999_999, 2, '1.00M'],
+    [999_999_999, 2, '1.00B'],
+    [-999_999, 2, '-1.00M'],
+    [999_500, 0, '1M'],
+    [999_999, 3, '999.999K'],
+    [999, 2, '999.00'],
+    [1_234_567, 2, '1.23M'],
+  ] as const)('图表紧凑数值在舍入后跨单位进位：%s', (value, decimals, expected) => {
+    expect(formatNumber(value, decimals)).toBe(expected);
+  });
+
+  it.each([null, undefined, Number.NaN, Infinity, -Infinity])(
+    '缺失或非有限数据 %s 格式化为空文本',
+    value => {
+      expect(formatNumber(value)).toBe('');
+    }
+  );
+
   it('工具箱默认文本使用当前语言，并允许传入最近 Provider 的翻译器', async () => {
     const { setLocale } = await import('../../../src/locale');
     setLocale('en-US');

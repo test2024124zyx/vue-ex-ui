@@ -185,6 +185,8 @@ const gradient = createGradientColor('#00f0ff', '#ff007f');
 const formatted = formatNumber(1234567); // "1.23M"
 ```
 
+`formatNumber` 在四舍五入后达到下一个量级时进位，例如 `999999` 会显示为 `1.00M`。缺失值和非有限值返回空字符串。
+
 ## 性能优化
 
 - 使用 `shallowRef` 存储 ECharts 实例，避免深度响应

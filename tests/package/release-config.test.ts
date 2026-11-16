@@ -164,4 +164,16 @@ describe('发布配置契约', () => {
     expect(workflow).toContain('npm run verify:tree-shaking');
     expect(workflow).toContain('npm run audit:production');
   });
+
+  it('浏览器验收保留三种引擎，同一 PR 的新提交替换旧检查', async () => {
+    const workflow = await readFile(resolve(projectRoot, '.github/workflows/ci.yml'), 'utf8');
+
+    expect(workflow).toContain('timeout-minutes: 45');
+    expect(workflow).toContain(
+      'group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}'
+    );
+    expect(workflow).toContain("cancel-in-progress: ${{ github.event_name == 'pull_request' }}");
+    expect(workflow).toContain('playwright install --with-deps chromium firefox webkit');
+    expect(workflow).toContain('npm run test:browser');
+  });
 });
