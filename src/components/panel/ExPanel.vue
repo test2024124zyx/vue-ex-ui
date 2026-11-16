@@ -94,6 +94,7 @@ import { useRenderComputed } from '../../composables/useRenderComputed';
 import { useComponentSize } from '../config-provider/composables';
 import { computed, getCurrentInstance, ref, useSlots } from 'vue';
 import { useLocale } from '../../locale';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import type { ExPanelProps, ExPanelExposed } from './types';
 
 defineOptions({
@@ -166,8 +167,7 @@ const guardLoadingClick = (event: MouseEvent): void => {
 const triggerPanelClick = (event: KeyboardEvent): void => {
   if (
     event.target !== event.currentTarget ||
-    event.isComposing ||
-    event.keyCode === 229 ||
+    isComposingKeyboardEvent(event) ||
     props.loading ||
     !isInteractive.value ||
     (event.key !== 'Enter' && event.key !== ' ')

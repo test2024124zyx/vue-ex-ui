@@ -13,7 +13,7 @@ export type SwitchStatus = 'success' | 'warning' | 'error';
 // ============================================================================
 
 export interface ExSwitchProps {
-  /** 绑定值 */
+  /** 绑定值。为 undefined 时由组件维护状态 */
   modelValue?: SwitchValue;
   /** 开关打开时的值 */
   activeValue?: SwitchValue;
@@ -62,15 +62,15 @@ export interface ExSwitchProps {
 // ============================================================================
 
 export interface ExSwitchEmits {
-  /** 值改变时触发 */
+  /** 请求更新绑定值 */
   'update:modelValue': [value: SwitchValue];
-  /** 值改变时触发 */
+  /** 请求切换开关时触发，参数为目标值 */
   change: [value: SwitchValue];
   /** 获得焦点时触发 */
   focus: [event: FocusEvent];
   /** 失去焦点时触发 */
   blur: [event: FocusEvent];
-  /** 键盘事件触发 */
+  /** 收到原生按键事件时触发，早于快捷键处理 */
   keydown: [event: KeyboardEvent];
 }
 

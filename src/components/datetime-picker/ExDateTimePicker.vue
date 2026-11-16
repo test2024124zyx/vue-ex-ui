@@ -351,6 +351,7 @@ import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useLocale } from '../../locale';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import {
   addDays,
   cloneDate,
@@ -697,7 +698,7 @@ const togglePanel = () => {
 };
 
 const handleInputKeydown = (event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
   if (event.key === 'ArrowDown') {
     event.preventDefault();
     if (!isOpen.value) openPanel(true);

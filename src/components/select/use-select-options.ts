@@ -1,6 +1,12 @@
 import { computed } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
-import type { ExSelectProps, SelectOption, SelectOptionGroup, SelectOptions } from './types';
+import type {
+  ExSelectProps,
+  SelectOption,
+  SelectOptionGroup,
+  SelectOptions,
+  SelectValue,
+} from './types';
 import { useRemoteOptionCache } from './use-option-cache';
 
 export const isGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup =>
@@ -50,7 +56,8 @@ export function useSelectOptions(
   props: ExSelectProps,
   searchQuery: Ref<string>,
   source: ComputedRef<SelectOptions> = computed(() => props.options ?? []),
-  loading: ComputedRef<boolean> = computed(() => Boolean(props.loading))
+  loading: ComputedRef<boolean> = computed(() => Boolean(props.loading)),
+  selection: ComputedRef<SelectValue> = computed(() => props.modelValue ?? null)
 ) {
   const sourceIndex = computed(() => indexSelectOptions(source.value));
   const flatOptions = computed(() => sourceIndex.value.flat);
@@ -74,26 +81,26 @@ export function useSelectOptions(
   );
   const flatFilteredOptions = computed(() => filteredIndex.value.flat);
   const selectedValues = computed<Array<string | number>>(() =>
-    Array.isArray(props.modelValue) ? props.modelValue : []
+    Array.isArray(selection.value) ? selection.value : []
   );
   const selectedSet = computed(() => new Set(selectedValues.value));
   const optionCache = useRemoteOptionCache(
     flatOptions,
     () => props.remote ?? false,
-    () => props.modelValue ?? null,
+    () => selection.value,
     () => props.multiple ?? false
   );
   const getOptionByValue = (value: string | number): SelectOption | undefined =>
     sourceIndex.value.byValue.get(value) ??
     (props.remote ? optionCache.value.get(value) : undefined);
   const selectedOption = computed(
-    () => getOptionByValue(props.modelValue as string | number) ?? null
+    () => getOptionByValue(selection.value as string | number) ?? null
   );
   const selectedOptions = computed(() =>
     selectedValues.value.map(getOptionByValue).filter((option): option is SelectOption => !!option)
   );
   const isSelected = (option: SelectOption) =>
-    props.multiple ? selectedSet.value.has(option.value) : option.value === props.modelValue;
+    props.multiple ? selectedSet.value.has(option.value) : option.value === selection.value;
   const getOptionIndex = (option: SelectOption) =>
     filteredIndex.value.indices.get(option.value) ?? -1;
   const virtualRows = computed(() => filteredIndex.value.rows);
