@@ -302,7 +302,7 @@ describe('无序集合快照', () => {
     expect(reads).toBe(0);
   });
 
-  it('自由配对前淘汰静态条件分别有候选、交集为空的成员', () => {
+  it.each([false, true])('按完整静态交集优先验证受限成员，存在未知候选=%s', wildcard => {
     let reads = 0;
     const unknown = () => {
       reads++;
@@ -344,10 +344,37 @@ describe('无序集合快照', () => {
     ]);
     const right = new Set([
       ...Array.from({ length: 6 }, first),
-      ...Array.from({ length: 6 }, second),
+      ...Array.from({ length: wildcard ? 5 : 6 }, second),
+      ...(wildcard ? [partial(1)] : []),
     ]);
     expect(compareWithLinearWork(left, right, left.size)).toBe(false);
-    expect(reads).toBe(0);
+    if (!wildcard) expect(reads).toBe(0);
+  });
+
+  it('所有对象键共享一个宽 Map 值时只比较一次该值', () => {
+    const entries = Array.from({ length: 800 }, (_, id) => ({
+      id,
+      get score() {
+        return 1;
+      },
+    }));
+    const source = new Map(entries.map(key => [key, entries]));
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    const set = Map.prototype.set;
+    const maxWrites = entries.length * 100;
+    let writes = 0;
+    Map.prototype.set = function <K, V>(this: Map<K, V>, key: K, value: V) {
+      if (++writes > maxWrites) throw new Error('重复展开了共享的 Map 值');
+      return set.call(this, key, value) as Map<K, V>;
+    };
+    try {
+      expect(equalValueSnapshot(source, new Map([...snapshot].reverse()))).toBe(true);
+    } finally {
+      Map.prototype.set = set;
+    }
+    const values = snapshot.values().next().value!;
+    values[0] = { ...values[0]! };
+    expect(equalValueSnapshot(source, snapshot)).toBe(false);
   });
 
   it('未匹配的首项不会使静态候选在换序后反复扫描已用位置', () => {

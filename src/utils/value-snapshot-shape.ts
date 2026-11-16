@@ -162,12 +162,15 @@ export function createSnapshotMemberShape() {
     return shape.join(',');
   }
 
-  function readableFields([key, value]: readonly [object, unknown]): Map<string, number> {
+  function readableFields(
+    [key, value]: readonly [object, unknown],
+    includeValue: boolean
+  ): Map<string, number> {
     const result = new Map<string, number>();
     const pending: Array<{ node: unknown; path: string; root?: true }> = [
       { node: key, path: 'key', root: true },
     ];
-    if (value !== key) pending.push({ node: value, path: 'value', root: true });
+    if (includeValue && value !== key) pending.push({ node: value, path: 'value', root: true });
     const visited = new WeakSet<object>();
     let remaining = MEMBER_SHAPE_BUDGET;
     let fieldBudget = READABLE_FIELDS_BUDGET;

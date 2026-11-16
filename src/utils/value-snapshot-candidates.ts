@@ -42,7 +42,7 @@ export function planReadableCandidates(
       else posting.byValue.set(value, { indices: [index], offset: 0 });
     }
   });
-  const compatibleProfiles = new Set<string>();
+  const intersections = new Map<string, AvailablePositions>();
   const ranked: RankedMember[] = [];
   for (const [sourceIndex, sourceFields] of left.entries()) {
     const fields = new Map<string, number>();
@@ -77,21 +77,23 @@ export function planReadableCandidates(
       if (exact) positions.push(exact);
       if (driver.unknown.indices.length) positions.push(driver.unknown);
       if (fields.size > 1) {
-        // 各字段分别有候选时，仍可能没有成员同时满足全部可读条件。
+        // 用完整交集的候选数排序，避免约束最强的成员最后才参与匹配。
         const profile = [...fields]
           .map(([field, value]) => `${field}:${value}`)
           .sort()
           .join('|');
-        if (!compatibleProfiles.has(profile)) {
-          let found = false;
+        let intersection = intersections.get(profile);
+        if (!intersection) {
+          const indices: number[] = [];
           for (const position of readablePositions(positions, 0)) {
-            if (!readableFieldsAgree(fields, right[position]!)) continue;
-            found = true;
-            break;
+            if (readableFieldsAgree(fields, right[position]!)) indices.push(position);
           }
-          if (!found) return undefined;
-          compatibleProfiles.add(profile);
+          if (!indices.length) return undefined;
+          intersection = { indices, offset: 0 };
+          intersections.set(profile, intersection);
         }
+        count = intersection.indices.length;
+        positions = [intersection];
       }
     }
     ranked.push({ sourceIndex, fields, count, positions });

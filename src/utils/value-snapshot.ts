@@ -47,6 +47,13 @@ function isObject(value: unknown): value is object {
   return value !== null && typeof value === 'object';
 }
 
+function sharedEntryValue(entries: readonly ObjectEntry[]): object | undefined {
+  const value = entries[0]![1];
+  if (entries.length < 2 || !isObject(value)) return undefined;
+  const raw = toRaw(value);
+  return entries.every(([, item]) => toRaw(item) === raw) ? raw : undefined;
+}
+
 /** 迭代比较值快照，支持常用结构与循环引用，不依赖 JSON 的丢失类型序列化。 */
 export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   let pending: PendingPair | undefined = { left, right, next: undefined };
@@ -128,9 +135,16 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   function groupReadableMembers(
     left: ObjectEntry[],
     right: ObjectEntry[],
-    readFields: ReturnType<typeof createSnapshotMemberShape>['readableFields']
+    readFields: ReturnType<typeof createSnapshotMemberShape>['readableFields'],
+    mapEntries: boolean
   ): boolean {
-    const fields = new Map([...left, ...right].map(entry => [entry, readFields(entry)]));
+    const leftValue = mapEntries ? sharedEntryValue(left) : undefined;
+    const rightValue = leftValue ? sharedEntryValue(right) : undefined;
+    // 同组条目的值若各自指向同一对象，值的对应关系与键的排列无关。
+    if (leftValue && rightValue) enqueue(leftValue, rightValue);
+    const fields = new Map(
+      [...left, ...right].map(entry => [entry, readFields(entry, !rightValue)])
+    );
     const first = fields.get(left[0]!)!;
     // 每个候选都能静态读取的字段才可用于分组，getter 与普通数据仍能按实际值比较。
     const candidates = [...fields.values()];
@@ -179,7 +193,10 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       const rightShapes = leftShapes && groupMembers(rightGroup, readShape.detailed);
       // 访问器的实际值交给完整比较，回退仍受原型和自有键约束。
       if (!leftShapes || !rightShapes) {
-        if (!groupReadableMembers(leftGroup, rightGroup, readShape.readableFields)) return false;
+        if (
+          !groupReadableMembers(leftGroup, rightGroup, readShape.readableFields, a instanceof Map)
+        )
+          return false;
         continue;
       }
       for (const [shape, leftShape] of leftShapes) {
