@@ -301,10 +301,48 @@ describe('locale provider', () => {
     expect(useI18n().t('pagination.pagination')).toBe('Pagination');
   });
 
-  it('全局语言设置遇到未知值时应该保留当前语言', () => {
-    setLocale('zh-CN');
-    setLocale('unknown' as never);
-    expect(getCurrentLocale()).toBe('zh-CN');
+  it.each(['unknown', 'constructor', 'toString', '__proto__', ['en-US']])(
+    '全局语言入口拒绝非白名单值并保留当前翻译：%o',
+    invalidLocale => {
+      setLocale('zh-CN');
+      const composer = useI18n();
+      setLocale(invalidLocale as never);
+      expect(getCurrentLocale()).toBe('zh-CN');
+      composer.setLocale?.(invalidLocale as never);
+      expect(getCurrentLocale()).toBe('zh-CN');
+      composer.locale.value = invalidLocale as never;
+      expect(getCurrentLocale()).toBe('zh-CN');
+      expect(t('common.confirm')).toBe(zhCN.common.confirm);
+    }
+  );
+
+  it('应用语言初始化及异步增强后的写入都使用同一白名单', async () => {
+    let composer: ReturnType<typeof useI18n> | undefined;
+    const probe = defineComponent({
+      setup() {
+        composer = useI18n();
+        const scoped = useLocale('common');
+        return () => h('span', `${scoped.t('confirm')}|${scoped.messages.value.confirm}`);
+      },
+    });
+    const wrapper = mount(probe, {
+      global: { plugins: [createLocaleProvider({ locale: '__proto__' as never })] },
+    });
+    try {
+      expect(wrapper.text()).toBe(`${enUS.common.confirm}|${enUS.common.confirm}`);
+      await flushLocaleProvider();
+      composer!.setLocale?.('zh-CN');
+      await flushLocaleProvider();
+      expect(wrapper.text()).toBe(`${zhCN.common.confirm}|${zhCN.common.confirm}`);
+      composer!.setLocale?.('constructor' as never);
+      expect(composer!.locale.value).toBe('zh-CN');
+      composer!.locale.value = 'toString';
+      await flushLocaleProvider();
+      expect(wrapper.text()).toBe(`${zhCN.common.confirm}|${zhCN.common.confirm}`);
+      expect(getCurrentLocale()).toBe('en-US');
+    } finally {
+      wrapper.unmount();
+    }
   });
 
   it('自定义语言包只覆盖已声明键且不改变共享内置对象', async () => {
