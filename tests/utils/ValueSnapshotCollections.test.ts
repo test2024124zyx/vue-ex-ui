@@ -558,6 +558,37 @@ describe('无序集合快照', () => {
     expect(compareWithLinearWork(source, snapshot, source.values.size)).toBe(true);
   });
 
+  it.each([
+    { name: '对象键关联数字', create: (value: number) => new Map([[{}, value]]) },
+    { name: '对象键关联对象', create: (value: number) => new Map([[{}, { value }]]) },
+    { name: 'Set 对象成员', create: (value: number) => new Set([{ value }]) },
+  ])('外层候选保留无序集合条目的内容，$name', ({ create }) => {
+    const values = (changed: number) =>
+      Array.from({ length: 9 }, (_, index) => create(index === 8 ? changed : 0));
+    const source = new Set(values(1));
+    expect(compareWithLinearWork(source, new Set(values(0)), source.size)).toBe(false);
+    expect(compareWithLinearWork(source, new Set(values(1).reverse()), source.size)).toBe(true);
+  });
+
+  it('按另一个集合的成员关系跳过尚未建立映射的候选', () => {
+    const free = Array.from({ length: 2000 }, () => ({}));
+    const anchors = Array.from({ length: 2000 }, () => ({}));
+    const source = { values: new Set([...free, ...anchors]), anchors: new Set(anchors) };
+    const snapshot = deepClone(source);
+    const freeCopies = [...snapshot.values].slice(0, free.length);
+    snapshot.values = new Set([...snapshot.anchors, ...freeCopies]);
+    expect(compareWithLinearWork(source, snapshot, source.values.size)).toBe(true);
+  });
+
+  it('两个集合共享成员的数量不一致时避免排列回溯', () => {
+    const entries = Array.from({ length: 9 }, () => ({}));
+    const source = { values: new Set(entries), anchors: new Set(entries) };
+    const snapshot = deepClone(source);
+    snapshot.anchors.delete([...snapshot.anchors].at(-1)!);
+    snapshot.anchors.add({});
+    expect(compareWithLinearWork(source, snapshot, source.values.size)).toBe(false);
+  });
+
   it('重新分配相交的静态组名额，并让不同候选域共用位置', () => {
     const lane = (a: number, b: number, c: number) =>
       new Map([

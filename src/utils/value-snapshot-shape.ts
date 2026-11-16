@@ -7,6 +7,7 @@ const READABLE_FIELDS_BUDGET = MEMBER_SHAPE_BUDGET * 2;
 const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 type OwnShape = { signature: number; children: object[] };
+type InternalShape = OwnShape & { members?: number | null };
 type KeyToken = { key: string | symbol; id: number };
 type Field = { id: number; value: unknown };
 type ReadableNode = { others: KeyToken[]; fields: Field[] };
@@ -29,7 +30,8 @@ function bytesOf(value: object): Uint8Array | undefined {
 export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
   const ownShapes = new WeakMap<object, OwnShape | null>();
-  const internalShapes = new WeakMap<object, OwnShape | null>();
+  const internalShapes = new WeakMap<object, InternalShape | null>();
+  const memberShapes = new WeakMap<object, string | null>();
   const ownKeys = new WeakMap<object, KeyToken[]>();
   const readableNodes = new WeakMap<object, ReadableNode>();
   const observedNodes = new WeakMap<object, Field[]>();
@@ -120,11 +122,28 @@ export function createSnapshotMemberShape() {
     }
   }
 
-  function internalShapeOf(node: object): OwnShape | undefined {
+  function memberShapeOf(value: unknown): string | undefined {
+    const outline = outlineOf(value);
+    if (value === null || typeof value !== 'object') return outline;
+    const node = toRaw(value);
+    if (usesNativeIdentity(node)) return outline;
+    const previous = memberShapes.get(node);
+    if (previous !== undefined) return previous ?? undefined;
+    const { fields, others } = fieldsOf(node);
+    // 浅层信息只读直接字段，不递归进入集合，循环条目也能生成同样的签名。
+    const signature = others.length
+      ? undefined
+      : `${outline};${fields.map(({ value }) => outlineOf(value)).join(';')}`;
+    memberShapes.set(node, signature ?? null);
+    return signature;
+  }
+
+  function internalShapeOf(node: object): InternalShape | undefined {
     const cached = internalShapes.get(node);
     if (cached !== undefined) return cached ?? undefined;
     const shape: Array<string | number> = [];
     const children: object[] = [];
+    let members: number | null | undefined;
     const bytes = bytesOf(node);
     if (bytes) {
       // 摘要仅淘汰不相容候选，实际相等仍由完整的逐字节比较确认。
@@ -138,17 +157,30 @@ export function createSnapshotMemberShape() {
     } else if (node instanceof Map || node instanceof Set) {
       shape.push('collection', node.size);
       const fixed: Array<[number, unknown]> = [];
+      const outlines: number[] = [];
+      const detailed: number[] = [];
+      let complete = true;
       for (const [entryKey, entryValue] of node.entries()) {
-        if (entryKey === null || typeof entryKey !== 'object')
+        if (entryKey === null || typeof entryKey !== 'object') {
           fixed.push([id(entryKey), entryValue]);
+          continue;
+        }
+        outlines.push(id(`${outlineOf(entryKey)}|${outlineOf(entryValue)}`));
+        if (!complete) continue;
+        const keyShape = memberShapeOf(entryKey);
+        const valueShape = entryValue === entryKey ? keyShape : memberShapeOf(entryValue);
+        if (keyShape === undefined || valueShape === undefined) complete = false;
+        else detailed.push(id(`${keyShape}|${valueShape}`));
       }
       fixed.sort(([first], [second]) => first - second);
       for (const [keyId, entryValue] of fixed) {
         shape.push(keyId);
         appendValue(shape, children, entryValue);
       }
+      shape.push('members', outlines.sort((a, b) => a - b).join(':'));
+      if (outlines.length) members = complete ? id(detailed.sort((a, b) => a - b).join(',')) : null;
     }
-    const result = shape.length ? { signature: id(shape.join(',')), children } : undefined;
+    const result = shape.length ? { signature: id(shape.join(',')), children, members } : undefined;
     internalShapes.set(node, result ?? null);
     return result;
   }
@@ -158,11 +190,12 @@ export function createSnapshotMemberShape() {
     if (cached !== undefined) return cached;
     const internal = internalShapeOf(node);
     const { others, fields } = fieldsOf(node);
-    if (others.length) {
+    if (others.length || internal?.members === null) {
       ownShapes.set(node, null);
       return null;
     }
     const shape: Array<string | number> = internal ? ['internal', internal.signature] : [];
+    if (internal?.members !== undefined) shape.push('members', internal.members);
     const children = internal ? [...internal.children] : [];
     shape.push('properties', fields.length);
     for (const { id, value } of fields) {
@@ -233,6 +266,7 @@ export function createSnapshotMemberShape() {
       // 原生对象的内部值不受额外自有访问器影响，可独立参与候选筛选。
       const internal = internalShapeOf(node);
       if (internal) result.set(`${path}.internal`, internal.signature);
+      if (internal?.members != null) result.set(`${path}.members`, internal.members);
       const known = readOwnShape(node);
       if (known) result.set(`${path}.data`, known.signature);
       // 成员本身的字段参与筛选，预算只限制递归展开的子图。

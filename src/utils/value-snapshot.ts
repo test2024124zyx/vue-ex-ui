@@ -5,6 +5,7 @@ import {
   planReadableCandidates,
   readableFieldsAgree,
   readablePositions,
+  type AvailablePositions,
   type ReadableCandidates,
 } from './value-snapshot-candidates';
 
@@ -25,12 +26,15 @@ interface ReadableGroup {
 }
 
 interface CollectionMatch {
+  id: number;
   left: ObjectEntry[];
   right: ObjectEntry[];
   used: Set<number>;
   leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
   available: CandidateCursor;
+  sharedMembership?: boolean;
+  membershipPositions?: Map<string, AvailablePositions> | null;
   readable?: ReadableCandidates;
 }
 
@@ -73,6 +77,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const leftMemberships: MembershipIndex = new WeakMap();
   const rightMemberships: MembershipIndex = new WeakMap();
   const groups: CollectionMatch[] = [];
+  let nextGroupId = 0;
   let readShape: ReturnType<typeof createSnapshotMemberShape> | undefined;
 
   function enqueue(leftValue: unknown, rightValue: unknown): void {
@@ -90,7 +95,21 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       memberships = new Map();
       index.set(key, memberships);
     }
+    if (memberships.size) {
+      group.sharedMembership = true;
+      for (const previous of memberships.keys()) {
+        previous.sharedMembership = true;
+        previous.membershipPositions = undefined;
+      }
+    }
     memberships.set(group, count);
+  }
+
+  function removeMembership(index: MembershipIndex, key: object, group: CollectionMatch): void {
+    const memberships = index.get(key)!;
+    memberships.delete(group);
+    // 只重建此次共享成员关系变化涉及的索引。
+    for (const previous of memberships.keys()) previous.membershipPositions = undefined;
   }
 
   function enqueueGroup(
@@ -107,6 +126,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       else rightIndices.set(key, [index]);
     });
     const collection: CollectionMatch = {
+      id: nextGroupId++,
       left: leftEntries,
       right: rightEntries,
       used: new Set(),
@@ -259,6 +279,43 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     return true;
   }
 
+  function membershipKey(index: MembershipIndex, key: object): string {
+    const groups = index.get(key)!;
+    // 每个分组按创建顺序登记，左右用相同顺序生成成员关系签名。
+    return [...groups].map(([group, count]) => `${group.id}:${count}`).join('|');
+  }
+
+  function memberPositions(
+    collection: CollectionMatch,
+    key: object
+  ): AvailablePositions | undefined {
+    if (collection.membershipPositions === undefined) {
+      const positions = new Map<string, AvailablePositions>();
+      collection.right.forEach(([key], index) => {
+        const membership = membershipKey(rightMemberships, key);
+        let available = positions.get(membership);
+        if (!available) {
+          available = { indices: [], offset: 0 };
+          positions.set(membership, available);
+        }
+        available.indices.push(index);
+      });
+      const counts = new Map<string, number>();
+      for (const [leftKey] of collection.left) {
+        const membership = membershipKey(leftMemberships, leftKey);
+        counts.set(membership, (counts.get(membership) ?? 0) + 1);
+      }
+      for (const [membership, count] of counts) {
+        if (positions.get(membership)?.indices.length !== count) {
+          collection.membershipPositions = null;
+          return undefined;
+        }
+      }
+      collection.membershipPositions = positions;
+    }
+    return collection.membershipPositions?.get(membershipKey(leftMemberships, key));
+  }
+
   function comparePair(leftValue: unknown, rightValue: unknown): boolean {
     if (!isObject(leftValue) || !isObject(rightValue)) return Object.is(leftValue, rightValue);
     const a = toRaw(leftValue);
@@ -350,7 +407,13 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       return available;
     }
     const first = Math.max(start, skipReserved(collection.available));
-    const indexed = ranked?.domain.positions;
+    let indexed = ranked?.domain.positions;
+    if (collection.sharedMembership) {
+      const members = memberPositions(collection, key);
+      if (!members) return false;
+      if (members.indices.length < (ranked?.domain.count ?? collection.right.length))
+        indexed = [members];
+    }
     if (indexed) {
       for (const positions of indexed) skipReserved(positions);
       for (const candidate of readablePositions(indexed, first)) if (take(candidate)) return true;
@@ -373,8 +436,8 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       }
       while (groups.length > groupCount) {
         const group = groups.pop()!;
-        for (const key of group.leftCounts.keys()) leftMemberships.get(key)?.delete(group);
-        for (const key of group.rightIndices.keys()) rightMemberships.get(key)?.delete(group);
+        for (const key of group.leftCounts.keys()) removeMembership(leftMemberships, key, group);
+        for (const key of group.rightIndices.keys()) removeMembership(rightMemberships, key, group);
       }
       // 候选索引缓存只跳过当前分支已经占用的位置，回退时一起恢复。
       while (cursors.length > cursorCount) {
