@@ -3,7 +3,6 @@
     ref="buttonRef"
     :class="buttonClasses"
     :style="props.style"
-    :data-ex-button-glitch-text="glitchText || undefined"
     :type="nativeType"
     :disabled="disabled || loading"
     :autofocus="autofocus"
@@ -13,14 +12,13 @@
     @focus="handleFocus"
     @blur="handleBlur"
   >
-    <!-- 装饰副本必须从可访问树隐藏，不能由按钮自身的伪元素生成朗读文字。 -->
+    <!-- 将生成的装饰文字限制在隐藏子树内，按钮正文只出现一次。 -->
     <span
       v-if="glitchText"
       class="ex-button__glitch"
+      :data-ex-button-glitch-text="glitchText"
       aria-hidden="true"
-    >
-      {{ glitchText }}
-    </span>
+    ></span>
     <span
       v-if="loading"
       class="ex-button__loading-icon"

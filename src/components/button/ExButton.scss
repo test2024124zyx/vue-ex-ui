@@ -95,10 +95,13 @@
   // 撕裂层复制可见文字，再用 inset 分片和离散位移制造真实的色差断层。
   &__glitch {
     display: none;
+
+    &::before {
+      content: attr(data-ex-button-glitch-text);
+    }
   }
 
-  &--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(.ex-button--link)
-    > .ex-button__glitch {
+  &--glow:not(.ex-button--text):not(.ex-button--link) > .ex-button__glitch {
     position: absolute;
     inset: 0;
     z-index: 3;
@@ -540,9 +543,9 @@
     transform: translateX(140%);
   }
 
-  .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
-      .ex-button--link
-    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)
+  .ex-button--glow:not(.ex-button--text):not(.ex-button--link):hover:not(:disabled):not(
+      .ex-button--loading
+    ):not(.ex-button--no-neon)
     > .ex-button__glitch {
     animation: ex-button-glitch-slices 1s steps(2, end) forwards;
   }
@@ -569,9 +572,9 @@
     animation: none;
   }
 
-  .ex-button--glow[data-ex-button-glitch-text]:not(.ex-button--text):not(
-      .ex-button--link
-    ):hover:not(:disabled):not(.ex-button--loading):not(.ex-button--no-neon)
+  .ex-button--glow:not(.ex-button--text):not(.ex-button--link):hover:not(:disabled):not(
+      .ex-button--loading
+    ):not(.ex-button--no-neon)
     > .ex-button__glitch {
     opacity: 0;
     transform: translate(0, 0);
@@ -586,7 +589,7 @@
   }
 
   .ex-button__glitch {
-    display: none;
+    visibility: hidden;
   }
 
   .ex-button:focus-visible {

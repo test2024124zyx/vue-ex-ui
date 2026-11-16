@@ -41,7 +41,13 @@ test('霓虹按钮的装饰层不会重复可访问名称，交互和语言切�
   for (const type of ['primary', 'success', 'warning', 'danger', 'info']) {
     const button = page.getByTestId(type);
     await expect(button).toHaveAccessibleName('保存');
+    await expect(button).toHaveText('保存');
     await button.hover();
+    const decoration = button.locator('.ex-button__glitch');
+    await expect(decoration).toHaveCSS('animation-name', /ex-button-glitch-slices/);
+    expect(
+      await decoration.evaluate(element => getComputedStyle(element, '::before').content)
+    ).toBe('"保存"');
     await expect(button).toHaveAccessibleName('保存');
     await button.focus();
     await expect(button).toHaveAccessibleName('保存');
@@ -52,7 +58,12 @@ test('霓虹按钮的装饰层不会重复可访问名称，交互和语言切�
   await expect(page.getByTestId('disabled')).toHaveAccessibleName('保存');
   await page.locator('#translate').click();
   await expect(page.getByTestId('primary')).toHaveAccessibleName('Save');
+  await expect(page.getByTestId('primary')).toHaveText('Save');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByTestId('primary').hover();
+  const decoration = page.getByTestId('primary').locator('.ex-button__glitch');
+  await expect(decoration).toHaveCSS('animation-name', 'none');
   await expect(page.getByTestId('primary')).toHaveAccessibleName('Save');
+  await page.emulateMedia({ contrast: 'more' });
+  await expect(decoration).toHaveCSS('visibility', 'hidden');
 });

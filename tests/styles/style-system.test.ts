@@ -426,7 +426,9 @@ describe('v2 样式系统边界', { timeout: STYLE_COMPILATION_TIMEOUT_MS }, () 
     const inputCss = compile("@use 'src/components/input/ExInput';");
 
     expect(buttonCss).toContain('border: 2px solid var(--ex-button-border)');
-    expect(buttonCss).toContain('content: attr(data-ex-button-glitch-text)');
+    expect(buttonCss).toMatch(
+      /\.ex-button__glitch::before\s*\{\s*content: attr\(data-ex-button-glitch-text\)/
+    );
     expect(buttonCss).toContain('clip-path: var(--ex-button-glitch-slice-1)');
     expect(buttonCss).toContain('animation: ex-button-glitch-slices 1s steps(2, end) forwards');
     expect(buttonCss).toContain('.ex-button--shape-slice');
