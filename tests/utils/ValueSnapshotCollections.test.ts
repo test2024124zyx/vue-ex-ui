@@ -150,6 +150,27 @@ describe('无序集合快照', () => {
     expect(performance.now() - start).toBeLessThan(1800);
   });
 
+  it('集合外层确认了无法匹配的引用时，先拒绝候选组', () => {
+    const items = Array.from({ length: 10 }, () => ({}));
+    const source = { values: new Set(items), selected: items.at(-1) };
+    const snapshot = deepClone(source);
+    snapshot.selected = {};
+    const start = performance.now();
+    expect(equalValueSnapshot(source, snapshot)).toBe(false);
+    expect(equalValueSnapshot(snapshot, source)).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('含访问器的原型组不会堵住大量普通对象的候选游标', () => {
+    const special = Object.defineProperty([], 'score', { enumerable: true, get: () => 1 });
+    const items = Array.from({ length: 18_000 }, () => ({}));
+    const source = new Set([...items, special]);
+    const snapshot = new Set([...deepClone(source)].reverse());
+    const start = performance.now();
+    expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    expect(performance.now() - start).toBeLessThan(1800);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);

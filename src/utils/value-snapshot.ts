@@ -14,6 +14,7 @@ interface CollectionMatch {
   left: ObjectEntry[];
   right: ObjectEntry[];
   used: Set<number>;
+  leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
   firstAvailable: number;
 }
@@ -49,6 +50,8 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   }
 
   function enqueueGroup(leftEntries: ObjectEntry[], rightEntries: ObjectEntry[]): void {
+    const leftCounts = new Map<object, number>();
+    for (const [key] of leftEntries) leftCounts.set(key, (leftCounts.get(key) ?? 0) + 1);
     const rightIndices = new Map<object, number[]>();
     rightEntries.forEach(([key], index) => {
       const indices = rightIndices.get(key);
@@ -60,6 +63,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
         left: leftEntries,
         right: rightEntries,
         used: new Set(),
+        leftCounts,
         rightIndices,
         firstAvailable: 0,
       },
@@ -68,11 +72,13 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     };
   }
 
-  function groupMembers(entries: ObjectEntry[]): Map<string, ObjectEntry[]> | undefined {
-    readShape ??= createSnapshotMemberShape();
-    const groups = new Map<string, ObjectEntry[]>();
+  function groupMembers<T>(
+    entries: ObjectEntry[],
+    classify: (entry: ObjectEntry) => T | undefined
+  ): Map<T, ObjectEntry[]> | undefined {
+    const groups = new Map<T, ObjectEntry[]>();
     for (const entry of entries) {
-      const shape = readShape(entry);
+      const shape = classify(entry);
       if (shape === undefined) return undefined;
       const group = groups.get(shape);
       if (group) group.push(entry);
@@ -97,17 +103,37 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     for (const [key, value] of b.entries()) {
       if (isObject(key)) rightEntries.push([toRaw(key), value]);
     }
-    const leftGroups = groupMembers(leftEntries);
-    const rightGroups = leftGroups && groupMembers(rightEntries);
-    if (!leftGroups || !rightGroups) {
-      enqueueGroup(leftEntries, rightEntries);
-      return true;
-    }
-    // 先按形状和数量排除不可能相等的集合，避免对大量相同成员依次排列。
-    for (const [shape, leftGroup] of leftGroups) {
-      const rightGroup = rightGroups.get(shape);
+    const prototypeOf = ([key]: ObjectEntry): object | null => Object.getPrototypeOf(key);
+    const leftPrototypes = groupMembers(leftEntries, prototypeOf)!;
+    const rightPrototypes = groupMembers(rightEntries, prototypeOf)!;
+    readShape ??= createSnapshotMemberShape();
+    for (const [prototype, leftGroup] of leftPrototypes) {
+      const rightGroup = rightPrototypes.get(prototype);
       if (leftGroup.length !== rightGroup?.length) return false;
-      enqueueGroup(leftGroup, rightGroup);
+      const leftShapes = groupMembers(leftGroup, readShape);
+      const rightShapes = leftShapes && groupMembers(rightGroup, readShape);
+      // 访问器的实际值交给完整比较，回退也只在同原型的候选中进行。
+      if (!leftShapes || !rightShapes) {
+        enqueueGroup(leftGroup, rightGroup);
+        continue;
+      }
+      for (const [shape, leftShape] of leftShapes) {
+        const rightShape = rightShapes.get(shape);
+        if (leftShape.length !== rightShape?.length) return false;
+        enqueueGroup(leftShape, rightShape);
+      }
+    }
+    return true;
+  }
+
+  function mappedMembersFit({ leftCounts, rightIndices }: CollectionMatch): boolean {
+    for (const [key, count] of leftCounts) {
+      const linked = seen.get(key);
+      if (linked && rightIndices.get(linked)?.length !== count) return false;
+    }
+    for (const [key, candidates] of rightIndices) {
+      const linked = reverseSeen.get(key);
+      if (linked && leftCounts.get(linked) !== candidates.length) return false;
     }
     return true;
   }
@@ -122,6 +148,9 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     if (seen.has(a)) return seen.get(a) === b;
     // 双向身份映射同时识别共享引用被拆分或合并，保留对象图的关系。
     if (reverseSeen.has(b)) return false;
+    const activeGroup = choices.at(-1)?.match.collection;
+    if (activeGroup && activeGroup.leftCounts.get(a) !== activeGroup.rightIndices.get(b)?.length)
+      return false;
     seen.set(a, b);
     reverseSeen.set(b, a);
     if (choices.length) mapped.push([a, b]);
@@ -158,6 +187,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
 
   function matchEntry(match: PendingMatch, start: number): boolean {
     const { collection, index, next } = match;
+    if (index === 0 && !mappedMembersFit(collection)) return false;
     const [key, value] = collection.left[index]!;
     const linkedKey = seen.get(key);
     const linkedCandidates = linkedKey ? (collection.rightIndices.get(linkedKey) ?? []) : undefined;
@@ -206,8 +236,13 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       const pair: PendingPair = pending;
       pending = pair.next;
       if (!comparePair(pair.left, pair.right) && !retryMatch()) return false;
-    } else if (matches && !matchEntry(matches, 0) && !retryMatch()) {
-      return false;
+    } else if (matches) {
+      // 固定配对建立的引用关系优先校验，避免对已知不可能的分组枚举排列。
+      if (!choices.length) {
+        for (let group: PendingMatch | undefined = matches; group; group = group.next)
+          if (!mappedMembersFit(group.collection)) return false;
+      }
+      if (!matchEntry(matches, 0) && !retryMatch()) return false;
     }
   }
   return true;
