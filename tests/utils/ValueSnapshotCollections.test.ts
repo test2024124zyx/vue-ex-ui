@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { reactive } from 'vue';
 import { deepClone } from '../../src/utils/clone';
 import { equalValueSnapshot } from '../../src/utils/value-snapshot';
+import {
+  planReadableCandidates,
+  readablePositions,
+} from '../../src/utils/value-snapshot-candidates';
 
 // 用实际属性枚举和候选查询次数约束规模，避免共享 CI 运行器耗时抖动。
 function compareWithLinearWork(left: unknown, right: unknown, members: number): boolean {
@@ -431,7 +435,7 @@ describe('无序集合快照', () => {
     expect(reads).toBe(0);
   });
 
-  it('候选集合相交时检查联合容量，并可将已分配名额改给受限成员', () => {
+  it('候选集合相交时检查联合容量，同时保留可行组合', () => {
     let reads = 0;
     const wildcard = () => ({
       get id() {
@@ -472,6 +476,79 @@ describe('无序集合快照', () => {
     const source = new Set(entries);
     const snapshot = deepClone(source, { materializeAccessors: true });
     expect(compareWithLinearWork(snapshot, source, source.size)).toBe(true);
+  });
+
+  it('静态容量充足但 getter 实际值变化时按实际内容淘汰候选', () => {
+    let id = 0;
+    let reads = 0;
+    const source = new Set(
+      Array.from({ length: 10 }, (_, index) => ({
+        get id() {
+          reads++;
+          return index === 9 ? id : 0;
+        },
+      }))
+    );
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    id = 1;
+    reads = 0;
+    expect(compareWithLinearWork(snapshot, source, source.size)).toBe(false);
+    expect(reads).toBe(source.size);
+  });
+
+  it('各自有一个精确项的候选组不会反复扫描共用的访问器列表', () => {
+    const entries = Array.from({ length: 2000 }, (_, index) => ({
+      get id() {
+        return index;
+      },
+    }));
+    const source = new Set([...entries, ...entries.map(({ id }) => ({ id }))]);
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    expect(compareWithLinearWork(snapshot, source, source.size)).toBe(true);
+  });
+
+  it('静态可行时，实际比较保留访问器抛出的错误', () => {
+    const error = new Error('读取失败');
+    let reads = 0;
+    const source = new Set([
+      {
+        get id() {
+          reads++;
+          throw error;
+        },
+      },
+    ]);
+    expect(() => equalValueSnapshot(source, new Set([{ id: 1 }]))).toThrow(error);
+    expect(reads).toBe(1);
+  });
+
+  it('重新分配相交的静态组名额，并让不同候选域共用位置', () => {
+    const lane = (a: number, b: number, c: number) =>
+      new Map([
+        ['a', a],
+        ['b', b],
+        ['c', c],
+      ]);
+    const plan = planReadableCandidates(
+      [new Map([['a', 1]]), new Map([['b', 1]]), new Map([['c', 1]])],
+      [lane(0, 1, 1), lane(1, 0, 1), lane(1, 1, 0)]
+    );
+    expect(plan).toBeDefined();
+    const [first, second, third] = plan!.ranked.map(({ domain }) => domain.positions!);
+    expect([...readablePositions(first!, 0)]).toEqual([1, 2]);
+    expect([...readablePositions(second!, 0)]).toEqual([0, 2]);
+    expect([...readablePositions(third!, 0)]).toEqual([0, 1]);
+    const shared = first![1]!;
+    expect(shared).toBe(second![1]);
+    shared.offset = 1;
+    expect([...readablePositions(second!, 0)]).toEqual([0]);
+    shared.offset = 0;
+    expect([...readablePositions(first!, 2)]).toEqual([2]);
+    const interleaved = [
+      { indices: [0, 2, 5], offset: 0 },
+      { indices: [1, 7], offset: 0 },
+    ];
+    expect([...readablePositions(interleaved, 3)]).toEqual([5, 7]);
   });
 
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {

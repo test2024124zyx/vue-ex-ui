@@ -8,7 +8,9 @@ const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 type OwnShape = { signature: number; children: object[] };
 type KeyToken = { key: string | symbol; id: number };
-type ReadableNode = { complete: boolean; fields: Array<{ id: number; value: unknown }> };
+type Field = { id: number; value: unknown };
+type ReadableNode = { others: KeyToken[]; fields: Field[] };
+type ObservedProperty = { value: unknown } | { error: unknown };
 
 function bytesOf(value: object): Uint8Array | undefined {
   if (ArrayBuffer.isView(value)) {
@@ -29,6 +31,8 @@ export function createSnapshotMemberShape() {
   const ownShapes = new WeakMap<object, OwnShape | null>();
   const ownKeys = new WeakMap<object, KeyToken[]>();
   const readableNodes = new WeakMap<object, ReadableNode>();
+  const observedNodes = new WeakMap<object, Field[]>();
+  const observedProperties = new WeakMap<object, Map<PropertyKey, ObservedProperty>>();
   const outlines = new WeakMap<object, string>();
   const negativeZero = Symbol();
   const id = (value: unknown) => {
@@ -66,14 +70,44 @@ export function createSnapshotMemberShape() {
   function fieldsOf(node: object): ReadableNode {
     const cached = readableNodes.get(node);
     if (cached) return cached;
-    const result: ReadableNode = { complete: true, fields: [] };
-    for (const { key, id } of keysOf(node)) {
-      const descriptor = Object.getOwnPropertyDescriptor(node, key);
-      if (descriptor && 'value' in descriptor) result.fields.push({ id, value: descriptor.value });
-      else result.complete = false;
+    const result: ReadableNode = { others: [], fields: [] };
+    for (const token of keysOf(node)) {
+      const descriptor = Object.getOwnPropertyDescriptor(node, token.key);
+      if (descriptor && 'value' in descriptor)
+        result.fields.push({ id: token.id, value: descriptor.value });
+      else result.others.push(token);
     }
     readableNodes.set(node, result);
     return result;
+  }
+
+  function observedFieldsOf(node: object, { fields, others }: ReadableNode): Field[] {
+    if (!others.length) return fields;
+    const previous = observedNodes.get(node);
+    if (previous) return previous;
+    const properties = new Map<PropertyKey, ObservedProperty>();
+    const result = [...fields];
+    for (const { key, id } of others) {
+      try {
+        const value: unknown = Reflect.get(node, key);
+        properties.set(key, { value });
+        result.push({ id, value });
+      } catch (error) {
+        // 保留读取失败的结果，等完整配对真正使用该属性时再抛出。
+        properties.set(key, { error });
+      }
+    }
+    result.sort((a, b) => a.id - b.id);
+    observedNodes.set(node, result);
+    observedProperties.set(node, properties);
+    return result;
+  }
+
+  function readValue(node: object, key: PropertyKey): unknown {
+    const property = observedProperties.get(node)?.get(key);
+    if (!property) return Reflect.get(node, key);
+    if ('error' in property) throw property.error;
+    return property.value;
   }
 
   function readOwnShape(node: object): OwnShape | null {
@@ -111,8 +145,8 @@ export function createSnapshotMemberShape() {
         append(entryValue);
       }
     }
-    const { complete, fields } = fieldsOf(node);
-    if (!complete) {
+    const { others, fields } = fieldsOf(node);
+    if (others.length) {
       ownShapes.set(node, null);
       return null;
     }
@@ -164,7 +198,8 @@ export function createSnapshotMemberShape() {
 
   function readableFields(
     [key, value]: readonly [object, unknown],
-    includeValue: boolean
+    includeValue: boolean,
+    observeAccessors: boolean
   ): Map<string, number> {
     const result = new Map<string, number>();
     const pending: Array<{ node: unknown; path: string; root?: true }> = [
@@ -184,7 +219,8 @@ export function createSnapshotMemberShape() {
       const known = readOwnShape(node);
       if (known) result.set(`${path}.data`, known.signature);
       // 成员本身的字段参与筛选，预算只限制递归展开的子图。
-      const { fields } = fieldsOf(node);
+      const readable = fieldsOf(node);
+      const fields = observeAccessors ? observedFieldsOf(node, readable) : readable.fields;
       const count = root ? fields.length : Math.min(fieldBudget, fields.length);
       if (!root) fieldBudget -= count;
       for (let index = 0; index < count; index++) {
@@ -203,5 +239,6 @@ export function createSnapshotMemberShape() {
     outline: ([key, value]: readonly [object, unknown]) => `${outlineOf(key)}|${outlineOf(value)}`,
     detailed,
     readableFields,
+    readValue,
   };
 }

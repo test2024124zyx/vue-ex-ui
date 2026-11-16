@@ -2,9 +2,9 @@ import { toRaw } from 'vue';
 import { usesNativeIdentity } from './native-identity';
 import { createSnapshotMemberShape } from './value-snapshot-shape';
 import {
-  firstReadablePosition,
   planReadableCandidates,
   readableFieldsAgree,
+  readablePositions,
   type AvailablePositions,
   type ReadableCandidates,
 } from './value-snapshot-candidates';
@@ -16,6 +16,12 @@ interface PendingPair {
 }
 
 type ObjectEntry = [object, unknown];
+
+interface ReadableGroup {
+  left: ObjectEntry[];
+  right: ObjectEntry[];
+  plan: ReadableCandidates;
+}
 
 interface CollectionMatch {
   left: ObjectEntry[];
@@ -132,19 +138,12 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     return groups;
   }
 
-  function groupReadableMembers(
+  function planReadableGroups(
     left: ObjectEntry[],
     right: ObjectEntry[],
-    readFields: ReturnType<typeof createSnapshotMemberShape>['readableFields'],
-    mapEntries: boolean
-  ): boolean {
-    const leftValue = mapEntries ? sharedEntryValue(left) : undefined;
-    const rightValue = leftValue ? sharedEntryValue(right) : undefined;
-    // 同组条目的值若各自指向同一对象，值的对应关系与键的排列无关。
-    if (leftValue && rightValue) enqueue(leftValue, rightValue);
-    const fields = new Map(
-      [...left, ...right].map(entry => [entry, readFields(entry, !rightValue)])
-    );
+    readFields: (entry: ObjectEntry) => Map<string, number>
+  ): ReadableGroup[] | undefined {
+    const fields = new Map([...left, ...right].map(entry => [entry, readFields(entry)]));
     const first = fields.get(left[0]!)!;
     // 每个候选都能静态读取的字段才可用于分组，getter 与普通数据仍能按实际值比较。
     const candidates = [...fields.values()];
@@ -155,14 +154,43 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     };
     const leftGroups = groupMembers(left, classify)!;
     const rightGroups = groupMembers(right, classify)!;
+    const groups: ReadableGroup[] = [];
     for (const [shape, entries] of leftGroups) {
       const compatible = rightGroups.get(shape);
-      if (entries.length !== compatible?.length) return false;
+      if (entries.length !== compatible?.length) return undefined;
       const plan = planReadableCandidates(
         entries.map(entry => fields.get(entry)!),
         compatible.map(entry => fields.get(entry)!)
       );
-      if (!plan || !enqueueGroup(entries, compatible, plan)) return false;
+      if (!plan) return undefined;
+      groups.push({ left: entries, right: compatible, plan });
+    }
+    return groups;
+  }
+
+  function groupReadableMembers(
+    left: ObjectEntry[],
+    right: ObjectEntry[],
+    readFields: ReturnType<typeof createSnapshotMemberShape>['readableFields'],
+    mapEntries: boolean
+  ): boolean {
+    const leftValue = mapEntries ? sharedEntryValue(left) : undefined;
+    const rightValue = leftValue ? sharedEntryValue(right) : undefined;
+    // 同组条目的值若各自指向同一对象，值的对应关系与键的排列无关。
+    if (leftValue && rightValue) enqueue(leftValue, rightValue);
+    const includeValue = !rightValue;
+    const declared = planReadableGroups(left, right, entry =>
+      readFields(entry, includeValue, false)
+    );
+    if (!declared) return false;
+    // 静态条件可满足后才读取候选的访问器，实际值能进一步排除无效配对。
+    for (const group of declared) {
+      const observed = planReadableGroups(group.left, group.right, entry =>
+        readFields(entry, includeValue, true)
+      );
+      if (!observed) return false;
+      for (const match of observed)
+        if (!enqueueGroup(match.left, match.right, match.plan)) return false;
     }
     return true;
   }
@@ -269,9 +297,10 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     }
     const keys = Reflect.ownKeys(a);
     if (keys.length !== Reflect.ownKeys(b).length) return false;
+    const read = readShape?.readValue ?? Reflect.get;
     for (const key of keys) {
       if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
-      enqueue(Reflect.get(a, key), Reflect.get(b, key));
+      enqueue(read(a, key), read(b, key));
     }
     return true;
   }
@@ -305,17 +334,18 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     };
     if (linkedKey) return collection.rightIndices.get(linkedKey)?.some(take) ?? false;
     const first = Math.max(start, collection.firstAvailable);
-    const positions = ranked?.domain.positions;
-    if (positions) {
-      const { indices, offset } = positions;
-      let available = offset;
-      while (available < indices.length && collection.used.has(indices[available]!)) available++;
-      if (available !== offset) {
-        cursors.push({ positions, offset });
-        positions.offset = available;
+    const indexed = ranked?.domain.positions;
+    if (indexed) {
+      for (const positions of indexed) {
+        const { indices, offset } = positions;
+        let available = offset;
+        while (available < indices.length && collection.used.has(indices[available]!)) available++;
+        if (available !== offset) {
+          cursors.push({ positions, offset });
+          positions.offset = available;
+        }
       }
-      for (let index = firstReadablePosition(positions, first); index < indices.length; index++)
-        if (take(indices[index]!)) return true;
+      for (const candidate of readablePositions(indexed, first)) if (take(candidate)) return true;
       return false;
     }
     for (let candidate = first; candidate < collection.right.length; candidate++)

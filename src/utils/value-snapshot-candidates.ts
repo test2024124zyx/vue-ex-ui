@@ -21,7 +21,7 @@ interface CandidateDomain {
   groups: number[];
   count: number;
   demand: number;
-  positions?: AvailablePositions;
+  positions?: AvailablePositions[];
 }
 
 interface RankedMember {
@@ -37,6 +37,7 @@ export interface ReadableCandidates {
 
 interface Slot {
   available: number;
+  requesters: number;
   owners: Map<CandidateDomain, number>;
 }
 
@@ -82,11 +83,16 @@ function transferCapacity(root: CandidateDomain, slots: Slot[], demand: number):
 }
 
 function canAssignCandidates(domains: CandidateDomain[], sizes: number[]): boolean {
-  const slots: Slot[] = sizes.map(available => ({ available, owners: new Map() }));
+  const slots: Slot[] = sizes.map(available => ({ available, requesters: 0, owners: new Map() }));
+  for (const { groups } of domains) for (const index of groups) slots[index]!.requesters++;
   for (const domain of domains) {
     if (domain.demand > domain.count) return false;
     let remaining = domain.demand;
-    for (const index of domain.groups) {
+    // 优先占用只有少数域能使用的组，把共享名额留给后续配对。
+    const preferred = [...domain.groups].sort(
+      (a, b) => slots[a]!.requesters - slots[b]!.requesters
+    );
+    for (const index of preferred) {
       const slot = slots[index]!;
       const count = Math.min(remaining, slot.available);
       if (!count) continue;
@@ -114,37 +120,37 @@ export function planReadableCandidates(
   left: StaticFields[],
   right: StaticFields[]
 ): ReadableCandidates | undefined {
-  const groups: Array<{ fields: StaticFields; indices: number[] }> = [];
-  const groupsByFields = new Map<string, number[]>();
+  const groups: Array<{ fields: StaticFields; positions: AvailablePositions }> = [];
+  const groupsByFields = new Map<string, AvailablePositions>();
   right.forEach((fields, index) => {
     const key = [...fields]
       .map(([field, value]) => `${field}:${value}`)
       .sort()
       .join('|');
-    let indices = groupsByFields.get(key);
-    if (!indices) {
-      indices = [];
-      groupsByFields.set(key, indices);
-      groups.push({ fields, indices });
+    let positions = groupsByFields.get(key);
+    if (!positions) {
+      positions = { indices: [], offset: 0 };
+      groupsByFields.set(key, positions);
+      groups.push({ fields, positions });
     }
-    indices.push(index);
+    positions.indices.push(index);
   });
 
   const postings = new Map<string, Posting>();
-  groups.forEach(({ fields, indices }, group) => {
+  groups.forEach(({ fields, positions }, group) => {
     for (const [field, value] of fields) {
       let posting = postings.get(field);
       if (!posting) {
         posting = { id: postings.size, known: { groups: [], size: 0 }, byValue: new Map() };
         postings.set(field, posting);
       }
-      addToBucket(posting.known, group, indices.length);
+      addToBucket(posting.known, group, positions.indices.length);
       let matches = posting.byValue.get(value);
       if (!matches) {
         matches = { groups: [], size: 0 };
         posting.byValue.set(value, matches);
       }
-      addToBucket(matches, group, indices.length);
+      addToBucket(matches, group, positions.indices.length);
     }
   });
 
@@ -177,8 +183,11 @@ export function planReadableCandidates(
       let compatible = allGroups;
       if (driver) {
         if (!driver.unknown) {
-          const known = new Set(driver.known.groups);
-          driver.unknown = allGroups.filter(group => !known.has(group));
+          driver.unknown = [];
+          if (driver.known.groups.length < groups.length) {
+            const known = new Set(driver.known.groups);
+            driver.unknown = allGroups.filter(group => !known.has(group));
+          }
         }
         compatible = [...driver.unknown, ...(exact?.groups ?? [])];
         if (constraints.length > 1)
@@ -191,14 +200,12 @@ export function planReadableCandidates(
       const groupKey = compatible.join(',');
       domain = domainsByGroups.get(groupKey);
       if (!domain) {
-        const count = compatible.reduce((total, group) => total + groups[group]!.indices.length, 0);
+        const count = compatible.reduce(
+          (total, group) => total + groups[group]!.positions.indices.length,
+          0
+        );
         const positions =
-          count === right.length
-            ? undefined
-            : {
-                indices: compatible.flatMap(group => groups[group]!.indices).sort((a, b) => a - b),
-                offset: 0,
-              };
+          count === right.length ? undefined : compatible.map(group => groups[group]!.positions);
         domain = { groups: compatible, count, demand: 0, positions };
         domainsByGroups.set(groupKey, domain);
       }
@@ -209,7 +216,7 @@ export function planReadableCandidates(
   }
   // 先验证静态候选可覆盖全部成员，再检查访问器、循环和共享引用。
   const domains = [...domainsByGroups.values()].sort((a, b) => a.count - b.count);
-  const sizes = groups.map(group => group.indices.length);
+  const sizes = groups.map(group => group.positions.indices.length);
   if (!canAssignCandidates(domains, sizes)) return undefined;
   ranked.sort((a, b) => a.domain.count - b.domain.count);
   return { ranked, rightFields: right };
@@ -223,11 +230,7 @@ export function readableFieldsAgree(left: StaticFields, right: StaticFields): bo
   return true;
 }
 
-/** 保留右侧插入顺序，并用二分定位回退后的起点。 */
-export function firstReadablePosition(
-  { indices, offset }: AvailablePositions,
-  start: number
-): number {
+function firstReadablePosition({ indices, offset }: AvailablePositions, start: number): number {
   if (offset === indices.length || indices[offset]! >= start) return offset;
   let low = offset;
   let high = indices.length;
@@ -237,4 +240,27 @@ export function firstReadablePosition(
     else high = middle;
   }
   return low;
+}
+
+/** 合并共用索引的位置，仍按右侧插入顺序逐项回退。 */
+export function* readablePositions(groups: AvailablePositions[], start: number): Iterable<number> {
+  const pending: Array<{ indices: number[]; offset: number }> = [];
+  for (const group of groups) {
+    const offset = firstReadablePosition(group, start);
+    if (offset < group.indices.length) pending.push({ indices: group.indices, offset });
+  }
+  while (pending.length) {
+    let first = 0;
+    for (let index = 1; index < pending.length; index++) {
+      const current = pending[index]!;
+      const best = pending[first]!;
+      if (current.indices[current.offset]! < best.indices[best.offset]!) first = index;
+    }
+    const group = pending[first]!;
+    yield group.indices[group.offset++]!;
+    if (group.offset === group.indices.length) {
+      pending[first] = pending[pending.length - 1]!;
+      pending.pop();
+    }
+  }
 }
