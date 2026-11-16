@@ -39,10 +39,42 @@ describe('数值边界与表单输入事件', () => {
     await input.trigger('keydown', { key: 'ArrowUp' });
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.5]);
     await wrapper.setProps({ modelValue: 0.5 });
+    await input.trigger('change');
     await input.trigger('blur');
     expect(input.element.value).toBe('0.5');
+    expect(wrapper.emitted('update:modelValue')).toEqual([[0.3], [0.5]]);
     await wrapper.get('.ex-number-input__button--decrease').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.3]);
+  });
+
+  it.each([
+    { initial: 4.96, expected: 5, min: 0, max: 5, direction: 'increase', key: 'ArrowUp' },
+    { initial: 0.04, expected: 0, min: 0, max: 5, direction: 'decrease', key: 'ArrowDown' },
+  ] as const)(
+    '格式化显示已到端点时仍可提交端点：$initial → $expected',
+    async ({ initial, expected, min, max, direction, key }) => {
+      const wrapper = mount(ExNumberInput, {
+        props: { modelValue: initial, min, max, precision: 1 },
+      });
+      wrappers.push(wrapper);
+      const input = wrapper.get('input');
+      expect(Number(input.element.value)).toBe(expected);
+      const button = wrapper.get<HTMLButtonElement>(`.ex-number-input__button--${direction}`);
+      expect(button.element.disabled).toBe(false);
+      await button.trigger('click');
+      await input.trigger('keydown', { key });
+      wrapper.vm[direction]();
+      expect(wrapper.emitted('update:modelValue')).toEqual([[expected], [expected], [expected]]);
+    }
+  );
+
+  it.each([
+    { value: 0.3, text: '0.30000000000000000000' },
+    { value: -1e-7, text: '-0.00000010000000000000' },
+  ])('高精度显示使用十进制有效数字并补零：$value', ({ value, text }) => {
+    const wrapper = mount(ExNumberInput, { props: { modelValue: value, precision: 20 } });
+    wrappers.push(wrapper);
+    expect(wrapper.get('input').element.value).toBe(text);
   });
 
   it('方向键和大步长基于焦点内的有效草稿，即使模型已到达上限', async () => {

@@ -18,6 +18,18 @@ function toNumber(coefficient: bigint, exponent: number): number {
   return Number(`${coefficient}e${exponent}`);
 }
 
+/** 对已舍入的十进制值补零，保留精度不足以容纳的精确边界值。 */
+export function formatFixedDecimal(value: number, digits: number): string {
+  if (!Number.isFinite(value)) return String(value);
+  const decimal = parseDecimal(value);
+  if (decimal.exponent < -digits) return String(value);
+  const scaled = toInteger(decimal, -digits);
+  if (digits === 0) return String(scaled);
+  const negative = scaled < 0n;
+  const magnitude = String(negative ? -scaled : scaled).padStart(digits + 1, '0');
+  return `${negative ? '-' : ''}${magnitude.slice(0, -digits)}.${magnitude.slice(-digits)}`;
+}
+
 /** 对齐十进制指数后加减，提交前只转换一次为 Number。 */
 export function addDecimal(left: number, right: number): number {
   if (!Number.isFinite(left) || !Number.isFinite(right)) return left + right;

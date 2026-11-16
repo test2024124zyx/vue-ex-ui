@@ -114,7 +114,7 @@ import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } from './types';
 import { useI18n } from '../../locale';
 import { debounce } from '../../utils/debounce';
-import { addDecimal, snapToDecimalStep } from '../../utils/decimal';
+import { addDecimal, formatFixedDecimal, snapToDecimalStep } from '../../utils/decimal';
 import type { DebouncedFunction } from '../../utils/debounce';
 import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
@@ -155,6 +155,7 @@ const numberInputRef = ref<HTMLDivElement>();
 const inputRef = ref<HTMLInputElement>();
 const displayValue = ref<string>('');
 const isFocused = ref(false);
+const hasDraft = ref(false);
 let debouncedInput: DebouncedFunction<(value: number) => void> | null = null;
 
 // 计算属性
@@ -235,9 +236,7 @@ const formatNumber = (value: number): number => {
 const formatDisplayNumber = (value: number): string => {
   const digits = precision.value;
   if (digits === undefined || digits > MAXIMUM_FIXED_DIGITS) return String(value);
-  const fixed = value.toFixed(digits);
-  // 边界值优先，避免用舍入后的文本表示另一个数值。
-  return Number(fixed) === value ? fixed : String(value);
+  return formatFixedDecimal(value, digits);
 };
 
 // 验证并限制数值范围
@@ -278,7 +277,9 @@ const parseValue = (input: string): number | null => {
   return num;
 };
 
-const stepValue = computed(() => parseValue(displayValue.value) ?? props.modelValue);
+const stepValue = computed(() =>
+  hasDraft.value ? (parseValue(displayValue.value) ?? props.modelValue) : props.modelValue
+);
 const isIncreaseDisabled = computed(
   () => !interactive.value || (stepValue.value !== null && stepValue.value >= props.max)
 );
@@ -290,6 +291,7 @@ const isDecreaseDisabled = computed(
 const updateDisplayValue = (force = false) => {
   if (isFocused.value && !force) return;
 
+  hasDraft.value = false;
   if (props.modelValue === null) {
     displayValue.value = '';
   } else {
@@ -352,6 +354,7 @@ const handleInput = (event: Event) => {
   }
 
   displayValue.value = value;
+  hasDraft.value = true;
 
   const parsedValue = parseValue(value);
   if (parsedValue !== null) {
@@ -373,6 +376,9 @@ const handleChange = (event: Event) => {
   }
   const target = event.target as HTMLInputElement;
   const value = target.value;
+  // 程序化回写完成后，浏览器补发的 change 仍对应同一个已确认值。
+  if (!hasDraft.value && value === displayValue.value) return;
+  hasDraft.value = false;
 
   const parsedValue = parseValue(value);
   if (parsedValue === null) {
