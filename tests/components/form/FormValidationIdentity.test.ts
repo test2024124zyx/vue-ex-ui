@@ -14,6 +14,44 @@ afterEach(() => {
 });
 
 describe('字段校验快照的结构值与调度身份', () => {
+  it('内置规则的字符串转换不会改写用于校验身份比较的对象', async () => {
+    class Draft {
+      cached?: string;
+      toString() {
+        return (this.cached ??= '无效');
+      }
+    }
+    const model = reactive({ value: new Draft() });
+    const Control = defineComponent({
+      setup() {
+        const field = useFormItem();
+        return () =>
+          h(
+            'button',
+            {
+              onClick: () => field?.onFieldInput?.({ value: model.value }),
+              onBlur: () => field?.onFieldBlur(),
+            },
+            '编辑'
+          );
+      },
+    });
+    const wrapper = mount(ExForm, {
+      props: {
+        model,
+        rules: { value: [{ trigger: 'input', pattern: /^有效$/, message: '专用格式错误' }] },
+      },
+      slots: { default: () => h(ExFormItem, { prop: 'value' }, () => h(Control)) },
+    });
+    wrappers.push(wrapper);
+    await wrapper.get('button').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('专用格式错误');
+    expect(model.value.cached).toBeUndefined();
+    await wrapper.get('button').trigger('blur');
+    await flushPromises();
+    expect(wrapper.text()).toContain('专用格式错误');
+  });
   it.each([false, true])('输入草稿只在接收时捕获，用户规则单独复制：%s', async custom => {
     const draft = ['甲', '乙'];
     const model = reactive({ value: ['原值'] });

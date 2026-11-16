@@ -419,14 +419,21 @@ async function validateFieldMethod(
 
   const validationId = ++latestValidationId;
   validationSnapshot = snapshot ?? { value: deepClone(sourceValue) };
-  const runsUserCode = filteredRules.some(
+  const hasCustomRule = filteredRules.some(
     rule => rule.transform || rule.validator || rule.asyncValidator
   );
-  // 自定义规则可能修改输入，校验身份始终保留原值。
-  const value = runsUserCode ? deepClone(validationSnapshot.value) : validationSnapshot.value;
+  const snapshotValue = validationSnapshot.value;
+  // 对象规则可能调用实例方法；数组的长度检查可复用快照，字符串转换仍需隔离。
+  const needsWorkingCopy =
+    hasCustomRule ||
+    (snapshotValue !== null &&
+      typeof snapshotValue === 'object' &&
+      (!Array.isArray(snapshotValue) ||
+        filteredRules.some(rule => rule.pattern || rule.type === 'email')));
+  const value = needsWorkingCopy ? deepClone(snapshotValue) : snapshotValue;
   const notifyResult = (result: FormItemValidateResult) => {
     // 失败事件的值对调用方可见，不能暴露内部对比快照。
-    const eventValue = result.valid || runsUserCode ? value : deepClone(value);
+    const eventValue = result.valid || needsWorkingCopy ? value : deepClone(value);
     formContext.notifyFieldValidate(field, result, { value: eventValue });
   };
 
