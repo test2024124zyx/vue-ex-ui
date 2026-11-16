@@ -111,6 +111,9 @@ export function useTableRows(
         const confirmed = new Set(controlledKeys);
         // 受控期间就记录确认结果，避免数据在解除控制之前清空。
         for (const key of confirmed) manuallyCollapsed.delete(key);
+        for (const key of previousKeys ?? []) {
+          if (!confirmed.has(key)) manuallyCollapsed.add(key);
+        }
         for (const row of keys === undefined ? (previousRows ?? []) : rows) {
           if (row.children.length && !confirmed.has(row.key)) manuallyCollapsed.add(row.key);
         }
