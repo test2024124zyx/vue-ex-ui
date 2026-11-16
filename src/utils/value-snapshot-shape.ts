@@ -29,6 +29,7 @@ function bytesOf(value: object): Uint8Array | undefined {
 export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
   const ownShapes = new WeakMap<object, OwnShape | null>();
+  const internalShapes = new WeakMap<object, OwnShape | null>();
   const ownKeys = new WeakMap<object, KeyToken[]>();
   const readableNodes = new WeakMap<object, ReadableNode>();
   const observedNodes = new WeakMap<object, Field[]>();
@@ -110,29 +111,31 @@ export function createSnapshotMemberShape() {
     return property.value;
   }
 
-  function readOwnShape(node: object): OwnShape | null {
-    const cached = ownShapes.get(node);
-    if (cached !== undefined) return cached;
+  function appendValue(shape: Array<string | number>, children: object[], value: unknown): void {
+    if (value !== null && typeof value === 'object') {
+      shape.push('child');
+      children.push(value);
+    } else {
+      shape.push('value', id(value));
+    }
+  }
+
+  function internalShapeOf(node: object): OwnShape | undefined {
+    const cached = internalShapes.get(node);
+    if (cached !== undefined) return cached ?? undefined;
     const shape: Array<string | number> = [];
     const children: object[] = [];
-    const append = (value: unknown) => {
-      if (value !== null && typeof value === 'object') {
-        shape.push('child');
-        children.push(value);
-      } else {
-        shape.push('value', id(value));
-      }
-    };
     const bytes = bytesOf(node);
     if (bytes) {
       // 摘要仅淘汰不相容候选，实际相等仍由完整的逐字节比较确认。
       let hash = FNV_OFFSET_BASIS;
       for (const byte of bytes) hash = Math.imul(hash ^ byte, FNV_PRIME);
       shape.push('binary', bytes.length, hash);
-    }
-    if (node instanceof Date) shape.push('date', id(node.getTime()));
-    else if (node instanceof RegExp) shape.push('regexp', id(node.source), id(node.flags));
-    if (node instanceof Map || node instanceof Set) {
+    } else if (node instanceof Date) {
+      shape.push('date', id(node.getTime()));
+    } else if (node instanceof RegExp) {
+      shape.push('regexp', id(node.source), id(node.flags));
+    } else if (node instanceof Map || node instanceof Set) {
       shape.push('collection', node.size);
       const fixed: Array<[number, unknown]> = [];
       for (const [entryKey, entryValue] of node.entries()) {
@@ -142,18 +145,29 @@ export function createSnapshotMemberShape() {
       fixed.sort(([first], [second]) => first - second);
       for (const [keyId, entryValue] of fixed) {
         shape.push(keyId);
-        append(entryValue);
+        appendValue(shape, children, entryValue);
       }
     }
+    const result = shape.length ? { signature: id(shape.join(',')), children } : undefined;
+    internalShapes.set(node, result ?? null);
+    return result;
+  }
+
+  function readOwnShape(node: object): OwnShape | null {
+    const cached = ownShapes.get(node);
+    if (cached !== undefined) return cached;
+    const internal = internalShapeOf(node);
     const { others, fields } = fieldsOf(node);
     if (others.length) {
       ownShapes.set(node, null);
       return null;
     }
+    const shape: Array<string | number> = internal ? ['internal', internal.signature] : [];
+    const children = internal ? [...internal.children] : [];
     shape.push('properties', fields.length);
     for (const { id, value } of fields) {
       shape.push(id);
-      append(value);
+      appendValue(shape, children, value);
     }
     const result = { signature: id(shape.join(',')), children };
     ownShapes.set(node, result);
@@ -216,6 +230,9 @@ export function createSnapshotMemberShape() {
       const node = toRaw(item);
       if (usesNativeIdentity(node) || visited.has(node)) continue;
       visited.add(node);
+      // 原生对象的内部值不受额外自有访问器影响，可独立参与候选筛选。
+      const internal = internalShapeOf(node);
+      if (internal) result.set(`${path}.internal`, internal.signature);
       const known = readOwnShape(node);
       if (known) result.set(`${path}.data`, known.signature);
       // 成员本身的字段参与筛选，预算只限制递归展开的子图。

@@ -5,7 +5,6 @@ import {
   planReadableCandidates,
   readableFieldsAgree,
   readablePositions,
-  type AvailablePositions,
   type ReadableCandidates,
 } from './value-snapshot-candidates';
 
@@ -16,6 +15,8 @@ interface PendingPair {
 }
 
 type ObjectEntry = [object, unknown];
+
+type CandidateCursor = { offset: number; indices?: number[] };
 
 interface ReadableGroup {
   left: ObjectEntry[];
@@ -29,7 +30,7 @@ interface CollectionMatch {
   used: Set<number>;
   leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
-  firstAvailable: number;
+  available: CandidateCursor;
   readable?: ReadableCandidates;
 }
 
@@ -68,7 +69,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const reverseSeen = new WeakMap<object, object>();
   const mapped: Array<[object, object]> = [];
   const choices: MatchChoice[] = [];
-  const cursors: Array<{ positions: AvailablePositions; offset: number }> = [];
+  const cursors: Array<{ cursor: CandidateCursor; offset: number }> = [];
   const leftMemberships: MembershipIndex = new WeakMap();
   const rightMemberships: MembershipIndex = new WeakMap();
   const groups: CollectionMatch[] = [];
@@ -111,7 +112,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       used: new Set(),
       leftCounts,
       rightIndices,
-      firstAvailable: 0,
+      available: { offset: 0 },
       readable,
     };
     if (!mappedMembersFit(collection)) return false;
@@ -326,25 +327,32 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
         cursorCount,
       });
       collection.used.add(candidate);
-      while (collection.used.has(collection.firstAvailable)) collection.firstAvailable++;
       matches = index + 1 < collection.left.length ? { collection, index: index + 1, next } : next;
       enqueue(value, otherValue);
       enqueue(key, otherKey);
       return true;
     };
     if (linkedKey) return collection.rightIndices.get(linkedKey)?.some(take) ?? false;
-    const first = Math.max(start, collection.firstAvailable);
+    function skipReserved(cursor: CandidateCursor): number {
+      const { indices, offset } = cursor;
+      let available = offset;
+      const end = indices?.length ?? collection.right.length;
+      while (available < end) {
+        const index = indices?.[available] ?? available;
+        // 已有固定配对的位置只供对应成员使用，自由候选可跳过整段。
+        if (!collection.used.has(index) && !reverseSeen.has(collection.right[index]![0])) break;
+        available++;
+      }
+      if (available !== offset) {
+        cursors.push({ cursor, offset });
+        cursor.offset = available;
+      }
+      return available;
+    }
+    const first = Math.max(start, skipReserved(collection.available));
     const indexed = ranked?.domain.positions;
     if (indexed) {
-      for (const positions of indexed) {
-        const { indices, offset } = positions;
-        let available = offset;
-        while (available < indices.length && collection.used.has(indices[available]!)) available++;
-        if (available !== offset) {
-          cursors.push({ positions, offset });
-          positions.offset = available;
-        }
-      }
+      for (const positions of indexed) skipReserved(positions);
       for (const candidate of readablePositions(indexed, first)) if (take(candidate)) return true;
       return false;
     }
@@ -370,11 +378,10 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       }
       // 候选索引缓存只跳过当前分支已经占用的位置，回退时一起恢复。
       while (cursors.length > cursorCount) {
-        const { positions, offset } = cursors.pop()!;
-        positions.offset = offset;
+        const { cursor, offset } = cursors.pop()!;
+        cursor.offset = offset;
       }
       match.collection.used.delete(candidate);
-      match.collection.firstAvailable = Math.min(match.collection.firstAvailable, candidate);
       if (matchEntry(match, candidate + 1)) return true;
     }
     return false;

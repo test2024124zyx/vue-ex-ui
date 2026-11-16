@@ -522,6 +522,42 @@ describe('无序集合快照', () => {
     expect(reads).toBe(1);
   });
 
+  it.each([
+    { name: 'Date', create: (value: number) => new Date(value) },
+    { name: 'RegExp', create: (value: number) => new RegExp(String(value)) },
+    {
+      name: 'DataView',
+      create: (value: number) => new DataView(Uint8Array.of(value).buffer),
+    },
+    { name: 'Map', create: (value: number) => new Map([['value', value]]) },
+    { name: 'Set', create: (value: number) => new Set([value]) },
+  ])('$name 存在自有 getter 时仍按原生值剪枝', ({ create }) => {
+    let reads = 0;
+    const entries = (last: number) =>
+      Array.from({ length: 10 }, (_, index) =>
+        Object.defineProperty(create(index === 9 ? last : 0), 'score', {
+          get() {
+            reads++;
+            return 1;
+          },
+        })
+      );
+    const source = new Set(entries(1));
+    expect(compareWithLinearWork(source, new Set(entries(0)), source.size)).toBe(false);
+    expect(reads).toBe(0);
+    expect(compareWithLinearWork(source, new Set(entries(1).reverse()), source.size)).toBe(true);
+  });
+
+  it('自由成员换序遇到已由集合外引用保留的位置时直接跳过', () => {
+    const free = Array.from({ length: 1500 }, () => ({}));
+    const anchors = Array.from({ length: 1500 }, () => ({}));
+    const source = { values: new Set([...free, ...anchors]), anchors };
+    const snapshot = deepClone(source);
+    const freeCopies = [...snapshot.values].slice(0, free.length);
+    snapshot.values = new Set([...snapshot.anchors, ...freeCopies]);
+    expect(compareWithLinearWork(source, snapshot, source.values.size)).toBe(true);
+  });
+
   it('重新分配相交的静态组名额，并让不同候选域共用位置', () => {
     const lane = (a: number, b: number, c: number) =>
       new Map([
