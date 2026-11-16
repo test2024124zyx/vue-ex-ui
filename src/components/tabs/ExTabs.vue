@@ -102,7 +102,18 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
-import { computed, ref, provide, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import {
+  computed,
+  ref,
+  shallowRef,
+  isVNode,
+  getCurrentInstance,
+  provide,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import type { ComponentInternalInstance, VNode } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
 import { generateId } from '../../utils/id';
@@ -134,42 +145,83 @@ const { t } = useLocale('tabs');
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
-const registeredPanes = ref<Array<PaneInfo & { uid: number }>>([]);
-const { items: slotItems, SlotContent } = useSlotItems('ExTabPane');
-const declaredPanes = computed(() => {
-  const byName = new Map<PaneInfo['name'], VNode>();
-  for (const node of slotItems.value) {
-    const name = node.props?.name as PaneInfo['name'];
-    if (byName.has(name)) logger.warn('ExTabs 的标签页名称重复，已保留首项。', name);
-    else byName.set(name, node);
-  }
-  return byName;
-});
-const slotPanes = computed<PaneInfo[]>(() =>
-  [...declaredPanes.value].map(([name, node]) => ({
-    name,
-    label: node.props?.label as string | undefined,
-    disabled: node.props?.disabled === true || node.props?.disabled === '',
-    closable: node.props?.closable === true || node.props?.closable === '',
-  }))
+const tabsInstance = getCurrentInstance();
+const registeredPanes = shallowRef<Array<{ pane: PaneInfo; instance: ComponentInternalInstance }>>(
+  []
 );
-const registeredByName = computed(() => {
-  const byName = new Map<PaneInfo['name'], (typeof registeredPanes.value)[number]>();
-  for (const pane of registeredPanes.value) {
-    if (declaredPanes.value.has(pane.name) || byName.has(pane.name)) {
-      logger.warn('ExTabs 的标签页名称重复，已保留首项。', pane.name);
-    } else byName.set(pane.name, pane);
-  }
-  return byName;
-});
-const panes = computed(() => [...slotPanes.value, ...registeredByName.value.values()]);
+const { items: slotItems, nodes, SlotContent } = useSlotItems('ExTabPane');
 const ownsVNode = (node: VNode, instance: ComponentInternalInstance) =>
-  node === instance.vnode || node.component === instance;
+  node === instance.vnode ||
+  node.component === instance ||
+  (node.props !== null && node.props === instance.vnode.props);
+
+const slotOrder = computed(() => {
+  const order: VNode[] = [];
+  const panes = new Set(slotItems.value);
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (!isVNode(value)) return;
+    order.push(value);
+    if (!panes.has(value) && Array.isArray(value.children)) value.children.forEach(visit);
+  };
+  nodes.value.forEach(visit);
+  return new Map(order.map((node, index) => [node, index]));
+});
+
+function getWrappedOrder(instance: ComponentInternalInstance): number {
+  for (let parent = instance.parent; parent && parent !== tabsInstance; parent = parent.parent) {
+    const positions = slotOrder.value;
+    const { key, type } = parent.vnode;
+    // 进入父级更新时新 VNode 可能还未绑定实例，用户声明的 key 可以直接关联。
+    let keyOrder: number | undefined;
+    let ambiguous = false;
+    for (const [node, order] of positions) {
+      if (ownsVNode(node, parent)) return order;
+      if (node.key !== key || node.type !== type) continue;
+      ambiguous ||= keyOrder !== undefined;
+      keyOrder = order;
+    }
+    if (!ambiguous && keyOrder !== undefined) return keyOrder;
+  }
+  return Infinity;
+}
+
+type PaneCandidate = { pane: PaneInfo; order: number } & (
+  { node: VNode } | { instance: ComponentInternalInstance }
+);
+
+const paneOwners = computed(() => {
+  const ordered: PaneCandidate[] = slotItems.value.map(node => ({
+    order: slotOrder.value.get(node) ?? Infinity,
+    node,
+    pane: {
+      name: node.props?.name as PaneInfo['name'],
+      label: node.props?.label as string | undefined,
+      disabled: node.props?.disabled === true || node.props?.disabled === '',
+      closable: node.props?.closable === true || node.props?.closable === '',
+    },
+  }));
+  for (const entry of registeredPanes.value) {
+    ordered.push({ ...entry, order: getWrappedOrder(entry.instance) });
+  }
+  ordered.sort((left, right) => left.order - right.order);
+  const owners = new Map<PaneInfo['name'], PaneCandidate>();
+  for (const candidate of ordered) {
+    if (owners.has(candidate.pane.name)) {
+      logger.warn('ExTabs 的标签页名称重复，已保留首项。', candidate.pane.name);
+    } else owners.set(candidate.pane.name, candidate);
+  }
+  return owners;
+});
+const panes = computed(() => [...paneOwners.value.values()].map(candidate => candidate.pane));
+const ownsPane = (candidate: PaneCandidate, instance: ComponentInternalInstance) =>
+  'node' in candidate ? ownsVNode(candidate.node, instance) : candidate.instance === instance;
 const isPaneVisible = (instance: ComponentInternalInstance, name: PaneInfo['name']) => {
-  const declared = declaredPanes.value.get(name);
-  return declared
-    ? ownsVNode(declared, instance)
-    : registeredByName.value.get(name)?.uid === instance.uid;
+  const owner = paneOwners.value.get(name);
+  return owner !== undefined && ownsPane(owner, instance);
 };
 const tabState = useControllableState<string | number | undefined>({
   controlledValue: () => props.modelValue,
@@ -198,19 +250,20 @@ provide(tabsContextKey, {
   isPaneVisible,
   registerPane(instance, pane) {
     if (!slotItems.value.some(node => ownsVNode(node, instance))) {
-      registeredPanes.value.push({ ...pane, uid: instance.uid });
+      registeredPanes.value = [...registeredPanes.value, { pane, instance }];
     }
   },
   updatePane(instance, previousName, pane) {
-    const target = registeredPanes.value.find(current => current.uid === instance.uid);
-    const oldOwner = declaredPanes.value.get(previousName);
-    const oldRegistration = registeredByName.value.get(previousName);
-    const ownedPrevious = oldOwner
-      ? ownsVNode(oldOwner, instance)
-      : !oldRegistration || oldRegistration.uid === instance.uid;
+    const oldOwner = paneOwners.value.get(previousName);
     const activeNameChanged =
-      activeTab.value === previousName && previousName !== pane.name && ownedPrevious;
-    if (target) Object.assign(target, pane);
+      activeTab.value === previousName &&
+      previousName !== pane.name &&
+      (!oldOwner || ownsPane(oldOwner, instance));
+    if (registeredPanes.value.some(current => current.instance === instance)) {
+      registeredPanes.value = registeredPanes.value.map(current =>
+        current.instance === instance ? { pane, instance } : current
+      );
+    }
     if (activeNameChanged && isPaneVisible(instance, pane.name)) {
       tabState.request(pane.name);
       emit('update:modelValue', pane.name);
@@ -218,7 +271,9 @@ provide(tabsContextKey, {
     }
   },
   unregisterPane(uid) {
-    registeredPanes.value = registeredPanes.value.filter(pane => pane.uid !== uid);
+    if (registeredPanes.value.some(pane => pane.instance.uid === uid)) {
+      registeredPanes.value = registeredPanes.value.filter(pane => pane.instance.uid !== uid);
+    }
   },
 });
 let isTabsUnmounting = false;

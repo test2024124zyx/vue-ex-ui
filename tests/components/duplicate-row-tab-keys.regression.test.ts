@@ -70,4 +70,34 @@ describe('表格与标签页的唯一键', () => {
     const html = await renderToString(createSSRApp(host));
     expect(html.match(/role="tabpanel"/g)).toHaveLength(1);
   });
+
+  it('封装标签出现在直声明标签前时，重排后仍采用第一个出现的标签', async () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const directFirst = ref(false);
+    const Wrapped = {
+      render: () => h(ExTabPane, { name: 'same', label: '封装标签' }, () => '封装面板'),
+    };
+    const host = {
+      render: () =>
+        h(ExTabs, {}, () => {
+          const wrapped = h(Wrapped, { key: 'wrapped' });
+          const direct = h(
+            ExTabPane,
+            { key: 'direct', name: 'same', label: '直接标签' },
+            () => '直接面板'
+          );
+          return directFirst.value ? [direct, wrapped] : [wrapped, direct];
+        }),
+    };
+    const wrapper = mount(host);
+    await nextTick();
+    expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
+    expect(wrapper.get('[role="tab"]').text()).toBe('封装标签');
+    expect(wrapper.get('[role="tabpanel"]').text()).toBe('封装面板');
+    directFirst.value = true;
+    await nextTick();
+    expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
+    expect(wrapper.get('[role="tab"]').text()).toBe('直接标签');
+    expect(wrapper.get('[role="tabpanel"]').text()).toBe('直接面板');
+  });
 });
