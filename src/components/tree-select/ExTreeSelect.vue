@@ -198,6 +198,7 @@ import {
 } from '../config-provider/composables';
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useViewportPosition } from '../../composables/useFloatingAutoUpdate';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useControllableState } from '../../composables/useControllableState';
@@ -807,15 +808,12 @@ const collapseAll = () => {
   expandedKeys.value = new Set([...expandedKeys.value].filter(isValueDisabled));
 };
 
+useViewportPosition(visible, updatePanelPosition);
 watch(visible, isVisible => {
   if (isVisible) {
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', updatePanelPosition);
-    window.addEventListener('scroll', updatePanelPosition, true);
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', updatePanelPosition);
-    window.removeEventListener('scroll', updatePanelPosition, true);
   }
 });
 
@@ -847,8 +845,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', updatePanelPosition);
-  window.removeEventListener('scroll', updatePanelPosition, true);
 });
 
 const focus = () => triggerRef.value?.focus();

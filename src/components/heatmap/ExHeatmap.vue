@@ -170,17 +170,10 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  ref,
-  watch,
-  type CSSProperties,
-  type StyleValue,
-} from 'vue';
+import { computed, nextTick, ref, watch, type CSSProperties, type StyleValue } from 'vue';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useOverlay } from '../../composables/useOverlay';
+import { useViewportPosition } from '../../composables/useFloatingAutoUpdate';
 import { useLocale } from '../../locale';
 import { computeFloatingPosition, type FloatingPlacement } from '../../utils/floating';
 import { generateId } from '../../utils/id';
@@ -252,7 +245,6 @@ const tooltipPositionStyle = ref<CSSProperties>({
   left: '0',
   visibility: 'hidden',
 });
-let tooltipListenersAttached = false;
 
 const heatmapClasses = computed(() => [
   'ex-heatmap',
@@ -509,27 +501,15 @@ const updateTooltipPosition = () => {
   };
 };
 
-const attachTooltipListeners = () => {
-  if (tooltipListenersAttached || typeof window === 'undefined') return;
-  window.addEventListener('resize', updateTooltipPosition);
-  window.addEventListener('scroll', updateTooltipPosition, true);
-  tooltipListenersAttached = true;
-};
-
-const detachTooltipListeners = () => {
-  if (!tooltipListenersAttached || typeof window === 'undefined') return;
-  window.removeEventListener('resize', updateTooltipPosition);
-  window.removeEventListener('scroll', updateTooltipPosition, true);
-  tooltipListenersAttached = false;
-};
+useViewportPosition(
+  computed(() => tooltipActive.value && Boolean(activeTooltipCell.value)),
+  updateTooltipPosition
+);
 
 watch(
   [activeTooltipCell, tooltipActive],
   ([day, active]) => {
-    if (!day || !active) {
-      detachTooltipListeners();
-      return;
-    }
+    if (!day || !active) return;
 
     tooltipPositionStyle.value = {
       position: 'fixed',
@@ -537,13 +517,10 @@ watch(
       left: '0',
       visibility: 'hidden',
     };
-    attachTooltipListeners();
     nextTick(updateTooltipPosition);
   },
   { flush: 'post' }
 );
-
-onBeforeUnmount(detachTooltipListeners);
 
 const getElement = () => heatmapRef.value ?? null;
 

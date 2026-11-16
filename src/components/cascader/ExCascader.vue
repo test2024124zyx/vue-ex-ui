@@ -376,6 +376,7 @@ import { calculateCascaderDropdownPosition } from './position';
 import { findNextEnabledIndex } from './keyboard';
 import { useCascaderAria } from './use-cascader-aria';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useViewportPosition } from '../../composables/useFloatingAutoUpdate';
 import { collectCascaderLeafPaths } from './search';
 import type { CascaderSearchResult } from './search';
 import { useCascaderPaths } from './use-cascader-paths';
@@ -930,25 +931,20 @@ watch(
 );
 
 // 只在面板打开时监听全局事件，避免每个 Cascader 常驻 document 点击监听器。
+useViewportPosition(visible, updateDropdownPosition);
 watch(visible, isVisible => {
   if (isVisible) {
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', updateDropdownPosition);
-    window.addEventListener('scroll', updateDropdownPosition, true);
     nextTick(() => {
       if (visible.value) updateDropdownPosition();
     });
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', updateDropdownPosition);
-    window.removeEventListener('scroll', updateDropdownPosition, true);
   }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', updateDropdownPosition);
-  window.removeEventListener('scroll', updateDropdownPosition, true);
 });
 
 // 暴露的方法

@@ -4,8 +4,8 @@
     ref="rootRef"
     :class="[
       'ex-typography',
-      `ex-typography--${props.variant}`,
-      props.size ? `ex-typography--${props.size}` : undefined,
+      `ex-typography--${normalizedVariant}`,
+      normalizedSize ? `ex-typography--${normalizedSize}` : undefined,
       {
         'ex-typography--truncate': props.truncate,
         'ex-typography--truncate-single-line': isSingleLineTruncate,
@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUpdated, ref, useAttrs, useSlots, type CSSProperties } from 'vue';
-import type { ExTypographyProps, TypographyTag, TypographyVariant } from './types';
+import type { ExTypographyProps, TypographySize, TypographyTag, TypographyVariant } from './types';
 
 defineOptions({
   name: 'ExTypography',
@@ -104,6 +104,24 @@ const DEFAULT_TAG_BY_VARIANT: Record<TypographyVariant, TypographyTag> = {
   caption: 'span',
   overline: 'span',
 };
+const TYPOGRAPHY_SIZES = new Set<TypographySize>([
+  'xs',
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  '2xl',
+  '3xl',
+  '4xl',
+]);
+const normalizedVariant = computed(() =>
+  Object.prototype.hasOwnProperty.call(DEFAULT_TAG_BY_VARIANT, props.variant)
+    ? props.variant
+    : 'body'
+);
+const normalizedSize = computed(() =>
+  props.size && TYPOGRAPHY_SIZES.has(props.size) ? props.size : undefined
+);
 
 const attrs = useAttrs();
 const slots = useSlots();
@@ -126,7 +144,10 @@ const isMultiLineTruncate = computed(
 );
 const isSingleLineTruncate = computed(() => props.truncate && !isMultiLineTruncate.value);
 const isGlitchEnabled = computed(
-  () => props.cyberpunk || props.variant === 'display' || props.variant === 'heading'
+  () =>
+    props.cyberpunk ||
+    normalizedVariant.value === 'display' ||
+    normalizedVariant.value === 'heading'
 );
 
 // 撕裂层是装饰性副本，需要同步插槽最终渲染出的纯文本，避免重复渲染插槽节点。
@@ -194,6 +215,6 @@ const truncationTitle = computed(() => {
   return props.text;
 });
 
-const actualTag = computed(() => props.tag ?? DEFAULT_TAG_BY_VARIANT[props.variant] ?? 'p');
+const actualTag = computed(() => props.tag ?? DEFAULT_TAG_BY_VARIANT[normalizedVariant.value]);
 </script>
 <style lang="scss" src="./ExTypography.scss" scoped></style>

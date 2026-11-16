@@ -69,7 +69,9 @@ export interface ExInputProps {
 
 export interface ExInputEmits {
   'update:modelValue': [value: InputModelValue];
+  /** 编辑时的转换值与原生事件。 */
   input: [value: InputModelValue, event: Event];
+  /** 提交时的转换值与原生事件。 */
   change: [value: InputModelValue, event: Event];
   focus: [event: FocusEvent];
   blur: [event: FocusEvent];
@@ -98,6 +100,7 @@ export interface ExInputExposed {
   blur: () => void;
   select: () => void;
   clear: () => void;
+  /** 同步检查输入控件自身的规则。表单异步规则由 ExForm 或 ExFormItem 校验。 */
   validate: () => boolean;
   getInputElement: () => HTMLInputElement | HTMLTextAreaElement | null;
 }

@@ -54,9 +54,9 @@ export interface ExNumberInputProps {
 export interface ExNumberInputEmits {
   /** 值变化事件 */
   'update:modelValue': [value: number | null];
-  /** 值变化事件（在输入完成后触发） */
+  /** 提交新值和提交前的绑定值。 */
   change: [value: number | null, oldValue: number | null];
-  /** 输入事件（实时触发） */
+  /** 输入时报告解析值。 */
   input: [value: number | null];
   /** 聚焦事件 */
   focus: [event: FocusEvent];

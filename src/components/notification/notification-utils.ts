@@ -82,18 +82,23 @@ const normalizeBoolean = (value: unknown, fallback: boolean, name: string): bool
   return value;
 };
 
+export const isNotificationPosition = (value: unknown): value is NotificationPosition =>
+  NOTIFICATION_POSITIONS.has(value as NotificationPosition);
+export const isNotificationType = (value: unknown): value is NotificationType =>
+  NOTIFICATION_TYPES.has(value as NotificationType);
+
 const normalizePosition = (value: unknown): NotificationPosition => {
-  if (!NOTIFICATION_POSITIONS.has(value as NotificationPosition)) {
+  if (!isNotificationPosition(value)) {
     throw new TypeError('Notification position 必须是四个角落位置之一');
   }
-  return value as NotificationPosition;
+  return value;
 };
 
 const normalizeType = (value: unknown): NotificationType => {
-  if (!NOTIFICATION_TYPES.has(value as NotificationType)) {
+  if (!isNotificationType(value)) {
     throw new TypeError('Notification type 必须是 info、success、warning 或 error');
   }
-  return value as NotificationType;
+  return value;
 };
 
 /** 将单条通知选项收敛成组件和容器都可安全消费的确定配置。 */
