@@ -46,7 +46,7 @@ export interface TableRowData {
  */
 export interface TableSorter {
   field: string;
-  order: 'asc' | 'desc' | 'descend' | null;
+  order: TableSortInfo['order'];
   sorter?: (a: unknown, b: unknown) => number;
 }
 
