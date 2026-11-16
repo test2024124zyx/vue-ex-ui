@@ -240,7 +240,7 @@
   // ── 逐行栅格（行号 + 代码同处一行，换行/高亮天然对齐）──────────────
   &__lines {
     position: relative;
-    min-width: 100%;
+    min-width: max(100%, var(--ex-code-content-width, 0px));
     width: max-content; // 不换行时撑开到最长行宽度，由 __content 横向滚动
     padding: var(--ex-code-padding-y) 0;
     box-sizing: border-box;

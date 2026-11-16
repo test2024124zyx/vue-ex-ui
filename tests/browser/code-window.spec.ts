@@ -125,3 +125,51 @@ test('缩放动画结束后软换行的末尾仍与完整文本布局对齐', as
     .evaluate(el => el.getBoundingClientRect().bottom);
   expect(Math.abs(position.y + position.height - mirrorBottom)).toBeLessThan(2);
 });
+
+test('分数行高中部的着色行与浏览器实测文本对齐', async ({ page }) => {
+  const code = page.locator('#precise-window');
+  const viewport = code.locator('.ex-code__content');
+  const target = 'P1250';
+  await viewport.scrollIntoViewIfNeeded();
+  await viewport.evaluate((element, label) => {
+    const mirror = element.querySelector('.ex-code__measurement')!;
+    const text = mirror.firstChild as Text;
+    const start = text.data.indexOf(`${label}\n`);
+    const range = document.createRange();
+    range.setStart(text, start);
+    range.setEnd(text, start + 1);
+    element.scrollTop = range.getBoundingClientRect().top - mirror.getBoundingClientRect().top - 60;
+  }, target);
+  const row = code.locator('.ex-code__line-content').filter({ hasText: /^P1250$/ });
+  await expect(row).toBeVisible();
+  const difference = await row.evaluate((element, label) => {
+    const mirror = element.closest('.ex-code__content')!.querySelector('.ex-code__measurement')!;
+    const rect = (text: Text, offset: number) => {
+      const range = document.createRange();
+      range.setStart(text, offset);
+      range.setEnd(text, offset + 1);
+      return range.getBoundingClientRect();
+    };
+    const text = mirror.firstChild as Text;
+    const rowText = [...element.childNodes].find(
+      (node): node is Text => node instanceof Text && node.length > 0
+    )!;
+    return Math.abs(rect(rowText, 0).top - rect(text, text.data.indexOf(`${label}\n`)).top);
+  }, target);
+  expect(difference).toBeLessThan(2);
+});
+
+test('未换行的短文本长文件保持整行高亮和完整命中宽度', async ({ page }) => {
+  const code = page.locator('#narrow-window');
+  const viewport = code.locator('.ex-code__content');
+  await viewport.scrollIntoViewIfNeeded();
+  const highlighted = code.locator('.ex-code__line--highlighted');
+  const box = (await viewport.boundingBox())!;
+  const width = await viewport.evaluate(el => el.clientWidth);
+  expect((await highlighted.boundingBox())!.width).toBeGreaterThanOrEqual(width - 1);
+  const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, {
+    x: box.x + width - 10,
+    y: box.y + 18,
+  });
+  expect(hit).toBe('TEXTAREA');
+});

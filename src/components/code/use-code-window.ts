@@ -108,8 +108,7 @@ export function useCodeWindow(
       const starts = offsets.value;
       const total = element.offsetHeight || element.getBoundingClientRect().height;
       if (!total) return;
-      // 浏览器实际行高会按布局精度取整，整段高度用来校准累积误差。
-      const lineHeight = total / Math.max(1, Math.round(total / styledLineHeight));
+      const lineHeight = styledLineHeight;
       const probe = element.ownerDocument.createRange();
       const readTop = (offset: number) => {
         const start = Math.min(offset, text.length - 1);
@@ -126,7 +125,8 @@ export function useCodeWindow(
       if (origin === undefined) return;
       const topAtOffset = (offset: number) => {
         const top = readTop(offset);
-        return top === undefined ? undefined : Math.round((top - origin) / lineHeight) * lineHeight;
+        // 直接采用每个起点的布局坐标，避免分数行高在长文件中累积误差。
+        return top === undefined ? undefined : Math.max(0, top - origin);
       };
       const positions = new Map([
         [0, 0],

@@ -70,7 +70,7 @@
     >
       <div
         class="ex-code__lines"
-        :style="{ minWidth: codeWindow.width.value }"
+        :style="{ '--ex-code-content-width': codeWindow.width.value }"
       >
         <div
           v-if="windowActive"
