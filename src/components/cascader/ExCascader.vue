@@ -684,15 +684,13 @@ const show = () => {
 };
 
 const hide = (options: { restoreFocus?: boolean } = {}) => {
-  if (!visible.value) {
-    searchQuery.value = '';
-    searchActiveIndex.value = -1;
-    return;
-  }
-
+  const wasVisible = visible.value;
   visible.value = false;
   searchQuery.value = '';
   searchActiveIndex.value = -1;
+  // 关闭时结束本轮搜索，防止旧输入法事件覆盖已选值或重新打开面板。
+  searchInput.discard();
+  if (!wasVisible) return;
   activeIndex.value = -1;
   emit('visible-change', false);
 
@@ -895,10 +893,7 @@ watch(
 );
 
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
-  if (disabled || readonly) {
-    hide();
-    searchInput.discard();
-  }
+  if (disabled || readonly) hide();
 });
 
 watch(
@@ -906,7 +901,6 @@ watch(
   () => {
     asyncOptions.cancelAll();
     hide();
-    searchInput.discard();
     activePath.value = [
       ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
     ];

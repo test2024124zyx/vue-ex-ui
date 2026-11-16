@@ -93,6 +93,33 @@ describe('Cascader 的输入交互', () => {
     expect(document.querySelectorAll('.ex-cascader__search-result-content')).toHaveLength(2);
   });
 
+  it.each([false, true])('单选提交结束旧组合输入，来自搜索结果：%s', async searched => {
+    const wrapper = mount(ExCascader, {
+      props: { options, filterable: true },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input');
+    input.element.focus();
+    await input.trigger('click');
+    if (searched) await input.setValue('杭州');
+    await input.trigger('compositionstart');
+    input.element.value = 'hangzhou';
+    input.element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+    await nextTick();
+
+    const buttons = document.querySelectorAll<HTMLButtonElement>('button[role="option"]');
+    buttons[1]!.dispatchEvent(new MouseEvent('mousedown', { cancelable: true }));
+    buttons[1]!.click();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['west']]);
+    await wrapper.setProps({ modelValue: ['west'] });
+    expect(input.element.value).toBe('杭州西');
+
+    input.element.value = '杭州';
+    await input.trigger('compositionend');
+    expect(input.element.value).toBe('杭州西');
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
   it('表单重置清除正在组合的草稿，迟到的输入法事件不会重新打开搜索', async () => {
     const model = reactive({ station: ['east'] });
     const wrapper = mount(ExForm, {
