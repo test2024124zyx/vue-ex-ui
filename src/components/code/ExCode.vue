@@ -149,7 +149,6 @@
           @compositionend="handleCompositionEnd"
           @keydown="handleKeydown"
           @keyup="handleCaret"
-          @select="handleCaret"
           @focus="resetTabExit"
           @blur="resetTabExit"
         />

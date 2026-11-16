@@ -76,3 +76,52 @@ test('软换行的长编辑器保留视口、实际行号与键盘光标', async
   await expect(displayed.last()).toContainText('L1200 最后一行!');
   expect(await displayed.count()).toBeLessThan(60);
 });
+
+test('长只读块滚动后可用鼠标跨窗口拖选', async ({ page }) => {
+  const code = page.locator('#readonly-window');
+  const viewport = code.locator('.ex-code__content');
+  const editor = code.locator('textarea');
+  await viewport.scrollIntoViewIfNeeded();
+  const box = (await viewport.boundingBox())!;
+  const point = { x: box.x + 125, y: box.y + 80 };
+  const hit = async () =>
+    page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, point);
+  const selectedText = () =>
+    editor.evaluate(element => {
+      const textarea = element as HTMLTextAreaElement;
+      return textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
+    });
+  expect(await hit()).toBe('TEXTAREA');
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 20, point.y + 35, { steps: 3 });
+  await expect.poll(async () => (await selectedText()).length).toBeGreaterThan(0);
+  await viewport.evaluate(el => {
+    el.scrollTop = 3000;
+  });
+  await expect.poll(hit).toBe('TEXTAREA');
+  await page.mouse.move(point.x + 45, point.y + 120, { steps: 4 });
+  await page.mouse.up();
+  const lines = (await selectedText()).split('\n').length;
+  expect(lines).toBeGreaterThan(40);
+});
+
+test('缩放动画结束后软换行的末尾仍与完整文本布局对齐', async ({ page }) => {
+  const code = page.locator('#editable-window');
+  const viewport = code.locator('.ex-code__content');
+  const finalLine = code.locator('.ex-code__line').last();
+  await expect(code.locator('.ex-code__line').first()).toContainText('L1');
+  // 改变 transform 不会通知 ResizeObserver，已有行坐标仍需能够使用。
+  await code.evaluate(el => {
+    (el as HTMLElement).style.transform = 'none';
+  });
+  await viewport.evaluate(el => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await expect(finalLine).toContainText('L1200 最后一行');
+  const position = (await finalLine.boundingBox())!;
+  const mirrorBottom = await code
+    .locator('.ex-code__measurement')
+    .evaluate(el => el.getBoundingClientRect().bottom);
+  expect(Math.abs(position.y + position.height - mirrorBottom)).toBeLessThan(2);
+});

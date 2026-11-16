@@ -23,6 +23,7 @@ createApp({
         editable: true,
         lineNumbers: true,
         maxHeight: 200,
+        style: 'transform: scale(0.8); transform-origin: top left',
       }),
     ]),
 }).mount('#app');

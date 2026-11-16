@@ -395,6 +395,11 @@
     font-style: normal;
   }
 
+  &--windowed &__textarea {
+    width: calc(100% - var(--ex-code-gutter-width));
+    height: 100%;
+  }
+
   &__textarea--nowrap {
     white-space: pre;
     word-break: normal;

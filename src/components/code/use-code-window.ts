@@ -12,6 +12,7 @@ interface WindowLayout {
   insetTop: number;
   width: number;
   topAt: (index: number) => number;
+  topAtOffset?: (offset: number) => number | undefined;
 }
 
 export function useCodeWindow(
@@ -87,15 +88,17 @@ export function useCodeWindow(
       return;
     }
     const style = view.getComputedStyle(element);
-    const lineHeight = Number.parseFloat(style.lineHeight);
-    if (!viewport.clientHeight || !lineHeight) return;
+    const styledLineHeight = Number.parseFloat(style.lineHeight);
+    if (!viewport.clientHeight || !styledLineHeight) return;
     const count = lineCount.value;
     const insetTop = Number.parseFloat(style.top) || 0;
     if (!wraps.value) {
+      const total = element.offsetHeight || count * styledLineHeight;
+      const lineHeight = total / count;
       layout = {
         lineHeight,
         insetTop,
-        total: count * lineHeight,
+        total,
         width: element.offsetWidth + (Number.parseFloat(style.left) || 0),
         topAt: index => index * lineHeight,
       };
@@ -103,15 +106,28 @@ export function useCodeWindow(
       const text = element.firstChild;
       if (!(text instanceof Text)) return;
       const starts = offsets.value;
-      const total = element.getBoundingClientRect().height;
+      const total = element.offsetHeight || element.getBoundingClientRect().height;
+      if (!total) return;
+      // 浏览器实际行高会按布局精度取整，整段高度用来校准累积误差。
+      const lineHeight = total / Math.max(1, Math.round(total / styledLineHeight));
       const probe = element.ownerDocument.createRange();
       const readTop = (offset: number) => {
-        probe.setStart(text, offset);
-        probe.setEnd(text, Math.min(offset + 1, text.length));
-        return probe.getClientRects()[0]?.top;
+        const start = Math.min(offset, text.length - 1);
+        probe.setStart(text, start);
+        probe.setEnd(text, start + 1);
+        const rect = probe.getClientRects()[0];
+        if (!rect) return undefined;
+        const bounds = element.getBoundingClientRect();
+        // 使用当前边界消除滚动平移和缩放，结果保存在未变换的布局坐标中。
+        const scale = bounds.height / total;
+        return scale ? (rect.top - bounds.top) / scale : undefined;
       };
       const origin = readTop(0);
       if (origin === undefined) return;
+      const topAtOffset = (offset: number) => {
+        const top = readTop(offset);
+        return top === undefined ? undefined : Math.round((top - origin) / lineHeight) * lineHeight;
+      };
       const positions = new Map([
         [0, 0],
         [count, total],
@@ -120,12 +136,11 @@ export function useCodeWindow(
       const topAt = (index: number): number => {
         const known = positions.get(index);
         if (known !== undefined) return known;
-        const top = readTop(starts[index]!) ?? origin + index * lineHeight;
-        const result = Math.round((top - origin) / lineHeight) * lineHeight;
+        const result = topAtOffset(starts[index]!) ?? index * lineHeight;
         positions.set(index, result);
         return result;
       };
-      layout = { lineHeight, insetTop, total, width: 0, topAt };
+      layout = { lineHeight, insetTop, total, width: 0, topAt, topAtOffset };
     }
     updateRange();
   }
@@ -162,20 +177,8 @@ export function useCodeWindow(
       if (starts[middle]! <= caret) low = middle + 1;
       else high = middle;
     }
-    let top = layout.topAt(Math.max(0, low - 1));
-    const probeText = measurement.value?.firstChild;
-    if (wraps.value && probeText instanceof Text) {
-      const probe = editor.ownerDocument.createRange();
-      probe.setStart(probeText, Math.min(caret, probeText.length - 1));
-      probe.setEnd(probeText, Math.min(caret + 1, probeText.length));
-      const rect = probe.getClientRects()[0];
-      const bounds = measurement.value!.getBoundingClientRect();
-      if (rect)
-        top =
-          Math.floor((rect.top - bounds.top + layout.lineHeight / 2) / layout.lineHeight) *
-          layout.lineHeight;
-    }
-    top += layout.insetTop;
+    const top =
+      (layout.topAtOffset?.(caret) ?? layout.topAt(Math.max(0, low - 1))) + layout.insetTop;
     const bottom = top + layout.lineHeight;
     if (top < viewport.scrollTop) viewport.scrollTop = top;
     else if (bottom > viewport.scrollTop + viewport.clientHeight) {
