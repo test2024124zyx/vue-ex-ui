@@ -32,6 +32,17 @@ const NAVIGABLE_SERIES_TYPES = new Set([
 // 这些系列的图例选择数据项名称；普通折线和柱图只按系列名过滤。
 const ITEM_LEGEND_SERIES_TYPES = new Set(['pie', 'funnel', 'radar']);
 
+/** ECharts 会按对象属性的顺序推断未声明的数据集维度。 */
+export function getChartDatasetKeyOrder(dataset: ChartOption['dataset']): string[][] {
+  return components(dataset).map(entry => {
+    if (Array.isArray(entry.dimensions) && entry.dimensions.length > 0) return [];
+    const source = entry.source;
+    return Object.keys(
+      record(Array.isArray(source) ? source.find(value => value != null) : source)
+    );
+  });
+}
+
 function readableValue(value: unknown): ChartNavigationItem['value'] | undefined {
   if (scalar(value)) return value;
   if (Array.isArray(value)) {

@@ -191,10 +191,11 @@ const props = withDefaults(defineProps<ExSkeletonProps>(), {
 
 const { t } = useLocale('skeleton');
 const globalSize = useGlobalSize();
-// 骨架屏保留 default 的公开别名，缺省值映射到全局 medium。
-const componentSize = computed(
-  () => props.size ?? (globalSize.value === 'medium' ? 'default' : globalSize.value)
-);
+// medium 和旧别名共用原来的中档样式。
+const componentSize = computed(() => {
+  const size = props.size ?? globalSize.value;
+  return size === 'medium' ? 'default' : size;
+});
 const skeletonRef = ref<HTMLDivElement>();
 const instance = getCurrentInstance();
 const hasExplicitRows = useRenderComputed(() => {

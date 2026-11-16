@@ -864,31 +864,38 @@ const selectionData = [
 
 `toggleAllSelection()` 仅适用于多选；单选模式或加载期间不会改变选择。多选切换为单选时，仅保留首个有效选中项。
 
+启用分页时，本地表头排序回到第 1 页。受控页码由 `update:pagination` 请求更新，`remote-sort` 的页码由业务端决定。启用 `default-expand-all-rows` 后，异步加入的父行也默认展开，同键行保留用户的折叠选择。
+
 ### Table Props
 
-| 属性                | 说明                                                   | 类型                             | 默认值       |
-| ------------------- | ------------------------------------------------------ | -------------------------------- | ------------ |
-| `columns`           | 表格列配置                                             | `TableColumn[]`                  | `[]`         |
-| `data`              | 表格数据                                               | `TableDataItem[]`                | `[]`         |
-| `size`              | 表格尺寸                                               | `'small' \| 'medium' \| 'large'` | `'medium'`   |
-| `bordered`          | 是否显示边框                                           | `boolean`                        | `false`      |
-| `striped`           | 是否显示斑马纹                                         | `boolean`                        | `false`      |
-| `hoverable`         | 是否可悬停                                             | `boolean`                        | `true`       |
-| `loading`           | 是否加载中                                             | `boolean`                        | `false`      |
-| `empty-text`        | 空数据文本                                             | `string`                         | `'暂无数据'` |
-| `show-header`       | 是否显示表头                                           | `boolean`                        | `true`       |
-| `row-key`           | 行唯一键的字段名。重复键只保留首行，开发环境会提示     | `string`                         | `'key'`      |
-| `selectable`        | 是否开启行选择列                                       | `boolean`                        | `false`      |
-| `selection-type`    | 选择类型（多选/单选）                                  | `'checkbox' \| 'radio'`          | `'checkbox'` |
-| `selectedRowKeys`   | 已选行 key 列表（支持 `v-model:selectedRowKeys`）      | `Array<string \| number>`        | `[]`         |
-| `is-row-selectable` | 判断某行是否可选                                       | `(record, index) => boolean`     | `undefined`  |
-| `max-height`        | 最大高度                                               | `string \| number`               | `undefined`  |
-| `layout`            | 布局模式（移动端友好）                                 | `'table' \| 'card'`              | `'table'`    |
-| `remote-sort`       | 远程/受控排序：禁用内置本地排序，仅派发 `sort-change`  | `boolean`                        | `false`      |
-| `virtual`           | 是否启用行虚拟滚动（大数据量，需固定 `row-height`）    | `boolean`                        | `false`      |
-| `row-height`        | 虚拟滚动行高（像素）                                   | `number`                         | `48`         |
-| `virtual-height`    | 虚拟滚动视口高度（像素，回退 `max-height` 再回退 400） | `number`                         | `undefined`  |
-| `virtual-buffer`    | 虚拟滚动上下缓冲行数                                   | `number`                         | `6`          |
+| 属性                        | 说明                                                   | 类型                             | 默认值       |
+| --------------------------- | ------------------------------------------------------ | -------------------------------- | ------------ |
+| `columns`                   | 表格列配置                                             | `TableColumn[]`                  | `[]`         |
+| `data`                      | 表格数据                                               | `TableDataItem[]`                | `[]`         |
+| `size`                      | 表格尺寸                                               | `'small' \| 'medium' \| 'large'` | `'medium'`   |
+| `bordered`                  | 是否显示边框                                           | `boolean`                        | `false`      |
+| `striped`                   | 是否显示斑马纹                                         | `boolean`                        | `false`      |
+| `hoverable`                 | 是否可悬停                                             | `boolean`                        | `true`       |
+| `loading`                   | 是否加载中                                             | `boolean`                        | `false`      |
+| `empty-text`                | 空数据文本                                             | `string`                         | `'暂无数据'` |
+| `show-header`               | 是否显示表头                                           | `boolean`                        | `true`       |
+| `row-key`                   | 行唯一键的字段名。重复键只保留首行，开发环境会提示     | `string`                         | `'key'`      |
+| `tree`                      | 是否渲染树形行                                         | `boolean`                        | `false`      |
+| `children-key`              | 子行数组的字段名                                       | `string`                         | `'children'` |
+| `expanded-row-keys`         | 受控展开的父行 key                                     | `Array<string \| number>`        | `undefined`  |
+| `default-expanded-row-keys` | 默认展开的父行 key                                     | `Array<string \| number>`        | `[]`         |
+| `default-expand-all-rows`   | 是否默认展开所有父行，包括异步加入的父行               | `boolean`                        | `false`      |
+| `selectable`                | 是否开启行选择列                                       | `boolean`                        | `false`      |
+| `selection-type`            | 选择类型（多选/单选）                                  | `'checkbox' \| 'radio'`          | `'checkbox'` |
+| `selectedRowKeys`           | 已选行 key 列表（支持 `v-model:selectedRowKeys`）      | `Array<string \| number>`        | `[]`         |
+| `is-row-selectable`         | 判断某行是否可选                                       | `(record, index) => boolean`     | `undefined`  |
+| `max-height`                | 最大高度                                               | `string \| number`               | `undefined`  |
+| `layout`                    | 布局模式（移动端友好）                                 | `'table' \| 'card'`              | `'table'`    |
+| `remote-sort`               | 远程/受控排序：禁用内置本地排序，仅派发 `sort-change`  | `boolean`                        | `false`      |
+| `virtual`                   | 是否启用行虚拟滚动（大数据量，需固定 `row-height`）    | `boolean`                        | `false`      |
+| `row-height`                | 虚拟滚动行高（像素）                                   | `number`                         | `48`         |
+| `virtual-height`            | 虚拟滚动视口高度（像素，回退 `max-height` 再回退 400） | `number`                         | `undefined`  |
+| `virtual-buffer`            | 虚拟滚动上下缓冲行数                                   | `number`                         | `6`          |
 
 ### Table Events
 

@@ -5,7 +5,8 @@
   >
     <Transition
       name="ex-modal-fade"
-      @after-leave="handleAfterClose"
+      @after-enter="afterEnter"
+      @after-leave="afterLeave"
     >
       <div
         v-if="shouldRender"
@@ -96,7 +97,7 @@
                   </ExButton>
                   <ExButton
                     :type="normalizedOkType"
-                    :loading="confirmLoading"
+                    :loading="okLoading ?? confirmLoading"
                     @click="handleOk"
                   >
                     {{ resolvedOkText }}
@@ -125,7 +126,7 @@ import {
   useZIndexLayer,
 } from '../config-provider/composables';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useOverlay } from '../../composables/useOverlay';
+import { useOverlay, useOverlayTransition } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
 import type {
@@ -153,8 +154,10 @@ const props = withDefaults(defineProps<ExModalProps>(), {
   mask: true,
   maskClosable: true,
   keyboard: true,
+  closeOnPressEscape: undefined,
   okType: 'primary',
   confirmLoading: false,
+  okLoading: undefined,
   centered: false,
   zIndex: undefined,
   appendToBody: true,
@@ -278,7 +281,7 @@ const wrapClasses = computed(() => [
   {
     'ex-modal-wrap--centered': props.centered,
   },
-  props.wrapClassName,
+  props.customClass ?? props.wrapClassName,
 ]);
 const modalClasses = computed(() => [
   'ex-modal',
@@ -306,7 +309,7 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   container: modalRef,
   zIndex: () => requestedZIndex.value,
   lockScroll: () => props.mask && props.lockScroll,
-  closeOnEscape: () => props.keyboard,
+  closeOnEscape: () => props.closeOnPressEscape ?? props.keyboard,
   onEscape: async () => {
     await requestCloseIntent('cancel');
   },
@@ -314,6 +317,15 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   autoFocus: () => props.mask,
   restoreFocus: true,
 });
+
+const { afterEnter, afterLeave } = useOverlayTransition(
+  overlayActive,
+  () => emit('opened'),
+  () => {
+    emit('afterClose');
+    emit('closed');
+  }
+);
 
 type CloseIntent = 'ok' | 'cancel' | 'api';
 let pendingCloseIntent: Promise<boolean> | null = null;
@@ -323,8 +335,10 @@ const requestCloseIntent = (intent: CloseIntent): Promise<boolean> => {
   if (!props.modelValue) return Promise.resolve(false);
   if (pendingCloseIntent) return pendingCloseIntent;
 
-  if (intent === 'ok') emit('ok');
-  else if (intent === 'cancel') emit('cancel');
+  if (intent === 'ok') {
+    emit('ok');
+    emit('confirm');
+  } else if (intent === 'cancel') emit('cancel');
 
   const operation = requestClose();
   pendingCloseIntent = operation;
@@ -352,8 +366,6 @@ const handleOk = (): void => {
 const handleCancel = (): void => {
   void requestCloseIntent('cancel');
 };
-const handleAfterClose = (): void => emit('afterClose');
-
 const open = (): void => {
   pendingCloseIntent = null;
   requestOpen();

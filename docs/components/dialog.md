@@ -843,38 +843,40 @@ const handleBeforeClose = async () => {
 
 ## API
 
+Dialog 的 `mask`、`mask-closable`、`ok-text`、`ok-loading` 支持对应旧名，显式设置统一名称时优先使用该值。`center` 控制 Dialog 的内容对齐。
+
 省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
 
 ### Dialog Props
 
-| 属性                    | 说明                        | 类型                                                                     | 默认值        |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------------ | ------------- |
-| `model-value / v-model` | 是否显示对话框              | `boolean`                                                                | `false`       |
-| `title`                 | 对话框标题                  | `string`                                                                 | `''`          |
-| `size`                  | 对话框尺寸                  | `'small' \| 'medium' \| 'large' \| 'full'`                               | `'medium'`    |
-| `type`                  | 对话框类型                  | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'`   |
-| `show-close`            | 是否显示关闭按钮            | `boolean`                                                                | `true`        |
-| `modal`                 | 是否显示遮罩层              | `boolean`                                                                | `true`        |
-| `close-on-click-modal`  | 是否可以通过点击遮罩层关闭  | `boolean`                                                                | `true`        |
-| `close-on-press-escape` | 是否可以通过按下 ESC 键关闭 | `boolean`                                                                | `true`        |
-| `show-footer`           | 是否显示底部操作栏          | `boolean`                                                                | `true`        |
-| `confirm-text`          | 确认按钮文本                | `string`                                                                 | `'确认'`      |
-| `cancel-text`           | 取消按钮文本                | `string`                                                                 | `'取消'`      |
-| `show-confirm`          | 是否显示确认按钮            | `boolean`                                                                | `true`        |
-| `show-cancel`           | 是否显示取消按钮            | `boolean`                                                                | `true`        |
-| `confirm-loading`       | 确认按钮加载状态            | `boolean`                                                                | `false`       |
-| `confirm-disabled`      | 确认按钮禁用状态            | `boolean`                                                                | `false`       |
-| `center`                | 是否居中显示                | `boolean`                                                                | `false`       |
-| `fullscreen`            | 是否全屏显示                | `boolean`                                                                | `false`       |
-| `lock-scroll`           | 是否锁定滚动                | `boolean`                                                                | `true`        |
-| `custom-class`          | 自定义类名                  | `string`                                                                 | `''`          |
-| `modal-class`           | 遮罩层自定义类名            | `string`                                                                 | `''`          |
-| `before-open`           | 对话框打开前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
-| `before-close`          | 对话框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
-| `z-index`               | 层级                        | `number`                                                                 | 全局层级 + 50 |
-| `append-to-body`        | 是否追加到 body             | `boolean`                                                                | `true`        |
-| `destroy-on-close`      | 关闭动画结束后是否销毁内容  | `boolean`                                                                | `false`       |
-| `aria-label`            | 无障碍标签                  | `string`                                                                 | `undefined`   |
+| 属性                    | 说明                                            | 类型                                                                     | 默认值        |
+| ----------------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------- |
+| `model-value / v-model` | 是否显示对话框                                  | `boolean`                                                                | `false`       |
+| `title`                 | 对话框标题                                      | `string`                                                                 | `''`          |
+| `size`                  | 对话框尺寸                                      | `'small' \| 'medium' \| 'large' \| 'full'`                               | `'medium'`    |
+| `type`                  | 对话框类型                                      | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'`   |
+| `show-close`            | 是否显示关闭按钮                                | `boolean`                                                                | `true`        |
+| `mask`                  | 是否显示遮罩层，兼容 `modal`                    | `boolean`                                                                | `true`        |
+| `mask-closable`         | 点击遮罩层是否关闭，兼容 `close-on-click-modal` | `boolean`                                                                | `true`        |
+| `close-on-press-escape` | 是否可以通过按下 ESC 键关闭                     | `boolean`                                                                | `true`        |
+| `show-footer`           | 是否显示底部操作栏                              | `boolean`                                                                | `true`        |
+| `ok-text`               | 确认按钮文本，兼容 `confirm-text`               | `string`                                                                 | `'确认'`      |
+| `cancel-text`           | 取消按钮文本                                    | `string`                                                                 | `'取消'`      |
+| `show-confirm`          | 是否显示确认按钮                                | `boolean`                                                                | `true`        |
+| `show-cancel`           | 是否显示取消按钮                                | `boolean`                                                                | `true`        |
+| `ok-loading`            | 确认按钮加载状态，兼容 `confirm-loading`        | `boolean`                                                                | `false`       |
+| `confirm-disabled`      | 确认按钮禁用状态                                | `boolean`                                                                | `false`       |
+| `center`                | 是否居中显示                                    | `boolean`                                                                | `false`       |
+| `fullscreen`            | 是否全屏显示                                    | `boolean`                                                                | `false`       |
+| `lock-scroll`           | 是否锁定滚动                                    | `boolean`                                                                | `true`        |
+| `custom-class`          | 自定义类名                                      | `string`                                                                 | `''`          |
+| `modal-class`           | 遮罩层自定义类名                                | `string`                                                                 | `''`          |
+| `before-open`           | 对话框打开前的回调                              | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
+| `before-close`          | 对话框关闭前的回调                              | `() => boolean \| Promise<boolean>`                                      | `undefined`   |
+| `z-index`               | 层级                                            | `number`                                                                 | 全局层级 + 50 |
+| `append-to-body`        | 是否追加到 body                                 | `boolean`                                                                | `true`        |
+| `destroy-on-close`      | 关闭动画结束后是否销毁内容                      | `boolean`                                                                | `false`       |
+| `aria-label`            | 无障碍标签                                      | `string`                                                                 | `undefined`   |
 
 ### Dialog Events
 
@@ -891,13 +893,13 @@ const handleBeforeClose = async () => {
 
 ### Dialog Slots
 
-| 插槽名    | 说明           |
-| --------- | -------------- |
-| `default` | 对话框内容     |
-| `title`   | 自定义标题     |
-| `icon`    | 自定义图标     |
-| `close`   | 自定义关闭按钮 |
-| `footer`  | 自定义底部内容 |
+| 插槽名      | 说明                             |
+| ----------- | -------------------------------- |
+| `default`   | 对话框内容                       |
+| `title`     | 自定义标题                       |
+| `icon`      | 自定义图标                       |
+| `closeIcon` | 自定义关闭按钮图标，兼容 `close` |
+| `footer`    | 自定义底部内容                   |
 
 ### Dialog Methods
 

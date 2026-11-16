@@ -1,3 +1,5 @@
+import type { VNodeChild } from 'vue';
+
 export type DialogSize = 'small' | 'medium' | 'large' | 'full';
 export type DialogType = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 export type DialogGuard = () => boolean | Promise<boolean>;
@@ -15,14 +17,20 @@ export interface ExDialogProps {
   /** 是否显示关闭按钮。 */
   showClose?: boolean;
   /** 是否显示遮罩并启用模态焦点圈闭。 */
+  mask?: boolean;
+  /** @deprecated 使用 mask。 */
   modal?: boolean;
   /** 点击遮罩是否请求关闭。 */
+  maskClosable?: boolean;
+  /** @deprecated 使用 maskClosable。 */
   closeOnClickModal?: boolean;
   /** Escape 是否请求关闭。 */
   closeOnPressEscape?: boolean;
   /** 是否启用默认底部操作区。 */
   showFooter?: boolean;
   /** 确认按钮文本。 */
+  okText?: string;
+  /** @deprecated 使用 okText。 */
   confirmText?: string;
   /** 取消按钮文本。 */
   cancelText?: string;
@@ -31,6 +39,8 @@ export interface ExDialogProps {
   /** 是否显示取消按钮。 */
   showCancel?: boolean;
   /** 确认按钮加载状态。 */
+  okLoading?: boolean;
+  /** @deprecated 使用 okLoading。 */
   confirmLoading?: boolean;
   /** 确认按钮禁用状态。 */
   confirmDisabled?: boolean;
@@ -68,6 +78,16 @@ export interface ExDialogEmits {
   guardError: [error: unknown, phase: 'open' | 'close'];
   confirm: [];
   cancel: [];
+}
+
+export interface ExDialogSlots {
+  default?: () => VNodeChild;
+  title?: () => VNodeChild;
+  icon?: () => VNodeChild;
+  footer?: () => VNodeChild;
+  closeIcon?: () => VNodeChild;
+  /** @deprecated 使用 closeIcon。 */
+  close?: () => VNodeChild;
 }
 
 /** 对话框公开方法。 */

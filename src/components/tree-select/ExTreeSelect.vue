@@ -198,6 +198,7 @@ import {
 } from '../config-provider/composables';
 import { useFormFieldState } from '../form/use-form-item';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useViewportPosition } from '../../composables/useFloatingAutoUpdate';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useControllableState } from '../../composables/useControllableState';
@@ -393,13 +394,22 @@ const filterActive = computed(() => props.filterable && !!lowerQuery.value);
 const visibleSet = computed<Set<string | number> | null>(() => {
   if (!filterActive.value) return null;
   const set = new Set<string | number>();
-  const entries = maps.value.entries;
-  for (let index = entries.length - 1; index >= 0; index--) {
-    const entry = entries[index]!;
-    if (set.has(entry.node.value) || entry.node.label.toLowerCase().includes(lowerQuery.value)) {
-      set.add(entry.node.value);
-      if (entry.parent !== null) set.add(entry.parent);
+  const { entries, parentMap } = maps.value;
+  let matchedSubtreeEnd = 0;
+  for (const entry of entries) {
+    if (entry.index >= matchedSubtreeEnd) {
+      if (!entry.node.label.toLowerCase().includes(lowerQuery.value)) continue;
+      // 先序索引将子树压在连续区间内，命中后直接保留区间和祖先路径。
+      matchedSubtreeEnd = entry.end;
+      for (
+        let parent = entry.parent;
+        parent !== null && !set.has(parent);
+        parent = parentMap.get(parent) ?? null
+      ) {
+        set.add(parent);
+      }
     }
+    set.add(entry.node.value);
   }
   return set;
 });
@@ -425,7 +435,9 @@ const flatNodes = computed<FlatNode[]>(() => {
       continue;
     }
     const hasChildren = asyncOptions.expandable(node, [node.value]);
-    const expanded = filterActive.value || expandedKeys.value.has(node.value);
+    // 搜索只打开已加载的分支，未知后代等用户主动展开后再请求。
+    const expanded =
+      expandedKeys.value.has(node.value) || Boolean(filterActive.value && node.children?.length);
     out.push({
       node,
       level,
@@ -579,12 +591,13 @@ const selectedSingleNode = computed<TreeSelectNode | null>(() =>
     : null
 );
 
-const showClear = computed(() => {
-  if (!props.clearable || !interactive.value) return false;
+const canClear = computed(() => {
+  if (!interactive.value) return false;
   return props.multiple
     ? selectedValues.value.some(value => !isValueDisabled(value))
     : currentValue.value != null && !isValueDisabled(currentValue.value as string | number);
 });
+const showClear = computed(() => props.clearable && canClear.value);
 
 const isChecked = (node: TreeSelectNode): boolean => checkedSet.value.has(node.value);
 const selectedDescendantSet = computed(() => {
@@ -681,7 +694,7 @@ const removeTag = (value: string | number) => {
 };
 
 const handleClear = () => {
-  if (!showClear.value) return;
+  if (!canClear.value) return;
   // 全局清空只能移除可交互值，禁用分支的外部已选值继续展示并保留。
   const cleared = props.multiple ? selectedValues.value.filter(isValueDisabled) : null;
   requestValue(cleared);
@@ -807,15 +820,12 @@ const collapseAll = () => {
   expandedKeys.value = new Set([...expandedKeys.value].filter(isValueDisabled));
 };
 
+useViewportPosition(visible, updatePanelPosition);
 watch(visible, isVisible => {
   if (isVisible) {
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', updatePanelPosition);
-    window.addEventListener('scroll', updatePanelPosition, true);
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', updatePanelPosition);
-    window.removeEventListener('scroll', updatePanelPosition, true);
   }
 });
 
@@ -847,16 +857,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', updatePanelPosition);
-  window.removeEventListener('scroll', updatePanelPosition, true);
 });
 
-const focus = () => triggerRef.value?.focus();
+const focus: ExTreeSelectExposed['focus'] = options => triggerRef.value?.focus(options);
 const blur = () => triggerRef.value?.blur();
 
 defineExpose<ExTreeSelectExposed>({
   focus,
   blur,
+  clear: handleClear,
+  getElement: () => rootRef.value ?? null,
   expandAll,
   collapseAll,
   reloadNode,

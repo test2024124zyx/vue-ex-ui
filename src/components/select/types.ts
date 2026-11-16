@@ -111,7 +111,7 @@ export interface ExSelectSlots {
 export interface ExSelectEmits {
   /** 值变化事件 */
   (e: 'update:modelValue', value: SelectValue): void;
-  /** 选择变化事件（多选时 value 为数组，option 为当前已选选项数组） */
+  /** 第二个参数是所选项或当前已选项数组。清空时单选为 null，多选为空数组。 */
   (e: 'change', value: SelectValue, option: SelectOption | SelectOption[] | null): void;
   /** 多选时移除标签 */
   (e: 'remove-tag', value: string | number): void;
@@ -129,9 +129,13 @@ export interface ExSelectEmits {
 
 export interface ExSelectExposed {
   /** 使选择器获取焦点 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 使选择器失去焦点 */
   blur: () => void;
+  /** 通过选择器的现有清空逻辑请求更新。 */
+  clear: () => void;
+  /** 获取选择器的根元素。 */
+  getElement: () => HTMLElement | null;
   /** 显示下拉菜单 */
   showDropdown: () => void;
   /** 隐藏下拉菜单 */

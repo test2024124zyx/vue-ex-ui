@@ -34,7 +34,7 @@ export interface ExNumberInputProps {
   controls?: boolean;
   /** 控制按钮位置 */
   controlsPosition?: NumberInputControlsPosition;
-  /** 是否严格步长（只能输入步长的倍数） */
+  /** 手动输入确认时是否对齐到最近的步长刻度 */
   strictStep?: boolean;
   /** 输入框名称 */
   name?: string;
@@ -54,9 +54,9 @@ export interface ExNumberInputProps {
 export interface ExNumberInputEmits {
   /** 值变化事件 */
   'update:modelValue': [value: number | null];
-  /** 值变化事件（在输入完成后触发） */
+  /** 提交新值和提交前的绑定值。 */
   change: [value: number | null, oldValue: number | null];
-  /** 输入事件（实时触发） */
+  /** 输入时报告解析值。 */
   input: [value: number | null];
   /** 聚焦事件 */
   focus: [event: FocusEvent];
@@ -73,7 +73,7 @@ export interface ExNumberInputEmits {
  */
 export interface ExNumberInputExposed {
   /** 聚焦输入框 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 失焦输入框 */
   blur: () => void;
   /** 选中输入框内容 */

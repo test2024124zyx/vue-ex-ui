@@ -1,3 +1,5 @@
+import type { ComponentSize } from '../config-provider/types';
+
 /**
  * 骨架屏动画类型
  */
@@ -11,7 +13,7 @@ export type SkeletonShape = 'circle' | 'square' | 'rounded';
 /**
  * 骨架屏尺寸
  */
-export type SkeletonSize = 'small' | 'default' | 'large';
+export type SkeletonSize = ComponentSize | 'default';
 
 /**
  * 骨架屏变体类型

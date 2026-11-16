@@ -89,6 +89,7 @@ export default defineConfig({
         'jsbarcode',
         'lunar-javascript',
         'tus-js-client',
+        'colorjs.io',
       ],
       output: {
         exports: 'named',

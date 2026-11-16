@@ -13,7 +13,6 @@ export function filterTreeNodes(data: TreeNode[], matches: (node: TreeNode) => b
     index: number;
     result: TreeNode[];
     owner?: TreeNode;
-    match?: boolean;
   }
   const frames: Frame[] = [{ nodes: data, index: 0, result: [] }];
   while (frames.length) {
@@ -21,21 +20,18 @@ export function filterTreeNodes(data: TreeNode[], matches: (node: TreeNode) => b
     if (frame.index === frame.nodes.length) {
       frames.pop();
       if (!frame.owner) return frame.result;
-      if (frame.match || frame.result.length)
+      if (frame.result.length)
         frames[frames.length - 1]!.result.push({
           ...frame.owner,
-          children: frame.result.length ? frame.result : frame.owner.children,
+          children: frame.result,
         });
       continue;
     }
     const node = frame.nodes[frame.index++]!;
-    frames.push({
-      nodes: node.children ?? [],
-      index: 0,
-      result: [],
-      owner: node,
-      match: matches(node),
-    });
+    // 自己命中时直接保留该节点和完整子树，不再逐项过滤后代。
+    if (matches(node)) frame.result.push(node);
+    else if (node.children?.length)
+      frames.push({ nodes: node.children, index: 0, result: [], owner: node });
   }
   return [];
 }

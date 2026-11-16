@@ -5,6 +5,7 @@
     :style="progressStyles"
     role="progressbar"
     :aria-valuenow="percentage"
+    :aria-valuetext="format ? displayText || undefined : undefined"
     :aria-valuemin="0"
     :aria-valuemax="100"
     :aria-label="ariaLabel"

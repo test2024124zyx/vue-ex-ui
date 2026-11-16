@@ -361,6 +361,8 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 ### Props
 
+同一份 `options` 中每个值应唯一，包含跨分组的选项。重复值只保留首次出现的选项，开发环境会提示。
+
 省略 `modelValue` 时选择状态由组件维护，单选初始为 `null`，多选初始为空数组。传入 `modelValue` 时由父组件确认更新，`null` 表示明确传入的空值。
 
 | 参数             | 说明                                                           | 类型                                               | 默认值       |
@@ -387,16 +389,16 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 ### Events
 
-| 事件名              | 参数                                                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `update:modelValue` | `(value: SelectValue)`                                                                                                     |
-| `change`            | `(value: SelectValue, option: SelectOption \| SelectOption[] \| null)`；多选时 `option` 为当前已选选项数组，清空时为空数组 |
-| `remove-tag`        | `(value: string \| number)`                                                                                                |
-| `clear`             | `()`                                                                                                                       |
-| `focus`             | `(event: FocusEvent)`                                                                                                      |
-| `blur`              | `(event: FocusEvent)`                                                                                                      |
-| `visible-change`    | `(visible: boolean)`                                                                                                       |
-| `remote-error`      | `(error: unknown, query: string)`；取消和过期请求不触发                                                                    |
+| 事件名              | 参数                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `update:modelValue` | `(value: SelectValue)`                                                                                                                                       |
+| `change`            | `(value: SelectValue, option: SelectOption \| SelectOption[] \| null)`。第二个参数是对应选项，多选时为当前已选的选项数组。清空时单选传 `null`，多选传 `[]`。 |
+| `remove-tag`        | `(value: string \| number)`                                                                                                                                  |
+| `clear`             | `()`                                                                                                                                                         |
+| `focus`             | `(event: FocusEvent)`                                                                                                                                        |
+| `blur`              | `(event: FocusEvent)`                                                                                                                                        |
+| `visible-change`    | `(visible: boolean)`                                                                                                                                         |
+| `remote-error`      | `(error: unknown, query: string)`；取消和过期请求不触发                                                                                                      |
 
 ### Slots
 
@@ -424,8 +426,10 @@ type SelectRemoteLoader = (query: string, context: SelectRemoteContext) => Promi
 
 | 方法           | 类型                                           |
 | -------------- | ---------------------------------------------- |
-| `focus`        | `() => void`                                   |
+| `focus`        | `(options?: FocusOptions) => void`             |
 | `blur`         | `() => void`                                   |
+| `clear`        | `() => void`                                   |
+| `getElement`   | `() => HTMLElement \| null`                    |
 | `showDropdown` | `() => void`                                   |
 | `hideDropdown` | `() => void`                                   |
 | `retryRemote`  | `() => void`，下拉打开且存在失败查询时立即重试 |

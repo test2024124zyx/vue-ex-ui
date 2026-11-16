@@ -118,9 +118,13 @@ export interface ExTreeSelectEmits {
  */
 export interface ExTreeSelectExposed {
   /** 聚焦 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 失焦 */
   blur: () => void;
+  /** 清除可交互的选值。 */
+  clear: () => void;
+  /** 获取树选择器的根元素。 */
+  getElement: () => HTMLElement | null;
   /** 展开全部 */
   expandAll: () => void;
   /** 收起全部 */

@@ -203,6 +203,8 @@ const emailRules = [
 
 独立使用时，请通过 `label`、`label` 插槽或 `aria-label` / `aria-labelledby` 提供可访问名称。`rules` 默认在失焦时校验，只有需要边输入边反馈时才配置 `validate-trigger="input"`；也可以使用 `change` 或 `manual`（仅由 `validate()` 触发）。组件同时支持 `v-model.trim`、`v-model.number` 与 `v-model.lazy`。
 
+使用 `v-model.number` 时，删除全部文字或点击清空按钮都提交空字符串，与 Vue 的空值约定一致。
+
 ::: raw
 
 <div class="vp-raw demo-container">
@@ -274,6 +276,8 @@ const emailRules = [
 
 ## Events
 
+`input` 和 `change` 都接收转换后的值和触发该事件的 DOM `Event`。组件间需要统一处理值时，可以监听 `update:model-value`。
+
 | 事件               | 参数                                    |
 | ------------------ | --------------------------------------- |
 | update:model-value | (value: string \| number)               |
@@ -301,6 +305,8 @@ const emailRules = [
 
 ## Exposes
 
+`validate()` 同步应用 `ExInput` 自身的 `rules`，返回布尔值。表单规则包含异步校验时，通过 `ExForm.validate()` 或 `ExFormItem.validate()` 取得 Promise 结果。
+
 | 方法            | 类型                                                  |
 | --------------- | ----------------------------------------------------- |
 | focus           | (options?: FocusOptions) => void                      |
@@ -308,6 +314,7 @@ const emailRules = [
 | select          | () => void                                            |
 | clear           | () => void                                            |
 | validate        | () => boolean                                         |
+| getElement      | () => HTMLInputElement \| HTMLTextAreaElement \| null |
 | getInputElement | () => HTMLInputElement \| HTMLTextAreaElement \| null |
 
 <style scoped>

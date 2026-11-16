@@ -622,7 +622,8 @@ useFloatingAutoUpdate(
   visible,
   [triggerRef, panelRef],
   [() => props.range, () => props.format, () => props.teleported, componentSize],
-  updatePanelPosition
+  updatePanelPosition,
+  { viewport: true }
 );
 
 const focusCell = (unit: TimeUnit, value: number) => {
@@ -856,12 +857,8 @@ const handleClickOutside = (event: MouseEvent) => {
 watch(visible, isVisible => {
   if (isVisible) {
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', updatePanelPosition);
-    window.addEventListener('scroll', updatePanelPosition, true);
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', updatePanelPosition);
-    window.removeEventListener('scroll', updatePanelPosition, true);
   }
 });
 
@@ -900,8 +897,6 @@ watch(
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', updatePanelPosition);
-  window.removeEventListener('scroll', updatePanelPosition, true);
 });
 
 const focus = () => triggerRef.value?.focus();

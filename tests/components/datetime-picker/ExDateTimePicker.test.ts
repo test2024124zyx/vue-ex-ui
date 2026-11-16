@@ -80,7 +80,14 @@ describe('ExDateTimePicker', () => {
     Object.defineProperty(panel, 'offsetWidth', { configurable: true, value: 360 });
     Object.defineProperty(panel, 'offsetHeight', { configurable: true, value: 500 });
 
+    let positionFrame: FrameRequestCallback | undefined;
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementationOnce(callback => {
+      positionFrame = callback;
+      return 1;
+    });
     window.dispatchEvent(new Event('resize'));
+    expect(positionFrame).toBeDefined();
+    positionFrame?.(0);
     await nextTick();
 
     expect(panel.style.position).toBe('fixed');

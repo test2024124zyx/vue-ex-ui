@@ -2,8 +2,8 @@
   <Teleport to="body">
     <Transition
       name="ex-drawer-wrapper-fade"
-      @after-enter="handleOpened"
-      @after-leave="handleClosed"
+      @after-enter="afterEnter"
+      @after-leave="afterLeave"
     >
       <div
         v-if="shouldRender"
@@ -22,7 +22,7 @@
           ></div>
         </Transition>
 
-        <Transition :name="`ex-drawer-slide-${placement}`">
+        <Transition :name="`ex-drawer-slide-${normalizedPlacement}`">
           <div
             v-if="shouldRender"
             v-show="overlayActive"
@@ -63,17 +63,19 @@
               </div>
 
               <button
-                v-if="closable"
+                v-if="showCloseButton"
                 class="ex-drawer__close"
                 type="button"
                 :aria-label="t('close')"
                 @click="handleClose"
               >
-                <ExIcon
-                  icon="close-line"
-                  :size="20"
-                  aria-hidden="true"
-                />
+                <slot name="closeIcon">
+                  <ExIcon
+                    icon="close-line"
+                    :size="20"
+                    aria-hidden="true"
+                  />
+                </slot>
               </button>
             </div>
 
@@ -110,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, useId, useSlots, watch } from 'vue';
+import { computed, ref, useAttrs, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
@@ -124,8 +126,14 @@ import {
 } from '../config-provider/composables';
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useOverlay } from '../../composables/useOverlay';
-import type { ExDrawerEmits, ExDrawerExposed, ExDrawerProps } from './types';
+import { useOverlay, useOverlayTransition } from '../../composables/useOverlay';
+import type {
+  DrawerPlacement,
+  ExDrawerEmits,
+  ExDrawerExposed,
+  ExDrawerProps,
+  ExDrawerSlots,
+} from './types';
 
 defineOptions({
   name: 'ExDrawer',
@@ -138,6 +146,7 @@ const props = withDefaults(defineProps<ExDrawerProps>(), {
   placement: 'right',
   size: undefined,
   closable: true,
+  showClose: undefined,
   mask: true,
   maskClosable: true,
   closeOnPressEscape: true,
@@ -152,7 +161,8 @@ const props = withDefaults(defineProps<ExDrawerProps>(), {
 });
 
 const emit = defineEmits<ExDrawerEmits>();
-const slots = useSlots();
+const slots = defineSlots<ExDrawerSlots>();
+const showCloseButton = computed(() => props.showClose ?? props.closable);
 const attrs = useAttrs();
 const { t } = useLocale('drawer');
 const { t: tDialog } = useLocale('dialog');
@@ -202,7 +212,7 @@ const labelledBy = computed(() => {
   if (props.ariaLabel?.trim() || nativeAriaLabel.value) return undefined;
   return nativeLabelledBy.value ?? (slots.header || hasTitle.value ? titleId : undefined);
 });
-const showHeader = computed(() => Boolean(slots.header || hasTitle.value || props.closable));
+const showHeader = computed(() => Boolean(slots.header || hasTitle.value || showCloseButton.value));
 const hasFooter = computed(() => Boolean(slots.footer || props.showFooter));
 
 const wrapperClasses = computed(() => ({
@@ -214,9 +224,13 @@ const wrapperStyles = computed<CSSProperties>(() => ({
   ...themeOverrides.value,
   zIndex: overlayZIndex.value,
 }));
+const DRAWER_PLACEMENTS = new Set<DrawerPlacement>(['left', 'right', 'top', 'bottom']);
+const normalizedPlacement = computed(() =>
+  DRAWER_PLACEMENTS.has(props.placement) ? props.placement : 'right'
+);
 const drawerClasses = computed(() => [
   'ex-drawer',
-  `ex-drawer--${props.placement}`,
+  `ex-drawer--${normalizedPlacement.value}`,
   props.customClass,
 ]);
 
@@ -237,7 +251,7 @@ const normalizedSize = computed(() => {
 });
 
 const sizeStyles = computed<CSSProperties>(() => {
-  if (props.placement === 'left' || props.placement === 'right') {
+  if (normalizedPlacement.value === 'left' || normalizedPlacement.value === 'right') {
     return { width: normalizedSize.value, maxWidth: '100vw' };
   }
   return { height: normalizedSize.value, maxHeight: '100vh' };
@@ -257,6 +271,12 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   autoFocus: () => props.mask,
   restoreFocus: true,
 });
+
+const { afterEnter, afterLeave } = useOverlayTransition(
+  overlayActive,
+  () => emit('opened'),
+  () => emit('closed')
+);
 
 type CloseIntent = 'cancel' | 'api';
 let pendingCloseIntent: Promise<boolean> | null = null;
@@ -286,12 +306,13 @@ const handleMaskClick = () => {
   if (props.mask && props.maskClosable) void requestCloseIntent('api');
 };
 const handleClose = () => void requestCloseIntent('api');
-const handleOk = () => emit('ok');
+const handleOk = () => {
+  emit('ok');
+  emit('confirm');
+};
 const handleCancel = () => {
   void requestCloseIntent('cancel');
 };
-const handleOpened = () => emit('opened');
-const handleClosed = () => emit('closed');
 
 const open = () => {
   pendingCloseIntent = null;

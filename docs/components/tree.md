@@ -419,6 +419,8 @@ const loadChildren: TreeLoadData = (node, { signal }) =>
 
 ## Exposed
 
+使用 `filter(query)` 时，匹配 `filterNodeMethod` 的节点会保留完整子树。只有后代匹配时会保留相应祖先，并请求展开已有子节点的分支。
+
 | 方法                   | 类型                                          |
 | ---------------------- | --------------------------------------------- |
 | `getSelectedNodes`     | `() => TreeNode[]`                            |
