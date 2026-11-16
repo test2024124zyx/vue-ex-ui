@@ -337,8 +337,11 @@ describe('ExButton', () => {
       slots: { default: 'DEFAULT ACTION' },
     });
 
-    expect(glowing.attributes('data-ex-button-glitch-text')).toBe('AVAILABLE NOW');
-    expect(restrained.attributes('data-ex-button-glitch-text')).toBeUndefined();
+    const decoration = glowing.get('.ex-button__glitch');
+    expect(decoration.attributes('aria-hidden')).toBe('true');
+    expect(decoration.attributes('data-ex-button-glitch-text')).toBe('AVAILABLE NOW');
+    expect(glowing.text()).toBe('AVAILABLE NOW');
+    expect(restrained.find('.ex-button__glitch').exists()).toBe(false);
   });
 
   it('renders as plain button', () => {
