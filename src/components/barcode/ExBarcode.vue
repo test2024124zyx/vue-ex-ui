@@ -80,6 +80,7 @@ import { generateBarcode } from './barcode-generator';
 import { MAX_BARCODE_VALUE_LENGTH, normalizeBarcodeOptions } from './barcode-limits';
 import { assertImagePixelBudget } from '../../utils/image-resource';
 import { mergeInlineStyles } from '../../utils/style';
+import { clickDownloadLink } from '../../utils/browser-download';
 
 defineOptions({
   name: 'ExBarcode',
@@ -305,14 +306,17 @@ const download = (filename?: string): void => {
         let downloadUrl: string | null = null;
         try {
           downloadUrl = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.download = filename || `barcode-${Date.now()}.png`;
-          link.href = downloadUrl;
-          link.click();
+          clickDownloadLink(
+            svg.ownerDocument,
+            downloadUrl,
+            filename || `barcode-${Date.now()}.png`
+          );
         } catch {
           // toBlob 的异步回调也须独立兜底，确保下载失败不会变成未捕获异常。
         } finally {
-          if (downloadUrl) revokeObjectUrl(downloadUrl);
+          const url = downloadUrl;
+          // 给浏览器一轮事件循环来接管 PNG 下载，源 SVG 的地址已在绘制完成后释放。
+          if (url) setTimeout(() => revokeObjectUrl(url), 0);
         }
       });
     } catch {
