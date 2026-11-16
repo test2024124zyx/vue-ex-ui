@@ -128,6 +128,43 @@ it('新 ID 的同名标题追加后仍采用主题色', async () => {
   expect(titles()[1]!.textStyle.color).not.toBe(light);
 });
 
+it('图例从隐式 plain 改为 scroll 后遵从当前文字主题', async () => {
+  const { theme, api, instance } = await mountThemedChart({
+    legend: { id: 'legend', textStyle: { color: 'red' } },
+  });
+  api.setOption({ legend: { id: 'legend', type: 'scroll' } });
+  const legend = () => (instance.getOption().legend as Array<{ textStyle: { color: string } }>)[0]!;
+  const light = legend().textStyle.color;
+  expect(light).not.toBe('red');
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(legend().textStyle.color).not.toBe(light);
+});
+
+it('主题往返切换更新生成的光晕并保留运行时阴影覆盖', async () => {
+  const { theme, instance } = await mountThemedChart({
+    xAxis: {},
+    yAxis: {},
+    series: [{ type: 'line', data: [1, 2] }],
+  });
+  const styles = () =>
+    (
+      instance.getOption().series as Array<{
+        lineStyle: { shadowColor: string };
+        itemStyle: { shadowColor: string };
+      }>
+    )[0]!;
+  expect(styles().lineStyle.shadowColor).toBe('rgba(22, 104, 220, 0.25)');
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(styles().lineStyle.shadowColor).toBe('rgba(0, 240, 255, 0.3)');
+  instance.setOption({ series: [{ lineStyle: { shadowColor: 'red' } }] });
+  theme.value = 'light';
+  await nextTick();
+  expect(styles().lineStyle.shadowColor).toBe('red');
+  expect(styles().itemStyle.shadowColor).toBe('rgba(22, 104, 220, 0.25)');
+});
+
 it.each([undefined, 'series'])('系列类型改变时重置旧模型的显式样式：%s', async replaceMerge => {
   const { theme, api, instance } = await mountThemedChart({ xAxis: {}, yAxis: {}, series: [] });
   api.setOption({

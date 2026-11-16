@@ -148,51 +148,27 @@ export function getChartTheme(theme: Theme, overrides: Partial<ChartThemePalette
   };
 }
 
-/**
- * 将赛博发光效果应用到图表系列，不修改调用方传入的原始配置。
- */
+/** 初始化和主题切换共用同一份生成的系列光晕样式。 */
+export function getNeonGlowStyles(
+  type: unknown,
+  theme: Theme
+): Partial<Pick<ChartSeriesOption, 'lineStyle' | 'itemStyle'>> {
+  const shadowColor = theme === 'light' ? 'rgba(22, 104, 220, 0.25)' : 'rgba(0, 240, 255, 0.3)';
+  const glow = { shadowBlur: type === 'pie' ? 15 : 10, shadowColor };
+  if (type === 'line' || type === 'radar') return { itemStyle: glow, lineStyle: glow };
+  if (type === 'bar' || type === 'pie' || type === 'scatter') return { itemStyle: glow };
+  return {};
+}
+
+/** 将赛博发光效果应用到图表系列，不修改调用方传入的原始配置。 */
 export function applyNeonGlow(option: ChartOption, theme: Theme): ChartOption {
   if (!option.series) return { ...option };
 
-  const glowColor = theme === 'light' ? 'rgba(22, 104, 220, 0.25)' : 'rgba(0, 240, 255, 0.3)';
-
   const enhanceSeries = (series: ChartSeriesOption): ChartSeriesOption => {
+    const { lineStyle, itemStyle } = getNeonGlowStyles(series.type, theme);
     const enhanced = { ...series };
-
-    if (series.type === 'line') {
-      enhanced.lineStyle = {
-        ...series.lineStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-      enhanced.itemStyle = {
-        ...series.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    if (series.type === 'bar' || series.type === 'pie' || series.type === 'scatter') {
-      enhanced.itemStyle = {
-        ...series.itemStyle,
-        shadowBlur: series.type === 'pie' ? 15 : 10,
-        shadowColor: glowColor,
-      };
-    }
-
-    if (series.type === 'radar') {
-      enhanced.lineStyle = {
-        ...series.lineStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-      enhanced.itemStyle = {
-        ...series.itemStyle,
-        shadowBlur: 10,
-        shadowColor: glowColor,
-      };
-    }
-
+    if (lineStyle) enhanced.lineStyle = { ...series.lineStyle, ...lineStyle };
+    if (itemStyle) enhanced.itemStyle = { ...series.itemStyle, ...itemStyle };
     return enhanced;
   };
 

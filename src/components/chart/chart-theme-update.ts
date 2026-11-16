@@ -1,5 +1,7 @@
 import { equalValueSnapshot } from '../../utils/value-snapshot';
 import { deepMerge } from '../../utils';
+import type { Theme } from '../../types/theme';
+import { getNeonGlowStyles } from './utils';
 import type { ChartOption } from './types';
 
 type Style = Record<string, unknown>;
@@ -7,6 +9,7 @@ type Style = Record<string, unknown>;
 export interface ChartThemeStyle {
   base: Style;
   controls: Style;
+  neonGlow?: Theme;
 }
 
 const asStyle = (value: unknown): Style =>
@@ -16,6 +19,8 @@ const asComponents = (value: unknown): unknown[] =>
 const axes = ['xAxis', 'yAxis', 'radiusAxis', 'angleAxis', 'singleAxis', 'parallelAxis'] as const;
 const axisKeys = new Set<string>(axes);
 const themedComponents = ['title', ...axes, 'series', 'legend', 'tooltip', 'toolbox', 'dataZoom'];
+// ECharts 的 getOption 可能省略这两种由注册器解析的默认子类型。
+const defaultSubtype: Record<string, string | undefined> = { legend: 'plain', dataZoom: 'slider' };
 
 /** 保留组件布局与身份，组件生成的默认样式由主题继续管理。 */
 export function snapshotChartThemeOptions(explicit: ChartOption, layout: ChartOption): ChartOption {
@@ -26,7 +31,7 @@ export function snapshotChartThemeOptions(explicit: ChartOption, layout: ChartOp
     snapshot[key] = asComponents(layout[key]).map((item, index) => {
       if (item == null) return null;
       const { id, name, type } = asStyle(item);
-      return { ...asStyle(declared[index]), id, name, type };
+      return { ...asStyle(declared[index]), id, name, type: type ?? defaultSubtype[key] };
     });
   }
   return snapshot;
@@ -100,7 +105,10 @@ export function mergeChartThemeOptions(
 
 function componentStyle(theme: ChartThemeStyle, key: string, option: Style, index: number): Style {
   if (axisKeys.has(key)) return asStyle(theme.base[`${option.type ?? 'value'}Axis`]);
-  if (key === 'series') return asStyle(theme.base[String(option.type ?? '')]);
+  if (key === 'series') {
+    const base = asStyle(theme.base[String(option.type ?? '')]);
+    return theme.neonGlow ? deepMerge(base, getNeonGlowStyles(option.type, theme.neonGlow)) : base;
+  }
   const control = theme.controls[key];
   const component = Array.isArray(control) ? control[index] : control;
   return { ...asStyle(theme.base[key]), ...asStyle(component) };

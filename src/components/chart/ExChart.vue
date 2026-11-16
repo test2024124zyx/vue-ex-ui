@@ -151,6 +151,7 @@ const readThemeStyle = (): ChartThemeStyle => {
   const palette = controlPalette();
   return {
     base: resolveChartTheme(theme, chartRef.value, themeOverrides.value),
+    neonGlow: globalConfig.neonEffect.value ? theme : undefined,
     controls: {
       toolbox: props.showToolbox ? createDefaultToolbox(theme, t, palette) : {},
       legend: props.showLegend ? createDefaultLegend(theme, palette) : {},
@@ -440,10 +441,13 @@ const updateChart = (theme = readThemeStyle()) => {
       notMerge: true,
       lazyUpdate: true,
     });
-    explicitThemeOptions = snapshotChartThemeOptions(props.option, mergedOption);
+    explicitThemeOptions = snapshotChartThemeOptions(
+      props.option,
+      chartInstance.value.getOption?.() ?? mergedOption
+    );
     usesDeclaredControls = true;
     if (initialThemeStyle)
-      updateThemeStyle({ base: initialThemeStyle.base, controls }, theme, explicitThemeOptions);
+      updateThemeStyle({ ...theme, base: initialThemeStyle.base }, theme, explicitThemeOptions);
     appliedThemeStyle = theme;
     appliedInputs = snapshot;
     syncNavigationItems(mergedOption);
@@ -589,9 +593,13 @@ const setOption = (
   if (!chartInstance.value) return;
   chartInstance.value.setOption(option, opts);
   appliedInputs = undefined;
-  explicitThemeOptions = opts?.notMerge
-    ? snapshotChartThemeOptions(option, option)
+  const nextOptions = opts?.notMerge
+    ? option
     : mergeChartThemeOptions(explicitThemeOptions, option, opts?.replaceMerge);
+  explicitThemeOptions = snapshotChartThemeOptions(
+    nextOptions,
+    chartInstance.value.getOption?.() ?? nextOptions
+  );
   if (opts?.notMerge) usesDeclaredControls = false;
   if (initialThemeStyle && appliedThemeStyle) {
     updateThemeStyle(
