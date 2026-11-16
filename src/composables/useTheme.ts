@@ -1,5 +1,5 @@
-import { getCurrentScope, onScopeDispose, readonly, ref, watch } from 'vue';
-import type { DeepReadonly, Ref } from 'vue';
+import { getCurrentScope, onScopeDispose, readonly, ref } from 'vue';
+import type { DeepReadonly, EffectScope, Ref } from 'vue';
 import { isDarkTheme, THEME_NAMES } from '../types/theme';
 import type { Theme } from '../types/theme';
 import { createDocumentRuntime } from '../utils/shared-runtime';
@@ -10,6 +10,10 @@ export const VALID_THEMES: readonly Theme[] = Object.freeze([...THEME_NAMES]);
 
 type ThemeChangeCallback = (theme: Theme) => void;
 type ReadonlyThemeRef = DeepReadonly<Ref<Theme>>;
+interface ThemePersistence {
+  scopes: Set<EffectScope>;
+  documentEnabled: boolean;
+}
 
 const readDocumentTheme = (): Theme => {
   if (typeof document === 'undefined') return DEFAULT_THEME;
@@ -23,6 +27,7 @@ const getThemeRuntime = createDocumentRuntime('theme', () => {
     currentTheme,
     readonlyTheme: readonly(currentTheme),
     themeChangeCallbacks: new Set<ThemeChangeCallback>(),
+    persistence: undefined as ThemePersistence | undefined,
   };
 });
 
@@ -39,13 +44,12 @@ const applyThemeToDocument = (theme: Theme): void => {
   root.classList.add('ex-theme-loaded');
 };
 
-/** 设置全局主题，并同步 DOM、颜色模式和变更通知。 */
-export function setTheme(theme: Theme): void {
+const updateTheme = (runtime: ReturnType<typeof getThemeRuntime>, theme: Theme): void => {
   if (!isTheme(theme)) {
     throw new TypeError(`[ExUI] 未知主题：${String(theme)}`);
   }
 
-  const { currentTheme, themeChangeCallbacks } = getThemeRuntime();
+  const { currentTheme, themeChangeCallbacks, persistence } = runtime;
   const oldTheme = currentTheme.value;
   const changed = oldTheme !== theme;
   currentTheme.value = theme;
@@ -55,6 +59,9 @@ export function setTheme(theme: Theme): void {
   if (!changed) return;
 
   if (typeof document !== 'undefined') {
+    if (persistence && (persistence.documentEnabled || persistence.scopes.size > 0)) {
+      saveThemeToStorage(theme);
+    }
     document.dispatchEvent(
       new CustomEvent('ex-theme-change', {
         detail: { oldTheme, newTheme: theme, timestamp: Date.now() },
@@ -66,13 +73,21 @@ export function setTheme(theme: Theme): void {
   for (const callback of [...themeChangeCallbacks]) {
     callback(theme);
   }
+};
+
+/** 设置全局主题，并同步 DOM、颜色模式和变更通知。 */
+export function setTheme(theme: Theme): void {
+  updateTheme(getThemeRuntime(), theme);
 }
 
 export function getTheme(): Theme {
   return getThemeRuntime().currentTheme.value;
 }
 
-export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
+const cycleTheme = (
+  runtime: ReturnType<typeof getThemeRuntime>,
+  themes: readonly Theme[]
+): void => {
   if (themes.length === 0) return;
 
   for (const theme of themes) {
@@ -81,9 +96,13 @@ export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
     }
   }
 
-  const currentIndex = themes.indexOf(getTheme());
+  const currentIndex = themes.indexOf(runtime.currentTheme.value);
   const nextTheme = themes[(currentIndex + 1) % themes.length] ?? themes[0];
-  if (nextTheme) setTheme(nextTheme);
+  if (nextTheme) updateTheme(runtime, nextTheme);
+};
+
+export function toggleTheme(themes: readonly Theme[] = VALID_THEMES): void {
+  cycleTheme(getThemeRuntime(), themes);
 }
 
 export function onThemeChange(callback: ThemeChangeCallback): () => void {
@@ -103,7 +122,16 @@ export function useTheme(): {
   setTheme: typeof setTheme;
   toggleTheme: typeof toggleTheme;
 } {
-  return { theme: getThemeRuntime().readonlyTheme, setTheme, toggleTheme };
+  const runtime = getThemeRuntime();
+  if (typeof document !== 'undefined')
+    return { theme: runtime.readonlyTheme, setTheme, toggleTheme };
+
+  // SSR 的异步预取跨过 await 后不再有注入上下文，保持操作绑定当前请求。
+  return {
+    theme: runtime.readonlyTheme,
+    setTheme: theme => updateTheme(runtime, theme),
+    toggleTheme: (themes = VALID_THEMES) => cycleTheme(runtime, themes),
+  };
 }
 
 /** 将系统暗色偏好映射到赛博暗色主题，亮色偏好映射到赛博亮色主题。 */
@@ -183,11 +211,21 @@ export function usePersistedTheme(): {
   setTheme: typeof setTheme;
   toggleTheme: typeof toggleTheme;
 } {
-  const savedTheme = loadThemeFromStorage();
-  if (savedTheme) setTheme(savedTheme);
+  if (typeof document !== 'undefined') {
+    const runtime = getThemeRuntime();
+    const persistence = (runtime.persistence ??= { scopes: new Set(), documentEnabled: false });
+    if (!persistence.documentEnabled && persistence.scopes.size === 0) {
+      const savedTheme = loadThemeFromStorage();
+      if (savedTheme) setTheme(savedTheme);
+    }
 
-  // Vue 会把同步创建的监听器绑定到当前组件作用域，卸载时自动停止。
-  watch(getThemeRuntime().currentTheme, saveThemeToStorage);
-
-  return { theme: getThemeRuntime().readonlyTheme, setTheme, toggleTheme };
+    // 组件卸载时注销自己的持久化需求，独立调用以文档为单位启用一次。
+    const scope = getCurrentScope();
+    if (!scope) persistence.documentEnabled = true;
+    else if (!persistence.scopes.has(scope)) {
+      persistence.scopes.add(scope);
+      onScopeDispose(() => persistence.scopes.delete(scope));
+    }
+  }
+  return useTheme();
 }

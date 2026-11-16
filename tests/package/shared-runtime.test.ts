@@ -292,6 +292,38 @@ describe('发布入口的模块副本共享契约', () => {
     }
   });
 
+  it('滚动补偿从所属文档的窗口读取样式', async () => {
+    const overlay = await loadOverlay();
+    const originalDocument = document;
+    const owner = originalDocument.implementation.createHTMLDocument('独立浮层窗口');
+    owner.body.style.paddingRight = '7px';
+    const ownerStyles = vi.fn(() => ({ paddingRight: '7px' }));
+    Object.defineProperty(owner, 'defaultView', {
+      value: { innerWidth: 820, getComputedStyle: ownerStyles },
+    });
+    Object.defineProperties(owner.documentElement, {
+      scrollHeight: { value: 700 },
+      clientHeight: { value: 600 },
+      clientWidth: { value: 800 },
+    });
+    const rootStyles = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ paddingRight: '100px' } as CSSStyleDeclaration);
+    vi.stubGlobal('document', owner);
+    try {
+      overlay.lockDocumentScroll();
+      expect(ownerStyles).toHaveBeenCalledExactlyOnceWith(owner.body);
+      expect(rootStyles).not.toHaveBeenCalled();
+      expect(owner.body.style.paddingRight).toBe('27px');
+      expect(owner.body.style.overflow).toBe('hidden');
+      overlay.unlockDocumentScroll();
+      expect(owner.body.style.paddingRight).toBe('7px');
+    } finally {
+      overlay.unlockDocumentScroll();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('跨入口子浮层继承父层级和真实活动状态', async () => {
     const first = await import('../../src/composables/useOverlay');
     vi.resetModules();

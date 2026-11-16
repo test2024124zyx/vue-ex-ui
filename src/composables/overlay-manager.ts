@@ -58,7 +58,9 @@ export function lockDocumentScroll(): void {
   const root = owner.documentElement;
   const scrollbarWidth = root.scrollHeight > root.clientHeight ? measureScrollbarWidth(owner) : 0;
   if (scrollbarWidth > 0) {
-    const currentPadding = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+    const padding =
+      owner.defaultView?.getComputedStyle(body).paddingRight ?? body.style.paddingRight;
+    const currentPadding = Number.parseFloat(padding) || 0;
     body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
   }
   body.style.overflow = 'hidden';
