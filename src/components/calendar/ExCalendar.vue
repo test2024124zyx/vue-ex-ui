@@ -428,9 +428,11 @@ import { computed, ref, watch, shallowRef, onMounted } from 'vue';
 import { useI18n } from '../../locale';
 import {
   calendarDayNumber,
+  createLocalDate,
   parseLocalDate,
   setMonthClamped,
   setYearClamped,
+  startOfDay,
 } from '../../utils/date';
 import { CALENDAR_WEEK_LENGTH, useCalendarKeyboard } from './use-calendar-keyboard';
 import type {
@@ -646,33 +648,33 @@ const calendarCells = computed(() => {
   const year = currentDate.value.getFullYear();
   const month = currentDate.value.getMonth();
 
-  const firstDay = new Date(year, month, 1);
+  const firstDay = createLocalDate(year, month, 1);
   const firstDayWeek = firstDay.getDay();
 
-  const lastDay = new Date(year, month + 1, 0);
+  const lastDay = createLocalDate(year, month + 1, 0);
   const lastDayDate = lastDay.getDate();
 
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  const prevMonthLastDay = createLocalDate(year, month, 0).getDate();
 
   const cells: CalendarDateCell[] = [];
 
   // 上月日期
   for (let i = firstDayWeek - 1; i >= 0; i--) {
     const day = prevMonthLastDay - i;
-    const date = new Date(year, month - 1, day);
+    const date = createLocalDate(year, month - 1, day);
     cells.push(createCell(date, day, false));
   }
 
   // 当月日期
   for (let day = 1; day <= lastDayDate; day++) {
-    const date = new Date(year, month, day);
+    const date = createLocalDate(year, month, day);
     cells.push(createCell(date, day, true));
   }
 
   // 下月日期
   const remainingDays = 42 - cells.length;
   for (let day = 1; day <= remainingDays; day++) {
-    const date = new Date(year, month + 1, day);
+    const date = createLocalDate(year, month + 1, day);
     cells.push(createCell(date, day, false));
   }
 
@@ -749,8 +751,7 @@ const getHoliday = (date: Date): string => {
 
 // 创建单元格数据
 const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarDateCell => {
-  const cellDate = new Date(date);
-  cellDate.setHours(0, 0, 0, 0);
+  const cellDate = startOfDay(date);
   const dateTime = cellDate.getTime();
 
   const isToday = todayDate.value !== null && dateTime === getDateTimestamp(todayDate.value);
@@ -765,20 +766,20 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
   });
 
   // 获取节假日
-  const holiday = getHoliday(date);
+  const holiday = getHoliday(cellDate);
 
   // 获取节气
-  const solarTerm = props.showSolarTerm ? getSolarTerm(date) : undefined;
+  const solarTerm = props.showSolarTerm ? getSolarTerm(cellDate) : undefined;
 
   // 获取农历日期
-  const lunar = props.showLunar ? getLunarDate(date) : undefined;
+  const lunar = props.showLunar ? getLunarDate(cellDate) : undefined;
 
   return {
-    date,
+    date: cellDate,
     day,
     isCurrentMonth,
     isToday,
-    disabled: props.disabledDate ? props.disabledDate(date) : false,
+    disabled: props.disabledDate ? props.disabledDate(new Date(cellDate)) : false,
     events: dateEvents,
     checkedIn,
     holiday,
@@ -790,8 +791,8 @@ const createCell = (date: Date, day: number, isCurrentMonth: boolean): CalendarD
 // 获取年视图中某月的日期
 const getMonthDays = (month: number) => {
   const year = currentDate.value.getFullYear();
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
+  const firstDay = createLocalDate(year, month - 1, 1);
+  const lastDay = createLocalDate(year, month, 0);
   const firstDayWeek = firstDay.getDay();
   const lastDayDate = lastDay.getDate();
 
@@ -805,8 +806,7 @@ const getMonthDays = (month: number) => {
 
   // 填充日期
   for (let day = 1; day <= lastDayDate; day++) {
-    const date = new Date(year, month - 1, day);
-    date.setHours(0, 0, 0, 0);
+    const date = createLocalDate(year, month - 1, day);
     days.push({ day, isToday: todayTimestamp !== null && date.getTime() === todayTimestamp });
   }
 

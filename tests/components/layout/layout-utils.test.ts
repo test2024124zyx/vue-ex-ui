@@ -11,6 +11,9 @@ describe('layout-utils', () => {
   it('将数字尺寸转换为 CSS 长度并保留有效字符串', () => {
     expect(normalizeLayoutLength(80, 64)).toBe('80px');
     expect(normalizeLayoutLength(0, 64)).toBe('0px');
+    expect(normalizeLayoutLength(' 80 ', 64)).toBe('80px');
+    expect(normalizeLayoutLength('1.5', 64)).toBe('1.5px');
+    expect(normalizeLayoutLength('0', 64)).toBe('0');
     expect(normalizeLayoutLength(' 5rem ', 64)).toBe('5rem');
     expect(normalizeLayoutLength('calc(100% - 2rem)', 64)).toBe('calc(100% - 2rem)');
   });
@@ -18,6 +21,7 @@ describe('layout-utils', () => {
   it('非法数字和空字符串回退到声明默认值', () => {
     expect(normalizeLayoutLength(-1, 64)).toBe('64px');
     expect(normalizeLayoutLength('-2rem', 64)).toBe('64px');
+    expect(normalizeLayoutLength('-2.5', 64)).toBe('64px');
     expect(normalizeLayoutLength(Number.NaN, '4rem')).toBe('4rem');
     expect(normalizeLayoutLength('', 64)).toBe('64px');
     expect(normalizeLayoutLength('   ', '3rem')).toBe('3rem');
