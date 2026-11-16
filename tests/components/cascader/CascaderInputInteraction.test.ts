@@ -117,7 +117,11 @@ describe('Cascader 的输入交互', () => {
     input.element.value = '杭州';
     await input.trigger('compositionend');
     expect(input.element.value).toBe('杭州西');
+    await Promise.resolve();
+    await input.trigger('input');
     expect(input.attributes('aria-expanded')).toBe('false');
+    await input.setValue('杭州东');
+    expect(input.attributes('aria-expanded')).toBe('true');
   });
 
   it('表单重置清除正在组合的草稿，迟到的输入法事件不会重新打开搜索', async () => {
@@ -149,6 +153,7 @@ describe('Cascader 的输入交互', () => {
     input.element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
     expect(input.element.value).toBe('杭州东');
     input.element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    await Promise.resolve();
     input.element.value = '杭州';
     input.element.dispatchEvent(
       new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText' })

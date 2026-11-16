@@ -37,20 +37,24 @@ export function useCascaderSearchInput(
     }
     discardedComposition = false;
     restoreDisplay();
-    // 兼容在 compositionend 后补发 input 的浏览器，忽略同一组合结果。
+    // 尾随 input 可以出现在微任务之后，保留到第一个输入或下一轮组合。
     ignoredFinalInput = value;
-    queueMicrotask(() => (ignoredFinalInput = null));
   };
 
   const handleInput = (event: Event) => {
     if (!input.value) return;
     const value = input.value.value;
     const { isComposing, inputType } = event as InputEvent;
-    const isCompositionInput =
-      inputType === 'insertCompositionText' || inputType === 'insertFromComposition';
+    const cancelledValue = ignoredFinalInput;
+    ignoredFinalInput = null;
     if (
       discardedComposition ||
-      (ignoredFinalInput !== null && (value === ignoredFinalInput || isCompositionInput))
+      (cancelledValue !== null &&
+        (value === cancelledValue ||
+          value === confirmedValue.value ||
+          isComposing ||
+          inputType === 'insertCompositionText' ||
+          inputType === 'insertFromComposition'))
     ) {
       restoreDisplay();
       return;
