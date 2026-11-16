@@ -54,7 +54,8 @@ import { setTheme } from 'vue-ex-ui';
 setTheme('light');
 ```
 
-在服务端渲染环境中，函数只更新内存状态，不访问 DOM。
+服务端渲染时，`setTheme()` 在组件的 `setup()` 中更新当前请求的内存状态。渲染前可用根组件的
+`ExConfigProvider` 设置初始主题和语言。脱离渲染上下文时，读取返回默认主题，写入不会影响后续请求。
 
 ### `getTheme`
 

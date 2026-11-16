@@ -108,9 +108,56 @@ describe('useTheme', () => {
 
     wrapper.unmount();
     write.mockClear();
-    setTheme('light');
+    setTheme('neon-blue');
     await nextTick();
     expect(write).not.toHaveBeenCalled();
+  });
+
+  it('多个组件同时启用持久化时只写一次，最后一个作用域卸载后停止写入', async () => {
+    const write = vi.spyOn(Storage.prototype, 'setItem');
+    const component = {
+      setup() {
+        usePersistedTheme();
+        return () => null;
+      },
+    };
+    const first = mount(component);
+    const second = mount(component);
+    setTheme('light');
+    await nextTick();
+    const writesWithTwoOwners = write.mock.calls.slice();
+    first.unmount();
+    setTheme('neon-blue');
+    await nextTick();
+    const writesWithOneOwner = write.mock.calls.slice();
+    second.unmount();
+    setTheme('light');
+    await nextTick();
+
+    expect(writesWithTwoOwners).toEqual([['ex-ui-theme', 'light']]);
+    expect(writesWithOneOwner).toEqual([
+      ['ex-ui-theme', 'light'],
+      ['ex-ui-theme', 'neon-blue'],
+    ]);
+    expect(write).toHaveBeenCalledTimes(2);
+  });
+
+  it('组件作用域外的重复调用只在每个文档初始化一次持久化', async () => {
+    const originalDocument = document;
+    vi.stubGlobal('document', document.implementation.createHTMLDocument('独立主题文档'));
+    const write = vi.spyOn(Storage.prototype, 'setItem');
+    const read = vi.spyOn(Storage.prototype, 'getItem');
+    try {
+      usePersistedTheme();
+      usePersistedTheme();
+      setTheme('light');
+      await nextTick();
+      expect(read).toHaveBeenCalledExactlyOnceWith('ex-ui-theme');
+      expect(write).toHaveBeenCalledExactlyOnceWith('ex-ui-theme', 'light');
+    } finally {
+      vi.stubGlobal('document', originalDocument);
+      vi.unstubAllGlobals();
+    }
   });
 
   it('系统主题监听会应用初始偏好并完整解绑', () => {

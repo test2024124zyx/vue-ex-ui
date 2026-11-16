@@ -70,7 +70,8 @@ changeTheme(theme.value === 'light' ? 'neon-blue' : 'light');
 ```
 
 `setTheme` 会同步 `document.documentElement[data-theme]`、`color-scheme` 和
-`ex-theme-change` 事件。服务端渲染时不会访问 DOM。
+`ex-theme-change` 事件。服务端渲染时，每次请求应创建新的 Vue App，并通过根组件的
+`ExConfigProvider` 传入该请求的 `theme` 和 `locale`，客户端水合时使用相同的初始值。
 
 ### 持久化主题
 
@@ -81,7 +82,8 @@ const { theme, setTheme } = usePersistedTheme();
 setTheme('light');
 ```
 
-持久化键为 `ex-ui-theme`。存储不可用时会静默降级，不会阻断主题切换。
+持久化键为 `ex-ui-theme`。多个组件同时启用时，每次主题变化只写入一次。最后一个组件卸载后停止写入。
+在组件作用域外调用会为当前文档启用持久化。存储不可用时会静默降级，主题仍可切换。
 
 ### 跟随系统偏好
 
