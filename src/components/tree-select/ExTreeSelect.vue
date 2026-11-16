@@ -393,13 +393,22 @@ const filterActive = computed(() => props.filterable && !!lowerQuery.value);
 const visibleSet = computed<Set<string | number> | null>(() => {
   if (!filterActive.value) return null;
   const set = new Set<string | number>();
-  const entries = maps.value.entries;
-  for (let index = entries.length - 1; index >= 0; index--) {
-    const entry = entries[index]!;
-    if (set.has(entry.node.value) || entry.node.label.toLowerCase().includes(lowerQuery.value)) {
-      set.add(entry.node.value);
-      if (entry.parent !== null) set.add(entry.parent);
+  const { entries, parentMap } = maps.value;
+  let matchedSubtreeEnd = 0;
+  for (const entry of entries) {
+    if (entry.index >= matchedSubtreeEnd) {
+      if (!entry.node.label.toLowerCase().includes(lowerQuery.value)) continue;
+      // 先序索引将子树压在连续区间内，命中后直接保留区间和祖先路径。
+      matchedSubtreeEnd = entry.end;
+      for (
+        let parent = entry.parent;
+        parent !== null && !set.has(parent);
+        parent = parentMap.get(parent) ?? null
+      ) {
+        set.add(parent);
+      }
     }
+    set.add(entry.node.value);
   }
   return set;
 });
