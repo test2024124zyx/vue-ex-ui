@@ -94,6 +94,21 @@ describe('数值边界与表单输入事件', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0.1]);
   });
 
+  it('步进达到同一个已确认值时恢复显示，下一次步进从该值继续', async () => {
+    const wrapper = mount(ExNumberInput, { props: { modelValue: 2 } });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    await input.trigger('focus');
+    input.element.value = '1';
+    await input.trigger('input');
+    await input.trigger('keydown', { key: 'ArrowUp' });
+    expect(input.element.value).toBe('2');
+    await input.trigger('change');
+    expect(wrapper.emitted('update:modelValue')).toEqual([[2]]);
+    await input.trigger('keydown', { key: 'ArrowUp' });
+    expect(wrapper.emitted('update:modelValue')).toEqual([[2], [3]]);
+  });
+
   it('显示补齐指定精度，模型为数字，边界值超出显示精度时保持准确', async () => {
     const wrapper = mount(ExNumberInput, { props: { modelValue: 1.5, precision: 2 } });
     wrappers.push(wrapper);
@@ -110,7 +125,7 @@ describe('数值边界与表单输入事件', () => {
     async value => {
       const wrapper = mount(ExNumberInput, { props: { modelValue: value, precision: 2 } });
       wrappers.push(wrapper);
-      expect(Number(wrapper.get('input').element.value)).toBe(value);
+      expect(wrapper.get('input').element.value).toBe(String(value));
       const text = `${value < 0 ? '-' : ''}${'9'.repeat(307)}`;
       await wrapper.get('input').setValue(text);
       expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([Number(text)]);

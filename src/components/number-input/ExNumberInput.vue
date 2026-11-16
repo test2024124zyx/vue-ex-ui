@@ -459,36 +459,24 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
-const getSteppedValue = (stepOrEvent: number | Event | undefined, direction: 1 | -1) => {
+const applyStep = (direction: 1 | -1, stepOrEvent?: number | Event) => {
+  if (direction === 1 ? isIncreaseDisabled.value : isDecreaseDisabled.value) return;
   const step = typeof stepOrEvent === 'number' ? stepOrEvent : effectiveStep.value;
-  return validateValue(addDecimal(stepValue.value ?? 0, direction * step));
-};
-
-const handleIncrease = (customStepOrEvent?: number | Event) => {
-  if (!interactive.value || isIncreaseDisabled.value) return;
-
-  const newValue = getSteppedValue(customStepOrEvent, 1);
+  const newValue = validateValue(addDecimal(stepValue.value ?? 0, direction * step));
   if (!Number.isFinite(newValue)) return;
   const oldValue = props.modelValue;
 
+  // 父级接受同值时不会触发属性监听，也需要结束正在编辑的草稿。
+  if (hasDraft.value && newValue === oldValue) discardDraft();
   emit('update:modelValue', newValue);
   emit('change', newValue, oldValue);
-  emit('increase', newValue);
+  if (direction === 1) emit('increase', newValue);
+  else emit('decrease', newValue);
   formItem?.onFieldChange();
 };
 
-const handleDecrease = (customStepOrEvent?: number | Event) => {
-  if (!interactive.value || isDecreaseDisabled.value) return;
-
-  const newValue = getSteppedValue(customStepOrEvent, -1);
-  if (!Number.isFinite(newValue)) return;
-  const oldValue = props.modelValue;
-
-  emit('update:modelValue', newValue);
-  emit('change', newValue, oldValue);
-  emit('decrease', newValue);
-  formItem?.onFieldChange();
-};
+const handleIncrease = (stepOrEvent?: number | Event) => applyStep(1, stepOrEvent);
+const handleDecrease = (stepOrEvent?: number | Event) => applyStep(-1, stepOrEvent);
 
 watch(interactive, canInteract => {
   if (!canInteract) {

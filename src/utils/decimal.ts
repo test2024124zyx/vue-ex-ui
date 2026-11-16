@@ -3,6 +3,9 @@ interface Decimal {
   exponent: number;
 }
 
+// 保留 Number 的大数显示约定，避免把科学计数法展开成长整数。
+const EXPONENTIAL_DISPLAY_THRESHOLD = 1e21;
+
 /** 按 Number 的十进制表示拆分，兼容科学计数法。 */
 function parseDecimal(value: number): Decimal {
   const [mantissa = '0', power = '0'] = value.toString().split('e');
@@ -20,7 +23,9 @@ function toNumber(coefficient: bigint, exponent: number): number {
 
 /** 对已舍入的十进制值补零，保留精度不足以容纳的精确边界值。 */
 export function formatFixedDecimal(value: number, digits: number): string {
-  if (!Number.isFinite(value)) return String(value);
+  if (!Number.isFinite(value) || Math.abs(value) >= EXPONENTIAL_DISPLAY_THRESHOLD) {
+    return String(value);
+  }
   const decimal = parseDecimal(value);
   if (decimal.exponent < -digits) return String(value);
   const scaled = toInteger(decimal, -digits);
