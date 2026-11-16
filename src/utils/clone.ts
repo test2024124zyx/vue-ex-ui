@@ -1,3 +1,5 @@
+import { usesNativeIdentity } from './native-identity';
+
 type ConstructableView = new (
   buffer: ArrayBufferLike,
   byteOffset?: number,
@@ -8,6 +10,7 @@ interface CloneContext {
   seen: WeakMap<object, unknown>;
   hydrated: WeakSet<object>;
   hydrating: WeakSet<object>;
+  materializeAccessors: boolean;
 }
 
 type CloneableBuffer = ArrayBuffer | SharedArrayBuffer;
@@ -46,6 +49,15 @@ const cloneOwnProperties = (source: object, target: object, context: CloneContex
     const descriptor = Object.getOwnPropertyDescriptor(source, key);
     if (!descriptor) continue;
     if ('value' in descriptor) descriptor.value = cloneValue(descriptor.value, context);
+    else if (context.materializeAccessors) {
+      // 比较快照记录当时的访问结果，避免旧 getter 随同一份响应式数据继续变化。
+      Object.defineProperty(target, key, {
+        configurable: descriptor.configurable,
+        enumerable: descriptor.enumerable,
+        value: cloneValue(Reflect.get(source, key), context),
+      });
+      continue;
+    }
     Object.defineProperty(target, key, descriptor);
   }
 
@@ -58,11 +70,7 @@ const cloneValue = (value: unknown, context: CloneContext): unknown => {
   const existing = context.seen.get(value);
   if (existing !== undefined) return existing;
 
-  if (value instanceof WeakMap || value instanceof WeakSet || value instanceof Promise)
-    return value;
-
-  // File 继承 Blob；二进制内容不可变，保留原生对象才能保持读取和上传所需的内部槽。
-  if (typeof Blob !== 'undefined' && value instanceof Blob) return value;
+  if (usesNativeIdentity(value)) return value;
 
   if (value instanceof Date) {
     const cloned = new Date(value.getTime());
@@ -122,10 +130,11 @@ const cloneValue = (value: unknown, context: CloneContext): unknown => {
 };
 
 /** 深度克隆常用结构，保留循环引用、属性描述符与类实例原型。 */
-export function deepClone<T>(value: T): T {
+export function deepClone<T>(value: T, options?: { materializeAccessors?: boolean }): T {
   return cloneValue(value, {
     seen: new WeakMap(),
     hydrated: new WeakSet(),
     hydrating: new WeakSet(),
+    materializeAccessors: options?.materializeAccessors === true,
   }) as T;
 }

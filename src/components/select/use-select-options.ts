@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
+import { logger } from '../../utils/logger';
 import type {
   ExSelectProps,
   SelectOption,
@@ -26,29 +27,51 @@ export interface SelectVirtualRow {
 }
 
 /** 单次扫描建立选项索引和展示行索引，分组标题不占用键盘选项索引。 */
-export function indexSelectOptions(options: SelectOptions) {
+export function indexSelectOptions(
+  options: SelectOptions,
+  include?: (option: SelectOption) => boolean
+) {
+  const visibleOptions: SelectOptions = [];
   const flat: SelectOption[] = [];
+  const values: SelectOption['value'][] = [];
   const byValue = new Map<SelectOption['value'], SelectOption>();
   const indices = new Map<SelectOption['value'], number>();
   const rowIndices: number[] = [];
   const rows: SelectVirtualRow[] = [];
   const append = (option: SelectOption) => {
-    const index = flat.length;
-    if (!byValue.has(option.value)) {
-      byValue.set(option.value, option);
-      indices.set(option.value, index);
+    if (include && !include(option)) return false;
+    if (byValue.has(option.value)) {
+      logger.warn('ExSelect 的选项值重复，已保留首项。', option.value);
+      return false;
     }
+    const index = flat.length;
+    byValue.set(option.value, option);
+    indices.set(option.value, index);
+    values.push(option.value);
     rowIndices.push(rows.length);
     rows.push({ key: getOptionKey(option), index, option });
     flat.push(option);
+    return true;
   };
   options.forEach(item => {
-    if (isGroup(item)) {
-      rows.push({ key: getOptionKey(item), index: -1, group: item });
-      item.options.forEach(append);
-    } else append(item);
+    if (!isGroup(item)) {
+      if (append(item)) visibleOptions.push(item);
+      return;
+    }
+    const headerIndex = rows.length;
+    rows.push({ key: '', index: -1 });
+    const start = flat.length;
+    item.options.forEach(append);
+    if (flat.length === start) {
+      rows.pop();
+      return;
+    }
+    const group =
+      flat.length - start === item.options.length ? item : { ...item, options: flat.slice(start) };
+    rows[headerIndex] = { key: getOptionKey(group), index: -1, group };
+    visibleOptions.push(group);
   });
-  return { flat, byValue, indices, rowIndices, rows };
+  return { options: visibleOptions, flat, values, byValue, indices, rowIndices, rows };
 }
 
 /** 选择器的数据查询统一使用缓存索引，避免每一渲染行重复扫描全部选项。 */
@@ -61,25 +84,29 @@ export function useSelectOptions(
 ) {
   const sourceIndex = computed(() => indexSelectOptions(source.value));
   const flatOptions = computed(() => sourceIndex.value.flat);
-  const filteredOptions = computed<SelectOptions>(() => {
-    const options = source.value;
-    if (props.remote || !props.searchable || !searchQuery.value) return options;
-    const query = searchQuery.value.toLowerCase();
-    const matches = (option: SelectOption) =>
-      option.label.toLowerCase().includes(query) ||
-      Boolean(option.keywords?.some(keyword => keyword.toLowerCase().includes(query)));
-    return options.flatMap<SelectOption | SelectOptionGroup>(item => {
-      if (!isGroup(item)) return matches(item) ? [item] : [];
-      const options = item.options.filter(matches);
-      return options.length ? [{ ...item, options }] : [];
-    });
-  });
-  const filteredIndex = computed(() =>
-    filteredOptions.value === source.value
-      ? sourceIndex.value
-      : indexSelectOptions(filteredOptions.value)
+  const searchText = computed(
+    () =>
+      new Map(
+        sourceIndex.value.flat.map(option => [
+          option,
+          [
+            option.label.toLowerCase(),
+            ...(option.keywords?.map(keyword => keyword.toLowerCase()) ?? []),
+          ],
+        ])
+      )
   );
+  const filteredIndex = computed(() => {
+    const index = sourceIndex.value;
+    if (props.remote || !props.searchable || !searchQuery.value) return index;
+    const query = searchQuery.value.toLowerCase();
+    return indexSelectOptions(index.options, option =>
+      searchText.value.get(option)!.some(text => text.includes(query))
+    );
+  });
+  const filteredOptions = computed(() => filteredIndex.value.options);
   const flatFilteredOptions = computed(() => filteredIndex.value.flat);
+  const filteredValues = computed(() => filteredIndex.value.values);
   const selectedValues = computed<Array<string | number>>(() =>
     Array.isArray(selection.value) ? selection.value : []
   );
@@ -101,8 +128,9 @@ export function useSelectOptions(
   );
   const isSelected = (option: SelectOption) =>
     props.multiple ? selectedSet.value.has(option.value) : option.value === selection.value;
-  const getOptionIndex = (option: SelectOption) =>
-    filteredIndex.value.indices.get(option.value) ?? -1;
+  const getFilteredValueIndex = (value: SelectOption['value'] | undefined) =>
+    value === undefined ? -1 : (filteredIndex.value.indices.get(value) ?? -1);
+  const getOptionIndex = (option: SelectOption) => getFilteredValueIndex(option.value);
   const virtualRows = computed(() => filteredIndex.value.rows);
   const getVirtualRowIndex = (optionIndex: number) =>
     filteredIndex.value.rowIndices[optionIndex] ?? optionIndex;
@@ -112,12 +140,14 @@ export function useSelectOptions(
   return {
     filteredOptions,
     flatFilteredOptions,
+    filteredValues,
     selectedOption,
     selectedValues,
     selectedOptions,
     getOptionByValue,
     isSelected,
     getOptionIndex,
+    getFilteredValueIndex,
     virtualRows,
     getVirtualRowIndex,
     useVirtual,

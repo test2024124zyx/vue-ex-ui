@@ -33,6 +33,28 @@ describe('颜色转换工具', () => {
     expect(parseColor('#12345')).toBeNull();
   });
 
+  it.each([
+    ['rgb(255 0 128 / 50%)', { r: 255, g: 0, b: 128, a: 0.5 }],
+    ['hsl(0.5turn 100% 50% / .25)', { r: 0, g: 255, b: 255, a: 0.25 }],
+    ['hsl(120, 100%, 50%)', { r: 0, g: 255, b: 0, a: 1 }],
+    ['color(srgb 1 0 0)', { r: 255, g: 0, b: 0, a: 1 }],
+  ] as const)('解析现代 CSS 色值 %s', (input, expected) => {
+    expect(parseColor(input)).toEqual(expected);
+  });
+
+  it('将广色域输入映射到可显示的 sRGB，保留透明度', () => {
+    const p3 = parseColor('color(display-p3 0 1 0 / 40%)');
+    const oklch = parseColor('oklch(70% 0.1 200)');
+    expect(p3).toMatchObject({ r: 0, a: 0.4 });
+    expect(p3!.g).toBeGreaterThan(200);
+    expect(p3!.b).toBeGreaterThan(0);
+    expect(oklch!.b).toBeGreaterThan(oklch!.r);
+    expect(parseColor('var(--page-color)')).toBeNull();
+    expect(parseColor('rgb(255 0)')).toBeNull();
+    expect(parseColor('rgb(1px 2 3)')).toBeNull();
+    expect(parseColor('color(invalid-space 0 1 0)')).toBeNull();
+  });
+
   it('启用透明度时输出格式始终包含 Alpha 通道', () => {
     const opaqueRed = { r: 255, g: 0, b: 0, a: 1 };
     expect(formatColor(opaqueRed, 'hex', true)).toBe('#ff0000ff');

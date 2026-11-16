@@ -965,11 +965,11 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', handleClickOutside);
 });
 
-const focus = () => inputRef.value?.focus();
+const focus: ExDateTimePickerExposed['focus'] = options => inputRef.value?.focus(options);
 const blur = () => inputRef.value?.blur();
 const getElement = () => pickerRef.value ?? null;
 
-defineExpose<ExDateTimePickerExposed>({ focus, blur, getElement });
+defineExpose<ExDateTimePickerExposed>({ focus, blur, clear: handleClear, getElement });
 </script>
 
 <style scoped lang="scss" src="./ExDateTimePicker.scss"></style>

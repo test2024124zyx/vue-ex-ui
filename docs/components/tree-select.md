@@ -235,7 +235,7 @@ const treeData = [
 
 ## 可搜索
 
-设置 `filterable`，输入关键字过滤节点（自动展开匹配路径）。
+设置 `filterable` 后可按关键字搜索。父节点命中时保留完整子树，只有后代命中时保留对应的祖先路径。搜索只展开已加载的节点，未加载分支在手动展开时请求。
 
 ::: raw
 
@@ -512,13 +512,16 @@ const virtualData = Array.from({ length: 5000 }, (_, value) => ({
 
 ### Methods
 
-| 方法名                  | 说明               | 类型                             |
-| ----------------------- | ------------------ | -------------------------------- |
-| focus / blur            | 聚焦 / 失焦        | `() => void`                     |
-| expandAll / collapseAll | 展开 / 收起全部    | `() => void`                     |
-| reloadNode              | 面板打开时重载节点 | `(value) => Promise<boolean>`    |
-| cancelNodeLoad          | 中止在途加载       | `(value) => boolean`             |
-| getNodeLoadState        | 读取加载状态快照   | `(value) => TreeSelectLoadState` |
+| 方法名                  | 说明               | 类型                               |
+| ----------------------- | ------------------ | ---------------------------------- |
+| focus                   | 聚焦               | `(options?: FocusOptions) => void` |
+| blur                    | 失焦               | `() => void`                       |
+| clear                   | 清除可交互的选值   | `() => void`                       |
+| getElement              | 获取根元素         | `() => HTMLElement \| null`        |
+| expandAll / collapseAll | 展开 / 收起全部    | `() => void`                       |
+| reloadNode              | 面板打开时重载节点 | `(value) => Promise<boolean>`      |
+| cancelNodeLoad          | 中止在途加载       | `(value) => boolean`               |
+| getNodeLoadState        | 读取加载状态快照   | `(value) => TreeSelectLoadState`   |
 
 ## 主题定制
 

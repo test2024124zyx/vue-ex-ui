@@ -1,3 +1,5 @@
+import Color from 'colorjs.io';
+
 /** RGBA 颜色通道。 */
 export interface RGBA {
   r: number;
@@ -119,9 +121,26 @@ const parseRgbChannel = (token: string): number | null => {
 
 const parseAlphaChannel = (token: string): number | null => parsePercentageOrNumber(token, 1, 1);
 
+const parseCssColor = (input: string): RGBA | null => {
+  try {
+    // 编辑面板使用 sRGB，超出色域的颜色按 CSS 的感知映射规则转换。
+    const color = new Color(input).to('srgb').toGamut({ method: 'css' });
+    const [red, green, blue] = color.coords;
+    if ([red, green, blue, color.alpha].some(value => value !== null && !Number.isFinite(value)))
+      return null;
+    return {
+      r: normalizeChannel((red ?? 0) * 255),
+      g: normalizeChannel((green ?? 0) * 255),
+      b: normalizeChannel((blue ?? 0) * 255),
+      a: normalizeAlpha(color.alpha ?? 0),
+    };
+  } catch {
+    return null;
+  }
+};
+
 /**
- * 解析十六进制及逗号分隔的 rgb/rgba 颜色。
- * 参数数量和范围不合法时返回 null，避免浏览器容错导致跨环境结果不一致。
+ * 解析 CSS 常量颜色并转换为 sRGB；旧逗号分隔的 RGB 写法保持严格范围校验。
  */
 export function parseColor(input: string): RGBA | null {
   if (typeof input !== 'string') return null;
@@ -143,8 +162,8 @@ export function parseColor(input: string): RGBA | null {
     };
   }
 
-  const functionalMatch = color.match(/^(rgb|rgba)\((.*)\)$/);
-  if (!functionalMatch) return null;
+  const functionalMatch = color.match(/^(rgb|rgba)\(([\s\S]*)\)$/);
+  if (!functionalMatch?.[2]?.includes(',')) return parseCssColor(color);
   const functionName = functionalMatch[1]!;
   const parts = functionalMatch[2]!.split(',').map(part => part.trim());
   const expectedLength = functionName === 'rgba' ? 4 : 3;

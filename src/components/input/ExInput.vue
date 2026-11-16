@@ -904,6 +904,7 @@ defineExpose<ExInputExposed>({
   select,
   clear,
   validate,
+  getElement: getInputElement,
   getInputElement,
 });
 </script>

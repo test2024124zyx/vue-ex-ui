@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, mount } from '@vue/test-utils';
-import { h, nextTick } from 'vue';
+import { h, nextTick, reactive } from 'vue';
 import ExTable from '../../../src/components/table/ExTable.vue';
 import ExPagination from '../../../src/components/pagination/ExPagination.vue';
 import type {
@@ -40,6 +40,7 @@ describe('Table 树形、分页与选择的组合契约', () => {
     expect(wrapper.findAll('.ex-table__row')).toHaveLength(3);
     await wrapper.get('.ex-table__sort-button').trigger('click');
     expect(wrapper.findAll('.ex-table__row').map(row => row.text())).toEqual(['A']);
+    expect(wrapper.emitted('update:pagination')).toBeUndefined();
     wrapper.getComponent(ExPagination).vm.$emit('change', 2, 1);
     await nextTick();
     expect(wrapper.findAll('.ex-table__row').map(row => row.text())).toEqual(['B', 'A', 'Z']);
@@ -47,6 +48,102 @@ describe('Table 树形、分页与选择的组合契约', () => {
     await nextTick();
     expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)).toEqual([[3]]);
     expect(wrapper.findAll('.ex-table__row--selected')[0]!.text()).toBe('Z');
+    await wrapper.get('.ex-table__sort-button').trigger('click');
+    expect(wrapper.findAll('.ex-table__row').map(row => row.text())).toEqual(['B', 'Z', 'A']);
+    expect(wrapper.getComponent(ExPagination).props('current')).toBe(1);
+  });
+
+  it('异步父行默认展开，刷新同一键和加入新父行时保留已有折叠', async () => {
+    const first = { key: 'a', name: '父 A', children: [{ key: 'a1', name: '子 A' }] };
+    const second = { key: 'b', name: '父 B', children: [{ key: 'b1', name: '子 B' }] };
+    const wrapper = mount(ExTable, {
+      props: { columns, data: [], tree: true, defaultExpandAllRows: true },
+    });
+    const rowNames = () => wrapper.findAll('.ex-table__row').map(row => row.text());
+    await wrapper.setProps({ data: [first] });
+    expect(rowNames()).toEqual(['父 A', '子 A']);
+    wrapper.vm.toggleRowExpansion(reactive(first), false);
+    await nextTick();
+    expect(rowNames()).toEqual(['父 A']);
+    await wrapper.setProps({ data: [] });
+    const updated = { ...first, name: '更新后的父 A' };
+    await wrapper.setProps({ data: [updated, second] });
+    expect(rowNames()).toEqual(['更新后的父 A', '父 B', '子 B']);
+    wrapper.vm.toggleRowExpansion(first, true);
+    await nextTick();
+    expect(rowNames()).not.toContain('子 A');
+    wrapper.vm.toggleRowExpansion(reactive(updated), true);
+    await nextTick();
+    expect(rowNames()).toContain('子 A');
+  });
+
+  it('从受控切到非受控时保留确认的折叠，并默认展开新父行', async () => {
+    const first = { key: 'a', name: '父 A', children: [{ key: 'a1', name: '子 A' }] };
+    const second = { key: 'b', name: '父 B', children: [{ key: 'b1', name: '子 B' }] };
+    const wrapper = mount(ExTable, {
+      props: {
+        columns,
+        data: [first],
+        tree: true,
+        defaultExpandAllRows: true,
+        expandedRowKeys: [],
+      },
+    });
+    expect(wrapper.text()).not.toContain('子 A');
+    await wrapper.setProps({ expandedRowKeys: undefined, data: [first, second] });
+    expect(wrapper.text()).not.toContain('子 A');
+    expect(wrapper.text()).toContain('子 B');
+  });
+
+  it('受控折叠通过父级确认后，在数据为空时解除控制也保留历史', async () => {
+    const row = { key: 'a', name: '父 A', children: [{ key: 'a1', name: '子 A' }] };
+    const wrapper = mount(ExTable, {
+      props: {
+        columns,
+        data: [row],
+        tree: true,
+        defaultExpandAllRows: true,
+        expandedRowKeys: ['a'],
+      },
+    });
+    expect(wrapper.text()).toContain('子 A');
+    await wrapper.setProps({ expandedRowKeys: [] });
+    expect(wrapper.text()).not.toContain('子 A');
+    await wrapper.setProps({ data: [] });
+    await wrapper.setProps({ expandedRowKeys: undefined });
+    await wrapper.setProps({ data: [row] });
+    expect(wrapper.text()).toContain('父 A');
+    expect(wrapper.text()).not.toContain('子 A');
+  });
+
+  it.each([false, true])('数据暂时为空时保留最新展开确认，是否撤回：%s', async withdraw => {
+    const row = { key: 'a', name: '父 A', children: [{ key: 'a1', name: '子 A' }] };
+    const wrapper = mount(ExTable, {
+      props: { columns, data: [row], tree: true, defaultExpandAllRows: true, expandedRowKeys: [] },
+    });
+    expect(wrapper.text()).not.toContain('子 A');
+    await wrapper.setProps({ data: [] });
+    await wrapper.setProps({ expandedRowKeys: ['a'] });
+    if (withdraw) await wrapper.setProps({ expandedRowKeys: [] });
+    await wrapper.setProps({ expandedRowKeys: undefined });
+    await wrapper.setProps({ data: [row] });
+    expect(wrapper.text().includes('子 A')).toBe(!withdraw);
+  });
+
+  it.each([false, true])('本地排序请求第一页，远程排序交由调用方：%s', async remoteSort => {
+    const data = [
+      { key: 'b', name: 'B' },
+      { key: 'a', name: 'A' },
+    ];
+    const wrapper = mount(ExTable, {
+      props: { columns, data, remoteSort, pagination: { current: 2, pageSize: 1 } },
+    });
+    await wrapper.get('.ex-table__sort-button').trigger('click');
+    expect(wrapper.emitted('sort-change')).toEqual([[{ key: 'name', order: 'asc' }]]);
+    const request = remoteSort ? undefined : [[{ current: 1, pageSize: 1, total: 2 }]];
+    expect(wrapper.emitted('update:pagination')).toEqual(request);
+    expect(wrapper.emitted('pagination-change')).toEqual(request);
+    expect(wrapper.getComponent(ExPagination).props('current')).toBe(2);
   });
 
   it('循环树与非记录子项不产生无限遍历，外部展开方法兼容原始记录', async () => {

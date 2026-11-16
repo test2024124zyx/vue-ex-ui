@@ -185,12 +185,15 @@ const findFirstEnabledKey = (nodes: readonly TreeNode[]): string | null => {
 };
 const activeKey = ref<string | null>(findFirstEnabledKey(treeData.value));
 
-const collectExpandableKeys = (nodes: readonly TreeNode[]): string[] => {
+const collectExpandableKeys = (
+  nodes: readonly TreeNode[],
+  canExpand = (node: TreeNode) => !node.disabled && loader.isExpandable(node)
+): string[] => {
   const keys: string[] = [];
   const pending = [...nodes].reverse();
   while (pending.length) {
     const node = pending.pop()!;
-    if (!node.disabled && loader.isExpandable(node)) {
+    if (canExpand(node)) {
       keys.push(node.key);
       const children = node.children ?? [];
       for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
@@ -747,20 +750,12 @@ const requestCollapseAll = () => {
 const filter = (value: string) => {
   filterValue.value = value;
 
-  // 过滤时自动展开命中节点的所有祖先，确保命中项可见
+  // 展开筛选后仍有已加载子节点的分支，不为搜索主动加载未知后代。
   if (value && props.filterNodeMethod) {
-    const toExpand = new Set(effectiveExpandedKeys.value);
-    const matched = new Set<string>();
-    for (const node of [...treeIndex.value.nodes.values()].reverse()) {
-      if (!matched.has(node.key) && !props.filterNodeMethod!(value, node)) continue;
-      const parent = treeIndex.value.parents.get(node.key);
-      if (parent !== undefined) {
-        matched.add(parent);
-      }
-    }
-    for (const node of treeIndex.value.nodes.values())
-      if (matched.has(node.key)) toExpand.add(node.key);
-    const nextKeys = Array.from(toExpand);
+    const visibleBranches = collectExpandableKeys(filteredData.value, node =>
+      Boolean(node.children?.length)
+    );
+    const nextKeys = [...new Set([...effectiveExpandedKeys.value, ...visibleBranches])];
     if (
       nextKeys.length !== effectiveExpandedKeys.value.length ||
       nextKeys.some(key => !expandedKeySet.value.has(key))

@@ -359,21 +359,22 @@ const disabledTime = (date: Date, endpoint: 'start' | 'end') => ({
 
 ### Events
 
-| 事件名               | 说明                       | 类型                                   |
-| -------------------- | -------------------------- | -------------------------------------- |
-| `update:model-value` | 已确认值发生变化           | `(value: DateTimePickerValue) => void` |
-| `change`             | 一次日期或时间选择正式提交 | `(value: DateTimePickerValue) => void` |
-| `visible-change`     | 面板可见状态变化           | `(visible: boolean) => void`           |
-| `focus` / `blur`     | 输入框焦点事件             | `(event: FocusEvent) => void`          |
-| `clear`              | 当前值被清空               | `() => void`                           |
+| 事件名               | 说明                                     | 类型                                   |
+| -------------------- | ---------------------------------------- | -------------------------------------- |
+| `update:model-value` | 已确认值发生变化                         | `(value: DateTimePickerValue) => void` |
+| `change`             | 一次日期或时间选择正式提交，只传已确认值 | `(value: DateTimePickerValue) => void` |
+| `visible-change`     | 面板可见状态变化                         | `(visible: boolean) => void`           |
+| `focus` / `blur`     | 输入框焦点事件                           | `(event: FocusEvent) => void`          |
+| `clear`              | 当前值被清空                             | `() => void`                           |
 
 ### Methods
 
-| 方法名       | 说明           | 类型                           |
-| ------------ | -------------- | ------------------------------ |
-| `focus`      | 聚焦输入框     | `() => void`                   |
-| `blur`       | 移除输入框焦点 | `() => void`                   |
-| `getElement` | 获取组件根元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明           | 类型                               |
+| ------------ | -------------- | ---------------------------------- |
+| `focus`      | 聚焦输入框     | `(options?: FocusOptions) => void` |
+| `blur`       | 移除输入框焦点 | `() => void`                       |
+| `clear`      | 请求清空当前值 | `() => void`                       |
+| `getElement` | 获取组件根元素 | `() => HTMLDivElement \| null`     |
 
 ### 键盘操作
 

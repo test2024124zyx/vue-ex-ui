@@ -67,6 +67,7 @@
         :aria-valuemin="min"
         :aria-valuemax="max"
         :aria-valuenow="currentValue as number"
+        :aria-valuetext="formatTooltip ? valueTexts[0] || undefined : undefined"
         :aria-label="ariaLabel || t('slider.button')"
         :aria-description="ariaDescription"
         v-bind="fieldAriaAttrs"
@@ -83,12 +84,26 @@
           class="ex-slider__tooltip"
           :class="`ex-slider__tooltip--${tooltipPlacement}`"
         >
-          {{ formatValue(currentValue as number) }}
+          {{ valueTexts[0] }}
         </div>
       </div>
 
       <!-- 滑块手柄 - 范围值 -->
       <template v-else>
+        <template v-if="fieldAriaAttrs['aria-labelledby']">
+          <span
+            :id="rangeThumbLabelIds[0]"
+            hidden
+          >
+            {{ t('slider.startValue') }}
+          </span>
+          <span
+            :id="rangeThumbLabelIds[1]"
+            hidden
+          >
+            {{ t('slider.endValue') }}
+          </span>
+        </template>
         <!-- 起始手柄 -->
         <div
           ref="thumbStartRef"
@@ -101,9 +116,11 @@
           :aria-valuemin="min"
           :aria-valuemax="(currentValue as [number, number])[1]"
           :aria-valuenow="(currentValue as [number, number])[0]"
+          :aria-valuetext="formatTooltip ? valueTexts[0] || undefined : undefined"
           :aria-label="getRangeThumbAriaLabel(0)"
           :aria-description="ariaDescription"
           v-bind="fieldAriaAttrs"
+          :aria-labelledby="getRangeThumbLabelledBy(0)"
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
@@ -116,7 +133,7 @@
             class="ex-slider__tooltip"
             :class="`ex-slider__tooltip--${tooltipPlacement}`"
           >
-            {{ formatValue((currentValue as [number, number])[0]) }}
+            {{ valueTexts[0] }}
           </div>
         </div>
 
@@ -131,9 +148,11 @@
           :aria-valuemin="(currentValue as [number, number])[0]"
           :aria-valuemax="max"
           :aria-valuenow="(currentValue as [number, number])[1]"
+          :aria-valuetext="formatTooltip ? valueTexts[1] || undefined : undefined"
           :aria-label="getRangeThumbAriaLabel(1)"
           :aria-description="ariaDescription"
           v-bind="fieldAriaAttrs"
+          :aria-labelledby="getRangeThumbLabelledBy(1)"
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
@@ -146,7 +165,7 @@
             class="ex-slider__tooltip"
             :class="`ex-slider__tooltip--${tooltipPlacement}`"
           >
-            {{ formatValue((currentValue as [number, number])[1]) }}
+            {{ valueTexts[1] }}
           </div>
         </div>
       </template>
@@ -206,11 +225,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, nextTick, useId } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
+import { addDecimal, snapToDecimalStep } from '../../utils/decimal';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
-import { useFormFieldState } from '../form/use-form-item';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 
 defineOptions({
@@ -236,6 +256,8 @@ const props = withDefaults(defineProps<ExSliderProps>(), {
 
 const emit = defineEmits<ExSliderEmits>();
 const { t } = useI18n();
+const sliderId = useId();
+const rangeThumbLabelIds = [`${sliderId}-start`, `${sliderId}-end`] as const;
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
 const {
@@ -387,21 +409,19 @@ const getValueFromPercent = (percent: number): number => {
 
 const roundToStep = (value: number): number => {
   const normalizedValue = Number.isFinite(value) ? value : props.min;
-  const step = effectiveStep.value;
-  const remainder = (normalizedValue - props.min) % step;
-  let rounded = normalizedValue - remainder;
-
-  if (Math.abs(remainder) >= step / 2) {
-    rounded += remainder > 0 ? step : -step;
-  }
-
   if (props.max <= props.min) return props.min;
+  const rounded = snapToDecimalStep(normalizedValue, props.min, effectiveStep.value);
   return Math.max(props.min, Math.min(props.max, rounded));
 };
 
 const getRangeThumbAriaLabel = (thumbIndex: number) => {
   const thumbLabel = thumbIndex === 0 ? t('slider.startValue') : t('slider.endValue');
   return props.ariaLabel ? `${props.ariaLabel} ${thumbLabel}` : thumbLabel;
+};
+
+const getRangeThumbLabelledBy = (index: 0 | 1) => {
+  const fieldLabel = fieldAriaAttrs.value['aria-labelledby'];
+  return fieldLabel ? mergeAriaIds(fieldLabel, rangeThumbLabelIds[index]) : undefined;
 };
 
 const getThumbStyle = (value: number) => {
@@ -437,12 +457,11 @@ const getMarkStyle = (value: number) => {
   return isReverse ? { right: `${percent}%` } : { left: `${percent}%` };
 };
 
-const formatValue = (value: number): string => {
-  if (props.formatTooltip) {
-    return props.formatTooltip(value);
-  }
-  return String(value);
-};
+const valueTexts = computed(() => {
+  const value = currentValue.value;
+  const format = props.formatTooltip ?? String;
+  return Array.isArray(value) ? value.map(item => format(item)) : [format(value)];
+});
 
 // 事件处理：从鼠标或触摸事件获取位置
 const getPositionFromEvent = (event: MouseEvent | TouchEvent): { x: number; y: number } => {
@@ -510,20 +529,21 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
   event.preventDefault();
   const { x, y } = getPositionFromEvent(event);
   const value = getValueFromPosition(x, y);
+  // 受控模式可以显示吸附值，但只有父级回写后该刻度才算确认。
+  const confirmed = props.modelValue ?? currentValue.value;
 
   if (!props.range) {
-    updateValue(value);
-  } else {
-    const [start, end] = currentValue.value as [number, number];
-    const distToStart = Math.abs(value - start);
-    const distToEnd = Math.abs(value - end);
-
-    if (distToStart < distToEnd) {
-      updateValue([value, end]);
-    } else {
-      updateValue([start, value]);
-    }
+    if (value !== confirmed) updateValue(value);
+    return;
   }
+
+  const [start, end] = currentValue.value as [number, number];
+  const closerToStart = value < start || Math.abs(value - start) < Math.abs(value - end);
+  const next: [number, number] = closerToStart
+    ? [Math.min(value, end), end]
+    : [start, Math.max(start, value)];
+  if (!Array.isArray(confirmed) || next[0] !== confirmed[0] || next[1] !== confirmed[1])
+    updateValue(next);
 };
 
 const handleThumbMouseDown = (event: MouseEvent | TouchEvent, thumbIndex: number) => {
@@ -610,9 +630,9 @@ const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
   // 遵循 WAI-ARIA slider 规范：Up/Right 始终增大值，Down/Left 始终减小值，
   // 与视觉方向（vertical/reverse）无关
   if (key === 'ArrowUp' || key === 'ArrowRight') {
-    increment = props.step;
+    increment = effectiveStep.value;
   } else if (key === 'ArrowDown' || key === 'ArrowLeft') {
-    increment = -props.step;
+    increment = -effectiveStep.value;
   } else if (key === 'Home') {
     const currentVal = props.range
       ? (currentValue.value as [number, number])[thumbIndex]
@@ -624,25 +644,25 @@ const handleKeyDown = (event: KeyboardEvent, thumbIndex: number) => {
       : (currentValue.value as number);
     increment = props.max - (currentVal ?? props.max);
   } else if (key === 'PageUp') {
-    increment = props.step * 10;
+    increment = effectiveStep.value * 10;
   } else if (key === 'PageDown') {
-    increment = -props.step * 10;
+    increment = -effectiveStep.value * 10;
   }
 
   if (increment !== 0) {
     event.preventDefault();
 
     if (!props.range) {
-      const newValue = roundToStep((currentValue.value as number) + increment);
+      const newValue = roundToStep(addDecimal(currentValue.value as number, increment));
       updateValue(newValue);
     } else {
       const [start, end] = currentValue.value as [number, number];
 
       if (thumbIndex === 0) {
-        const newStart = roundToStep(start + increment);
+        const newStart = roundToStep(addDecimal(start, increment));
         updateValue([Math.min(newStart, end), end]);
       } else {
-        const newEnd = roundToStep(end + increment);
+        const newEnd = roundToStep(addDecimal(end, increment));
         updateValue([start, Math.max(newEnd, start)]);
       }
     }

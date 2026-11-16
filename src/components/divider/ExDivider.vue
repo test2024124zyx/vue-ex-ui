@@ -3,6 +3,7 @@ import { computed, useSlots } from 'vue';
 import type { CSSProperties } from 'vue';
 import { hasRenderableContent } from '../../utils/vnode';
 import { useRenderComputed } from '../../composables/useRenderComputed';
+import { useGlobalSize } from '../config-provider/composables';
 import type { DividerOrientation, DividerPresetSize, DividerType, ExDividerProps } from './types';
 
 defineOptions({ name: 'ExDivider' });
@@ -11,14 +12,14 @@ const props = withDefaults(defineProps<ExDividerProps>(), {
   type: 'horizontal',
   orientation: 'center',
   dashed: false,
-  size: 'default',
   plain: false,
 });
 
 const slots = useSlots();
+const globalSize = useGlobalSize();
 const DIVIDER_TYPES = new Set<DividerType>(['horizontal', 'vertical']);
 const DIVIDER_ORIENTATIONS = new Set<DividerOrientation>(['left', 'center', 'right']);
-const PRESET_SIZES = new Set<DividerPresetSize>(['small', 'default', 'large']);
+const PRESET_SIZES = new Set<DividerPresetSize>(['small', 'medium', 'large', 'default']);
 
 /** 将有限数字或非空字符串转换为 CSS 长度。 */
 const normalizeLength = (
@@ -39,10 +40,10 @@ const normalizedOrientation = computed<DividerOrientation>(() =>
   DIVIDER_ORIENTATIONS.has(props.orientation) ? props.orientation : 'center'
 );
 const normalizedSize = computed<DividerPresetSize | number>(() => {
-  if (typeof props.size === 'number') {
-    return Number.isFinite(props.size) && props.size > 0 ? props.size : 'default';
-  }
-  return PRESET_SIZES.has(props.size) ? props.size : 'default';
+  const size = props.size;
+  if (typeof size === 'number' && Number.isFinite(size) && size > 0) return size;
+  const preset = typeof size === 'string' && PRESET_SIZES.has(size) ? size : globalSize.value;
+  return preset === 'medium' ? 'default' : preset;
 });
 const isVertical = computed(() => normalizedType.value === 'vertical');
 const hasTitle = useRenderComputed(() =>

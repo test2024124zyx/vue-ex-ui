@@ -808,47 +808,50 @@ const visibleInner = ref(false);
 
 ## API
 
+Modal、Dialog 和 Drawer 共用 `show-close`、`mask`、`mask-closable`、`close-on-press-escape`、`ok-text`、`ok-loading` 和 `custom-class`。同时传入新旧属性时使用统一名称对应的值。`centered` 负责 Modal 在视口中的垂直位置。
+
 省略 `size` 时继承最近的 `ExConfigProvider`；未配置全局尺寸时使用下表默认值。显式设置的尺寸优先。
 
 ### Modal Props
 
-| 属性                    | 说明                        | 类型                                                                     | 默认值      |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------------ | ----------- |
-| `model-value / v-model` | 是否显示模态框              | `boolean`                                                                | `false`     |
-| `title`                 | 模态框标题                  | `string`                                                                 | —           |
-| `size`                  | 模态框尺寸                  | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  |
-| `type`                  | 模态框类型                  | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
-| `show-close`            | 是否显示关闭按钮            | `boolean`                                                                | `true`      |
-| `mask`                  | 是否显示遮罩层              | `boolean`                                                                | `true`      |
-| `mask-closable`         | 是否可以通过点击遮罩层关闭  | `boolean`                                                                | `true`      |
-| `keyboard`              | 是否可以通过按下 ESC 键关闭 | `boolean`                                                                | `true`      |
-| `ok-text`               | 确认按钮文本                | `string`                                                                 | `'确定'`    |
-| `cancel-text`           | 取消按钮文本                | `string`                                                                 | `'取消'`    |
-| `ok-type`               | 确认按钮类型                | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger'`           | `'primary'` |
-| `confirm-loading`       | 确认按钮加载状态            | `boolean`                                                                | `false`     |
-| `centered`              | 是否居中显示                | `boolean`                                                                | `false`     |
-| `width`                 | 宽度                        | `string \| number`                                                       | `undefined` |
-| `z-index`               | 层级                        | `number`                                                                 | 全局层级    |
-| `append-to-body`        | 是否追加到 body             | `boolean`                                                                | `true`      |
-| `destroy-on-close`      | 关闭动画结束后是否销毁内容  | `boolean`                                                                | `false`     |
-| `show-footer`           | 是否显示默认底部按钮区      | `boolean`                                                                | `true`      |
-| `wrap-class-name`       | 包装器自定义类名            | `string`                                                                 | `''`        |
-| `body-style`            | 内容区域自定义样式          | `CSSProperties`                                                          | `undefined` |
-| `lock-scroll`           | 模态状态下是否锁定页面滚动  | `boolean`                                                                | `true`      |
-| `before-open`           | 模态框打开前的守卫          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
-| `before-close`          | 模态框关闭前的回调          | `() => boolean \| Promise<boolean>`                                      | `undefined` |
+| 属性                    | 说明                                     | 类型                                                                     | 默认值      |
+| ----------------------- | ---------------------------------------- | ------------------------------------------------------------------------ | ----------- |
+| `model-value / v-model` | 是否显示模态框                           | `boolean`                                                                | `false`     |
+| `title`                 | 模态框标题                               | `string`                                                                 | —           |
+| `size`                  | 模态框尺寸                               | `'small' \| 'medium' \| 'large'`                                         | `'medium'`  |
+| `type`                  | 模态框类型                               | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger' \| 'info'` | `'default'` |
+| `show-close`            | 是否显示关闭按钮                         | `boolean`                                                                | `true`      |
+| `mask`                  | 是否显示遮罩层                           | `boolean`                                                                | `true`      |
+| `mask-closable`         | 是否可以通过点击遮罩层关闭               | `boolean`                                                                | `true`      |
+| `close-on-press-escape` | Escape 是否请求关闭，兼容 `keyboard`     | `boolean`                                                                | `true`      |
+| `ok-text`               | 确认按钮文本                             | `string`                                                                 | `'确定'`    |
+| `cancel-text`           | 取消按钮文本                             | `string`                                                                 | `'取消'`    |
+| `ok-type`               | 确认按钮类型                             | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger'`           | `'primary'` |
+| `ok-loading`            | 确认按钮加载状态，兼容 `confirm-loading` | `boolean`                                                                | `false`     |
+| `centered`              | 是否居中显示                             | `boolean`                                                                | `false`     |
+| `width`                 | 宽度                                     | `string \| number`                                                       | `undefined` |
+| `z-index`               | 层级                                     | `number`                                                                 | 全局层级    |
+| `append-to-body`        | 是否追加到 body                          | `boolean`                                                                | `true`      |
+| `destroy-on-close`      | 关闭动画结束后是否销毁内容               | `boolean`                                                                | `false`     |
+| `show-footer`           | 是否显示默认底部按钮区                   | `boolean`                                                                | `true`      |
+| `custom-class`          | 包装器自定义类名，兼容 `wrap-class-name` | `string`                                                                 | `''`        |
+| `body-style`            | 内容区域自定义样式                       | `CSSProperties`                                                          | `undefined` |
+| `lock-scroll`           | 模态状态下是否锁定页面滚动               | `boolean`                                                                | `true`      |
+| `before-open`           | 模态框打开前的守卫                       | `() => boolean \| Promise<boolean>`                                      | `undefined` |
+| `before-close`          | 模态框关闭前的回调                       | `() => boolean \| Promise<boolean>`                                      | `undefined` |
 
 ### Modal Events
 
-| 事件名               | 说明                     | 类型                                                 |
-| -------------------- | ------------------------ | ---------------------------------------------------- |
-| `update:model-value` | 更新 modelValue          | `(value: boolean) => void`                           |
-| `open`               | 打开守卫通过后触发       | `() => void`                                         |
-| `close`              | 外部状态真正关闭时触发   | `() => void`                                         |
-| `ok`                 | 点击确定按钮时触发       | `() => void`                                         |
-| `cancel`             | 点击取消按钮时触发       | `() => void`                                         |
-| `after-close`        | 模态框关闭动画结束后触发 | `() => void`                                         |
-| `guard-error`        | 打开或关闭守卫发生异常   | `(error: unknown, phase: 'open' \| 'close') => void` |
+| 事件名               | 说明                                   | 类型                                                 |
+| -------------------- | -------------------------------------- | ---------------------------------------------------- |
+| `update:model-value` | 更新 modelValue                        | `(value: boolean) => void`                           |
+| `open`               | 打开守卫通过后触发                     | `() => void`                                         |
+| `opened`             | 打开动画结束时触发                     | `() => void`                                         |
+| `close`              | 外部状态真正关闭时触发                 | `() => void`                                         |
+| `confirm`            | 点击确定按钮时触发，兼容 `ok`          | `() => void`                                         |
+| `cancel`             | 点击取消按钮时触发                     | `() => void`                                         |
+| `closed`             | 关闭动画结束时触发，兼容 `after-close` | `() => void`                                         |
+| `guard-error`        | 打开或关闭守卫发生异常                 | `(error: unknown, phase: 'open' \| 'close') => void` |
 
 ### Modal Slots
 

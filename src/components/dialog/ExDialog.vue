@@ -5,8 +5,8 @@
   >
     <Transition
       name="ex-dialog-fade"
-      @after-enter="handleOpened"
-      @after-leave="handleClosed"
+      @after-enter="afterEnter"
+      @after-leave="afterLeave"
     >
       <div
         v-if="shouldRender"
@@ -18,7 +18,7 @@
         @click.self="handleMaskClick"
       >
         <div
-          v-if="modal"
+          v-if="hasMask"
           class="ex-dialog-modal"
           :class="modalClass"
           @click="handleMaskClick"
@@ -33,7 +33,7 @@
             class="ex-dialog"
             :class="dialogClasses"
             :role="dialogRole"
-            :aria-modal="modal ? 'true' : undefined"
+            :aria-modal="hasMask ? 'true' : undefined"
             :aria-label="accessibleLabel"
             :aria-labelledby="labelledBy"
             @click.stop
@@ -70,12 +70,14 @@
                 :aria-label="t('close')"
                 @click="handleClose"
               >
-                <slot name="close">
-                  <ExIcon
-                    icon="close-line"
-                    :size="20"
-                    aria-hidden="true"
-                  />
+                <slot name="closeIcon">
+                  <slot name="close">
+                    <ExIcon
+                      icon="close-line"
+                      :size="20"
+                      aria-hidden="true"
+                    />
+                  </slot>
                 </slot>
               </button>
             </div>
@@ -100,11 +102,11 @@
                   <ExButton
                     v-if="showConfirm"
                     type="primary"
-                    :loading="confirmLoading"
+                    :loading="okLoading ?? confirmLoading"
                     :disabled="confirmDisabled"
                     @click="handleConfirm"
                   >
-                    {{ confirmText || t('confirm') }}
+                    {{ (okText ?? confirmText) || t('confirm') }}
                   </ExButton>
                 </div>
               </slot>
@@ -117,11 +119,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, useId, useSlots, watch } from 'vue';
+import { computed, ref, useAttrs, useId, watch } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
 import { useLocale } from '../../locale';
-import { useOverlay } from '../../composables/useOverlay';
+import { useOverlay, useOverlayTransition } from '../../composables/useOverlay';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import {
   useAnimation,
@@ -137,6 +139,7 @@ import type {
   ExDialogEmits,
   ExDialogExposed,
   ExDialogProps,
+  ExDialogSlots,
 } from './types';
 
 defineOptions({
@@ -151,12 +154,15 @@ const props = withDefaults(defineProps<ExDialogProps>(), {
   type: 'default',
   showClose: true,
   modal: true,
+  mask: undefined,
   closeOnClickModal: true,
+  maskClosable: undefined,
   closeOnPressEscape: true,
   showFooter: true,
   showConfirm: true,
   showCancel: true,
   confirmLoading: false,
+  okLoading: undefined,
   confirmDisabled: false,
   center: false,
   fullscreen: false,
@@ -167,7 +173,8 @@ const props = withDefaults(defineProps<ExDialogProps>(), {
 });
 
 const emit = defineEmits<ExDialogEmits>();
-const slots = useSlots();
+const slots = defineSlots<ExDialogSlots>();
+const hasMask = computed(() => props.mask ?? props.modal);
 const attrs = useAttrs();
 const { t } = useLocale('dialog');
 const baseZIndex = useZIndexLayer('modal');
@@ -224,7 +231,7 @@ const hasFooter = computed(() =>
 const wrapperClasses = computed(() => [
   {
     'ex-dialog-wrapper--center': props.center,
-    'ex-dialog-wrapper--modeless': !props.modal,
+    'ex-dialog-wrapper--modeless': !hasMask.value,
     'ex-no-neon': !neonEffect.value,
     'ex-no-animation': !animation.value,
   },
@@ -264,13 +271,16 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   onEscape: async () => {
     await requestCloseIntent('api');
   },
-  trapFocus: () => props.modal,
-  autoFocus: () => props.modal,
+  trapFocus: () => hasMask.value,
+  autoFocus: () => hasMask.value,
   restoreFocus: true,
 });
 
-const handleOpened = () => emit('opened');
-const handleClosed = () => emit('closed');
+const { afterEnter, afterLeave } = useOverlayTransition(
+  overlayActive,
+  () => emit('opened'),
+  () => emit('closed')
+);
 
 type CloseIntent = 'cancel' | 'api';
 let pendingCloseIntent: Promise<boolean> | null = null;
@@ -297,7 +307,8 @@ watch(
 );
 
 const handleMaskClick = () => {
-  if (props.modal && props.closeOnClickModal) void requestCloseIntent('api');
+  if (hasMask.value && (props.maskClosable ?? props.closeOnClickModal))
+    void requestCloseIntent('api');
 };
 const handleClose = () => void requestCloseIntent('api');
 const handleConfirm = () => emit('confirm');
