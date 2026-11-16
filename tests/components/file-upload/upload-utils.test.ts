@@ -29,7 +29,9 @@ describe('FileUpload 工具函数', () => {
     it('只接受非负安全整数作为数量限制', () => {
       expect(normalizeUploadLimit(undefined)).toBeUndefined();
       expect(normalizeUploadLimit(Number.NaN)).toBeUndefined();
-      expect(normalizeUploadLimit(-1)).toBe(0);
+      expect(normalizeUploadLimit(-1)).toBeUndefined();
+      expect(normalizeUploadLimit(-0.25)).toBeUndefined();
+      expect(normalizeUploadLimit(0)).toBe(0);
       expect(normalizeUploadLimit(2.9)).toBe(2);
       expect(normalizeUploadLimit(Number.MAX_VALUE)).toBeUndefined();
     });

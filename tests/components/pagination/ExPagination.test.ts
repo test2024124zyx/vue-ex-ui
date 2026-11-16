@@ -75,6 +75,18 @@ describe('ExPagination', () => {
     expect(wrapper.find('.ex-pagination__next').attributes('disabled')).toBeDefined();
   });
 
+  it.each([
+    [-5, 0, [0, 0]],
+    [Number.NaN, 0, [0, 0]],
+    [Number.POSITIVE_INFINITY, 0, [0, 0]],
+    [10.9, 10, [1, 10]],
+  ])('总数 %s 的默认文案和自定义文案使用同一规范值', async (total, expected, range) => {
+    const wrapper = mount(ExPagination, { props: { total, pageSize: 10 } });
+    expect(wrapper.get('.ex-pagination__total').text()).toBe(`Total ${expected} items`);
+    await wrapper.setProps({ totalText: (count, pageRange) => `${count}:${pageRange.join('-')}` });
+    expect(wrapper.get('.ex-pagination__total').text()).toBe(`${expected}:${range.join('-')}`);
+  });
+
   it('简洁模式的页码输入应该具有可访问名称', () => {
     const wrapper = mount(ExPagination, {
       props: { current: 1, pageSize: 10, total: 100, simple: true },
