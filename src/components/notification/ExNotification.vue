@@ -91,6 +91,7 @@ import {
   useThemeOverrides,
 } from '../config-provider/composables';
 import ExIcon from '../icon/ExIcon.vue';
+import { isNotificationPosition, isNotificationType } from './notification-utils';
 import type {
   ExNotificationEmits,
   ExNotificationExposed,
@@ -136,17 +137,21 @@ const defaultIconMap: Record<NotificationType, string> = {
   error: 'close-circle-line',
 };
 
-const defaultIcon = computed(() => defaultIconMap[props.type]);
-const liveRole = computed(() => (props.type === 'error' ? 'alert' : 'status'));
-const ariaLive = computed(() => (props.type === 'error' ? 'assertive' : 'polite'));
+const normalizedType = computed(() => (isNotificationType(props.type) ? props.type : 'info'));
+const normalizedPosition = computed(() =>
+  isNotificationPosition(props.position) ? props.position : 'top-right'
+);
+const defaultIcon = computed(() => defaultIconMap[normalizedType.value]);
+const liveRole = computed(() => (normalizedType.value === 'error' ? 'alert' : 'status'));
+const ariaLive = computed(() => (normalizedType.value === 'error' ? 'assertive' : 'polite'));
 const hasClickHandler = computed(() => Boolean(props.onClick || props.onClickOnce));
 const sanitizedContent = computed(() =>
   props.dangerouslyUseHTMLString ? sanitizeHtml(props.content) : props.content
 );
 const notificationClasses = computed(() => [
   'ex-notification',
-  `ex-notification--${props.type}`,
-  `ex-notification--${props.position}`,
+  `ex-notification--${normalizedType.value}`,
+  `ex-notification--${normalizedPosition.value}`,
   {
     'ex-notification--closable': props.closable,
     'ex-notification--clickable': hasClickHandler.value,
@@ -155,7 +160,7 @@ const notificationClasses = computed(() => [
   },
   props.customClass,
 ]);
-const iconClasses = computed(() => [`ex-notification__icon--${props.type}`]);
+const iconClasses = computed(() => [`ex-notification__icon--${normalizedType.value}`]);
 const notificationStyles = computed<Record<string, string>>(() => {
   const styles: Record<string, string> = { ...themeOverrides.value };
   if (props.zIndex !== undefined) styles.zIndex = String(props.zIndex);

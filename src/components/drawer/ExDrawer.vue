@@ -22,7 +22,7 @@
           ></div>
         </Transition>
 
-        <Transition :name="`ex-drawer-slide-${placement}`">
+        <Transition :name="`ex-drawer-slide-${normalizedPlacement}`">
           <div
             v-if="shouldRender"
             v-show="overlayActive"
@@ -125,7 +125,7 @@ import {
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
-import type { ExDrawerEmits, ExDrawerExposed, ExDrawerProps } from './types';
+import type { DrawerPlacement, ExDrawerEmits, ExDrawerExposed, ExDrawerProps } from './types';
 
 defineOptions({
   name: 'ExDrawer',
@@ -214,9 +214,13 @@ const wrapperStyles = computed<CSSProperties>(() => ({
   ...themeOverrides.value,
   zIndex: overlayZIndex.value,
 }));
+const DRAWER_PLACEMENTS = new Set<DrawerPlacement>(['left', 'right', 'top', 'bottom']);
+const normalizedPlacement = computed(() =>
+  DRAWER_PLACEMENTS.has(props.placement) ? props.placement : 'right'
+);
 const drawerClasses = computed(() => [
   'ex-drawer',
-  `ex-drawer--${props.placement}`,
+  `ex-drawer--${normalizedPlacement.value}`,
   props.customClass,
 ]);
 
@@ -237,7 +241,7 @@ const normalizedSize = computed(() => {
 });
 
 const sizeStyles = computed<CSSProperties>(() => {
-  if (props.placement === 'left' || props.placement === 'right') {
+  if (normalizedPlacement.value === 'left' || normalizedPlacement.value === 'right') {
     return { width: normalizedSize.value, maxWidth: '100vw' };
   }
   return { height: normalizedSize.value, maxHeight: '100vh' };

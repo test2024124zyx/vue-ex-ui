@@ -8,7 +8,7 @@
       :class="alertClasses"
       :style="alertStyles"
       role="alert"
-      :aria-live="type === 'error' ? 'assertive' : 'polite'"
+      :aria-live="normalizedType === 'error' ? 'assertive' : 'polite'"
     >
       <!-- 图标 -->
       <div
@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { ExAlertProps, ExAlertEmits, ExAlertInstance } from './types';
+import type { AlertVariant, ExAlertProps, ExAlertEmits, ExAlertInstance } from './types';
 import ExIcon from '../icon/ExIcon.vue';
 import { useI18n } from '../../locale';
 import { useComponentSize } from '../config-provider/composables';
@@ -121,9 +121,16 @@ const iconMap = {
   warning: 'error-warning-line',
   error: 'close-circle-line',
 };
+const ALERT_VARIANTS = new Set<AlertVariant>(['standard', 'filled', 'outlined']);
+const normalizedType = computed(() =>
+  Object.prototype.hasOwnProperty.call(iconMap, props.type) ? props.type : 'info'
+);
+const normalizedVariant = computed(() =>
+  ALERT_VARIANTS.has(props.variant) ? props.variant : 'standard'
+);
 
 // props.icon / props.closeIcon 允许传入自定义图片 URL，否则使用内置图标
-const builtinIcon = computed(() => (props.icon ? undefined : iconMap[props.type]));
+const builtinIcon = computed(() => (props.icon ? undefined : iconMap[normalizedType.value]));
 const customIconUrl = computed(() => props.icon);
 const builtinCloseIcon = computed(() => (props.closeIcon ? undefined : 'close-line'));
 const customCloseIconUrl = computed(() => props.closeIcon);
@@ -132,9 +139,9 @@ const customCloseIconUrl = computed(() => props.closeIcon);
 const alertClasses = computed(() => {
   const classes = [
     'ex-alert',
-    `ex-alert--${props.type}`,
+    `ex-alert--${normalizedType.value}`,
     `ex-alert--${componentSize.value}`,
-    `ex-alert--${props.variant}`,
+    `ex-alert--${normalizedVariant.value}`,
   ];
 
   if (props.center) classes.push('ex-alert--center');

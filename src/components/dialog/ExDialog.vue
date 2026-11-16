@@ -131,7 +131,13 @@ import {
   useThemeOverrides,
   useZIndexLayer,
 } from '../config-provider/composables';
-import type { ExDialogEmits, ExDialogExposed, ExDialogProps } from './types';
+import type {
+  DialogSize,
+  DialogType,
+  ExDialogEmits,
+  ExDialogExposed,
+  ExDialogProps,
+} from './types';
 
 defineOptions({
   name: 'ExDialog',
@@ -227,9 +233,22 @@ const wrapperStyles = computed(() => ({
   ...themeOverrides.value,
   zIndex: overlayZIndex.value,
 }));
+const DIALOG_SIZES = new Set<DialogSize>(['small', 'medium', 'large', 'full']);
+const DIALOG_TYPES = new Set<DialogType>([
+  'default',
+  'primary',
+  'success',
+  'warning',
+  'danger',
+  'info',
+]);
+const normalizedSize = computed(() =>
+  props.size && DIALOG_SIZES.has(props.size) ? props.size : globalSize.value
+);
+const normalizedType = computed(() => (DIALOG_TYPES.has(props.type) ? props.type : 'default'));
 const dialogClasses = computed(() => [
-  `ex-dialog--${props.size ?? globalSize.value}`,
-  `ex-dialog--${props.type}`,
+  `ex-dialog--${normalizedSize.value}`,
+  `ex-dialog--${normalizedType.value}`,
   {
     'ex-dialog--fullscreen': props.fullscreen,
     [props.customClass || '']: Boolean(props.customClass),
