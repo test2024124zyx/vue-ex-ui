@@ -79,6 +79,7 @@ import { useI18n } from '../../locale';
 import { generateBarcode } from './barcode-generator';
 import { MAX_BARCODE_VALUE_LENGTH, normalizeBarcodeOptions } from './barcode-limits';
 import { assertImagePixelBudget } from '../../utils/image-resource';
+import { mergeInlineStyles } from '../../utils/style';
 
 defineOptions({
   name: 'ExBarcode',
@@ -148,16 +149,7 @@ const barcodeStyles = computed(() => {
     styles.borderRadius = `${props.borderRadius}px`;
   }
 
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    }
-    return { ...styles, ...props.style };
-  }
-
-  return styles;
+  return mergeInlineStyles(styles, props.style);
 });
 
 // 生成条码

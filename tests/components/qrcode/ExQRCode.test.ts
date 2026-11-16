@@ -28,6 +28,19 @@ describe('ExQRCode', () => {
     vi.restoreAllMocks();
   });
 
+  it('字符串样式保留圆角与尺寸，使用自定义圆角时以调用方为准', async () => {
+    const wrapper = mount(ExQRCode, {
+      props: { value: 'example', size: 120, borderRadius: 8, style: 'opacity: 0.5' },
+    });
+    const { style } = wrapper.element as HTMLElement;
+    expect(style.width).toBe('120px');
+    expect(style.borderRadius).toBe('8px');
+    expect(style.opacity).toBe('0.5');
+
+    await wrapper.setProps({ style: 'border-radius: 12px' });
+    expect(style.borderRadius).toBe('12px');
+  });
+
   it('过期生成不得在最新结果之后覆盖可见画布', async () => {
     let finishFirst: () => void = () => undefined;
     generator.toCanvas

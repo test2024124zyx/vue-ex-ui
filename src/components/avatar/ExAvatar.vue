@@ -69,6 +69,7 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, useSlots, watch } from 'vue';
 import type { Slots } from 'vue';
 import { getFirstGrapheme } from '../../utils/text';
+import { mergeInlineStyles } from '../../utils/style';
 import { hasRenderableContent } from '../../utils/vnode';
 import { useRenderComputed } from '../../composables/useRenderComputed';
 import type { ExAvatarProps, ExAvatarEmits, ExAvatarExposed } from './types';
@@ -215,18 +216,7 @@ const avatarStyles = computed(() => {
     styles.color = props.textColor;
   }
 
-  // 合并用户自定义样式
-  if (props.style) {
-    if (typeof props.style === 'string') {
-      return `${Object.entries(styles)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('; ')}; ${props.style}`;
-    } else {
-      Object.assign(styles, props.style);
-    }
-  }
-
-  return styles;
+  return mergeInlineStyles(styles, props.style);
 });
 
 // 事件处理
