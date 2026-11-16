@@ -123,7 +123,6 @@ const openTimer = ref<number>();
 const closeTimer = ref<number>();
 const isPointerInside = ref(false);
 const isPopoverHovered = ref(false);
-const isFocusInside = ref(false);
 const popperId = `ex-popover-${generateId()}`;
 const titleId = `${popperId}-title`;
 const hasTitle = computed(() => Boolean(props.title || slots.title));
@@ -273,7 +272,6 @@ watch(
     clearTimers();
     isPointerInside.value = false;
     isPopoverHovered.value = false;
-    isFocusInside.value = false;
   }
 );
 
@@ -298,24 +296,19 @@ const handlePopoverMouseLeave = () => {
   }
 };
 
-const handleFocus = () => {
-  if (props.trigger !== 'focus' || isFocusInside.value) return;
-  isFocusInside.value = true;
+const containsFocus = (target: EventTarget | null) =>
+  target instanceof Node &&
+  (popperRef.value?.contains(target) || popoverRef.value?.contains(target));
+
+const handleFocus = (event: FocusEvent) => {
+  if (props.trigger !== 'focus') return;
   if (visible.value) clearTimers();
-  else show();
+  else if (!containsFocus(event.relatedTarget)) show();
 };
 
 const handleBlur = (event: FocusEvent) => {
-  if (props.trigger !== 'focus' || !isFocusInside.value) return;
-  const nextTarget = event.relatedTarget;
   // 触发区与传送后的内容共同构成一个焦点范围。
-  if (
-    nextTarget instanceof Node &&
-    (popperRef.value?.contains(nextTarget) || popoverRef.value?.contains(nextTarget))
-  ) {
-    return;
-  }
-  isFocusInside.value = false;
+  if (props.trigger !== 'focus' || containsFocus(event.relatedTarget)) return;
   hide();
 };
 
@@ -431,7 +424,6 @@ watch(
       clearTimers();
       isPointerInside.value = false;
       isPopoverHovered.value = false;
-      isFocusInside.value = false;
       if (isModelControlled() && props.modelValue === true) emit('update:modelValue', false);
       commitVisible(false);
     } else if (isModelControlled() && props.modelValue === true) {

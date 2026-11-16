@@ -264,21 +264,22 @@ const handleMouseLeave = () => {
   }
 };
 
-const handleFocus = () => {
-  if ((props.trigger !== 'focus' && props.trigger !== 'hover-focus') || isFocusInside.value) return;
+const containsFocus = (target: EventTarget | null) =>
+  target instanceof Node &&
+  (popperRef.value?.contains(target) || tooltipRef.value?.contains(target));
+
+const handleFocus = (event: FocusEvent) => {
+  if (props.trigger !== 'focus' && props.trigger !== 'hover-focus') return;
   isFocusInside.value = true;
   if (visible.value) clearTimers();
-  else show();
+  else if (!containsFocus(event.relatedTarget)) show();
 };
 
 const handleBlur = (event: FocusEvent) => {
-  if ((props.trigger !== 'focus' && props.trigger !== 'hover-focus') || !isFocusInside.value)
-    return;
-  const nextTarget = event.relatedTarget;
   // 内容被传送到 body，焦点在两处之间转移仍保持同一次交互。
   if (
-    nextTarget instanceof Node &&
-    (popperRef.value?.contains(nextTarget) || tooltipRef.value?.contains(nextTarget))
+    (props.trigger !== 'focus' && props.trigger !== 'hover-focus') ||
+    containsFocus(event.relatedTarget)
   ) {
     return;
   }
