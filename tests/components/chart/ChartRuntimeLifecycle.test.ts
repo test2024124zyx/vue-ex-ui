@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { nextTick, reactive } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import type {
   ChartEventParams,
@@ -61,6 +62,32 @@ describe('图表公开能力与运行时生命周期', () => {
     await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 3] }] } });
     expect(runtime.setOption).toHaveBeenCalledTimes(2);
     expect(wrapper.emitted('updated')).toHaveLength(1);
+  });
+
+  it('清空后收到同值数据仍能恢复绘制', async () => {
+    const { wrapper, api, runtime } = await mountChart();
+    api.clear();
+    await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 2] }] } });
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+  });
+
+  it('series 的响应式 getter 返回新数据时重新设置图表', async () => {
+    const state = reactive({ points: [1, 2] });
+    const option: ChartOption = {
+      series: [
+        {
+          type: 'bar',
+          get data() {
+            return state.points;
+          },
+        },
+      ],
+    };
+    const { runtime } = await mountChart({ option });
+    state.points = [3, 4];
+    await nextTick();
+    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(runtime.setOption.mock.lastCall?.[0].series[0].data).toEqual([3, 4]);
   });
 
   it('连续缩放不读取数据快照，连续渲染回调合并但事件仍逐次转发', async () => {

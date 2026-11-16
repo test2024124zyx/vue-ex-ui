@@ -254,7 +254,7 @@ const syncNavigationItems = (fallback = props.option) => {
   renderedOption.value = option;
   const input = [option.series, option.dataset, option.xAxis, option.yAxis, option.legend];
   if (navigationInput && equalValueSnapshot(navigationInput, input)) return;
-  navigationInput = instanceOption ? input : deepClone(input);
+  navigationInput = instanceOption ? input : deepClone(input, { materializeAccessors: true });
   const items = getChartNavigationItems(option);
   // finished 可能由高亮动作触发，相同数据不重复通知导航器，避免动作反馈循环。
   const previous = navigationItems.value;
@@ -339,7 +339,7 @@ const updateChart = () => {
   try {
     const inputs = chartUpdateSources.map(read => read());
     if (appliedInputs && equalValueSnapshot(appliedInputs, inputs)) return false;
-    const snapshot = deepClone(inputs);
+    const snapshot = deepClone(inputs, { materializeAccessors: true });
     // 合并配置
     const palette = controlPalette();
     let mergedOption: ChartOption = {
@@ -502,6 +502,7 @@ const clear = () => {
   highlightNavigationItem(null);
   chartInstance.value?.clear();
   syncFinishedNavigation.cancel();
+  appliedInputs = undefined;
   navigationInput = undefined;
   navigationItems.value = [];
   renderedOption.value = {};
