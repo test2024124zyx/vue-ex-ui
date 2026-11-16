@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { clickDownloadLink } from '../../utils/browser-download';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
@@ -149,17 +150,7 @@ const triggerBrowserDownload = (url: string, filename: string) => {
     throw new ExFileDownloadError('unsupported', '当前运行环境不支持浏览器下载');
   }
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  link.hidden = true;
-  document.body.appendChild(link);
-  try {
-    link.click();
-  } finally {
-    link.remove();
-  }
+  clickDownloadLink(document, url, filename);
 };
 
 const releaseObjectUrl = (url: string) => {

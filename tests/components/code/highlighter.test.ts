@@ -8,6 +8,7 @@ import {
   SUPPORTED_LANGUAGES,
   tokenizeToLines,
 } from '../../../src/components/code/highlighter';
+import { getGrammar } from '../../../src/components/code/highlighter/grammars';
 
 describe('Code highlighter（零依赖）', () => {
   it('escapeHtml 应该转义所有危险字符', () => {
@@ -50,6 +51,36 @@ describe('Code highlighter（零依赖）', () => {
     }
     expect(SUPPORTED_LANGUAGES).toContain('typescript');
     expect(SUPPORTED_LANGUAGES).toContain('rust');
+  });
+
+  it('各语言规则不包含 Safari 16.4 之前无法解析的正则后顾断言', () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      expect(getGrammar(language)?.rules.every(rule => !/\(\?<([=!])/.test(rule.re.source))).toBe(
+        true
+      );
+    }
+  });
+
+  it('区分 JavaScript 正则、除法和成员属性，并保留原始文本与高亮优先级', () => {
+    const source = 'return  /[a/b]+/gi; total /= divisor(); target.value; target.call();';
+    const tokens = tokenizeToLines(source, 'javascript').flat();
+    expect(tokens.map(token => token.value).join('')).toBe(source);
+    expect(tokens).toContainEqual({ type: 'regexp', value: '/[a/b]+/gi' });
+    expect(tokens).toContainEqual({ type: 'operator', value: '/=' });
+    expect(tokens).toContainEqual({ type: 'property', value: 'value' });
+    expect(tokens).toContainEqual({ type: 'function', value: 'call' });
+    expect(tokens).toContainEqual({ type: 'function', value: 'divisor' });
+  });
+
+  it.each([
+    ['shell', 'npm --flag -x config--other', ['--flag', '-x']],
+    ['markdown', '*斜体* 与 _斜体_，以及 **加粗**', ['*斜体*', '_斜体_']],
+  ])('%s 保留依赖前置字符的高亮规则', (language, source, properties) => {
+    const tokens = tokenizeToLines(source, language).flat();
+    expect(tokens.map(token => token.value).join('')).toBe(source);
+    expect(tokens.filter(token => token.type === 'property').map(token => token.value)).toEqual(
+      properties
+    );
   });
 
   it('tokenizeToLines 行数应恒等于 split(\\n) 行数', () => {

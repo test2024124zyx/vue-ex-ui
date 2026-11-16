@@ -16,6 +16,7 @@ import { computed, provide, ref, useSlots, Fragment, isVNode, cloneVNode } from 
 import type { VNode } from 'vue';
 import type { ExTimelineProps, ExTimelineExposed } from './types';
 import { useI18n } from '../../locale';
+import { timelineContextKey } from './context';
 
 defineOptions({
   name: 'ExTimeline',
@@ -47,18 +48,11 @@ const TimelineContent = () => {
 };
 
 // 提供给子组件的上下文
-provide(
-  'timeline-direction',
-  computed(() => props.direction)
-);
-provide(
-  'timeline-mode',
-  computed(() => props.mode)
-);
-provide(
-  'timeline-show-line',
-  computed(() => props.showLine)
-);
+provide(timelineContextKey, {
+  direction: computed(() => props.direction),
+  mode: computed(() => props.mode),
+  showLine: computed(() => props.showLine),
+});
 
 // 计算属性
 const timelineClasses = computed(() => {
