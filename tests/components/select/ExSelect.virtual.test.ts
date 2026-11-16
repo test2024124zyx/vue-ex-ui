@@ -15,7 +15,7 @@ describe('ExSelect 虚拟滚动', () => {
   });
 
   it('virtual=false 时全量渲染所有选项', async () => {
-    const wrapper = mount(ExSelect, { props: { options: bigOptions } });
+    const wrapper = mount(ExSelect, { props: { options: bigOptions, virtual: false } });
     await wrapper.find('.ex-select__trigger').trigger('click');
     await nextTick();
     expect(document.querySelector('.ex-select__options--virtual')).toBeNull();

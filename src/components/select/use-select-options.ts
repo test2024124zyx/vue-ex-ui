@@ -1,6 +1,7 @@
-import { computed } from 'vue';
+import { computed, onScopeDispose, ref, watch } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
 import { logger } from '../../utils/logger';
+import { debounce } from '../../utils/debounce';
 import type {
   ExSelectProps,
   SelectOption,
@@ -9,6 +10,9 @@ import type {
   SelectValue,
 } from './types';
 import { useRemoteOptionCache } from './use-option-cache';
+
+const AUTO_VIRTUAL_OPTION_COUNT = 500;
+const LOCAL_SEARCH_DELAY = 100;
 
 export const isGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup =>
   'options' in item;
@@ -84,6 +88,23 @@ export function useSelectOptions(
 ) {
   const sourceIndex = computed(() => indexSelectOptions(source.value));
   const flatOptions = computed(() => sourceIndex.value.flat);
+  const largeList = computed(() => flatOptions.value.length >= AUTO_VIRTUAL_OPTION_COUNT);
+  const deferLocalSearch = computed(() => largeList.value && props.searchable && !props.remote);
+  const appliedQuery = ref(searchQuery.value);
+  const applyQuery = debounce((query: string) => {
+    appliedQuery.value = query;
+    return true;
+  }, LOCAL_SEARCH_DELAY);
+  watch([searchQuery, deferLocalSearch], ([query, deferred]) => {
+    if (query && deferred) {
+      applyQuery(query);
+    } else {
+      // 关闭、清空或切换成小列表时立即应用当前值。
+      applyQuery.cancel();
+      appliedQuery.value = query;
+    }
+  });
+  onScopeDispose(applyQuery.cancel);
   const searchText = computed(
     () =>
       new Map(
@@ -98,8 +119,8 @@ export function useSelectOptions(
   );
   const filteredIndex = computed(() => {
     const index = sourceIndex.value;
-    if (props.remote || !props.searchable || !searchQuery.value) return index;
-    const query = searchQuery.value.toLowerCase();
+    if (props.remote || !props.searchable || !appliedQuery.value) return index;
+    const query = appliedQuery.value.toLowerCase();
     return indexSelectOptions(index.options, option =>
       searchText.value.get(option)!.some(text => text.includes(query))
     );
@@ -135,7 +156,9 @@ export function useSelectOptions(
   const getVirtualRowIndex = (optionIndex: number) =>
     filteredIndex.value.rowIndices[optionIndex] ?? optionIndex;
   const useVirtual = computed(() =>
-    Boolean(props.virtual && !loading.value && flatFilteredOptions.value.length)
+    Boolean(
+      (props.virtual ?? largeList.value) && !loading.value && flatFilteredOptions.value.length
+    )
   );
   return {
     filteredOptions,
@@ -151,5 +174,6 @@ export function useSelectOptions(
     virtualRows,
     getVirtualRowIndex,
     useVirtual,
+    flushLocalSearch: applyQuery.flush,
   };
 }

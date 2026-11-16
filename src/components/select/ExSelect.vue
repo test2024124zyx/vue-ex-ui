@@ -448,7 +448,7 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
   multiple: false,
   multipleLimit: 0,
   collapseTags: false,
-  virtual: false,
+  virtual: undefined,
   optionHeight: SELECT_DEFAULT_OPTION_HEIGHT,
 });
 
@@ -585,6 +585,7 @@ const {
   virtualRows,
   getVirtualRowIndex,
   useVirtual,
+  flushLocalSearch,
 } = useSelectOptions(props, searchQuery, sourceOptions, remoteLoading, selection.value);
 
 // 折叠标签时实际展示的标签与被折叠数量
@@ -836,7 +837,9 @@ const handleRetryKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' || !event.shiftKey) hideDropdown();
 };
 
-const handleKeydown = (event: KeyboardEvent) => {
+const optionNavigationKeys = new Set(['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter']);
+
+const handleKeydown = async (event: KeyboardEvent) => {
   if (
     effectiveDisabled.value ||
     effectiveReadonly.value ||
@@ -844,6 +847,15 @@ const handleKeydown = (event: KeyboardEvent) => {
     isComposingKeyboardEvent(event)
   )
     return;
+
+  // 刷新待处理的结果后再导航，避免使用旧列表中的活动位置。
+  if (optionNavigationKeys.has(event.key) && flushLocalSearch()) {
+    event.preventDefault();
+    const query = searchQuery.value;
+    await nextTick();
+    if (!dropdownVisible.value || searchQuery.value !== query || composing.value) return;
+    hoverIndex.value = event.key === 'Enter' ? findEnabledIndex(-1, 1) : -1;
+  }
 
   switch (event.key) {
     case 'ArrowDown':
