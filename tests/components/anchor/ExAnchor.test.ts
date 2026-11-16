@@ -173,6 +173,54 @@ describe('ExAnchor', () => {
     wrapper.unmount();
   });
 
+  it('标签伪类选择器可以定位在锚点之后才挂载的目标', async () => {
+    const selector = 'section:nth-of-type(2)';
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const wrapper = mount(ExAnchor, {
+      slots: { default: () => h(ExAnchorLink, { href: selector, title: '第二节' }) },
+    });
+    await nextTick();
+    const link = wrapper.get('a');
+    expect(link.attributes('href')).toBeUndefined();
+    expect(link.attributes('tabindex')).toBe('0');
+
+    const area = document.createElement('main');
+    const target = document.createElement('section');
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 120 }));
+    area.append(document.createElement('section'), target);
+    document.body.append(area);
+    await link.trigger('click');
+    expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 120, behavior: 'smooth' });
+    expect(wrapper.emitted('change')).toEqual([[selector]]);
+    wrapper.unmount();
+  });
+
+  it('平滑滚动中同一批次替换活动锚点时不发布中间空地址', async () => {
+    for (const [id, top] of [
+      ['first', 100],
+      ['second', -2],
+      ['third', -1],
+    ] as const) {
+      const section = document.createElement('section');
+      section.id = id;
+      vi.spyOn(section, 'getBoundingClientRect').mockReturnValue(rect({ top }));
+      document.body.append(section);
+    }
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const shown = ref(['first']);
+    const wrapper = mount(ExAnchor, {
+      slots: {
+        default: () =>
+          shown.value.map(id => h(ExAnchorLink, { key: id, href: `#${id}`, title: id })),
+      },
+    });
+    await wrapper.get('a').trigger('click');
+    shown.value = ['second', 'third'];
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#third']]);
+    wrapper.unmount();
+  });
+
   it('自定义滚动容器使用容器矩形与 scrollTop 计算目标位置', async () => {
     const container = document.createElement('div');
     const target = document.createElement('section');

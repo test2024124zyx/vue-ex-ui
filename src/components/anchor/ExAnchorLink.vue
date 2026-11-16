@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
 import { normalizeLinkHref } from '../link/link-utils';
 import { ANCHOR_INJECTION_KEY } from './context';
 import type { ExAnchorLinkProps, ExAnchorLinkEmits } from './types';
@@ -69,7 +69,8 @@ const syncLink = () => {
   else anchor.updateLink(linkRef.value, href, props.title);
 };
 
-onMounted(syncLink);
+// 模板引用就绪时先完成注册，让父组件的渲染后监听看到完整列表。
+watch(linkRef, syncLink, { flush: 'sync' });
 watch([() => props.href, () => props.title], syncLink);
 
 onBeforeUnmount(() => {

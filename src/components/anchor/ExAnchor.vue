@@ -68,9 +68,8 @@ const resolveTarget = (href: string): HTMLElement | null => {
 };
 
 const isValidSelector = (selector: string): boolean => {
-  if (!selector) return false;
-  // 形似协议的字符串只有确实找到页内元素时才视作选择器。
-  if (/^[a-z][a-z0-9+.-]*:/i.test(selector)) return resolveTarget(selector) !== null;
+  // 排除脚本协议，同时允许标签伪类等选择器的目标稍后挂载。
+  if (!selector || /^(?:java|vb)script:/i.test(selector.replace(/[\t\n\r]/g, ''))) return false;
   try {
     // 在空片段验证语法，实际滚动时才查询页面目标。
     document.createDocumentFragment().querySelector(selector);
@@ -198,7 +197,6 @@ const unregisterLink = (element: HTMLElement): void => {
   links.value = links.value.filter(link => link.element !== element);
   if (mounted && animating && activeElement.value === element) {
     clearAnimationTimer();
-    handleScroll();
   }
 };
 
