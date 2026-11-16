@@ -3,10 +3,12 @@ import { usesNativeIdentity } from './native-identity';
 
 // 签名只是预筛选，按成员限制访问量，避免反复遍历大集合中的共享子图。
 const MEMBER_SHAPE_BUDGET = 32;
+const READABLE_FIELDS_BUDGET = MEMBER_SHAPE_BUDGET * 2;
 const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 type OwnShape = { signature: number; children: object[] };
 type KeyToken = { key: string | symbol; id: number };
+type ReadableNode = { complete: boolean; fields: Array<{ id: number; value: unknown }> };
 
 function bytesOf(value: object): Uint8Array | undefined {
   if (ArrayBuffer.isView(value)) {
@@ -26,6 +28,7 @@ export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
   const ownShapes = new WeakMap<object, OwnShape | null>();
   const ownKeys = new WeakMap<object, KeyToken[]>();
+  const readableNodes = new WeakMap<object, ReadableNode>();
   const outlines = new WeakMap<object, string>();
   const negativeZero = Symbol();
   const id = (value: unknown) => {
@@ -58,6 +61,19 @@ export function createSnapshotMemberShape() {
       .join(',')}`;
     outlines.set(node, shape);
     return shape;
+  }
+
+  function fieldsOf(node: object): ReadableNode {
+    const cached = readableNodes.get(node);
+    if (cached) return cached;
+    const result: ReadableNode = { complete: true, fields: [] };
+    for (const { key, id } of keysOf(node)) {
+      const descriptor = Object.getOwnPropertyDescriptor(node, key);
+      if (descriptor && 'value' in descriptor) result.fields.push({ id, value: descriptor.value });
+      else result.complete = false;
+    }
+    readableNodes.set(node, result);
+    return result;
   }
 
   function readOwnShape(node: object): OwnShape | null {
@@ -95,16 +111,15 @@ export function createSnapshotMemberShape() {
         append(entryValue);
       }
     }
-    const keys = keysOf(node);
-    shape.push('properties', keys.length);
-    for (const { key, id: keyId } of keys) {
-      const descriptor = Object.getOwnPropertyDescriptor(node, key);
-      if (!descriptor || !('value' in descriptor)) {
-        ownShapes.set(node, null);
-        return null;
-      }
-      shape.push(keyId);
-      append(descriptor.value);
+    const { complete, fields } = fieldsOf(node);
+    if (!complete) {
+      ownShapes.set(node, null);
+      return null;
+    }
+    shape.push('properties', fields.length);
+    for (const { id, value } of fields) {
+      shape.push(id);
+      append(value);
     }
     const result = { signature: id(shape.join(',')), children };
     ownShapes.set(node, result);
@@ -153,7 +168,8 @@ export function createSnapshotMemberShape() {
     if (value !== key) pending.push({ node: value, path: 'value' });
     const visited = new WeakSet<object>();
     let remaining = MEMBER_SHAPE_BUDGET;
-    while (pending.length && remaining-- > 0) {
+    let fieldBudget = READABLE_FIELDS_BUDGET;
+    while (pending.length && remaining-- > 0 && fieldBudget > 0) {
       const { node: item, path } = pending.pop()!;
       if (item === null || typeof item !== 'object') continue;
       const node = toRaw(item);
@@ -161,11 +177,13 @@ export function createSnapshotMemberShape() {
       visited.add(node);
       const known = readOwnShape(node);
       if (known) result.set(`${path}.data`, known.signature);
-      for (const { key, id: keyId } of keysOf(node)) {
-        const descriptor = Object.getOwnPropertyDescriptor(node, key);
-        if (!descriptor || !('value' in descriptor)) continue;
+      // 描述符按原始节点复用，预算同时限制单个候选的字段路径总量。
+      const { fields } = fieldsOf(node);
+      const count = Math.min(fieldBudget, fields.length);
+      fieldBudget -= count;
+      for (let index = 0; index < count; index++) {
+        const { id: keyId, value } = fields[index]!;
         const position = `${path}.${keyId}`;
-        const value: unknown = descriptor.value;
         result.set(position, id(outlineOf(value)));
         if (value !== null && typeof value === 'object' && pending.length < remaining) {
           pending.push({ node: value, path: position });

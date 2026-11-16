@@ -7,6 +7,7 @@ import { equalValueSnapshot } from '../../src/utils/value-snapshot';
 function compareWithLinearWork(left: unknown, right: unknown, members: number): boolean {
   const maxOperations = members * 24;
   const ownKeys = Reflect.ownKeys;
+  const readDescriptor = Object.getOwnPropertyDescriptor;
   const has = Set.prototype.has;
   let operations = 0;
   const count = () => {
@@ -16,6 +17,10 @@ function compareWithLinearWork(left: unknown, right: unknown, members: number): 
     count();
     return ownKeys(value);
   };
+  Object.getOwnPropertyDescriptor = (value, key) => {
+    count();
+    return readDescriptor(value, key);
+  };
   Set.prototype.has = function (this: Set<unknown>, value: unknown) {
     count();
     return has.call(this, value);
@@ -24,6 +29,7 @@ function compareWithLinearWork(left: unknown, right: unknown, members: number): 
     return equalValueSnapshot(left, right);
   } finally {
     Reflect.ownKeys = ownKeys;
+    Object.getOwnPropertyDescriptor = readDescriptor;
     Set.prototype.has = has;
   }
 }
@@ -126,16 +132,17 @@ describe('无序集合快照', () => {
   });
 
   it('宽数组作为集合成员时可从后半部分识别不相容内容', () => {
+    const width = 32;
     const pool = (distinct: number) =>
       new Set(
         Array.from({ length: 10 }, (_, index) => {
-          const values = Array<number>(32).fill(0);
+          const values = Array<number>(width).fill(0);
           if (index === 9) values[values.length - 1] = distinct;
           return values;
         })
       );
     const source = pool(1);
-    expect(compareWithLinearWork(source, pool(0), source.size)).toBe(false);
+    expect(compareWithLinearWork(source, pool(0), source.size * width)).toBe(false);
   });
 
   it('共享数组确定了所有成员身份后按映射直接寻找候选', () => {
@@ -230,6 +237,49 @@ describe('无序集合快照', () => {
       );
     expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
     expect(reads).toBe(0);
+  });
+
+  it.each([0, 1])('部分候选的 getter 不取消其余候选的静态约束，实际值=%i', actual => {
+    const zeros = () => Array.from({ length: 8 }, () => ({ id: 0 }));
+    const left = new Set([...zeros(), { id: 1 }]);
+    const right = new Set([
+      ...zeros(),
+      {
+        get id() {
+          return actual;
+        },
+      },
+    ]);
+    expect(compareWithLinearWork(left, right, left.size)).toBe(actual === 1);
+  });
+
+  it('精确候选与访问器候选交错时保留回退次序', () => {
+    const source = new Set([{ id: 1 }, { id: 0 }, { id: 0 }]);
+    const target = new Set([
+      {
+        get id() {
+          return 0;
+        },
+      },
+      { id: 0 },
+      { id: 1 },
+    ]);
+    expect(compareWithLinearWork(source, target, source.size)).toBe(true);
+  });
+
+  it('带访问器并共享宽数组的成员复用静态描述符', () => {
+    const entries: Array<{ readonly score: number; all?: object[] }> = Array.from(
+      { length: 800 },
+      () => ({
+        get score() {
+          return 1;
+        },
+      })
+    );
+    for (const entry of entries) entry.all = entries;
+    const source = new Set(entries);
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    expect(compareWithLinearWork(source, snapshot, source.size)).toBe(true);
   });
 
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {

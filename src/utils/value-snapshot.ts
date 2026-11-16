@@ -1,6 +1,12 @@
 import { toRaw } from 'vue';
 import { usesNativeIdentity } from './native-identity';
 import { createSnapshotMemberShape } from './value-snapshot-shape';
+import {
+  planReadableCandidates,
+  readableFieldsAgree,
+  readablePositions,
+  type ReadableCandidates,
+} from './value-snapshot-candidates';
 
 interface PendingPair {
   left: unknown;
@@ -17,6 +23,7 @@ interface CollectionMatch {
   leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
   firstAvailable: number;
+  readable?: ReadableCandidates;
 }
 
 interface PendingMatch {
@@ -69,7 +76,11 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     memberships.set(group, count);
   }
 
-  function enqueueGroup(leftEntries: ObjectEntry[], rightEntries: ObjectEntry[]): boolean {
+  function enqueueGroup(
+    leftEntries: ObjectEntry[],
+    rightEntries: ObjectEntry[],
+    readable?: ReadableCandidates
+  ): boolean {
     const leftCounts = new Map<object, number>();
     for (const [key] of leftEntries) leftCounts.set(key, (leftCounts.get(key) ?? 0) + 1);
     const rightIndices = new Map<object, number[]>();
@@ -85,6 +96,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       leftCounts,
       rightIndices,
       firstAvailable: 0,
+      readable,
     };
     if (!mappedMembersFit(collection)) return false;
     for (const [key, count] of leftCounts) indexMembership(leftMemberships, key, collection, count);
@@ -120,7 +132,6 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     // 每个候选都能静态读取的字段才可用于分组，getter 与普通数据仍能按实际值比较。
     const candidates = [...fields.values()];
     const common = [...first.keys()].filter(path => candidates.every(values => values.has(path)));
-    if (!common.length) return enqueueGroup(left, right);
     const classify = (entry: ObjectEntry) => {
       const values = fields.get(entry)!;
       return common.map(path => values.get(path)).join(',');
@@ -129,7 +140,12 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     const rightGroups = groupMembers(right, classify)!;
     for (const [shape, entries] of leftGroups) {
       const compatible = rightGroups.get(shape);
-      if (entries.length !== compatible?.length || !enqueueGroup(entries, compatible)) return false;
+      if (entries.length !== compatible?.length) return false;
+      const plan = planReadableCandidates(
+        entries.map(entry => fields.get(entry)!),
+        compatible.map(entry => fields.get(entry)!)
+      );
+      if (!plan || !enqueueGroup(entries, compatible, plan)) return false;
     }
     return true;
   }
@@ -242,20 +258,16 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
 
   function matchEntry(match: PendingMatch, start: number): boolean {
     const { collection, index, next } = match;
-    const [key, value] = collection.left[index]!;
+    const plan = collection.readable;
+    const ranked = plan?.ranked[index];
+    const [key, value] = collection.left[ranked?.sourceIndex ?? index]!;
     const linkedKey = seen.get(key);
-    const linkedCandidates = linkedKey ? (collection.rightIndices.get(linkedKey) ?? []) : undefined;
-    const length = linkedCandidates?.length ?? collection.right.length;
-    for (
-      let offset = linkedCandidates ? 0 : Math.max(start, collection.firstAvailable);
-      offset < length;
-      offset++
-    ) {
-      const candidate = linkedCandidates?.[offset] ?? offset;
-      if (candidate < start || collection.used.has(candidate)) continue;
+    const take = (candidate: number): boolean => {
+      if (candidate < start || collection.used.has(candidate)) return false;
       const [otherKey, otherValue] = collection.right[candidate]!;
-      if (!linkedKey && reverseSeen.has(otherKey)) continue;
-      if (Object.getPrototypeOf(key) !== Object.getPrototypeOf(otherKey)) continue;
+      if (!linkedKey && reverseSeen.has(otherKey)) return false;
+      if (ranked && !readableFieldsAgree(ranked.fields, plan!.rightFields[candidate]!))
+        return false;
       choices.push({ match, candidate, mappedCount: mapped.length, groupCount: groups.length });
       collection.used.add(candidate);
       while (collection.used.has(collection.firstAvailable)) collection.firstAvailable++;
@@ -263,7 +275,16 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       enqueue(value, otherValue);
       enqueue(key, otherKey);
       return true;
+    };
+    if (linkedKey) return collection.rightIndices.get(linkedKey)?.some(take) ?? false;
+    const first = Math.max(start, collection.firstAvailable);
+    if (ranked?.positions) {
+      for (const candidate of readablePositions(ranked.positions, first))
+        if (take(candidate)) return true;
+      return false;
     }
+    for (let candidate = first; candidate < collection.right.length; candidate++)
+      if (take(candidate)) return true;
     return false;
   }
 
