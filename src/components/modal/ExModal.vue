@@ -126,7 +126,7 @@ import {
   useZIndexLayer,
 } from '../config-provider/composables';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useOverlay } from '../../composables/useOverlay';
+import { useOverlay, useOverlayTransition } from '../../composables/useOverlay';
 import { useLocale } from '../../locale';
 import { hasRenderableContent } from '../../utils/vnode';
 import type {
@@ -222,22 +222,16 @@ const panelAttrs = computed(() =>
   )
 );
 
-const { visible, hasOpened, requestOpen, requestClose, afterEnter, afterLeave } =
-  useGuardedVisibility({
-    modelValue: () => props.modelValue,
-    beforeOpen: () => props.beforeOpen,
-    beforeClose: () => props.beforeClose,
-    requestModelValue: value => emit('update:modelValue', value),
-    onOpen: () => emit('open'),
-    onOpened: () => emit('opened'),
-    onClose: () => emit('close'),
-    onClosed: () => {
-      emit('afterClose');
-      emit('closed');
-    },
-    onGuardError: (error, phase) => emit('guardError', error, phase),
-    skipRedundantRequests: true,
-  });
+const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
+  modelValue: () => props.modelValue,
+  beforeOpen: () => props.beforeOpen,
+  beforeClose: () => props.beforeClose,
+  requestModelValue: value => emit('update:modelValue', value),
+  onOpen: () => emit('open'),
+  onClose: () => emit('close'),
+  onGuardError: (error, phase) => emit('guardError', error, phase),
+  skipRedundantRequests: true,
+});
 
 const shouldRender = computed(
   () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
@@ -323,6 +317,15 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   autoFocus: () => props.mask,
   restoreFocus: true,
 });
+
+const { afterEnter, afterLeave } = useOverlayTransition(
+  overlayActive,
+  () => emit('opened'),
+  () => {
+    emit('afterClose');
+    emit('closed');
+  }
+);
 
 type CloseIntent = 'ok' | 'cancel' | 'api';
 let pendingCloseIntent: Promise<boolean> | null = null;

@@ -126,7 +126,7 @@ import {
 } from '../config-provider/composables';
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
-import { useOverlay } from '../../composables/useOverlay';
+import { useOverlay, useOverlayTransition } from '../../composables/useOverlay';
 import type { ExDrawerEmits, ExDrawerExposed, ExDrawerProps, ExDrawerSlots } from './types';
 
 defineOptions({
@@ -182,18 +182,15 @@ const panelAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => !CONTROLLED_PANEL_ATTRS.has(key)))
 );
 
-const { visible, hasOpened, requestOpen, requestClose, afterEnter, afterLeave } =
-  useGuardedVisibility({
-    modelValue: () => props.modelValue,
-    beforeOpen: () => props.beforeOpen,
-    beforeClose: () => props.beforeClose,
-    requestModelValue: value => emit('update:modelValue', value),
-    onOpen: () => emit('open'),
-    onOpened: () => emit('opened'),
-    onClose: () => emit('close'),
-    onClosed: () => emit('closed'),
-    onGuardError: (error, phase) => emit('guardError', error, phase),
-  });
+const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
+  modelValue: () => props.modelValue,
+  beforeOpen: () => props.beforeOpen,
+  beforeClose: () => props.beforeClose,
+  requestModelValue: value => emit('update:modelValue', value),
+  onOpen: () => emit('open'),
+  onClose: () => emit('close'),
+  onGuardError: (error, phase) => emit('guardError', error, phase),
+});
 
 const shouldRender = computed(
   () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
@@ -264,6 +261,12 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   autoFocus: () => props.mask,
   restoreFocus: true,
 });
+
+const { afterEnter, afterLeave } = useOverlayTransition(
+  overlayActive,
+  () => emit('opened'),
+  () => emit('closed')
+);
 
 type CloseIntent = 'cancel' | 'api';
 let pendingCloseIntent: Promise<boolean> | null = null;

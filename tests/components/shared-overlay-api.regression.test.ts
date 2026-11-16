@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
-import { h, type Component } from 'vue';
+import { h, ref, type Component } from 'vue';
 import ExDialog from '../../src/components/dialog/ExDialog.vue';
 import ExDrawer from '../../src/components/drawer/ExDrawer.vue';
 import ExModal from '../../src/components/modal/ExModal.vue';
@@ -58,5 +58,40 @@ describe('弹层公共关闭与确认接口', () => {
     await flushPromises();
     expect(wrapper.emitted('confirm')).toEqual([[]]);
     if (name !== 'Dialog') expect(wrapper.emitted('ok')).toEqual([[]]);
+  });
+
+  it.each([
+    ['Modal', ExModal],
+    ['Dialog', ExDialog],
+    ['Drawer', ExDrawer],
+  ] as const)('%s 随父浮层关闭和重开时发出过渡事件', async (name, component) => {
+    const parentOpen = ref(true);
+    const childOpen = ref(false);
+    const opened = vi.fn();
+    const closed = vi.fn();
+    const afterClose = vi.fn();
+    mount(
+      {
+        setup: () => () =>
+          h(ExModal, { modelValue: parentOpen.value, destroyOnClose: false }, () =>
+            h(component as Component, {
+              modelValue: childOpen.value,
+              destroyOnClose: false,
+              onOpened: opened,
+              onClosed: closed,
+              ...(name === 'Modal' ? { onAfterClose: afterClose } : {}),
+            })
+          ),
+      },
+      { attachTo: document.body, global: { stubs: { transition: false } } }
+    );
+    childOpen.value = true;
+    await vi.waitFor(() => expect(opened).toHaveBeenCalledTimes(1));
+    parentOpen.value = false;
+    await vi.waitFor(() => expect(closed).toHaveBeenCalledTimes(1));
+    if (name === 'Modal') expect(afterClose).toHaveBeenCalledTimes(1);
+    parentOpen.value = true;
+    await vi.waitFor(() => expect(opened).toHaveBeenCalledTimes(2));
+    expect(closed).toHaveBeenCalledTimes(1);
   });
 });

@@ -15,12 +15,8 @@ export interface UseGuardedVisibilityOptions {
   requestModelValue: (value: boolean) => void;
   /** 打开守卫通过后的回调。 */
   onOpen?: () => void;
-  /** 当前打开动画结束。 */
-  onOpened?: () => void;
   /** 外部状态真正关闭后的回调。 */
   onClose?: () => void;
-  /** 当前关闭动画结束。 */
-  onClosed?: () => void;
   /** 守卫抛出异常或 Promise 拒绝时的回调。 */
   onGuardError?: (error: unknown, phase: VisibilityGuardPhase) => void;
   /** 是否跳过与当前受控值相同的更新请求；旧组件默认保留原行为。 */
@@ -36,8 +32,6 @@ export interface UseGuardedVisibilityReturn {
   requestOpen: () => void;
   /** 经关闭守卫请求父级关闭；并发请求共享同一个结果。 */
   requestClose: () => Promise<boolean>;
-  afterEnter: () => void;
-  afterLeave: () => void;
 }
 
 const isPromiseLike = (value: unknown): value is PromiseLike<boolean> =>
@@ -58,20 +52,6 @@ export function useGuardedVisibility(
   let closeRevision = 0;
   let pendingClose: Promise<boolean> | null = null;
   let disposed = false;
-  let entered = false;
-  let left = true;
-
-  // v-if 和 v-show 可能先后完成同一轮过渡，生命周期事件只确认一次。
-  const afterEnter = () => {
-    if (disposed || !visible.value || entered) return;
-    entered = true;
-    options.onOpened?.();
-  };
-  const afterLeave = () => {
-    if (disposed || visible.value || left) return;
-    left = true;
-    options.onClosed?.();
-  };
 
   // 销毁撤销全部异步意图，迟到的守卫不能再触发业务回调。
   onScopeDispose(() => {
@@ -128,8 +108,6 @@ export function useGuardedVisibility(
       }
 
       hasOpened.value = true;
-      entered = false;
-      left = false;
       visible.value = true;
       options.onOpen?.();
     };
@@ -184,5 +162,5 @@ export function useGuardedVisibility(
     return operation;
   };
 
-  return { visible, hasOpened, requestOpen, requestClose, afterEnter, afterLeave };
+  return { visible, hasOpened, requestOpen, requestClose };
 }
