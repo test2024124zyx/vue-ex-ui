@@ -1,3 +1,8 @@
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const DATE_TOKEN_SOURCE = 'YYYY|MM|DD|HH|mm|ss';
+const DATE_TOKENS = new RegExp(DATE_TOKEN_SOURCE, 'g');
+const DATE_TOKEN_SEQUENCE = new RegExp(`^(?:${DATE_TOKEN_SOURCE}|[TZ])+$`);
+
 /** 判断值是否为有效 Date。 */
 export function isValidDate(value: unknown): value is Date {
   return value instanceof Date && Number.isFinite(value.getTime());
@@ -77,12 +82,19 @@ export function addDays(date: Date, amount: number): Date {
   return result;
 }
 
+/** 将本地年月日换算成 UTC 日序，忽略时分秒及夏令时长度变化。 */
+export function calendarDayNumber(date: Date): number {
+  const utc = new Date(0);
+  utc.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+  return utc.getTime() / MILLISECONDS_PER_DAY;
+}
+
 /** 返回稳定的本地 YYYY-MM-DD 标识。 */
 export function toDateKey(date: Date): string {
   return formatDate(date, 'YYYY-MM-DD');
 }
 
-/** 使用固定占位符格式化本地日期时间。 */
+/** 格式化本地日期时间，保留普通单词和方括号中的文本。 */
 export function formatDate(date: Date, format: string): string {
   if (!isValidDate(date)) return '';
   const tokens: Record<string, string> = {
@@ -93,7 +105,12 @@ export function formatDate(date: Date, format: string): string {
     mm: String(date.getMinutes()).padStart(2, '0'),
     ss: String(date.getSeconds()).padStart(2, '0'),
   };
-  return format.replace(/YYYY|MM|DD|HH|mm|ss/g, token => tokens[token]!);
+  return format.replace(/\[([^\]]*)\]|[A-Za-z]+/g, (word, literal: string | undefined) => {
+    if (literal !== undefined) return literal;
+    return DATE_TOKEN_SEQUENCE.test(word)
+      ? word.replace(DATE_TOKENS, token => tokens[token]!)
+      : word;
+  });
 }
 
 /** 将时、分、秒输入规范为有限整数范围。 */

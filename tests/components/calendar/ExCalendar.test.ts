@@ -5,6 +5,16 @@ import ExCalendar from '../../../src/components/calendar/ExCalendar.vue';
 import type { ExCalendarExposed, CalendarEvent } from '../../../src/components/calendar/types';
 
 describe('ExCalendar', () => {
+  it('周视图在周六晚仍显示同一周，跨到周日才增加周数', async () => {
+    const wrapper = mount(ExCalendar, {
+      props: { mode: 'week', modelValue: new Date(2024, 3, 13, 20), showSolarTerm: false },
+    });
+    expect(wrapper.get('.ex-calendar__week').text()).toBe('Week 15');
+    await wrapper.setProps({ modelValue: new Date(2024, 3, 14) });
+    expect(wrapper.get('.ex-calendar__week').text()).toBe('Week 16');
+    wrapper.unmount();
+  });
+
   it('未提供日期时服务端输出不随系统时钟变化', async () => {
     vi.useFakeTimers();
     try {

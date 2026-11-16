@@ -2,6 +2,22 @@
  * 输入格式化工具函数
  */
 
+const CURRENCY_FRACTION_DIGITS = 2;
+
+/** 保留负号与待修正的多小数点输入，避免格式化丢失原始金额。 */
+function formatGroupedNumber(value: string, fractionDigits?: number): string {
+  if (!value) return '';
+  const cleaned = value.replace(/[^\d.]/g, '');
+  if (cleaned.indexOf('.') !== cleaned.lastIndexOf('.')) return value;
+  const [integer = '', fraction] = cleaned.split('.');
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const sign = value.trimStart().startsWith('-') ? '-' : '';
+  const decimals = fraction?.slice(0, fractionDigits);
+  const suffix =
+    decimals !== undefined && (decimals || fractionDigits === undefined) ? `.${decimals}` : '';
+  return `${sign}${grouped}${suffix}`;
+}
+
 /**
  * 数字千分位格式化
  * @param value 输入值
@@ -9,21 +25,7 @@
  * @example formatThousands('1234567') => '1,234,567'
  */
 export function formatThousands(value: string): string {
-  if (!value) return '';
-
-  // 移除非数字字符（保留小数点）
-  const cleaned = value.replace(/[^\d.]/g, '');
-
-  // 分割整数和小数部分
-  const parts = cleaned.split('.');
-  const integerPart = parts[0] || '';
-  const decimalPart = parts[1];
-
-  // 添加千分位分隔符
-  const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  // 组合整数和小数部分
-  return decimalPart !== undefined ? `${formatted}.${decimalPart}` : formatted;
+  return formatGroupedNumber(value);
 }
 
 /**
@@ -102,30 +104,13 @@ export function parseCreditCard(value: string): string {
 }
 
 /**
- * 金额格式化（保留两位小数）
+ * 金额格式化（最多保留两位小数）
  * @param value 输入值
  * @returns 格式化后的值
- * @example formatCurrency('1234.5') => '1,234.50'
+ * @example formatCurrency('1234.5') => '1,234.5'
  */
 export function formatCurrency(value: string): string {
-  if (!value) return '';
-
-  // 移除非数字字符（保留小数点）
-  const cleaned = value.replace(/[^\d.]/g, '');
-
-  // 确保只有一个小数点
-  const parts = cleaned.split('.');
-  const integerPart = parts[0] || '';
-  let decimalPart = parts[1] || '';
-
-  // 限制小数位数为2位
-  decimalPart = decimalPart.slice(0, 2);
-
-  // 添加千分位分隔符
-  const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  // 组合整数和小数部分
-  return decimalPart ? `${formatted}.${decimalPart}` : formatted;
+  return formatGroupedNumber(value, CURRENCY_FRACTION_DIGITS);
 }
 
 /**

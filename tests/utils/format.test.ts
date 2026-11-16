@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { formatFileSize, formatTimestamp } from '../../src/utils/format';
 
 describe('formatTimestamp', () => {
+  it('只替换日期占位符，保留普通字母、显式字面量和无分隔符格式', () => {
+    const timestamp = new Date(2024, 2, 25, 14, 30, 45).getTime();
+    expect(formatTimestamp(timestamp, 'YYYY年MM月DD日 HH:mm:ss 班级Bass [备注 mm] DDD')).toBe(
+      '2024年03月25日 14:30:45 班级Bass 备注 mm DDD'
+    );
+    expect(formatTimestamp(timestamp, 'YYYYMMDDTHHmmssZ')).toBe('20240325T143045Z');
+  });
+
   it('支持默认时间格式和重复的自定义日期占位符', () => {
     const date = new Date(2024, 0, 2, 3, 4, 5);
 
