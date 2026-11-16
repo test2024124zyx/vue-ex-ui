@@ -54,6 +54,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, shallowRef, nextTick 
 import type { CSSProperties } from 'vue';
 import type { ExVirtualListProps, ExVirtualListEmits } from './types';
 import { logger } from '../../utils/logger';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExVirtualList',
@@ -505,12 +506,7 @@ const focusItem = (index: number) => {
 
 // 列表项采用 roving tabindex，避免大量数据同时进入 Tab 顺序。
 const handleItemKeydown = (event: KeyboardEvent, item: { index: number; data: unknown }) => {
-  if (
-    !itemRole.value ||
-    event.target !== event.currentTarget ||
-    event.isComposing ||
-    event.keyCode === 229
-  )
+  if (!itemRole.value || event.target !== event.currentTarget || isComposingKeyboardEvent(event))
     return;
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();

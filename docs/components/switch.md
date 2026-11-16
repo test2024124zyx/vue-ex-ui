@@ -249,29 +249,41 @@ const value1 = ref(true);
 
 ### Props
 
-| 参数                  | 说明                     | 类型                              | 默认值      |
-| --------------------- | ------------------------ | --------------------------------- | ----------- |
-| model-value / v-model | 绑定值                   | `boolean \| string \| number`     | `false`     |
-| disabled              | 是否禁用                 | `boolean`                         | `false`     |
-| loading               | 是否显示加载中           | `boolean`                         | `false`     |
-| size                  | switch 的大小            | `'large' \| 'default' \| 'small'` | `'default'` |
-| width                 | switch 的宽度（像素）    | `number`                          | -           |
-| active-text           | switch 打开时的文字描述  | `string`                          | -           |
-| inactive-text         | switch 关闭时的文字描述  | `string`                          | -           |
-| active-value          | switch 打开时的值        | `boolean \| string \| number`     | `true`      |
-| inactive-value        | switch 关闭时的值        | `boolean \| string \| number`     | `false`     |
-| name                  | switch 对应的 name 属性  | `string`                          | -           |
-| validate-event        | 输入时是否触发表单的校验 | `boolean`                         | `true`      |
+省略 `model-value` 时开关从 `inactive-value` 开始，由组件维护状态。传入值时由父组件通过 `v-model` 或 `update:modelValue` 确认更新。
+
+| 参数                  | 说明                    | 类型                                | 默认值                    |
+| --------------------- | ----------------------- | ----------------------------------- | ------------------------- |
+| model-value / v-model | 绑定值                  | `boolean \| string \| number`       | `undefined`               |
+| disabled              | 是否禁用                | `boolean`                           | `false`                   |
+| readonly              | 是否只读                | `boolean`                           | `false`                   |
+| loading               | 是否显示加载中          | `boolean`                           | `false`                   |
+| size                  | 开关尺寸                | `'small' \| 'medium' \| 'large'`    | 继承配置，缺省为 `medium` |
+| width                 | 开关宽度，数值以像素计  | `number \| string`                  | -                         |
+| active-text           | 打开时的文字描述        | `string`                            | -                         |
+| inactive-text         | 关闭时的文字描述        | `string`                            | -                         |
+| active-value          | 打开时的值              | `boolean \| string \| number`       | `true`                    |
+| inactive-value        | 关闭时的值              | `boolean \| string \| number`       | `false`                   |
+| active-color          | 打开时的颜色            | `string`                            | -                         |
+| inactive-color        | 关闭时的颜色            | `string`                            | -                         |
+| inline-prompt         | 是否在开关内部显示文字  | `boolean`                           | `false`                   |
+| validate-status       | 校验状态                | `'success' \| 'warning' \| 'error'` | -                         |
+| required              | 是否必填                | `boolean`                           | `false`                   |
+| name                  | 原生输入元素的 `name`   | `string`                            | -                         |
+| id                    | 原生输入元素的 `id`     | `string`                            | -                         |
+| aria-label            | 无障碍名称              | `string`                            | -                         |
+| aria-describedby      | 无障碍描述对应的元素 ID | `string`                            | -                         |
+| custom-class          | 自定义类名              | `string`                            | -                         |
+| custom-style          | 自定义样式              | `Record<string, string>`            | -                         |
 
 ### Events
 
-| 事件名             | 说明                            | 回调参数                                       |
-| ------------------ | ------------------------------- | ---------------------------------------------- |
-| update:model-value | 值变化时触发（配合 `v-model`）  | `(value: boolean \| string \| number) => void` |
-| change             | switch 状态发生变化时的回调函数 | `(value: boolean \| string \| number) => void` |
-| focus              | 获得焦点时触发                  | `(event: FocusEvent) => void`                  |
-| blur               | 失去焦点时触发                  | `(event: FocusEvent) => void`                  |
-| keydown            | 键盘按下时触发                  | `(event: KeyboardEvent) => void`               |
+| 事件名             | 说明                                                   | 回调参数                                       |
+| ------------------ | ------------------------------------------------------ | ---------------------------------------------- |
+| update:model-value | 请求更新绑定值                                         | `(value: boolean \| string \| number) => void` |
+| change             | 请求切换时触发，参数为目标值                           | `(value: boolean \| string \| number) => void` |
+| focus              | 获得焦点时触发                                         | `(event: FocusEvent) => void`                  |
+| blur               | 失去焦点时触发                                         | `(event: FocusEvent) => void`                  |
+| keydown            | 收到原生按键时触发，可调用 `preventDefault()` 阻止切换 | `(event: KeyboardEvent) => void`               |
 
 ### Slots
 

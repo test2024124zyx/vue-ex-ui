@@ -115,6 +115,7 @@ import type { ExNumberInputProps, ExNumberInputEmits, ExNumberInputExposed } fro
 import { useI18n } from '../../locale';
 import { debounce } from '../../utils/debounce';
 import type { DebouncedFunction } from '../../utils/debounce';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useFormFieldState } from '../form/use-form-item';
 import ExIcon from '../icon/ExIcon.vue';
 
@@ -400,7 +401,7 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (!interactive.value || event.isComposing) return;
+  if (!interactive.value || isComposingKeyboardEvent(event)) return;
 
   // 上下箭头键
   if (event.key === 'ArrowUp') {

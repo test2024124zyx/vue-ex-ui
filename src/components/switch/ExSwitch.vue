@@ -86,15 +86,17 @@
 
 <script setup lang="ts">
 import { ref, computed, useSlots, nextTick } from 'vue';
-import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance } from './types';
+import type { ExSwitchProps, ExSwitchEmits, ExSwitchInstance, SwitchValue } from './types';
 import { useFormFieldState } from '../form/use-form-item';
+import { useControllableState } from '../../composables/useControllableState';
+import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
 defineOptions({
   name: 'ExSwitch',
 });
 
 const props = withDefaults(defineProps<ExSwitchProps>(), {
-  modelValue: false,
+  modelValue: undefined,
   activeValue: true,
   inactiveValue: false,
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
@@ -118,9 +120,11 @@ const {
 } = useFormFieldState(props);
 
 // 计算属性
-const isChecked = computed(() => {
-  return props.modelValue === props.activeValue;
+const switchState = useControllableState<SwitchValue>({
+  controlledValue: () => props.modelValue,
+  defaultValue: props.inactiveValue,
 });
+const isChecked = computed(() => switchState.value.value === props.activeValue);
 
 const isInteractionDisabled = computed(() => disabled.value || props.loading);
 const canChange = computed(() => interactive.value && !props.loading);
@@ -199,9 +203,7 @@ const handleChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const newValue = target.checked ? props.activeValue : props.inactiveValue;
 
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
-  formItem?.onFieldChange();
+  requestValue(newValue);
   // 使用本轮渲染后的模型恢复原生 checked，父组件拒绝更新时也保持一致。
   void nextTick(() => {
     target.checked = isChecked.value;
@@ -220,13 +222,12 @@ const handleBlur = (event: FocusEvent) => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
+  emit('keydown', event);
   const togglesValue =
     event.code === 'Space' || event.code === 'Enter' || event.key === ' ' || event.key === 'Enter';
-  if (!togglesValue || event.isComposing) return;
+  if (!togglesValue || event.defaultPrevented || isComposingKeyboardEvent(event)) return;
   event.preventDefault();
-  if (!canChange.value) return;
   toggle();
-  emit('keydown', event);
 };
 
 // 暴露方法
@@ -238,13 +239,15 @@ const blur = () => {
   inputRef.value?.blur();
 };
 
-const toggle = () => {
-  if (!canChange.value) return;
-
-  const newValue = isChecked.value ? props.inactiveValue : props.activeValue;
+const requestValue = (newValue: SwitchValue) => {
+  switchState.request(newValue);
   emit('update:modelValue', newValue);
   emit('change', newValue);
   formItem?.onFieldChange();
+};
+
+const toggle = () => {
+  if (canChange.value) requestValue(isChecked.value ? props.inactiveValue : props.activeValue);
 };
 
 defineExpose<ExSwitchInstance>({

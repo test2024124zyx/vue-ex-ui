@@ -428,6 +428,7 @@ import { usePopupOverlay } from '../../composables/usePopupOverlay';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useSelectAria } from './use-select-aria';
 import { useSelectRemote } from './use-select-remote';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExSelect',
@@ -435,7 +436,6 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<ExSelectProps>(), {
-  modelValue: null,
   options: () => [],
   placeholder: '',
   size: undefined,
@@ -453,6 +453,11 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
 });
 
 const emit = defineEmits<ExSelectEmits>();
+const selection = useControllableState<SelectValue>({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => (props.multiple ? [] : null),
+  clone: value => (Array.isArray(value) ? [...value] : value),
+});
 defineSlots<ExSelectSlots>();
 const attrs = useAttrs();
 
@@ -578,7 +583,7 @@ const {
   virtualRows,
   getVirtualRowIndex,
   useVirtual,
-} = useSelectOptions(props, searchQuery, sourceOptions, remoteLoading);
+} = useSelectOptions(props, searchQuery, sourceOptions, remoteLoading, selection.value);
 
 // 折叠标签时实际展示的标签与被折叠数量
 const displayTags = computed<SelectOption[]>(() =>
@@ -716,6 +721,11 @@ const handleInputClick = () => {
   if (!dropdownVisible.value) showDropdown();
 };
 
+const requestSelection = (value: SelectValue) => {
+  selection.request(value);
+  emit('update:modelValue', value);
+};
+
 const handleSelect = (option: SelectOption) => {
   if (option.disabled || effectiveDisabled.value || effectiveReadonly.value) return;
 
@@ -732,7 +742,7 @@ const handleSelect = (option: SelectOption) => {
       }
       next = [...current, option.value];
     }
-    emit('update:modelValue', next);
+    requestSelection(next);
     emit(
       'change',
       next,
@@ -747,7 +757,7 @@ const handleSelect = (option: SelectOption) => {
     return;
   }
 
-  emit('update:modelValue', option.value);
+  requestSelection(option.value);
   emit('change', option.value, option);
   formItem?.onFieldChange();
   hideDropdown();
@@ -756,7 +766,7 @@ const handleSelect = (option: SelectOption) => {
 const removeTag = (value: string | number) => {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
   const next = selectedValues.value.filter(v => v !== value);
-  emit('update:modelValue', next);
+  requestSelection(next);
   emit(
     'change',
     next,
@@ -769,7 +779,7 @@ const removeTag = (value: string | number) => {
 const handleClear = () => {
   if (effectiveDisabled.value || effectiveReadonly.value) return;
   const cleared: SelectValue = props.multiple ? [] : null;
-  emit('update:modelValue', cleared);
+  requestSelection(cleared);
   emit('change', cleared, props.multiple ? [] : null);
   emit('clear');
   formItem?.onFieldChange();

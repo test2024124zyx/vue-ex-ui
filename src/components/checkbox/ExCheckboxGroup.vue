@@ -105,13 +105,13 @@ import { useComponentSize } from '../config-provider/composables';
 import { generateId } from '../../utils/id';
 import { checkboxGroupContextKey, type CheckboxRegistration } from './context';
 import { useFormItem } from '../form/use-form-item';
+import { useControllableState } from '../../composables/useControllableState';
 
 defineOptions({
   name: 'ExCheckboxGroup',
 });
 
 const props = withDefaults(defineProps<ExCheckboxGroupProps>(), {
-  modelValue: () => [],
   size: undefined, // 改为 undefined，让 useComponentSize 处理默认值
   status: undefined,
   disabled: false,
@@ -121,6 +121,11 @@ const props = withDefaults(defineProps<ExCheckboxGroupProps>(), {
 });
 
 const emit = defineEmits<ExCheckboxGroupEmits>();
+const { value: confirmedValues, request } = useControllableState<Array<string | number>>({
+  controlledValue: () => props.modelValue,
+  defaultValue: () => [],
+  clone: values => [...values],
+});
 
 defineSlots<ExCheckboxGroupSlots>();
 
@@ -256,6 +261,7 @@ const normalizedMax = computed(() => {
 const commitValue = (value: Array<string | number>) => {
   const uniqueValue = [...new Set(value)];
   validateGroup(uniqueValue);
+  request(uniqueValue);
   emit('update:modelValue', uniqueValue);
   emit('change', uniqueValue);
   formItem?.onFieldChange();
@@ -265,7 +271,7 @@ const commitValue = (value: Array<string | number>) => {
 const updateValue = (value: string | number, checked: boolean): boolean => {
   if (currentDisabled.value || currentReadonly.value) return false;
 
-  const newValue = [...props.modelValue];
+  const newValue = [...confirmedValues.value];
   const index = newValue.indexOf(value);
 
   if (checked && index === -1) {
@@ -312,7 +318,7 @@ watch(
   [() => props.modelValue, () => props.rules],
   () => {
     // 保留业务提供的 errorMessage，只更新组件自己产生的错误。
-    if (validationErrorMessage.value) validateGroup(props.modelValue);
+    if (validationErrorMessage.value) validateGroup(confirmedValues.value);
   },
   { deep: true }
 );
@@ -329,7 +335,7 @@ const unregisterCheckbox = (uid: number) => {
 };
 
 provide(checkboxGroupContextKey, {
-  modelValue: computed(() => props.modelValue),
+  modelValue: confirmedValues,
   name: computed(() => props.name),
   size: componentSize,
   shape: currentShape,
@@ -358,7 +364,7 @@ const getAvailableOptions = () => {
 const checkAll = () => {
   if (currentDisabled.value || currentReadonly.value) return;
 
-  const result = [...new Set(props.modelValue)];
+  const result = [...new Set(confirmedValues.value)];
   for (const option of getAvailableOptions()) {
     if (!option.disabled && !result.includes(option.value) && result.length < normalizedMax.value) {
       result.push(option.value);
@@ -374,9 +380,9 @@ const uncheckAll = () => {
   const disabledValues = new Set(
     options.filter(option => option.disabled).map(option => option.value)
   );
-  const result = props.modelValue.filter(value => disabledValues.has(value));
+  const result = confirmedValues.value.filter(value => disabledValues.has(value));
 
-  for (const value of props.modelValue) {
+  for (const value of confirmedValues.value) {
     if (result.length >= normalizedMin.value) break;
     if (!result.includes(value)) result.push(value);
   }
@@ -390,7 +396,7 @@ const toggleAll = () => {
     .filter(option => !option.disabled)
     .map(option => option.value);
   const allEnabledChecked =
-    enabledValues.length > 0 && enabledValues.every(value => props.modelValue.includes(value));
+    enabledValues.length > 0 && enabledValues.every(value => confirmedValues.value.includes(value));
 
   if (allEnabledChecked) uncheckAll();
   else checkAll();
