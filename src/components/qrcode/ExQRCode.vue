@@ -4,7 +4,7 @@
     :class="qrcodeClasses"
     :style="qrcodeStyles"
     :role="loading || error ? 'group' : 'img'"
-    :aria-label="ariaLabel || `QR Code: ${value}`"
+    :aria-label="ariaLabel || t('qrcode.ariaLabel', { value })"
     :aria-busy="loading || undefined"
   >
     <canvas
@@ -83,7 +83,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ExQRCodeProps, ExQRCodeExposed, ExQRCodeEmits } from './types';
 import { useI18n } from '../../locale';
 import { mergeInlineStyles } from '../../utils/style';
+import { clickDownloadLink } from '../../utils/browser-download';
 import QRCodeGenerator from './qrcode-generator';
+import { DEFAULT_QRCODE_SIZE, normalizeQRCodeSize } from './qrcode-options';
 import { composeQRCodeLogo, getQRCodeLogoPixels } from './qrcode-logo';
 import { useGlobalConfig, useThemeOverrides } from '../config-provider/composables';
 
@@ -93,7 +95,7 @@ defineOptions({
 
 const props = withDefaults(defineProps<ExQRCodeProps>(), {
   value: '',
-  size: 200,
+  size: DEFAULT_QRCODE_SIZE,
   level: 'M',
   bgColor: '#ffffff',
   fgColor: '#000000',
@@ -127,18 +129,12 @@ let mounted = false;
 let generationScheduled = false;
 let renderedSignature = '';
 
-const DEFAULT_QRCODE_SIZE = 200;
-const MIN_QRCODE_SIZE = 32;
-const MAX_QRCODE_SIZE = 2048;
-
 const clampFiniteNumber = (value: number, min: number, max: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, value));
 };
 
-const normalizedSize = computed(() =>
-  clampFiniteNumber(props.size, MIN_QRCODE_SIZE, MAX_QRCODE_SIZE, DEFAULT_QRCODE_SIZE)
-);
+const normalizedSize = computed(() => normalizeQRCodeSize(props.size));
 const normalizedIconSize = computed(() =>
   clampFiniteNumber(props.iconSize, 0, normalizedSize.value, Math.min(40, normalizedSize.value))
 );
@@ -319,15 +315,13 @@ watch(
 
 // 下载二维码
 const download = (filename?: string) => {
-  if (!canvasRef.value || !ready.value || error.value) return;
+  const canvas = canvasRef.value;
+  if (!canvas || !ready.value || error.value) return;
 
   const url = toDataURL();
   if (!url) return;
   try {
-    const link = document.createElement('a');
-    link.download = filename || `qrcode-${Date.now()}.png`;
-    link.href = url;
-    link.click();
+    clickDownloadLink(canvas.ownerDocument, url, filename || `qrcode-${Date.now()}.png`);
   } catch (cause) {
     emit('error', normalizeError(cause));
   }

@@ -26,6 +26,20 @@ const BLOCK_COMMENT: GrammarRule = { type: 'comment', re: /\/\*[\s\S]*?(?:\*\/|(
 const HASH_COMMENT: GrammarRule = { type: 'comment', re: /#[^\n]*/ };
 const DQ_STRING: GrammarRule = { type: 'string', re: /"(?:\\.|[^"\\\n])*"/ };
 const SQ_STRING: GrammarRule = { type: 'string', re: /'(?:\\.|[^'\\\n])*'/ };
+const JS_IDENTIFIER = /[A-Za-z_$][\w$]*/;
+const JS_REGEX_CONTEXT = /(?:[=(,:[!&|?{};]|=>|\breturn|\btypeof)$/;
+const JS_REGEX_CONTEXT_LENGTH = 'return'.length + 1;
+const JS_REGEX_LITERAL = /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\n])*\]|[^/\\\n[])+\/[gimsuy]*/y;
+const SHELL_OPTION = /--?[\w-]+/y;
+
+function readJavaScriptRegex(code: string, start: number): string | undefined {
+  let end = start;
+  while (end > 0 && /\s/.test(code[end - 1]!)) end -= 1;
+  const context = code.slice(Math.max(0, end - JS_REGEX_CONTEXT_LENGTH), end);
+  if (!JS_REGEX_CONTEXT.test(context)) return undefined;
+  JS_REGEX_LITERAL.lastIndex = start;
+  return JS_REGEX_LITERAL.exec(code)?.[0];
+}
 
 // ---------------------------------------------------------------------------
 // JavaScript / TypeScript
@@ -40,10 +54,11 @@ function javascript(): Grammar {
       { type: 'string', re: /`(?:\\[\s\S]|\$\{(?:[^{}]|\{[^}]*\})*\}|\$(?!\{)|[^`\\$])*`/ },
       DQ_STRING,
       SQ_STRING,
-      // 正则字面量：用变长后顾断言限定其只在「值位置」出现，避免误判除法。
+      // 先判断是否处在值位置，再读取正则字面量，避免把除法作为正则。
       {
         type: 'regexp',
-        re: /(?<=(?:[=(,:[!&|?{};]|=>|\breturn|\btypeof)\s*)\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\n])*\]|[^/\\\n])+\/[gimsuy]*/,
+        re: /\/(?![*/])/,
+        resolve: readJavaScriptRegex,
       },
       { type: 'number', re: NUMBER },
       { type: 'boolean', re: /\b(?:true|false|null|undefined|NaN|Infinity)\b/ },
@@ -56,7 +71,13 @@ function javascript(): Grammar {
       // 调用位置的标识符（含方法名）着色为函数。
       { type: 'function', re: /[A-Za-z_$][\w$]*(?=\s*[<(])/ },
       // 成员访问属性。
-      { type: 'property', re: /(?<=\.)[A-Za-z_$][\w$]*/ },
+      {
+        type: 'property',
+        re: JS_IDENTIFIER,
+        resolve: (code, start, value) => (code[start - 1] === '.' ? value : undefined),
+      },
+      // 未着色的标识符一次读完，避免逐字符重复扫描长变量名。
+      { type: 'plain', re: JS_IDENTIFIER },
       { type: 'operator', re: /=>|\.\.\.|\?\.|\?\?|[+\-*/%=<>!&|^~?]+/ },
       { type: 'punctuation', re: /[{}()[\];,.:]/ },
     ],
@@ -233,7 +254,15 @@ function shell(): Grammar {
       { type: 'keyword', re: words(SHELL_KEYWORDS) },
       { type: 'function', re: words(SHELL_COMMANDS) },
       // 长短选项。
-      { type: 'property', re: /(?<=\s)--?[\w-]+/ },
+      {
+        type: 'property',
+        re: /-(?=[\w-])/,
+        resolve: (code, start) => {
+          if (!/\s/.test(code[start - 1] ?? '')) return undefined;
+          SHELL_OPTION.lastIndex = start;
+          return SHELL_OPTION.exec(code)?.[0];
+        },
+      },
       { type: 'number', re: /\b\d+\b/ },
       { type: 'operator', re: /&&|\|\||[|&;<>]/ },
     ],
@@ -483,7 +512,11 @@ function markdown(): Grammar {
       { type: 'comment', re: /^>.*/ },
       // 加粗 / 斜体。
       { type: 'class', re: /\*\*[^*\n]+\*\*|__[^_\n]+__/ },
-      { type: 'property', re: /(?<!\*)\*(?!\*)[^*\n]+\*(?!\*)|(?<!_)_(?!_)[^_\n]+_(?!_)/ },
+      {
+        type: 'property',
+        re: /\*(?!\*)[^*\n]+\*(?!\*)|_(?!_)[^_\n]+_(?!_)/,
+        resolve: (code, start, value) => (code[start - 1] === value[0] ? undefined : value),
+      },
       // 链接 / 图片。
       { type: 'function', re: /!?\[[^\]\n]*\]\([^)\n]*\)/ },
       // 列表标记 / 分隔线。

@@ -49,7 +49,30 @@ test('键盘焦点给文件名预览和卡片上传按钮显示轮廓', async ({
       await expect(button).toBeFocused();
       await expect(button).toHaveCSS('outline-style', 'solid');
       await expect(button).toHaveCSS('outline-width', '2px');
-      await expect(button).toHaveCSS('outline-offset', '2px');
+      if (!selector.endsWith('__upload-trigger-content')) {
+        await expect(button).toHaveCSS('outline-offset', '2px');
+        continue;
+      }
+      await expect(button).toHaveCSS('outline-offset', '-4px');
+      const png = await button.screenshot({ scale: 'css', animations: 'disabled' });
+      // 在卡片上边缘内侧采样，验证实际绘制的轮廓处于裁剪区内。
+      expect(
+        await button.evaluate(async (element, base64) => {
+          const image = new Image();
+          image.src = `data:image/png;base64,${base64}`;
+          await image.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext('2d')!;
+          context.drawImage(image, 0, 0);
+          const pixel = context.getImageData(Math.floor(image.width / 2), 3, 1, 1).data;
+          context.fillStyle = getComputedStyle(element).outlineColor;
+          context.fillRect(0, 0, 1, 1);
+          const expected = context.getImageData(0, 0, 1, 1).data;
+          return pixel.every((channel, index) => channel === expected[index]);
+        }, png.toString('base64'))
+      ).toBe(true);
     }
   }
 });
