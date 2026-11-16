@@ -109,6 +109,33 @@ describe('数值边界与表单输入事件', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([[2], [3]]);
   });
 
+  it.each([
+    { initial: 0, endpoint: 'Home', arrow: 'ArrowUp', expected: 1 },
+    { initial: 10, endpoint: 'End', arrow: 'ArrowDown', expected: 9 },
+  ])('$endpoint 再次确认当前端点时结束草稿', async ({ initial, endpoint, arrow, expected }) => {
+    const model = reactive<{ value: number | null }>({ value: initial });
+    const wrapper = mount({
+      render: () =>
+        h(ExNumberInput, {
+          modelValue: model.value,
+          min: 0,
+          max: 10,
+          'onUpdate:modelValue': value => {
+            model.value = value;
+          },
+        }),
+    });
+    wrappers.push(wrapper);
+    const input = wrapper.get('input');
+    await input.trigger('focus');
+    input.element.value = '5';
+    await input.trigger('input');
+    await input.trigger('keydown', { key: endpoint });
+    expect(input.element.value).toBe(String(initial));
+    await input.trigger('keydown', { key: arrow });
+    expect(model.value).toBe(expected);
+  });
+
   it('显示补齐指定精度，模型为数字，边界值超出显示精度时保持准确', async () => {
     const wrapper = mount(ExNumberInput, { props: { modelValue: 1.5, precision: 2 } });
     wrappers.push(wrapper);

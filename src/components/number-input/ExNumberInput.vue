@@ -412,6 +412,18 @@ const handleBlur = (event: FocusEvent) => {
   formItem?.onFieldBlur();
 };
 
+const commitSteppedValue = (newValue: number, direction?: 1 | -1) => {
+  if (!Number.isFinite(newValue)) return;
+  const oldValue = props.modelValue;
+  // 确认同值不会触发属性监听，立即撤销草稿和待发送的输入事件。
+  if (hasDraft.value && newValue === oldValue) discardDraft();
+  emit('update:modelValue', newValue);
+  emit('change', newValue, oldValue);
+  if (direction === 1) emit('increase', newValue);
+  else if (direction === -1) emit('decrease', newValue);
+  formItem?.onFieldChange();
+};
+
 const handleKeydown = (event: KeyboardEvent) => {
   if (!interactive.value || event.isComposing) return;
 
@@ -442,37 +454,17 @@ const handleKeydown = (event: KeyboardEvent) => {
   // Home/End 跳转到最小/最大值
   else if (event.key === 'Home') {
     event.preventDefault();
-    if (props.min !== -Infinity) {
-      const oldValue = props.modelValue;
-      emit('update:modelValue', props.min);
-      emit('change', props.min, oldValue);
-      formItem?.onFieldChange();
-    }
+    commitSteppedValue(props.min);
   } else if (event.key === 'End') {
     event.preventDefault();
-    if (props.max !== Infinity) {
-      const oldValue = props.modelValue;
-      emit('update:modelValue', props.max);
-      emit('change', props.max, oldValue);
-      formItem?.onFieldChange();
-    }
+    commitSteppedValue(props.max);
   }
 };
 
 const applyStep = (direction: 1 | -1, stepOrEvent?: number | Event) => {
   if (direction === 1 ? isIncreaseDisabled.value : isDecreaseDisabled.value) return;
   const step = typeof stepOrEvent === 'number' ? stepOrEvent : effectiveStep.value;
-  const newValue = validateValue(addDecimal(stepValue.value ?? 0, direction * step));
-  if (!Number.isFinite(newValue)) return;
-  const oldValue = props.modelValue;
-
-  // 父级接受同值时不会触发属性监听，也需要结束正在编辑的草稿。
-  if (hasDraft.value && newValue === oldValue) discardDraft();
-  emit('update:modelValue', newValue);
-  emit('change', newValue, oldValue);
-  if (direction === 1) emit('increase', newValue);
-  else emit('decrease', newValue);
-  formItem?.onFieldChange();
+  commitSteppedValue(validateValue(addDecimal(stepValue.value ?? 0, direction * step)), direction);
 };
 
 const handleIncrease = (stepOrEvent?: number | Event) => applyStep(1, stepOrEvent);
