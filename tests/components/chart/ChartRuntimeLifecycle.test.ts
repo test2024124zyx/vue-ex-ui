@@ -64,11 +64,13 @@ describe('图表公开能力与运行时生命周期', () => {
     expect(wrapper.emitted('updated')).toHaveLength(1);
   });
 
-  it('清空后收到同值数据仍能恢复绘制', async () => {
+  it.each(['clear', 'setOption'] as const)('%s 清空后收到同值数据仍能恢复绘制', async method => {
     const { wrapper, api, runtime } = await mountChart();
-    api.clear();
+    if (method === 'clear') api.clear();
+    else api.setOption({ series: [] }, { notMerge: true });
+    runtime.setOption.mockClear();
     await wrapper.setProps({ option: { series: [{ type: 'bar', data: [1, 2] }] } });
-    expect(runtime.setOption).toHaveBeenCalledTimes(2);
+    expect(runtime.setOption).toHaveBeenCalledOnce();
   });
 
   it('series 的响应式 getter 返回新数据时重新设置图表', async () => {

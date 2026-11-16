@@ -533,6 +533,7 @@ const setOption = (
 ) => {
   if (!chartInstance.value) return;
   chartInstance.value.setOption(option, opts);
+  appliedInputs = undefined;
   syncNavigationItems(option);
 };
 
