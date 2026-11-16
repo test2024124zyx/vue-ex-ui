@@ -118,6 +118,10 @@ export function useCascaderAria({
   const triggerAttrs = computed<Record<string, unknown>>(() => {
     const forwarded = { ...attrs };
     for (const key of CONTROLLED_TRIGGER_ATTRIBUTES) delete forwarded[key];
+    // 浏览器事件由根节点统一接收，避免同一冒泡事件调用外部监听器两次。
+    for (const key of Object.keys(forwarded)) {
+      if (/^on[^a-z]/.test(key)) delete forwarded[key];
+    }
     return forwarded;
   });
 

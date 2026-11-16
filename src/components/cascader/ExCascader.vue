@@ -46,8 +46,8 @@
       <input
         :id="controlId"
         ref="inputRef"
+        v-model="inputDisplayValue"
         v-bind="triggerAttrs"
-        :value="inputDisplayValue"
         :placeholder="currentPlaceholder"
         :disabled="effectiveDisabled"
         :readonly="effectiveReadonly || !filterable"
@@ -65,7 +65,6 @@
         :aria-disabled="effectiveDisabled || undefined"
         :aria-readonly="effectiveReadonly || !filterable ? 'true' : undefined"
         :aria-autocomplete="filterable ? 'list' : undefined"
-        @input="handleInput"
         @keydown="handleKeydown"
         @focus="handleInputFocus"
         @blur="handleInputBlur"
@@ -172,6 +171,7 @@
                 :aria-selected="isSearchResultSelected(result)"
                 :aria-label="result.labels.join(separator)"
                 @mouseenter="!result.disabled && (searchActiveIndex = resultIndex)"
+                @mousedown.prevent
                 @click="handleSearchResultClick(result)"
               >
                 <span
@@ -279,6 +279,7 @@
                     'ex-cascader__option--keyboard':
                       activeCol === index && activeIndex === optIndex,
                   }"
+                  @mousedown.prevent
                   @click="handleOptionClick(option, index)"
                   @mouseenter="trigger === 'hover' && handleOptionHover(option, index, optIndex)"
                 >
@@ -520,13 +521,13 @@ const activeDescendant = computed(() => {
   return getOptionId(activeCol.value, activeIndex.value);
 });
 
-// 输入框展示值：搜索时显示搜索词，否则显示选中路径
-const inputDisplayValue = computed(() => {
-  if (hasSearchQuery.value && visible.value) {
-    return searchQuery.value;
-  }
-  if (props.multiple) return '';
-  return displayValue.value;
+// 复用 Vue 原生 v-model 的输入法组合处理，确认后的文字才进入搜索。
+const inputDisplayValue = computed({
+  get: () => {
+    if (hasSearchQuery.value && visible.value) return searchQuery.value;
+    return props.multiple ? '' : displayValue.value;
+  },
+  set: setSearchQuery,
 });
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
 const allLeafPaths = computed(() => collectCascaderLeafPaths(asyncOptions.data.value));
@@ -737,15 +738,15 @@ const handleTriggerClick = () => {
   }
 };
 
-const handleInput = (event: Event) => {
+function setSearchQuery(value: string) {
   if (!props.filterable || effectiveDisabled.value || effectiveReadonly.value) return;
-  const target = event.target as HTMLInputElement;
-  searchQuery.value = target.value;
+  if (visible.value && searchQuery.value === value) return;
+  searchQuery.value = value;
   searchActiveIndex.value = -1;
   if (!visible.value) {
     show();
   }
-};
+}
 
 const handleInputFocus = (event: FocusEvent) => {
   emit('focus', event);
