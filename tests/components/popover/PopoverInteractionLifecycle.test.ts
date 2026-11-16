@@ -10,6 +10,27 @@ afterEach(() => {
 });
 
 describe('气泡浮层交互生命周期', () => {
+  it('在多个触发元素间移动焦点不会发送关闭或重新打开请求', async () => {
+    const wrapper = mount(ExPopover, {
+      props: { trigger: 'focus', openDelay: 0, closeDelay: 0, content: '详情' },
+      slots: { default: () => [h('button', '第一项'), h('button', '第二项')] },
+      attachTo: document.body,
+    });
+    wrappers.push(wrapper);
+    const [first, second] = wrapper.findAll<HTMLButtonElement>('button');
+    first!.element.focus();
+    await nextTick();
+    const popup = document.querySelector('.ex-popover__popper');
+    expect(popup).not.toBeNull();
+    second!.element.focus();
+    await nextTick();
+    expect(document.querySelector('.ex-popover__popper')).toBe(popup);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true]]);
+    second!.element.blur();
+    await nextTick();
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true], [false]]);
+  });
+
   it('悬停跨入浮层会取消关闭，离开后按延迟关闭', async () => {
     vi.useFakeTimers();
     const wrapper = mount(ExPopover, {

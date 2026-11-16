@@ -27,8 +27,8 @@
           :aria-labelledby="!ariaLabel && hasTitle ? titleId : undefined"
           @mouseenter="handlePopoverMouseEnter"
           @mouseleave="handlePopoverMouseLeave"
-          @focusin="handlePopoverFocusIn"
-          @focusout="handlePopoverFocusOut"
+          @focusin="handleFocus"
+          @focusout="handleBlur"
           @click.stop
         >
           <!-- 霓虹边框效果 -->
@@ -299,32 +299,18 @@ const handlePopoverMouseLeave = () => {
 };
 
 const handleFocus = () => {
-  if (props.trigger === 'focus') {
-    isFocusInside.value = true;
-    show();
-  }
+  if (props.trigger !== 'focus' || isFocusInside.value) return;
+  isFocusInside.value = true;
+  if (visible.value) clearTimers();
+  else show();
 };
 
 const handleBlur = (event: FocusEvent) => {
-  if (props.trigger === 'focus') {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (nextTarget && popperRef.value?.contains(nextTarget)) return;
-    isFocusInside.value = false;
-    hide();
-  }
-};
-
-const handlePopoverFocusIn = () => {
-  if (props.trigger !== 'focus') return;
-  isFocusInside.value = true;
-  clearTimers();
-};
-
-const handlePopoverFocusOut = (event: FocusEvent) => {
-  if (props.trigger !== 'focus') return;
-  const nextTarget = event.relatedTarget as Node | null;
+  if (props.trigger !== 'focus' || !isFocusInside.value) return;
+  const nextTarget = event.relatedTarget;
+  // 触发区与传送后的内容共同构成一个焦点范围。
   if (
-    nextTarget &&
+    nextTarget instanceof Node &&
     (popperRef.value?.contains(nextTarget) || popoverRef.value?.contains(nextTarget))
   ) {
     return;

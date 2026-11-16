@@ -25,6 +25,8 @@
           :aria-label="ariaLabel"
           @mouseenter="handlePopperEnter"
           @mouseleave="handlePopperLeave"
+          @focusin="handleFocus"
+          @focusout="handleBlur"
         >
           <!-- 霓虹边框效果 -->
           <div class="ex-tooltip__border"></div>
@@ -263,17 +265,25 @@ const handleMouseLeave = () => {
 };
 
 const handleFocus = () => {
-  if (props.trigger === 'focus' || props.trigger === 'hover-focus') {
-    isFocusInside.value = true;
-    show();
-  }
+  if ((props.trigger !== 'focus' && props.trigger !== 'hover-focus') || isFocusInside.value) return;
+  isFocusInside.value = true;
+  if (visible.value) clearTimers();
+  else show();
 };
 
-const handleBlur = () => {
-  if (props.trigger === 'focus' || props.trigger === 'hover-focus') {
-    isFocusInside.value = false;
-    hideWhenInactive();
+const handleBlur = (event: FocusEvent) => {
+  if ((props.trigger !== 'focus' && props.trigger !== 'hover-focus') || !isFocusInside.value)
+    return;
+  const nextTarget = event.relatedTarget;
+  // 内容被传送到 body，焦点在两处之间转移仍保持同一次交互。
+  if (
+    nextTarget instanceof Node &&
+    (popperRef.value?.contains(nextTarget) || tooltipRef.value?.contains(nextTarget))
+  ) {
+    return;
   }
+  isFocusInside.value = false;
+  hideWhenInactive();
 };
 
 const handleClick = () => {
