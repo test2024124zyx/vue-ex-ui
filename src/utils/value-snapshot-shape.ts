@@ -31,12 +31,12 @@ export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
   const ownShapes = new WeakMap<object, OwnShape | null>();
   const internalShapes = new WeakMap<object, InternalShape | null>();
-  const memberShapes = new WeakMap<object, string | null>();
+  const memberShapes = new WeakMap<object, number | null>();
   const ownKeys = new WeakMap<object, KeyToken[]>();
   const readableNodes = new WeakMap<object, ReadableNode>();
   const observedNodes = new WeakMap<object, Field[]>();
   const observedProperties = new WeakMap<object, Map<PropertyKey, ObservedProperty>>();
-  const outlines = new WeakMap<object, string>();
+  const outlines = new WeakMap<object, number>();
   const negativeZero = Symbol();
   const id = (value: unknown) => {
     const atom = Object.is(value, -0) ? negativeZero : value;
@@ -56,16 +56,18 @@ export function createSnapshotMemberShape() {
     return keys;
   }
 
-  function outlineOf(value: unknown): string {
-    if (value === null || typeof value !== 'object') return `value:${id(value)}`;
+  function outlineOf(value: unknown): number {
+    if (value === null || typeof value !== 'object') return id(`value:${id(value)}`);
     const node = toRaw(value);
-    if (usesNativeIdentity(node)) return `native:${id(node)}`;
+    if (usesNativeIdentity(node)) return id(`native:${id(node)}`);
     const cached = outlines.get(node);
     if (cached !== undefined) return cached;
     // 判断自有键无需读取访问器，仍可作为回退分组的必要条件。
-    const shape = `object:${id(Object.getPrototypeOf(node))}:${keysOf(node)
-      .map(key => key.id)
-      .join(',')}`;
+    const shape = id(
+      `object:${id(Object.getPrototypeOf(node))}:${keysOf(node)
+        .map(key => key.id)
+        .join(',')}`
+    );
     outlines.set(node, shape);
     return shape;
   }
@@ -122,7 +124,7 @@ export function createSnapshotMemberShape() {
     }
   }
 
-  function memberShapeOf(value: unknown): string | undefined {
+  function memberShapeOf(value: unknown): number | undefined {
     const outline = outlineOf(value);
     if (value === null || typeof value !== 'object') return outline;
     const node = toRaw(value);
@@ -130,10 +132,10 @@ export function createSnapshotMemberShape() {
     const previous = memberShapes.get(node);
     if (previous !== undefined) return previous ?? undefined;
     const { fields, others } = fieldsOf(node);
-    // 浅层信息只读直接字段，不递归进入集合，循环条目也能生成同样的签名。
+    // 浅层签名先转成编号，复用同一成员时无需重复拼接它的属性。
     const signature = others.length
       ? undefined
-      : `${outline};${fields.map(({ value }) => outlineOf(value)).join(';')}`;
+      : id(`${outline};${fields.map(({ value }) => outlineOf(value)).join(';')}`);
     memberShapes.set(node, signature ?? null);
     return signature;
   }
@@ -277,7 +279,7 @@ export function createSnapshotMemberShape() {
       for (let index = 0; index < count; index++) {
         const { id: keyId, value } = fields[index]!;
         const position = `${path}.${keyId}`;
-        result.set(position, id(outlineOf(value)));
+        result.set(position, outlineOf(value));
         if (value !== null && typeof value === 'object' && pending.length < remaining) {
           pending.push({ node: value, path: position });
         }
