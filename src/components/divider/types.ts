@@ -1,6 +1,8 @@
+import type { ComponentSize } from '../config-provider/types';
+
 export type DividerType = 'horizontal' | 'vertical';
 export type DividerOrientation = 'left' | 'center' | 'right';
-export type DividerPresetSize = 'small' | 'default' | 'large';
+export type DividerPresetSize = ComponentSize | 'default';
 
 /** 分割线属性。 */
 export interface ExDividerProps {
