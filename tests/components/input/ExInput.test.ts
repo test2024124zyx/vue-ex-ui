@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { h, nextTick, ref } from 'vue';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { mount, type ComponentMountingOptions, type VueWrapper } from '@vue/test-utils';
@@ -136,6 +136,19 @@ describe('ExInput', () => {
     expect(input.attributes('modelModifiers')).toBeUndefined();
   });
 
+  it('清空按钮和键盘删除在 number 修饰符下都提交空字符串', async () => {
+    const inputWrapper = mountInput({
+      props: { modelValue: 42, clearable: true, modelModifiers: { number: true } },
+    });
+    const input = inputWrapper.get('input');
+    await input.setValue('');
+    expect(inputWrapper.emitted('update:modelValue')).toEqual([['']]);
+    await inputWrapper.setProps({ modelValue: 43 });
+    await inputWrapper.get('.ex-input__action--clear').trigger('click');
+    expect(inputWrapper.emitted('update:modelValue')).toEqual([[''], ['']]);
+    expect(inputWrapper.emitted('clear')).toHaveLength(1);
+  });
+
   it('lazy 修饰符只在 change 时提交模型，并在提交后通知 FormItem change 链路', async () => {
     const onFieldChange = vi.fn();
     const inputWrapper = mountInput({
@@ -161,6 +174,41 @@ describe('ExInput', () => {
     await input.trigger('change');
     expect(inputWrapper.emitted('update:modelValue')).toEqual([['lazy']]);
     expect(onFieldChange).toHaveBeenCalledOnce();
+  });
+
+  it('宿主更换行内 formatter 会更新当前草稿的展示，直到模型改变或主动提交', async () => {
+    const confirmed = ref('确认值');
+    const tick = ref(0);
+    const delimiter = ref('[]');
+    wrapper = mount(
+      {
+        render: () =>
+          h('div', [
+            String(tick.value),
+            h(ExInput, {
+              modelValue: confirmed.value,
+              modelModifiers: { lazy: true },
+              formatter: value => `${delimiter.value[0]}${value}${delimiter.value[1]}`,
+              'onUpdate:modelValue': value => (confirmed.value = String(value)),
+            }),
+          ]),
+      },
+      { attachTo: document.body }
+    );
+    const input = wrapper.get('input');
+    input.element.value = '草稿';
+    await input.trigger('input');
+    expect(input.element.value).toBe('[草稿]');
+    tick.value += 1;
+    delimiter.value = '()';
+    await nextTick();
+    expect(input.element.value).toBe('(草稿)');
+    expect(confirmed.value).toBe('确认值');
+    await input.trigger('change');
+    expect(confirmed.value).toBe('草稿');
+    confirmed.value = '父级新值';
+    await nextTick();
+    expect(input.element.value).toBe('(父级新值)');
   });
 
   it('formatter 只控制显示值，parser 统一控制 input、change 和模型值', async () => {

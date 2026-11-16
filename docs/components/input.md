@@ -203,6 +203,8 @@ const emailRules = [
 
 独立使用时，请通过 `label`、`label` 插槽或 `aria-label` / `aria-labelledby` 提供可访问名称。`rules` 默认在失焦时校验，只有需要边输入边反馈时才配置 `validate-trigger="input"`；也可以使用 `change` 或 `manual`（仅由 `validate()` 触发）。组件同时支持 `v-model.trim`、`v-model.number` 与 `v-model.lazy`。
 
+使用 `v-model.number` 时，删除全部文字或点击清空按钮都提交空字符串，与 Vue 的空值约定一致。
+
 ::: raw
 
 <div class="vp-raw demo-container">

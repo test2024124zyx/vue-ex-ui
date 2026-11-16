@@ -713,7 +713,7 @@ const handleClear = (): void => {
 
   rawValue.value = '';
   displayValue.value = applyFormatter('');
-  emit('update:modelValue', '');
+  emit('update:modelValue', normalizeModelOutput(''));
   emit('clear');
   if (shouldValidate('input') || shouldValidate('change')) validateInput('');
   formItem?.onFieldChange();
@@ -832,14 +832,16 @@ const startResizeTracking = (): void => {
   scheduleTextareaHeight();
 };
 
-watch([() => props.modelValue, () => props.formatter], ([modelValue]) => {
-  const value = normalizeInputValue(modelValue);
-  const valueChanged = value !== rawValue.value;
-  rawValue.value = value;
-  displayValue.value = applyFormatter(value);
-  if (valueChanged && validationError.value !== null) {
-    validationError.value = null;
+watch([() => props.modelValue, () => props.formatter], ([modelValue], [previousModelValue]) => {
+  if (!Object.is(modelValue, previousModelValue)) {
+    const value = normalizeInputValue(modelValue);
+    if (value !== rawValue.value) validationError.value = null;
+    rawValue.value = value;
+  } else if (isComposing.value) {
+    return;
   }
+  // 格式化函数变化仅重绘当前内容，保留尚未提交的草稿。
+  displayValue.value = applyFormatter(rawValue.value);
   scheduleTextareaHeight();
 });
 
