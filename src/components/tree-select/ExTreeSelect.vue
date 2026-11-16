@@ -591,12 +591,13 @@ const selectedSingleNode = computed<TreeSelectNode | null>(() =>
     : null
 );
 
-const showClear = computed(() => {
-  if (!props.clearable || !interactive.value) return false;
+const canClear = computed(() => {
+  if (!interactive.value) return false;
   return props.multiple
     ? selectedValues.value.some(value => !isValueDisabled(value))
     : currentValue.value != null && !isValueDisabled(currentValue.value as string | number);
 });
+const showClear = computed(() => props.clearable && canClear.value);
 
 const isChecked = (node: TreeSelectNode): boolean => checkedSet.value.has(node.value);
 const selectedDescendantSet = computed(() => {
@@ -693,7 +694,7 @@ const removeTag = (value: string | number) => {
 };
 
 const handleClear = () => {
-  if (!showClear.value) return;
+  if (!canClear.value) return;
   // 全局清空只能移除可交互值，禁用分支的外部已选值继续展示并保留。
   const cleared = props.multiple ? selectedValues.value.filter(isValueDisabled) : null;
   requestValue(cleared);
@@ -858,12 +859,14 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
 });
 
-const focus = () => triggerRef.value?.focus();
+const focus: ExTreeSelectExposed['focus'] = options => triggerRef.value?.focus(options);
 const blur = () => triggerRef.value?.blur();
 
 defineExpose<ExTreeSelectExposed>({
   focus,
   blur,
+  clear: handleClear,
+  getElement: () => rootRef.value ?? null,
   expandAll,
   collapseAll,
   reloadNode,

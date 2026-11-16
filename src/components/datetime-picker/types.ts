@@ -93,9 +93,11 @@ export interface ExDateTimePickerEmits {
 /** 日期时间选择器公开方法。 */
 export interface ExDateTimePickerExposed {
   /** 聚焦输入框。 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 移除输入框焦点。 */
   blur: () => void;
+  /** 清空当前选值。 */
+  clear: () => void;
   /** 获取组件根元素。 */
   getElement: () => HTMLDivElement | null;
 }

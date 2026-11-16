@@ -102,5 +102,7 @@ export interface ExInputExposed {
   clear: () => void;
   /** 同步检查输入控件自身的规则。表单异步规则由 ExForm 或 ExFormItem 校验。 */
   validate: () => boolean;
+  /** 获取原生输入元素。 */
+  getElement: () => HTMLInputElement | HTMLTextAreaElement | null;
   getInputElement: () => HTMLInputElement | HTMLTextAreaElement | null;
 }

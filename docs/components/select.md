@@ -426,8 +426,10 @@ type SelectRemoteLoader = (query: string, context: SelectRemoteContext) => Promi
 
 | 方法           | 类型                                           |
 | -------------- | ---------------------------------------------- |
-| `focus`        | `() => void`                                   |
+| `focus`        | `(options?: FocusOptions) => void`             |
 | `blur`         | `() => void`                                   |
+| `clear`        | `() => void`                                   |
+| `getElement`   | `() => HTMLElement \| null`                    |
 | `showDropdown` | `() => void`                                   |
 | `hideDropdown` | `() => void`                                   |
 | `retryRemote`  | `() => void`，下拉打开且存在失败查询时立即重试 |

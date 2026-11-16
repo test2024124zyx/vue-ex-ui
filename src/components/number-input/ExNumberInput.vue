@@ -483,8 +483,8 @@ onBeforeUnmount(() => {
 });
 
 // 暴露的方法
-const focus = () => {
-  inputRef.value?.focus();
+const focus: ExNumberInputExposed['focus'] = options => {
+  inputRef.value?.focus(options);
 };
 
 const blur = () => {
