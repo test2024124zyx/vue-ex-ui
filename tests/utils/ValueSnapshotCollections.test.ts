@@ -415,6 +415,65 @@ describe('无序集合快照', () => {
     expect(equalValueSnapshot(left, right)).toBe(true);
   });
 
+  it('同一批静态候选容纳不了全部成员时直接判不等', () => {
+    let reads = 0;
+    const left = new Set(Array.from({ length: 10 }, () => ({ id: 1 })));
+    const right = new Set([
+      ...Array.from({ length: 9 }, () => ({
+        get id() {
+          reads++;
+          return 1;
+        },
+      })),
+      { id: 0 },
+    ]);
+    expect(compareWithLinearWork(left, right, left.size)).toBe(false);
+    expect(reads).toBe(0);
+  });
+
+  it('候选集合相交时检查联合容量，并可将已分配名额改给受限成员', () => {
+    let reads = 0;
+    const wildcard = () => ({
+      get id() {
+        reads++;
+        return 2;
+      },
+    });
+    const two = () => ({ id: 2 });
+    const right = new Set([wildcard(), { id: 1 }, two()]);
+    expect(equalValueSnapshot(new Set([{ id: 1 }, two(), two()]), right)).toBe(true);
+
+    reads = 0;
+    const left = new Set([{ id: 1 }, { id: 1 }, two(), two(), wildcard()]);
+    const insufficient = new Set([...right, { id: 0 }, { id: 0 }]);
+    expect(compareWithLinearWork(left, insufficient, left.size)).toBe(false);
+    expect(reads).toBe(0);
+  });
+
+  it('不同字段值筛出相同访问器候选时复用可用索引', () => {
+    const entries = Array.from({ length: 2000 }, (_, index) => {
+      const member = {
+        get a() {
+          return index;
+        },
+        get b() {
+          return index;
+        },
+      };
+      if (index < 2) {
+        Object.defineProperty(member, index === 0 ? 'a' : 'b', {
+          value: index,
+          enumerable: true,
+          configurable: true,
+        });
+      }
+      return member;
+    });
+    const source = new Set(entries);
+    const snapshot = deepClone(source, { materializeAccessors: true });
+    expect(compareWithLinearWork(snapshot, source, source.size)).toBe(true);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);

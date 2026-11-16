@@ -2,9 +2,9 @@ import { toRaw } from 'vue';
 import { usesNativeIdentity } from './native-identity';
 import { createSnapshotMemberShape } from './value-snapshot-shape';
 import {
+  firstReadablePosition,
   planReadableCandidates,
   readableFieldsAgree,
-  readablePositions,
   type AvailablePositions,
   type ReadableCandidates,
 } from './value-snapshot-candidates';
@@ -305,18 +305,17 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     };
     if (linkedKey) return collection.rightIndices.get(linkedKey)?.some(take) ?? false;
     const first = Math.max(start, collection.firstAvailable);
-    if (ranked?.positions) {
-      for (const positions of ranked.positions) {
-        const { indices, offset } = positions;
-        let available = offset;
-        while (available < indices.length && collection.used.has(indices[available]!)) available++;
-        if (available !== offset) {
-          cursors.push({ positions, offset });
-          positions.offset = available;
-        }
+    const positions = ranked?.domain.positions;
+    if (positions) {
+      const { indices, offset } = positions;
+      let available = offset;
+      while (available < indices.length && collection.used.has(indices[available]!)) available++;
+      if (available !== offset) {
+        cursors.push({ positions, offset });
+        positions.offset = available;
       }
-      for (const candidate of readablePositions(ranked.positions, first))
-        if (take(candidate)) return true;
+      for (let index = firstReadablePosition(positions, first); index < indices.length; index++)
+        if (take(indices[index]!)) return true;
       return false;
     }
     for (let candidate = first; candidate < collection.right.length; candidate++)
