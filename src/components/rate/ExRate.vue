@@ -8,6 +8,7 @@
     :aria-valuemin="0"
     :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
+    :aria-valuetext="formatRateText(currentValue) || undefined"
     :aria-label="ariaLabel || (fieldAriaAttrs['aria-labelledby'] ? undefined : t('label'))"
     v-bind="fieldAriaAttrs"
     :aria-disabled="effectiveDisabled"
@@ -175,18 +176,20 @@ const displayValue = computed(() => {
   return isHovering.value ? hoverValue.value : currentValue.value;
 });
 
-const displayText = computed(() => {
+const displayText = computed(() => formatRateText(displayValue.value));
+
+function formatRateText(value: number): string {
   if (props.showText && props.texts && props.texts.length > 0) {
-    const index = Math.ceil(displayValue.value) - 1;
+    const index = Math.ceil(value) - 1;
     return props.texts[index] || '';
   }
 
   if (props.showScore) {
-    return props.scoreTemplate.replace('{value}', displayValue.value.toString());
+    return props.scoreTemplate.replace('{value}', String(value));
   }
 
   return '';
-});
+}
 
 // 方法
 function getStarClasses(item: number) {
