@@ -3,6 +3,31 @@ import { reactive } from 'vue';
 import { deepClone } from '../../src/utils/clone';
 import { equalValueSnapshot } from '../../src/utils/value-snapshot';
 
+// 用实际属性枚举和候选查询次数约束规模，避免共享 CI 运行器耗时抖动。
+function compareWithLinearWork(left: unknown, right: unknown, members: number): boolean {
+  const maxOperations = members * 24;
+  const ownKeys = Reflect.ownKeys;
+  const has = Set.prototype.has;
+  let operations = 0;
+  const count = () => {
+    if (++operations > maxOperations) throw new Error(`集合比较超过 ${maxOperations} 次候选操作`);
+  };
+  Reflect.ownKeys = value => {
+    count();
+    return ownKeys(value);
+  };
+  Set.prototype.has = function (this: Set<unknown>, value: unknown) {
+    count();
+    return has.call(this, value);
+  };
+  try {
+    return equalValueSnapshot(left, right);
+  } finally {
+    Reflect.ownKeys = ownKeys;
+    Set.prototype.has = has;
+  }
+}
+
 describe('无序集合快照', () => {
   it('按原始键和成员匹配，忽略插入顺序并保留符号与 NaN 语义', () => {
     const key = Symbol('唯一键');
@@ -66,9 +91,8 @@ describe('无序集合快照', () => {
           metadata: { value: index === 9 ? distinct : 0 },
         }))
       );
-    const start = performance.now();
-    expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
-    expect(performance.now() - start).toBeLessThan(1000);
+    const source = pool(1);
+    expect(compareWithLinearWork(source, pool(0), source.size)).toBe(false);
   });
 
   it('无法静态读取的访问器仍按实际的值比较', () => {
@@ -98,9 +122,7 @@ describe('无序集合快照', () => {
     });
     const values = new Set(nodes);
     const snapshot = new Set([...deepClone(values)].reverse());
-    const start = performance.now();
-    expect(equalValueSnapshot(values, snapshot)).toBe(true);
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(compareWithLinearWork(values, snapshot, values.size)).toBe(true);
   });
 
   it('宽数组作为集合成员时可从后半部分识别不相容内容', () => {
@@ -112,9 +134,8 @@ describe('无序集合快照', () => {
           return values;
         })
       );
-    const start = performance.now();
-    expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
-    expect(performance.now() - start).toBeLessThan(1000);
+    const source = pool(1);
+    expect(compareWithLinearWork(source, pool(0), source.size)).toBe(false);
   });
 
   it('共享数组确定了所有成员身份后按映射直接寻找候选', () => {
@@ -122,9 +143,7 @@ describe('无序集合快照', () => {
     for (const entry of entries) entry.all = entries;
     const source = new Set(entries);
     const clone = deepClone(source);
-    const start = performance.now();
-    expect(equalValueSnapshot(source, clone)).toBe(true);
-    expect(performance.now() - start).toBeLessThan(1800);
+    expect(compareWithLinearWork(source, clone, source.size)).toBe(true);
   });
 
   it.each([false, true])('按实际字节筛选二进制成员，DataView：%s', view => {
@@ -136,18 +155,14 @@ describe('无序集合快照', () => {
         })
       );
     const source = pool(1);
-    const start = performance.now();
-    expect(equalValueSnapshot(source, pool(0))).toBe(false);
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(compareWithLinearWork(source, pool(0), source.size)).toBe(false);
     expect(equalValueSnapshot(source, new Set([...deepClone(source)].reverse()))).toBe(true);
   });
 
   it('大量互不引用的同形对象按可用候选前沿完成匹配', () => {
     const source = new Set(Array.from({ length: 18_000 }, () => ({})));
     const copied = deepClone(source);
-    const start = performance.now();
-    expect(equalValueSnapshot(source, copied)).toBe(true);
-    expect(performance.now() - start).toBeLessThan(1800);
+    expect(compareWithLinearWork(source, copied, source.size)).toBe(true);
   });
 
   it('集合外层确认了无法匹配的引用时，先拒绝候选组', () => {
@@ -155,10 +170,8 @@ describe('无序集合快照', () => {
     const source = { values: new Set(items), selected: items.at(-1) };
     const snapshot = deepClone(source);
     snapshot.selected = {};
-    const start = performance.now();
-    expect(equalValueSnapshot(source, snapshot)).toBe(false);
-    expect(equalValueSnapshot(snapshot, source)).toBe(false);
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(compareWithLinearWork(source, snapshot, items.length)).toBe(false);
+    expect(compareWithLinearWork(snapshot, source, items.length)).toBe(false);
   });
 
   it('含访问器的原型组不会堵住大量普通对象的候选游标', () => {
@@ -166,9 +179,7 @@ describe('无序集合快照', () => {
     const items = Array.from({ length: 18_000 }, () => ({}));
     const source = new Set([...items, special]);
     const snapshot = new Set([...deepClone(source)].reverse());
-    const start = performance.now();
-    expect(equalValueSnapshot(source, snapshot)).toBe(true);
-    expect(performance.now() - start).toBeLessThan(1800);
+    expect(compareWithLinearWork(source, snapshot, source.size)).toBe(true);
   });
 
   it('一个集合自由配对时立即校验另一集合的成员引用', () => {
@@ -178,9 +189,7 @@ describe('无序集合快照', () => {
     const snapshot = deepClone(source);
     const external = {};
     for (const value of snapshot.values) value.selected = external;
-    const start = performance.now();
-    expect(equalValueSnapshot(source, snapshot)).toBe(false);
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(compareWithLinearWork(source, snapshot, values.size)).toBe(false);
   });
 
   it('同原型的访问器成员仍按自有键隔离候选', () => {
@@ -191,9 +200,7 @@ describe('无序集合快照', () => {
     };
     const source = new Set([...Array.from({ length: 18_000 }, () => ({})), special]);
     const snapshot = new Set([...deepClone(source)].reverse());
-    const start = performance.now();
-    expect(equalValueSnapshot(source, snapshot)).toBe(true);
-    expect(performance.now() - start).toBeLessThan(1800);
+    expect(compareWithLinearWork(source, snapshot, source.size)).toBe(true);
   });
 
   it('回退候选时撤销这一分支登记的嵌套集合约束', () => {
@@ -204,6 +211,25 @@ describe('无序集合快照', () => {
     const source = new Set([member(1), member(2)]);
     const reordered = new Set([...deepClone(source)].reverse());
     expect(equalValueSnapshot(source, reordered)).toBe(true);
+  });
+
+  it.each([false, true])('含访问器时仍使用双方可读取的数据字段，嵌套=%s', nested => {
+    let reads = 0;
+    const pool = (different: number) =>
+      new Set(
+        Array.from({ length: 10 }, (_, index) => {
+          const data = {
+            id: index === 9 ? different : 0,
+            get score() {
+              reads++;
+              return 1;
+            },
+          };
+          return nested ? { data } : data;
+        })
+      );
+    expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
+    expect(reads).toBe(0);
   });
 
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {

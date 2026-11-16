@@ -110,6 +110,30 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     return groups;
   }
 
+  function groupReadableMembers(
+    left: ObjectEntry[],
+    right: ObjectEntry[],
+    readFields: ReturnType<typeof createSnapshotMemberShape>['readableFields']
+  ): boolean {
+    const fields = new Map([...left, ...right].map(entry => [entry, readFields(entry)]));
+    const first = fields.get(left[0]!)!;
+    // 每个候选都能静态读取的字段才可用于分组，getter 与普通数据仍能按实际值比较。
+    const candidates = [...fields.values()];
+    const common = [...first.keys()].filter(path => candidates.every(values => values.has(path)));
+    if (!common.length) return enqueueGroup(left, right);
+    const classify = (entry: ObjectEntry) => {
+      const values = fields.get(entry)!;
+      return common.map(path => values.get(path)).join(',');
+    };
+    const leftGroups = groupMembers(left, classify)!;
+    const rightGroups = groupMembers(right, classify)!;
+    for (const [shape, entries] of leftGroups) {
+      const compatible = rightGroups.get(shape);
+      if (entries.length !== compatible?.length || !enqueueGroup(entries, compatible)) return false;
+    }
+    return true;
+  }
+
   function compareCollection(a: Map<unknown, unknown> | Set<unknown>, b: typeof a): boolean {
     if (a.size !== b.size) return false;
     const leftEntries: ObjectEntry[] = [];
@@ -136,7 +160,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       const rightShapes = leftShapes && groupMembers(rightGroup, readShape.detailed);
       // 访问器的实际值交给完整比较，回退仍受原型和自有键约束。
       if (!leftShapes || !rightShapes) {
-        if (!enqueueGroup(leftGroup, rightGroup)) return false;
+        if (!groupReadableMembers(leftGroup, rightGroup, readShape.readableFields)) return false;
         continue;
       }
       for (const [shape, leftShape] of leftShapes) {

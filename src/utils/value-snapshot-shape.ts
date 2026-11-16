@@ -80,6 +80,8 @@ export function createSnapshotMemberShape() {
       for (const byte of bytes) hash = Math.imul(hash ^ byte, FNV_PRIME);
       shape.push('binary', bytes.length, hash);
     }
+    if (node instanceof Date) shape.push('date', id(node.getTime()));
+    else if (node instanceof RegExp) shape.push('regexp', id(node.source), id(node.flags));
     if (node instanceof Map || node instanceof Set) {
       shape.push('collection', node.size);
       const fixed: Array<[number, unknown]> = [];
@@ -133,8 +135,6 @@ export function createSnapshotMemberShape() {
       }
       visited.set(node, referenceCount++);
       shape.push('object', id(Object.getPrototypeOf(node)));
-      if (node instanceof Date) shape.push('date', id(node.getTime()));
-      else if (node instanceof RegExp) shape.push('regexp', id(node.source), id(node.flags));
       // 同一节点的完整浅层内容只读取一次，预算只限制追踪后续对象关系。
       const own = readOwnShape(node);
       if (!own) return undefined;
@@ -147,8 +147,37 @@ export function createSnapshotMemberShape() {
     return shape.join(',');
   }
 
+  function readableFields([key, value]: readonly [object, unknown]): Map<string, number> {
+    const result = new Map<string, number>();
+    const pending: Array<{ node: unknown; path: string }> = [{ node: key, path: 'key' }];
+    if (value !== key) pending.push({ node: value, path: 'value' });
+    const visited = new WeakSet<object>();
+    let remaining = MEMBER_SHAPE_BUDGET;
+    while (pending.length && remaining-- > 0) {
+      const { node: item, path } = pending.pop()!;
+      if (item === null || typeof item !== 'object') continue;
+      const node = toRaw(item);
+      if (usesNativeIdentity(node) || visited.has(node)) continue;
+      visited.add(node);
+      const known = readOwnShape(node);
+      if (known) result.set(`${path}.data`, known.signature);
+      for (const { key, id: keyId } of keysOf(node)) {
+        const descriptor = Object.getOwnPropertyDescriptor(node, key);
+        if (!descriptor || !('value' in descriptor)) continue;
+        const position = `${path}.${keyId}`;
+        const value: unknown = descriptor.value;
+        result.set(position, id(outlineOf(value)));
+        if (value !== null && typeof value === 'object' && pending.length < remaining) {
+          pending.push({ node: value, path: position });
+        }
+      }
+    }
+    return result;
+  }
+
   return {
     outline: ([key, value]: readonly [object, unknown]) => `${outlineOf(key)}|${outlineOf(value)}`,
     detailed,
+    readableFields,
   };
 }
