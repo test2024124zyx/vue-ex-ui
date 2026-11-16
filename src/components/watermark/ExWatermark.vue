@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, normalizeStyle, ref, useAttrs } from 'vue';
 import { useZIndexLayer } from '../config-provider/composables';
 import { watermarkPropDefs } from './types';
 import { useWatermark } from './useWatermark';
@@ -38,6 +38,34 @@ const { t } = useI18n();
 // 容器元素引用
 const containerRef = ref<HTMLElement | null>(null);
 const overlayRef = ref<HTMLElement | null>(null);
+const attrs = useAttrs();
+const defaultWatermarkZIndex = useZIndexLayer('watermark');
+
+// 将交互和层级放在容器变量上，允许调用方通过根元素样式覆盖。
+const containerStyle = computed(
+  () =>
+    ({
+      position: 'relative',
+      overflow: props.antiTamper ? 'hidden' : undefined,
+      '--ex-watermark-z-index': String(props.zIndex ?? defaultWatermarkZIndex.value),
+      '--ex-watermark-pointer-events': props.pointerEvents,
+      '--ex-watermark-user-select': props.selectable ? 'text' : 'none',
+    }) satisfies CSSProperties
+);
+
+function restoreContainerStyle(element: HTMLElement): void {
+  const normalized = normalizeStyle([attrs.style]);
+  const overrides = typeof normalized === 'object' ? normalized : {};
+  for (const [name, value] of Object.entries(containerStyle.value)) {
+    if (value === undefined || name in overrides) continue;
+    if (
+      name === 'overflow' &&
+      ['overflowX', 'overflowY', 'overflow-x', 'overflow-y'].some(key => key in overrides)
+    )
+      continue;
+    if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+  }
+}
 
 // 使用水印组合式函数
 const { overlayDataUrl, tileWidth, tileHeight, refresh, toDataURL } = useWatermark(
@@ -48,24 +76,12 @@ const { overlayDataUrl, tileWidth, tileHeight, refresh, toDataURL } = useWaterma
   {
     onError: error => emit('error', error),
     onRemove: () => emit('remove'),
+    restoreContainerStyle,
   }
 );
 
 // 暴露方法给父组件
 defineExpose<ExWatermarkExposed>({ refresh, toDataURL });
-
-const defaultWatermarkZIndex = useZIndexLayer('watermark');
-
-// 将交互和层级放在容器变量上，允许调用方通过根元素样式覆盖。
-const containerStyle = computed<CSSProperties>(() => {
-  return {
-    position: 'relative',
-    overflow: props.antiTamper ? 'hidden' : undefined,
-    '--ex-watermark-z-index': String(props.zIndex ?? defaultWatermarkZIndex.value),
-    '--ex-watermark-pointer-events': props.pointerEvents,
-    '--ex-watermark-user-select': props.selectable ? 'text' : 'none',
-  } as CSSProperties;
-});
 
 // 水印覆盖层样式
 const overlayStyle = computed(() => {
