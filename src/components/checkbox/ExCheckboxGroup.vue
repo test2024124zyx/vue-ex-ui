@@ -121,9 +121,12 @@ const props = withDefaults(defineProps<ExCheckboxGroupProps>(), {
 });
 
 const emit = defineEmits<ExCheckboxGroupEmits>();
+// 所在 FormItem 的字段上下文，同时承接尺寸、状态和表单校验语义。
+const formItem = useFormItem();
 const { value: confirmedValues, request } = useControllableState<Array<string | number>>({
   controlledValue: () => props.modelValue,
   defaultValue: () => [],
+  resetRevision: () => formItem?.resetRevision?.value,
   clone: values => [...values],
 });
 
@@ -132,9 +135,6 @@ defineSlots<ExCheckboxGroupSlots>();
 // 获取 slots 和国际化
 const slots = useSlots();
 const { t } = useI18n();
-
-// 所在 FormItem 的字段上下文，同时承接尺寸、状态和表单校验语义。
-const formItem = useFormItem();
 
 // 使用全局尺寸配置；组件显式尺寸和 FormItem 尺寸高于全局默认值。
 const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));

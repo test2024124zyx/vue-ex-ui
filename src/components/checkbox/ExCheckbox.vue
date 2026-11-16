@@ -214,7 +214,8 @@ const isIndeterminate = ref(props.indeterminate);
 // 计算属性
 const checkboxState = useControllableState({
   controlledValue: () => props.modelValue,
-  defaultValue: props.falseValue,
+  defaultValue: () => props.falseValue,
+  resetRevision: () => formItem?.resetRevision?.value,
 });
 const checkboxValue = computed(() =>
   checkboxGroupContext && props.value !== undefined

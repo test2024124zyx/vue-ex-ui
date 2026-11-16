@@ -100,11 +100,6 @@ const props = withDefaults(defineProps<ExRadioGroupProps>(), {
 });
 
 const emit = defineEmits<ExRadioGroupEmits>();
-const { value: confirmedValue, request } = useControllableState<RadioValue | undefined>({
-  controlledValue: () => props.modelValue,
-  defaultValue: undefined,
-});
-
 defineSlots<ExRadioGroupSlots>();
 
 const slots = useSlots();
@@ -117,6 +112,11 @@ const {
   size: componentSize,
   ariaAttrs: fieldAriaAttrs,
 } = useFormFieldState(props);
+const { value: confirmedValue, request } = useControllableState<RadioValue | undefined>({
+  controlledValue: () => props.modelValue,
+  defaultValue: undefined,
+  resetRevision: () => formItem?.resetRevision?.value,
+});
 
 const groupId = generateId('ex-radio-group');
 const labelId = `${groupId}-label`;

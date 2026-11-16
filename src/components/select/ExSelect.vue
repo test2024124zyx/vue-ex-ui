@@ -453,18 +453,18 @@ const props = withDefaults(defineProps<ExSelectProps>(), {
 });
 
 const emit = defineEmits<ExSelectEmits>();
+// 所在 FormItem 的字段上下文（用于 blur/change 自动校验）
+const formItem = useFormItem();
 const selection = useControllableState<SelectValue>({
   controlledValue: () => props.modelValue,
   defaultValue: () => (props.multiple ? [] : null),
+  resetRevision: () => formItem?.resetRevision?.value,
   clone: value => (Array.isArray(value) ? [...value] : value),
 });
 defineSlots<ExSelectSlots>();
 const attrs = useAttrs();
 
 const { t } = useLocale('selector');
-
-// 所在 FormItem 的字段上下文（用于 blur/change 自动校验）
-const formItem = useFormItem();
 
 // 使用组件自身、FormItem 与 ConfigProvider 的尺寸继承链。
 const componentSize = useComponentSize(computed(() => props.size ?? formItem?.size?.value));

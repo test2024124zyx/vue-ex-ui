@@ -122,7 +122,8 @@ const {
 // 计算属性
 const switchState = useControllableState<SwitchValue>({
   controlledValue: () => props.modelValue,
-  defaultValue: props.inactiveValue,
+  defaultValue: () => props.inactiveValue,
+  resetRevision: () => formItem?.resetRevision?.value,
 });
 const isChecked = computed(() => switchState.value.value === props.activeValue);
 
