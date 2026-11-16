@@ -78,7 +78,7 @@ export interface ExDateTimePickerProps {
 export interface ExDateTimePickerEmits {
   /** 已确认值发生变化。 */
   'update:modelValue': [value: DateTimePickerValue];
-  /** 一次日期或时间选择正式提交。 */
+  /** 提交日期或时间后只提供确认值。 */
   change: [value: DateTimePickerValue];
   /** 输入框获得焦点。 */
   focus: [event: FocusEvent];

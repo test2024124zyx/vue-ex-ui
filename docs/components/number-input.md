@@ -636,15 +636,15 @@ const value1 = ref(0);
 
 输入中的数值属于编辑草稿，原生 `change` 发生时才提交模型。表单的 `input` 规则校验当前草稿，`change` / `blur` 规则校验模型中的已提交值；`resetFields()` 会清除草稿及尚未执行的防抖通知，即使重置前后的模型值相同。
 
-| 事件名               | 说明                         | 回调参数                                            |
-| -------------------- | ---------------------------- | --------------------------------------------------- |
-| `update:model-value` | 值变化时触发                 | `(value: number \| null)`                           |
-| `change`             | 值变化时触发（在输入完成后） | `(value: number \| null, oldValue: number \| null)` |
-| `input`              | 输入时触发（实时）           | `(value: number \| null)`                           |
-| `focus`              | 聚焦时触发                   | `(event: FocusEvent)`                               |
-| `blur`               | 失焦时触发                   | `(event: FocusEvent)`                               |
-| `increase`           | 增加按钮点击时触发           | `(value: number \| null)`                           |
-| `decrease`           | 减少按钮点击时触发           | `(value: number \| null)`                           |
+| 事件名               | 说明                                       | 回调参数                                            |
+| -------------------- | ------------------------------------------ | --------------------------------------------------- |
+| `update:model-value` | 值变化时触发                               | `(value: number \| null)`                           |
+| `change`             | 提交数值时触发，第二个参数为提交前的绑定值 | `(value: number \| null, oldValue: number \| null)` |
+| `input`              | 编辑过程中发出解析后的数值                 | `(value: number \| null)`                           |
+| `focus`              | 聚焦时触发                                 | `(event: FocusEvent)`                               |
+| `blur`               | 失焦时触发                                 | `(event: FocusEvent)`                               |
+| `increase`           | 增加按钮点击时触发                         | `(value: number \| null)`                           |
+| `decrease`           | 减少按钮点击时触发                         | `(value: number \| null)`                           |
 
 ### NumberInput Slots
 
