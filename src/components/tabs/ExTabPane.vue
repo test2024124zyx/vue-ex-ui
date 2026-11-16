@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
-import { computed, getCurrentInstance, ref, inject, onUnmounted, watch } from 'vue';
+import { computed, getCurrentInstance, ref, inject, onMounted, onUnmounted, watch } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
 import { tabsContextKey } from './context';
 
@@ -40,12 +40,14 @@ const getTabId = (name: ExTabPaneProps['name']) =>
 const getPanelId = (name: ExTabPaneProps['name']) =>
   tabs ? tabs.getPanelId(name) : `ex-tabs-panel-${name}`;
 const instance = getCurrentInstance()!;
-// 不能从插槽 VNode 识别的封装标签也按实例身份注册，服务端同样可以去重。
-tabs?.registerPane(instance, {
-  name: props.name,
-  label: props.label,
-  disabled: props.disabled,
-  closable: props.closable,
+// 异步包装标签也要等自身水合和挂载结束，才能加入导航。
+onMounted(() => {
+  tabs?.registerPane(instance, {
+    name: props.name,
+    label: props.label,
+    disabled: props.disabled,
+    closable: props.closable,
+  });
 });
 
 // 计算属性

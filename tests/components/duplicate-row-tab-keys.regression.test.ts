@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
-import { createSSRApp, h, nextTick, ref } from 'vue';
+import {
+  createSSRApp,
+  defineAsyncComponent,
+  defineComponent,
+  h,
+  nextTick,
+  ref,
+  type Component,
+} from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import ExTable from '../../src/components/table/ExTable.vue';
 import ExTabs from '../../src/components/tabs/ExTabs.vue';
@@ -160,6 +168,73 @@ describe('表格与标签页的唯一键', () => {
       expect(root.querySelectorAll('[role="tabpanel"]')).toHaveLength(duplicate ? 1 : 2);
       expect(errors.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
       expect(warn.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
+    } finally {
+      app.unmount();
+      root.remove();
+    }
+  });
+
+  it('相同类型的多个无 key 包装组件各自按插槽位置参与', async () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const Wrapped = defineComponent({
+      props: { name: { type: String, required: true } },
+      setup: props => () =>
+        h(ExTabPane, { name: props.name, label: `包装 ${props.name}` }, () => `面板 ${props.name}`),
+    });
+    const wrapper = mount(ExTabs, {
+      slots: {
+        default: () => [
+          h(Wrapped, { name: 'same' }),
+          h(ExTabPane, { name: 'same', label: '直声明' }, () => '直声明面板'),
+          h(Wrapped, { name: 'other' }),
+        ],
+      },
+    });
+    await flushPromises();
+    expect(wrapper.findAll('[role="tab"]').map(tab => tab.text())).toEqual([
+      '包装 same',
+      '包装 other',
+    ]);
+    expect(wrapper.get('[role="tabpanel"][aria-hidden="false"]').text()).toBe('面板 same');
+  });
+
+  it('客户端异步包装页自身挂载前继续使用静态 hydration 输出', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warnings = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const Wrapped = {
+      render: () => h(ExTabPane, { name: 'async', label: '异步页' }, () => '异步面板'),
+    };
+    let resolveClient!: (component: Component) => void;
+    const server = defineAsyncComponent(async () => Wrapped);
+    const client = defineAsyncComponent(
+      () =>
+        new Promise<Component>(resolve => {
+          resolveClient = resolve;
+        })
+    );
+    const host = (component: Component) => ({
+      render: () =>
+        h(ExTabs, {}, () => [
+          h(component),
+          h(ExTabPane, { name: 'direct', label: '静态页' }, () => '静态面板'),
+        ]),
+    });
+    const root = document.createElement('div');
+    root.innerHTML = await renderToString(createSSRApp(host(server)));
+    document.body.append(root);
+    const app = createSSRApp(host(client));
+    try {
+      app.mount(root);
+      await flushPromises();
+      expect(root.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('静态页');
+      resolveClient(Wrapped);
+      await flushPromises();
+      expect(root.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('异步页');
+      expect(root.querySelector('[role="tabpanel"][aria-hidden="false"]')?.textContent).toBe(
+        '异步面板'
+      );
+      expect(errors.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
+      expect(warnings.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
     } finally {
       app.unmount();
       root.remove();

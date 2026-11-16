@@ -115,6 +115,7 @@ import {
   watch,
   nextTick,
   onMounted,
+  onUpdated,
   onBeforeUnmount,
 } from 'vue';
 import type { ComponentInternalInstance, VNode } from 'vue';
@@ -150,12 +151,11 @@ const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
 const panelsRef = ref<HTMLDivElement>();
 const tabsInstance = getCurrentInstance();
-const includeWrappedPanes = ref(false);
 const registeredPanes = shallowRef<Array<{ pane: PaneInfo; instance: ComponentInternalInstance }>>(
   []
 );
 const { items: slotItems, nodes, SlotContent } = useSlotItems('ExTabPane');
-const wrappedPositions = shallowRef(new Map<number, number>());
+const wrappedPositions = shallowRef(new Map<number, { slot: number; visual: number }>());
 const ownsVNode = (node: VNode, instance: ComponentInternalInstance) =>
   node === instance.vnode ||
   node.component === instance ||
@@ -210,17 +210,23 @@ const paneOwners = computed(() => {
       closable: node.props?.closable === true || node.props?.closable === '',
     },
   }));
-  // 导航先于面板输出。服务端和首次 hydration 只采用静态可知的面板。
-  if (includeWrappedPanes.value) {
-    for (const entry of registeredPanes.value) {
-      ordered.push({ ...entry, order: getWrappedOrder(entry.instance) });
-    }
+  // 导航先于面板输出，包装页完成自身挂载后再进入注册表。
+  for (const entry of registeredPanes.value) {
+    const current = getWrappedOrder(entry.instance);
+    const previous = wrappedPositions.value.get(entry.instance.uid);
+    ordered.push({
+      ...entry,
+      order: Number.isFinite(current) ? current : (previous?.slot ?? current),
+    });
   }
   ordered.sort((left, right) => {
     if (left.order !== right.order) return left.order - right.order;
     if ('node' in left || 'node' in right) return 0;
     const positions = wrappedPositions.value;
-    return (positions.get(left.instance.uid) ?? 0) - (positions.get(right.instance.uid) ?? 0);
+    return (
+      (positions.get(left.instance.uid)?.visual ?? 0) -
+      (positions.get(right.instance.uid)?.visual ?? 0)
+    );
   });
   const owners = new Map<PaneInfo['name'], PaneCandidate>();
   for (const candidate of ordered) {
@@ -516,27 +522,33 @@ let resizeObserver: ResizeObserver | null = null;
 let paneOrderObserver: MutationObserver | undefined;
 
 function readWrappedPositions(): void {
-  if (registeredPanes.value.length < 2) return;
   const rendered = registeredPanes.value.flatMap(({ instance }) => {
     const element = instance.vnode.el;
     return element instanceof Node && panelsRef.value?.contains(element)
-      ? [{ uid: instance.uid, element }]
+      ? [{ instance, element }]
       : [];
   });
   // 非首项可能只渲染 Vue 占位节点，也依照它当前在包装组件中的位置排序。
   rendered.sort((left, right) =>
     left.element.compareDocumentPosition(right.element) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1
   );
+  const positions = rendered.map(
+    ({ instance }, visual) => [instance.uid, { slot: getWrappedOrder(instance), visual }] as const
+  );
   if (
-    rendered.length === wrappedPositions.value.size &&
-    rendered.every(({ uid }, index) => wrappedPositions.value.get(uid) === index)
+    positions.length === wrappedPositions.value.size &&
+    positions.every(([uid, position]) => {
+      const previous = wrappedPositions.value.get(uid);
+      return previous?.slot === position.slot && previous.visual === position.visual;
+    })
   )
     return;
-  wrappedPositions.value = new Map(rendered.map(({ uid }, index) => [uid, index]));
+  wrappedPositions.value = new Map(positions);
 }
 
+// 新的 VNode 在补丁阶段关联实例，无 key 包装页在关联完成后校准顺序。
+onUpdated(readWrappedPositions);
 onMounted(() => {
-  includeWrappedPanes.value = true;
   updateIndicator();
   // 容器/标签尺寸变化（窗口缩放、字体加载、标签增删）时同步指示条位置
   if (typeof ResizeObserver !== 'undefined' && navRef.value) {
