@@ -107,6 +107,8 @@ describe('sanitize', () => {
       '<pre>onload = 1; style = "color"; data: todos</pre>',
       '<code>&lt;script&gt;alert(1)&lt;/script&gt;</code>',
       '<!-- <img onerror="alert(1)"> -->',
+      '<!--[CDATA[><img src=x onerror=alert(1)>]]-->',
+      '<svg><text><![CDATA[标注 data: <示例>]]></text></svg>',
       '<a href="/guide?example=javascript:alert(1)" title="data: links">说明</a>',
       '<img src="data:image/png;base64,iVBORw0KGgo=" alt="示例">',
     ])('不会把纯文本、注释和安全属性误报为攻击：%s', html => {
@@ -122,6 +124,10 @@ describe('sanitize', () => {
       '<svg><a xlink:href="vbscript:msgbox(1)">链接</a></svg>',
       '<img src="java&#9;script:alert(1)">',
       '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+      '<svg><a><animate attributeName="href" values="javascript:alert(1)"/></a></svg>',
+      '<svg><a><set attributeName="href" to="jav&#x61;script&colon;alert(1)"/></a></svg>',
+      '<![CDATA[><img src=x onerror=alert(1)>]]>',
+      '<svg><foreignObject><![CDATA[><img src=x onerror=alert(1)>]]></foreignObject></svg>',
     ])('识别实际标签和解码后的危险属性：%s', html => {
       expect(containsDangerousHtml(html)).toBe(true);
     });
