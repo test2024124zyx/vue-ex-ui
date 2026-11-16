@@ -127,6 +127,29 @@ describe('无序集合快照', () => {
     expect(performance.now() - start).toBeLessThan(1800);
   });
 
+  it.each([false, true])('按实际字节筛选二进制成员，DataView：%s', view => {
+    const pool = (different: number) =>
+      new Set(
+        Array.from({ length: 10 }, (_, index) => {
+          const buffer = Uint8Array.of(index === 9 ? different : 0).buffer;
+          return view ? new DataView(buffer) : buffer;
+        })
+      );
+    const source = pool(1);
+    const start = performance.now();
+    expect(equalValueSnapshot(source, pool(0))).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(equalValueSnapshot(source, new Set([...deepClone(source)].reverse()))).toBe(true);
+  });
+
+  it('大量互不引用的同形对象按可用候选前沿完成匹配', () => {
+    const source = new Set(Array.from({ length: 18_000 }, () => ({})));
+    const copied = deepClone(source);
+    const start = performance.now();
+    expect(equalValueSnapshot(source, copied)).toBe(true);
+    expect(performance.now() - start).toBeLessThan(1800);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);

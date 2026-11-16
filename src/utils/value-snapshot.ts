@@ -15,6 +15,7 @@ interface CollectionMatch {
   right: ObjectEntry[];
   used: Set<number>;
   rightIndices: Map<object, number[]>;
+  firstAvailable: number;
 }
 
 interface PendingMatch {
@@ -55,7 +56,13 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       else rightIndices.set(key, [index]);
     });
     matches = {
-      collection: { left: leftEntries, right: rightEntries, used: new Set(), rightIndices },
+      collection: {
+        left: leftEntries,
+        right: rightEntries,
+        used: new Set(),
+        rightIndices,
+        firstAvailable: 0,
+      },
       index: 0,
       next: matches,
     };
@@ -155,7 +162,11 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     const linkedKey = seen.get(key);
     const linkedCandidates = linkedKey ? (collection.rightIndices.get(linkedKey) ?? []) : undefined;
     const length = linkedCandidates?.length ?? collection.right.length;
-    for (let offset = linkedCandidates ? 0 : start; offset < length; offset++) {
+    for (
+      let offset = linkedCandidates ? 0 : Math.max(start, collection.firstAvailable);
+      offset < length;
+      offset++
+    ) {
       const candidate = linkedCandidates?.[offset] ?? offset;
       if (candidate < start || collection.used.has(candidate)) continue;
       const [otherKey, otherValue] = collection.right[candidate]!;
@@ -163,6 +174,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       if (Object.getPrototypeOf(key) !== Object.getPrototypeOf(otherKey)) continue;
       choices.push({ match, candidate, mappedCount: mapped.length });
       collection.used.add(candidate);
+      while (collection.used.has(collection.firstAvailable)) collection.firstAvailable++;
       matches = index + 1 < collection.left.length ? { collection, index: index + 1, next } : next;
       enqueue(value, otherValue);
       enqueue(key, otherKey);
@@ -182,6 +194,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
         reverseSeen.delete(b);
       }
       match.collection.used.delete(candidate);
+      match.collection.firstAvailable = Math.min(match.collection.firstAvailable, candidate);
       if (matchEntry(match, candidate + 1)) return true;
     }
     return false;

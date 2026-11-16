@@ -3,7 +3,22 @@ import { usesNativeIdentity } from './native-identity';
 
 // 签名只是预筛选，按成员限制访问量，避免反复遍历大集合中的共享子图。
 const MEMBER_SHAPE_BUDGET = 32;
+const FNV_OFFSET_BASIS = 0x811c9dc5;
+const FNV_PRIME = 0x01000193;
 type OwnShape = { signature: number; children: object[] };
+
+function bytesOf(value: object): Uint8Array | undefined {
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  }
+  if (
+    value instanceof ArrayBuffer ||
+    (typeof SharedArrayBuffer !== 'undefined' && value instanceof SharedArrayBuffer)
+  ) {
+    return new Uint8Array(value);
+  }
+  return undefined;
+}
 
 /** 生成候选的必要条件，访问器和无序成员的实际值仍交由快照比较。 */
 export function createSnapshotMemberShape() {
@@ -32,6 +47,13 @@ export function createSnapshotMemberShape() {
         shape.push('value', id(value));
       }
     };
+    const bytes = bytesOf(node);
+    if (bytes) {
+      // 摘要仅淘汰不相容候选，实际相等仍由完整的逐字节比较确认。
+      let hash = FNV_OFFSET_BASIS;
+      for (const byte of bytes) hash = Math.imul(hash ^ byte, FNV_PRIME);
+      shape.push('binary', bytes.length, hash);
+    }
     if (node instanceof Map || node instanceof Set) {
       shape.push('collection', node.size);
       const fixed: Array<[number, unknown]> = [];
