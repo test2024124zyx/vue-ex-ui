@@ -80,6 +80,29 @@ describe('无序集合快照', () => {
     expect(equalValueSnapshot(new Set([entry]), new Set([{ nested: { value: 2 } }]))).toBe(true);
   });
 
+  it('带回指的不透明 Promise 保留身份，不展开它的附加属性', () => {
+    const promise = Promise.resolve();
+    const entry = { promise };
+    Object.assign(promise, { owner: entry });
+    const source = new Set([entry]);
+    expect(equalValueSnapshot(source, deepClone(source))).toBe(true);
+    expect(equalValueSnapshot(source, new Set([{ promise: Promise.resolve() }]))).toBe(false);
+  });
+
+  it('共享的大环只生成有界结构，成员换序后仍能正确比较', () => {
+    const nodes: Array<{ id: number; next?: object }> = Array.from({ length: 1000 }, (_, id) => ({
+      id,
+    }));
+    nodes.forEach((node, index) => {
+      node.next = nodes[(index + 1) % nodes.length];
+    });
+    const values = new Set(nodes);
+    const snapshot = new Set([...deepClone(values)].reverse());
+    const start = performance.now();
+    expect(equalValueSnapshot(values, snapshot)).toBe(true);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);

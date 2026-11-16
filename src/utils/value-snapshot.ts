@@ -1,4 +1,5 @@
 import { toRaw } from 'vue';
+import { usesNativeIdentity } from './native-identity';
 import { createSnapshotMemberShape } from './value-snapshot-shape';
 
 interface PendingPair {
@@ -103,14 +104,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     const b = toRaw(rightValue);
     if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
     // 不透明对象无法靠自有属性比较；只允许同一原生对象继续作为确认值。
-    if (
-      a instanceof Promise ||
-      a instanceof WeakMap ||
-      a instanceof WeakSet ||
-      (typeof Blob !== 'undefined' && a instanceof Blob)
-    ) {
-      return a === b;
-    }
+    if (usesNativeIdentity(a)) return a === b;
     if (seen.has(a)) return seen.get(a) === b;
     // 双向身份映射同时识别共享引用被拆分或合并，保留对象图的关系。
     if (reverseSeen.has(b)) return false;
