@@ -21,12 +21,14 @@ describe('Cascader 的输入交互', () => {
     });
     const input = wrapper.get('input');
     expect(input.element.value).toBe('杭州东');
+    expect(input.attributes('aria-required')).toBe('true');
     input.element.focus();
     expect(input.element.selectionStart).toBe(0);
     expect(input.element.selectionEnd).toBe(input.element.value.length);
     await input.trigger('click');
     expect(input.element.value).toBe('');
     expect(input.element.checkValidity()).toBe(true);
+    expect(input.attributes('aria-required')).toBe('true');
     input.element.value += '杭州';
     await input.trigger('input');
     expect(wrapper.findAll('.ex-cascader__search-results [role="option"]')).toHaveLength(2);

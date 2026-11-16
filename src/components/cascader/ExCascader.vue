@@ -47,8 +47,8 @@
         :id="controlId"
         ref="inputRef"
         :value="searchInput.displayValue.value"
-        v-bind="triggerAttrs"
-        :required="!hasValue && attrs.required != null && attrs.required !== false"
+        v-bind="hasRequiredAttr() ? { ...triggerAttrs, 'aria-required': true } : triggerAttrs"
+        :required="!hasValue && hasRequiredAttr()"
         :placeholder="currentPlaceholder"
         :disabled="effectiveDisabled"
         :readonly="effectiveReadonly || !filterable"
@@ -418,6 +418,7 @@ const { t: tCascader } = useLocale('cascader');
 const { t: tCommon } = useLocale('common');
 const { t: tTree } = useLocale('tree');
 const attrs = useAttrs();
+const hasRequiredAttr = () => attrs.required != null && attrs.required !== false;
 const currentPlaceholder = computed(() => props.placeholder || tCascader('placeholder'));
 const emit = defineEmits<ExCascaderEmits>();
 defineSlots<ExCascaderSlots>();
