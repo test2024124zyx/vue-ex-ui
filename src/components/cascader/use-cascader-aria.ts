@@ -3,6 +3,10 @@ import type { FormItemFieldContext } from '../form/use-form-item';
 
 type AriaInvalidValue = 'true' | 'false' | 'grammar' | 'spelling';
 
+// 原生校验和输入框滚动不冒泡，应由输入框直接接收。
+const INPUT_LOCAL_LISTENER =
+  /^(?:on(?:Invalid|Scroll|Scrollend)|on:(?:invalid|scroll|scrollend))(?:Once|Capture|Passive)*$/;
+
 // 这些属性由组件根据真实状态维护，不能被外部 attrs 覆盖。
 const CONTROLLED_TRIGGER_ATTRIBUTES = [
   'class',
@@ -102,6 +106,7 @@ export function useCascaderAria({
         key === 'role' ||
         key === 'tabindex' ||
         key.startsWith('aria-') ||
+        INPUT_LOCAL_LISTENER.test(key) ||
         key === 'disabled' ||
         key === 'readonly' ||
         key === 'value' ||
@@ -118,9 +123,9 @@ export function useCascaderAria({
   const triggerAttrs = computed<Record<string, unknown>>(() => {
     const forwarded = { ...attrs };
     for (const key of CONTROLLED_TRIGGER_ATTRIBUTES) delete forwarded[key];
-    // 浏览器事件由根节点统一接收，避免同一冒泡事件调用外部监听器两次。
+    // 其余事件由根节点接收，避免输入框与根节点重复接收同一冒泡事件。
     for (const key of Object.keys(forwarded)) {
-      if (/^on[^a-z]/.test(key)) delete forwarded[key];
+      if (/^on[^a-z]/.test(key) && !INPUT_LOCAL_LISTENER.test(key)) delete forwarded[key];
     }
     return forwarded;
   });

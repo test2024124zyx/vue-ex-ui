@@ -46,7 +46,7 @@
       <input
         :id="controlId"
         ref="inputRef"
-        v-model="inputDisplayValue"
+        :value="searchInput.displayValue.value"
         v-bind="triggerAttrs"
         :placeholder="currentPlaceholder"
         :disabled="effectiveDisabled"
@@ -65,6 +65,10 @@
         :aria-disabled="effectiveDisabled || undefined"
         :aria-readonly="effectiveReadonly || !filterable ? 'true' : undefined"
         :aria-autocomplete="filterable ? 'list' : undefined"
+        @input="searchInput.handleInput"
+        @compositionstart="searchInput.startComposition"
+        @compositionend="searchInput.endComposition"
+        @change="searchInput.endComposition"
         @keydown="handleKeydown"
         @focus="handleInputFocus"
         @blur="handleInputBlur"
@@ -374,6 +378,7 @@ import { collectCascaderLeafPaths } from './search';
 import type { CascaderSearchResult } from './search';
 import { useCascaderPaths } from './use-cascader-paths';
 import { useCascaderKeyboard } from './use-cascader-keyboard';
+import { useCascaderSearchInput } from './use-cascader-search-input';
 import { useCascaderMultiple, cascaderPathKey } from './use-cascader-multiple';
 import { useAsyncOptions } from '../tree-select/use-async-options';
 import { captureReactiveValue } from '../../utils/reactive-snapshot';
@@ -521,14 +526,11 @@ const activeDescendant = computed(() => {
   return getOptionId(activeCol.value, activeIndex.value);
 });
 
-// 复用 Vue 原生 v-model 的输入法组合处理，确认后的文字才进入搜索。
-const inputDisplayValue = computed({
-  get: () => {
-    if (hasSearchQuery.value && visible.value) return searchQuery.value;
-    return props.multiple ? '' : displayValue.value;
-  },
-  set: setSearchQuery,
+const inputDisplayValue = computed(() => {
+  if (hasSearchQuery.value && visible.value) return searchQuery.value;
+  return props.multiple ? '' : displayValue.value;
 });
+const searchInput = useCascaderSearchInput(inputRef, inputDisplayValue, setSearchQuery);
 // 先缓存叶子路径，搜索输入变化时只过滤缓存，避免每个字符都递归遍历整棵树。
 const allLeafPaths = computed(() => collectCascaderLeafPaths(asyncOptions.data.value));
 // 搜索结果是一条完整叶子路径，路径中任意一级标签命中即可显示。
@@ -709,7 +711,7 @@ const nextEnabledIndex = (col: number, from: number, step: 1 | -1): number => {
 };
 
 const handleKeydown = useCascaderKeyboard({
-  blocked: () => effectiveDisabled.value || effectiveReadonly.value,
+  blocked: () => effectiveDisabled.value || effectiveReadonly.value || searchInput.isComposing(),
   filterable: () => props.filterable,
   visible,
   searching: hasSearchQuery,
@@ -893,7 +895,10 @@ watch(
 );
 
 watch([effectiveDisabled, effectiveReadonly], ([disabled, readonly]) => {
-  if (disabled || readonly) hide();
+  if (disabled || readonly) {
+    hide();
+    searchInput.discard();
+  }
 });
 
 watch(
@@ -901,6 +906,7 @@ watch(
   () => {
     asyncOptions.cancelAll();
     hide();
+    searchInput.discard();
     activePath.value = [
       ...(props.multiple ? (multipleState.selected.value[0] ?? []) : selectedPath.value),
     ];

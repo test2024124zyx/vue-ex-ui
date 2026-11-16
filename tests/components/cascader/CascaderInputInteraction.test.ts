@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { h, nextTick, reactive } from 'vue';
 import ExCascader from '../../../src/components/cascader/ExCascader.vue';
+import ExForm from '../../../src/components/form/ExForm.vue';
+import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 
 enableAutoUnmount(afterEach);
 
@@ -28,6 +30,24 @@ describe('Cascader 的输入交互', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onInput).toHaveBeenCalledTimes(1);
     expect(onKeydown).toHaveBeenCalledTimes(1);
+  });
+
+  it('原生约束校验将非冒泡的 invalid 事件交给输入框监听器', () => {
+    const onInvalid = vi.fn((event: Event) => event.preventDefault());
+    const onInvalidOnce = vi.fn();
+    const wrapper = mount(ExCascader, {
+      props: { options, filterable: true },
+      attrs: { required: true, onInvalid, onInvalidOnce },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+
+    expect(input.checkValidity()).toBe(false);
+    expect(input.checkValidity()).toBe(false);
+    expect(onInvalid).toHaveBeenCalledTimes(2);
+    expect(onInvalidOnce).toHaveBeenCalledTimes(1);
+    expect(onInvalid.mock.calls[0]?.[0].target).toBe(input);
+    expect(onInvalid.mock.calls[0]?.[0].defaultPrevented).toBe(true);
   });
 
   it.each([false, true])('鼠标选择后键盘仍可导航，搜索模式=%s', async filterable => {
@@ -71,5 +91,47 @@ describe('Cascader 的输入交互', () => {
     input.element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
     await nextTick();
     expect(document.querySelectorAll('.ex-cascader__search-result-content')).toHaveLength(2);
+  });
+
+  it('表单重置清除正在组合的草稿，迟到的输入法事件不会重新打开搜索', async () => {
+    const model = reactive({ station: ['east'] });
+    const wrapper = mount(ExForm, {
+      props: { model },
+      slots: {
+        default: () =>
+          h(ExFormItem, { prop: 'station' }, () =>
+            h(ExCascader, { modelValue: model.station, options, filterable: true })
+          ),
+      },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input');
+    input.element.focus();
+    await input.trigger('click');
+    await input.trigger('compositionstart');
+    input.element.value = 'hangzhou';
+    input.element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+    await nextTick();
+    expect(input.element.value).toBe('hangzhou');
+
+    wrapper.vm.resetFields();
+    await nextTick();
+    expect(input.element.value).toBe('杭州东');
+
+    input.element.value = 'hangzhou';
+    input.element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+    expect(input.element.value).toBe('杭州东');
+    input.element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    input.element.value = '杭州';
+    input.element.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText' })
+    );
+    await nextTick();
+    expect(input.element.value).toBe('杭州东');
+    expect(input.attributes('aria-expanded')).toBe('false');
+
+    await input.setValue('杭州西');
+    expect(input.attributes('aria-expanded')).toBe('true');
+    expect(document.querySelectorAll('.ex-cascader__search-result-content')).toHaveLength(1);
   });
 });
