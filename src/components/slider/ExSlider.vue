@@ -505,9 +505,10 @@ const handleTrackClick = (event: MouseEvent | TouchEvent) => {
   const value = getValueFromPosition(x, y);
 
   if (!props.range) {
-    updateValue(value);
+    if (value !== currentValue.value) updateValue(value);
   } else {
     const [start, end] = currentValue.value as [number, number];
+    if (value === start || value === end) return;
     const distToStart = Math.abs(value - start);
     const distToEnd = Math.abs(value - end);
 

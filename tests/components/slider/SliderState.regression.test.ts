@@ -39,6 +39,28 @@ describe('滑块动态配置与公开样式', () => {
     }
   });
 
+  it.each([
+    { modelValue: 30, range: false, points: [29, 30] },
+    { modelValue: [30, 70] as [number, number], range: true, points: [30, 70] },
+  ])('点击落在当前刻度时不提交重复值：$modelValue', async ({ modelValue, range, points }) => {
+    const wrapper = mount(ExSlider, { props: { modelValue, range, step: 5 } });
+    wrappers.push(wrapper);
+    const track = wrapper.get('.ex-slider__track-wrapper');
+    const bounds = vi.spyOn(track.element, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 8,
+    } as DOMRect);
+    try {
+      for (const clientX of points) await track.trigger('mousedown', { clientX });
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+      expect(wrapper.emitted('change')).toBeUndefined();
+    } finally {
+      bounds.mockRestore();
+    }
+  });
+
   it('动态边界和步长同步滑块、ARIA 与输入框', async () => {
     const wrapper = mount(ExSlider, { props: { modelValue: 80, showInput: true } });
     wrappers.push(wrapper);
