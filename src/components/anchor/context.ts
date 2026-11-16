@@ -4,7 +4,7 @@ import { createSharedInjectionKey } from '../../utils/shared-runtime';
 
 export interface AnchorContext {
   activeLink: Readonly<Ref<string>>;
-  registerLink(item: AnchorItem): void;
+  isValidSelector(selector: string): boolean;
   updateLink(element: HTMLElement, href: string, title: string): void;
   unregisterLink(element: HTMLElement): void;
   handleClick(item: AnchorItem): void;

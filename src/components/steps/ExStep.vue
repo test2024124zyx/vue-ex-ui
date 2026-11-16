@@ -91,7 +91,8 @@
 <script setup lang="ts">
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, inject, onBeforeUnmount, ref } from 'vue';
-import type { ExStepProps, ExStepExposed, StepsContext } from './types';
+import type { ExStepProps, ExStepExposed } from './types';
+import { stepsContextKey } from './context';
 import ExIcon from '../icon/ExIcon.vue';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 
@@ -107,7 +108,7 @@ const props = withDefaults(defineProps<ExStepProps>(), {
 const stepRef = ref<HTMLDivElement>();
 
 // 从父组件注入上下文
-const stepsContext = inject<StepsContext>('exSteps')!;
+const stepsContext = inject(stepsContextKey)!;
 
 // 注册步骤（索引由父组件按文档顺序实时计算，支持动态增删/重排）
 const uid = Symbol('ex-step');

@@ -8,9 +8,38 @@ const cleanups: Array<() => void> = [];
 afterEach(() => {
   cleanups.splice(0).forEach(cleanup => cleanup());
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('选择器确认值的 SSR 水合', () => {
+  it('未选择日期时跨月水合保持面板关闭，首次打开使用客户端日期', async () => {
+    const render = () => h(ExDateTimePicker, { teleported: false, ariaLabel: '日期' });
+    vi.setSystemTime(new Date(2026, 10, 30, 23, 59));
+    const html = await renderToString(createSSRApp({ render }));
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    document.body.append(container);
+    const reportWarnings = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const reportErrors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+
+    vi.setSystemTime(new Date(2026, 11, 1, 0, 1));
+    const app = createSSRApp({ render });
+    app.mount(container);
+    cleanups.push(() => {
+      app.unmount();
+      container.remove();
+    });
+    await nextTick();
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect([...reportWarnings.mock.calls, ...reportErrors.mock.calls].flat().join(' ')).not.toMatch(
+      /hydration.*mismatch/i
+    );
+    container.querySelector('input')!.click();
+    await nextTick();
+    expect(container.querySelector('[role="dialog"] [aria-label="2026-12-01"]')).not.toBeNull();
+  });
+
   it.each(['week', 'time'] as const)(
     '%s 范围在服务端和客户端保持确认值及 ARIA 关联',
     async kind => {

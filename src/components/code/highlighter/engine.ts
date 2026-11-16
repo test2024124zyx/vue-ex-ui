@@ -21,6 +21,8 @@ export interface Token {
 export interface GrammarRule {
   type: string;
   re: RegExp;
+  /** 在需要前文时拒绝候选项，或在确认上下文后读取完整文本。 */
+  resolve?: (code: string, start: number, value: string) => string | undefined;
 }
 
 /** 一种语言的语法：有序规则集合 + 可选正则标志（如 SQL 的大小写不敏感 'i'）。 */
@@ -32,7 +34,7 @@ export interface Grammar {
 
 interface CompiledGrammar {
   regex: RegExp;
-  types: string[];
+  alternatives: RegExp[];
 }
 
 const compileCache = new WeakMap<Grammar, CompiledGrammar>();
@@ -42,22 +44,42 @@ function compile(grammar: Grammar): CompiledGrammar {
   const cached = compileCache.get(grammar);
   if (cached) return cached;
 
-  const types: string[] = [];
   // 每条规则包一层捕获组，命中后用组下标反查类型。
-  const source = grammar.rules
-    .map(rule => {
-      types.push(rule.type);
-      return `(${rule.re.source})`;
-    })
-    .join('|');
+  const source = grammar.rules.map(rule => `(${rule.re.source})`).join('|');
 
   // 始终带 g（驱动 exec 扫描）与 m（让 ^/$ 作用于每一行）。
   let flags = 'gm';
   if (grammar.flags?.includes('i')) flags += 'i';
 
-  const compiled: CompiledGrammar = { regex: new RegExp(source, flags), types };
+  const alternatives = grammar.rules.some(rule => rule.resolve)
+    ? grammar.rules.map(rule => new RegExp(rule.re.source, flags.replace('g', 'y')))
+    : [];
+  const compiled: CompiledGrammar = { regex: new RegExp(source, flags), alternatives };
   compileCache.set(grammar, compiled);
   return compiled;
+}
+
+function resolveToken(
+  code: string,
+  match: RegExpExecArray,
+  ruleIndex: number,
+  rules: GrammarRule[],
+  alternatives: RegExp[]
+): Token | undefined {
+  let value: string | undefined = match[0];
+  // 上下文不符时，只在相同位置尝试优先级更低的规则，避免吞掉后续 token。
+  for (let index = ruleIndex; index < rules.length; index += 1) {
+    const rule = rules[index]!;
+    if (index !== ruleIndex) {
+      const alternative = alternatives[index]!;
+      alternative.lastIndex = match.index;
+      value = alternative.exec(code)?.[0];
+    }
+    if (value === undefined) continue;
+    const resolved = rule.resolve ? rule.resolve(code, match.index, value) : value;
+    if (resolved !== undefined) return { type: rule.type, value: resolved };
+  }
+  return undefined;
 }
 
 /**
@@ -65,22 +87,17 @@ function compile(grammar: Grammar): CompiledGrammar {
  * grammar 为 null（如 plaintext / 未知语言）时整体作为一个 plain token 返回。
  */
 export function tokenize(code: string, grammar: Grammar | null): Token[] {
-  if (!grammar || !code) {
+  if (!grammar?.rules.length || !code) {
     return code ? [{ type: 'plain', value: code }] : [];
   }
 
-  const { regex, types } = compile(grammar);
+  const { regex, alternatives } = compile(grammar);
   const tokens: Token[] = [];
   let lastIndex = 0;
   regex.lastIndex = 0;
 
   let match: RegExpExecArray | null;
   while ((match = regex.exec(code)) !== null) {
-    // 命中前的未匹配文本作为 plain token。
-    if (match.index > lastIndex) {
-      tokens.push({ type: 'plain', value: code.slice(lastIndex, match.index) });
-    }
-
     // 反查命中的规则：第一个非 undefined 的捕获组。
     let groupIndex = -1;
     for (let i = 1; i < match.length; i++) {
@@ -90,11 +107,16 @@ export function tokenize(code: string, grammar: Grammar | null): Token[] {
       }
     }
 
-    tokens.push({ type: types[groupIndex] ?? 'plain', value: match[0] });
-    lastIndex = regex.lastIndex;
+    const token = resolveToken(code, match, groupIndex, grammar.rules, alternatives);
+    // 被拒绝或零宽的候选项也必须推进扫描位置。
+    regex.lastIndex = match.index + Math.max(1, token?.value.length ?? 0);
+    if (!token || token.type === 'plain') continue;
 
-    // 防御零宽匹配导致的死循环。
-    if (match.index === regex.lastIndex) regex.lastIndex++;
+    if (match.index > lastIndex) {
+      tokens.push({ type: 'plain', value: code.slice(lastIndex, match.index) });
+    }
+    tokens.push(token);
+    lastIndex = match.index + token.value.length;
   }
 
   // 收尾的未匹配文本。

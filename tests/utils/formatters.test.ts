@@ -22,6 +22,14 @@ import {
 } from '../../src/utils/formatters';
 
 describe('输入格式化工具', () => {
+  it('千分位和金额往返保留前导负号及待修改的非法小数', () => {
+    expect(parseThousands(formatThousands('-1234567.890'))).toBe('-1234567.890');
+    expect(parseCurrency(formatCurrency(' -1234567.891'))).toBe('-1234567.89');
+    expect(formatThousands('-')).toBe('-');
+    expect(formatThousands('-12.34.56')).toBe('-12.34.56');
+    expect(formatCurrency('1.234.56')).toBe('1.234.56');
+  });
+
   it('格式化和解析千分位数字', () => {
     expect(formatThousands('')).toBe('');
     expect(formatThousands('abc1234567.89')).toBe('1,234,567.89');

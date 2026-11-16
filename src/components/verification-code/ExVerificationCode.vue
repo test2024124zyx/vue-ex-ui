@@ -439,6 +439,8 @@ function handleBackspace() {
     // 当前格子为空，移动到前一个格子并清空
     focusedIndex.value--;
     cells.value[focusedIndex.value] = '';
+  } else {
+    return;
   }
   updateValue();
 }

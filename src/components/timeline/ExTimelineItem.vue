@@ -138,14 +138,8 @@ import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { useI18n } from '../../locale';
 import { computed, inject, ref, onMounted, onUpdated } from 'vue';
 import { useComponentSize } from '../config-provider/composables';
-import type { ComputedRef } from 'vue';
-import type {
-  ExTimelineItemProps,
-  ExTimelineItemEmits,
-  ExTimelineItemExposed,
-  TimelineDirection,
-  TimelineMode,
-} from './types';
+import type { ExTimelineItemProps, ExTimelineItemEmits, ExTimelineItemExposed } from './types';
+import { timelineContextKey } from './context';
 
 defineOptions({
   name: 'ExTimelineItem',
@@ -167,18 +161,10 @@ const itemRef = ref<HTMLDivElement>();
 const itemIndex = ref(0);
 
 // 注入父组件提供的上下文
-const direction = inject<ComputedRef<TimelineDirection>>(
-  'timeline-direction',
-  computed(() => 'vertical')
-);
-const mode = inject<ComputedRef<TimelineMode>>(
-  'timeline-mode',
-  computed(() => 'left')
-);
-const showLine = inject<ComputedRef<boolean>>(
-  'timeline-show-line',
-  computed(() => true)
-);
+const timeline = inject(timelineContextKey, null);
+const direction = computed(() => timeline?.direction.value ?? 'vertical');
+const mode = computed(() => timeline?.mode.value ?? 'left');
+const showLine = computed(() => timeline?.showLine.value ?? true);
 
 // 计算当前项是否在右侧（alternate 模式）
 const isRightSide = computed(() => {

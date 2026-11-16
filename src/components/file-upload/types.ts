@@ -119,7 +119,7 @@ export interface ExFileUploadProps {
   fileList?: UploadFile[];
   /** 非受控模式的初始文件列表。 */
   defaultFileList?: UploadFile[];
-  /** 最大文件数量。 */
+  /** 最大文件数量。未设置、负数和非有限数表示不限，0 表示禁止添加文件。 */
   limit?: number;
   /** 单个文件最大字节数。 */
   maxFileSize?: number;

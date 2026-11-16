@@ -25,6 +25,7 @@ export function parseTimeValue(value: string, format: string): TimeValue | null 
   const units = normalizeTimeFormat(format)
     .split(':')
     .map(token => TOKENS[token]!);
+  if (parts.length !== units.length) return null;
   const result: TimeValue = { h: 0, m: 0, s: 0 };
   for (const [index, unit] of units.entries()) {
     const part = parts[index];

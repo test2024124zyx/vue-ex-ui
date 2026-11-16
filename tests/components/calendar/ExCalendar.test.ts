@@ -5,6 +5,62 @@ import ExCalendar from '../../../src/components/calendar/ExCalendar.vue';
 import type { ExCalendarExposed, CalendarEvent } from '../../../src/components/calendar/types';
 
 describe('ExCalendar', () => {
+  it.each(['week', 'month'] as const)(
+    '%s 单元格的禁用条件和选择事件使用同一本地日历日',
+    async mode => {
+      const anchor = new Date(2024, 0, 15, 18, 30, 17);
+      const midnight = new Date(2024, 0, 15);
+      const disabledDate = vi.fn((date: Date) => date > midnight);
+      const wrapper = mount(ExCalendar, {
+        props: { modelValue: anchor, mode, disabledDate, showLunar: false, showSolarTerm: false },
+      });
+      try {
+        const selection = wrapper.get('.ex-calendar__cell[aria-selected="true"]');
+        expect(selection.attributes('aria-disabled')).not.toBe('true');
+        await selection.trigger('click');
+        expect(disabledDate.mock.calls.every(([date]) => date.getHours() === 0)).toBe(true);
+        expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([midnight]);
+        expect(wrapper.emitted('select')?.at(-1)?.[0]).toEqual(midnight);
+        expect(wrapper.emitted('date-click')?.at(-1)?.[0]).toEqual(midnight);
+        expect(anchor.getHours()).toBe(18);
+      } finally {
+        wrapper.unmount();
+      }
+    }
+  );
+
+  it('早年日期的月历使用原年份并匹配同日事件', async () => {
+    const date = new Date(2000, 5, 15);
+    date.setFullYear(50);
+    const wrapper = mount(ExCalendar, {
+      props: {
+        modelValue: date,
+        mode: 'month',
+        showLunar: false,
+        showSolarTerm: false,
+        events: [{ id: 'history', title: '历史事件', date: '0050-06-15' }],
+      },
+    });
+    try {
+      const selection = wrapper.get('.ex-calendar__cell[aria-selected="true"]');
+      expect(selection.text()).toContain('历史事件');
+      await selection.trigger('click');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([date]);
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it('周视图在周六晚仍显示同一周，跨到周日才增加周数', async () => {
+    const wrapper = mount(ExCalendar, {
+      props: { mode: 'week', modelValue: new Date(2024, 3, 13, 20), showSolarTerm: false },
+    });
+    expect(wrapper.get('.ex-calendar__week').text()).toBe('Week 15');
+    await wrapper.setProps({ modelValue: new Date(2024, 3, 14) });
+    expect(wrapper.get('.ex-calendar__week').text()).toBe('Week 16');
+    wrapper.unmount();
+  });
+
   it('未提供日期时服务端输出不随系统时钟变化', async () => {
     vi.useFakeTimers();
     try {

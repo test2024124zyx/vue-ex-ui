@@ -131,6 +131,7 @@ import { useI18n } from '../../locale';
 import { generateId } from '../../utils/id';
 import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 import { registerNativeRadio, restoreNativeRadioGroup } from './native-radio-state';
+import { radioGroupContextKey } from './context';
 
 defineOptions({
   name: 'ExRadio',
@@ -163,17 +164,7 @@ const {
 } = useFormFieldState(props);
 
 // 注入 RadioGroup 上下文
-const radioGroupContext = inject<{
-  modelValue: import('vue').ComputedRef<string | number | boolean>;
-  name?: string;
-  size?: import('vue').ComputedRef<string>;
-  status?: string;
-  disabled?: boolean;
-  readonly?: boolean;
-  required?: boolean;
-  updateValue: (value: string | number | boolean) => void;
-  registerRadio?: (restore: () => void) => () => void;
-} | null>('radioGroup', null);
+const radioGroupContext = inject(radioGroupContextKey, null);
 
 const radioId = generateId('ex-radio');
 const radioRef = ref<HTMLInputElement>();
@@ -215,7 +206,7 @@ const restoreNativeState = () => {
 let unregisterRadio: (() => void) | undefined;
 let unregisterNativeRadio: (() => void) | undefined;
 onMounted(() => {
-  unregisterRadio = radioGroupContext?.registerRadio?.(restoreNativeState);
+  unregisterRadio = radioGroupContext?.registerRadio(restoreNativeState);
   if (radioRef.value)
     unregisterNativeRadio = registerNativeRadio(radioRef.value, restoreNativeState);
 });
@@ -237,7 +228,7 @@ const currentSize = computed(() => {
   if (props.size) {
     return props.size;
   }
-  return radioGroupContext?.size?.value || componentSize.value;
+  return radioGroupContext?.size.value ?? componentSize.value;
 });
 
 const currentStatus = computed(() => {

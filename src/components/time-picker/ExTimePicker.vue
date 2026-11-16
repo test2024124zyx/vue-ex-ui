@@ -344,11 +344,11 @@ const confirmedRange = computed(() => {
     ? value
     : null;
 });
-const displayValue = computed(() =>
-  props.range
-    ? confirmedRange.value?.join(` ${t('rangeSeparator')} `) || ''
-    : valueState.value.value
-);
+const displayValue = computed(() => {
+  if (props.range) return confirmedRange.value?.join(` ${t('rangeSeparator')} `) || '';
+  const value = valueState.value.value;
+  return parseTimeValue(value, props.format) ? value : '';
+});
 
 const effectiveFormat = computed(() => normalizeTimeFormat(props.format));
 const showHour = computed(() => effectiveFormat.value.includes('HH'));
