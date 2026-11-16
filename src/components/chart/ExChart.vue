@@ -64,7 +64,11 @@ import {
   resolveChartPalette,
 } from './chart-runtime';
 import { getChartNavigationItems, type ChartNavigationItem } from './chart-accessibility';
-import { createChartThemePatch, type ChartThemeStyle } from './chart-theme-update';
+import {
+  createChartThemePatch,
+  mergeChartThemeOptions,
+  type ChartThemeStyle,
+} from './chart-theme-update';
 import { equalValueSnapshot } from '../../utils/value-snapshot';
 import ExChartDataNavigation from './ExChartDataNavigation.vue';
 import { useOverlayParentActive } from '../../composables/useOverlay';
@@ -129,6 +133,8 @@ let reducedMotionQuery: MediaQueryList | null = null;
 let echartsModule: typeof import('echarts') | null = null;
 let initialThemeStyle: ChartThemeStyle | undefined;
 let appliedThemeStyle: ChartThemeStyle | undefined;
+let explicitThemeOptions: ChartOption = {};
+let usesDeclaredControls = true;
 
 const readThemeStyle = (): ChartThemeStyle => {
   const theme = globalConfig.theme.value;
@@ -381,6 +387,8 @@ const updateChart = (theme = readThemeStyle()) => {
       notMerge: true,
       lazyUpdate: true,
     });
+    explicitThemeOptions = props.option;
+    usesDeclaredControls = true;
     if (initialThemeStyle)
       updateThemeStyle({ base: initialThemeStyle.base, controls }, theme, props.option);
     appliedThemeStyle = theme;
@@ -491,6 +499,8 @@ const resize = (opts?: { width?: number | 'auto'; height?: number | 'auto' }) =>
 const clear = () => {
   highlightNavigationItem(null);
   chartInstance.value?.clear();
+  explicitThemeOptions = {};
+  usesDeclaredControls = false;
   navigationItems.value = [];
   renderedOption.value = {};
 };
@@ -517,11 +527,15 @@ const setOption = (
 ) => {
   if (!chartInstance.value) return;
   chartInstance.value.setOption(option, opts);
-  if (opts?.notMerge && initialThemeStyle && appliedThemeStyle) {
+  explicitThemeOptions = opts?.notMerge
+    ? option
+    : mergeChartThemeOptions(explicitThemeOptions, option, opts?.replaceMerge);
+  if (opts?.notMerge) usesDeclaredControls = false;
+  if (initialThemeStyle && appliedThemeStyle) {
     updateThemeStyle(
       { base: initialThemeStyle.base, controls: {} },
       { base: appliedThemeStyle.base, controls: {} },
-      option
+      explicitThemeOptions
     );
   }
   syncNavigationItems(option);
@@ -655,8 +669,12 @@ watch(
   () => {
     if (!chartInstance.value || !appliedThemeStyle) return;
     try {
-      const next = readThemeStyle();
-      updateThemeStyle(appliedThemeStyle, next, props.option);
+      const read = readThemeStyle();
+      const current = usesDeclaredControls
+        ? appliedThemeStyle
+        : { base: appliedThemeStyle.base, controls: {} };
+      const next = usesDeclaredControls ? read : { base: read.base, controls: {} };
+      updateThemeStyle(current, next, explicitThemeOptions);
       appliedThemeStyle = next;
       syncNavigationItems();
     } catch (error) {
