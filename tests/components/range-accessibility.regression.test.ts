@@ -76,6 +76,16 @@ describe('数值控件的可访问名称与值', () => {
     expect(rate.attributes('aria-valuetext')).toBe('一般');
   });
 
+  it('半星与相邻整星共用评价文字时，仍能从读屏值区分', async () => {
+    const wrapper = mount(ExRate, {
+      props: { modelValue: 2.5, allowHalf: true, showText: true, texts: ['差', '一般', '好'] },
+    });
+    const rate = wrapper.get('[role="slider"]');
+    expect(rate.attributes('aria-valuetext')).toBe('好 (2.5)');
+    await wrapper.setProps({ modelValue: 3 });
+    expect(rate.attributes('aria-valuetext')).toBe('好 (3)');
+  });
+
   it('进度条提供自定义语义，移除格式化后恢复默认数值播报', async () => {
     const wrapper = mount(ExProgress, {
       props: { percentage: 40, format: value => `已完成 ${value} 件` },

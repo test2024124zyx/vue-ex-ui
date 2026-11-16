@@ -8,7 +8,7 @@
     :aria-valuemin="0"
     :aria-valuemax="normalizedMax"
     :aria-valuenow="currentValue"
-    :aria-valuetext="formatRateText(currentValue) || undefined"
+    :aria-valuetext="accessibleValueText"
     :aria-label="ariaLabel || (fieldAriaAttrs['aria-labelledby'] ? undefined : t('label'))"
     v-bind="fieldAriaAttrs"
     :aria-disabled="effectiveDisabled"
@@ -177,6 +177,13 @@ const displayValue = computed(() => {
 });
 
 const displayText = computed(() => formatRateText(displayValue.value));
+const accessibleValueText = computed(() => {
+  const value = currentValue.value;
+  const text = formatRateText(value);
+  if (!text) return undefined;
+  // 半星与下一整星可能对应同一句评价，读屏仍需保留精确分值。
+  return props.allowHalf && props.showText && props.texts?.length ? `${text} (${value})` : text;
+});
 
 function formatRateText(value: number): string {
   if (props.showText && props.texts && props.texts.length > 0) {
