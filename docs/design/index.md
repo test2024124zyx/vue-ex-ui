@@ -2,8 +2,16 @@
 
 ExUI 的版本更新记录，记录每个版本的新特性、优化和修复。
 
-> **当前版本**: v3.0.0
-> **最新更新**: 2026-11-06
+> **当前版本**: v3.0.1
+> **最新更新**: 2026-11-14
+
+## 📦 v3.0.1 (2026-11-14)
+
+- 修复 RadioGroup 和 CheckboxGroup 在首屏、换行、纵向和屏外布局中的高度偏移。
+- 接入 GitHub Release 与 npm OIDC 可信发布，保留完整发布前质量检查。
+- 修复依赖镜像下载地址，并统一 CI 与发布的 Node.js 运行时。
+- 从 npm `1.0.0` 升级时，请阅读[双主题迁移指南](/guide/theme-migration-guide)。
+- 完整记录见 [v3.0.1 更新日志](https://github.com/zhuhanxin0308/vue-ex-ui/blob/v3.0.1/CHANGELOG.md)。
 
 ## 📦 v3.0.0 (2026-11-06)
 
