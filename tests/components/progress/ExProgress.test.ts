@@ -95,6 +95,32 @@ describe('ExProgress', () => {
   });
 
   describe('进度条类型', () => {
+    it.each(['circle', 'dashboard'] as const)('%s 边界描边不会生成非法圆环', async type => {
+      const wrapper = mount(ExProgress, {
+        props: { type, width: 20, strokeWidth: 100, percentage: 75 },
+      });
+      const track = wrapper.get('circle.ex-progress__circle-track');
+      expect(track.attributes('stroke-width')).toBe('10');
+      expect(track.attributes('r')).toBe('5');
+      expect(
+        track
+          .attributes('stroke-dasharray')
+          ?.split(' ')
+          .every(value => Number(value) > 0)
+      ).toBe(true);
+
+      await wrapper.setProps({ width: Number.NaN, strokeWidth: Number.POSITIVE_INFINITY });
+      expect(wrapper.get('svg').attributes('viewBox')).toBe('0 0 120 120');
+      expect(track.attributes('stroke-width')).toBe('8');
+      await wrapper.setProps({ strokeWidth: -10 });
+      expect(track.attributes('stroke-width')).toBe('0');
+    });
+
+    it('线性进度条的负描边规范为零高度', () => {
+      const wrapper = mount(ExProgress, { props: { type: 'line', strokeWidth: -2 } });
+      expect(wrapper.get('.ex-progress__bar').attributes('style')).toContain('height: 0px');
+    });
+
     it('应该渲染线性进度条', () => {
       const wrapper = mount(ExProgress, {
         props: {
