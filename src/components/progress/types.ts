@@ -1,3 +1,5 @@
+import type { ComponentSize } from '../config-provider/types';
+
 /**
  * 进度条类型
  */
@@ -11,7 +13,7 @@ export type ProgressStatus = 'success' | 'exception' | 'warning' | 'normal' | 'a
 /**
  * 进度条尺寸
  */
-export type ProgressSize = 'small' | 'default' | 'large';
+export type ProgressSize = ComponentSize | 'default';
 
 /**
  * 进度条主题

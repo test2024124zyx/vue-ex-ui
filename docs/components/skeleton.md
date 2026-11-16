@@ -751,7 +751,7 @@ const toggleLoading3 = () => {
 
 ## API
 
-省略 `size` 时继承最近的 `ExConfigProvider`；全局 `medium` 对应骨架屏的 `default`。显式设置的尺寸优先。
+省略 `size` 时继承最近的 `ExConfigProvider`，全局默认值为 `medium`。`default` 是中档尺寸的兼容别名。
 
 ### Skeleton Props
 
@@ -760,7 +760,7 @@ const toggleLoading3 = () => {
 | `loading`      | 是否显示加载状态 | `boolean`                                                                                                                     | `true`      |
 | `animation`    | 动画类型         | `'pulse' \| 'wave' \| 'none'`                                                                                                 | `'pulse'`   |
 | `shape`        | 形状             | `'circle' \| 'square' \| 'rounded'`                                                                                           | `'rounded'` |
-| `size`         | 尺寸             | `'small' \| 'default' \| 'large'`                                                                                             | `'default'` |
+| `size`         | 尺寸             | `'small' \| 'medium' \| 'large' \| 'default'`                                                                                 | 继承配置    |
 | `variant`      | 变体类型         | `'text' \| 'avatar' \| 'title' \| 'paragraph' \| 'image' \| 'button' \| 'card' \| 'list' \| 'table' \| 'article' \| 'custom'` | `'text'`    |
 | `active`       | 是否激活动画     | `boolean`                                                                                                                     | `true`      |
 | `width`        | 宽度             | `string \| number`                                                                                                            | `undefined` |
