@@ -2,8 +2,8 @@
   <Teleport to="body">
     <Transition
       name="ex-drawer-wrapper-fade"
-      @after-enter="handleOpened"
-      @after-leave="handleClosed"
+      @after-enter="afterEnter"
+      @after-leave="afterLeave"
     >
       <div
         v-if="shouldRender"
@@ -63,17 +63,19 @@
               </div>
 
               <button
-                v-if="closable"
+                v-if="showCloseButton"
                 class="ex-drawer__close"
                 type="button"
                 :aria-label="t('close')"
                 @click="handleClose"
               >
-                <ExIcon
-                  icon="close-line"
-                  :size="20"
-                  aria-hidden="true"
-                />
+                <slot name="closeIcon">
+                  <ExIcon
+                    icon="close-line"
+                    :size="20"
+                    aria-hidden="true"
+                  />
+                </slot>
               </button>
             </div>
 
@@ -110,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, useId, useSlots, watch } from 'vue';
+import { computed, ref, useAttrs, useId, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import ExButton from '../button/ExButton.vue';
 import ExIcon from '../icon/ExIcon.vue';
@@ -125,7 +127,7 @@ import {
 import { useLocale } from '../../locale';
 import { useGuardedVisibility } from '../../composables/useGuardedVisibility';
 import { useOverlay } from '../../composables/useOverlay';
-import type { ExDrawerEmits, ExDrawerExposed, ExDrawerProps } from './types';
+import type { ExDrawerEmits, ExDrawerExposed, ExDrawerProps, ExDrawerSlots } from './types';
 
 defineOptions({
   name: 'ExDrawer',
@@ -138,6 +140,7 @@ const props = withDefaults(defineProps<ExDrawerProps>(), {
   placement: 'right',
   size: undefined,
   closable: true,
+  showClose: undefined,
   mask: true,
   maskClosable: true,
   closeOnPressEscape: true,
@@ -152,7 +155,8 @@ const props = withDefaults(defineProps<ExDrawerProps>(), {
 });
 
 const emit = defineEmits<ExDrawerEmits>();
-const slots = useSlots();
+const slots = defineSlots<ExDrawerSlots>();
+const showCloseButton = computed(() => props.showClose ?? props.closable);
 const attrs = useAttrs();
 const { t } = useLocale('drawer');
 const { t: tDialog } = useLocale('dialog');
@@ -178,15 +182,18 @@ const panelAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => !CONTROLLED_PANEL_ATTRS.has(key)))
 );
 
-const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
-  modelValue: () => props.modelValue,
-  beforeOpen: () => props.beforeOpen,
-  beforeClose: () => props.beforeClose,
-  requestModelValue: value => emit('update:modelValue', value),
-  onOpen: () => emit('open'),
-  onClose: () => emit('close'),
-  onGuardError: (error, phase) => emit('guardError', error, phase),
-});
+const { visible, hasOpened, requestOpen, requestClose, afterEnter, afterLeave } =
+  useGuardedVisibility({
+    modelValue: () => props.modelValue,
+    beforeOpen: () => props.beforeOpen,
+    beforeClose: () => props.beforeClose,
+    requestModelValue: value => emit('update:modelValue', value),
+    onOpen: () => emit('open'),
+    onOpened: () => emit('opened'),
+    onClose: () => emit('close'),
+    onClosed: () => emit('closed'),
+    onGuardError: (error, phase) => emit('guardError', error, phase),
+  });
 
 const shouldRender = computed(
   () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
@@ -202,7 +209,7 @@ const labelledBy = computed(() => {
   if (props.ariaLabel?.trim() || nativeAriaLabel.value) return undefined;
   return nativeLabelledBy.value ?? (slots.header || hasTitle.value ? titleId : undefined);
 });
-const showHeader = computed(() => Boolean(slots.header || hasTitle.value || props.closable));
+const showHeader = computed(() => Boolean(slots.header || hasTitle.value || showCloseButton.value));
 const hasFooter = computed(() => Boolean(slots.footer || props.showFooter));
 
 const wrapperClasses = computed(() => ({
@@ -286,12 +293,13 @@ const handleMaskClick = () => {
   if (props.mask && props.maskClosable) void requestCloseIntent('api');
 };
 const handleClose = () => void requestCloseIntent('api');
-const handleOk = () => emit('ok');
+const handleOk = () => {
+  emit('ok');
+  emit('confirm');
+};
 const handleCancel = () => {
   void requestCloseIntent('cancel');
 };
-const handleOpened = () => emit('opened');
-const handleClosed = () => emit('closed');
 
 const open = () => {
   pendingCloseIntent = null;

@@ -5,7 +5,8 @@
   >
     <Transition
       name="ex-modal-fade"
-      @after-leave="handleAfterClose"
+      @after-enter="afterEnter"
+      @after-leave="afterLeave"
     >
       <div
         v-if="shouldRender"
@@ -96,7 +97,7 @@
                   </ExButton>
                   <ExButton
                     :type="normalizedOkType"
-                    :loading="confirmLoading"
+                    :loading="okLoading ?? confirmLoading"
                     @click="handleOk"
                   >
                     {{ resolvedOkText }}
@@ -153,8 +154,10 @@ const props = withDefaults(defineProps<ExModalProps>(), {
   mask: true,
   maskClosable: true,
   keyboard: true,
+  closeOnPressEscape: undefined,
   okType: 'primary',
   confirmLoading: false,
+  okLoading: undefined,
   centered: false,
   zIndex: undefined,
   appendToBody: true,
@@ -219,16 +222,22 @@ const panelAttrs = computed(() =>
   )
 );
 
-const { visible, hasOpened, requestOpen, requestClose } = useGuardedVisibility({
-  modelValue: () => props.modelValue,
-  beforeOpen: () => props.beforeOpen,
-  beforeClose: () => props.beforeClose,
-  requestModelValue: value => emit('update:modelValue', value),
-  onOpen: () => emit('open'),
-  onClose: () => emit('close'),
-  onGuardError: (error, phase) => emit('guardError', error, phase),
-  skipRedundantRequests: true,
-});
+const { visible, hasOpened, requestOpen, requestClose, afterEnter, afterLeave } =
+  useGuardedVisibility({
+    modelValue: () => props.modelValue,
+    beforeOpen: () => props.beforeOpen,
+    beforeClose: () => props.beforeClose,
+    requestModelValue: value => emit('update:modelValue', value),
+    onOpen: () => emit('open'),
+    onOpened: () => emit('opened'),
+    onClose: () => emit('close'),
+    onClosed: () => {
+      emit('afterClose');
+      emit('closed');
+    },
+    onGuardError: (error, phase) => emit('guardError', error, phase),
+    skipRedundantRequests: true,
+  });
 
 const shouldRender = computed(
   () => overlayActive.value || (hasOpened.value && !props.destroyOnClose)
@@ -278,7 +287,7 @@ const wrapClasses = computed(() => [
   {
     'ex-modal-wrap--centered': props.centered,
   },
-  props.wrapClassName,
+  props.customClass ?? props.wrapClassName,
 ]);
 const modalClasses = computed(() => [
   'ex-modal',
@@ -306,7 +315,7 @@ const { zIndex: overlayZIndex, active: overlayActive } = useOverlay({
   container: modalRef,
   zIndex: () => requestedZIndex.value,
   lockScroll: () => props.mask && props.lockScroll,
-  closeOnEscape: () => props.keyboard,
+  closeOnEscape: () => props.closeOnPressEscape ?? props.keyboard,
   onEscape: async () => {
     await requestCloseIntent('cancel');
   },
@@ -323,8 +332,10 @@ const requestCloseIntent = (intent: CloseIntent): Promise<boolean> => {
   if (!props.modelValue) return Promise.resolve(false);
   if (pendingCloseIntent) return pendingCloseIntent;
 
-  if (intent === 'ok') emit('ok');
-  else if (intent === 'cancel') emit('cancel');
+  if (intent === 'ok') {
+    emit('ok');
+    emit('confirm');
+  } else if (intent === 'cancel') emit('cancel');
 
   const operation = requestClose();
   pendingCloseIntent = operation;
@@ -352,8 +363,6 @@ const handleOk = (): void => {
 const handleCancel = (): void => {
   void requestCloseIntent('cancel');
 };
-const handleAfterClose = (): void => emit('afterClose');
-
 const open = (): void => {
   pendingCloseIntent = null;
   requestOpen();

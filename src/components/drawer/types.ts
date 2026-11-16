@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'vue';
+import type { CSSProperties, VNodeChild } from 'vue';
 
 export type DrawerPlacement = 'left' | 'right' | 'top' | 'bottom';
 export type DrawerPresetSize = 'small' | 'medium' | 'large' | 'extra-large';
@@ -16,6 +16,8 @@ export interface ExDrawerProps {
   /** 预设尺寸、自定义 CSS 长度或正数像素值。 */
   size?: DrawerSize;
   /** 是否显示关闭按钮。 */
+  showClose?: boolean;
+  /** @deprecated 使用 showClose。 */
   closable?: boolean;
   /** 是否显示遮罩并启用模态焦点圈闭。 */
   mask?: boolean;
@@ -63,8 +65,18 @@ export interface ExDrawerEmits {
   close: [];
   closed: [];
   guardError: [error: unknown, phase: 'open' | 'close'];
+  confirm: [];
+  /** @deprecated 使用 confirm。 */
   ok: [];
   cancel: [];
+}
+
+export interface ExDrawerSlots {
+  default?: () => VNodeChild;
+  header?: () => VNodeChild;
+  title?: () => VNodeChild;
+  footer?: () => VNodeChild;
+  closeIcon?: () => VNodeChild;
 }
 
 /** 抽屉公开方法。 */
