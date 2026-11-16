@@ -4,7 +4,7 @@
  */
 
 import render from 'dom-serializer';
-import { ElementType, parseDocument } from 'htmlparser2';
+import { ElementType, Parser, parseDocument } from 'htmlparser2';
 
 /**
  * 允许的 HTML 标签白名单
@@ -69,6 +69,16 @@ const RASTER_DATA_IMAGE_PATTERN =
 
 /** 这些节点的文本本身也可能被浏览器当成可执行或替换内容，必须连同子树一起丢弃。 */
 const DROP_CONTENT_TAGS = new Set(['script', 'style', 'iframe', 'object', 'embed', 'textarea']);
+const DANGEROUS_TAGS = new Set(['script', 'style', 'iframe', 'object', 'embed', 'form']);
+const URL_ATTRIBUTES = new Set([
+  'href',
+  'src',
+  'xlink:href',
+  'action',
+  'formaction',
+  'background',
+  'poster',
+]);
 
 type ParsedNode = ReturnType<typeof parseDocument>['children'][number];
 type ParsedElement = Extract<
@@ -157,7 +167,8 @@ const sanitizeAttributes = (
     safeAttributes[normalizedName] = attributeValue;
   }
 
-  if (tagName === 'a' && safeAttributes.target === '_blank') {
+  if (tagName === 'a' && safeAttributes.target?.toLowerCase() === '_blank') {
+    safeAttributes.target = '_blank';
     safeAttributes.rel = 'noopener noreferrer';
   }
 
@@ -233,19 +244,22 @@ export function sanitizeHtml(html: string): string {
  * @returns 是否包含危险内容
  */
 export function containsDangerousHtml(html: string): boolean {
-  const dangerousPatterns = [
-    /<script\b/i,
-    /<iframe\b/i,
-    /<object\b/i,
-    /<embed\b/i,
-    /<form\b/i,
-    /\bon\w+\s*=/i,
-    /\bstyle\s*=/i,
-    /javascript:/i,
-    /vbscript:/i,
-    /data:/i,
-    /expression\s*\(/i,
-  ];
-
-  return dangerousPatterns.some(pattern => pattern.test(html));
+  let dangerous = false;
+  // 从实际标签和已解码的属性识别风险，跳过正文、注释与已转义的代码示例。
+  const parser = new Parser({
+    onopentag(tag, attributes) {
+      dangerous ||=
+        DANGEROUS_TAGS.has(tag) ||
+        Object.entries(attributes).some(
+          ([name, value]) =>
+            name === 'style' ||
+            /^on\w+$/i.test(name) ||
+            (URL_ATTRIBUTES.has(name) &&
+              value.trim() !== '' &&
+              !isSafeUrl(value, tag === 'img' && name === 'src'))
+        );
+    },
+  });
+  parser.end(html);
+  return dangerous;
 }

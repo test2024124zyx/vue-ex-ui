@@ -34,8 +34,8 @@ export const SUPPORTED_LOCALES = {
 
 export type SupportedLocale = keyof typeof SUPPORTED_LOCALES;
 
-const isSupportedLocale = (value: string): value is SupportedLocale =>
-  Object.prototype.hasOwnProperty.call(SUPPORTED_LOCALES, value);
+const isSupportedLocale = (value: unknown): value is SupportedLocale =>
+  typeof value === 'string' && Object.prototype.hasOwnProperty.call(SUPPORTED_LOCALES, value);
 
 /** ConfigProvider 用于隔离子树语言的注入键。 */
 export const LOCALE_INJECTION_KEY: InjectionKey<Readonly<Ref<SupportedLocale>>> =
@@ -47,6 +47,19 @@ export const LOCALE_COMPOSER_INJECTION_KEY: InjectionKey<LocaleComposer> =
 
 // 默认语言
 export const DEFAULT_LOCALE: SupportedLocale = 'en-US';
+
+/** 全局和 App 的公开语言引用共用写入校验，非法值保留当前语言。 */
+const createLocaleRef = (initial: SupportedLocale): Ref<SupportedLocale> => {
+  const locale = ref(initial);
+  return computed({
+    get: () => locale.value,
+    set: value => {
+      if (isSupportedLocale(value)) locale.value = value;
+      else logger.warn('不支持的语言，保留当前语言。', value);
+    },
+  });
+};
+
 interface LocaleRuntime {
   currentLocale: Ref<SupportedLocale>;
   composer?: LocaleComposer;
@@ -54,7 +67,7 @@ interface LocaleRuntime {
 
 // 全局语言只在同一浏览器文档内共享，App 级 Provider 继续持有独立状态。
 const getLocaleRuntime = createDocumentRuntime<LocaleRuntime>('locale', () => ({
-  currentLocale: ref<SupportedLocale>(DEFAULT_LOCALE),
+  currentLocale: createLocaleRef(DEFAULT_LOCALE),
 }));
 
 // 获取当前语言
@@ -64,15 +77,7 @@ export function getCurrentLocale(): SupportedLocale {
 
 // 设置语言
 export function setLocale(locale: SupportedLocale): void {
-  updateLocale(getLocaleRuntime().currentLocale, locale);
-}
-
-function updateLocale(currentLocale: Ref<SupportedLocale>, locale: SupportedLocale): void {
-  if (!SUPPORTED_LOCALES[locale]) {
-    logger.warn(`Unsupported locale "${locale}", falling back to "${DEFAULT_LOCALE}"`);
-    return;
-  }
-  currentLocale.value = locale;
+  getLocaleRuntime().currentLocale.value = locale;
 }
 
 const translateMessages = (
@@ -159,7 +164,9 @@ const getGlobalComposer = (): LocaleComposer => {
     messages: computed(
       () => SUPPORTED_LOCALES as unknown as Record<string, Record<string, unknown>>
     ),
-    setLocale: locale => updateLocale(runtime.currentLocale, locale),
+    setLocale: locale => {
+      runtime.currentLocale.value = locale;
+    },
   };
   return runtime.composer;
 };
@@ -240,7 +247,7 @@ export interface LocaleProviderOptions {
 }
 
 export function createLocaleProvider(options: LocaleProviderOptions = {}) {
-  const initial = options.locale ?? DEFAULT_LOCALE;
+  const initial = isSupportedLocale(options.locale) ? options.locale : DEFAULT_LOCALE;
   const base = SUPPORTED_LOCALES as Record<SupportedLocale, Locale>;
   const messages: Record<SupportedLocale, Locale> = { ...base };
   if (options.messages) {
@@ -252,7 +259,7 @@ export function createLocaleProvider(options: LocaleProviderOptions = {}) {
 
   return {
     install(app: App) {
-      const locale = ref<SupportedLocale>(initial);
+      const locale = createLocaleRef(initial);
       const vueI18nComposer = shallowRef<LocaleComposer | null>(null);
       const messagesRef: ComputedRef<Record<string, Record<string, unknown>>> = computed(() =>
         vueI18nComposer.value

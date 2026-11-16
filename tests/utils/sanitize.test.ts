@@ -100,6 +100,31 @@ describe('sanitize', () => {
       expect(containsDangerousHtml('<p>Hello <strong>World</strong></p>')).toBe(false);
       expect(containsDangerousHtml('<a href="https://example.com">Link</a>')).toBe(false);
     });
+
+    it.each([
+      'metadata: version=1',
+      'The expression (a+b) is simplified',
+      '<pre>onload = 1; style = "color"; data: todos</pre>',
+      '<code>&lt;script&gt;alert(1)&lt;/script&gt;</code>',
+      '<!-- <img onerror="alert(1)"> -->',
+      '<a href="/guide?example=javascript:alert(1)" title="data: links">说明</a>',
+      '<img src="data:image/png;base64,iVBORw0KGgo=" alt="示例">',
+    ])('不会把纯文本、注释和安全属性误报为攻击：%s', html => {
+      expect(containsDangerousHtml(html)).toBe(false);
+    });
+
+    it.each([
+      '<OBJECT data="data:text/html,test"></OBJECT>',
+      '<form></form>',
+      '<style>@import url(https://example.com/)</style>',
+      '<a HREF="jav&#x61;script&colon;alert(1)">链接</a>',
+      '<img src="data:image/svg+xml;base64,PHN2Zz4=">',
+      '<svg><a xlink:href="vbscript:msgbox(1)">链接</a></svg>',
+      '<img src="java&#9;script:alert(1)">',
+      '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+    ])('识别实际标签和解码后的危险属性：%s', html => {
+      expect(containsDangerousHtml(html)).toBe(true);
+    });
   });
 
   describe('sanitizeHtml', () => {
@@ -150,6 +175,17 @@ describe('sanitize', () => {
       expect(result).toContain('href="https://example.com"');
       // 应该添加 rel="noopener noreferrer"
       expect(result).toContain('rel="noopener noreferrer"');
+    });
+
+    it.each(['_BLANK', '_bLaNk', '&#95;BLANK'])('规范化新标签目标并覆盖 opener：%s', target => {
+      expect(sanitizeHtml(`<a href="/guide" target="${target}" rel="opener">指南</a>`)).toBe(
+        '<a href="/guide" target="_blank" rel="noopener noreferrer">指南</a>'
+      );
+    });
+
+    it('保留显式命名的窗口与已有链接关系', () => {
+      const link = '<a href="/guide" target="GuideWindow" rel="nofollow">指南</a>';
+      expect(sanitizeHtml(link)).toBe(link);
     });
 
     it.each([
