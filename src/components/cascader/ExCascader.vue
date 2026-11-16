@@ -48,6 +48,7 @@
         ref="inputRef"
         :value="searchInput.displayValue.value"
         v-bind="triggerAttrs"
+        :required="!hasValue && attrs.required != null && attrs.required !== false"
         :placeholder="currentPlaceholder"
         :disabled="effectiveDisabled"
         :readonly="effectiveReadonly || !filterable"
@@ -529,7 +530,7 @@ const activeDescendant = computed(() => {
 });
 
 const inputDisplayValue = computed(() => {
-  if (hasSearchQuery.value && visible.value) return searchQuery.value;
+  if (props.filterable && visible.value) return searchQuery.value;
   return props.multiple ? '' : displayValue.value;
 });
 const searchInput = useCascaderSearchInput(inputRef, inputDisplayValue, setSearchQuery);
@@ -751,6 +752,8 @@ function setSearchQuery(value: string) {
 }
 
 const handleInputFocus = (event: FocusEvent) => {
+  // 用键盘进入时保留已选文本的展示，并让第一次键入直接替换它。
+  if (props.filterable && !visible.value && !effectiveReadonly.value) inputRef.value?.select();
   emit('focus', event);
 };
 

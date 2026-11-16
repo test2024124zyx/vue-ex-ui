@@ -13,6 +13,28 @@ const options = [
 ];
 
 describe('Cascader 的输入交互', () => {
+  it('单选已有值时从空文本开始搜索，取消后恢复所选路径', async () => {
+    const wrapper = mount(ExCascader, {
+      props: { options, filterable: true, modelValue: ['east'], teleported: false },
+      attrs: { required: true },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input');
+    expect(input.element.value).toBe('杭州东');
+    input.element.focus();
+    expect(input.element.selectionStart).toBe(0);
+    expect(input.element.selectionEnd).toBe(input.element.value.length);
+    await input.trigger('click');
+    expect(input.element.value).toBe('');
+    expect(input.element.checkValidity()).toBe(true);
+    input.element.value += '杭州';
+    await input.trigger('input');
+    expect(wrapper.findAll('.ex-cascader__search-results [role="option"]')).toHaveLength(2);
+    expect(input.element.value).toBe('杭州');
+    await input.trigger('keydown', { key: 'Escape' });
+    expect(input.element.value).toBe('杭州东');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
   it('冒泡的原生事件只调用外部监听器一次', async () => {
     const onClick = vi.fn();
     const onInput = vi.fn();
