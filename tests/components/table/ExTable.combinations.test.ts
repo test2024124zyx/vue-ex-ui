@@ -116,6 +116,19 @@ describe('Table 树形、分页与选择的组合契约', () => {
     expect(wrapper.text()).not.toContain('子 A');
   });
 
+  it('数据暂时为空时收到父级展开确认，回来后也沿用最新确认', async () => {
+    const row = { key: 'a', name: '父 A', children: [{ key: 'a1', name: '子 A' }] };
+    const wrapper = mount(ExTable, {
+      props: { columns, data: [row], tree: true, defaultExpandAllRows: true, expandedRowKeys: [] },
+    });
+    expect(wrapper.text()).not.toContain('子 A');
+    await wrapper.setProps({ data: [] });
+    await wrapper.setProps({ expandedRowKeys: ['a'] });
+    await wrapper.setProps({ expandedRowKeys: undefined });
+    await wrapper.setProps({ data: [row] });
+    expect(wrapper.text()).toContain('子 A');
+  });
+
   it.each([false, true])('本地排序请求第一页，远程排序交由调用方：%s', async remoteSort => {
     const data = [
       { key: 'b', name: 'B' },

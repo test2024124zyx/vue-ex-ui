@@ -110,10 +110,9 @@ export function useTableRows(
       if (controlledKeys) {
         const confirmed = new Set(controlledKeys);
         // 受控期间就记录确认结果，避免数据在解除控制之前清空。
+        for (const key of confirmed) manuallyCollapsed.delete(key);
         for (const row of keys === undefined ? (previousRows ?? []) : rows) {
-          if (!row.children.length) continue;
-          if (confirmed.has(row.key)) manuallyCollapsed.delete(row.key);
-          else manuallyCollapsed.add(row.key);
+          if (row.children.length && !confirmed.has(row.key)) manuallyCollapsed.add(row.key);
         }
       }
       if (keys !== undefined) return;
