@@ -73,7 +73,7 @@ export interface ExNumberInputEmits {
  */
 export interface ExNumberInputExposed {
   /** 聚焦输入框 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 失焦输入框 */
   blur: () => void;
   /** 选中输入框内容 */

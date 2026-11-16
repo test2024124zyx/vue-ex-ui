@@ -369,11 +369,12 @@ const disabledTime = (date: Date, endpoint: 'start' | 'end') => ({
 
 ### Methods
 
-| 方法名       | 说明           | 类型                           |
-| ------------ | -------------- | ------------------------------ |
-| `focus`      | 聚焦输入框     | `() => void`                   |
-| `blur`       | 移除输入框焦点 | `() => void`                   |
-| `getElement` | 获取组件根元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明           | 类型                               |
+| ------------ | -------------- | ---------------------------------- |
+| `focus`      | 聚焦输入框     | `(options?: FocusOptions) => void` |
+| `blur`       | 移除输入框焦点 | `() => void`                       |
+| `clear`      | 请求清空当前值 | `() => void`                       |
+| `getElement` | 获取组件根元素 | `() => HTMLDivElement \| null`     |
 
 ### 键盘操作
 

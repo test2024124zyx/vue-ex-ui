@@ -99,5 +99,7 @@ export interface ExInputExposed {
   select: () => void;
   clear: () => void;
   validate: () => boolean;
+  /** 获取原生输入元素。 */
+  getElement: () => HTMLInputElement | HTMLTextAreaElement | null;
   getInputElement: () => HTMLInputElement | HTMLTextAreaElement | null;
 }

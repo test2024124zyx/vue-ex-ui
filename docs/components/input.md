@@ -310,6 +310,7 @@ const emailRules = [
 | select          | () => void                                            |
 | clear           | () => void                                            |
 | validate        | () => boolean                                         |
+| getElement      | () => HTMLInputElement \| HTMLTextAreaElement \| null |
 | getInputElement | () => HTMLInputElement \| HTMLTextAreaElement \| null |
 
 <style scoped>

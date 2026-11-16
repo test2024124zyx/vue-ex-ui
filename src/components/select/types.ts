@@ -129,9 +129,13 @@ export interface ExSelectEmits {
 
 export interface ExSelectExposed {
   /** 使选择器获取焦点 */
-  focus: () => void;
+  focus: (options?: FocusOptions) => void;
   /** 使选择器失去焦点 */
   blur: () => void;
+  /** 通过选择器的现有清空逻辑请求更新。 */
+  clear: () => void;
+  /** 获取选择器的根元素。 */
+  getElement: () => HTMLElement | null;
   /** 显示下拉菜单 */
   showDropdown: () => void;
   /** 隐藏下拉菜单 */

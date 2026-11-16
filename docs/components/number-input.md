@@ -655,14 +655,14 @@ const value1 = ref(0);
 
 ### NumberInput Methods
 
-| 方法名       | 说明              | 参数                           |
-| ------------ | ----------------- | ------------------------------ |
-| `focus`      | 聚焦输入框        | `()`                           |
-| `blur`       | 失焦输入框        | `()`                           |
-| `select`     | 选中输入框内容    | `()`                           |
-| `increase`   | 增加值            | `()`                           |
-| `decrease`   | 减少值            | `()`                           |
-| `getElement` | 获取输入框DOM元素 | `() => HTMLDivElement \| null` |
+| 方法名       | 说明              | 参数                               |
+| ------------ | ----------------- | ---------------------------------- |
+| `focus`      | 聚焦输入框        | `(options?: FocusOptions) => void` |
+| `blur`       | 失焦输入框        | `()`                               |
+| `select`     | 选中输入框内容    | `()`                               |
+| `increase`   | 增加值            | `()`                               |
+| `decrease`   | 减少值            | `()`                               |
+| `getElement` | 获取输入框DOM元素 | `() => HTMLDivElement \| null`     |
 
 ## 无障碍支持
 

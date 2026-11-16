@@ -978,25 +978,15 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
 });
 
-const focus = () => {
-  if (props.searchable && inputRef.value) {
-    inputRef.value.focus();
-  } else {
-    triggerRef.value?.focus();
-  }
-};
-
-const blur = () => {
-  if (props.searchable && inputRef.value) {
-    inputRef.value.blur();
-  } else {
-    triggerRef.value?.blur();
-  }
-};
+const getFocusTarget = () => (props.searchable ? inputRef.value : undefined) ?? triggerRef.value;
+const focus: ExSelectExposed['focus'] = options => getFocusTarget()?.focus(options);
+const blur = () => getFocusTarget()?.blur();
 
 defineExpose<ExSelectExposed>({
   focus,
   blur,
+  clear: handleClear,
+  getElement: () => selectRef.value ?? null,
   showDropdown,
   hideDropdown,
   retryRemote,
