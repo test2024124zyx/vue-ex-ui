@@ -877,7 +877,7 @@ const selectionData = [
 | `loading`           | 是否加载中                                             | `boolean`                        | `false`      |
 | `empty-text`        | 空数据文本                                             | `string`                         | `'暂无数据'` |
 | `show-header`       | 是否显示表头                                           | `boolean`                        | `true`       |
-| `row-key`           | 行的 key 字段名                                        | `string`                         | `'key'`      |
+| `row-key`           | 行唯一键的字段名。重复键只保留首行，开发环境会提示     | `string`                         | `'key'`      |
 | `selectable`        | 是否开启行选择列                                       | `boolean`                        | `false`      |
 | `selection-type`    | 选择类型（多选/单选）                                  | `'checkbox' \| 'radio'`          | `'checkbox'` |
 | `selectedRowKeys`   | 已选行 key 列表（支持 `v-model:selectedRowKeys`）      | `Array<string \| number>`        | `[]`         |

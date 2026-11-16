@@ -103,8 +103,10 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import ExIcon from '../icon/ExIcon.vue';
 import { computed, ref, provide, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import type { ComponentInternalInstance, VNode } from 'vue';
 import type { ExTabsProps, ExTabsEmits, ExTabsExposed } from './types';
 import { generateId } from '../../utils/id';
+import { logger } from '../../utils/logger';
 import { useLocale } from '../../locale';
 import { useSlotItems } from '../../composables/useSlotItems';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
@@ -132,20 +134,43 @@ const { t } = useLocale('tabs');
 
 const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
-const registeredPanes = ref<PaneInfo[]>([]);
+const registeredPanes = ref<Array<PaneInfo & { uid: number }>>([]);
 const { items: slotItems, SlotContent } = useSlotItems('ExTabPane');
+const declaredPanes = computed(() => {
+  const byName = new Map<PaneInfo['name'], VNode>();
+  for (const node of slotItems.value) {
+    const name = node.props?.name as PaneInfo['name'];
+    if (byName.has(name)) logger.warn('ExTabs 的标签页名称重复，已保留首项。', name);
+    else byName.set(name, node);
+  }
+  return byName;
+});
 const slotPanes = computed<PaneInfo[]>(() =>
-  slotItems.value.map(node => ({
-    name: node.props?.name as string | number,
+  [...declaredPanes.value].map(([name, node]) => ({
+    name,
     label: node.props?.label as string | undefined,
     disabled: node.props?.disabled === true || node.props?.disabled === '',
     closable: node.props?.closable === true || node.props?.closable === '',
   }))
 );
-const panes = computed(() => {
-  const names = new Set(slotPanes.value.map(pane => pane.name));
-  return [...slotPanes.value, ...registeredPanes.value.filter(pane => !names.has(pane.name))];
+const registeredByName = computed(() => {
+  const byName = new Map<PaneInfo['name'], (typeof registeredPanes.value)[number]>();
+  for (const pane of registeredPanes.value) {
+    if (declaredPanes.value.has(pane.name) || byName.has(pane.name)) {
+      logger.warn('ExTabs 的标签页名称重复，已保留首项。', pane.name);
+    } else byName.set(pane.name, pane);
+  }
+  return byName;
 });
+const panes = computed(() => [...slotPanes.value, ...registeredByName.value.values()]);
+const ownsVNode = (node: VNode, instance: ComponentInternalInstance) =>
+  node === instance.vnode || node.component === instance;
+const isPaneVisible = (instance: ComponentInternalInstance, name: PaneInfo['name']) => {
+  const declared = declaredPanes.value.get(name);
+  return declared
+    ? ownsVNode(declared, instance)
+    : registeredByName.value.get(name)?.uid === instance.uid;
+};
 const tabState = useControllableState<string | number | undefined>({
   controlledValue: () => props.modelValue,
   defaultValue: undefined,
@@ -170,21 +195,30 @@ provide(tabsContextKey, {
   getTabId,
   getPanelId,
   activeTab,
-  registerPane(pane) {
-    if (!slotPanes.value.some(item => item.name === pane.name)) registeredPanes.value.push(pane);
+  isPaneVisible,
+  registerPane(instance, pane) {
+    if (!slotItems.value.some(node => ownsVNode(node, instance))) {
+      registeredPanes.value.push({ ...pane, uid: instance.uid });
+    }
   },
-  updatePane(registeredName, pane) {
-    const target = registeredPanes.value.find(current => current.name === registeredName);
-    const activeNameChanged = activeTab.value === registeredName && registeredName !== pane.name;
+  updatePane(instance, previousName, pane) {
+    const target = registeredPanes.value.find(current => current.uid === instance.uid);
+    const oldOwner = declaredPanes.value.get(previousName);
+    const oldRegistration = registeredByName.value.get(previousName);
+    const ownedPrevious = oldOwner
+      ? ownsVNode(oldOwner, instance)
+      : !oldRegistration || oldRegistration.uid === instance.uid;
+    const activeNameChanged =
+      activeTab.value === previousName && previousName !== pane.name && ownedPrevious;
     if (target) Object.assign(target, pane);
-    if (activeNameChanged) {
+    if (activeNameChanged && isPaneVisible(instance, pane.name)) {
       tabState.request(pane.name);
       emit('update:modelValue', pane.name);
       emit('change', pane.name);
     }
   },
-  unregisterPane(name) {
-    registeredPanes.value = registeredPanes.value.filter(pane => pane.name !== name);
+  unregisterPane(uid) {
+    registeredPanes.value = registeredPanes.value.filter(pane => pane.uid !== uid);
   },
 });
 let isTabsUnmounting = false;
