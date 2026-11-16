@@ -1,4 +1,5 @@
 import { toRaw } from 'vue';
+import { createSnapshotMemberShape } from './value-snapshot-shape';
 
 interface PendingPair {
   left: unknown;
@@ -38,9 +39,31 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const reverseSeen = new WeakMap<object, object>();
   const mapped: Array<[object, object]> = [];
   const choices: MatchChoice[] = [];
+  let readShape: ReturnType<typeof createSnapshotMemberShape> | undefined;
 
   function enqueue(leftValue: unknown, rightValue: unknown): void {
     pending = { left: leftValue, right: rightValue, next: pending };
+  }
+
+  function enqueueGroup(leftEntries: ObjectEntry[], rightEntries: ObjectEntry[]): void {
+    matches = {
+      collection: { left: leftEntries, right: rightEntries, used: new Set() },
+      index: 0,
+      next: matches,
+    };
+  }
+
+  function groupMembers(entries: ObjectEntry[]): Map<string, ObjectEntry[]> | undefined {
+    readShape ??= createSnapshotMemberShape();
+    const groups = new Map<string, ObjectEntry[]>();
+    for (const entry of entries) {
+      const shape = readShape(entry);
+      if (shape === undefined) return undefined;
+      const group = groups.get(shape);
+      if (group) group.push(entry);
+      else groups.set(shape, [entry]);
+    }
+    return groups;
   }
 
   function compareCollection(a: Map<unknown, unknown> | Set<unknown>, b: typeof a): boolean {
@@ -59,11 +82,18 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     for (const [key, value] of b.entries()) {
       if (isObject(key)) rightEntries.push([toRaw(key), value]);
     }
-    matches = {
-      collection: { left: leftEntries, right: rightEntries, used: new Set() },
-      index: 0,
-      next: matches,
-    };
+    const leftGroups = groupMembers(leftEntries);
+    const rightGroups = leftGroups && groupMembers(rightEntries);
+    if (!leftGroups || !rightGroups) {
+      enqueueGroup(leftEntries, rightEntries);
+      return true;
+    }
+    // 先按形状和数量排除不可能相等的集合，避免对大量相同成员依次排列。
+    for (const [shape, leftGroup] of leftGroups) {
+      const rightGroup = rightGroups.get(shape);
+      if (leftGroup.length !== rightGroup?.length) return false;
+      enqueueGroup(leftGroup, rightGroup);
+    }
     return true;
   }
 

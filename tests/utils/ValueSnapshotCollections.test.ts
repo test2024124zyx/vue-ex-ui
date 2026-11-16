@@ -59,6 +59,27 @@ describe('无序集合快照', () => {
     expect(equalValueSnapshot(map, newMap)).toBe(false);
   });
 
+  it('大量同形成员后出现不相容成员时按结构与数量淘汰候选', () => {
+    const pool = (distinct: number) =>
+      new Set(
+        Array.from({ length: 10 }, (_, index) => ({
+          metadata: { value: index === 9 ? distinct : 0 },
+        }))
+      );
+    const start = performance.now();
+    expect(equalValueSnapshot(pool(1), pool(0))).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('无法静态读取的访问器仍按实际的值比较', () => {
+    const entry = {
+      get nested() {
+        return { value: 2 };
+      },
+    };
+    expect(equalValueSnapshot(new Set([entry]), new Set([{ nested: { value: 2 } }]))).toBe(true);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);
