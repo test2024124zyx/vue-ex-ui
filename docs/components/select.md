@@ -361,6 +361,8 @@ const loadRemoteOptions = async (query, { signal }) => {
 
 ### Props
 
+同一份 `options` 中每个值应唯一，包含跨分组的选项。重复值只保留首次出现的选项，开发环境会提示。
+
 省略 `modelValue` 时选择状态由组件维护，单选初始为 `null`，多选初始为空数组。传入 `modelValue` 时由父组件确认更新，`null` 表示明确传入的空值。
 
 | 参数             | 说明                                                           | 类型                                               | 默认值       |

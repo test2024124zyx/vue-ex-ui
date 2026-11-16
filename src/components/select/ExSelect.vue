@@ -574,12 +574,14 @@ const selectStyles = computed(() => {
 const {
   filteredOptions,
   flatFilteredOptions,
+  filteredValues,
   selectedOption,
   selectedValues,
   selectedOptions,
   getOptionByValue,
   isSelected,
   getOptionIndex,
+  getFilteredValueIndex,
   virtualRows,
   getVirtualRowIndex,
   useVirtual,
@@ -937,17 +939,17 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-// 监听下拉状态：仅在下拉打开时挂载全局监听器
+// 活动值通过索引保留，仅单独监听当前活动项的禁用状态。
 watch(
-  () =>
-    flatFilteredOptions.value.map(option => ({ value: option.value, disabled: option.disabled })),
-  (options, previous) => {
+  [filteredValues, () => Boolean(flatFilteredOptions.value[hoverIndex.value]?.disabled)],
+  ([, disabled], [previousValues]) => {
     if (!dropdownVisible.value) {
       hoverIndex.value = -1;
       return;
     }
-    const activeValue = previous[hoverIndex.value]?.value;
-    const retained = options.findIndex(option => option.value === activeValue && !option.disabled);
+    if (filteredValues.value === previousValues && !disabled) return;
+    const index = getFilteredValueIndex(previousValues[hoverIndex.value]);
+    const retained = flatFilteredOptions.value[index]?.disabled ? -1 : index;
     hoverIndex.value = retained >= 0 ? retained : findEnabledIndex(-1, 1);
     scrollHoverIntoView();
   }
