@@ -7,6 +7,7 @@ export default defineConfig({
     'button-name.spec.ts',
     'choice-group-layout.spec.ts',
     'code-image-download.spec.ts',
+    'code-window.spec.ts',
     'upload-focus.spec.ts',
   ],
   workers: 2,

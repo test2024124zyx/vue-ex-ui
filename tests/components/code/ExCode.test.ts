@@ -143,6 +143,29 @@ describe('ExCode', () => {
     expect(gutters[2].text()).toBe('7');
   });
 
+  it('长代码首屏仅渲染一个行窗口，并保留完整的原生文本选择', () => {
+    const code = Array.from({ length: 1000 }, (_, index) => `行 ${index + 1}`).join('\n');
+    const wrapper = mount(ExCode, { props: { code, lineNumbers: true } });
+    const rows = wrapper.findAll('.ex-code__line');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThan(100);
+    expect(rows[0]!.text()).toContain('行 1');
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.value).toBe(code);
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.readOnly).toBe(true);
+    expect(wrapper.get<HTMLElement>('.ex-code__content').element.style.maxHeight).toBe('24rem');
+    wrapper.unmount();
+  });
+
+  it('长文件保留调用方指定的视口高度和编辑能力', () => {
+    const wrapper = mount(ExCode, {
+      props: { code: 'line\n'.repeat(1000), maxHeight: 180, editable: true, wrap: true },
+    });
+    expect(wrapper.get<HTMLElement>('.ex-code__content').element.style.maxHeight).toBe('180px');
+    expect(wrapper.findAll('.ex-code__line').length).toBeLessThan(100);
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.readOnly).toBe(false);
+    wrapper.unmount();
+  });
+
   it('非法 startLine 与 tabSize 不会产生 Infinity 行号或编辑异常', async () => {
     const wrapper = mount(ExCode, {
       props: {

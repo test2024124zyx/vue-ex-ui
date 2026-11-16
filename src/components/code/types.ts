@@ -46,7 +46,7 @@ export interface ExCodeProps {
   showLanguage?: boolean;
   /** 可选文件名。 */
   filename?: string;
-  /** 内容区最大高度。 */
+  /** 内容区最大高度，500 行起默认 24rem。 */
   maxHeight?: string | number;
   /** 是否自动换行。 */
   wrap?: boolean;

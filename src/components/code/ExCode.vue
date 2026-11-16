@@ -63,17 +63,42 @@
 
     <!-- 内容区：逐行渲染（行号 / 行高亮 / 换行对齐统一在同一栅格内） -->
     <div
+      ref="contentRef"
       class="ex-code__content"
       :style="contentStyles"
+      @scroll.passive="codeWindow.onScroll"
     >
-      <div class="ex-code__lines">
+      <div
+        class="ex-code__lines"
+        :style="{ minWidth: codeWindow.width.value }"
+      >
         <div
-          v-for="(line, index) in renderLines"
+          v-if="windowActive"
+          ref="measurementRef"
+          class="ex-code__measurement"
+          aria-hidden="true"
+        >
+          {{ renderSource + '\u200b' }}
+        </div>
+        <div
+          v-if="windowActive"
+          :style="{ height: codeWindow.top.value }"
+          aria-hidden="true"
+        />
+        <div
+          v-for="{ line, index } in visibleLines"
           :key="index"
-          v-memo="[line, isLineHighlighted(index), editable, lineNumbers, normalizedStartLine]"
+          v-memo="[
+            line,
+            isLineHighlighted(index),
+            editable,
+            windowActive,
+            lineNumbers,
+            normalizedStartLine,
+          ]"
           class="ex-code__line"
           :class="{ 'ex-code__line--highlighted': isLineHighlighted(index) }"
-          :aria-hidden="editable ? 'true' : undefined"
+          :aria-hidden="editable || windowActive ? 'true' : undefined"
         >
           <span
             v-if="lineNumbers"
@@ -97,17 +122,23 @@
             </template>
           </span>
         </div>
+        <div
+          v-if="windowActive"
+          :style="{ height: codeWindow.bottom.value }"
+          aria-hidden="true"
+        />
 
-        <!-- 可编辑：透明 textarea 叠加在高亮层之上，光标可见、文字由下方高亮层呈现 -->
+        <!-- 原生文本控件保留完整文本的编辑、选区和复制，着色层只输出视口中的行。 -->
         <textarea
-          v-if="editable"
+          v-if="editable || windowActive"
           ref="textareaRef"
           class="ex-code__textarea"
-          :value="compositionDraft ?? currentCode"
-          :readonly="readonly"
-          :aria-label="editorAriaLabel"
-          :aria-describedby="readonly ? undefined : editorInstructionsId"
-          wrap="soft"
+          :class="{ 'ex-code__textarea--nowrap': !editable && !wrap }"
+          :value="renderSource"
+          :readonly="readonly || !editable"
+          :aria-label="editable ? editorAriaLabel : rootAriaLabel"
+          :aria-describedby="editable && !readonly ? editorInstructionsId : undefined"
+          :wrap="editable || wrap ? 'soft' : 'off'"
           spellcheck="false"
           autocapitalize="off"
           autocomplete="off"
@@ -117,6 +148,8 @@
           @compositionstart="handleCompositionStart"
           @compositionend="handleCompositionEnd"
           @keydown="handleKeydown"
+          @keyup="handleCaret"
+          @select="handleCaret"
           @focus="resetTabExit"
           @blur="resetTabExit"
         />
@@ -142,6 +175,7 @@ import type { CSSProperties } from 'vue';
 import type { ExCodeProps, ExCodeEmits, ExCodeExposed } from './types';
 import { useI18n } from '../../locale';
 import { useCodeHighlight } from './use-code-highlight';
+import { CODE_WINDOW_MAX_HEIGHT, useCodeWindow } from './use-code-window';
 import { normalizeLineNumber, normalizeTabSize, parseHighlightedLines } from './line-utils';
 import { registerOverlayEscapeBoundary } from '../../composables/overlay-manager';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
@@ -170,6 +204,8 @@ const emit = defineEmits<ExCodeEmits>();
 const { t } = useI18n();
 
 const rootRef = ref<HTMLDivElement>();
+const contentRef = ref<HTMLDivElement>();
+const measurementRef = ref<HTMLDivElement>();
 const textareaRef = ref<HTMLTextAreaElement>();
 const copied = ref(false);
 const compositionDraft = ref<string>();
@@ -185,11 +221,28 @@ const codeState = useControllableState<string>({
 });
 const currentCode = codeState.value;
 
+const renderSource = computed(() =>
+  (compositionDraft.value ?? currentCode.value).replace(/\r\n?/g, '\n')
+);
 const renderLines = useCodeHighlight(
-  computed(() => compositionDraft.value ?? currentCode.value),
+  renderSource,
   () => props.language,
   () => props.editable
 );
+const codeWindow = useCodeWindow(
+  renderSource,
+  computed(() => renderLines.value.length),
+  computed(() => props.wrap || props.editable),
+  contentRef,
+  measurementRef
+);
+const windowActive = codeWindow.active;
+const visibleLines = computed(() => {
+  const start = codeWindow.start.value;
+  return renderLines.value
+    .slice(start, codeWindow.end.value)
+    .map((line, offset) => ({ line, index: start + offset }));
+});
 const normalizedStartLine = computed(() => normalizeLineNumber(props.startLine));
 const normalizedTabSize = computed(() => normalizeTabSize(props.tabSize));
 
@@ -203,6 +256,7 @@ const rootClasses = computed(() => {
   if (props.lineNumbers) classes.push('ex-code--line-numbers');
   if (props.wrap) classes.push('ex-code--wrap');
   if (props.editable) classes.push('ex-code--editable');
+  if (windowActive.value) classes.push('ex-code--windowed');
 
   classes.push(...normalizeCustomClass(props.class));
 
@@ -225,8 +279,12 @@ const rootStyleList = computed(() => [
 ]);
 
 const contentStyles = computed<CSSProperties>(() => {
-  if (props.maxHeight === undefined) return {};
-  if (typeof props.maxHeight === 'number' && !Number.isFinite(props.maxHeight)) return {};
+  if (
+    props.maxHeight === undefined ||
+    (typeof props.maxHeight === 'number' && !Number.isFinite(props.maxHeight))
+  ) {
+    return windowActive.value ? { maxHeight: CODE_WINDOW_MAX_HEIGHT } : {};
+  }
   return {
     maxHeight:
       typeof props.maxHeight === 'number' ? `${Math.max(0, props.maxHeight)}px` : props.maxHeight,
@@ -341,6 +399,11 @@ const syncEditor = (request?: PendingEditorChange) => {
         ? request.previous
         : undefined);
   if (selection) element.setSelectionRange(selection.start, selection.end);
+  codeWindow.revealCaret(element);
+};
+
+const handleCaret = () => {
+  if (textareaRef.value && windowActive.value) codeWindow.revealCaret(textareaRef.value);
 };
 
 // 原生输入先回退到已确认值，只有本次请求被确认时才恢复请求对应的光标。
@@ -439,7 +502,7 @@ watch(
 
 // 编辑增强：Tab 缩进 / Shift+Tab 反缩进，支持多行选区按行处理。
 const handleKeydown = (event: KeyboardEvent) => {
-  if (isComposingKeyboardEvent(event) || props.readonly) return;
+  if (!props.editable || isComposingKeyboardEvent(event) || props.readonly) return;
   if (event.key === 'Tab' && tabExitArmed.value) {
     // 父层可能圈闭到同一元素而不触发 blur，这次 Tab 仍已消耗放行资格。
     resetTabExit();
