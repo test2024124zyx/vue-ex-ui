@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readPackManifest } from './npm-pack-manifest.mjs';
 import { verifyBrowserBundle } from './verify-browser-bundle.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -148,11 +149,10 @@ try {
     ],
     { name: 'npm pack' }
   );
-  const packEntries = JSON.parse(packOutput);
-  const packEntry = packEntries[0];
-  if (!packEntry?.filename || !Array.isArray(packEntry.files)) {
-    throw new Error('npm pack 未返回可验证的包清单');
-  }
+  const { name: packageName } = JSON.parse(
+    await readFile(join(projectRoot, 'package.json'), 'utf8')
+  );
+  const packEntry = readPackManifest(packOutput, packageName);
   const packedPaths = new Set(packEntry.files.map(file => file.path));
   for (const file of requiredFiles) {
     if (!packedPaths.has(`dist/${file}`)) {
