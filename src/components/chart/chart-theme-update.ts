@@ -17,6 +17,21 @@ const axes = ['xAxis', 'yAxis', 'radiusAxis', 'angleAxis', 'singleAxis', 'parall
 const axisKeys = new Set<string>(axes);
 const themedComponents = ['title', ...axes, 'series', 'legend', 'tooltip', 'toolbox', 'dataZoom'];
 
+/** 保留组件布局与身份，组件生成的默认样式由主题继续管理。 */
+export function snapshotChartThemeOptions(explicit: ChartOption, layout: ChartOption): ChartOption {
+  const snapshot = { ...explicit };
+  for (const key of themedComponents) {
+    if (layout[key] == null) continue;
+    const declared = asComponents(explicit[key]);
+    snapshot[key] = asComponents(layout[key]).map((item, index) => {
+      if (item == null) return null;
+      const { id, name, type } = asStyle(item);
+      return { ...asStyle(declared[index]), id, name, type };
+    });
+  }
+  return snapshot;
+}
+
 /** 跟踪实际应用的显式配置，合并顺序与 ECharts 的 id、name、位置优先级一致。 */
 export function mergeChartThemeOptions(
   previous: ChartOption,
@@ -39,7 +54,13 @@ export function mergeChartThemeOptions(
     const slots = existing.map(value => (replace ? null : value));
     const matched = new Set<number>();
     const place = (value: Style, index: number) => {
-      slots[index] = deepMerge(asStyle(slots[index]), value);
+      const previous = asStyle(slots[index]);
+      // ECharts 在子类型变化时重建模型，旧模型的业务样式不再生效。
+      const replacedType =
+        value.type != null && previous.type != null && value.type !== previous.type;
+      slots[index] = replacedType
+        ? { id: previous.id, name: previous.name, ...value }
+        : deepMerge(previous, value);
       matched.add(index);
     };
     const pending = unmatched
@@ -54,14 +75,12 @@ export function mergeChartThemeOptions(
         return false;
       })
       .filter(value => {
-        if (replace || value.name == null) return true;
+        // 已有模型即使没有业务 ID 也有内部 ID，传入全新 ID 应追加。
+        if (replace || value.id != null || value.name == null) return true;
         const index = slots.findIndex((item, index) => {
           const fields = asStyle(item);
           return (
-            !matched.has(index) &&
-            fields.name != null &&
-            String(fields.name) === String(value.name) &&
-            (fields.id == null || value.id == null)
+            !matched.has(index) && fields.name != null && String(fields.name) === String(value.name)
           );
         });
         if (index < 0) return true;

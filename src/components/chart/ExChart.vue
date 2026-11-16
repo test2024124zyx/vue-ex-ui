@@ -67,6 +67,7 @@ import { getChartNavigationItems, type ChartNavigationItem } from './chart-acces
 import {
   createChartThemePatch,
   mergeChartThemeOptions,
+  snapshotChartThemeOptions,
   type ChartThemeStyle,
 } from './chart-theme-update';
 import { equalValueSnapshot } from '../../utils/value-snapshot';
@@ -387,7 +388,7 @@ const updateChart = (theme = readThemeStyle()) => {
       notMerge: true,
       lazyUpdate: true,
     });
-    explicitThemeOptions = props.option;
+    explicitThemeOptions = snapshotChartThemeOptions(props.option, mergedOption);
     usesDeclaredControls = true;
     if (initialThemeStyle)
       updateThemeStyle({ base: initialThemeStyle.base, controls }, theme, props.option);
@@ -528,7 +529,7 @@ const setOption = (
   if (!chartInstance.value) return;
   chartInstance.value.setOption(option, opts);
   explicitThemeOptions = opts?.notMerge
-    ? option
+    ? snapshotChartThemeOptions(option, option)
     : mergeChartThemeOptions(explicitThemeOptions, option, opts?.replaceMerge);
   if (opts?.notMerge) usesDeclaredControls = false;
   if (initialThemeStyle && appliedThemeStyle) {

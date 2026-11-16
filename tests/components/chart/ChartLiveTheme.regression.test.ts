@@ -98,6 +98,53 @@ it('局部替换时保留同 ID 标题的业务样式，新标题使用当前主
   ]);
 });
 
+it('追加业务图例时保留自动图例的主题位置', async () => {
+  const { theme, api, instance } = await mountThemedChart({
+    xAxis: {},
+    yAxis: {},
+    series: [{ type: 'bar', name: '数据', data: [1] }],
+  });
+  const legends = () => instance.getOption().legend as Array<{ textStyle: { color: string } }>;
+  const light = legends()[0]!.textStyle.color;
+  api.setOption({ legend: { id: 'business', textStyle: { color: 'red' } } });
+  expect(legends()).toHaveLength(2);
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(legends()[0]!.textStyle.color).not.toBe(light);
+  expect(legends()[1]!.textStyle.color).toBe('red');
+});
+
+it('新 ID 的同名标题追加后仍采用主题色', async () => {
+  const { theme, api, instance } = await mountThemedChart({
+    title: { name: 'same', text: '原有', textStyle: { color: 'red' } },
+  });
+  api.setOption({ title: { id: 'new', name: 'same', text: '新增' } });
+  const titles = () => instance.getOption().title as Array<{ textStyle: { color: string } }>;
+  expect(titles()).toHaveLength(2);
+  const light = titles()[1]!.textStyle.color;
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(titles()[0]!.textStyle.color).toBe('red');
+  expect(titles()[1]!.textStyle.color).not.toBe(light);
+});
+
+it.each([undefined, 'series'])('系列类型改变时重置旧模型的显式样式：%s', async replaceMerge => {
+  const { theme, api, instance } = await mountThemedChart({ xAxis: {}, yAxis: {}, series: [] });
+  api.setOption({
+    series: { id: 'metric', type: 'bar', data: [1], itemStyle: { borderColor: 'red' } },
+  });
+  api.setOption(
+    { series: { id: 'metric', type: 'pie', data: [{ name: '甲', value: 1 }] } },
+    { replaceMerge }
+  );
+  const series = () => instance.getOption().series as Array<{ itemStyle: { borderColor: string } }>;
+  const light = series()[0]!.itemStyle.borderColor;
+  expect(light).not.toBe('red');
+  theme.value = 'neon-blue';
+  await nextTick();
+  expect(series()[0]!.itemStyle.borderColor).not.toBe(light);
+});
+
 it('切换主题只更新视觉属性，保留实际 ECharts 的数据、图例与缩放', async () => {
   const theme = ref<Theme>('light');
   const overrides = ref<Partial<ThemeVariables>>({});
