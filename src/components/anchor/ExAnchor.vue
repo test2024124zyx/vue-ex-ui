@@ -22,6 +22,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, watch } from 'vue';
 import { useLocale } from '../../locale';
+import { createFrameTask } from '../../utils/frame-task';
 import { ANCHOR_INJECTION_KEY } from './context';
 import type { AnchorItem, ExAnchorEmits, ExAnchorExposed, ExAnchorProps } from './types';
 
@@ -91,11 +92,6 @@ const getOffsetTop = (element: HTMLElement, container: HTMLElement | Window): nu
   return rect.top - containerRect.top + container.scrollTop;
 };
 
-const getScrollTop = (container: HTMLElement | Window): number =>
-  isWindowContainer(container)
-    ? window.scrollY || document.documentElement.scrollTop
-    : container.scrollTop;
-
 const clearAnimationTimer = (): void => {
   if (animationTimer !== null) clearTimeout(animationTimer);
   animationTimer = null;
@@ -153,33 +149,37 @@ const setActiveFromScroll = (href: string): void => {
 
 const getCurrentAnchor = (): string => {
   if (!scrollContainer) return '';
-  const threshold =
-    getScrollTop(scrollContainer) + (props.targetOffset ?? props.offsetTop) + props.bounds;
-  const candidates = links.value
-    .map(link => {
-      const target = resolveTarget(link.href);
-      return target ? { href: link.href, offset: getOffsetTop(target, scrollContainer!) } : null;
-    })
-    .filter((item): item is { href: string; offset: number } => item !== null)
-    .sort((left, right) => left.offset - right.offset);
-
+  const viewportTop = isWindowContainer(scrollContainer)
+    ? window.scrollY
+      ? 0
+      : document.documentElement.scrollTop
+    : scrollContainer.getBoundingClientRect().top;
+  const threshold = viewportTop + (props.targetOffset ?? props.offsetTop) + props.bounds;
+  let nearestTop = -Infinity;
   let current = '';
-  for (const candidate of candidates) {
-    if (candidate.offset > threshold) break;
-    current = candidate.href;
+  for (const link of links.value) {
+    const target = resolveTarget(link.href);
+    if (!target) continue;
+    // 按可见位置单次选取最近锚点，保留相同位置时后注册条目优先。
+    const top = target.getBoundingClientRect().top;
+    if (top <= threshold && top >= nearestTop) {
+      nearestTop = top;
+      current = link.href;
+    }
   }
   return current;
 };
 
 const handleScroll = (): void => {
+  scrollTask.cancel();
   if (!animating) setActiveFromScroll(getCurrentAnchor());
 };
+const scrollTask = createFrameTask(handleScroll);
 
 const handleLinkClick = (item: AnchorItem): void => {
   setActiveFromScroll(item.href);
   emit('click', item.href, item);
   scrollTo(item.href);
-  void updateInkPosition();
 };
 
 const updateLink = (element: HTMLElement, href: string, title: string): void => {
@@ -218,15 +218,16 @@ provide(ANCHOR_INJECTION_KEY, {
 });
 
 const removeListeners = (): void => {
-  scrollContainer?.removeEventListener('scroll', handleScroll);
-  window.removeEventListener('resize', handleScroll);
+  scrollTask.cancel();
+  scrollContainer?.removeEventListener('scroll', scrollTask.schedule);
+  window.removeEventListener('resize', scrollTask.schedule);
   scrollContainer = null;
 };
 
 const addListeners = (): void => {
   scrollContainer = props.container();
-  scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-  window.addEventListener('resize', handleScroll, { passive: true });
+  scrollContainer.addEventListener('scroll', scrollTask.schedule, { passive: true });
+  window.addEventListener('resize', scrollTask.schedule, { passive: true });
 };
 
 watch(

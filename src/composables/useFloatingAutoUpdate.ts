@@ -1,35 +1,64 @@
 import { nextTick, onBeforeUnmount, watch } from 'vue';
 import type { Ref, WatchSource } from 'vue';
+import { createFrameTask } from '../utils/frame-task';
+
+type Active = Readonly<Ref<boolean>>;
+
+function listenToViewport(active: Active, task: ReturnType<typeof createFrameTask>) {
+  const detach = () => {
+    task.cancel();
+    if (typeof window === 'undefined') return;
+    window.removeEventListener('resize', task.schedule);
+    window.removeEventListener('scroll', task.schedule, true);
+  };
+  watch(
+    active,
+    enabled => {
+      if (!enabled) return detach();
+      if (typeof window === 'undefined') return;
+      window.addEventListener('resize', task.schedule);
+      window.addEventListener('scroll', task.schedule, { capture: true, passive: true });
+    },
+    { immediate: true }
+  );
+  onBeforeUnmount(detach);
+}
+
+/** 仅在浮层可见时跟踪滚动和视口尺寸。 */
+export function useViewportPosition(active: Active, update: () => void): void {
+  listenToViewport(
+    active,
+    createFrameTask(() => {
+      if (active.value) update();
+    })
+  );
+}
 
 /** 动态定位属性与内容尺寸共用更新任务；销毁和隐藏后不再测量布局。 */
 export function useFloatingAutoUpdate(
-  active: Readonly<Ref<boolean>>,
+  active: Active,
   elements: Ref<HTMLElement | undefined>[],
   sources: WatchSource[],
-  update: () => void
+  update: () => void,
+  options?: { viewport?: boolean }
 ) {
   let disposed = false;
   let observer: ResizeObserver | undefined;
-  let frame: number | undefined;
   let revision = 0;
-  const cancel = () => {
-    if (frame !== undefined) cancelAnimationFrame(frame);
-    frame = undefined;
-  };
+  const task = createFrameTask(() => {
+    if (!disposed && active.value) update();
+  });
   const schedule = () => {
-    if (disposed || !active.value || frame !== undefined) return;
-    frame = requestAnimationFrame(() => {
-      frame = undefined;
-      if (!disposed && active.value) update();
-    });
+    if (!disposed && active.value) task.schedule();
   };
+  if (options?.viewport) listenToViewport(active, { schedule, cancel: task.cancel });
   watch(
     [active, ...elements],
     async () => {
       const currentRevision = ++revision;
       observer?.disconnect();
       observer = undefined;
-      cancel();
+      task.cancel();
       await nextTick();
       if (
         disposed ||
@@ -57,7 +86,7 @@ export function useFloatingAutoUpdate(
   onBeforeUnmount(() => {
     disposed = true;
     observer?.disconnect();
-    cancel();
+    task.cancel();
   });
   return schedule;
 }
