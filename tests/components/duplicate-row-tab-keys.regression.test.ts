@@ -59,7 +59,7 @@ describe('表格与标签页的唯一键', () => {
     expect(wrapper.get('[role="tabpanel"]').text()).toBe('重复面板');
   });
 
-  it('服务端和封装组件创建的重复面板也只渲染首项', async () => {
+  it('包装组件创建的重复面板在挂载后只渲染首项', async () => {
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const Pane = { render: () => h(ExTabPane, { name: 'same', label: '标签' }, () => '面板') };
     const host = { render: () => h(ExTabs, {}, () => [h(Pane), h(Pane)]) };
@@ -68,7 +68,7 @@ describe('表格与标签页的唯一键', () => {
     expect(wrapper.findAll('[role="tab"]')).toHaveLength(1);
     expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
     const html = await renderToString(createSSRApp(host));
-    expect(html.match(/role="tabpanel"/g)).toHaveLength(1);
+    expect(html).not.toContain('role="tabpanel"');
   });
 
   it('封装标签出现在直声明标签前时，重排后仍采用第一个出现的标签', async () => {
@@ -121,5 +121,48 @@ describe('表格与标签页的唯一键', () => {
     expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(1);
     expect(wrapper.get('[role="tab"]').text()).toBe('乙');
     expect(wrapper.get('[role="tabpanel"]').text()).toBe('乙面板');
+  });
+
+  it.each([false, true])('混合包装标签的 SSR 导航和活动面板一致，重复：%s', async duplicate => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const Wrapped = {
+      render: () => h(ExTabPane, { name: 'wrapped', label: '包装标签' }, () => '包装面板'),
+    };
+    const host = {
+      render: () =>
+        h(ExTabs, {}, () => [
+          h(Wrapped),
+          h(
+            ExTabPane,
+            { name: duplicate ? 'wrapped' : 'direct', label: '直声明标签' },
+            () => '直声明面板'
+          ),
+        ]),
+    };
+    const root = document.createElement('div');
+    root.innerHTML = await renderToString(createSSRApp(host));
+    const assertActive = (label: string, panel: string) => {
+      const tab = root.querySelector('[role="tab"][aria-selected="true"]');
+      const active = root.querySelector('[role="tabpanel"][aria-hidden="false"]');
+      expect(tab?.textContent?.trim()).toBe(label);
+      expect(active?.textContent?.trim()).toBe(panel);
+      expect(tab?.getAttribute('aria-controls')).toBe(active?.id);
+    };
+    assertActive('直声明标签', '直声明面板');
+    const app = createSSRApp(host);
+    document.body.append(root);
+    try {
+      app.mount(root);
+      await flushPromises();
+      assertActive('包装标签', '包装面板');
+      expect(root.querySelectorAll('[role="tabpanel"]')).toHaveLength(duplicate ? 1 : 2);
+      expect(errors.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
+      expect(warn.mock.calls.flat().join(' ')).not.toMatch(/hydrat/i);
+    } finally {
+      app.unmount();
+      root.remove();
+    }
   });
 });

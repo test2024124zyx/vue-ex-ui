@@ -150,6 +150,7 @@ const tabsRef = ref<HTMLDivElement>();
 const navRef = ref<HTMLDivElement>();
 const panelsRef = ref<HTMLDivElement>();
 const tabsInstance = getCurrentInstance();
+const includeWrappedPanes = ref(false);
 const registeredPanes = shallowRef<Array<{ pane: PaneInfo; instance: ComponentInternalInstance }>>(
   []
 );
@@ -209,8 +210,11 @@ const paneOwners = computed(() => {
       closable: node.props?.closable === true || node.props?.closable === '',
     },
   }));
-  for (const entry of registeredPanes.value) {
-    ordered.push({ ...entry, order: getWrappedOrder(entry.instance) });
+  // 导航先于面板输出。服务端和首次 hydration 只采用静态可知的面板。
+  if (includeWrappedPanes.value) {
+    for (const entry of registeredPanes.value) {
+      ordered.push({ ...entry, order: getWrappedOrder(entry.instance) });
+    }
   }
   ordered.sort((left, right) => {
     if (left.order !== right.order) return left.order - right.order;
@@ -532,6 +536,7 @@ function readWrappedPositions(): void {
 }
 
 onMounted(() => {
+  includeWrappedPanes.value = true;
   updateIndicator();
   // 容器/标签尺寸变化（窗口缩放、字体加载、标签增删）时同步指示条位置
   if (typeof ResizeObserver !== 'undefined' && navRef.value) {
