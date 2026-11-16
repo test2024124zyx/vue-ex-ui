@@ -589,6 +589,50 @@ describe('无序集合快照', () => {
     expect(compareWithLinearWork(source, snapshot, source.values.size)).toBe(false);
   });
 
+  it('对象键不同但关联同一个宽对象时只保留紧凑签名', () => {
+    const size = 1000;
+    const shared = { items: Array<number>(size).fill(1) };
+    const source = new Set(Array.from({ length: size }, (_, id) => new Map([[{ id }, shared]])));
+    const snapshot = deepClone(source);
+    const set = Map.prototype.set;
+    const maxCharacters = size * 600;
+    let characters = 0;
+    Map.prototype.set = function <K, V>(this: Map<K, V>, key: K, value: V) {
+      if (typeof key === 'string') characters += key.length;
+      if (characters > maxCharacters) throw new Error('共享对象签名被重复拼接');
+      return set.call(this, key, value) as Map<K, V>;
+    };
+    try {
+      expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    } finally {
+      Map.prototype.set = set;
+    }
+  });
+
+  it('大量集合共享一个成员时登记约束只读取线性数量的分组', () => {
+    const shared = {};
+    const source = Array.from({ length: 1000 }, () => new Set([shared]));
+    const snapshot = deepClone(source);
+    const keys = Map.prototype.keys;
+    const maxReads = source.length * 12;
+    let reads = 0;
+    Map.prototype.keys = function <K, V>(this: Map<K, V>) {
+      const iterator = keys.call(this) as MapIterator<K>;
+      const next = iterator.next.bind(iterator);
+      iterator.next = () => {
+        const step = next();
+        if (!step.done && ++reads > maxReads) throw new Error('旧分组被重复扫描');
+        return step;
+      };
+      return iterator;
+    };
+    try {
+      expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    } finally {
+      Map.prototype.keys = keys;
+    }
+  });
+
   it('重新分配相交的静态组名额，并让不同候选域共用位置', () => {
     const lane = (a: number, b: number, c: number) =>
       new Map([

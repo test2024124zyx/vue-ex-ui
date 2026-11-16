@@ -33,7 +33,7 @@ interface CollectionMatch {
   leftCounts: Map<object, number>;
   rightIndices: Map<object, number[]>;
   available: CandidateCursor;
-  sharedMembership?: boolean;
+  membershipVersion?: number;
   membershipPositions?: Map<string, AvailablePositions> | null;
   readable?: ReadableCandidates;
 }
@@ -52,7 +52,12 @@ interface MatchChoice {
   cursorCount: number;
 }
 
-type MembershipIndex = WeakMap<object, Map<CollectionMatch, number>>;
+interface Membership {
+  groups: Map<CollectionMatch, number>;
+  signature?: string;
+}
+
+type MembershipIndex = WeakMap<object, Membership>;
 
 function isObject(value: unknown): value is object {
   return value !== null && typeof value === 'object';
@@ -78,6 +83,7 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   const rightMemberships: MembershipIndex = new WeakMap();
   const groups: CollectionMatch[] = [];
   let nextGroupId = 0;
+  let membershipVersion = 0;
   let readShape: ReturnType<typeof createSnapshotMemberShape> | undefined;
 
   function enqueue(leftValue: unknown, rightValue: unknown): void {
@@ -90,26 +96,21 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     group: CollectionMatch,
     count: number
   ): void {
-    let memberships = index.get(key);
-    if (!memberships) {
-      memberships = new Map();
-      index.set(key, memberships);
+    let membership = index.get(key);
+    if (!membership) {
+      membership = { groups: new Map() };
+      index.set(key, membership);
     }
-    if (memberships.size) {
-      group.sharedMembership = true;
-      for (const previous of memberships.keys()) {
-        previous.sharedMembership = true;
-        previous.membershipPositions = undefined;
-      }
-    }
-    memberships.set(group, count);
+    if (membership.groups.size) membershipVersion++;
+    membership.groups.set(group, count);
+    membership.signature = undefined;
   }
 
   function removeMembership(index: MembershipIndex, key: object, group: CollectionMatch): void {
-    const memberships = index.get(key)!;
-    memberships.delete(group);
-    // 只重建此次共享成员关系变化涉及的索引。
-    for (const previous of memberships.keys()) previous.membershipPositions = undefined;
+    const membership = index.get(key)!;
+    membership.groups.delete(group);
+    if (membership.groups.size) membershipVersion++;
+    membership.signature = undefined;
   }
 
   function enqueueGroup(
@@ -270,8 +271,8 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   }
 
   function mappingFitsGroups(a: object, b: object): boolean {
-    const first = leftMemberships.get(a);
-    const second = rightMemberships.get(b);
+    const first = leftMemberships.get(a)?.groups;
+    const second = rightMemberships.get(b)?.groups;
     if ((first?.size ?? 0) !== (second?.size ?? 0)) return false;
     if (first && second) {
       for (const [group, count] of first) if (second.get(group) !== count) return false;
@@ -280,16 +281,25 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
   }
 
   function membershipKey(index: MembershipIndex, key: object): string {
-    const groups = index.get(key)!;
+    const membership = index.get(key)!;
     // 每个分组按创建顺序登记，左右用相同顺序生成成员关系签名。
-    return [...groups].map(([group, count]) => `${group.id}:${count}`).join('|');
+    membership.signature ??= [...membership.groups]
+      .map(([group, count]) => `${group.id}:${count}`)
+      .join('|');
+    return membership.signature;
   }
 
-  function memberPositions(
-    collection: CollectionMatch,
-    key: object
-  ): AvailablePositions | undefined {
-    if (collection.membershipPositions === undefined) {
+  function currentMembershipPositions(collection: CollectionMatch) {
+    if (collection.membershipVersion !== membershipVersion) {
+      collection.membershipVersion = membershipVersion;
+      // 成员关系变化时按需更新，无需在登记新分组时遍历旧分组。
+      if (
+        !collection.left.some(([key]) => leftMemberships.get(key)!.groups.size > 1) &&
+        !collection.right.some(([key]) => rightMemberships.get(key)!.groups.size > 1)
+      ) {
+        collection.membershipPositions = undefined;
+        return undefined;
+      }
       const positions = new Map<string, AvailablePositions>();
       collection.right.forEach(([key], index) => {
         const membership = membershipKey(rightMemberships, key);
@@ -308,12 +318,12 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
       for (const [membership, count] of counts) {
         if (positions.get(membership)?.indices.length !== count) {
           collection.membershipPositions = null;
-          return undefined;
+          return null;
         }
       }
       collection.membershipPositions = positions;
     }
-    return collection.membershipPositions?.get(membershipKey(leftMemberships, key));
+    return collection.membershipPositions;
   }
 
   function comparePair(leftValue: unknown, rightValue: unknown): boolean {
@@ -408,9 +418,10 @@ export function equalValueSnapshot(left: unknown, right: unknown): boolean {
     }
     const first = Math.max(start, skipReserved(collection.available));
     let indexed = ranked?.domain.positions;
-    if (collection.sharedMembership) {
-      const members = memberPositions(collection, key);
-      if (!members) return false;
+    const memberPositions = currentMembershipPositions(collection);
+    if (memberPositions === null) return false;
+    if (memberPositions) {
+      const members = memberPositions.get(membershipKey(leftMemberships, key))!;
       if (members.indices.length < (ranked?.domain.count ?? collection.right.length))
         indexed = [members];
     }
