@@ -1,15 +1,63 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h, nextTick, reactive, ref } from 'vue';
 import ExForm from '../../../src/components/form/ExForm.vue';
 import ExFormItem from '../../../src/components/form/ExFormItem.vue';
 import { useFormItem } from '../../../src/components/form/use-form-item';
 import type { FormInstance, FormItemInstance, FormRule } from '../../../src/components/form/types';
+import * as cloning from '../../../src/utils/clone';
 
 const wrappers: Array<{ unmount(): void }> = [];
-afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
+afterEach(() => {
+  wrappers.splice(0).forEach(wrapper => wrapper.unmount());
+  vi.restoreAllMocks();
+});
 
 describe('字段校验快照的结构值与调度身份', () => {
+  it.each([false, true])('输入草稿只在接收时捕获，用户规则单独复制：%s', async custom => {
+    const draft = ['甲', '乙'];
+    const model = reactive({ value: ['原值'] });
+    const observed: unknown[] = [];
+    const clones = vi.spyOn(cloning, 'deepClone');
+    const rule: FormRule = {
+      trigger: 'input',
+      type: 'array',
+      required: true,
+      min: 2,
+      ...(custom
+        ? {
+            validator: (_rule, value, done) => {
+              observed.push([...(value as string[])]);
+              (value as string[]).push('规则临时值');
+              done();
+            },
+          }
+        : {}),
+    };
+    const Control = defineComponent({
+      setup() {
+        const field = useFormItem();
+        return () =>
+          h('button', { onClick: () => field?.onFieldInput?.({ value: draft }) }, '提交草稿');
+      },
+    });
+    const wrapper = mount(ExForm, {
+      props: { model, rules: { value: [rule] } },
+      slots: { default: () => h(ExFormItem, { prop: 'value' }, () => h(Control)) },
+    });
+    wrappers.push(wrapper);
+    clones.mockClear();
+    wrapper.get('button').element.click();
+    draft.length = 0;
+    await flushPromises();
+    expect(wrapper.emitted('field-validate')).toContainEqual([
+      'value',
+      { valid: true, errors: [] },
+    ]);
+    expect(observed).toEqual(custom ? [['甲', '乙']] : []);
+    expect(model.value).toEqual(['原值']);
+    expect(clones).toHaveBeenCalledTimes(custom ? 2 : 1);
+  });
   it.each([true, false])('结构值确认相同=%s 时保留或作废正在执行的 input 校验', async equal => {
     const model = reactive({ value: { tags: ['初始'] } });
     let finish: ((error?: string) => void) | undefined;
