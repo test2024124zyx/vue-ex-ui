@@ -468,6 +468,7 @@ describe('ExSelect', () => {
       const dropdown = document.querySelector('.ex-select__dropdown') as HTMLElement;
       Object.defineProperty(dropdown, 'offsetHeight', { configurable: true, value: 320 });
       window.dispatchEvent(new Event('resize'));
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       await nextTick();
 
       expect(parseFloat(dropdown.style.top)).toBeGreaterThanOrEqual(8);

@@ -665,7 +665,8 @@ useFloatingAutoUpdate(
   isOpen,
   [inputRef, panelRef],
   [() => props.type, () => props.showTime, () => props.teleported, componentSize],
-  updatePanelPosition
+  updatePanelPosition,
+  { viewport: true }
 );
 
 const openPanel = (focusCalendar = false) => {
@@ -948,12 +949,8 @@ watch(isOpen, open => {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
   if (open) {
     document.addEventListener('pointerdown', handleClickOutside);
-    window.addEventListener('resize', updatePanelPosition);
-    window.addEventListener('scroll', updatePanelPosition, true);
   } else {
     document.removeEventListener('pointerdown', handleClickOutside);
-    window.removeEventListener('resize', updatePanelPosition);
-    window.removeEventListener('scroll', updatePanelPosition, true);
   }
 });
 
@@ -965,8 +962,6 @@ watch(
 onBeforeUnmount(() => {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
   document.removeEventListener('pointerdown', handleClickOutside);
-  window.removeEventListener('resize', updatePanelPosition);
-  window.removeEventListener('scroll', updatePanelPosition, true);
 });
 
 const focus = () => inputRef.value?.focus();

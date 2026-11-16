@@ -425,6 +425,7 @@ import { calculateSelectDropdownPosition } from './position';
 import { getOptionKey, isGroup, useSelectOptions } from './use-select-options';
 import type { SelectVirtualRow } from './use-select-options';
 import { usePopupOverlay } from '../../composables/usePopupOverlay';
+import { useViewportPosition } from '../../composables/useFloatingAutoUpdate';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
 import { useSelectAria } from './use-select-aria';
 import { useSelectRemote } from './use-select-remote';
@@ -654,13 +655,15 @@ const updateDropdownPosition = () => {
   };
 };
 
-// 视口变化后先恢复完整内容高度，再在下一帧重新测量，避免重复定位产生高度振荡。
-const handleViewportChange = () => {
+// 先恢复完整内容高度，再测量下拉列表，避免重复定位产生高度振荡。
+useViewportPosition(dropdownVisible, () => {
   availableDropdownHeight.value = SELECT_DROPDOWN_OPTIONS_MAX_HEIGHT;
   dropdownRef.value?.style.removeProperty('max-height');
   dropdownRef.value?.style.removeProperty('--ex-select-options-max-height');
-  void nextTick(updateDropdownPosition);
-};
+  void nextTick(() => {
+    if (dropdownVisible.value) updateDropdownPosition();
+  });
+});
 
 // 事件处理
 const handleTriggerClick = () => {
@@ -955,20 +958,14 @@ watch(dropdownVisible, visible => {
       scrollHoverIntoView();
     });
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', handleViewportChange);
-    window.addEventListener('scroll', handleViewportChange, true);
   } else {
     document.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', handleViewportChange);
-    window.removeEventListener('scroll', handleViewportChange, true);
   }
 });
 
 // 生命周期：卸载时兜底清理
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', handleViewportChange);
-  window.removeEventListener('scroll', handleViewportChange, true);
 });
 
 const focus = () => {
