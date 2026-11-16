@@ -19,6 +19,7 @@
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 import { computed, ref, inject, onMounted, onUnmounted, watch } from 'vue';
 import type { ExTabPaneProps, ExTabPaneExposed } from './types';
+import { tabsContextKey } from './context';
 
 defineOptions({
   name: 'ExTabPane',
@@ -33,26 +34,15 @@ const props = withDefaults(defineProps<ExTabPaneProps>(), {
 const paneRef = ref<HTMLDivElement>();
 
 // 从父组件注入
-inject<string>('exTabsUid', '');
-const getTabId = inject<(name: string | number) => string>(
-  'getTabId',
-  name => `ex-tabs-tab-${name}`
-);
-const getPanelId = inject<(name: string | number) => string>(
-  'getPanelId',
-  name => `ex-tabs-panel-${name}`
-);
-const activeTab = inject<{ value: string | number }>('activeTab', { value: '' });
-const registerPane = inject<(pane: Record<string, unknown>) => void>('registerPane', () => {});
-const updatePane = inject<(registeredName: string | number, pane: Record<string, unknown>) => void>(
-  'updatePane',
-  () => {}
-);
-const unregisterPane = inject<(name: string | number) => void>('unregisterPane', () => {});
+const tabs = inject(tabsContextKey, null);
+const getTabId = (name: ExTabPaneProps['name']) =>
+  tabs ? tabs.getTabId(name) : `ex-tabs-tab-${name}`;
+const getPanelId = (name: ExTabPaneProps['name']) =>
+  tabs ? tabs.getPanelId(name) : `ex-tabs-panel-${name}`;
 const registeredName = ref(props.name);
 
 // 计算属性
-const isActive = computed(() => activeTab.value === props.name);
+const isActive = computed(() => (tabs ? tabs.activeTab.value : '') === props.name);
 
 const hasBeenActive = ref(false);
 
@@ -73,7 +63,7 @@ watch(isActive, checkActive, { immediate: true });
 watch(
   () => [props.name, props.label, props.disabled, props.closable] as const,
   ([name, label, disabled, closable], [previousName]) => {
-    updatePane(previousName, { name, label, disabled, closable });
+    tabs?.updatePane(previousName, { name, label, disabled, closable });
     registeredName.value = name;
   }
 );
@@ -96,7 +86,7 @@ const paneStyles = computed(() => {
 
 // 生命周期
 onMounted(() => {
-  registerPane({
+  tabs?.registerPane({
     name: props.name,
     label: props.label,
     disabled: props.disabled,
@@ -107,7 +97,7 @@ onMounted(() => {
 
 // 卸载时注销，否则被删除的标签仍残留在导航里（导致"删除不了"）
 onUnmounted(() => {
-  unregisterPane(registeredName.value);
+  tabs?.unregisterPane(registeredName.value);
 });
 
 // 暴露的方法

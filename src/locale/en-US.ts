@@ -111,6 +111,7 @@ const enUS = {
 
   // QRCode
   qrcode: {
+    ariaLabel: 'QR Code: {value}',
     loading: 'Generating...',
     error: 'QR Code generation failed',
     download: 'Download QR Code',

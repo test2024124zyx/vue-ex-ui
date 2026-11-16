@@ -1,11 +1,38 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExDateTimePicker from '../../../src/components/datetime-picker/ExDateTimePicker.vue';
+import type { DateTimeConstraints } from '../../../src/components/datetime-picker/types';
 
 const wrappers: Array<{ unmount(): void }> = [];
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()));
 
 describe('日期时间的独立时间约束', () => {
+  it('空值和非数组时间约束不阻止渲染，有效的分钟列表仍生效', async () => {
+    const disabledTime = (): DateTimeConstraints => ({
+      disabledHours: () => undefined,
+      disabledMinutes: (hour: number) => (hour === 9 ? [30] : null),
+      disabledSeconds: () => ({ invalid: 20 }) as unknown as number[],
+    });
+    const wrapper = mount(ExDateTimePicker, {
+      props: {
+        modelValue: new Date(2026, 9, 15, 9, 30, 20),
+        type: 'datetime',
+        teleported: false,
+        disabledTime,
+      },
+    });
+    wrappers.push(wrapper);
+    await wrapper.get('input').trigger('click');
+    const confirm = wrapper.get<HTMLButtonElement>('.ex-datetime-picker__confirm-btn');
+    expect(confirm.element.disabled).toBe(true);
+    await wrapper.get('[data-time-part="hour"]').setValue('10');
+    expect(confirm.element.disabled).toBe(false);
+    await confirm.trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+      new Date(2026, 9, 15, 10, 30, 20),
+    ]);
+  });
+
   it('禁用小时阻止确认，修改到合法时间后可以提交', async () => {
     const wrapper = mount(ExDateTimePicker, {
       props: {
