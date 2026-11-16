@@ -67,6 +67,18 @@ const resolveTarget = (href: string): HTMLElement | null => {
   }
 };
 
+const isValidSelector = (selector: string): boolean => {
+  // 排除脚本协议，同时允许标签伪类等选择器的目标稍后挂载。
+  if (!selector || /^(?:java|vb)script:/i.test(selector.replace(/[\t\n\r]/g, ''))) return false;
+  try {
+    // 在空片段验证语法，实际滚动时才查询页面目标。
+    document.createDocumentFragment().querySelector(selector);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /** 显式类型守卫兼容声明生成器对 Window/HTMLElement 联合类型的严格收窄。 */
 const isWindowContainer = (container: HTMLElement | Window): container is Window =>
   container === window;
@@ -170,22 +182,22 @@ const handleLinkClick = (item: AnchorItem): void => {
   void updateInkPosition();
 };
 
-const registerLink = (item: AnchorItem): void => {
-  if (!links.value.some(link => link.element === item.element)) {
-    links.value = [...links.value, item];
-  }
-};
-
 const updateLink = (element: HTMLElement, href: string, title: string): void => {
-  links.value = links.value.map(link =>
-    link.element === element ? { href, title, element } : link
-  );
-  if (activeElement.value === element) activeLink.value = href;
-  handleScroll();
+  const items = [...links.value];
+  const index = items.findIndex(link => link.element === element);
+  items[index === -1 ? items.length : index] = { element, href, title };
+  links.value = items;
+  if (!mounted) return;
+
+  // 平滑滚动期间仍沿用已选条目，但变更地址必须经过同一事件出口。
+  if (animating && activeElement.value === element) setActiveFromScroll(href);
 };
 
 const unregisterLink = (element: HTMLElement): void => {
   links.value = links.value.filter(link => link.element !== element);
+  if (mounted && animating && activeElement.value === element) {
+    clearAnimationTimer();
+  }
 };
 
 watch(
@@ -199,7 +211,7 @@ watch(
 
 provide(ANCHOR_INJECTION_KEY, {
   activeLink: readonly(activeLink),
-  registerLink,
+  isValidSelector,
   updateLink,
   unregisterLink,
   handleClick: handleLinkClick,

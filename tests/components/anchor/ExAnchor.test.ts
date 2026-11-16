@@ -69,9 +69,12 @@ describe('ExAnchor', () => {
       },
     });
 
+    expect(wrapper.emitted('change')).toEqual([['#first']]);
+
     href.value = '#second';
     title.value = 'Second';
     await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#second']]);
     await wrapper.find('a').trigger('click');
 
     expect(wrapper.emitted('click')?.[0]?.[0]).toBe('#second');
@@ -79,6 +82,34 @@ describe('ExAnchor', () => {
       href: '#second',
       title: 'Second',
     });
+  });
+
+  it('危险地址移出活动列表，恢复有效地址后重新参与滚动定位', async () => {
+    const section = document.createElement('section');
+    section.id = 'active';
+    document.body.append(section);
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const href = ref('#active');
+    const wrapper = mount(ExAnchor, {
+      slots: { default: () => h(ExAnchorLink, { href: href.value, title: '活动锚点' }) },
+    });
+    await wrapper.get('a').trigger('click');
+    expect(scroll).toHaveBeenCalledOnce();
+
+    href.value = 'javascript:alert(1)';
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#active'], ['']]);
+    expect(wrapper.get('a').classes()).not.toContain('is-active');
+    await wrapper.get('a').trigger('click');
+    expect(scroll).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('click')).toHaveLength(1);
+
+    href.value = '#active';
+    await nextTick();
+    await wrapper.get('a').trigger('click');
+    expect(wrapper.emitted('change')).toEqual([['#active'], [''], ['#active']]);
+    expect(scroll).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
   });
 
   it('容器变化时迁移滚动监听器', async () => {
@@ -92,6 +123,102 @@ describe('ExAnchor', () => {
 
     expect(firstRemove).toHaveBeenCalledWith('scroll', expect.any(Function));
     expect(secondAdd).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true });
+  });
+
+  it.each(['.chapter:nth-of-type(2)', '[data-section="chapter:2"]'])(
+    '选择器 %s 可定位同页目标，也能通过回车操作',
+    async href => {
+      const group = document.createElement('div');
+      group.innerHTML =
+        '<section class="chapter"></section><section class="chapter" data-section="chapter:2"></section>';
+      document.body.append(group);
+      const target = group.querySelector(href)!;
+      vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 240 }));
+      const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+      const wrapper = mount(ExAnchor, {
+        slots: { default: () => h(ExAnchorLink, { href, title: '第二章' }) },
+      });
+      await nextTick();
+      const link = wrapper.get('a');
+      expect(link.attributes('href')).toBeUndefined();
+      expect(link.attributes('role')).toBe('link');
+      expect(link.attributes('tabindex')).toBe('0');
+      await link.trigger('keydown', { key: 'Enter' });
+      expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 240, behavior: 'smooth' });
+      expect(wrapper.emitted('click')?.[0]?.[0]).toBe(href);
+      wrapper.unmount();
+    }
+  );
+
+  it('同一次渲染新增多个锚点时只发布最终选中的地址', async () => {
+    const sections = ['first', 'second', 'third'];
+    for (const [index, id] of sections.entries()) {
+      const section = document.createElement('section');
+      section.id = id;
+      vi.spyOn(section, 'getBoundingClientRect').mockReturnValue(rect({ top: index - 2 }));
+      document.body.append(section);
+    }
+    const count = ref(1);
+    const wrapper = mount(ExAnchor, {
+      slots: {
+        default: () =>
+          sections
+            .slice(0, count.value)
+            .map(id => h(ExAnchorLink, { key: id, href: `#${id}`, title: id })),
+      },
+    });
+    count.value = sections.length;
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#third']]);
+    wrapper.unmount();
+  });
+
+  it('标签伪类选择器可以定位在锚点之后才挂载的目标', async () => {
+    const selector = 'section:nth-of-type(2)';
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const wrapper = mount(ExAnchor, {
+      slots: { default: () => h(ExAnchorLink, { href: selector, title: '第二节' }) },
+    });
+    await nextTick();
+    const link = wrapper.get('a');
+    expect(link.attributes('href')).toBeUndefined();
+    expect(link.attributes('tabindex')).toBe('0');
+
+    const area = document.createElement('main');
+    const target = document.createElement('section');
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 120 }));
+    area.append(document.createElement('section'), target);
+    document.body.append(area);
+    await link.trigger('click');
+    expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 120, behavior: 'smooth' });
+    expect(wrapper.emitted('change')).toEqual([[selector]]);
+    wrapper.unmount();
+  });
+
+  it('平滑滚动中同一批次替换活动锚点时不发布中间空地址', async () => {
+    for (const [id, top] of [
+      ['first', 100],
+      ['second', -2],
+      ['third', -1],
+    ] as const) {
+      const section = document.createElement('section');
+      section.id = id;
+      vi.spyOn(section, 'getBoundingClientRect').mockReturnValue(rect({ top }));
+      document.body.append(section);
+    }
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const shown = ref(['first']);
+    const wrapper = mount(ExAnchor, {
+      slots: {
+        default: () =>
+          shown.value.map(id => h(ExAnchorLink, { key: id, href: `#${id}`, title: id })),
+      },
+    });
+    await wrapper.get('a').trigger('click');
+    shown.value = ['second', 'third'];
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#third']]);
+    wrapper.unmount();
   });
 
   it('自定义滚动容器使用容器矩形与 scrollTop 计算目标位置', async () => {
