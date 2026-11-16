@@ -60,4 +60,26 @@ describe('下拉选项使用统一索引', () => {
     await nextTick();
     expect(activeItem()).toBe('乙');
   });
+
+  it.each([false, true])('指针经过已有禁用项时不跳回首项：%s', async virtual => {
+    const wrapper = mount(ExSelect, {
+      props: {
+        virtual,
+        options: [
+          { value: 0, label: '首项' },
+          { value: 1, label: '禁用项', disabled: true },
+          { value: 2, label: '末项' },
+        ],
+      },
+      attachTo: document.body,
+    });
+    const trigger = wrapper.get('[role="combobox"]');
+    await trigger.trigger('click');
+    await trigger.trigger('keydown', { key: 'End' });
+    const items = [...document.querySelectorAll('[role="option"]')];
+    const disabled = items.find(item => item.textContent?.includes('禁用项'))!;
+    disabled.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(trigger.attributes('aria-activedescendant')).toBe(disabled.id);
+  });
 });
