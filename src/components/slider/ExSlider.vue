@@ -67,6 +67,7 @@
         :aria-valuemin="min"
         :aria-valuemax="max"
         :aria-valuenow="currentValue as number"
+        :aria-valuetext="formatTooltip ? valueTexts[0] || undefined : undefined"
         :aria-label="ariaLabel || t('slider.button')"
         :aria-description="ariaDescription"
         v-bind="fieldAriaAttrs"
@@ -83,12 +84,26 @@
           class="ex-slider__tooltip"
           :class="`ex-slider__tooltip--${tooltipPlacement}`"
         >
-          {{ formatValue(currentValue as number) }}
+          {{ valueTexts[0] }}
         </div>
       </div>
 
       <!-- 滑块手柄 - 范围值 -->
       <template v-else>
+        <template v-if="fieldAriaAttrs['aria-labelledby']">
+          <span
+            :id="rangeThumbLabelIds[0]"
+            hidden
+          >
+            {{ t('slider.startValue') }}
+          </span>
+          <span
+            :id="rangeThumbLabelIds[1]"
+            hidden
+          >
+            {{ t('slider.endValue') }}
+          </span>
+        </template>
         <!-- 起始手柄 -->
         <div
           ref="thumbStartRef"
@@ -101,9 +116,11 @@
           :aria-valuemin="min"
           :aria-valuemax="(currentValue as [number, number])[1]"
           :aria-valuenow="(currentValue as [number, number])[0]"
+          :aria-valuetext="formatTooltip ? valueTexts[0] || undefined : undefined"
           :aria-label="getRangeThumbAriaLabel(0)"
           :aria-description="ariaDescription"
           v-bind="fieldAriaAttrs"
+          :aria-labelledby="getRangeThumbLabelledBy(0)"
           @mousedown="handleThumbMouseDown($event, 0)"
           @touchstart="handleThumbMouseDown($event, 0)"
           @keydown="handleKeyDown($event, 0)"
@@ -116,7 +133,7 @@
             class="ex-slider__tooltip"
             :class="`ex-slider__tooltip--${tooltipPlacement}`"
           >
-            {{ formatValue((currentValue as [number, number])[0]) }}
+            {{ valueTexts[0] }}
           </div>
         </div>
 
@@ -131,9 +148,11 @@
           :aria-valuemin="(currentValue as [number, number])[0]"
           :aria-valuemax="max"
           :aria-valuenow="(currentValue as [number, number])[1]"
+          :aria-valuetext="formatTooltip ? valueTexts[1] || undefined : undefined"
           :aria-label="getRangeThumbAriaLabel(1)"
           :aria-description="ariaDescription"
           v-bind="fieldAriaAttrs"
+          :aria-labelledby="getRangeThumbLabelledBy(1)"
           @mousedown="handleThumbMouseDown($event, 1)"
           @touchstart="handleThumbMouseDown($event, 1)"
           @keydown="handleKeyDown($event, 1)"
@@ -146,7 +165,7 @@
             class="ex-slider__tooltip"
             :class="`ex-slider__tooltip--${tooltipPlacement}`"
           >
-            {{ formatValue((currentValue as [number, number])[1]) }}
+            {{ valueTexts[1] }}
           </div>
         </div>
       </template>
@@ -206,11 +225,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount, nextTick } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, nextTick, useId } from 'vue';
 import type { ExSliderProps, ExSliderEmits, ExSliderExposed, SliderMark } from './types';
 import { useI18n } from '../../locale';
 import { isComposingKeyboardEvent } from '../../utils/keyboard';
-import { useFormFieldState } from '../form/use-form-item';
+import { mergeAriaIds, useFormFieldState } from '../form/use-form-item';
 import { normalizeCustomClass } from '../../composables/useCustomClass';
 
 defineOptions({
@@ -236,6 +255,8 @@ const props = withDefaults(defineProps<ExSliderProps>(), {
 
 const emit = defineEmits<ExSliderEmits>();
 const { t } = useI18n();
+const sliderId = useId();
+const rangeThumbLabelIds = [`${sliderId}-start`, `${sliderId}-end`] as const;
 
 // 所在 FormItem 的字段上下文（用于 blur 自动校验）
 const {
@@ -404,6 +425,11 @@ const getRangeThumbAriaLabel = (thumbIndex: number) => {
   return props.ariaLabel ? `${props.ariaLabel} ${thumbLabel}` : thumbLabel;
 };
 
+const getRangeThumbLabelledBy = (index: 0 | 1) => {
+  const fieldLabel = fieldAriaAttrs.value['aria-labelledby'];
+  return fieldLabel ? mergeAriaIds(fieldLabel, rangeThumbLabelIds[index]) : undefined;
+};
+
 const getThumbStyle = (value: number) => {
   const percent = getPercent(value);
   const isVertical = props.direction === 'vertical';
@@ -437,12 +463,11 @@ const getMarkStyle = (value: number) => {
   return isReverse ? { right: `${percent}%` } : { left: `${percent}%` };
 };
 
-const formatValue = (value: number): string => {
-  if (props.formatTooltip) {
-    return props.formatTooltip(value);
-  }
-  return String(value);
-};
+const valueTexts = computed(() => {
+  const value = currentValue.value;
+  const format = props.formatTooltip ?? String;
+  return Array.isArray(value) ? value.map(item => format(item)) : [format(value)];
+});
 
 // 事件处理：从鼠标或触摸事件获取位置
 const getPositionFromEvent = (event: MouseEvent | TouchEvent): { x: number; y: number } => {
