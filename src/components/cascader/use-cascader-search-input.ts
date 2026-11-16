@@ -1,5 +1,8 @@
 import { computed, ref, type Ref } from 'vue';
 
+const isCompositionInput = ({ inputType, isComposing }: InputEvent) =>
+  isComposing || inputType === 'insertCompositionText' || inputType === 'insertFromComposition';
+
 export function useCascaderSearchInput(
   input: Ref<HTMLInputElement | undefined>,
   confirmedValue: Readonly<Ref<string>>,
@@ -37,29 +40,34 @@ export function useCascaderSearchInput(
     }
     discardedComposition = false;
     restoreDisplay();
-    // 尾随 input 可以出现在微任务之后，保留到第一个输入或下一轮组合。
+    // 尾随 input 可以出现在微任务之后，保留到第一个输入或新编辑开始。
     ignoredFinalInput = value;
+  };
+
+  const startEdit = () => {
+    ignoredFinalInput = null;
+  };
+
+  const handleBeforeInput = (event: Event) => {
+    const edit = event as InputEvent;
+    if (edit.inputType && !isCompositionInput(edit)) startEdit();
   };
 
   const handleInput = (event: Event) => {
     if (!input.value) return;
     const value = input.value.value;
-    const { isComposing, inputType } = event as InputEvent;
+    const edit = event as InputEvent;
     const cancelledValue = ignoredFinalInput;
     ignoredFinalInput = null;
     if (
       discardedComposition ||
       (cancelledValue !== null &&
-        (value === cancelledValue ||
-          value === confirmedValue.value ||
-          isComposing ||
-          inputType === 'insertCompositionText' ||
-          inputType === 'insertFromComposition'))
+        (value === cancelledValue || value === confirmedValue.value || isCompositionInput(edit)))
     ) {
       restoreDisplay();
       return;
     }
-    if (draft.value !== null || isComposing) {
+    if (draft.value !== null || edit.isComposing) {
       draft.value = value;
       return;
     }
@@ -68,5 +76,14 @@ export function useCascaderSearchInput(
 
   const isComposing = () => draft.value !== null || discardedComposition;
 
-  return { displayValue, discard, startComposition, endComposition, handleInput, isComposing };
+  return {
+    displayValue,
+    discard,
+    startComposition,
+    endComposition,
+    startEdit,
+    handleBeforeInput,
+    handleInput,
+    isComposing,
+  };
 }

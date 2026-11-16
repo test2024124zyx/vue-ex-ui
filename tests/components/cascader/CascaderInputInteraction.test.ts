@@ -124,6 +124,35 @@ describe('Cascader 的输入交互', () => {
     expect(input.attributes('aria-expanded')).toBe('true');
   });
 
+  it.each(['paste', 'beforeinput'] as const)(
+    '没有尾随事件时，%s 可开始与旧组合内容相同的新输入',
+    async startEvent => {
+      const wrapper = mount(ExCascader, {
+        props: { modelValue: ['east'], options, filterable: true, clearable: true },
+        attachTo: document.body,
+      });
+      const input = wrapper.get('input');
+      await input.trigger('click');
+      await input.trigger('compositionstart');
+      input.element.value = 'hangzhou';
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+      await input.trigger('click');
+      input.element.value = '杭州东';
+      await input.trigger('compositionend');
+      await wrapper.get('.ex-cascader__clear').trigger('click');
+      await wrapper.setProps({ modelValue: [] });
+
+      const inputType = startEvent === 'paste' ? 'insertFromPaste' : 'insertText';
+      if (startEvent === 'paste') await input.trigger('paste');
+      else input.element.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, inputType }));
+      input.element.value = '杭州东';
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
+      await nextTick();
+      expect(input.attributes('aria-expanded')).toBe('true');
+      expect(input.element.value).toBe('杭州东');
+    }
+  );
+
   it('表单重置清除正在组合的草稿，迟到的输入法事件不会重新打开搜索', async () => {
     const model = reactive({ station: ['east'] });
     const wrapper = mount(ExForm, {
