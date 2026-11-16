@@ -23,6 +23,35 @@ const deferred = <T>() => {
 };
 
 describe('TreeSelect 异步分支', () => {
+  it('搜索父项只展开已加载数据，未加载的子项需显式点击后才请求', async () => {
+    const loadData = vi.fn(async () => [{ value: 'nested', label: '待加载后代', isLeaf: false }]);
+    const wrapper = mount(ExTreeSelect, {
+      props: {
+        data: [
+          {
+            value: 'parent',
+            label: '部门',
+            children: [{ value: 'lazy', label: '子项', isLeaf: false }],
+          },
+        ],
+        filterable: true,
+        loadData,
+        teleported: false,
+      },
+    });
+    wrappers.push(wrapper);
+    await wrapper.get('[role="combobox"]').trigger('click');
+    await wrapper.get('.ex-tree-select__search-input').setValue('部门');
+    await flushPromises();
+    expect(loadData).not.toHaveBeenCalled();
+    const child = wrapper.findAll('[role="treeitem"]')[1]!;
+    expect(child.text()).toContain('子项');
+    expect(child.attributes('aria-expanded')).toBe('false');
+    await child.get('.ex-tree-select__expand').trigger('click');
+    await flushPromises();
+    expect(loadData).toHaveBeenCalledOnce();
+    expect(wrapper.text()).toContain('待加载后代');
+  });
   it('万层静态树启用异步能力仍可初始化，SSR 不发起请求', async () => {
     let root: TreeSelectNode = { value: 'leaf', label: '最深节点' };
     for (let depth = 9999; depth >= 0; depth--)

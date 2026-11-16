@@ -434,7 +434,9 @@ const flatNodes = computed<FlatNode[]>(() => {
       continue;
     }
     const hasChildren = asyncOptions.expandable(node, [node.value]);
-    const expanded = filterActive.value || expandedKeys.value.has(node.value);
+    // 搜索只打开已加载的分支，未知后代等用户主动展开后再请求。
+    const expanded =
+      expandedKeys.value.has(node.value) || Boolean(filterActive.value && node.children?.length);
     out.push({
       node,
       level,
