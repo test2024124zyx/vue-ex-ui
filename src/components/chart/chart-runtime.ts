@@ -1,4 +1,5 @@
 import type { Theme } from '../../types/theme';
+import { deepMerge, isObject } from '../../utils';
 import { getChartPalette, getChartTheme, type ChartPalette } from './utils';
 
 /** 保留 ECharts 对同类多组件的数组契约，并独立合并每个组件的默认值。 */
@@ -7,11 +8,16 @@ export function mergeChartComponent(
   defaults: Record<string, unknown>,
   show: boolean
 ): Record<string, unknown> | Record<string, unknown>[] {
-  const merge = (item: unknown) => ({
-    ...defaults,
-    ...(item && typeof item === 'object' && !Array.isArray(item) ? item : {}),
-    show,
-  });
+  const { feature: defaultFeature, ...defaultStyles } = defaults;
+  const merge = (item: unknown) => {
+    const overrides = isObject(item) ? item : {};
+    const { feature, ...styles } = overrides;
+    const result = deepMerge(defaultStyles, styles);
+    // 工具功能由调用方选择，声明 feature 时沿用整组选项替换行为。
+    if (Object.prototype.hasOwnProperty.call(overrides, 'feature')) result.feature = feature;
+    else if (defaultFeature !== undefined) result.feature = defaultFeature;
+    return { ...result, show };
+  };
   return Array.isArray(value) ? value.map(merge) : merge(value);
 }
 

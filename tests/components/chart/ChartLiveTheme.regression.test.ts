@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { setPlatformAPI } from 'echarts';
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
-import { h, nextTick, ref } from 'vue';
+import { h, nextTick, reactive, ref } from 'vue';
 import ExChart from '../../../src/components/chart/ExChart.vue';
 import ExConfigProvider from '../../../src/components/config-provider/ExConfigProvider.vue';
 import type { ChartOption, ExChartExposed } from '../../../src/components/chart/types';
@@ -186,6 +186,29 @@ it('还原交互配置后保留当前主题颜色和光晕', async () => {
     xAxis: dark.xAxis,
     series: dark.series,
   });
+});
+
+it('图例的局部业务样式在声明式重绘与还原后仍使用当前默认色', async () => {
+  const option = reactive<ChartOption>({
+    legend: { textStyle: { fontSize: 16 } },
+    xAxis: { type: 'category', data: ['甲', '乙'] },
+    yAxis: {},
+    series: [{ type: 'line', data: [1, 2] }],
+  });
+  const { theme, instance } = await mountThemedChart(option, true);
+  const legendStyle = () =>
+    (instance.getOption().legend as Array<{ textStyle: { color: string; fontSize: number } }>)[0]!
+      .textStyle;
+  const light = legendStyle().color;
+  theme.value = 'neon-blue';
+  await nextTick();
+  const dark = legendStyle().color;
+  expect(dark).not.toBe(light);
+  option.series = [{ type: 'line', data: [3, 4] }];
+  await nextTick();
+  expect(legendStyle()).toMatchObject({ color: dark, fontSize: 16 });
+  instance.dispatchAction({ type: 'restore' });
+  expect(legendStyle()).toMatchObject({ color: dark, fontSize: 16 });
 });
 
 it('被生成光晕覆写的声明式阴影也随主题更新', async () => {
