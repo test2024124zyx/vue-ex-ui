@@ -198,6 +198,33 @@ describe('表格与标签页的唯一键', () => {
     expect(wrapper.get('[role="tabpanel"][aria-hidden="false"]').text()).toBe('面板 same');
   });
 
+  it('外层包装内的同类型组件不能认领其他顶层包装的位置', async () => {
+    const Inner = defineComponent({
+      props: { name: { type: String, required: true } },
+      setup: props => () => h(ExTabPane, { name: props.name, label: props.name }, () => props.name),
+    });
+    const Outer = { render: () => h(Inner, { name: 'A' }) };
+    const Middle = { render: () => h(ExTabPane, { name: 'B', label: 'B' }, () => 'B') };
+    const wrapper = mount(ExTabs, {
+      slots: { default: () => [h(Outer), h(Middle), h(Inner, { name: 'C' })] },
+    });
+    await flushPromises();
+    expect(wrapper.findAll('[role="tab"]').map(tab => tab.text())).toEqual(['A', 'B', 'C']);
+    expect(wrapper.get('[role="tabpanel"][aria-hidden="false"]').text()).toBe('A');
+  });
+
+  it('复用 props 对象的同名直声明页仍只保留第一个实例', async () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const props = { name: 'same', label: '共享' };
+    const wrapper = mount(ExTabs, {
+      slots: {
+        default: () => [h(ExTabPane, props, () => '首项'), h(ExTabPane, props, () => '重复项')],
+      },
+    });
+    await flushPromises();
+    expect(wrapper.findAll('[role="tabpanel"]').map(panel => panel.text())).toEqual(['首项']);
+  });
+
   it('客户端异步包装页自身挂载前继续使用静态 hydration 输出', async () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const warnings = vi.spyOn(console, 'warn').mockImplementation(() => {});

@@ -157,9 +157,7 @@ const registeredPanes = shallowRef<Array<{ pane: PaneInfo; instance: ComponentIn
 const { items: slotItems, nodes, SlotContent } = useSlotItems('ExTabPane');
 const wrappedPositions = shallowRef(new Map<number, { slot: number; visual: number }>());
 const ownsVNode = (node: VNode, instance: ComponentInternalInstance) =>
-  node === instance.vnode ||
-  node.component === instance ||
-  (node.props !== null && node.props === instance.vnode.props);
+  node === instance.vnode || node.component === instance;
 
 const slotOrder = computed(() => {
   const order: VNode[] = [];
@@ -178,19 +176,13 @@ const slotOrder = computed(() => {
 });
 
 function getWrappedOrder(instance: ComponentInternalInstance): number {
+  const positions = slotOrder.value;
   for (let parent = instance.parent; parent && parent !== tabsInstance; parent = parent.parent) {
-    const positions = slotOrder.value;
-    const { key, type } = parent.vnode;
-    // 进入父级更新时新 VNode 可能还未绑定实例，用户声明的 key 可以直接关联。
-    let keyOrder: number | undefined;
-    let ambiguous = false;
+    const position = positions.get(parent.vnode);
+    if (position !== undefined) return position;
     for (const [node, order] of positions) {
-      if (ownsVNode(node, parent)) return order;
-      if (node.key !== key || node.type !== type) continue;
-      ambiguous ||= keyOrder !== undefined;
-      keyOrder = order;
+      if (node.component === parent) return order;
     }
-    if (!ambiguous && keyOrder !== undefined) return keyOrder;
   }
   return Infinity;
 }
