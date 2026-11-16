@@ -63,7 +63,11 @@ import {
   resolveChartTheme,
   resolveChartPalette,
 } from './chart-runtime';
-import { getChartNavigationItems, type ChartNavigationItem } from './chart-accessibility';
+import {
+  getChartDatasetKeyOrder,
+  getChartNavigationItems,
+  type ChartNavigationItem,
+} from './chart-accessibility';
 import ExChartDataNavigation from './ExChartDataNavigation.vue';
 import { useOverlayParentActive } from '../../composables/useOverlay';
 import { deepClone } from '../../utils/clone';
@@ -252,7 +256,14 @@ const syncNavigationItems = (fallback = props.option) => {
   const option = instanceOption ?? fallback;
   // 空状态与键盘导航共用当前实例快照，兼容声明式及公开 setOption 更新。
   renderedOption.value = option;
-  const input = [option.series, option.dataset, option.xAxis, option.yAxis, option.legend];
+  const input = [
+    option.series,
+    option.dataset,
+    option.xAxis,
+    option.yAxis,
+    option.legend,
+    getChartDatasetKeyOrder(option.dataset),
+  ];
   if (navigationInput && equalValueSnapshot(navigationInput, input)) return;
   navigationInput = instanceOption ? input : deepClone(input, { materializeAccessors: true });
   const items = getChartNavigationItems(option);
@@ -337,7 +348,10 @@ const updateChart = () => {
   if (!chartInstance.value || !props.option) return false;
 
   try {
-    const inputs = chartUpdateSources.map(read => read());
+    const inputs = [
+      ...chartUpdateSources.map(read => read()),
+      getChartDatasetKeyOrder(props.option.dataset),
+    ];
     if (appliedInputs && equalValueSnapshot(appliedInputs, inputs)) return false;
     const snapshot = deepClone(inputs, { materializeAccessors: true });
     // 合并配置
