@@ -67,6 +67,19 @@ const resolveTarget = (href: string): HTMLElement | null => {
   }
 };
 
+const isValidSelector = (selector: string): boolean => {
+  if (!selector) return false;
+  // 形似协议的字符串只有确实找到页内元素时才视作选择器。
+  if (/^[a-z][a-z0-9+.-]*:/i.test(selector)) return resolveTarget(selector) !== null;
+  try {
+    // 在空片段验证语法，实际滚动时才查询页面目标。
+    document.createDocumentFragment().querySelector(selector);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /** 显式类型守卫兼容声明生成器对 Window/HTMLElement 联合类型的严格收窄。 */
 const isWindowContainer = (container: HTMLElement | Window): container is Window =>
   container === window;
@@ -179,7 +192,6 @@ const updateLink = (element: HTMLElement, href: string, title: string): void => 
 
   // 平滑滚动期间仍沿用已选条目，但变更地址必须经过同一事件出口。
   if (animating && activeElement.value === element) setActiveFromScroll(href);
-  handleScroll();
 };
 
 const unregisterLink = (element: HTMLElement): void => {
@@ -201,6 +213,7 @@ watch(
 
 provide(ANCHOR_INJECTION_KEY, {
   activeLink: readonly(activeLink),
+  isValidSelector,
   updateLink,
   unregisterLink,
   handleClick: handleLinkClick,

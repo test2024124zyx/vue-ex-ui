@@ -125,6 +125,54 @@ describe('ExAnchor', () => {
     expect(secondAdd).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true });
   });
 
+  it.each(['.chapter:nth-of-type(2)', '[data-section="chapter:2"]'])(
+    '选择器 %s 可定位同页目标，也能通过回车操作',
+    async href => {
+      const group = document.createElement('div');
+      group.innerHTML =
+        '<section class="chapter"></section><section class="chapter" data-section="chapter:2"></section>';
+      document.body.append(group);
+      const target = group.querySelector(href)!;
+      vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rect({ top: 240 }));
+      const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+      const wrapper = mount(ExAnchor, {
+        slots: { default: () => h(ExAnchorLink, { href, title: '第二章' }) },
+      });
+      await nextTick();
+      const link = wrapper.get('a');
+      expect(link.attributes('href')).toBeUndefined();
+      expect(link.attributes('role')).toBe('link');
+      expect(link.attributes('tabindex')).toBe('0');
+      await link.trigger('keydown', { key: 'Enter' });
+      expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 240, behavior: 'smooth' });
+      expect(wrapper.emitted('click')?.[0]?.[0]).toBe(href);
+      wrapper.unmount();
+    }
+  );
+
+  it('同一次渲染新增多个锚点时只发布最终选中的地址', async () => {
+    const sections = ['first', 'second', 'third'];
+    for (const [index, id] of sections.entries()) {
+      const section = document.createElement('section');
+      section.id = id;
+      vi.spyOn(section, 'getBoundingClientRect').mockReturnValue(rect({ top: index - 2 }));
+      document.body.append(section);
+    }
+    const count = ref(1);
+    const wrapper = mount(ExAnchor, {
+      slots: {
+        default: () =>
+          sections
+            .slice(0, count.value)
+            .map(id => h(ExAnchorLink, { key: id, href: `#${id}`, title: id })),
+      },
+    });
+    count.value = sections.length;
+    await nextTick();
+    expect(wrapper.emitted('change')).toEqual([['#first'], ['#third']]);
+    wrapper.unmount();
+  });
+
   it('自定义滚动容器使用容器矩形与 scrollTop 计算目标位置', async () => {
     const container = document.createElement('div');
     const target = document.createElement('section');

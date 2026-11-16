@@ -6,10 +6,13 @@
   >
     <a
       :href="safeHref"
-      :aria-disabled="!safeHref || undefined"
+      :role="selectorHref ? 'link' : undefined"
+      :tabindex="selectorHref ? 0 : undefined"
+      :aria-disabled="!scrollHref || undefined"
       :class="['ex-anchor-link__title', { 'is-active': isActive }]"
       :title="title"
       @click.prevent="handleClick"
+      @keydown.enter="handleEnter"
     >
       {{ title }}
     </a>
@@ -34,13 +37,15 @@ const linkRef = ref<HTMLDivElement>();
 
 const anchor = inject(ANCHOR_INJECTION_KEY, null);
 
+const selectorHref = ref<string>();
 const safeHref = computed(() => normalizeLinkHref(props.href));
+const scrollHref = computed(() => safeHref.value ?? selectorHref.value);
 const isActive = computed(
-  () => safeHref.value !== undefined && anchor?.activeLink.value === safeHref.value
+  () => scrollHref.value !== undefined && anchor?.activeLink.value === scrollHref.value
 );
 
 const handleClick = () => {
-  const href = safeHref.value;
+  const href = scrollHref.value;
   if (href === undefined) return;
   if (linkRef.value && anchor) {
     anchor.handleClick({ href, title: props.title, element: linkRef.value });
@@ -48,14 +53,24 @@ const handleClick = () => {
   emit('click', href);
 };
 
-const syncLink = (href: string | undefined, title: string) => {
-  if (!linkRef.value || !anchor) return;
-  if (href === undefined) anchor.unregisterLink(linkRef.value);
-  else anchor.updateLink(linkRef.value, href, title);
+const handleEnter = (event: KeyboardEvent) => {
+  if (!selectorHref.value) return;
+  event.preventDefault();
+  handleClick();
 };
 
-onMounted(() => syncLink(safeHref.value, props.title));
-watch([safeHref, () => props.title], ([href, title]) => syncLink(href, title));
+const syncLink = () => {
+  if (!linkRef.value || !anchor) return;
+  // 选择器仅用于页内定位，原生 href 继续使用协议白名单。
+  const selector = typeof props.href === 'string' ? props.href.trim() : '';
+  selectorHref.value = !safeHref.value && anchor.isValidSelector(selector) ? selector : undefined;
+  const href = scrollHref.value;
+  if (href === undefined) anchor.unregisterLink(linkRef.value);
+  else anchor.updateLink(linkRef.value, href, props.title);
+};
+
+onMounted(syncLink);
+watch([() => props.href, () => props.title], syncLink);
 
 onBeforeUnmount(() => {
   if (anchor) {
