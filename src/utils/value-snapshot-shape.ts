@@ -6,6 +6,7 @@ const MEMBER_SHAPE_BUDGET = 32;
 const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 type OwnShape = { signature: number; children: object[] };
+type KeyToken = { key: string | symbol; id: number };
 
 function bytesOf(value: object): Uint8Array | undefined {
   if (ArrayBuffer.isView(value)) {
@@ -24,6 +25,8 @@ function bytesOf(value: object): Uint8Array | undefined {
 export function createSnapshotMemberShape() {
   const atoms = new Map<unknown, number>();
   const ownShapes = new WeakMap<object, OwnShape | null>();
+  const ownKeys = new WeakMap<object, KeyToken[]>();
+  const outlines = new WeakMap<object, string>();
   const negativeZero = Symbol();
   const id = (value: unknown) => {
     const atom = Object.is(value, -0) ? negativeZero : value;
@@ -33,6 +36,29 @@ export function createSnapshotMemberShape() {
     atoms.set(atom, next);
     return next;
   };
+
+  function keysOf(node: object): KeyToken[] {
+    const cached = ownKeys.get(node);
+    if (cached) return cached;
+    const keys = Reflect.ownKeys(node).map(key => ({ key, id: id(key) }));
+    keys.sort((first, second) => first.id - second.id);
+    ownKeys.set(node, keys);
+    return keys;
+  }
+
+  function outlineOf(value: unknown): string {
+    if (value === null || typeof value !== 'object') return `value:${id(value)}`;
+    const node = toRaw(value);
+    if (usesNativeIdentity(node)) return `native:${id(node)}`;
+    const cached = outlines.get(node);
+    if (cached !== undefined) return cached;
+    // 判断自有键无需读取访问器，仍可作为回退分组的必要条件。
+    const shape = `object:${id(Object.getPrototypeOf(node))}:${keysOf(node)
+      .map(key => key.id)
+      .join(',')}`;
+    outlines.set(node, shape);
+    return shape;
+  }
 
   function readOwnShape(node: object): OwnShape | null {
     const cached = ownShapes.get(node);
@@ -67,8 +93,7 @@ export function createSnapshotMemberShape() {
         append(entryValue);
       }
     }
-    const keys = Reflect.ownKeys(node).map(key => ({ key, id: id(key) }));
-    keys.sort((first, second) => first.id - second.id);
+    const keys = keysOf(node);
     shape.push('properties', keys.length);
     for (const { key, id: keyId } of keys) {
       const descriptor = Object.getOwnPropertyDescriptor(node, key);
@@ -84,7 +109,7 @@ export function createSnapshotMemberShape() {
     return result;
   }
 
-  return ([key, value]: readonly [object, unknown]): string | undefined => {
+  function detailed([key, value]: readonly [object, unknown]): string | undefined {
     const pending: unknown[] = [value, key];
     const visited = new WeakMap<object, number>();
     let referenceCount = 0;
@@ -120,5 +145,10 @@ export function createSnapshotMemberShape() {
       }
     }
     return shape.join(',');
+  }
+
+  return {
+    outline: ([key, value]: readonly [object, unknown]) => `${outlineOf(key)}|${outlineOf(value)}`,
+    detailed,
   };
 }

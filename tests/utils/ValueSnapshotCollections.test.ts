@@ -171,6 +171,41 @@ describe('无序集合快照', () => {
     expect(performance.now() - start).toBeLessThan(1800);
   });
 
+  it('一个集合自由配对时立即校验另一集合的成员引用', () => {
+    const target = {};
+    const values = new Set(Array.from({ length: 9 }, () => ({ selected: target })));
+    const source = { values, anchors: new Set([target]) };
+    const snapshot = deepClone(source);
+    const external = {};
+    for (const value of snapshot.values) value.selected = external;
+    const start = performance.now();
+    expect(equalValueSnapshot(source, snapshot)).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('同原型的访问器成员仍按自有键隔离候选', () => {
+    const special = {
+      get score() {
+        return 1;
+      },
+    };
+    const source = new Set([...Array.from({ length: 18_000 }, () => ({})), special]);
+    const snapshot = new Set([...deepClone(source)].reverse());
+    const start = performance.now();
+    expect(equalValueSnapshot(source, snapshot)).toBe(true);
+    expect(performance.now() - start).toBeLessThan(1800);
+  });
+
+  it('回退候选时撤销这一分支登记的嵌套集合约束', () => {
+    const member = (id: number) => ({
+      first: new Set([{ id }]),
+      second: new Set([{ active: true }]),
+    });
+    const source = new Set([member(1), member(2)]);
+    const reordered = new Set([...deepClone(source)].reverse());
+    expect(equalValueSnapshot(source, reordered)).toBe(true);
+  });
+
   it('按原始键直接匹配大集合，深层结构沿用迭代遍历', () => {
     const entries = Array.from({ length: 12_000 }, (_, index) => [index, index] as const);
     expect(equalValueSnapshot(new Map(entries), new Map(entries.toReversed()))).toBe(true);
